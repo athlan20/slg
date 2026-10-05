@@ -2,12 +2,11 @@
 // 驻军行、行军标签 / 剩余秒、掠夺冷却剩余的人读拼装，不含状态与请求逻辑。
 
 import { PLUNDER_COOLDOWN_HOURS, TROOP_KINDS, type MarchView, type TroopKind } from '../api/protocol';
-import { COPY, TROOP_LABEL } from '../copy';
-import { CITY_COPY } from '../copy-cities';
-import { MOVING_COPY } from '../copy-moving';
+import { getCopy } from '../i18n/bundle';
 
 /** 非零驻军行（详情与 NPC 情报共用） */
 export function armyRows(army: Record<TroopKind, number>) {
+  const { TROOP_LABEL } = getCopy();
   return TROOP_KINDS.filter((kind) => army[kind] > 0).map((kind) => (
     <span key={kind} className="text-dim">
       {TROOP_LABEL[kind].name}×{army[kind]}
@@ -21,6 +20,8 @@ export function marchSecondsLeft(march: MarchView, now: number): number {
 
 /** 行军人读标签；截击埋伏中（v35 AISLG-112，now ≥ ambushAt）显示「埋伏中」变体 */
 export function marchLabel(march: MarchView, now: number = Date.now()): string {
+  // 非组件辅助：体内取当前语言文案包（模块顶层严禁取）
+  const { COPY, CITY_COPY, MOVING_COPY } = getCopy();
   if (march.purpose === 'scout') {
     return COPY.worldMap.marchScout(march.x, march.y);
   }
@@ -59,6 +60,7 @@ export function protectionLeftText(
   if (!protection) {
     return null;
   }
+  const { COPY, EXTRA_MAP } = getCopy();
   const format = (iso: string | null): string | null => {
     if (!iso) {
       return null;
@@ -70,7 +72,7 @@ export function protectionLeftText(
     const remainingMs = ts - now;
     const hours = Math.floor(remainingMs / (60 * 60 * 1000));
     const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
-    return hours > 0 ? `${hours} 小时 ${minutes} 分` : `${minutes} 分`;
+    return hours > 0 ? EXTRA_MAP.duration.hm(hours, minutes) : EXTRA_MAP.duration.m(minutes);
   };
   const newbie = format(protection.newbieUntil);
   if (newbie) {
@@ -104,7 +106,8 @@ export function plunderCooldownLeft(plunderedAt: string | null, now: number, tim
   if (remainingMs <= 0) {
     return null;
   }
+  const { EXTRA_MAP } = getCopy();
   const hours = Math.floor(remainingMs / (60 * 60 * 1000));
   const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
-  return hours > 0 ? `${hours} 小时 ${minutes} 分` : `${minutes} 分`;
+  return hours > 0 ? EXTRA_MAP.duration.hm(hours, minutes) : EXTRA_MAP.duration.m(minutes);
 }

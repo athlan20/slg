@@ -4,12 +4,15 @@
 
 import { movingIndexAt, type MovingTargetView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
-import { MOVING_COPY } from '../../copy-moving';
+import { useCopy } from '../../i18n/bundle';
+import { tName } from '../../i18n/names';
 import { useNow } from '../../state/useNow';
 import type { WorldSession } from '../../state/worldSession';
 import { PagedList } from '../ui/PagedList';
 
 export function MovingTargetList({ targets, world }: { targets: MovingTargetView[]; world: WorldSession }) {
+  const copy = useCopy();
+  const { MOVING_COPY } = copy;
   const now = useNow(targets.length > 0);
   const alive = targets.filter((target) => now < Date.parse(target.endsAt));
 
@@ -34,7 +37,7 @@ export function MovingTargetList({ targets, world }: { targets: MovingTargetView
           >
             <span className="min-w-0">
               <b className={`block truncate text-[12px] font-semibold ${target.kind === 'bandit' ? 'text-warn' : 'text-gold'}`}>
-                {MOVING_COPY.panel.row(target.label, target.level)}
+                {MOVING_COPY.panel.row(tName(target.label), target.level)}
                 <span className="ml-1.5 font-mono text-[11px] font-normal text-faint">
                   {MOVING_COPY.panel.leaves(formatDurationText(Math.max(0, Math.ceil((Date.parse(target.endsAt) - now) / 1000))))}
                 </span>

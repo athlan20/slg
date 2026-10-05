@@ -2,17 +2,19 @@
  *  数据来自 GET_OFFLINE_REPORT（进入 Agent 页时拉一次，不弹窗）。 */
 
 import { useEffect } from 'react';
-import { COPY, RESOURCE_LABEL } from '../../copy';
-import { INTEL_COPY } from '../../copy-pages';
+import { getCopy, useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
 import { Card } from '../ui/Card';
 
 function durationText(seconds: number): string {
+  const { COPY } = getCopy();
   const minutes = Math.max(0, Math.floor(seconds / 60));
   return minutes < 60 ? COPY.offlineReport.durationMinutes(minutes) : COPY.offlineReport.durationHours(Math.floor(minutes / 60), minutes % 60);
 }
 
 export function OfflineSummaryCard() {
+  const copy = useCopy();
+  const { COPY, EXTRA_PANEL, INTEL_COPY, RESOURCE_LABEL } = copy;
   const { session } = useGame();
   const { offlineSummary, loadOfflineSummary } = session;
   useEffect(() => {
@@ -32,7 +34,7 @@ export function OfflineSummaryCard() {
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
           <Line label={COPY.offlineReport.gainsTitle} value={gains.length > 0 ? gains.join(' · ') : COPY.offlineReport.gainsNone} tone={gains.length > 0 ? 'text-ok' : 'text-faint'} />
           <Line label={COPY.offlineReport.lossesTitle} value={offline.battles > 0 ? COPY.offlineReport.battlesRow(offline.battles) : COPY.offlineReport.lossesNone} />
-          {offline.troopsLost > 0 ? <Line label="减员" value={COPY.offlineReport.troopsLostRow(offline.troopsLost)} tone="text-warn" /> : null}
+          {offline.troopsLost > 0 ? <Line label={EXTRA_PANEL.offlineSummary.troopsLostLabel} value={COPY.offlineReport.troopsLostRow(offline.troopsLost)} tone="text-warn" /> : null}
           {offline.npcRaids > 0 ? <Line label="NPC" value={COPY.offlineReport.npcRaidsRow(offline.npcRaids)} /> : null}
           <div className="mt-1 min-h-0 flex-1 overflow-hidden rounded border border-line-soft bg-panel-2 px-2 py-1.5" role="Agent页-日报原文">
             <p className="text-[11px] text-faint">{COPY.offlineReport.agentTitle}</p>

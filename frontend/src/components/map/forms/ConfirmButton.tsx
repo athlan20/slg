@@ -1,6 +1,6 @@
 /** 确认大按钮：选中详情面板每个操作的出口。禁用时把原因直接写在按钮上（悬停同样有 title）。 */
 
-import { COPY } from '../../../copy';
+import { useCopy } from '../../../i18n/bundle';
 
 interface ConfirmButtonProps {
   role?: string;
@@ -13,6 +13,8 @@ interface ConfirmButtonProps {
 }
 
 export function ConfirmButton({ role = '世界地图详情区-出征按钮', label, busy, disabledReason = null, tone = 'accent', onClick }: ConfirmButtonProps) {
+  const copy = useCopy();
+  const { COPY } = copy;
   const disabled = busy || disabledReason !== null;
   return (
     <button

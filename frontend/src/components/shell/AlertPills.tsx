@@ -5,9 +5,7 @@
 import type { NpcAttackWarningPushData } from '../../api/protocol';
 import type { CityView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
-import { COPY } from '../../copy';
-import { STARVE_COPY } from '../../copy-starvation';
-import { TOP_COPY } from '../../copy-ui';
+import { useCopy } from '../../i18n/bundle';
 import { useNow } from '../../state/useNow';
 
 interface AlertPillsProps {
@@ -19,6 +17,8 @@ interface AlertPillsProps {
 const pill = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11.5px]';
 
 export function AlertPills({ city, incoming, onOpenWarning }: AlertPillsProps) {
+  const copy = useCopy();
+  const { COPY, STARVE_COPY, TOP_COPY } = copy;
   const truceDeadline = city?.truceUntil ? Date.parse(city.truceUntil) : NaN;
   const starveAt = city?.starveAt ?? null;
   const mutinyNextAt = city?.mutinyNextAt ?? null;

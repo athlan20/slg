@@ -6,7 +6,9 @@ import { useState } from 'react';
 import type { CityView, ResearchView, ServerBroadcastView } from '../../api/protocol';
 import { formatDurationText, formatReportTime } from '../../api/format';
 import { serverBroadcastText } from '../../api/mapping';
-import { FOOT_COPY } from '../../copy-ui';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { FOOT_COPY as FOOT_COPY_ZH } from '../../copy-ui';
+import { useCopy } from '../../i18n/bundle';
 import { buildProgressItems } from '../../state/progressItems';
 import { useNow } from '../../state/useNow';
 import { Modal } from '../ui/Modal';
@@ -20,6 +22,8 @@ interface BottomBarProps {
 }
 
 export function BottomBar({ city, research, broadcasts, onOpenBroadcasts }: BottomBarProps) {
+  const copy = useCopy();
+  const { FOOT_COPY, EXTRA_AUTH } = copy;
   const [open, setOpen] = useState(false);
   const now = useNow(true);
   const items = buildProgressItems(city, research, now).sort((a, b) => (a.leftSec ?? Infinity) - (b.leftSec ?? Infinity));
@@ -38,14 +42,14 @@ export function BottomBar({ city, research, broadcasts, onOpenBroadcasts }: Bott
           items.map((item) => (
             <span
               key={item.id}
-              role={`导航-时间线-${FOOT_COPY.lane[item.lane]}`}
+              role={`导航-时间线-${FOOT_COPY_ZH.lane[item.lane]}`}
               title={`${FOOT_COPY.lane[item.lane]}：${item.text}`}
               className="relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded border border-line bg-panel-2 px-2 py-0.5"
             >
               <span className="text-faint">{FOOT_COPY.lane[item.lane]}</span>
               <span>{item.text}</span>
               <span className={`font-mono tabular-nums ${item.ambush ? 'text-gold' : 'text-accent'}`}>
-                {item.leftSec === null ? '排队' : formatDurationText(item.leftSec)}
+                {item.leftSec === null ? EXTRA_AUTH.bottomBar.queued : formatDurationText(item.leftSec)}
               </span>
               <i className="absolute bottom-0 left-0 h-0.5 bg-accent" style={{ width: `${item.pct}%` }} />
             </span>

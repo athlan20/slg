@@ -6,9 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { movingIndexAt, type CityView, type MovingTargetView, type YellowTurbanState } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
-import { COPY, RESOURCE_LABEL } from '../../copy';
-import { MAPUI_COPY } from '../../copy-pages';
-import { YT_COPY } from '../../copy-yt';
+import { useCopy } from '../../i18n/bundle';
 import type { MapLayers } from '../../state/NavContext';
 import { viewportDims } from '../../state/mapZoom';
 import { useNow } from '../../state/useNow';
@@ -34,6 +32,8 @@ interface WorldMapStageProps {
 }
 
 export function WorldMapStage({ world, movingTargets, city, accountId, layers, yellowTurban, onOpenYellowTurban, onSelect }: WorldMapStageProps) {
+  const copy = useCopy();
+  const { COPY, RESOURCE_LABEL, MAPUI_COPY, YT_COPY } = copy;
   const boxRef = useRef<HTMLDivElement | null>(null);
   // 图例默认展开，手机等窄屏默认收起（不遮地图）
   const [legendOpen, setLegendOpen] = useState(() => window.innerWidth >= 1024);
@@ -98,7 +98,7 @@ export function WorldMapStage({ world, movingTargets, city, accountId, layers, y
       }
     }
     return map;
-  }, [city?.territory]);
+  }, [city?.territory, RESOURCE_LABEL]);
 
   const event = yellowTurban?.event ?? null;
   const ytActive = layers.yt && event !== null && event.status === 'active';

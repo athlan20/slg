@@ -6,7 +6,8 @@
 import { useState } from 'react';
 import type { HeroView } from '../api/protocol';
 import { formatClock } from '../api/format';
-import { HERO_COPY } from '../copy-hero';
+import { getCopy, useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 
 const HERO_LEVEL_MAX = 20;
 
@@ -24,6 +25,7 @@ interface HeroCardProps {
 }
 
 function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number): { text: string; tone: string } {
+  const { EXTRA_PANEL, HERO_COPY } = getCopy();
   if (hero.woundedUntil && Date.parse(hero.woundedUntil) > now) {
     return { text: HERO_COPY.card.statusWounded(formatClock(hero.woundedUntil)), tone: 'text-warn' };
   }
@@ -34,7 +36,8 @@ function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number
     return { text: HERO_COPY.card.statusMarching, tone: 'text-accent' };
   }
   if (hero.guardCityId) {
-    return { text: HERO_COPY.card.statusGuard(cityNames[hero.guardCityId] ?? '城池'), tone: 'text-ok' };
+    // 城名可能是名城名，按码表翻译；查不到时给兜底短语
+    return { text: HERO_COPY.card.statusGuard(tName(cityNames[hero.guardCityId] ?? EXTRA_PANEL.heroCard.cityFallback)), tone: 'text-ok' };
   }
   return { text: HERO_COPY.card.statusIdle, tone: 'text-faint' };
 }
@@ -42,6 +45,8 @@ function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number
 const smallBtn = 'cursor-pointer rounded border px-1.5 text-[11.5px] disabled:cursor-not-allowed disabled:opacity-40';
 
 export function HeroCard({ hero, currentCityId, cityNames, busy, now, onAssign, onRemoveGuard, onDismiss }: HeroCardProps) {
+  const copy = useCopy();
+  const { HERO_COPY } = copy;
   const [confirming, setConfirming] = useState(false);
   const status = statusOf(hero, cityNames, now);
   const guardsHere = currentCityId !== null && hero.guardCityId === currentCityId;
@@ -61,7 +66,7 @@ export function HeroCard({ hero, currentCityId, cityNames, busy, now, onAssign, 
     >
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 truncate text-[13px] font-semibold">
-          {hero.name}
+          {tName(hero.name)}
           {hero.famous ? (
             <span role="武将面板-名将标记" className="ml-1.5 rounded border border-gold px-1 text-[10.5px] font-normal text-gold">
               {HERO_COPY.card.famousTag}

@@ -5,7 +5,9 @@
 
 import { buildingEffectText } from '../../api/mapping';
 import { type BuildingKind, type CityView } from '../../api/protocol';
-import { BUILDING_LABEL, COPY } from '../../copy';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { BUILDING_LABEL as BUILDING_LABEL_ZH } from '../../copy';
+import { useCopy } from '../../i18n/bundle';
 import { useNow } from '../../state/useNow';
 
 /** 建筑分组（城内视图按用途分三行，每行一个标签）：资源产出 / 内政民生 / 军事守备，共 15 座 */
@@ -25,6 +27,8 @@ interface CityGridProps {
 }
 
 export function CityGrid({ city, selected, onPick }: CityGridProps) {
+  const copy = useCopy();
+  const { BUILDING_LABEL, COPY, EXTRA_PANEL } = copy;
   const queue = city?.queue ?? [];
   const activeEntry = queue.find((item) => item.status === 'building') ?? null;
   // 到期时间由服务端给出；剩余秒数按本地时钟推进，完成与否以服务端推送 / 查询为准
@@ -35,7 +39,8 @@ export function CityGrid({ city, selected, onPick }: CityGridProps) {
     <div role="城内视图-建筑格" className="flex shrink-0 flex-col gap-3 p-3 short:gap-2 short:p-2">
       {KIND_GROUPS.map((group) => (
         <section key={group.key} role={`城内视图-分组-${group.label}`} className="flex min-w-0 flex-col gap-1.5">
-          <h3 className="text-[11.5px] text-faint">{group.label}</h3>
+          {/* role 沿用分组的中文 label（定位约定），显示文案按界面语言取 */}
+          <h3 className="text-[11.5px] text-faint">{EXTRA_PANEL.cityGrid.groupLabel[group.key] ?? group.label}</h3>
           <div className="grid grid-cols-4 gap-2 sm:[grid-template-columns:repeat(6,minmax(0,8.5rem))]">
             {group.kinds.map((kind) => {
               const label = BUILDING_LABEL[kind];
@@ -56,7 +61,7 @@ export function CityGrid({ city, selected, onPick }: CityGridProps) {
                 <button
                   key={kind}
                   type="button"
-                  role={`城内视图-建筑-${label.short}`}
+                  role={`城内视图-建筑-${BUILDING_LABEL_ZH[kind].short}`}
                   aria-pressed={isSelected}
                   disabled={city === null}
                   onClick={() => onPick(kind)}

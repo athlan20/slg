@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { COPY } from '../copy';
-import { WECHAT_COPY } from '../copy-wechat';
+import { useCopy } from '../i18n/bundle';
 import type { ApiClient } from '../api/client';
 import { useAuthConfig } from '../state/useAuthConfig';
 import { WechatLoginTab } from './wechat/WechatLoginTab';
@@ -27,6 +26,8 @@ interface LoginPanelProps {
 type LoginTab = 'password' | 'wechat';
 
 export function LoginPanel({ booting, loginBusy, loginError, lastUsername, onLogin, connectForWechat, onWechatToken, onGoogleToken }: LoginPanelProps) {
+  const copy = useCopy();
+  const { COPY, WECHAT_COPY } = copy;
   const { config } = useAuthConfig();
   const wechatEnabled = config?.wechatEnabled ?? false;
   const googleClientId = config?.googleClientId ?? null;
@@ -161,6 +162,17 @@ export function LoginPanel({ booting, loginBusy, loginError, lastUsername, onLog
       <p className="mt-2 text-[12px] text-faint" role="账号面板-说明">
         {passwordLoginEnabled ? COPY.login.note : COPY.login.noteInternational}
       </p>
+
+      {/* 开源仓库入口（AISLG-137 海外推广）：未登录访客第一眼能看到；新标签打开避免断开游戏会话 */}
+      <a
+        className="mt-2 text-[12px] text-faint underline-offset-2 hover:text-accent hover:underline"
+        role="账号面板-GitHub仓库"
+        href="https://github.com/athlan20/slg"
+        target="_blank"
+        rel="noreferrer"
+      >
+        {COPY.login.repoLink} ↗
+      </a>
     </section>
   );
 }

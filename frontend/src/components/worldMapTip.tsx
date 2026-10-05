@@ -2,19 +2,22 @@
  *  NPC 库存档位色调、城池归属形状、地块标题 / 归属说明 / 读屏文案，以及悬浮提示卡本身。
  */
 
-import { COPY, TERRAIN_LABEL } from '../copy';
-import { CITY_COPY } from '../copy-cities';
-import { YT_COPY } from '../copy-yt';
+import { getCopy, useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import type { NpcStockTier, TileView } from '../api/protocol';
 import type { CitySide } from './worldMapMarks';
 
-/** NPC 城库存档位的中文与色调（v23 AISLG-55）：已空变暗、见底警示、丰厚金色 */
-export const NPC_TIER_LABEL: Record<NpcStockTier, string> = {
-  rich: COPY.worldMap.npcTierRich,
-  normal: COPY.worldMap.npcTierNormal,
-  low: COPY.worldMap.npcTierLow,
-  empty: COPY.worldMap.npcTierEmpty,
-};
+/** NPC 城库存档位的文案与色调（v23 AISLG-55）：已空变暗、见底警示、丰厚金色；文案随语言在函数体内取 */
+export function npcTierLabel(tier: NpcStockTier): string {
+  const { COPY } = getCopy();
+  const labels: Record<NpcStockTier, string> = {
+    rich: COPY.worldMap.npcTierRich,
+    normal: COPY.worldMap.npcTierNormal,
+    low: COPY.worldMap.npcTierLow,
+    empty: COPY.worldMap.npcTierEmpty,
+  };
+  return labels[tier];
+}
 
 export const NPC_TIER_CLASS: Record<NpcStockTier, string> = {
   rich: 'text-gold',
@@ -37,30 +40,34 @@ export function citySide(tile: TileView, isOwn: boolean): CitySide {
   return isOwn ? 'own' : 'enemy';
 }
 
-/** 地块标题：悬浮提示与读屏共用 */
+/** 地块标题：悬浮提示与读屏共用（非组件辅助：体内取当前语言文案包；城名 / 名城名走 tName） */
 export function tileTitle(tile: TileView, isOwn: boolean): string {
+  const { TERRAIN_LABEL, TILE_KIND_LABEL, CITY_COPY, EXTRA_MAP } = getCopy();
   if (tile.kind === 'city') {
-    return `${tile.owner?.cityName ?? '城池'} · ${isOwn ? '本方城池' : '玩家城池'}`;
+    return `${tile.owner ? tName(tile.owner.cityName) : TILE_KIND_LABEL.city} · ${isOwn ? EXTRA_MAP.tileTip.ownCity : EXTRA_MAP.tileTip.playerCity}`;
   }
   if (tile.kind === 'npc_city') {
-    return tile.famous ? `${CITY_COPY.famous.title(tile.famous.name)} Lv${tile.level}` : `NPC 城池 Lv${tile.level}`;
+    return tile.famous ? `${CITY_COPY.famous.title(tName(tile.famous.name))} Lv${tile.level}` : `${TILE_KIND_LABEL.npc_city} Lv${tile.level}`;
   }
-  return `${TERRAIN_LABEL[tile.terrain] ?? tile.terrain} · 野地 Lv${tile.level}`;
+  return `${TERRAIN_LABEL[tile.terrain] ?? tile.terrain} · ${TILE_KIND_LABEL.wilderness} Lv${tile.level}`;
 }
 
 /** 归属说明：城池写城主，野地写占领者 */
 export function tileOwnerText(tile: TileView, isOwn: boolean): string {
+  const { COPY, EXTRA_MAP } = getCopy();
+  const tip = EXTRA_MAP.tileTip;
   if (!tile.owner) {
-    return tile.kind === 'npc_city' ? 'NPC 守城' : COPY.worldMap.ownerNone;
+    return tile.kind === 'npc_city' ? tip.npcGuard : COPY.worldMap.ownerNone;
   }
   if (isOwn) {
-    return tile.kind === 'city' ? '你的城池' : '本方占领';
+    return tile.kind === 'city' ? tip.yourCity : tip.ownOccupied;
   }
-  return tile.kind === 'city' ? `城主：${tile.owner.username}` : COPY.worldMap.ownerRow(tile.owner.username);
+  return tile.kind === 'city' ? tip.owner(tile.owner.username) : COPY.worldMap.ownerRow(tile.owner.username);
 }
 
 export function tileAria(tile: TileView, isOwn: boolean): string {
-  return `(${tile.x},${tile.y}) ${tileTitle(tile, isOwn)}，${tileOwnerText(tile, isOwn)}`;
+  const { EXTRA_MAP } = getCopy();
+  return `(${tile.x},${tile.y}) ${tileTitle(tile, isOwn)}${EXTRA_MAP.tileTip.ariaSep(tileOwnerText(tile, isOwn))}`;
 }
 
 interface WorldMapTooltipProps {
@@ -70,6 +77,8 @@ interface WorldMapTooltipProps {
 
 /** 悬浮提示：名称 / 坐标 / 归属 / 驻军 + 操作提示 */
 export function WorldMapTooltip({ tip, clusters }: WorldMapTooltipProps) {
+  const copy = useCopy();
+  const { COPY, CITY_COPY, YT_COPY } = copy;
   const cluster = tip ? clusters?.get(`${tip.tile.x},${tip.tile.y}`) : undefined;
   return (
     <div
@@ -103,7 +112,7 @@ export function WorldMapTooltip({ tip, clusters }: WorldMapTooltipProps) {
             <div className={NPC_TIER_CLASS[tip.tile.npcStockTier]}>
               {tip.tile.npcStockTier === 'empty'
                 ? COPY.worldMap.npcTierEmptyHint
-                : COPY.worldMap.npcTierHint(NPC_TIER_LABEL[tip.tile.npcStockTier])}
+                : COPY.worldMap.npcTierHint(npcTierLabel(tip.tile.npcStockTier))}
             </div>
           ) : null}
           {cluster ? <div className="text-gold">{COPY.worldMap.clusterTip(cluster.resourceLabel, cluster.size, cluster.percent)}</div> : null}

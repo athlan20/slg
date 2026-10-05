@@ -12,7 +12,12 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './test/e2e',
   timeout: 60_000,
-  use: { baseURL: 'http://localhost:5175' },
+  use: {
+    baseURL: 'http://localhost:5175',
+    // 界面语言默认跟随浏览器语言（AISLG-137）；e2e 断言与 role 命名按中文界面编写，
+    // 固定 zh-CN 让用例不随运行环境的浏览器语言漂移。
+    locale: 'zh-CN',
+  },
   webServer: [
     {
       command: 'npm run api',

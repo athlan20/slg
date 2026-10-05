@@ -5,14 +5,15 @@
 import { useMemo, useState } from 'react';
 import { formatDurationText } from '../../../api/format';
 import { marchBonusPercent, marchTravelSeconds } from '../../../api/marchPlan';
-import { COPY } from '../../../copy';
-import { DEFENSE_COPY } from '../../../copy-defense';
+import { useCopy } from '../../../i18n/bundle';
 import { useDeployBlockedText } from '../../../state/deployContext';
 import { HeroPicker } from '../../HeroPicker';
 import { ConfirmButton } from './ConfirmButton';
 import type { TargetCtx } from './targetTypes';
 
 export function ScoutForm({ ctx }: { ctx: TargetCtx }) {
+  const copy = useCopy();
+  const { COPY, DEFENSE_COPY } = copy;
   const { world, city, x, y, origin, hero, busy, run } = ctx;
   const [count, setCount] = useState(1);
   const deployBlocked = useDeployBlockedText(DEFENSE_COPY.deploy.full);

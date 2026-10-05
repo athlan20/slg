@@ -682,6 +682,8 @@ const LOGIN = {
   noteInternational: '本站为国际站，用 Google 或 GitHub 登录；老账号先在国内站用密码登录并绑定 Google / GitHub，即可用同一账号进入本站。',
   /** v47：国际站但两个第三方入口都未配置时的兜底提示 */
   thirdPartyUnavailable: '本站的 Google / GitHub 登录暂时不可用，请稍后再试。',
+  /** 开源仓库入口（登录页底部），指向 github.com/athlan20/slg */
+  repoLink: '开源项目 · GitHub',
 };
 
 const THEME = {
@@ -860,4 +862,7 @@ export const COPY = {
   theme: THEME,
   errors: ERRORS,
   session: SESSION,
-} as const;
+};
+// 不写 as const（AISLG-137）：英文孪生（copy-en*.ts）要以本对象的类型为基准（satisfies typeof），
+// 字符串需放宽为 string，否则英文文案会被字面量类型卡死。
+

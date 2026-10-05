@@ -1,10 +1,12 @@
 import { formatClock, formatDurationText } from '../api/format';
 import type { YtTileCampView } from '../api/protocol';
-import { YT_COPY } from '../copy-yt';
+import { useCopy } from '../i18n/bundle';
 
 /** 黄巾营地 / 张角老巢说明（v29 AISLG-76）：一行摘要 = 档位 / 守军大致范围 / 升档倒计时 / 老巢阶段；
  *  攻打提示放在悬停全文里。精确编成要派斥候侦察。 */
 export function YellowTurbanCampNote({ camp, now }: { camp: YtTileCampView; now: number }) {
+  const copy = useCopy();
+  const { YT_COPY } = copy;
   const isBoss = camp.tier === 'boss';
   const parts = [
     YT_COPY.tile.title(camp.label),

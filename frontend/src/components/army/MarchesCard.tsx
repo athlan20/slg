@@ -5,8 +5,8 @@
 import { useState } from 'react';
 import { TROOP_KINDS, type MarchView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
-import { COPY, TROOP_LABEL } from '../../copy';
-import { ARMY_COPY } from '../../copy-pages';
+import { getCopy, useCopy } from '../../i18n/bundle';
+import { tName } from '../../i18n/names';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
 import { activeMarches } from '../../state/progressItems';
@@ -16,11 +16,14 @@ import { Card } from '../ui/Card';
 import { PagedList } from '../ui/PagedList';
 
 function compositionText(march: MarchView): string {
+  const { TROOP_LABEL } = getCopy();
   const parts = TROOP_KINDS.filter((kind) => march.troops[kind] > 0).map((kind) => `${TROOP_LABEL[kind].short}${march.troops[kind]}`);
   return parts.join(' ') || '—';
 }
 
 export function MarchesCard({ role }: { role: string }) {
+  const copy = useCopy();
+  const { ARMY_COPY, COPY, EXTRA_PANEL } = copy;
   const { session } = useGame();
   const { go } = useNav();
   const { world, city } = session;
@@ -68,7 +71,7 @@ export function MarchesCard({ role }: { role: string }) {
                 <button
                   type="button"
                   role="世界地图详情区-行军定位"
-                  title={`${title}（${ARMY_COPY.marchLocate}）`}
+                  title={`${title}${EXTRA_PANEL.joiners.paren(ARMY_COPY.marchLocate)}`}
                   onClick={() => {
                     world.centerOn(march.x, march.y);
                     go('map');
@@ -77,9 +80,9 @@ export function MarchesCard({ role }: { role: string }) {
                 >
                   {title}
                 </button>
-                <small className="block truncate text-[11px] text-faint" title={`${compositionText(march)}${hero ? ` · ${hero.name}` : ''}`}>
+                <small className="block truncate text-[11px] text-faint" title={`${compositionText(march)}${hero ? ` · ${tName(hero.name)}` : ''}`}>
                   {compositionText(march)}
-                  {hero ? ` · ${hero.name}` : ''} · {state}
+                  {hero ? ` · ${tName(hero.name)}` : ''} · {state}
                 </small>
                 <span className="mt-0.5 block h-[2px] overflow-hidden rounded bg-line">
                   <i className="block h-full bg-accent" style={{ width: `${pct}%` }} />

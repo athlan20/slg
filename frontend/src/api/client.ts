@@ -3,6 +3,7 @@
 
 import type { ClientFrame, PushFrame, ResponseFrame } from './protocol';
 import { withActiveCity } from './cityScope';
+import { getCopy } from '../i18n/bundle';
 
 /** 构建时追加的站点 → 网关映射：环境变量 PUBLIC_WS_BY_HOST（JSON，如 `{"slg.example.cn":"wss://slgws.example.cn/ws"}`），
  *  放在 frontend/.env.local（已被 .gitignore 忽略）；格式不对时忽略并告警。 */
@@ -107,7 +108,7 @@ export class ApiClient {
         if (this.socket === socket) {
           this.socket = null;
         }
-        reject(new Error(`连接失败（close code ${ev.code}）`));
+        reject(new Error(getCopy().EXTRA_STATE.client.connectFailedCode(ev.code)));
       };
     });
   }
@@ -116,7 +117,7 @@ export class ApiClient {
   request(op: number, data?: Record<string, unknown>): Promise<ResponseFrame> {
     const socket = this.socket;
     if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return Promise.reject(new Error('连接未建立'));
+      return Promise.reject(new Error(getCopy().EXTRA_STATE.client.notConnected));
     }
     const seq = ++this.seq;
     const payload = withActiveCity(op, data);
@@ -125,7 +126,7 @@ export class ApiClient {
     return new Promise((resolve, reject) => {
       const timer = window.setTimeout(() => {
         this.pending.delete(seq);
-        reject(new Error(`请求 op=${op} 超时`));
+        reject(new Error(getCopy().EXTRA_STATE.client.requestTimeout(op)));
       }, REQUEST_TIMEOUT_MS);
       this.pending.set(seq, { resolve, reject, timer });
     });
@@ -142,7 +143,7 @@ export class ApiClient {
   /** 主动关闭连接（不触发 onClose） */
   close(): void {
     this.teardownSocket();
-    this.rejectAllPending(new Error('连接已关闭'));
+    this.rejectAllPending(new Error(getCopy().EXTRA_STATE.client.closed));
   }
 
   private bindSocket(socket: WebSocket): void {
@@ -173,7 +174,7 @@ export class ApiClient {
         return;
       }
       this.socket = null;
-      this.rejectAllPending(new Error('连接已断开'));
+      this.rejectAllPending(new Error(getCopy().EXTRA_STATE.client.disconnected));
       this.onClose?.(ev.code, ev.reason);
     };
   }

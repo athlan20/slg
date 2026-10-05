@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { useWechatQr, type WxQrConfirmed } from '../../state/useWechatQr';
-import { WECHAT_COPY } from '../../copy-wechat';
+import { useCopy } from '../../i18n/bundle';
 import type { ApiClient } from '../../api/client';
 import { WechatQrView } from './WechatQrView';
 
@@ -15,6 +15,8 @@ interface WechatLoginTabProps {
 }
 
 export function WechatLoginTab({ active, connect, onToken }: WechatLoginTabProps) {
+  const copy = useCopy();
+  const { WECHAT_COPY } = copy;
   const onConfirmed = useCallback(
     (result: WxQrConfirmed) => {
       if (result.sessionToken) {

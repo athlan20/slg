@@ -5,7 +5,7 @@
 
 import { TROOP_KINDS, TROOP_POWER, armyCarryCapacity, type ArmyCounts, type TroopKind } from '../../../api/protocol';
 import { formatDurationText } from '../../../api/mapping';
-import { COPY, TROOP_LABEL } from '../../../copy';
+import { useCopy } from '../../../i18n/bundle';
 import { HeroPicker } from '../../HeroPicker';
 import type { TroopInput } from './targetTypes';
 
@@ -30,6 +30,8 @@ interface TroopPickerProps {
 }
 
 export function TroopPicker({ army, value, onChange, showCarry = false, enemyPower = 0, etaSeconds = null, carryBonusPercent = 0, hideHero = false }: TroopPickerProps) {
+  const copy = useCopy();
+  const { COPY, TROOP_LABEL } = copy;
   const kinds = TROOP_KINDS.filter((kind) => (army[kind] ?? 0) > 0);
   const total = troopTotal(value);
   const power = TROOP_KINDS.reduce((sum, kind) => sum + (value[kind] ?? 0) * TROOP_POWER[kind], 0);

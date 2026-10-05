@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { COPY } from '../../copy';
+import { useCopy } from '../../i18n/bundle';
 import type { WorldSession } from '../../state/worldSession';
 import { MapZoomControls } from '../MapZoomControls';
 import { PAN_STEP } from './WorldMapStage';
@@ -30,6 +30,8 @@ const ctrlBtn =
   'cursor-pointer rounded border border-line bg-panel-2 text-dim transition-colors hover:border-accent-dim hover:text-fg disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-line disabled:hover:text-dim';
 
 export function MapToolbar({ world }: { world: WorldSession }) {
+  const copy = useCopy();
+  const { COPY } = copy;
   const win = world.window;
   const [jumpX, setJumpX] = useState('');
   const [jumpY, setJumpY] = useState('');

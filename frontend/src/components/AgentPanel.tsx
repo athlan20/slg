@@ -4,9 +4,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AGENT_API_DOC_URL, WS_URL } from '../api/client';
+import { formatClock } from '../api/format';
 import type { AgentInfoView } from '../api/protocol';
 import { eventText } from '../api/mapping';
-import { COPY } from '../copy';
+import { useCopy } from '../i18n/bundle';
 import { useGame } from '../state/GameContext';
 import { Card } from './ui/Card';
 
@@ -19,19 +20,6 @@ interface AgentPanelProps {
 }
 
 type DocCopyState = 'idle' | 'copied' | 'failed';
-
-const DOC_BUTTON_LABEL: Record<DocCopyState, string> = {
-  idle: COPY.agentPanel.docButton,
-  copied: COPY.agentPanel.docCopied,
-  failed: COPY.agentPanel.docFailed,
-};
-
-/** MCP 配置复制（AISLG-131）：npx 拉起 slg-mcp，令牌内嵌进 mcpServers JSON */
-const MCP_BUTTON_LABEL: Record<DocCopyState, string> = {
-  idle: COPY.agentPanel.mcpButton,
-  copied: COPY.agentPanel.mcpCopied,
-  failed: COPY.agentPanel.mcpFailed,
-};
 
 /** 写剪贴板：优先 Clipboard API；页面未聚焦等场景被权限拦截时退回 textarea + execCommand */
 export async function writeClipboard(text: string): Promise<void> {
@@ -49,7 +37,7 @@ export async function writeClipboard(text: string): Promise<void> {
   ta.select();
   try {
     if (!document.execCommand('copy')) {
-      throw new Error('execCommand copy 不可用');
+      throw new Error('execCommand copy unavailable');
     }
   } finally {
     ta.remove();
@@ -57,7 +45,21 @@ export async function writeClipboard(text: string): Promise<void> {
 }
 
 export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: AgentPanelProps) {
+  const copy = useCopy();
+  const { COPY, EXTRA_PANEL } = copy;
   const { session } = useGame();
+  // 复制按钮文案随状态切换（原为模块级常量表，文案须随语言取用，改在组件内构造）
+  const DOC_BUTTON_LABEL: Record<DocCopyState, string> = {
+    idle: COPY.agentPanel.docButton,
+    copied: COPY.agentPanel.docCopied,
+    failed: COPY.agentPanel.docFailed,
+  };
+  /** MCP 配置复制（AISLG-131）：npx 拉起 slg-mcp，令牌内嵌进 mcpServers JSON */
+  const MCP_BUTTON_LABEL: Record<DocCopyState, string> = {
+    idle: COPY.agentPanel.mcpButton,
+    copied: COPY.agentPanel.mcpCopied,
+    failed: COPY.agentPanel.mcpFailed,
+  };
   // 复制接入文档：不请求任何接口，只把固定提示语写入剪贴板——由用户的 Agent
   // 按提示语自行 GET 文档地址（AGENT_API_DOC_URL）后阅读接入
   const [docCopy, setDocCopy] = useState<DocCopyState>('idle');
@@ -118,7 +120,7 @@ export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: A
     { key: COPY.agentPanel.rowConnection, value: agent ? (online ? COPY.agentPanel.connectionsOnline(agent.connections.length) : COPY.agentPanel.offline) : COPY.agentPanel.querying },
     {
       key: COPY.agentPanel.rowLastOnline,
-      value: agent?.connections[0]?.connectedAt ? new Date(agent.connections[0].connectedAt).toLocaleTimeString('zh-CN', { hour12: false }) : COPY.agentPanel.none,
+      value: agent?.connections[0]?.connectedAt ? formatClock(agent.connections[0].connectedAt) : COPY.agentPanel.none,
     },
     { key: COPY.agentPanel.rowLastAction, value: agent?.recentEvents[0] ? eventText(agent.recentEvents[0]) : COPY.agentPanel.none },
   ];
@@ -126,7 +128,7 @@ export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: A
   return (
     <Card
       role="Agent面板"
-      title="Agent 状态与计划"
+      title={EXTRA_PANEL.agentPanel.title}
       meta={
         <span role="Agent面板-状态" className="inline-flex items-center gap-1.5">
           <i className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-st-online' : 'bg-st-offline'}`} />

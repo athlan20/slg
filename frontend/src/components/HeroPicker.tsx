@@ -3,7 +3,8 @@
  *  没有武将时不渲染。
  */
 
-import { HERO_COPY } from '../copy-hero';
+import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import { useHeroPick } from '../state/heroContext';
 import { heroUnavailableReason } from '../state/heroSession';
 import { useNow } from '../state/useNow';
@@ -23,6 +24,8 @@ function previewBonus(lead: number, force: number, wit: number, troopTotal: numb
 }
 
 export function HeroPicker({ troopTotal }: HeroPickerProps) {
+  const copy = useCopy();
+  const { EXTRA_PANEL, HERO_COPY } = copy;
   const pick = useHeroPick();
   const now = useNow(false);
   if (!pick || pick.heroes.length === 0) {
@@ -46,8 +49,8 @@ export function HeroPicker({ troopTotal }: HeroPickerProps) {
             const reason = heroUnavailableReason(hero, now);
             return (
               <option key={hero.id} value={hero.id} disabled={reason !== null}>
-                {HERO_COPY.picker.option(hero.name, hero.level, hero.lead, hero.force, hero.wit)}
-                {reason ? `（${HERO_COPY.picker.unavailable[reason]}）` : ''}
+                {HERO_COPY.picker.option(tName(hero.name), hero.level, hero.lead, hero.force, hero.wit)}
+                {reason ? EXTRA_PANEL.joiners.paren(HERO_COPY.picker.unavailable[reason]) : ''}
               </option>
             );
           })}

@@ -5,7 +5,7 @@
 
 import { useEffect, useState, type RefObject } from 'react';
 import { EXCHANGE_INPUT_PER_GOLD, type Resources } from '../../api/protocol';
-import { COPY, RESOURCE_LABEL } from '../../copy';
+import { useCopy } from '../../i18n/bundle';
 import type { ExchangeResource } from '../../state/exchangeAction';
 
 const EXCHANGE_RESOURCES: ExchangeResource[] = ['food', 'wood', 'stone', 'iron'];
@@ -19,6 +19,8 @@ interface ExchangePopoverProps {
 }
 
 export function ExchangePopover({ resources, anchorRef, onExchange, onClose }: ExchangePopoverProps) {
+  const copy = useCopy();
+  const { COPY, RESOURCE_LABEL } = copy;
   const [resource, setResource] = useState<ExchangeResource>('food');
   const [amountInput, setAmountInput] = useState('');
   const [busy, setBusy] = useState(false);

@@ -6,13 +6,14 @@ import { BuildingDetail } from '../city/BuildingDetail';
 import { CityStatsCard } from '../city/CityStatsCard';
 import { BuildQueuePanel } from '../BuildQueuePanel';
 import { Card } from '../ui/Card';
-import { CITY_PAGE_COPY } from '../../copy-pages';
-import { DEFENSE_COPY } from '../../copy-defense';
+import { useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
 import { PageGrid } from './PageGrid';
 
 export function CityPage() {
+  const copy = useCopy();
+  const { CITY_PAGE_COPY, COPY, DEFENSE_COPY, EXTRA_PANEL } = copy;
   const { session } = useGame();
   const { building, selectBuilding } = useNav();
   const city = session.city;
@@ -29,6 +30,7 @@ export function CityPage() {
         {
           key: 'queue',
           label: '队列',
+          tab: EXTRA_PANEL.pageTabs.queue,
           areaClass: 'a-queue',
           always: true,
           fit: true,
@@ -37,6 +39,7 @@ export function CityPage() {
         {
           key: 'grid',
           label: '城内',
+          tab: CITY_PAGE_COPY.gridTitle,
           areaClass: 'a-grid',
           fit: true,
           node: (
@@ -56,10 +59,11 @@ export function CityPage() {
             </Card>
           ),
         },
-        { key: 'stats', label: '概况', areaClass: 'a-stats', node: <CityStatsCard city={city} /> },
+        { key: 'stats', label: '概况', tab: EXTRA_PANEL.pageTabs.stats, areaClass: 'a-stats', node: <CityStatsCard city={city} /> },
         {
           key: 'detail',
           label: '详情',
+          tab: EXTRA_PANEL.pageTabs.detail,
           areaClass: 'a-detail',
           node: (
             <Card role="城池页-建筑详情卡">
@@ -75,7 +79,7 @@ export function CityPage() {
                 />
               ) : (
                 <p role="城池页-建筑详情-空态" className="grid flex-1 place-items-center text-[12.5px] text-faint">
-                  {city ? CITY_PAGE_COPY.placeholder : '尚未获取城池状态'}
+                  {city ? CITY_PAGE_COPY.placeholder : COPY.cityMap.noCity}
                 </p>
               )}
             </Card>

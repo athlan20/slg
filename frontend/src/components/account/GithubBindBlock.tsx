@@ -7,9 +7,11 @@
 import { useState } from 'react';
 import { useGame } from '../../state/GameContext';
 import { useAuthConfig } from '../../state/useAuthConfig';
-import { GITHUB_COPY } from '../../copy-github';
+import { useCopy } from '../../i18n/bundle';
 
 export function GithubBindBlock() {
+  const copy = useCopy();
+  const { GITHUB_COPY } = copy;
   const { session } = useGame();
   const { config } = useAuthConfig();
   const bound = session.agent?.githubBound ?? false;

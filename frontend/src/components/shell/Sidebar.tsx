@@ -4,12 +4,14 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { COPY } from '../../copy';
-import { CITY_COPY } from '../../copy-cities';
-import { NAV_COPY } from '../../copy-ui';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { NAV_COPY as NAV_COPY_ZH } from '../../copy-ui';
+import { getCopy, useCopy, useLang } from '../../i18n/bundle';
+import { tName } from '../../i18n/names';
 import type { ConnectionStatus } from '../../state/useGameSession';
 import type { CityList } from '../../state/useCityList';
 import { PAGE_KEYS, type PageKey } from '../../state/usePage';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { ThemeSwitcher } from '../ThemeSwitcher';
 
 /** 各导航项的角标：count = 数字；hot = 红色（总览的 NPC 来袭） */
@@ -34,14 +36,22 @@ interface SidebarProps {
   onLeaderboard: () => void;
 }
 
-const CONNECTION_LAMP: Record<ConnectionStatus, { lamp: string; label: string }> = {
-  idle: { lamp: 'bg-st-offline', label: COPY.topbar.connectionLamp.idle },
-  connecting: { lamp: 'bg-st-offline animate-pulse', label: COPY.topbar.connectionLamp.connecting },
-  online: { lamp: 'bg-st-online shadow-[0_0_6px_var(--st-online)]', label: COPY.topbar.connectionLamp.online },
-  reconnecting: { lamp: 'bg-st-error animate-pulse', label: COPY.topbar.connectionLamp.reconnecting },
-};
+/** 连接状态灯样式与文字（文字用户可见，按当前语言取文案包，不能放模块常量） */
+function connectionLamp(connection: ConnectionStatus): { lamp: string; label: string } {
+  const { COPY } = getCopy();
+  const lamps: Record<ConnectionStatus, { lamp: string; label: string }> = {
+    idle: { lamp: 'bg-st-offline', label: COPY.topbar.connectionLamp.idle },
+    connecting: { lamp: 'bg-st-offline animate-pulse', label: COPY.topbar.connectionLamp.connecting },
+    online: { lamp: 'bg-st-online shadow-[0_0_6px_var(--st-online)]', label: COPY.topbar.connectionLamp.online },
+    reconnecting: { lamp: 'bg-st-error animate-pulse', label: COPY.topbar.connectionLamp.reconnecting },
+  };
+  return lamps[connection];
+}
 
 export function Sidebar(props: SidebarProps) {
+  const copy = useCopy();
+  const lang = useLang();
+  const { COPY, CITY_COPY, NAV_COPY, EXTRA_AUTH } = copy;
   const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded } = props;
   const [cityOpen, setCityOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -74,7 +84,7 @@ export function Sidebar(props: SidebarProps) {
 
   const { cities, activeCityId } = cityList;
   const current = cities.find((item) => item.id === activeCityId) ?? cities[0] ?? null;
-  const lamp = CONNECTION_LAMP[connection];
+  const lamp = connectionLamp(connection);
   const chooseCity = (cityId: string) => {
     setCityOpen(false);
     setAccountOpen(false);
@@ -115,11 +125,11 @@ export function Sidebar(props: SidebarProps) {
         className="flex min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-md border border-transparent p-1 text-left hover:border-line disabled:cursor-default max-lg:hidden"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[5px] border border-accent-dim bg-accent-soft text-[15px] font-semibold text-accent">
-          {(current?.name ?? '城').slice(0, 1)}
+          {(current ? tName(current.name) : EXTRA_AUTH.sidebar.avatarFallback).slice(0, 1)}
         </span>
         <span className="flex min-w-0 flex-1 flex-col leading-tight max-xl:hidden">
-          <b role="导航-城池名" className="truncate text-[14px]" title={current?.name}>
-            {switching ? NAV_COPY.citySwitching : (current?.name ?? NAV_COPY.cityLoading)}
+          <b role="导航-城池名" className="truncate text-[14px]" title={current ? tName(current.name) : undefined}>
+            {switching ? NAV_COPY.citySwitching : current ? tName(current.name) : NAV_COPY.cityLoading}
           </b>
           <small className="truncate text-[11px] text-dim">
             {current ? (cities.length > 1 ? NAV_COPY.cityMeta(current.level, cities.length) : NAV_COPY.cityMetaSolo(current.level)) : ''}
@@ -140,7 +150,7 @@ export function Sidebar(props: SidebarProps) {
             <button
               key={key}
               type="button"
-              role={`导航-${item.label}`}
+              role={`导航-${NAV_COPY_ZH.pages[key].label}`}
               aria-current={on ? 'page' : undefined}
               title={item.label}
               onClick={() => onNavigate(key)}
@@ -158,7 +168,7 @@ export function Sidebar(props: SidebarProps) {
               <span className="max-xl:hidden max-lg:inline">{item.label}</span>
               {badge && badge.count > 0 ? (
                 <i
-                  role={`导航-${item.label}-角标`}
+                  role={`导航-${NAV_COPY_ZH.pages[key].label}-角标`}
                   className={`ml-auto min-w-[18px] rounded-full px-1.5 text-center text-[10.5px] not-italic max-xl:absolute max-xl:right-0.5 max-xl:top-0.5 max-xl:ml-0 max-xl:min-w-[14px] max-xl:px-1 max-xl:text-[9px] max-lg:right-1.5 ${
                     badge.hot ? 'bg-st-error text-bg' : 'bg-line text-fg'
                   }`}
@@ -172,6 +182,17 @@ export function Sidebar(props: SidebarProps) {
       </nav>
 
       <div role="导航-侧栏底部" className="relative shrink-0 max-lg:flex max-lg:items-center">
+        {/* 开源仓库入口（AISLG-137 海外推广）：桌面宽侧栏常驻一角，悬停提示按界面语言取；新标签打开避免断开游戏会话 */}
+        <a
+          className="mb-1 hidden px-2.5 text-[11px] text-faint underline-offset-2 hover:text-accent hover:underline xl:block"
+          role="侧栏-GitHub仓库"
+          href="https://github.com/athlan20/slg"
+          target="_blank"
+          rel="noreferrer"
+          title={COPY.login.repoLink}
+        >
+          GitHub ↗
+        </a>
         <button
           type="button"
           role="侧栏-账号按钮"
@@ -186,7 +207,7 @@ export function Sidebar(props: SidebarProps) {
         >
           <i
             role="顶栏-本人在线状态"
-            title={`${COPY.topbar.self}：${lamp.label}`}
+            title={`${COPY.topbar.self}${lang === 'zh' ? '：' : ': '}${lamp.label}`}
             className={`h-1.5 w-1.5 shrink-0 rounded-full ${lamp.lamp}`}
           />
           <span role="侧栏-账号" className="min-w-0 flex-1 truncate max-xl:hidden max-lg:hidden">
@@ -220,12 +241,15 @@ export function Sidebar(props: SidebarProps) {
                         item.id === activeCityId ? 'text-accent' : ''
                       }`}
                     >
-                      <span className="truncate">{item.name}</span>
+                      <span className="truncate">{tName(item.name)}</span>
                       <span className="shrink-0 font-mono text-[11px] text-faint">{CITY_COPY.switcher.levelTag(item.level)}</span>
                     </button>
                   ))}
                 </>
               ) : null}
+            </div>
+            <div className="border-t border-line-soft">
+              <LanguageSwitcher />
             </div>
             <div className="mt-1 border-t border-line-soft">
               <ThemeSwitcher />
@@ -239,6 +263,8 @@ export function Sidebar(props: SidebarProps) {
 
 /** 城池下拉：全部城池（名字 / 等级 / 主城·分城 / 坐标），当前城打勾，底部给分城名额 */
 function CityMenu({ cityList, onChoose, className }: { cityList: CityList; onChoose: (cityId: string) => void; className: string }) {
+  const copy = useCopy();
+  const { CITY_COPY, NAV_COPY } = copy;
   const { cities, activeCityId, branch } = cityList;
   return (
     <div
@@ -252,7 +278,7 @@ function CityMenu({ cityList, onChoose, className }: { cityList: CityList; onCho
             key={item.id}
             type="button"
             role="城池下拉-城池"
-            title={CITY_COPY.switcher.tabTitle(item.name, item.level, item.x, item.y)}
+            title={CITY_COPY.switcher.tabTitle(tName(item.name), item.level, item.x, item.y)}
             onClick={() => onChoose(item.id)}
             className={`flex cursor-pointer items-baseline justify-between gap-3 rounded px-2.5 py-1.5 text-left text-[12.5px] hover:bg-accent-soft ${
               active ? 'text-accent' : ''
@@ -260,7 +286,7 @@ function CityMenu({ cityList, onChoose, className }: { cityList: CityList; onCho
           >
             <span className="min-w-0 truncate">
               {active ? '✓ ' : ''}
-              {item.name}{' '}
+              {tName(item.name)}{' '}
               <small className="text-faint">
                 {CITY_COPY.switcher.levelTag(item.level)} · {item.isMain ? NAV_COPY.cityMain : NAV_COPY.cityBranch}
               </small>

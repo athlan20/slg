@@ -9,8 +9,7 @@ import { Op } from '../api/protocol';
 import type { AgentInfoView } from '../api/protocol';
 import type { AgentTokenData } from '../api/protocol-wechat';
 import { githubErrorText, googleErrorText } from '../api/errorText';
-import { GITHUB_COPY } from '../copy-github';
-import { GOOGLE_COPY } from '../copy-google';
+import { getCopy } from '../i18n/bundle';
 
 export interface AccountSecurity {
   /** 重拉 agent 信息（绑定状态） */
@@ -70,6 +69,7 @@ export function useAccountSecurity({ clientRef, setAgent }: Options): AccountSec
 
   const bindGoogle = useCallback(
     async (credential: string): Promise<string | null> => {
+      const { GOOGLE_COPY } = getCopy();
       const client = clientRef.current;
       if (!client?.connected) {
         return GOOGLE_COPY.errors.connect;
@@ -90,6 +90,7 @@ export function useAccountSecurity({ clientRef, setAgent }: Options): AccountSec
 
   /** GitHub 绑定授权（v45）：在当前已登录连接上发 GITHUB_AUTH_START，拿到授权地址交给调用方跳转 */
   const startGithubBind = useCallback(async (): Promise<string | null> => {
+    const { GITHUB_COPY } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) {
       return GITHUB_COPY.errors.connect;

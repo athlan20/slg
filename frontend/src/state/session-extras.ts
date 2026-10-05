@@ -18,7 +18,7 @@ import {
   type NpcAttackWarningPushData,
   type ServerBroadcastView,
 } from '../api/protocol';
-import { COPY } from '../copy';
+import { getCopy } from '../i18n/bundle';
 
 /** 离线日报自动弹出的门槛（秒；占位值 30 分钟，随需求「已定」标注可调） */
 const OFFLINE_REPORT_THRESHOLD_SECONDS = 30 * 60;
@@ -111,7 +111,7 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
     if (data) {
       setOfflineReport(data);
     } else {
-      setOfflineReportError(COPY.session.connectFailed);
+      setOfflineReportError(getCopy().COPY.session.connectFailed);
     }
   }, [fetchOfflineReport]);
 
@@ -147,6 +147,7 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
   /** 拉取指定榜单快照（GET_LEADERBOARD，op 43） */
   const fetchLeaderboard = useCallback(
     async (kind: LeaderboardKind) => {
+      const { COPY } = getCopy();
       const client = clientRef.current;
       if (!client?.connected) {
         setLeaderboardError(COPY.session.connectFailed);

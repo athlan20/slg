@@ -5,7 +5,8 @@
 import { useState } from 'react';
 import type { CityView, HeroStateView } from '../api/protocol';
 import { formatClock } from '../api/format';
-import { HERO_COPY } from '../copy-hero';
+import { useCopy } from '../i18n/bundle';
+import { tHeroSource, tName } from '../i18n/names';
 import { Modal } from './ui/Modal';
 import { PagedList } from './ui/PagedList';
 
@@ -22,6 +23,8 @@ function nextRefreshIso(refreshedAt: string, timeScale: number): string {
 }
 
 export function HeroTavern({ state, city, busy, onRecruit }: HeroTavernProps) {
+  const copy = useCopy();
+  const { HERO_COPY } = copy;
   const [famousOpen, setFamousOpen] = useState(false);
   const gold = city?.resources.gold ?? 0;
   const capReached = state.normalCount >= state.normalCap;
@@ -53,7 +56,7 @@ export function HeroTavern({ state, city, busy, onRecruit }: HeroTavernProps) {
             const blocked = capReached ? HERO_COPY.candidates.capReached(state.normalCap) : gold < cand.cost ? HERO_COPY.candidates.needGold(cand.cost) : null;
             return (
               <div key={cand.id} role={`武将面板-候选-${cand.name}`} className="flex min-w-0 flex-col gap-0.5 rounded-[5px] border border-dashed border-line px-1.5 py-1 text-[11.5px]">
-                <b className="truncate text-[12.5px]">{cand.name}</b>
+                <b className="truncate text-[12.5px]">{tName(cand.name)}</b>
                 <span className="truncate font-mono text-[11px] text-dim" title={HERO_COPY.candidates.attrs(cand.lead, cand.force, cand.wit)}>
                   {HERO_COPY.candidates.attrs(cand.lead, cand.force, cand.wit)}
                 </span>
@@ -82,8 +85,8 @@ export function HeroTavern({ state, city, busy, onRecruit }: HeroTavernProps) {
             renderRow={(claim) => (
               <p className="flex items-baseline justify-between gap-2 border-b border-line-soft py-1 text-[12.5px]">
                 <span className="min-w-0 truncate text-dim">
-                  {claim.name}
-                  <span className="ml-1 text-faint">{claim.sourceLabel}</span>
+                  {tName(claim.name)}
+                  <span className="ml-1 text-faint">{tHeroSource(claim.sourceLabel)}</span>
                 </span>
                 <span className={`shrink-0 ${claim.ownerUsername ? 'text-accent' : 'text-faint'}`}>
                   {claim.ownerUsername ? HERO_COPY.famous.owner(claim.ownerUsername) : HERO_COPY.famous.free}

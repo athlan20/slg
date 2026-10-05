@@ -9,7 +9,7 @@ import { Op } from '../api/protocol';
 import type { PushFrame } from '../api/protocol';
 import type { WxQrCreateData, WxQrPurpose, WxQrStatusPushData } from '../api/protocol-wechat';
 import { wechatErrorText } from '../api/errorText';
-import { WECHAT_COPY } from '../copy-wechat';
+import { getCopy } from '../i18n/bundle';
 
 /** 连续自动换码的次数上限（扫码成功或手动刷新后清零） */
 export const MAX_AUTO_RETRIES = 3;
@@ -50,6 +50,7 @@ export function useWechatQr({ purpose, active, getClient, onConfirmed }: Options
 
   const generate = useCallback(
     async (auto: boolean) => {
+      const { WECHAT_COPY } = getCopy();
       const run = ++runRef.current;
       if (!auto) {
         retriesRef.current = 0;

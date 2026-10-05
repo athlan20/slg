@@ -4,14 +4,17 @@
 
 import { STORAGE_FULL_WARN_PERCENT, type CityView, type Resources } from '../../api/protocol';
 import { compactNumber } from '../../api/format';
-import { COPY, RESOURCE_LABEL } from '../../copy';
-import { TOP_COPY } from '../../copy-ui';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { RESOURCE_LABEL as RESOURCE_LABEL_ZH } from '../../copy';
+import { useCopy } from '../../i18n/bundle';
 
-const KEYS = Object.keys(RESOURCE_LABEL) as Array<keyof Resources>;
 /** 进度条警示线：docs 第 3 节「≥90% 变警示色」 */
 const ALERT_PERCENT = 90;
 
 export function ResourceStrip({ city }: { city: CityView }) {
+  const copy = useCopy();
+  const { COPY, RESOURCE_LABEL, TOP_COPY } = copy;
+  const KEYS = Object.keys(RESOURCE_LABEL) as Array<keyof Resources>;
   return (
     <div role="顶栏-资源" className="grid min-w-0 flex-1 grid-cols-3 gap-1.5 lg:grid-cols-6">
       {KEYS.map((key) => {
@@ -27,18 +30,18 @@ export function ResourceStrip({ city }: { city: CityView }) {
         return (
           <div
             key={key}
-            role={`顶栏-资源-${label}`}
+            role={`顶栏-资源-${RESOURCE_LABEL_ZH[key]}`}
             title={title}
             className={`min-w-0 rounded-[5px] border bg-panel-2 px-2 pb-1 pt-0.5 ${warn ? 'border-warn/50' : 'border-line-soft'}`}
           >
             <div className="flex items-baseline gap-1.5 whitespace-nowrap">
               <span className="text-[11px] text-faint">{label}</span>
-              <span role={`顶栏-资源-${label}-存量`} className="font-mono text-[13px] tabular-nums">
+              <span role={`顶栏-资源-${RESOURCE_LABEL_ZH[key]}-存量`} className="font-mono text-[13px] tabular-nums">
                 {compactNumber(city.resources[key])}
               </span>
             </div>
             <div className="flex items-baseline gap-1 whitespace-nowrap font-mono text-[10.5px] leading-tight tabular-nums">
-              <span role={`顶栏-资源-${label}-产量`} className={net < 0 ? 'text-st-error' : 'text-ok'}>
+              <span role={`顶栏-资源-${RESOURCE_LABEL_ZH[key]}-产量`} className={net < 0 ? 'text-st-error' : 'text-ok'}>
                 {TOP_COPY.net(net)}
               </span>
               <span className={`ml-auto max-xl:hidden ${warn ? 'text-warn' : 'text-faint'}`}>{percent}%</span>
@@ -55,6 +58,8 @@ export function ResourceStrip({ city }: { city: CityView }) {
 }
 
 function PopulationCell({ city }: { city: CityView }) {
+  const copy = useCopy();
+  const { COPY, TOP_COPY } = copy;
   const { current, cap, growthPerHour } = city.population;
   const percent = cap > 0 ? Math.min(100, Math.floor((current / cap) * 100)) : 0;
   return (

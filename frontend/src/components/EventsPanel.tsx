@@ -1,5 +1,4 @@
-import { COPY, IDENTITY_LABEL } from '../copy';
-import { INTEL_COPY } from '../copy-pages';
+import { useCopy } from '../i18n/bundle';
 import { useBattleReportModal } from '../state/battleReportModal';
 import { useScoutReportModal } from '../state/scoutReportModal';
 import type { Actor, SessionEvent } from '../types';
@@ -27,7 +26,10 @@ function tagClass(actor: SessionEvent['actor']): string {
 
 /** 动态卡（情报页中 / Agent 页中）：事件流，发起者标签「玩家 / Agent / 系统」，战斗类事件带战报入口、侦察类带侦察报告入口。
  *  分页列表（行定高、文本截断，悬停看全文）；翻到最后一页后「更早」按钮向服务端加载更早的历史。 */
-export function EventsPanel({ events, hasMoreEvents, loadingOlder, onLoadOlder, actor, title = INTEL_COPY.eventsTitle, role = '事件面板' }: EventsPanelProps) {
+export function EventsPanel({ events, hasMoreEvents, loadingOlder, onLoadOlder, actor, title, role = '事件面板' }: EventsPanelProps) {
+  const copy = useCopy();
+  const { COPY, IDENTITY_LABEL, INTEL_COPY } = copy;
+  const heading = title ?? INTEL_COPY.eventsTitle;
   const { openBattleReportById } = useBattleReportModal();
   const { openScoutReport } = useScoutReportModal();
   // 内部按时间正序存放，渲染时倒转：最新在最上
@@ -37,7 +39,7 @@ export function EventsPanel({ events, hasMoreEvents, loadingOlder, onLoadOlder, 
     .reverse();
 
   return (
-    <Card role={role} title={title} meta={actor ? INTEL_COPY.agentLogMeta(ordered.length) : undefined}>
+    <Card role={role} title={heading} meta={actor ? INTEL_COPY.agentLogMeta(ordered.length) : undefined}>
       <PagedList
         role={actor ? `${role}-列表` : '事件面板-列表'}
         items={ordered}

@@ -7,9 +7,8 @@ import { useMemo, useState } from 'react';
 import { INTERCEPT_REACH } from '../../../api/protocol';
 import { formatClock } from '../../../api/format';
 import { carryBonusPercent, marchBonusPercent, marchTravelSeconds } from '../../../api/marchPlan';
-import { MOVING_COPY } from '../../../copy-moving';
-import { DEFENSE_COPY } from '../../../copy-defense';
-import { COPY } from '../../../copy';
+import { useCopy } from '../../../i18n/bundle';
+import { tName } from '../../../i18n/names';
 import { useDeployBlockedText } from '../../../state/deployContext';
 import { interceptVerdict, recommendCell, type InterceptCandidate } from '../../../state/interceptPlan';
 import { ConfirmButton } from './ConfirmButton';
@@ -24,6 +23,8 @@ interface InterceptFormProps {
 }
 
 export function InterceptForm({ ctx, candidates, onPickCell }: InterceptFormProps) {
+  const copy = useCopy();
+  const { COPY, MOVING_COPY, DEFENSE_COPY } = copy;
   const { world, city, x, y, origin, hero, now, troops, setTroops, busy, run } = ctx;
   const [pickedId, setPickedId] = useState<string | null>(null);
   const deployBlocked = useDeployBlockedText(DEFENSE_COPY.deploy.full);
@@ -46,7 +47,7 @@ export function InterceptForm({ ctx, candidates, onPickCell }: InterceptFormProp
         {candidates.map(({ target, index }) => (
           <label key={target.id} className="flex cursor-pointer items-center gap-1.5 truncate text-[12px] text-dim">
             <input role="截击表单-目标单选" type="radio" name="intercept-target" checked={picked.target.id === target.id} onChange={() => setPickedId(target.id)} />
-            <span className="truncate">{MOVING_COPY.intercept.passAt(target.label, target.level, formatClock(target.route[index].at))}</span>
+            <span className="truncate">{MOVING_COPY.intercept.passAt(tName(target.label), target.level, formatClock(target.route[index].at))}</span>
           </label>
         ))}
       </div>

@@ -36,12 +36,9 @@ import {
 } from '../api/protocol';
 import { buildErrorText, formatClock, loginErrorText, renameErrorText, toSessionEvent } from '../api/mapping';
 import { useAccountSecurity, type AccountSecurity } from './useAccountSecurity';
-import { WECHAT_COPY } from '../copy-wechat';
-import { GOOGLE_COPY } from '../copy-google';
-import { GITHUB_COPY } from '../copy-github';
+import { getCopy } from '../i18n/bundle';
 import { githubErrorText } from '../api/errorText';
 import { takeOauthReturn } from './oauthReturn';
-import { BUILDING_LABEL, COPY, buildActionText } from '../copy';
 import {
   clearStoredToken,
   readLastUsername,
@@ -454,7 +451,7 @@ export function useGameSession(): GameSession {
         return;
       }
       setConnection('reconnecting');
-      appendLocalEvent('system', COPY.session.disconnected);
+      appendLocalEvent('system', getCopy().COPY.session.disconnected);
       reconnectTriggerRef.current();
     };
     clientRef.current = client;
@@ -506,6 +503,7 @@ export function useGameSession(): GameSession {
     if (!aliveRef.current || logoutIntentRef.current || !accountRef.current) {
       return;
     }
+    const { COPY } = getCopy();
     const token = readStoredToken();
     if (!token) {
       resetToLoginForm(COPY.session.tokenLost);
@@ -584,6 +582,7 @@ export function useGameSession(): GameSession {
     async (username: string, password: string) => {
       setLoginBusy(true);
       setLoginError(null);
+      const { COPY } = getCopy();
       try {
         setConnection('connecting');
         const client = ensureClient();
@@ -616,6 +615,7 @@ export function useGameSession(): GameSession {
   /** 页面加载时的令牌自动登录；网络失败保留令牌，会话失效则清除并回落表单 */
   const tokenLogin = useCallback(
     async (token: string, source: 'auto' | 'wechat' | 'google' | 'github' = 'auto') => {
+      const { COPY, WECHAT_COPY, GOOGLE_COPY, GITHUB_COPY } = getCopy();
       try {
         setConnection('connecting');
         const client = ensureClient();
@@ -695,6 +695,7 @@ export function useGameSession(): GameSession {
     async (code: string) => {
       setLoginBusy(true);
       setLoginError(null);
+      const { COPY, GITHUB_COPY } = getCopy();
       try {
         const client = ensureClient();
         await client.connect();
@@ -745,6 +746,7 @@ export function useGameSession(): GameSession {
       };
     }
     if (oauthReturn) {
+      const { GITHUB_COPY } = getCopy();
       const notice =
         oauthReturn.kind === 'bindOk'
           ? GITHUB_COPY.return.bindOk
@@ -799,6 +801,7 @@ export function useGameSession(): GameSession {
         return;
       }
       setBuildError(null);
+      const { COPY, BUILDING_LABEL, buildActionText, EXTRA_STATE } = getCopy();
       const name = BUILDING_LABEL[kind].name;
       try {
         // 服务端分发层要求 toLevel 为 ≥3 的整数；仅在确实连升时携带
@@ -837,7 +840,7 @@ export function useGameSession(): GameSession {
           if (cityNow) {
             setCity(cityNow);
           }
-          appendLocalEvent('player', COPY.session.buildRejected(res.error?.message ?? '失败'));
+          appendLocalEvent('player', COPY.session.buildRejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
         }
       } catch (err) {
         setBuildError(err instanceof Error ? err.message : COPY.session.buildFailedFallback);
@@ -864,6 +867,7 @@ export function useGameSession(): GameSession {
         return;
       }
       setBuildError(null);
+      const { COPY, BUILDING_LABEL, buildActionText, EXTRA_STATE } = getCopy();
       try {
         const res = await client.request(Op.CANCEL_BUILD, { buildId });
         if (res.ok) {
@@ -878,7 +882,7 @@ export function useGameSession(): GameSession {
           scheduleSync();
         } else {
           setBuildError(buildErrorText(res.error?.code, res.error?.message));
-          appendLocalEvent('player', COPY.session.cancelRejected(res.error?.message ?? '失败'));
+          appendLocalEvent('player', COPY.session.cancelRejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
           // 取消被拒说明本地队列可能已过时被改动（如条目已被激活），立即对齐
           scheduleSync();
         }
@@ -910,6 +914,7 @@ export function useGameSession(): GameSession {
   /** 城池改名：发起连接收不到 PUSH_CITY_STATE，直接按响应更新名称 */
   const renameCity = useCallback(
     async (name: string): Promise<string | null> => {
+      const { COPY } = getCopy();
       const client = clientRef.current;
       if (!client?.connected) {
         return COPY.session.connectFailed;
@@ -935,6 +940,7 @@ export function useGameSession(): GameSession {
    *  服务端已清空事件流，本地同步清空并全量重拉（只剩 account_reset 审计事件）；
    *  世界数据（行军 / 领地 / 分城）一并重置，地图与详情清空重新加载 */
   const resetAccount = useCallback(async (): Promise<string | null> => {
+    const { COPY } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) {
       return COPY.session.connectFailed;

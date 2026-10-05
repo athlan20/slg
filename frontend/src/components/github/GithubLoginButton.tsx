@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import type { ApiClient } from '../../api/client';
 import { Op } from '../../api/protocol';
-import { GITHUB_COPY } from '../../copy-github';
+import { useCopy } from '../../i18n/bundle';
 import { githubErrorText } from '../../api/errorText';
 
 interface GithubLoginButtonProps {
@@ -15,6 +15,8 @@ interface GithubLoginButtonProps {
 
 /** GitHub 官方登录按钮样式（黑底白字 + GitHub mark） */
 export function GithubLoginButton({ connect }: GithubLoginButtonProps) {
+  const copy = useCopy();
+  const { GITHUB_COPY } = copy;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

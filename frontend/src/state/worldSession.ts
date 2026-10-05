@@ -25,9 +25,7 @@ import {
   type WorldMapResponseData,
 } from '../api/protocol';
 import { cargoText, formatClock, marchErrorText } from '../api/mapping';
-import { COPY } from '../copy';
-import { CITY_COPY } from '../copy-cities';
-import { MOVING_COPY } from '../copy-moving';
+import { getCopy } from '../i18n/bundle';
 import type { Actor } from '../types';
 import { applyMarchResult } from './cityUpdates';
 import { clampZoom, loadSavedZoom, resizedOrigin, saveZoom } from './mapZoom';
@@ -367,6 +365,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
         return false;
       }
       setError(null);
+      const { COPY, CITY_COPY, MOVING_COPY, EXTRA_STATE } = getCopy();
       try {
         const res = await client.request(Op.MARCH, { x, y, troops, ...(task ? { task } : {}), ...(cargo ? { cargo } : {}), ...(targetId ? { targetId } : {}), ...(heroId ? { heroId } : {}) });
         if (res.ok) {
@@ -391,7 +390,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
         if (cityNow) {
           setCity(() => cityNow);
         }
-        appendLocalEvent('player', COPY.session.marchRejected(res.error?.message ?? '失败'));
+        appendLocalEvent('player', COPY.session.marchRejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
         return false;
       } catch (err) {
         setError(err instanceof Error ? err.message : COPY.session.marchFailedFallback);
@@ -409,6 +408,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
         return false;
       }
       setError(null);
+      const { COPY, EXTRA_STATE } = getCopy();
       try {
         const res = await client.request(Op.RECALL_GARRISON, { x, y });
         if (res.ok) {
@@ -417,14 +417,14 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
             setCity((prev) => (prev ? applyMarchResult(prev, marchView) : prev));
             appendLocalEvent('player', COPY.session.recallStarted(x, y, formatClock(marchView.arriveAt)));
           } else {
-            appendLocalEvent('player', `召回 (${x},${y})：地块已无驻军，占领已清除`);
+            appendLocalEvent('player', EXTRA_STATE.state.recallNoGarrison(x, y));
           }
           scheduleSync();
           void refresh();
           return true;
         }
         setError(marchErrorText(res.error?.code, res.error?.message));
-        appendLocalEvent('player', COPY.session.recallRejected(res.error?.message ?? '失败'));
+        appendLocalEvent('player', COPY.session.recallRejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
         void refresh();
         return false;
       } catch (err) {
@@ -443,6 +443,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
         return false;
       }
       setError(null);
+      const { COPY, EXTRA_STATE } = getCopy();
       try {
         const res = await client.request(Op.SCOUT, { x, y, count, ...(heroId ? { heroId } : {}) });
         if (res.ok) {
@@ -466,10 +467,10 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
         if (cityNow) {
           setCity(() => cityNow);
         }
-        appendLocalEvent('player', res.error?.message ?? '侦察发起失败');
+        appendLocalEvent('player', res.error?.message ?? EXTRA_STATE.state.scoutFailed);
         return false;
       } catch (err) {
-        setError(err instanceof Error ? err.message : '侦察发起失败');
+        setError(err instanceof Error ? err.message : EXTRA_STATE.state.scoutFailed);
         return false;
       }
     },
@@ -484,6 +485,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
         return false;
       }
       setError(null);
+      const { COPY, EXTRA_STATE } = getCopy();
       try {
         const res = await client.request(Op.RECALL_MARCH, { marchId });
         if (res.ok) {
@@ -499,7 +501,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
         setError(marchErrorText(res.error?.code, res.error?.message));
         return false;
       } catch (err) {
-        setError(err instanceof Error ? err.message : '行军撤回失败');
+        setError(err instanceof Error ? err.message : EXTRA_STATE.state.recallMarchFailed);
         return false;
       }
     },

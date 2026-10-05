@@ -6,7 +6,7 @@
 import { type CityView, type TechEntryView } from '../api/protocol';
 import { costParts } from '../api/mapping';
 import { formatDurationText } from '../api/format';
-import { TECH_COPY } from '../copy-tech';
+import { useCopy } from '../i18n/bundle';
 import type { TechSession } from '../state/techSession';
 import { useNow } from '../state/useNow';
 import { Card } from './ui/Card';
@@ -17,6 +17,8 @@ interface TechPanelProps {
 }
 
 function TechCard({ entry, city, researchBusy, researching, onResearch }: { entry: TechEntryView; city: CityView; researchBusy: boolean; researching: boolean; onResearch: () => void }) {
+  const copy = useCopy();
+  const { TECH_COPY } = copy;
   const next = entry.next;
   const academyOk = next !== null && city.levels.academy >= next.academyRequired;
   const parts = next ? costParts(next.cost, city.resources) : [];
@@ -35,20 +37,22 @@ function TechCard({ entry, city, researchBusy, researching, onResearch }: { entr
   const nextLine = next
     ? TECH_COPY.panel.nextLine(next.level, parts.map((part) => `${part.label} ${part.value}`).join(' / '), formatDurationText(next.seconds))
     : TECH_COPY.panel.maxed;
+  // 科技名以文案包为准（entry.label 是服务端下发的中文），role 保留服务端原词便于定位
+  const label = TECH_COPY.names[entry.kind];
   return (
     <div
       role={`科技面板-条目-${entry.label}`}
       className={`flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden rounded-[5px] border px-2 py-1 ${researching ? 'border-accent-dim bg-accent-soft' : 'border-line-soft bg-panel-2'}`}
     >
       <div className="flex items-baseline justify-between gap-1">
-        <span className="min-w-0 truncate text-[13px] font-semibold">{entry.label}</span>
+        <span className="min-w-0 truncate text-[13px] font-semibold">{label}</span>
         <span className="shrink-0 font-mono text-[11.5px] text-accent">{TECH_COPY.panel.levelTag(entry.level, entry.maxLevel)}</span>
       </div>
       <p role="科技面板-当前效果" className="truncate font-mono text-[11.5px] text-dim" title={`${effect}\n${entry.effect}`}>
         {effect}
       </p>
-      <p className="truncate text-[11px] text-faint" title={entry.effect}>
-        {entry.effect}
+      <p className="truncate text-[11px] text-faint" title={TECH_COPY.effectText[entry.kind] ?? entry.effect}>
+        {TECH_COPY.effectText[entry.kind] ?? entry.effect}
       </p>
       <p role="科技面板-下一级" className={`truncate text-[11px] ${lacking ? 'text-warn' : 'text-dim'}`} title={nextLine}>
         {nextLine}
@@ -72,6 +76,8 @@ function TechCard({ entry, city, researchBusy, researching, onResearch }: { entr
 }
 
 export function TechPanel({ city, session }: TechPanelProps) {
+  const copy = useCopy();
+  const { TECH_COPY } = copy;
   const { tech, error, busy } = session;
   const research = tech?.research ?? null;
   const now = useNow(research !== null);

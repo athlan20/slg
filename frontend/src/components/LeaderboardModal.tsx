@@ -12,7 +12,10 @@ import { Modal } from './ui/Modal';
 import { PagedList } from './ui/PagedList';
 import { LEADERBOARD_KINDS, type LeaderboardKind, type LeaderboardView } from '../api/protocol';
 import { formatReportTime } from '../api/mapping';
-import { COPY } from '../copy';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { COPY as COPY_ZH } from '../copy';
+import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 
 export type { LeaderboardView } from '../api/protocol';
 
@@ -23,14 +26,16 @@ interface LeaderboardModalProps {
   onSelectKind: (kind: LeaderboardKind) => void;
 }
 
-const KIND_LABEL: Record<LeaderboardKind, string> = {
-  power: COPY.leaderboard.power,
-  territory: COPY.leaderboard.territory,
-  plunder: COPY.leaderboard.plunder,
-  model: COPY.leaderboard.model,
-};
-
 export function LeaderboardModal({ view, loading, onClose, onSelectKind }: LeaderboardModalProps) {
+  const copy = useCopy();
+  const { COPY } = copy;
+  // 榜名随语言取用（原为模块级常量表，改在组件内构造）
+  const KIND_LABEL: Record<LeaderboardKind, string> = {
+    power: COPY.leaderboard.power,
+    territory: COPY.leaderboard.territory,
+    plunder: COPY.leaderboard.plunder,
+    model: COPY.leaderboard.model,
+  };
   const [tab, setTab] = useState<LeaderboardKind>(view?.kind ?? 'power');
   // 列头与行渲染以已到手的快照为准（切榜后快照未回时维持上一榜展示，与 v23 行为一致）
   const isModelView = (view?.kind ?? 'power') === 'model';
@@ -43,7 +48,7 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind }: Leade
           <button
             key={kind}
             type="button"
-            role={`排行榜弹窗-切换-${KIND_LABEL[kind]}`}
+            role={`排行榜弹窗-切换-${COPY_ZH.leaderboard[kind]}`}
             onClick={() => {
               setTab(kind);
               onSelectKind(kind);
@@ -101,7 +106,7 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind }: Leade
                   <span className="font-mono">{entry.rank}</span>
                   <span className="min-w-0 truncate">
                     <span className="text-fg">{entry.username}</span>
-                    <span className="ml-1.5 text-faint">{entry.cityName}</span>
+                    <span className="ml-1.5 text-faint">{tName(entry.cityName)}</span>
                     {entry.agentOnline ? <span className="tag actor-system ml-1.5">{COPY.leaderboard.agentBadge}</span> : null}
                     {entry.agentModel ? (
                       <span role="排行榜-自报模型标注" className="tag ml-1.5" title={COPY.leaderboard.modelRule}>

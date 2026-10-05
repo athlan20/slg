@@ -2,15 +2,15 @@
  *  只读摘要，点击进军队页征兵 / 调度。 */
 
 import { TROOP_KINDS, TROOP_POWER, type TroopKind } from '../../api/protocol';
-import { COPY, TROOP_LABEL } from '../../copy';
-import { DEFENSE_COPY } from '../../copy-defense';
-import { OVERVIEW_COPY } from '../../copy-pages';
+import { useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
 import { activeMarches } from '../../state/progressItems';
 import { Card } from '../ui/Card';
 
 export function ArmyOverviewCard() {
+  const copy = useCopy();
+  const { COPY, DEFENSE_COPY, OVERVIEW_COPY, TROOP_LABEL } = copy;
   const { session } = useGame();
   const { go } = useNav();
   const city = session.city;

@@ -5,15 +5,14 @@
 import { useState } from 'react';
 import { armyCarryCapacity, type Resources } from '../../../api/protocol';
 import { carryBonusPercent, marchBonusPercent, marchTravelSeconds } from '../../../api/marchPlan';
-import { RESOURCE_LABEL, COPY } from '../../../copy';
-import { CITY_COPY } from '../../../copy-cities';
-import { DEFENSE_COPY } from '../../../copy-defense';
+import { useCopy } from '../../../i18n/bundle';
 import { useDeployBlockedText } from '../../../state/deployContext';
 import { ConfirmButton } from './ConfirmButton';
 import type { TargetCtx } from './targetTypes';
 import { TroopPicker, troopTotal } from './TroopPicker';
 
-const RESOURCE_KEYS = Object.keys(RESOURCE_LABEL) as Array<keyof Resources>;
+/** 资源键清单（原 Object.keys(RESOURCE_LABEL)：键名与语言无关，改静态数组避免模块顶层取文案包；键序与 copy.RESOURCE_LABEL 一致） */
+const RESOURCE_KEYS = ['gold', 'wood', 'food', 'stone', 'iron'] as Array<keyof Resources>;
 
 export type CargoInput = Partial<Record<keyof Resources, number>>;
 
@@ -22,6 +21,8 @@ export function cargoUsed(cargo: CargoInput): number {
 }
 
 export function TransportForm({ ctx }: { ctx: TargetCtx }) {
+  const copy = useCopy();
+  const { COPY, CITY_COPY, DEFENSE_COPY, RESOURCE_LABEL } = copy;
   const { world, city, x, y, origin, hero, troops, setTroops, busy, run } = ctx;
   const [cargo, setCargo] = useState<CargoInput>({});
   const deployBlocked = useDeployBlockedText(DEFENSE_COPY.deploy.full);

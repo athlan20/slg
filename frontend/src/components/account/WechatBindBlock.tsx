@@ -5,10 +5,12 @@ import { useCallback, useState } from 'react';
 import { useGame } from '../../state/GameContext';
 import { useWechatQr, type WxQrConfirmed } from '../../state/useWechatQr';
 import { useAuthConfig } from '../../state/useAuthConfig';
-import { WECHAT_COPY } from '../../copy-wechat';
+import { useCopy } from '../../i18n/bundle';
 import { WechatQrView } from '../wechat/WechatQrView';
 
 export function WechatBindBlock() {
+  const copy = useCopy();
+  const { WECHAT_COPY } = copy;
   const { session } = useGame();
   const { config } = useAuthConfig();
   const bound = session.agent?.wechatBound ?? false;

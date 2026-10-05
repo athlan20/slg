@@ -1,6 +1,6 @@
 /** Agent 页（三等分）：Agent 状态与计划 · Agent 操作记录（事件流里发起者是 Agent 的条目）· 离线日报摘要。 */
 
-import { INTEL_COPY } from '../../copy-pages';
+import { useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
 import { AgentPanel } from '../AgentPanel';
 import { OfflineSummaryCard } from '../agent/OfflineSummaryCard';
@@ -8,6 +8,8 @@ import { EventsPanel } from '../EventsPanel';
 import { PageGrid } from './PageGrid';
 
 export function AgentPage() {
+  const copy = useCopy();
+  const { EXTRA_PANEL, INTEL_COPY } = copy;
   const { session } = useGame();
   return (
     <PageGrid
@@ -28,6 +30,7 @@ export function AgentPage() {
         {
           key: 'log',
           label: '记录',
+          tab: EXTRA_PANEL.pageTabs.log,
           node: (
             <EventsPanel
               role="Agent页-操作记录"
@@ -40,7 +43,7 @@ export function AgentPage() {
             />
           ),
         },
-        { key: 'offline', label: '日报', hideMd: true, node: <OfflineSummaryCard /> },
+        { key: 'offline', label: '日报', tab: EXTRA_PANEL.pageTabs.daily, hideMd: true, node: <OfflineSummaryCard /> },
       ]}
     />
   );

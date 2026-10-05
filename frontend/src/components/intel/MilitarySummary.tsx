@@ -5,7 +5,8 @@
 import type { ReactNode } from 'react';
 import { formatDurationText } from '../../api/format';
 import { movingIndexAt } from '../../api/protocol';
-import { SUMMARY_COPY } from '../../copy-pages';
+import { useCopy } from '../../i18n/bundle';
+import { tName } from '../../i18n/names';
 import { recommendCell } from '../../state/interceptPlan';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
@@ -31,6 +32,8 @@ const TONE: Record<SummaryRow['tone'], string> = {
 };
 
 export function MilitarySummary({ role }: { role: string }) {
+  const copy = useCopy();
+  const { EXTRA_PANEL, SUMMARY_COPY } = copy;
   const { session, incoming, openWarning, openYellowTurban, marchOrigin } = useGame();
   const { go } = useNav();
   const city = session.city;
@@ -46,7 +49,7 @@ export function MilitarySummary({ role }: { role: string }) {
       tone: 'bad',
       role: '军情摘要-NPC来袭',
       title: SUMMARY_COPY.npc(first.target === 'city' ? SUMMARY_COPY.npcCity : SUMMARY_COPY.npcWild(first.x, first.y), first.level),
-      sub: `${SUMMARY_COPY.npcSub(first.armyMin, first.armyMax, first.beaconLevel)}${incoming.length > 1 ? ` · 共 ${incoming.length} 批` : ''}`,
+      sub: `${SUMMARY_COPY.npcSub(first.armyMin, first.armyMax, first.beaconLevel)}${incoming.length > 1 ? ` · ${EXTRA_PANEL.militarySummary.wavesTotal(incoming.length)}` : ''}`,
       right: <b className="font-mono tabular-nums text-st-error">{formatDurationText(Math.max(0, Math.ceil((Date.parse(first.arriveAt) - now) / 1000)))}</b>,
       onClick: openWarning,
     });
@@ -108,7 +111,7 @@ export function MilitarySummary({ role }: { role: string }) {
         tone: 'gold',
         role: '军情摘要-流寇商队',
         title: SUMMARY_COPY.moving(alive.length),
-        sub: `${SUMMARY_COPY.movingNearest(nearest.target.label, nearest.target.level, nearest.dist)}${rec ? ` · ${SUMMARY_COPY.movingRecommend(rec.x, rec.y)}` : ''}`,
+        sub: `${SUMMARY_COPY.movingNearest(tName(nearest.target.label), nearest.target.level, nearest.dist)}${rec ? ` · ${SUMMARY_COPY.movingRecommend(rec.x, rec.y)}` : ''}`,
         right: (
           <button
             type="button"
