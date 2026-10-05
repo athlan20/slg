@@ -14,7 +14,7 @@ import {
   type TechStateView,
 } from '../api/protocol';
 import { techErrorText } from '../api/errorText';
-import { TECH_COPY } from '../copy-tech';
+import { getCopy } from '../i18n/bundle';
 import type { Actor } from '../types';
 
 interface TechSessionDeps {
@@ -65,10 +65,11 @@ export function useTechSession(deps: TechSessionDeps): TechSession {
     }
   }, [connected, fetchTechs]);
 
-  const label = (kind: TechKind) => TECH_COPY.names[kind];
+  const label = (kind: TechKind) => getCopy().TECH_COPY.names[kind];
 
   const startResearch = useCallback(
     async (kind: TechKind): Promise<boolean> => {
+      const { TECH_COPY, EXTRA_STATE } = getCopy();
       const client = clientRef.current;
       if (!client?.connected || busy) {
         return false;
@@ -93,7 +94,7 @@ export function useTechSession(deps: TechSessionDeps): TechSession {
         if (cityNow) {
           setCity(() => cityNow);
         }
-        appendLocalEvent('player', TECH_COPY.session.rejected(res.error?.message ?? '失败'));
+        appendLocalEvent('player', TECH_COPY.session.rejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
         return false;
       } catch (err) {
         setError(err instanceof Error ? err.message : TECH_COPY.session.failedFallback);
@@ -106,6 +107,7 @@ export function useTechSession(deps: TechSessionDeps): TechSession {
   );
 
   const cancelResearch = useCallback(async (): Promise<boolean> => {
+    const { TECH_COPY } = getCopy();
     const client = clientRef.current;
     if (!client?.connected || busy) {
       return false;

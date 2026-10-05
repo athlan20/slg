@@ -5,15 +5,14 @@
  *  report.role 选边；roundLog 的攻/守数值在展示前统一换算成我方/敌方。
  */
 
-import { MOVING_COPY } from '../copy-moving';
-import { YT_COPY } from '../copy-yt';
-import { DEFENSE_COPY } from '../copy-defense';
-import { HERO_COPY } from '../copy-hero';
 import { useState } from 'react';
 import { Modal } from './ui/Modal';
 import { TROOP_KINDS, type ArmyCounts, type BattleReportView, type BattleSideView } from '../api/protocol';
 import { formatReportTime } from '../api/mapping';
-import { COPY, TROOP_LABEL } from '../copy';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { TROOP_LABEL as TROOP_LABEL_ZH } from '../copy';
+import { getCopy, useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import { BattleRoundChart } from './BattleRoundChart';
 
 interface BattleReportModalProps {
@@ -26,6 +25,7 @@ function totalOf(army: ArmyCounts): number {
 }
 
 function kindTitle(report: BattleReportView): string {
+  const { COPY, MOVING_COPY, YT_COPY } = getCopy();
   if (report.kind === 'intercept') {
     return MOVING_COPY.report.kind;
   }
@@ -51,6 +51,7 @@ function kindTitle(report: BattleReportView): string {
 }
 
 function endReasonText(report: BattleReportView): string {
+  const { COPY, MOVING_COPY } = getCopy();
   if (report.endReason === 'no_contact') {
     // 截击未接战（v28 AISLG-78）：扑空 / 目标消失
     return report.contact === 'gone' ? MOVING_COPY.report.endNoContactGone : MOVING_COPY.report.endNoContactMissed;
@@ -63,6 +64,8 @@ function endReasonText(report: BattleReportView): string {
 
 /** 一方编成卡片：初始 → 幸存的兵种行（条形为幸存 / 损失占比），底部合计与总输出 */
 function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; roleTag: string; mine: boolean; attacker: boolean }) {
+  const copy = useCopy();
+  const { COPY, HERO_COPY, TROOP_LABEL } = copy;
   const rows = TROOP_KINDS.filter((kind) => side.troops[kind] > 0);
   const lossesTotal = totalOf(side.losses);
   const survivorsTotal = totalOf(side.survivors);
@@ -71,7 +74,7 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
     <div role={mine ? '战报弹窗-我方卡片' : '战报弹窗-敌方卡片'} className="flex min-w-0 flex-col gap-1">
       <p className="flex items-baseline gap-1.5">
         <span className={`tag ${mine ? '' : 'actor-system'}`}>{mine ? COPY.battleReport.sideMine : COPY.battleReport.sideEnemy} · {roleTag}</span>
-        <span className="truncate text-sm font-semibold">{side.name}</span>
+        <span className="truncate text-sm font-semibold">{tName(side.name)}</span>
       </p>
       {rows.length === 0 ? (
         <p className="text-[12px] text-faint">{COPY.battleReport.noTroops}</p>
@@ -81,7 +84,7 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
           const survived = side.survivors[kind];
           const lost = side.losses[kind];
           return (
-            <div key={kind} role={`战报弹窗-兵种行-${TROOP_LABEL[kind].short}`} className="grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-center gap-1.5 leading-tight">
+            <div key={kind} role={`战报弹窗-兵种行-${TROOP_LABEL_ZH[kind].short}`} className="grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-center gap-1.5 leading-tight">
               <span className="text-[12px] text-dim">{TROOP_LABEL[kind].name}</span>
               <span className="flex h-[5px] overflow-hidden rounded bg-line">
                 <i className={`block h-full ${barTone}`} style={{ width: `${(survived / initial) * 100}%` }} />
@@ -98,7 +101,7 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
       {side.hero ? (
         <p role={mine ? '战报弹窗-我方将领' : '战报弹窗-敌方将领'} className="text-[12px] text-accent">
           {(attacker ? HERO_COPY.report.attackerHero : HERO_COPY.report.defenderHero)(
-            side.hero.name, side.hero.lead, side.hero.force, side.hero.wit, side.hero.atkPercent, side.hero.defPercent,
+            tName(side.hero.name), side.hero.lead, side.hero.force, side.hero.wit, side.hero.atkPercent, side.hero.defPercent,
           )}
         </p>
       ) : null}
@@ -128,6 +131,8 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
 const ROUNDS_PER_PAGE = 16;
 
 export function BattleReportModal({ report, onClose }: BattleReportModalProps) {
+  const copy = useCopy();
+  const { COPY, DEFENSE_COPY, EXTRA_PANEL } = copy;
   const [view, setView] = useState<'chart' | 'rounds'>('chart');
   const [roundPage, setRoundPage] = useState(0);
   const mineIsAttacker = report.role === 'attacker';
@@ -140,7 +145,13 @@ export function BattleReportModal({ report, onClose }: BattleReportModalProps) {
   const roundPages = Math.max(1, Math.ceil(report.roundLog.length / ROUNDS_PER_PAGE));
   const page = Math.min(roundPage, roundPages - 1);
   const result =
-    report.endReason === 'no_contact' ? (report.contact === 'gone' ? '目标消失' : '扑 空') : report.won ? COPY.battleReport.resultWon : COPY.battleReport.resultLost;
+    report.endReason === 'no_contact'
+      ? report.contact === 'gone'
+        ? EXTRA_PANEL.battleReport.resultTargetGone
+        : EXTRA_PANEL.battleReport.resultMissed
+      : report.won
+        ? COPY.battleReport.resultWon
+        : COPY.battleReport.resultLost;
 
   return (
     <Modal
@@ -150,9 +161,9 @@ export function BattleReportModal({ report, onClose }: BattleReportModalProps) {
       title={
         <>
           <span className="tag mr-2">{kindTitle(report)}</span>
-          {mySide.name}
+          {tName(mySide.name)}
           <span className="mx-1.5 font-mono text-[12px] font-normal text-faint">{COPY.battleReport.versus}</span>
-          {enemySide.name}
+          {tName(enemySide.name)}
         </>
       }
       headExtra={

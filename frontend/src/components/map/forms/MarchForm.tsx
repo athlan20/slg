@@ -5,9 +5,8 @@
 
 import { useMemo } from 'react';
 import { carryBonusPercent, marchBonusPercent, marchTravelSeconds } from '../../../api/marchPlan';
-import { BRANCH_MIN_GOVERNMENT, CITY_COPY } from '../../../copy-cities';
-import { COPY } from '../../../copy';
-import { DEFENSE_COPY } from '../../../copy-defense';
+import { BRANCH_MIN_GOVERNMENT } from '../../../copy-cities';
+import { useCopy } from '../../../i18n/bundle';
 import { useDeployBlockedText } from '../../../state/deployContext';
 import { ConfirmButton } from './ConfirmButton';
 import type { TargetCtx } from './targetTypes';
@@ -16,6 +15,8 @@ import { TroopPicker, troopTotal } from './TroopPicker';
 export type MarchAct = 'plunder' | 'occupy' | 'clear' | 'reinforce' | 'transfer';
 
 export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
+  const copy = useCopy();
+  const { COPY, CITY_COPY, DEFENSE_COPY } = copy;
   const { world, city, x, y, detail, origin, hero, troops, setTroops, busy, run } = ctx;
   const deployBlocked = useDeployBlockedText(DEFENSE_COPY.deploy.full);
   const total = troopTotal(troops);

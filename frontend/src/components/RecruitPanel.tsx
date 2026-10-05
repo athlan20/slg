@@ -6,9 +6,9 @@
 import { useState } from 'react';
 import { RECRUIT_COUNT_MAX, RECRUIT_QUEUE_CAPACITY, TROOP_INFO, TROOP_KINDS, type CityView, type Resources, type TroopKind } from '../api/protocol';
 import { costParts } from '../api/mapping';
-import { COPY, IDENTITY_LABEL, TROOP_LABEL } from '../copy';
-import { DEFENSE_COPY } from '../copy-defense';
-import { ARMY_COPY } from '../copy-pages';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { TROOP_LABEL as TROOP_LABEL_ZH } from '../copy';
+import { useCopy } from '../i18n/bundle';
 import { activeMarches } from '../state/progressItems';
 import type { ConnectionStatus } from '../state/useGameSession';
 import { useNow } from '../state/useNow';
@@ -23,6 +23,8 @@ interface RecruitPanelProps {
 }
 
 export function RecruitPanel({ city, connection, recruitError, onStartRecruit, onCancelRecruit }: RecruitPanelProps) {
+  const copy = useCopy();
+  const { ARMY_COPY, COPY, DEFENSE_COPY, IDENTITY_LABEL, TROOP_LABEL } = copy;
   const [troop, setTroop] = useState<TroopKind | null>(null);
   const [count, setCount] = useState(0);
   const queue = city?.recruitQueue ?? [];
@@ -68,7 +70,7 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
           return (
             <div
               key={kind}
-              role={`征兵面板-驻军-${TROOP_LABEL[kind].short}`}
+              role={`征兵面板-驻军-${TROOP_LABEL_ZH[kind].short}`}
               title={DEFENSE_COPY.troopNote[kind]}
               className={`grid max-h-9 min-h-0 flex-1 grid-cols-[minmax(0,1fr)_2.6rem_2.2rem_3.6rem] items-center gap-1.5 rounded px-1.5 text-[12px] even:bg-panel-2 ${isLocked ? 'opacity-45' : ''}`}
             >
@@ -84,7 +86,7 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
                 </span>
               ) : (
                 <input
-                  role={`征兵面板-数量-${TROOP_LABEL[kind].short}`}
+                  role={`征兵面板-数量-${TROOP_LABEL_ZH[kind].short}`}
                   type="number"
                   min={1}
                   max={RECRUIT_COUNT_MAX}
@@ -150,7 +152,7 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
           return (
             <div
               key={item.id}
-              role={`征兵面板-条目-${label.short}`}
+              role={`征兵面板-条目-${TROOP_LABEL_ZH[item.troop].short}`}
               className={`flex flex-col gap-0.5 rounded border px-2 py-1 ${active ? 'border-accent-dim bg-accent-soft' : 'border-line-soft bg-panel-2'}`}
             >
               <div className="flex items-baseline justify-between gap-2">
@@ -166,7 +168,7 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
                   {active ? null : (
                     <button
                       type="button"
-                      role={`征兵面板-取消-${label.short}`}
+                      role={`征兵面板-取消-${TROOP_LABEL_ZH[item.troop].short}`}
                       title={COPY.recruitPanel.cancelTitle}
                       aria-label={`${COPY.recruitPanel.cancel}${label.name}`}
                       className="grid h-4 w-4 place-items-center rounded border border-line-soft bg-panel text-[11px] leading-none text-faint hover:border-accent-dim hover:text-accent"

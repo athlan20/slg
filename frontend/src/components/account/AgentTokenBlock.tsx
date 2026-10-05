@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useGame } from '../../state/GameContext';
 import type { AgentTokenData } from '../../api/protocol-wechat';
-import { WECHAT_COPY } from '../../copy-wechat';
+import { useCopy } from '../../i18n/bundle';
 import { writeClipboard } from '../AgentPanel';
 
 function formatTime(iso: string): string {
@@ -13,6 +13,8 @@ function formatTime(iso: string): string {
 }
 
 export function AgentTokenBlock() {
+  // 解构直接取 WECHAT_COPY：本文件已有名为 copy 的本地状态，不再引入同名变量
+  const { WECHAT_COPY } = useCopy();
   const { session } = useGame();
   const { getAgentToken, resetAgentToken } = session.security;
   const [info, setInfo] = useState<AgentTokenData | null>(null);

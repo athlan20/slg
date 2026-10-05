@@ -39,6 +39,10 @@ export const NAV_COPY = {
   exchangeMobile: '集市',
   leaderboardMobile: '排行榜',
   theme: '皮肤',
+  /** 语言切换行（AISLG-137，账号菜单里紧挨皮肤行） */
+  language: '语言',
+  languageZh: '中文',
+  languageEn: 'English',
 };
 
 export const TOP_COPY = {

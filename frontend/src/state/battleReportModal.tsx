@@ -8,7 +8,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BattleReportCommentView, BattleReportView } from '../api/protocol';
 import { BattleReportModal } from '../components/BattleReportModal';
-import { COPY } from '../copy';
+import { useCopy } from '../i18n/bundle';
 
 /** 战报点评的模块级事件总线（v23 AISLG-53）：推送到达时 emit，Provider 若正开着
  *  同一份战报就地把点评补进弹窗（不依赖重新打开）。 */
@@ -39,6 +39,8 @@ interface BattleReportModalProviderProps {
 const BattleReportModalContext = createContext<BattleReportModalApi | null>(null);
 
 export function BattleReportModalProvider({ children, fetchReportById }: BattleReportModalProviderProps) {
+  const copy = useCopy();
+  const { COPY } = copy;
   const [state, setState] = useState<ModalState | null>(null);
   /** 反查请求序号：关闭或被新打开取代后，迟到的响应直接丢弃 */
   const requestSeqRef = useRef(0);

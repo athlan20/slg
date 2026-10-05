@@ -1,7 +1,8 @@
 import type { CityView } from '../api/protocol';
 import { BUILD_QUEUE_CAPACITY } from '../api/protocol';
-import { BUILDING_LABEL, COPY, IDENTITY_LABEL, buildActionText } from '../copy';
-import { CITY_PAGE_COPY } from '../copy-pages';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { BUILDING_LABEL as BUILDING_LABEL_ZH } from '../copy';
+import { useCopy } from '../i18n/bundle';
 import { useNow } from '../state/useNow';
 import { Card } from './ui/Card';
 
@@ -16,6 +17,8 @@ interface BuildQueuePanelProps {
  *  一眼看出还能不能再排。每个槽位带建筑 / 动作 / 发起者标签（玩家 / Agent）；在建槽位显示剩余时间与进度条；
  *  排队槽位带取消按钮（全额返还成本），在建的不可取消。 */
 export function BuildQueuePanel({ city, buildError, onCancelBuild }: BuildQueuePanelProps) {
+  const copy = useCopy();
+  const { BUILDING_LABEL, CITY_PAGE_COPY, COPY, IDENTITY_LABEL, buildActionText } = copy;
   const queue = city?.queue ?? [];
   const hasActive = queue.some((item) => item.status === 'building');
   // 在建倒计时按本地时钟推进；完成与否以服务端推送 / 查询为准
@@ -50,7 +53,7 @@ export function BuildQueuePanel({ city, buildError, onCancelBuild }: BuildQueueP
           return (
             <div
               key={item.id}
-              role={`建造队列面板-条目-${label.short}`}
+              role={`建造队列面板-条目-${BUILDING_LABEL_ZH[item.kind].short}`}
               className={`flex min-h-[58px] short:min-h-[50px] min-w-0 flex-col justify-between gap-1 rounded-md border px-2.5 py-1.5 ${
                 active ? 'border-accent-dim bg-accent-soft' : 'border-line-soft bg-panel-2'
               }`}
@@ -68,7 +71,7 @@ export function BuildQueuePanel({ city, buildError, onCancelBuild }: BuildQueueP
                   {active ? null : (
                     <button
                       type="button"
-                      role={`建造队列面板-取消-${label.short}`}
+                      role={`建造队列面板-取消-${BUILDING_LABEL_ZH[item.kind].short}`}
                       title={COPY.buildQueue.cancelTitle}
                       aria-label={`${COPY.buildQueue.cancel}${label.name}`}
                       className="grid h-4 w-4 place-items-center rounded border border-line-soft bg-panel text-[11px] leading-none text-faint transition-colors hover:border-accent-dim hover:text-accent"

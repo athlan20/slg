@@ -4,7 +4,7 @@
  */
 
 import { useEffect, type ReactNode } from 'react';
-import { MODAL_COPY } from '../../copy-ui';
+import { useCopy } from '../../i18n/bundle';
 
 interface ModalProps {
   /** 弹窗 role：外层遮罩用它，面板为「{role}-面板」，关闭按钮为「{role}-关闭按钮」 */
@@ -29,6 +29,8 @@ const ACCENT_BAR: Record<NonNullable<ModalProps['accent']>, string> = {
 };
 
 export function Modal({ role, title, onClose, size = 'md', accent = 'accent', fill = false, headExtra, children }: ModalProps) {
+  const copy = useCopy();
+  const { MODAL_COPY } = copy;
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

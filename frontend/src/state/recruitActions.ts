@@ -10,7 +10,7 @@ import {
   type TroopKind,
 } from '../api/protocol';
 import { formatClock, recruitErrorText } from '../api/mapping';
-import { COPY, TROOP_LABEL } from '../copy';
+import { getCopy } from '../i18n/bundle';
 import type { Actor } from '../types';
 import { applyCancelRecruitResult, applyRecruitResult } from './cityUpdates';
 
@@ -34,6 +34,7 @@ export function createRecruitActions(deps: RecruitActionsDeps): {
 
   /** 发起征兵：成功乐观更新队列；失败展示人读错误并对齐响应附带的状态 */
   const startRecruit = async (troop: TroopKind, count: number): Promise<void> => {
+    const { COPY, TROOP_LABEL, EXTRA_STATE } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) {
       return;
@@ -62,7 +63,7 @@ export function createRecruitActions(deps: RecruitActionsDeps): {
         if (cityNow) {
           setCity(() => cityNow);
         }
-        appendLocalEvent('player', COPY.session.recruitRejected(res.error?.message ?? '失败'));
+        appendLocalEvent('player', COPY.session.recruitRejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
       }
     } catch (err) {
       setRecruitError(err instanceof Error ? err.message : COPY.session.recruitFailedFallback);
@@ -71,6 +72,7 @@ export function createRecruitActions(deps: RecruitActionsDeps): {
 
   /** 取消排队条目：直接结果乐观移出队列，返还的资源与人口随防抖查询对齐 */
   const cancelRecruit = async (recruitId: string): Promise<void> => {
+    const { COPY, TROOP_LABEL, EXTRA_STATE } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) {
       return;
@@ -87,7 +89,7 @@ export function createRecruitActions(deps: RecruitActionsDeps): {
         scheduleSync();
       } else {
         setRecruitError(recruitErrorText(res.error?.code, res.error?.message));
-        appendLocalEvent('player', COPY.session.cancelRecruitRejected(res.error?.message ?? '失败'));
+        appendLocalEvent('player', COPY.session.cancelRecruitRejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
         // 取消被拒说明本地队列可能已过时被改动（如条目已被激活），立即对齐
         scheduleSync();
       }

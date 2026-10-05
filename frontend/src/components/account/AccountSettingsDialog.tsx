@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 import { useGame } from '../../state/GameContext';
-import { WECHAT_COPY } from '../../copy-wechat';
+import { useCopy } from '../../i18n/bundle';
 import { Modal } from '../ui/Modal';
 import { AgentTokenBlock } from './AgentTokenBlock';
 import { GithubBindBlock } from './GithubBindBlock';
@@ -11,6 +11,8 @@ import { GoogleBindBlock } from './GoogleBindBlock';
 import { WechatBindBlock } from './WechatBindBlock';
 
 export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
+  const copy = useCopy();
+  const { WECHAT_COPY } = copy;
   const { session } = useGame();
   const { refresh } = session.security;
   // 打开时对齐一次：令牌清单与绑定状态以服务端为准（别的连接可能刚改过）

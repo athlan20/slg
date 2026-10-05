@@ -1,8 +1,15 @@
 // 时间与时长的人读格式化（从 api/mapping.ts 拆出）：只做「值 → 文案格式」，
 // 不依赖协议类型与全局文案（copy.ts），供事件文字、错误提示与各面板倒计时共用。
+// 单位词与 locale 按界面语言（AISLG-137）：中文沿用原格式，英文用 s / min / h 与 en-US。
+
+import { getLang } from '../i18n/lang';
+
+function locale(): string {
+  return getLang() === 'zh' ? 'zh-CN' : 'en-US';
+}
 
 export function formatClock(iso: string): string {
-  return new Date(iso).toLocaleTimeString('zh-CN', { hour12: false });
+  return new Date(iso).toLocaleTimeString(locale(), { hour12: false });
 }
 
 /** 战报时间（列表 / 详情用）：当天只显示时刻，跨天补月日 */
@@ -13,13 +20,27 @@ export function formatReportTime(iso: string): string {
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
-  const clock = date.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
-  return sameDay ? clock : `${date.getMonth() + 1}月${date.getDate()}日 ${clock}`;
+  const clock = date.toLocaleTimeString(locale(), { hour12: false, hour: '2-digit', minute: '2-digit' });
+  if (sameDay) {
+    return clock;
+  }
+  if (getLang() === 'zh') {
+    return `${date.getMonth() + 1}月${date.getDate()}日 ${clock}`;
+  }
+  const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+  return `${day}, ${clock}`;
 }
 
 /** 秒数的人读时长（顶栏免战倒计时、资源缺口攒够预估等共用）：<1 分钟给秒，<1 小时给分秒，再往上给时分 */
 export function formatDurationText(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
+  if (getLang() !== 'zh') {
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (s < 3600) return m >= 10 || s % 60 === 0 ? `${m}min` : `${m}min ${s % 60}s`;
+    const h = Math.floor(s / 3600);
+    return `${h}h ${Math.floor((s % 3600) / 60)}min`;
+  }
   if (s < 60) {
     return `${s} 秒`;
   }

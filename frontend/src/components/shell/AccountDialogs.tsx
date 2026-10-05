@@ -3,7 +3,7 @@
  */
 
 import { useState, type FormEvent } from 'react';
-import { COPY } from '../../copy';
+import { useCopy } from '../../i18n/bundle';
 import { Modal } from '../ui/Modal';
 import { AccountSettingsDialog } from '../account/AccountSettingsDialog';
 
@@ -19,6 +19,8 @@ interface AccountDialogsProps {
 }
 
 export function AccountDialogs({ mode, cityName, onClose, onSwitchAccount, onResetAccount, onRenameCity }: AccountDialogsProps) {
+  const copy = useCopy();
+  const { COPY } = copy;
   if (mode === 'switch') {
     return (
       <Modal role="切换账号确认框" title={COPY.topbar.switchAccount} size="sm" accent="none" onClose={onClose}>
@@ -53,6 +55,8 @@ export function AccountDialogs({ mode, cityName, onClose, onSwitchAccount, onRes
 }
 
 function ResetDialog({ onClose, onResetAccount }: Pick<AccountDialogsProps, 'onClose' | 'onResetAccount'>) {
+  const copy = useCopy();
+  const { COPY } = copy;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,6 +95,8 @@ function ResetDialog({ onClose, onResetAccount }: Pick<AccountDialogsProps, 'onC
 }
 
 function RenameDialog({ cityName, onClose, onRenameCity }: Pick<AccountDialogsProps, 'cityName' | 'onClose' | 'onRenameCity'>) {
+  const copy = useCopy();
+  const { COPY } = copy;
   const [value, setValue] = useState(cityName ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

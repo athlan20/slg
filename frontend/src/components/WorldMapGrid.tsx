@@ -9,11 +9,13 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import type { TileView, WorldMapResponseData } from '../api/protocol';
+import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import { useMapZoomGestures, type ZoomHandler } from '../state/useMapZoomGestures';
 import { zoomStep } from '../state/mapZoom';
 import { WorldTileBadges } from './WorldTileBadges';
 import { CityMark, TERRAIN_CLASS, TerrainIcon, levelTone } from './worldMapMarks';
-import { NPC_TIER_CLASS, NPC_TIER_LABEL, WorldMapTooltip, citySide, tileAria, type TileTip } from './worldMapTip';
+import { NPC_TIER_CLASS, WorldMapTooltip, citySide, npcTierLabel, tileAria, type TileTip } from './worldMapTip';
 
 interface WorldMapGridProps {
   win: WorldMapResponseData;
@@ -72,6 +74,8 @@ const ARROW_DELTA: Record<string, [number, number]> = {
 };
 
 export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanTo, panStep, territoryClusters, movingMarks, onZoom, zoomSize, layers }: WorldMapGridProps) {
+  const copy = useCopy();
+  const { TILE_KIND_LABEL } = copy;
   const showYt = layers?.yt ?? true;
   const showMine = layers?.mine ?? true;
   const [tip, setTip] = useState<TileTip | null>(null);
@@ -356,7 +360,7 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
                       <span
                         role="世界地图视野-NPC库存档位"
                         className={`absolute left-[6%] top-[4%] font-mono text-[clamp(8px,1.25cqw,12px)] leading-none ${NPC_TIER_CLASS[tile.npcStockTier]}`}
-                        title={NPC_TIER_LABEL[tile.npcStockTier]}
+                        title={npcTierLabel(tile.npcStockTier)}
                       >
                         {tile.npcStockTier === 'rich' ? '◆' : tile.npcStockTier === 'normal' ? '◇' : tile.npcStockTier === 'low' ? '·' : '×'}
                       </span>
@@ -367,7 +371,7 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
                         tile.kind === 'npc_city' ? 'text-gold' : isOwn ? 'font-semibold text-accent' : 'text-warn'
                       }`}
                     >
-                      {tile.kind === 'npc_city' ? (tile.famous?.name ?? `NPC Lv${tile.level}`) : (tile.owner?.cityName ?? '城池')}
+                      {tile.kind === 'npc_city' ? (tile.famous ? tName(tile.famous.name) : `NPC Lv${tile.level}`) : (tile.owner ? tName(tile.owner.cityName) : TILE_KIND_LABEL.city)}
                     </span>
                   </>
                 ) : (

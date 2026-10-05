@@ -24,6 +24,8 @@ export const YT_COPY = {
     strength: (min: number, max: number) => `守军约 ${min}–${max}`,
     locate: '定位',
     rewardsTitle: '名次奖励（结束发到主城）',
+    /** 分页按钮窄，用不带括号说明的短标签（原 replace 裁剪只对中文全角括号成立） */
+    rewardsTab: '名次奖励',
     rewardRow: (label: string, gold: number, res: number) => `${label}：金 ${gold} · 四资源各 ${res}`,
     bossStage: (stage: 'outer' | 'keeper', recovers: string | null) =>
       stage === 'keeper' ? `城守阶段${recovers ? `，${recovers} 前攻下否则外围恢复` : ''}` : '外围阶段：先清外围',

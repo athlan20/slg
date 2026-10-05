@@ -5,6 +5,7 @@
  */
 
 import type { TerrainKind } from '../api/protocol';
+import { useCopy } from '../i18n/bundle';
 
 /** 地形底色（themes.css --t-*，五套皮肤各自配色；金矿 v19 起有独立地形色） */
 export const TERRAIN_CLASS: Record<string, string> = {
@@ -57,15 +58,17 @@ export function TerrainIcon({ terrain, className = '' }: { terrain: TerrainKind;
 /** 城池归属：本方 / NPC / 他方玩家 */
 export type CitySide = 'own' | 'npc' | 'famous' | 'enemy';
 
-/** 城池标记（尺寸由外层 className 决定，地图里随格子缩放，图例里固定小号） */
+/** 城池标记（尺寸由外层 className 决定，地图里随格子缩放，图例里固定小号）；格内单字随语言取 EXTRA_MAP.tileGlyphs */
 export function CityMark({ side, className = '' }: { side: CitySide; className?: string }) {
+  const copy = useCopy();
+  const glyphs = copy.EXTRA_MAP.tileGlyphs;
   if (side === 'own') {
     return (
       <span
         aria-hidden="true"
         className={`grid aspect-square place-items-center rounded bg-accent font-semibold leading-none text-bg shadow-[0_0_10px_var(--accent)] ${className}`}
       >
-        城
+        {glyphs.city}
       </span>
     );
   }
@@ -76,7 +79,7 @@ export function CityMark({ side, className = '' }: { side: CitySide; className?:
         aria-hidden="true"
         className={`grid aspect-square place-items-center rounded-[3px] border-2 border-gold bg-warn font-semibold leading-none text-bg shadow-[0_0_10px_var(--gold)] ${className}`}
       >
-        名
+        {glyphs.famous}
       </span>
     );
   }
@@ -93,7 +96,7 @@ export function CityMark({ side, className = '' }: { side: CitySide; className?:
       aria-hidden="true"
       className={`grid aspect-square place-items-center rounded-[2px] bg-warn font-semibold leading-none text-bg ${className}`}
     >
-      城
+      {glyphs.city}
     </span>
   );
 }

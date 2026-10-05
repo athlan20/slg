@@ -3,15 +3,16 @@
 
 import { type Resources } from '../../api/protocol';
 import { compactNumber } from '../../api/format';
-import { RESOURCE_LABEL } from '../../copy';
-import { CITY_PAGE_COPY } from '../../copy-pages';
+import { useCopy } from '../../i18n/bundle';
 import type { CityView } from '../../api/protocol';
 import { Card } from '../ui/Card';
 import { PagedList } from '../ui/PagedList';
 
-const KEYS = Object.keys(RESOURCE_LABEL) as Array<keyof Resources>;
-
 export function CityStatsCard({ city }: { city: CityView | null }) {
+  const copy = useCopy();
+  const { CITY_PAGE_COPY, RESOURCE_LABEL } = copy;
+  // 资源遍历顺序来自文案包的资源键（各语言一致）
+  const KEYS = Object.keys(RESOURCE_LABEL) as Array<keyof Resources>;
   const tiles: Array<{ key: string; label: string; value: string; sub: string; warn?: boolean }> = [];
   if (city) {
     for (const key of KEYS) {

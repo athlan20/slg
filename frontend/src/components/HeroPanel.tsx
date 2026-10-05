@@ -3,7 +3,8 @@
  */
 
 import type { CityView } from '../api/protocol';
-import { HERO_COPY } from '../copy-hero';
+import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import type { CityList } from '../state/useCityList';
 import type { HeroSession } from '../state/heroSession';
 import { useNow } from '../state/useNow';
@@ -19,12 +20,14 @@ interface HeroPanelProps {
 }
 
 export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
+  const copy = useCopy();
+  const { EXTRA_PANEL, HERO_COPY } = copy;
   const { state, error, busy } = session;
   const now = useNow(state !== null && state.heroes.length > 0);
   const cityNames: Record<string, string> = Object.fromEntries(cityList.cities.map((item) => [item.id, item.name]));
   const guard = city?.guard ?? null;
   const guardText = guard
-    ? HERO_COPY.guard.row(guard.name, Math.min(20, Math.round(guard.force * 0.3 * 10) / 10), Math.min(20, Math.round(guard.wit * 0.3 * 10) / 10), guard.bonusPercent)
+    ? HERO_COPY.guard.row(tName(guard.name), Math.min(20, Math.round(guard.force * 0.3 * 10) / 10), Math.min(20, Math.round(guard.wit * 0.3 * 10) / 10), guard.bonusPercent)
     : HERO_COPY.guard.none;
 
   return (
@@ -33,8 +36,8 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
       title={HERO_COPY.panel.title}
       meta={<span role="武将面板-上限">{state ? HERO_COPY.panel.meta(state.normalCount, state.normalCap, state.famousCount, state.famousCap) : ''}</span>}
     >
-      <p role="武将面板-城守" className="shrink-0 truncate text-[12px] text-dim" title={`${HERO_COPY.guard.title}：${guardText}\n${HERO_COPY.panel.hint}`}>
-        <span className="text-faint">{HERO_COPY.guard.title}：</span>
+      <p role="武将面板-城守" className="shrink-0 truncate text-[12px] text-dim" title={`${HERO_COPY.guard.title}${EXTRA_PANEL.joiners.colon}${guardText}\n${HERO_COPY.panel.hint}`}>
+        <span className="text-faint">{HERO_COPY.guard.title}{EXTRA_PANEL.joiners.colon}</span>
         {guardText}
       </p>
       {error ? (

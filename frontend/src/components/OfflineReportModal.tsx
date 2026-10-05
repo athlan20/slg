@@ -5,10 +5,9 @@
  *  也可在 Agent 面板里重新打开。
  */
 
-import { STARVE_COPY } from '../copy-starvation';
 import { Modal } from './ui/Modal';
 import type { GetOfflineReportResponseData } from '../api/protocol';
-import { COPY, RESOURCE_LABEL } from '../copy';
+import { getCopy, useCopy } from '../i18n/bundle';
 import { formatReportTime } from '../api/mapping';
 
 interface OfflineReportModalProps {
@@ -18,6 +17,7 @@ interface OfflineReportModalProps {
 
 /** 秒数 → 「X 小时 Y 分钟」（不足 1 小时只显示分钟） */
 function durationText(seconds: number): string {
+  const { COPY } = getCopy();
   const minutes = Math.max(0, Math.floor(seconds / 60));
   if (minutes < 60) {
     return COPY.offlineReport.durationMinutes(minutes);
@@ -26,6 +26,8 @@ function durationText(seconds: number): string {
 }
 
 export function OfflineReportModal({ data, onClose }: OfflineReportModalProps) {
+  const copy = useCopy();
+  const { COPY, EXTRA_PANEL, RESOURCE_LABEL, STARVE_COPY } = copy;
   const { offline, agentReport } = data;
   const gains = (Object.keys(RESOURCE_LABEL) as Array<keyof typeof RESOURCE_LABEL>)
     .filter((key) => (offline.gains[key] ?? 0) > 0)
@@ -47,7 +49,7 @@ export function OfflineReportModal({ data, onClose }: OfflineReportModalProps) {
     >
       <div role="离线日报弹窗-收获">
         <h4 className={h4}>{COPY.offlineReport.gainsTitle}</h4>
-        {gains.length === 0 ? <p className="text-[12px] text-faint">{COPY.offlineReport.gainsNone}</p> : <p className="text-[13px] text-ok">{COPY.offlineReport.gainsLine(gains.join('、'))}</p>}
+        {gains.length === 0 ? <p className="text-[12px] text-faint">{COPY.offlineReport.gainsNone}</p> : <p className="text-[13px] text-ok">{COPY.offlineReport.gainsLine(gains.join(EXTRA_PANEL.joiners.enum))}</p>}
       </div>
 
       <div role="离线日报弹窗-损失">

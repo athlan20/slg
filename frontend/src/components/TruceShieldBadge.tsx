@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { formatDurationText } from '../api/mapping';
-import { COPY } from '../copy';
+import { useCopy } from '../i18n/bundle';
 import { useNow } from '../state/useNow';
 
 interface TruceShieldBadgeProps {
@@ -19,6 +19,8 @@ interface TruceShieldBadgeProps {
 }
 
 export function TruceShieldBadge({ newbieUntil, shieldUntil, shieldNextAt, onStartTruce }: TruceShieldBadgeProps) {
+  const copy = useCopy();
+  const { COPY } = copy;
   const shieldDeadline = shieldUntil !== null ? Date.parse(shieldUntil) : NaN;
   const shieldActive = Number.isFinite(shieldDeadline) && shieldDeadline - Date.now() > 0;
   const newbieDeadline = newbieUntil !== null ? Date.parse(newbieUntil) : NaN;
@@ -69,7 +71,7 @@ export function TruceShieldBadge({ newbieUntil, shieldUntil, shieldNextAt, onSta
         onClick={() => void submit()}
         className="grid h-7 min-w-7 place-items-center rounded border border-gold/50 bg-gold/10 px-1 font-mono text-[12px] text-gold transition-colors hover:border-gold disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {busy ? '…' : '免'}
+        {busy ? '…' : copy.EXTRA_MAP.truceBadge.glyph}
       </button>
     </span>
   );

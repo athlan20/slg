@@ -13,7 +13,7 @@ import {
   type HeroView,
 } from '../api/protocol';
 import { heroErrorText } from '../api/errorText';
-import { HERO_COPY } from '../copy-hero';
+import { getCopy } from '../i18n/bundle';
 
 interface HeroSessionDeps {
   clientRef: { current: ApiClient | null };
@@ -97,6 +97,7 @@ export function useHeroSession(deps: HeroSessionDeps): HeroSession {
 
   const run = useCallback(
     async (op: number, data: Record<string, unknown>, after?: () => void): Promise<boolean> => {
+      const { HERO_COPY } = getCopy();
       const client = clientRef.current;
       if (!client?.connected || busy) {
         return false;

@@ -2,6 +2,8 @@
  *  （v28 AISLG-78：当前所在格画徽章、尚未走过的路线格画小点）。 */
 
 import type { TileView } from '../api/protocol';
+import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 
 export interface MovingMark {
   kind: 'caravan' | 'bandit';
@@ -11,6 +13,8 @@ export interface MovingMark {
 }
 
 export function WorldTileBadges({ tile, mark, hideCamp = false }: { tile: TileView; mark: MovingMark | undefined; hideCamp?: boolean }) {
+  const copy = useCopy();
+  const glyphs = copy.EXTRA_MAP.tileGlyphs;
   return (
     <>
       {tile.camp && !hideCamp ? (
@@ -21,13 +25,13 @@ export function WorldTileBadges({ tile, mark, hideCamp = false }: { tile: TileVi
             tile.camp.tier === 'boss' ? 'bg-gold' : tile.camp.tier === 'large' ? 'bg-st-error' : 'bg-warn'
           }`}
         >
-          {tile.camp.tier === 'boss' ? '巢' : '巾'}
+          {tile.camp.tier === 'boss' ? glyphs.ytBoss : glyphs.ytCamp}
         </span>
       ) : null}
       {mark ? (
         <span
           role={mark.current ? '世界地图视野-移动目标' : '世界地图视野-移动目标路线'}
-          title={`${mark.label} Lv${mark.level}`}
+          title={`${tName(mark.label)} Lv${mark.level}`}
           className={
             mark.current
               ? `absolute right-[4%] top-[4%] grid h-[34%] w-[34%] place-items-center rounded-full font-semibold leading-none text-bg shadow-[0_0_8px_currentColor] text-[clamp(8px,1.4cqw,13px)] ${
@@ -36,7 +40,7 @@ export function WorldTileBadges({ tile, mark, hideCamp = false }: { tile: TileVi
               : `absolute bottom-[8%] left-[8%] h-[14%] w-[14%] rounded-full opacity-80 ${mark.kind === 'bandit' ? 'bg-warn' : 'bg-gold'}`
           }
         >
-          {mark.current ? (mark.kind === 'bandit' ? '寇' : '商') : null}
+          {mark.current ? (mark.kind === 'bandit' ? glyphs.bandit : glyphs.caravan) : null}
         </span>
       ) : null}
     </>

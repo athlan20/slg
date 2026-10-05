@@ -4,10 +4,9 @@
  */
 
 import type { NpcAttackWarningPushData, TroopKind } from '../api/protocol';
-import { DEFENSE_COPY } from '../copy-defense';
 import { formatClock, formatDurationText } from '../api/mapping';
-import { COPY, TERRAIN_LABEL } from '../copy';
-import { WARN_COPY } from '../copy-pages';
+import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import { useNow } from '../state/useNow';
 import { Modal } from './ui/Modal';
 
@@ -19,6 +18,8 @@ interface NpcWarningModalProps {
 }
 
 export function NpcWarningModal({ warning, onDismiss, onReinforce }: NpcWarningModalProps) {
+  const copy = useCopy();
+  const { COPY, DEFENSE_COPY, EXTRA_PANEL, TERRAIN_LABEL, WARN_COPY } = copy;
   // 到达倒计时本地推进；到点后战斗由服务端结算，战报推送随后到达
   const now = useNow(true);
   const secondsLeft = Math.max(0, Math.ceil((Date.parse(warning.arriveAt) - now) / 1000));
@@ -35,7 +36,7 @@ export function NpcWarningModal({ warning, onDismiss, onReinforce }: NpcWarningM
         {warning.attacker ? (
           <p role="NPC来袭预警弹窗-进攻方">
             {COPY.npcWarning.attackerLabel}
-            {COPY.npcWarning.attackerRow(warning.attacker.username, warning.attacker.cityName)}
+            {COPY.npcWarning.attackerRow(warning.attacker.username, tName(warning.attacker.cityName))}
           </p>
         ) : null}
         <p>
@@ -51,15 +52,15 @@ export function NpcWarningModal({ warning, onDismiss, onReinforce }: NpcWarningM
         {warning.intel === 'kinds' && warning.armyKinds ? (
           <p role="NPC来袭预警弹窗-兵种估算">
             {DEFENSE_COPY.warning.kindsLabel}
-            {(Object.entries(warning.armyKinds) as Array<[TroopKind, { min: number; max: number }]>).map(([kind, range]) => DEFENSE_COPY.warning.kindRange(kind, range.min, range.max)).join('、')}
-            <span className="ml-1 text-faint">（{DEFENSE_COPY.warning.beaconNote(warning.beaconLevel ?? 0)}）</span>
+            {(Object.entries(warning.armyKinds) as Array<[TroopKind, { min: number; max: number }]>).map(([kind, range]) => DEFENSE_COPY.warning.kindRange(kind, range.min, range.max)).join(EXTRA_PANEL.joiners.enum)}
+            <span className="ml-1 text-faint">{EXTRA_PANEL.joiners.paren(DEFENSE_COPY.warning.beaconNote(warning.beaconLevel ?? 0))}</span>
           </p>
         ) : null}
         {warning.intel === 'exact' && warning.army ? (
           <p role="NPC来袭预警弹窗-精确编成">
             {DEFENSE_COPY.warning.exactLabel}
-            {(Object.entries(warning.army) as Array<[TroopKind, number]>).map(([kind, count]) => DEFENSE_COPY.warning.exactRow(kind, count)).join('、')}
-            <span className="ml-1 text-faint">（{DEFENSE_COPY.warning.beaconNote(warning.beaconLevel ?? 0)}）</span>
+            {(Object.entries(warning.army) as Array<[TroopKind, number]>).map(([kind, count]) => DEFENSE_COPY.warning.exactRow(kind, count)).join(EXTRA_PANEL.joiners.enum)}
+            <span className="ml-1 text-faint">{EXTRA_PANEL.joiners.paren(DEFENSE_COPY.warning.beaconNote(warning.beaconLevel ?? 0))}</span>
           </p>
         ) : null}
       </div>

@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ApiClient } from '../../api/client';
 import { Op } from '../../api/protocol';
-import { GOOGLE_COPY } from '../../copy-google';
+import { useCopy } from '../../i18n/bundle';
 import { googleErrorText } from '../../api/errorText';
 import { renderGoogleButton } from '../../state/googleGsi';
 
@@ -18,6 +18,8 @@ interface GoogleLoginSectionProps {
 }
 
 export function GoogleLoginSection({ clientId, connect, onToken }: GoogleLoginSectionProps) {
+  const copy = useCopy();
+  const { GOOGLE_COPY } = copy;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -68,7 +70,8 @@ export function GoogleLoginSection({ clientId, connect, onToken }: GoogleLoginSe
     return () => {
       alive = false;
     };
-  }, [clientId]);
+    // GOOGLE_COPY 进依赖：语言切换时按新文案重建按钮
+  }, [clientId, GOOGLE_COPY]);
 
   if (failed) {
     return (

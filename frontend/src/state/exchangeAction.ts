@@ -5,7 +5,7 @@
 import { ApiClient } from '../api/client';
 import { Op, type CityView } from '../api/protocol';
 import { exchangeErrorText } from '../api/mapping';
-import { COPY, RESOURCE_LABEL } from '../copy';
+import { getCopy } from '../i18n/bundle';
 import type { Actor } from '../types';
 
 /** 可兑换的基础资源（金币不可逆兑） */
@@ -25,6 +25,7 @@ export function createExchangeAction(deps: ExchangeActionDeps): {
 
   /** 发起兑换：成功返回 null（弹窗关闭），失败返回人读错误（弹窗内展示） */
   const exchangeGold = async (resource: ExchangeResource, amount: number): Promise<string | null> => {
+    const { COPY, RESOURCE_LABEL } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) {
       return COPY.session.connectFailed;

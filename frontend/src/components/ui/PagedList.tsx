@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { PAGED_COPY } from '../../copy-ui';
+import { useCopy } from '../../i18n/bundle';
 
 interface PagedListProps<T> {
   /** 分页列表的 role 名（翻页器自动命名为「{role}-分页器」） */
@@ -38,6 +38,8 @@ export function PagedList<T>({
   onLoadMore,
   className = '',
 }: PagedListProps<T>) {
+  const copy = useCopy();
+  const { PAGED_COPY } = copy;
   const listRef = useRef<HTMLDivElement | null>(null);
   /** 每页条数；null = 尚未测量（此时只渲染第一条量行高） */
   const [per, setPer] = useState<number | null>(null);

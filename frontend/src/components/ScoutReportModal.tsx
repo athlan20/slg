@@ -5,10 +5,10 @@
  *  事件流 / 战报面板 / 地块详情三处共用。
  */
 
-import { TECH_COPY } from '../copy-tech';
 import { Modal } from './ui/Modal';
 import { TROOP_KINDS, TROOP_POWER, type ArmyCounts, type CityView, type ScoutIntel } from '../api/protocol';
-import { COPY, RESOURCE_LABEL, TERRAIN_LABEL, TROOP_LABEL } from '../copy';
+import { getCopy, useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 
 interface ScoutReportModalProps {
   intel: ScoutIntel;
@@ -27,6 +27,7 @@ function armyPower(army: ArmyCounts): number {
 
 /** 相对时间：「X 分钟前」（超过 1 小时显示「X 小时 Y 分钟前」，超过 1 天显示「X 天前」） */
 export function relativeAgo(iso: string, now: number): string {
+  const { COPY, EXTRA_PANEL } = getCopy();
   const ts = Date.parse(iso);
   if (!Number.isFinite(ts)) {
     return '';
@@ -34,7 +35,7 @@ export function relativeAgo(iso: string, now: number): string {
   const diff = Math.max(0, now - ts);
   const minutes = Math.floor(diff / 60_000);
   if (minutes < 1) {
-    return '刚刚';
+    return EXTRA_PANEL.scoutReport.justNow;
   }
   if (minutes < 60) {
     return COPY.scoutReport.minutesAgo(minutes);
@@ -48,6 +49,7 @@ export function relativeAgo(iso: string, now: number): string {
 
 /** 战力对比结论：比值阈值给人读判断（粗估，城墙减伤以乘数近似折算进守方战力） */
 function verdictOf(myPower: number, defenderPower: number, wallPercent: number): { text: string; tone: 'ok' | 'warn' | 'error' } {
+  const { COPY } = getCopy();
   const adjusted = defenderPower * (1 + wallPercent / 100);
   const ratio = adjusted > 0 ? myPower / adjusted : Infinity;
   if (ratio >= 1.5) {
@@ -60,6 +62,8 @@ function verdictOf(myPower: number, defenderPower: number, wallPercent: number):
 }
 
 export function ScoutReportModal({ intel, city, onClose }: ScoutReportModalProps) {
+  const copy = useCopy();
+  const { COPY, RESOURCE_LABEL, TECH_COPY, TERRAIN_LABEL, TROOP_LABEL } = copy;
   const now = Date.now();
   const garrisonRows = TROOP_KINDS.filter((kind) => (intel.garrison[kind] ?? 0) > 0);
   // 侦察科技决定详细度（v27 AISLG-77）：rough 只给总兵力范围、kinds 兵种近似、缺省 / exact 精确
@@ -81,7 +85,7 @@ export function ScoutReportModal({ intel, city, onClose }: ScoutReportModalProps
           <span className="tag actor-system mr-2">{COPY.scoutReport.title}</span>
           {TERRAIN_LABEL[intel.terrain]}
           {intel.level > 0 ? ` Lv${intel.level}` : ''}
-          {intel.owner ? COPY.scoutReport.ownerRow(`${intel.owner.username} · ${intel.owner.cityName}`) : ''}
+          {intel.owner ? COPY.scoutReport.ownerRow(`${intel.owner.username} · ${tName(intel.owner.cityName)}`) : ''}
           <span className="ml-2 font-mono text-[12px] font-normal text-faint">
             {COPY.scoutReport.location(intel.x, intel.y)} · {COPY.scoutReport.scoutedAtAgo(relativeAgo(intel.scoutedAt, now))}
           </span>

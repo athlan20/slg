@@ -4,7 +4,7 @@
 
 import { ApiClient } from '../api/client';
 import { Op } from '../api/protocol';
-import { COPY } from '../copy';
+import { getCopy } from '../i18n/bundle';
 import type { Actor } from '../types';
 
 export interface TruceActionDeps {
@@ -20,6 +20,7 @@ export function createTruceAction(deps: TruceActionDeps): {
 
   /** 开启免战：成功返回 null，失败返回人读错误（按钮旁展示） */
   const startTruce = async (): Promise<string | null> => {
+    const { COPY } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) {
       return COPY.session.connectFailed;

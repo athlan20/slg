@@ -10,7 +10,9 @@ import { useGame } from '../../state/GameContext';
 import { useHeroPick } from '../../state/heroContext';
 import { interceptCandidates } from '../../state/interceptPlan';
 import { useNow } from '../../state/useNow';
-import { TARGET_COPY } from '../../copy-pages';
+import { useCopy } from '../../i18n/bundle';
+// role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
+import { TARGET_COPY as TARGET_COPY_ZH } from '../../copy-pages';
 import { InterceptForm } from './forms/InterceptForm';
 import { MarchForm } from './forms/MarchForm';
 import { RecallForm } from './forms/RecallForm';
@@ -22,6 +24,8 @@ import { TargetHeader } from './TargetHeader';
 type Act = 'plunder' | 'occupy' | 'scout' | 'clear' | 'intercept' | 'reinforce' | 'recall' | 'transfer' | 'transport';
 
 export function TargetPanel() {
+  const copy = useCopy();
+  const { TARGET_COPY } = copy;
   const { session, marchOrigin } = useGame();
   const { world, city } = session;
   const hero = useHeroPick();
@@ -134,7 +138,7 @@ export function TargetPanel() {
                 <button
                   key={item}
                   type="button"
-                  role={`选中详情-操作-${TARGET_COPY.actions[item]}`}
+                  role={`选中详情-操作-${TARGET_COPY_ZH.actions[item]}`}
                   aria-pressed={item === current}
                   onClick={() => setAct(item)}
                   className={`cursor-pointer rounded border px-2.5 py-0.5 text-[12px] ${

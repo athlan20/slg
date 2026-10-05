@@ -12,7 +12,7 @@ import {
 } from '../api/protocol';
 import { formatClock, formatDurationText } from '../api/format';
 import { marchBonusPercent, marchTravelSeconds } from '../api/marchPlan';
-import { MOVING_COPY } from '../copy-moving';
+import { getCopy } from '../i18n/bundle';
 
 export interface InterceptCandidate {
   target: MovingTargetView;
@@ -44,6 +44,7 @@ export function interceptVerdict(
   now: number,
   arriveMs: number | null,
 ): InterceptVerdict | null {
+  const { MOVING_COPY } = getCopy();
   const currentIndex = movingIndexAt(target, now) ?? 0;
   const reach = reachWindowOf(target, x, y, currentIndex);
   if (arriveMs === null || !reach) {

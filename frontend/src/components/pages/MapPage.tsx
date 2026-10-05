@@ -1,8 +1,7 @@
 /** 地图页：左 1fr = 地图卡；右 360px = 选中目标详情与就地操作（未选中时是军情摘要 + 流寇商队列表）。 */
 
 import { useEffect } from 'react';
-import { TARGET_COPY, SUMMARY_COPY } from '../../copy-pages';
-import { MOVING_COPY } from '../../copy-moving';
+import { useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
 import { MilitarySummary } from '../intel/MilitarySummary';
 import { MapCard } from '../map/MapCard';
@@ -12,6 +11,8 @@ import { Card } from '../ui/Card';
 import { PageGrid } from './PageGrid';
 
 export function MapPage() {
+  const copy = useCopy();
+  const { EXTRA_PANEL, MOVING_COPY, NAV_COPY, SUMMARY_COPY, TARGET_COPY } = copy;
   const { session } = useGame();
   const world = session.world;
   const hasTile = world.selected !== null;
@@ -32,10 +33,11 @@ export function MapPage() {
       forceTab={hasTile ? 'detail' : null}
       hideTabs
       blocks={[
-        { key: 'map', label: '地图', node: <MapCard role="地图页-地图卡" /> },
+        { key: 'map', label: '地图', tab: NAV_COPY.pages.map.label, node: <MapCard role="地图页-地图卡" /> },
         {
           key: 'detail',
           label: '详情',
+          tab: EXTRA_PANEL.pageTabs.detail,
           node: hasTile ? (
             <Card role="地图页-选中详情">
               <TargetPanel />

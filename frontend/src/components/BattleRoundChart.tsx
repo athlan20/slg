@@ -4,7 +4,7 @@
  */
 
 import type { BattleReportView } from '../api/protocol';
-import { COPY } from '../copy';
+import { useCopy } from '../i18n/bundle';
 
 /** SVG 画布（viewBox 固定，随容器宽度整体缩放；描边用 non-scaling-stroke 保持 1px） */
 const W = 320;
@@ -16,6 +16,8 @@ interface BattleRoundChartProps {
 }
 
 export function BattleRoundChart({ report }: BattleRoundChartProps) {
+  const copy = useCopy();
+  const { COPY } = copy;
   // 视角换算：roundLog 的 attacker/defender 是绝对攻守身份，我方/敌方按 role 选边
   const mineIsAttacker = report.role === 'attacker';
   let myCum = 0;

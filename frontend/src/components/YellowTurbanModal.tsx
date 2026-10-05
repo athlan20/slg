@@ -6,7 +6,8 @@
 import { useState } from 'react';
 import { formatClock, formatDurationText } from '../api/format';
 import type { YellowTurbanState } from '../api/protocol';
-import { YT_COPY } from '../copy-yt';
+import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import { useNav } from '../state/NavContext';
 import { useNow } from '../state/useNow';
 import type { WorldSession } from '../state/worldSession';
@@ -17,6 +18,7 @@ type Tab = 'camps' | 'top' | 'rewards';
 
 export function YellowTurbanModal({ state, world, onClose }: { state: YellowTurbanState | null; world: WorldSession; onClose: () => void }) {
   const { go } = useNav();
+  const { YT_COPY } = useCopy();
   const [tab, setTab] = useState<Tab>('camps');
   const event = state?.event ?? null;
   const active = event?.status === 'active';
@@ -54,7 +56,7 @@ export function YellowTurbanModal({ state, world, onClose }: { state: YellowTurb
               [
                 ['camps', YT_COPY.panel.campsTitle],
                 ['top', YT_COPY.panel.topTitle],
-                ['rewards', YT_COPY.panel.rewardsTitle.replace(/（.*）/, '')],
+                ['rewards', YT_COPY.panel.rewardsTab],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -78,7 +80,7 @@ export function YellowTurbanModal({ state, world, onClose }: { state: YellowTurb
                 renderRow={(camp) => (
                   <div role="黄巾之乱-营地条目" className="flex items-center justify-between gap-2 border-b border-line-soft py-1 text-[12.5px]">
                     <span className={`min-w-0 truncate ${camp.tier === 'boss' ? 'text-gold' : 'text-warn'}`}>
-                      {YT_COPY.panel.campRow(camp.label, camp.x, camp.y)}
+                      {YT_COPY.panel.campRow(tName(camp.label), camp.x, camp.y)}
                       <span className="ml-1.5 text-faint">
                         {YT_COPY.panel.strength(camp.garrisonTotal.min, camp.garrisonTotal.max)}
                         {camp.nextGrowAt ? ` · ${YT_COPY.panel.growIn(remainingOf(camp.nextGrowAt))}` : ''}
@@ -120,7 +122,7 @@ export function YellowTurbanModal({ state, world, onClose }: { state: YellowTurb
                 role="黄巾之乱-奖励-列表"
                 items={state.rewards}
                 keyOf={(tier) => tier.label}
-                renderRow={(tier) => <p className="border-b border-line-soft py-1 text-[12.5px] text-dim">{YT_COPY.panel.rewardRow(tier.label, tier.reward.gold, tier.reward.wood)}</p>}
+                renderRow={(tier) => <p className="border-b border-line-soft py-1 text-[12.5px] text-dim">{YT_COPY.panel.rewardRow(tName(tier.label), tier.reward.gold, tier.reward.wood)}</p>}
               />
             </div>
           ) : null}

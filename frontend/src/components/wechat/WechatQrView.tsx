@@ -3,7 +3,7 @@
 
 import type { WxQrPhase } from '../../state/useWechatQr';
 import { useNow } from '../../state/useNow';
-import { WECHAT_COPY } from '../../copy-wechat';
+import { useCopy } from '../../i18n/bundle';
 import type { WxQrPurpose } from '../../api/protocol-wechat';
 
 interface WechatQrViewProps {
@@ -19,6 +19,8 @@ function remainingSeconds(expiresAt: number, now: number): number | null {
 }
 
 export function WechatQrView({ purpose, phase, onRefresh }: WechatQrViewProps) {
+  const copy = useCopy();
+  const { WECHAT_COPY } = copy;
   const now = useNow(phase.kind === 'ready');
   const dim = phase.kind !== 'ready';
   const statusText = (() => {

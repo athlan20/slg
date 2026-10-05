@@ -6,15 +6,12 @@
  *  从 WorldDetailPanel 拆出以控制单文件行数；数据来自会话切片 worldSession。
  */
 
-import { MOVING_COPY } from '../copy-moving';
-import { YT_COPY } from '../copy-yt';
 import { useEffect } from 'react';
-import { INTEL_COPY } from '../copy-pages';
-import { Card } from './ui/Card';
-import { PagedList } from './ui/PagedList';
 import { TROOP_KINDS, type BattleReportView, type TroopKind } from '../api/protocol';
 import { formatReportTime } from '../api/mapping';
-import { COPY, TERRAIN_LABEL, TROOP_LABEL } from '../copy';
+import { getCopy, useCopy } from '../i18n/bundle';
+import { Card } from './ui/Card';
+import { PagedList } from './ui/PagedList';
 import { useBattleReportModal } from '../state/battleReportModal';
 import { useScoutReportModal } from '../state/scoutReportModal';
 import type { ScoutRecord, WorldSession } from '../state/worldSession';
@@ -27,11 +24,13 @@ interface WorldReportsPanelProps {
 
 /** 非零损失的编队摘要（战报列表行用）：「义兵×10 弓箭兵×2」 */
 function armyLosses(army: Record<TroopKind, number>): string {
+  const { TROOP_LABEL, EXTRA_MAP } = getCopy();
   const parts = TROOP_KINDS.filter((kind) => army[kind] > 0).map((kind) => `${TROOP_LABEL[kind].name}×${army[kind]}`);
-  return parts.length > 0 ? parts.join(' ') : '无';
+  return parts.length > 0 ? parts.join(' ') : EXTRA_MAP.reports.lossesNone;
 }
 
 function reportKindLabel(report: BattleReportView): string {
+  const { COPY, MOVING_COPY, YT_COPY } = getCopy();
   if (report.kind === 'intercept') {
     return MOVING_COPY.report.kind;
   }
@@ -49,11 +48,14 @@ function reportKindLabel(report: BattleReportView): string {
 
 /** 侦察记录行摘要的目标描述：「森林 Lv3」/「NPC 城池 Lv2」 */
 function scoutTargetLabel(record: ScoutRecord): string {
+  const { COPY, TERRAIN_LABEL } = getCopy();
   const base = record.intel.kind === 'npc_city' ? COPY.worldMap.reportKindNpcCity : TERRAIN_LABEL[record.intel.terrain];
   return record.intel.level > 0 ? `${base} Lv${record.intel.level}` : base;
 }
 
 export function WorldReportsPanel({ world, onSeen }: WorldReportsPanelProps) {
+  const copy = useCopy();
+  const { COPY, INTEL_COPY, EXTRA_MAP } = copy;
   const { openBattleReport } = useBattleReportModal();
   const { openScoutReport } = useScoutReportModal();
 
@@ -116,7 +118,7 @@ export function WorldReportsPanel({ world, onSeen }: WorldReportsPanelProps) {
             // attacker/defender 是绝对攻守身份；列表展示按 role 选边后的「对方」与我方损失
             const opponent = report.role === 'attacker' ? report.defender : report.attacker;
             const myLosses = report.role === 'attacker' ? report.attacker.losses : report.defender.losses;
-            const result = report.endReason === 'no_contact' ? (report.contact === 'gone' ? '消失' : '扑空') : report.won ? COPY.worldMap.reportWon : COPY.worldMap.reportLost;
+            const result = report.endReason === 'no_contact' ? (report.contact === 'gone' ? EXTRA_MAP.reports.resultGone : EXTRA_MAP.reports.resultMissed) : report.won ? COPY.worldMap.reportWon : COPY.worldMap.reportLost;
             const sub = `(${report.x},${report.y}) · ${COPY.battleReport.roundsMeta(report.rounds)} · ${COPY.worldMap.reportMyLosses(armyLosses(myLosses))}`;
             return (
               <button
@@ -143,7 +145,7 @@ export function WorldReportsPanel({ world, onSeen }: WorldReportsPanelProps) {
           }
           const record = row.scout;
           const garrisonTotal = TROOP_KINDS.reduce((sum, kind) => sum + Math.max(0, record.intel.garrison[kind] ?? 0), 0);
-          const sub = `(${record.intel.x},${record.intel.y})${record.intel.wallDefensePercent > 0 ? ` · 城墙 ${record.intel.wallDefensePercent}%` : ''}`;
+          const sub = `(${record.intel.x},${record.intel.y})${record.intel.wallDefensePercent > 0 ? ` · ${EXTRA_MAP.reports.wallShort(record.intel.wallDefensePercent)}` : ''}`;
           return (
             <button
               type="button"

@@ -7,9 +7,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../state/GameContext';
 import { useAuthConfig } from '../../state/useAuthConfig';
 import { renderGoogleButton } from '../../state/googleGsi';
-import { GOOGLE_COPY } from '../../copy-google';
+import { useCopy } from '../../i18n/bundle';
 
 export function GoogleBindBlock() {
+  const copy = useCopy();
+  const { GOOGLE_COPY } = copy;
   const { session } = useGame();
   const { config } = useAuthConfig();
   const bound = session.agent?.googleBound ?? false;

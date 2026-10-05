@@ -2,15 +2,16 @@
  *  一屏地图里要尽量少遮挡：紧凑小字、自动换行，不含键盘说明（放在悬浮提示里）。
  */
 
-import { COPY, TERRAIN_LABEL } from '../copy';
+import { useCopy } from '../i18n/bundle';
 import { TERRAIN_KINDS } from '../api/protocol';
-import { CITY_COPY } from '../copy-cities';
 import { CityMark, TERRAIN_CLASS, TerrainIcon } from './worldMapMarks';
 
 const itemCls = 'flex items-center gap-1 whitespace-nowrap text-[10.5px] text-dim';
 const swatchCls = 'grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border border-line-soft';
 
 export function WorldMapLegend() {
+  const copy = useCopy();
+  const { COPY, TERRAIN_LABEL, CITY_COPY } = copy;
   return (
     <div role="世界地图图例" className="flex flex-col gap-1">
       <ul role="世界地图图例-地形" aria-label={COPY.worldMap.legendTerrain} className="flex flex-wrap gap-x-2.5 gap-y-1">

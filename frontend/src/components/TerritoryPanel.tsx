@@ -1,14 +1,15 @@
 /** 领地卡（军队页右）：本城占领的野地一览——地形 / 等级 / 坐标 / 加成 / 连片标注 / 驻军；
  *  点「定位」在世界地图居中并选中该地块（跳地图页，可就地增援 / 撤回驻军）。数据来自城池状态，占领 / 失守后自动刷新。 */
 
-import { COPY, RESOURCE_LABEL, TERRAIN_LABEL } from '../copy';
-import { ARMY_COPY } from '../copy-pages';
+import { useCopy } from '../i18n/bundle';
 import { useGame } from '../state/GameContext';
 import { useNav } from '../state/NavContext';
 import { Card } from './ui/Card';
 import { PagedList } from './ui/PagedList';
 
 export function TerritoryPanel() {
+  const copy = useCopy();
+  const { COPY, RESOURCE_LABEL, TERRAIN_LABEL, ARMY_COPY } = copy;
   const { session } = useGame();
   const { go } = useNav();
   const city = session.city;

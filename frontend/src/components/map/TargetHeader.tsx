@@ -4,9 +4,8 @@
 
 import { useState } from 'react';
 import { TROOP_KINDS, type CityView, type TileDetailView } from '../../api/protocol';
-import { COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL } from '../../copy';
-import { TARGET_COPY } from '../../copy-pages';
-import { TECH_COPY } from '../../copy-tech';
+import { getCopy, useCopy } from '../../i18n/bundle';
+import { tName } from '../../i18n/names';
 import { useScoutReportModal } from '../../state/scoutReportModal';
 import type { WorldSession } from '../../state/worldSession';
 import { FamousCityNote } from '../FamousCityNote';
@@ -30,22 +29,27 @@ interface TargetHeaderProps {
 }
 
 function iconOf(detail: TileDetailView, mover: 'caravan' | 'bandit' | null, isOwnCity: boolean): string {
+  // 非组件辅助：体内取当前语言文案包（模块顶层严禁取）
+  const { TERRAIN_LABEL, EXTRA_MAP } = getCopy();
+  const glyphs = EXTRA_MAP.tileGlyphs;
   if (mover) {
-    return mover === 'bandit' ? '寇' : '商';
+    return mover === 'bandit' ? glyphs.bandit : glyphs.caravan;
   }
   if (detail.camp) {
-    return detail.camp.tier === 'boss' ? '巢' : '巾';
+    return detail.camp.tier === 'boss' ? glyphs.ytBoss : glyphs.ytCamp;
   }
   if (detail.kind === 'city') {
-    return isOwnCity ? '城' : '敌';
+    return isOwnCity ? glyphs.city : glyphs.enemy;
   }
   if (detail.kind === 'npc_city') {
-    return detail.famous ? '名' : 'N';
+    return detail.famous ? glyphs.famous : 'N';
   }
-  return (TERRAIN_LABEL[detail.terrain] ?? '野').slice(0, 1);
+  return (TERRAIN_LABEL[detail.terrain] ?? glyphs.wild).slice(0, 1);
 }
 
 export function TargetHeader({ world, city, x, y, detail, origin, now, mover, isOwnCity, onClose }: TargetHeaderProps) {
+  const copy = useCopy();
+  const { COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY } = copy;
   const { openScoutReport } = useScoutReportModal();
   const [lookup, setLookup] = useState<'idle' | 'loading' | 'missing'>('idle');
 
@@ -72,10 +76,10 @@ export function TargetHeader({ world, city, x, y, detail, origin, now, mover, is
     : detail.camp
       ? detail.camp.label
       : detail.kind === 'city'
-        ? (detail.owner?.cityName ?? TILE_KIND_LABEL.city)
+        ? (detail.owner ? tName(detail.owner.cityName) : TILE_KIND_LABEL.city)
         : detail.kind === 'npc_city'
           ? detail.famous
-            ? detail.famous.name
+            ? tName(detail.famous.name)
             : `${TILE_KIND_LABEL.npc_city} Lv${detail.level}`
           : `${TERRAIN_LABEL[detail.terrain]} Lv${detail.level}`;
   const distance = origin ? Math.abs(x - origin.x) + Math.abs(y - origin.y) : null;
@@ -83,7 +87,7 @@ export function TargetHeader({ world, city, x, y, detail, origin, now, mover, is
   const garrison = !detail
     ? TARGET_COPY.unknown
     : range
-      ? TECH_COPY.scout.garrisonRange(range.min, range.max).replace('总兵力', '')
+      ? TECH_COPY.scout.garrisonRangeShort(range.min, range.max)
       : detail.kind === 'city' && detail.garrison <= 0
         ? TARGET_COPY.unknown
         : String(TROOP_KINDS.reduce((sum, kind) => sum + (detail.garrisonDetail?.[kind] ?? 0), 0) || detail.garrison);
@@ -145,8 +149,8 @@ export function TargetHeader({ world, city, x, y, detail, origin, now, mover, is
           </div>
           <div role="世界地图详情区-地块摘要" className="flex flex-col gap-1 text-[11.5px]">
             {detail.kind !== 'npc_city' ? (
-              <p className="truncate text-dim" title={detail.owner ? `${detail.owner.username} · ${detail.owner.cityName}` : undefined}>
-                {detail.owner ? COPY.worldMap.ownerRow(`${detail.owner.username} · ${detail.owner.cityName}`) : COPY.worldMap.ownerNone}
+              <p className="truncate text-dim" title={detail.owner ? `${detail.owner.username} · ${tName(detail.owner.cityName)}` : undefined}>
+                {detail.owner ? COPY.worldMap.ownerRow(`${detail.owner.username} · ${tName(detail.owner.cityName)}`) : COPY.worldMap.ownerNone}
               </p>
             ) : null}
             {detail.famous ? <FamousCityNote famous={detail.famous} /> : null}

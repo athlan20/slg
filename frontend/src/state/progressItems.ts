@@ -3,8 +3,7 @@
 
 import type { CityView, InitiatorRole, MarchView, ResearchView } from '../api/protocol';
 import { marchLabel } from '../components/worldPanelText';
-import { BUILDING_LABEL, TROOP_LABEL } from '../copy';
-import { TECH_COPY } from '../copy-tech';
+import { getCopy } from '../i18n/bundle';
 
 export type Lane = 'build' | 'recruit' | 'tech' | 'march';
 
@@ -41,6 +40,7 @@ export function activeMarches(city: CityView): MarchView[] {
 }
 
 export function buildProgressItems(city: CityView | null, research: ResearchView | null, now: number): ProgressItem[] {
+  const { BUILDING_LABEL, TROOP_LABEL, TECH_COPY } = getCopy();
   if (!city) {
     return [];
   }

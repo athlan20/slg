@@ -4,8 +4,7 @@
 
 import { useRef, useState } from 'react';
 import type { CityView, NpcAttackWarningPushData } from '../../api/protocol';
-import { COPY } from '../../copy';
-import { NAV_COPY, TOP_COPY } from '../../copy-ui';
+import { useCopy } from '../../i18n/bundle';
 import type { ExchangeResource } from '../../state/exchangeAction';
 import type { PageKey } from '../../state/usePage';
 import { TruceShieldBadge } from '../TruceShieldBadge';
@@ -30,6 +29,8 @@ const topBtn =
   'cursor-pointer rounded-[5px] border border-line bg-panel-2 px-2.5 py-1 text-[12px] transition-colors hover:border-accent-dim hover:text-accent';
 
 export function TopBar({ page, city, incoming, onOpenWarning, onOpenLeaderboard, onExchange, exchangeRequest, onStartTruce }: TopBarProps) {
+  const copy = useCopy();
+  const { COPY, NAV_COPY, TOP_COPY } = copy;
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [lastRequest, setLastRequest] = useState(exchangeRequest);
   const anchorRef = useRef<HTMLButtonElement | null>(null);

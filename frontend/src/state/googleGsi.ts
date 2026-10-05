@@ -1,6 +1,9 @@
 // Google Identity Services（GSI）脚本加载器（v44，AISLG-127）：登录页与账号设置的绑定块共用。
 // 脚本 https://accounts.google.com/gsi/client 在国内直连下加载不出来——加载失败要能落到
 // 「改用账号密码」的人读提示，而不是整页白等。加载一次后复用同一个 Promise。
+// 错误提示按界面语言（AISLG-137）：抛错时刻经 getCopy() 取当前语言包。
+
+import { getCopy } from '../i18n/bundle';
 
 /** GSI 回调给的凭证响应（只用到 credential） */
 export interface GsiCredentialResponse {
@@ -39,7 +42,7 @@ export function loadGoogleGsi(): Promise<GoogleGsi> {
       script.onload = null;
       script.onerror = null;
       loadPromise = null;
-      reject(new Error('Google 脚本加载超时'));
+      reject(new Error(getCopy().EXTRA_STATE.state.gsiTimeout));
     }, LOAD_TIMEOUT_MS);
     script.onload = () => {
       window.clearTimeout(timer);
@@ -47,13 +50,13 @@ export function loadGoogleGsi(): Promise<GoogleGsi> {
         resolve(window.google);
       } else {
         loadPromise = null;
-        reject(new Error('Google 脚本已加载但初始化失败'));
+        reject(new Error(getCopy().EXTRA_STATE.state.gsiInitFailed));
       }
     };
     script.onerror = () => {
       window.clearTimeout(timer);
       loadPromise = null;
-      reject(new Error('Google 脚本加载失败（需要能访问 Google 的网络）'));
+      reject(new Error(getCopy().EXTRA_STATE.state.gsiLoadFailed));
     };
     if (!existing) {
       script.id = SCRIPT_ID;

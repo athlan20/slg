@@ -6,8 +6,10 @@ import { useState, type ReactNode } from 'react';
 
 export interface PageBlock {
   key: string;
-  /** 手机分段条上的名字 */
+  /** 手机分段条上的名字（role 定位也用它，保持中文） */
   label: string;
+  /** 分段条显示文案（AISLG-137 双语）：由页面用文案包传入，缺省显示 label */
+  tab?: string;
   node: ReactNode;
   /** 对应 shell.css 的 grid-area 类（a-map / a-ctx / a-lanes 等） */
   areaClass?: string;
@@ -49,7 +51,7 @@ export function PageGrid({ role, layout, blocks, forceTab = null, hideTabs = fal
               className={active === block.key ? 'on' : ''}
               onClick={() => setTab(block.key)}
             >
-              {block.label}
+              {block.tab ?? block.label}
             </button>
           ))}
         </div>

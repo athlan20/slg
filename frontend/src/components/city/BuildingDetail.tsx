@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { BUILD_QUEUE_CAPACITY, BUILDING_LEVEL_MAX, type BuildingKind, type CityView, type Resources } from '../../api/protocol';
 import { upgradeChainPreview } from '../../api/chainPlan';
 import { buildingEffectText, costParts, formatDurationText } from '../../api/mapping';
-import { BUILDING_DESC, BUILDING_LABEL, COPY, buildActionText } from '../../copy';
+import { useCopy } from '../../i18n/bundle';
 import type { ConnectionStatus } from '../../state/useGameSession';
 
 interface BuildingDetailProps {
@@ -21,6 +21,8 @@ interface BuildingDetailProps {
 }
 
 export function BuildingDetail({ city, kind, connection, onClose, onStartBuild, onStartUpgrade }: BuildingDetailProps) {
+  const copy = useCopy();
+  const { BUILDING_DESC, BUILDING_LABEL, COPY, buildActionText } = copy;
   // 连升目标等级（AISLG-68）：null = 单级（当前+1）；换建筑时由父级 key 复位
   const [targetLevel, setTargetLevel] = useState<number | null>(null);
   const label = BUILDING_LABEL[kind];

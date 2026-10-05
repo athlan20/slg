@@ -1,10 +1,11 @@
-/** 皮肤切换：只写 <html data-theme>，选择存 localStorage。纯视觉，不涉及游戏数据。 */
+/** 皮肤切换：只写 <html data-theme>，选择存 localStorage。纯视觉，不涉及游戏数据。
+ *  label 双语（AISLG-137）：组件按界面语言取 label / labelEn。 */
 
 export const THEMES = [
-  { id: 'night', label: '暗夜', swatch: '#2dd4bf' },
-  { id: 'crimson', label: '赤霄', swatch: '#e8564a' },
-  { id: 'gilded', label: '鎏金', swatch: '#d9a441' },
-  { id: 'paper', label: '宣纸', swatch: '#b03a2e' },
+  { id: 'night', label: '暗夜', labelEn: 'Night', swatch: '#2dd4bf' },
+  { id: 'crimson', label: '赤霄', labelEn: 'Crimson', swatch: '#e8564a' },
+  { id: 'gilded', label: '鎏金', labelEn: 'Gilded', swatch: '#d9a441' },
+  { id: 'paper', label: '宣纸', labelEn: 'Paper', swatch: '#b03a2e' },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]['id'];

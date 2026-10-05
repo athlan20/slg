@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { useCopy } from '../i18n/bundle';
 import { MAP_ZOOM_DEFAULT, MAP_ZOOM_MAX, MAP_ZOOM_MIN, zoomStep } from '../state/mapZoom';
 
 interface MapZoomControlsProps {
@@ -14,19 +15,12 @@ interface MapZoomControlsProps {
   onZoom: (size: number, focus?: { fx: number; fy: number }) => void;
 }
 
-const TEXT = {
-  zoomIn: '放大',
-  zoomOut: '缩小',
-  reset: '复位',
-  view: (w: number, h: number) => `视野 ${w}×${h}`,
-  atMin: '已放到最大',
-  atMax: '已缩到最小',
-};
-
 const btn =
   'grid h-6 w-6 cursor-pointer place-items-center rounded border border-line bg-panel-2 font-mono text-[14px] leading-none text-dim transition-colors hover:border-accent-dim hover:text-fg disabled:cursor-not-allowed disabled:opacity-40';
 
 export function MapZoomControls({ dims, zoom, onZoom }: MapZoomControlsProps) {
+  const copy = useCopy();
+  const TEXT = copy.EXTRA_MAP.zoom;
   const size = dims === null ? null : zoom;
   const sizeRef = useRef(size);
   const zoomRef = useRef(onZoom);
@@ -72,7 +66,7 @@ export function MapZoomControls({ dims, zoom, onZoom }: MapZoomControlsProps) {
         type="button"
         role="世界地图视图-放大按钮"
         aria-label={TEXT.zoomIn}
-        title={size !== null && size <= MAP_ZOOM_MIN ? TEXT.atMin : `${TEXT.zoomIn}（Ctrl+滚轮向上 / + / 双指张开）`}
+        title={size !== null && size <= MAP_ZOOM_MIN ? TEXT.atMin : TEXT.zoomInHint}
         disabled={size === null || size <= MAP_ZOOM_MIN}
         onClick={() => onZoom(current - zoomStep(current))}
         className={btn}
@@ -86,7 +80,7 @@ export function MapZoomControls({ dims, zoom, onZoom }: MapZoomControlsProps) {
         type="button"
         role="世界地图视图-缩小按钮"
         aria-label={TEXT.zoomOut}
-        title={size !== null && size >= MAP_ZOOM_MAX ? TEXT.atMax : `${TEXT.zoomOut}（Ctrl+滚轮向下 / - / 双指捏合）`}
+        title={size !== null && size >= MAP_ZOOM_MAX ? TEXT.atMax : TEXT.zoomOutHint}
         disabled={size === null || size >= MAP_ZOOM_MAX}
         onClick={() => onZoom(current + zoomStep(current))}
         className={btn}
