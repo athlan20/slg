@@ -401,6 +401,12 @@ export interface LoginRequestData {
   token?: string;
   /** 可选（v32）：调用方手上 agent-api.md 的协议版本；低于当前版本时 Agent 连接的响应附 docNotice */
   docVersion?: number;
+  /**
+   * 可选（v50，AISLG-133）：Agent 自报的驱动模型名（如 claude-opus-5-5、gpt-5、自己写的
+   * 脚本名），1..64 字符（超长截断）。仅 asAgent=true 时生效并记到账号（以最近一次声明
+   * 为准，不填保留上次）；自报不验证，仅用于排行榜展示（标注「自报」）。玩家登录忽略。
+   */
+  agentModel?: string;
 }
 
 export interface LoginResponseData {
@@ -560,6 +566,7 @@ export type {
   ServerBroadcastPushData,
   LeaderboardKind,
   LeaderboardEntryView,
+  ModelLeaderboardEntryView,
   GetLeaderboardResponseData,
 } from './protocol-server';
 export { SERVER_BROADCAST_TYPES, isServerBroadcastType, LEADERBOARD_KINDS, isLeaderboardKind } from './protocol-server';

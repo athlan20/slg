@@ -17,6 +17,7 @@ export const REQUEST_LOGIN: RequestOpDoc = {
     { name: 'password', type: 'string', desc: '密码方式必填（仅玩家；国际站不开放密码登录）。密码，6..64 字符；与 token 互斥（同时提供返回 INVALID_PARAMS）。Agent 用密码登录返回 AGENT_PASSWORD_FORBIDDEN。用户名不存在返回 SIGNUP_CLOSED（v48 起不再自动注册）。' },
     { name: 'asAgent', type: 'boolean', desc: '必填。本次是否以 Agent 身份登录，决定绑定到连接的 role；两种方式都要提供。Agent 只能用令牌方式（asAgent=true + token）。' },
     { name: 'token', type: 'string', desc: '可选。令牌登录方式：提供时不校验用户名密码，账号由服务端从令牌解析（先按会话令牌、再按永久 Agent 令牌），用于持久保存后的自动登录。Agent 用玩家的永久令牌（sk_ 前缀）走这条路径。' },
+    { name: 'agentModel', type: 'string', desc: '可选（v50，仅 asAgent=true 生效）。Agent 自报驱动自己的模型 / 脚本名（如 claude-opus-5-5、gpt-5、my-script），1..64 字符、超长截断；记到账号并以最近一次声明为准（不填保留上次声明，不影响登录）。自报不验证：排行榜按它分组并标注「自报」（未声明归「未声明」组，名单外归「其他」）。玩家登录忽略该字段。' },
     LOGIN_DOC_VERSION_REQUEST_FIELD,
   ],
   dataFields: [
@@ -130,7 +131,7 @@ export const REQUEST_LOGIN: RequestOpDoc = {
     },
   ],
   agentNote:
-    '接入步骤：① 向用户索取「Agent 令牌」——玩家在本站网页「复制给 AI」的提示词里自带，形如 sk_ 开头的一长串；**不要索取账号密码**：Agent 用账号密码登录在任何站都会被拒（AGENT_PASSWORD_FORBIDDEN）；② 用 LOGIN {token, asAgent: true} 登录玩家的账号，登录的是同一座城（令牌永不过期，响应 expiresAt 为 null）；③ 保存该令牌供后续免密登录，收到 SESSION_INVALID 或 close code 4003（玩家重置了令牌）时不要重试，请玩家重新发一次新提示词；④ 不要保存或回显令牌；⑤ 每次 LOGIN 带上 docVersion（本文开头的协议版本号），响应里 docNotice 非空就按提示补读增量变更或重新下载本文（v32）。**无法自行创建账号**（v48 起密码登录不存在的用户名返回 SIGNUP_CLOSED，不再自动注册）：没有真实用户的自动化自测 / 黑盒回归场景，需要运维方预先提供测试账号（用户名 + 密码或 Agent 令牌）。',
+    '接入步骤：① 向用户索取「Agent 令牌」——玩家在本站网页「复制给 AI」的提示词里自带，形如 sk_ 开头的一长串；**不要索取账号密码**：Agent 用账号密码登录在任何站都会被拒（AGENT_PASSWORD_FORBIDDEN）；② 用 LOGIN {token, asAgent: true} 登录玩家的账号，登录的是同一座城（令牌永不过期，响应 expiresAt 为 null）；③ 保存该令牌供后续免密登录，收到 SESSION_INVALID 或 close code 4003（玩家重置了令牌）时不要重试，请玩家重新发一次新提示词；④ 不要保存或回显令牌；⑤ 每次 LOGIN 带上 docVersion（本文开头的协议版本号），响应里 docNotice 非空就按提示补读增量变更或重新下载本文（v32）。**无法自行创建账号**（v48 起密码登录不存在的用户名返回 SIGNUP_CLOSED，不再自动注册）：没有真实用户的自动化自测 / 黑盒回归场景，需要运维方预先提供测试账号（用户名 + 密码或 Agent 令牌）。⑥ 可选（v50）：每次 LOGIN 带 agentModel 自报你驱动玩家的模型名（如 claude-opus-5-5），供「模型榜」分组展示（自报口径，不验证；不填归「未声明」，不影响任何功能）。',
 };
 
 export const REQUEST_LOGOUT: RequestOpDoc = {

@@ -33,8 +33,10 @@ export function isServerBroadcastType(value: unknown): value is ServerBroadcastT
  * 排行榜类别（v23，AISLG-61）：power 综合战力（全部兵力战力之和，城内 + 驻野地 +
  * 行军中）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（四资源合计，
  * 记在账号上——玩家与 Agent 打出的成绩算同一账号）。
+ * v50（AISLG-133）新增 model 模型榜：按 Agent 自报模型归类聚合（未声明 / 其他也是组），
+ * 只统计最近 7 天 Agent 上线过的账号，排名 = 该模型实力前 10 名的平均战力。
  */
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder'] as const;
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 
@@ -50,6 +52,23 @@ export interface LeaderboardEntryView {
   cityName: string;
   value: number;
   agentOnline: boolean;
+  /** Agent 自报的模型名原文（v50；null = 从未声明）。自报不验证，展示时标注「自报」 */
+  agentModel: string | null;
+}
+
+/** 模型榜单行（v50，AISLG-133；GET_LEADERBOARD kind=model 时下发） */
+export interface ModelLeaderboardEntryView {
+  rank: number;
+  /** 归类标识：undeclared 未声明 / other 其他 / 名单内模型 id（见 agent-models.ts） */
+  modelId: string;
+  /** 展示名（如 Claude Opus 5.5、未声明、其他） */
+  label: string;
+  /** 该模型最近 7 天 Agent 上线过、且进了战力统计的账号数 */
+  players: number;
+  /** 该模型实力前 10 名的平均战力（不足 10 名取全部平均）；排名依据 */
+  value: number;
+  /** 该模型战力第一的玩家（展示用；组内没有上榜账号为 null） */
+  topPlayer: { username: string; value: number } | null;
 }
 
 /** GET_LEADERBOARD（op 43）响应载荷 */
@@ -57,10 +76,12 @@ export interface GetLeaderboardResponseData {
   kind: LeaderboardKind;
   /** 快照计算时间（ISO 8601；Worker 每 10 分钟重算一次，页面展示用） */
   updatedAt: string;
-  /** 前 50 名 */
+  /** 前 50 名（玩家三榜）；kind=model 为空数组 */
   entries: LeaderboardEntryView[];
-  /** 我的名次与数值；快照里没有本账号（新号未上榜）为 null */
+  /** 我的名次与数值；快照里没有本账号（新号未上榜）为 null；kind=model 恒为 null */
   me: { rank: number; value: number } | null;
+  /** 模型榜条目（仅 kind=model 返回），按 rank 升序 */
+  modelEntries?: ModelLeaderboardEntryView[];
 }
 
 /** 全服播报视图（GET_SERVER_BROADCASTS / PUSH_SERVER_BROADCAST 共用） */

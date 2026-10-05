@@ -340,7 +340,7 @@ export type {
   OfflineDigestView,
   GetOfflineReportResponseData,
 } from './protocol-agent';
-export { LEADERBOARD_KINDS, type LeaderboardKind, type LeaderboardEntryView, type GetLeaderboardResponseData, type LeaderboardView } from './protocol-server';
+export { LEADERBOARD_KINDS, type LeaderboardKind, type LeaderboardEntryView, type ModelLeaderboardEntryView, type GetLeaderboardResponseData, type LeaderboardView } from './protocol-server';
 export type {
   ServerBroadcastType,
   ServerBroadcastView,

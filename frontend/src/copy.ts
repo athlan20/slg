@@ -449,7 +449,7 @@ const WORLD_MAP = {
   lastScoutMissing: '侦察记录不在最近事件里（可重新侦察刷新情报）',
 };
 
-/** 全服排行榜弹窗（v23，AISLG-61）：三榜 + 我的名次 */
+/** 全服排行榜弹窗（v23，AISLG-61；v50 AISLG-133 新增模型榜与自报模型标注） */
 const LEADERBOARD = {
   title: '全服排行榜',
   close: '关闭排行榜',
@@ -459,13 +459,24 @@ const LEADERBOARD = {
   power: '综合战力',
   territory: '领地数量',
   plunder: '累计掠夺',
+  model: '模型榜',
   updatedAt: (time: string) => `快照 ${time}`,
   rankColumn: '名次',
   playerColumn: '玩家',
+  modelColumn: '模型（Agent 自报）',
+  modelValueColumn: '前 10 名平均战力',
   valueColumn: '数值',
   myRank: (rank: number, value: number) => `我的名次：第 ${rank} 名 · ${value}`,
   myRankNone: '暂未上榜',
   agentBadge: 'Agent',
+  /** 玩家榜上的自报模型标注（如 claude-opus-5-5·自报） */
+  agentModelBadge: (model: string) => `${model}·自报`,
+  /** 模型榜行内：该模型的账号数 */
+  modelPlayers: (count: number) => `${count} 个账号`,
+  /** 模型榜行内：该模型战力第一的玩家 */
+  modelTop: (username: string, value: number) => `第一：${username} · ${value}`,
+  /** 模型榜排名口径说明（验收：排名规则与页面说明一致） */
+  modelRule: '口径：最近 7 天 Agent 上线过的账号，按该模型实力前 10 名的平均战力排名；不声明归「未声明」，名单外归「其他」。模型为 Agent 登录时自报，未经核实。',
   empty: '榜单还没有数据（服务端每 10 分钟刷新一次）',
 };
 

@@ -305,6 +305,29 @@ CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
   computed_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_leaderboard_kind_rank ON leaderboard_snapshots (kind, computed_at DESC, rank);
+-- v50（AISLG-133）：玩家三榜条目带 Agent 自报模型（与 username 一样是展示快照；Worker 重算时回填）
+ALTER TABLE leaderboard_snapshots ADD COLUMN IF NOT EXISTS agent_model text;
+
+-- v50（AISLG-133）：Agent 自报模型（原文，限长 64，LOGIN asAgent=true 时以最近一次声明为准；
+-- 自报不验证，排行榜标注「自报」）与最近一次 Agent 登录时刻（模型榜只统计最近 7 天上线过的账号）
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS agent_model text;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS agent_last_seen_at timestamptz;
+
+-- v50（AISLG-133）：模型榜快照（与 leaderboard_snapshots 同一批重算，每行一个模型的聚合）：
+-- model_id 为归类标识（undeclared / other / 名单内模型 id，见 common/src/agent-models.ts），
+-- value = 该模型实力前 10 名的平均战力（排名依据）
+CREATE TABLE IF NOT EXISTS leaderboard_model_snapshots (
+  id bigserial PRIMARY KEY,
+  rank integer NOT NULL,
+  model_id text NOT NULL,
+  model_label text NOT NULL,
+  players integer NOT NULL,
+  top_avg_value bigint NOT NULL,
+  top_player_username text,
+  top_player_value bigint,
+  computed_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_model_rank ON leaderboard_model_snapshots (computed_at DESC, rank);
 
 -- v23（AISLG-57）：NPC 袭击预警与到达结算。袭击改为两阶段：Worker 按袭击间隔发起
 -- （选定目标并固定编成，写入本表 + 预警事件 / 推送），到达时刻（预警提前量 =

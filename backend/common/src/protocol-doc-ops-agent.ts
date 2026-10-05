@@ -207,17 +207,18 @@ export const PUSH_SERVER_BROADCAST: PushOpDoc = {
 export const REQUEST_GET_LEADERBOARD: RequestOpDoc = {
   kind: 'request',
   name: 'GET_LEADERBOARD',
-  title: '查询全服排行榜（v23，AISLG-61）',
+  title: '查询全服排行榜（v23，AISLG-61；v50 新增模型榜）',
   preAuth: false,
-  summary: `查询三个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）。返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。`,
+  summary: `查询四个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）/ **model 模型榜（v50，AISLG-133）**：把最近 7 天 Agent 上线过、且进了战力统计的账号按 Agent 自报模型（LOGIN 的 agentModel）归类分组，「未声明」与「其他」（名单外）也是组，每组排名分 = 该模型实力前 10 名的平均战力（不足 10 名取全部平均）——防止单个账号（刷小号）拉高或拉低整体。模型为**自报口径，不验证**。玩家三榜返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）；模型榜经 modelEntries 下发（entries 为空数组、me 为 null）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。`,
   requestFields: [
-    { name: 'kind', type: "'power' | 'territory' | 'plunder'", desc: '必填。榜单类别。' },
+    { name: 'kind', type: "'power' | 'territory' | 'plunder' | 'model'", desc: '必填。榜单类别；model 为按 Agent 自报模型归类的模型榜（v50）。' },
   ],
   dataFields: [
-    { name: 'kind', type: "'power' | 'territory' | 'plunder'", desc: '回显榜单类别。' },
+    { name: 'kind', type: "'power' | 'territory' | 'plunder' | 'model'", desc: '回显榜单类别。' },
     { name: 'updatedAt', type: 'string', desc: '快照计算时间（ISO 8601）。' },
-    { name: 'entries', type: 'array', desc: '前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接 }，按 rank 升序。' },
-    { name: 'me', type: 'object | null', desc: '本账号的 { rank, value }；快照里没有本账号为 null。' },
+    { name: 'entries', type: 'array', desc: '玩家三榜的前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接, agentModel 该账号 Agent 自报的模型名原文（v50，null = 从未声明；自报不验证） }，按 rank 升序；kind=model 为空数组。' },
+    { name: 'me', type: 'object | null', desc: '本账号的 { rank, value }；快照里没有本账号为 null；kind=model 恒为 null。' },
+    { name: 'modelEntries', type: 'array', desc: '仅 kind=model（v50）：模型榜条目 { rank 名次, modelId 归类标识（undeclared / other / 常见模型 id）, label 展示名（如 Claude Opus 5.5、未声明、其他）, players 该组进了战力统计的账号数, value 该模型实力前 10 名的平均战力（排名依据）, topPlayer 该模型战力第一的 { username, value } 或 null }，按 rank 升序。' },
   ],
   errors: ['INVALID_PARAMS'],
   examples: [
@@ -233,9 +234,30 @@ export const REQUEST_GET_LEADERBOARD: RequestOpDoc = {
             kind: 'power',
             updatedAt: '2026-10-01T10:00:00.000Z',
             entries: [
-              { rank: 1, accountId: ACCOUNT_ID, username: 'example-player', cityName: '主城', value: 3640, agentOnline: true },
+              { rank: 1, accountId: ACCOUNT_ID, username: 'example-player', cityName: '主城', value: 3640, agentOnline: true, agentModel: 'claude-opus-5-5' },
             ],
             me: { rank: 1, value: 3640 },
+          },
+        },
+      ],
+    },
+    {
+      caption: '查询模型榜（v50：按 Agent 自报模型分组，自报不验证）',
+      request: { op: Op.GET_LEADERBOARD, seq: 23, data: { kind: 'model' } },
+      responses: [
+        {
+          op: Op.GET_LEADERBOARD,
+          seq: 23,
+          ok: true,
+          data: {
+            kind: 'model',
+            updatedAt: '2026-10-01T10:00:00.000Z',
+            entries: [],
+            me: null,
+            modelEntries: [
+              { rank: 1, modelId: 'claude-opus-5-5', label: 'Claude Opus 5.5', players: 3, value: 3120, topPlayer: { username: 'example-player', value: 3640 } },
+              { rank: 2, modelId: 'undeclared', label: '未声明', players: 5, value: 980, topPlayer: { username: 'quiet-farmer', value: 2110 } },
+            ],
           },
         },
       ],
@@ -249,5 +271,5 @@ export const REQUEST_GET_LEADERBOARD: RequestOpDoc = {
     },
   ],
   agentNote:
-    '排行榜每 10 分钟刷新一次（updatedAt 可判断新鲜度）。战力榜可用来评估目标（对比自己与对手的兵力战力）；别刷榜——数值来自快照，高频查询只会读到同一份。',
+    '排行榜每 10 分钟刷新一次（updatedAt 可判断新鲜度）。战力榜可用来评估目标（对比自己与对手的兵力战力）；别刷榜——数值来自快照，高频查询只会读到同一份。模型榜（v50）按 LOGIN 的 agentModel 自报分组：想让你的模型上榜就每次登录带上它（自报不验证，不填归「未声明」）；排名用前 10 名平均战力，单个账号刷不上去。',
 };

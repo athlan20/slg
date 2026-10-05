@@ -4,6 +4,7 @@
 // - 登出吊销本连接所用的会话令牌并关闭连接。
 
 import { EventType, Op, type InitiatorRole } from '../../common/src/protocol';
+import { sanitizeAgentModelInput } from '../../common/src/agent-models';
 import { findAgentTokenByToken, touchAgentToken } from './agent-token';
 import { issueSessionToken, loginWithPassword, resolveSessionToken, revokeSession } from './auth';
 import type { ConnInfo, ConnectionRegistry } from './connections';
@@ -22,6 +23,8 @@ export async function handleLogin(
   seq: number | undefined,
 ): Promise<void> {
   const docVersion = readDocVersion(data);
+  // v50（AISLG-133）：Agent 可自报驱动模型；玩家登录忽略该字段（密码分支 asAgent 恒为 false）
+  const agentModel = data?.asAgent === true ? sanitizeAgentModelInput(data?.agentModel) : null;
   // 令牌登录：与密码互斥（同时提供按参数错误处理），账号由会话解析
   const token = readString(data, 'token');
   if (token !== null) {
@@ -52,6 +55,7 @@ export async function handleLogin(
         expiresAt: null,
         role: data.asAgent ? 'agent' : 'player',
         docVersion,
+        agentModel,
       });
       return;
     }
@@ -62,6 +66,7 @@ export async function handleLogin(
       expiresAt: session.expiresAt,
       role: data.asAgent ? 'agent' : 'player',
       docVersion,
+      agentModel,
     });
     return;
   }
@@ -104,6 +109,7 @@ export async function handleLogin(
     expiresAt: session.expiresAt,
     role: 'player',
     docVersion,
+    agentModel: null,
   });
 }
 
@@ -121,6 +127,8 @@ export interface LoginSuccess {
   expiresAt: Date | null;
   role: InitiatorRole;
   docVersion: number | null;
+  /** v50（AISLG-133）：Agent 本次自报的模型名（清洗后）；null = 未声明（保留上次声明） */
+  agentModel: string | null;
 }
 
 /** 两种登录方式的共同收尾：绑定连接、Agent 上线事件与推送、带令牌的成功响应 */
@@ -138,6 +146,7 @@ async function completeLogin(
   conn.sessionId = success.sessionId;
   if (success.role === 'agent') {
     await recordAgentPresence(ctx, success.account.id, EventType.AGENT_CONNECTED);
+    recordAgentModelLogin(ctx.pool, success.account.id, success.agentModel);
     const isAgentOnline = ctx.registry.agentConnections(success.account.id).length > 0;
     if (isAgentOnline !== wasAgentOnline) {
       pushAgentStatus(ctx, success.account.id, isAgentOnline);
@@ -172,6 +181,19 @@ export async function handleLogout(
 /** Agent 连接上线 / 离线时写事件并推给账号在线连接 */
 export async function recordAgentPresence(ctx: HandlerContext, accountId: string, type: EventType): Promise<void> {
   await insertEvent(ctx.pool, { accountId, type, initiator: 'agent' });
+}
+
+/**
+ * v50（AISLG-133）：Agent 登录成功后落库自报模型与上线时刻。agent_model 以最近一次
+ * 声明为准（本次没带就只刷 agent_last_seen_at，不覆盖已有声明）。与 touchAgentToken
+ * 同口径：非关键路径，失败只忽略不阻塞登录。
+ */
+function recordAgentModelLogin(pool: HandlerContext['pool'], accountId: string, agentModel: string | null): void {
+  const query =
+    agentModel !== null
+      ? `UPDATE accounts SET agent_last_seen_at = now(), agent_model = $2 WHERE id = $1`
+      : `UPDATE accounts SET agent_last_seen_at = now() WHERE id = $1`;
+  void pool.query(query, agentModel !== null ? [accountId, agentModel] : [accountId]).catch(() => undefined);
 }
 
 /**

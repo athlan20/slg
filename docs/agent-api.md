@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**49** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**50** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 49）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 50）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -390,6 +390,7 @@
 | password | string | 密码方式必填（仅玩家；国际站不开放密码登录）。密码，6..64 字符；与 token 互斥（同时提供返回 INVALID_PARAMS）。Agent 用密码登录返回 AGENT_PASSWORD_FORBIDDEN。用户名不存在返回 SIGNUP_CLOSED（v48 起不再自动注册）。 |
 | asAgent | boolean | 必填。本次是否以 Agent 身份登录，决定绑定到连接的 role；两种方式都要提供。Agent 只能用令牌方式（asAgent=true + token）。 |
 | token | string | 可选。令牌登录方式：提供时不校验用户名密码，账号由服务端从令牌解析（先按会话令牌、再按永久 Agent 令牌），用于持久保存后的自动登录。Agent 用玩家的永久令牌（sk_ 前缀）走这条路径。 |
+| agentModel | string | 可选（v50，仅 asAgent=true 生效）。Agent 自报驱动自己的模型 / 脚本名（如 claude-opus-5-5、gpt-5、my-script），1..64 字符、超长截断；记到账号并以最近一次声明为准（不填保留上次声明，不影响登录）。自报不验证：排行榜按它分组并标注「自报」（未声明归「未声明」组，名单外归「其他」）。玩家登录忽略该字段。 |
 | docVersion | number | 可选（v32）。你手上 agent-api.md 开头标注的协议版本号。低于服务端当前版本时，Agent 连接的响应附 docNotice 提示更新；非正整数视为未提供（不会因此登录失败）。建议 Agent 每次登录都带上。 |
 
 **响应 data 字段**
@@ -406,7 +407,7 @@
 
 **可能错误**：`INVALID_PARAMS`、`INVALID_CREDENTIALS`、`SIGNUP_CLOSED`、`SESSION_INVALID`、`AGENT_PASSWORD_FORBIDDEN`、`PASSWORD_LOGIN_CLOSED`（处置建议见第 4 节）
 
-**Agent 提示**：接入步骤：① 向用户索取「Agent 令牌」——玩家在本站网页「复制给 AI」的提示词里自带，形如 sk_ 开头的一长串；**不要索取账号密码**：Agent 用账号密码登录在任何站都会被拒（AGENT_PASSWORD_FORBIDDEN）；② 用 LOGIN {token, asAgent: true} 登录玩家的账号，登录的是同一座城（令牌永不过期，响应 expiresAt 为 null）；③ 保存该令牌供后续免密登录，收到 SESSION_INVALID 或 close code 4003（玩家重置了令牌）时不要重试，请玩家重新发一次新提示词；④ 不要保存或回显令牌；⑤ 每次 LOGIN 带上 docVersion（本文开头的协议版本号），响应里 docNotice 非空就按提示补读增量变更或重新下载本文（v32）。**无法自行创建账号**（v48 起密码登录不存在的用户名返回 SIGNUP_CLOSED，不再自动注册）：没有真实用户的自动化自测 / 黑盒回归场景，需要运维方预先提供测试账号（用户名 + 密码或 Agent 令牌）。
+**Agent 提示**：接入步骤：① 向用户索取「Agent 令牌」——玩家在本站网页「复制给 AI」的提示词里自带，形如 sk_ 开头的一长串；**不要索取账号密码**：Agent 用账号密码登录在任何站都会被拒（AGENT_PASSWORD_FORBIDDEN）；② 用 LOGIN {token, asAgent: true} 登录玩家的账号，登录的是同一座城（令牌永不过期，响应 expiresAt 为 null）；③ 保存该令牌供后续免密登录，收到 SESSION_INVALID 或 close code 4003（玩家重置了令牌）时不要重试，请玩家重新发一次新提示词；④ 不要保存或回显令牌；⑤ 每次 LOGIN 带上 docVersion（本文开头的协议版本号），响应里 docNotice 非空就按提示补读增量变更或重新下载本文（v32）。**无法自行创建账号**（v48 起密码登录不存在的用户名返回 SIGNUP_CLOSED，不再自动注册）：没有真实用户的自动化自测 / 黑盒回归场景，需要运维方预先提供测试账号（用户名 + 密码或 Agent 令牌）。⑥ 可选（v50）：每次 LOGIN 带 agentModel 自报你驱动玩家的模型名（如 claude-opus-5-5），供「模型榜」分组展示（自报口径，不验证；不填归「未声明」，不影响任何功能）。
 
 **示例**
 
@@ -439,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 49,
+    "protocolVersion": 50,
     "docNotice": null
   }
 }
@@ -501,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 49,
+    "protocolVersion": 50,
     "docNotice": null
   }
 }
@@ -521,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/46 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/47 补读增量）**
 
 请求：
 
@@ -532,7 +533,8 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 46
+    "docVersion": 47,
+    "agentModel": "claude-opus-5-5"
   }
 }
 ```
@@ -550,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 49,
-    "docNotice": "接口文档已从 v46 更新到 v49：请 GET /agent-api/changes/46 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 50,
+    "docNotice": "接口文档已从 v47 更新到 v50：请 GET /agent-api/changes/47 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -5010,30 +5012,31 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
-### op 43 · GET_LEADERBOARD — 查询全服排行榜（v23，AISLG-61）
+### op 43 · GET_LEADERBOARD — 查询全服排行榜（v23，AISLG-61；v50 新增模型榜）
 
 `C→S` 请求-响应 · 需登录后发送
 
-查询三个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）。返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。
+查询四个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）/ **model 模型榜（v50，AISLG-133）**：把最近 7 天 Agent 上线过、且进了战力统计的账号按 Agent 自报模型（LOGIN 的 agentModel）归类分组，「未声明」与「其他」（名单外）也是组，每组排名分 = 该模型实力前 10 名的平均战力（不足 10 名取全部平均）——防止单个账号（刷小号）拉高或拉低整体。模型为**自报口径，不验证**。玩家三榜返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）；模型榜经 modelEntries 下发（entries 为空数组、me 为 null）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。
 
 **请求字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| kind | 'power' \| 'territory' \| 'plunder' | 必填。榜单类别。 |
+| kind | 'power' \| 'territory' \| 'plunder' \| 'model' | 必填。榜单类别；model 为按 Agent 自报模型归类的模型榜（v50）。 |
 
 **响应 data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| kind | 'power' \| 'territory' \| 'plunder' | 回显榜单类别。 |
+| kind | 'power' \| 'territory' \| 'plunder' \| 'model' | 回显榜单类别。 |
 | updatedAt | string | 快照计算时间（ISO 8601）。 |
-| entries | array | 前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接 }，按 rank 升序。 |
-| me | object \| null | 本账号的 { rank, value }；快照里没有本账号为 null。 |
+| entries | array | 玩家三榜的前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接, agentModel 该账号 Agent 自报的模型名原文（v50，null = 从未声明；自报不验证） }，按 rank 升序；kind=model 为空数组。 |
+| me | object \| null | 本账号的 { rank, value }；快照里没有本账号为 null；kind=model 恒为 null。 |
+| modelEntries | array | 仅 kind=model（v50）：模型榜条目 { rank 名次, modelId 归类标识（undeclared / other / 常见模型 id）, label 展示名（如 Claude Opus 5.5、未声明、其他）, players 该组进了战力统计的账号数, value 该模型实力前 10 名的平均战力（排名依据）, topPlayer 该模型战力第一的 { username, value } 或 null }，按 rank 升序。 |
 
 **可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
 
-**Agent 提示**：排行榜每 10 分钟刷新一次（updatedAt 可判断新鲜度）。战力榜可用来评估目标（对比自己与对手的兵力战力）；别刷榜——数值来自快照，高频查询只会读到同一份。
+**Agent 提示**：排行榜每 10 分钟刷新一次（updatedAt 可判断新鲜度）。战力榜可用来评估目标（对比自己与对手的兵力战力）；别刷榜——数值来自快照，高频查询只会读到同一份。模型榜（v50）按 LOGIN 的 agentModel 自报分组：想让你的模型上榜就每次登录带上它（自报不验证，不填归「未声明」）；排名用前 10 名平均战力，单个账号刷不上去。
 
 **示例**
 
@@ -5068,13 +5071,68 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "username": "example-player",
         "cityName": "主城",
         "value": 3640,
-        "agentOnline": true
+        "agentOnline": true,
+        "agentModel": "claude-opus-5-5"
       }
     ],
     "me": {
       "rank": 1,
       "value": 3640
     }
+  }
+}
+```
+
+**查询模型榜（v50：按 Agent 自报模型分组，自报不验证）**
+
+请求：
+
+```json
+{
+  "op": 43,
+  "seq": 23,
+  "data": {
+    "kind": "model"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 43,
+  "seq": 23,
+  "ok": true,
+  "data": {
+    "kind": "model",
+    "updatedAt": "2026-10-01T10:00:00.000Z",
+    "entries": [],
+    "me": null,
+    "modelEntries": [
+      {
+        "rank": 1,
+        "modelId": "claude-opus-5-5",
+        "label": "Claude Opus 5.5",
+        "players": 3,
+        "value": 3120,
+        "topPlayer": {
+          "username": "example-player",
+          "value": 3640
+        }
+      },
+      {
+        "rank": 2,
+        "modelId": "undeclared",
+        "label": "未声明",
+        "players": 5,
+        "value": 980,
+        "topPlayer": {
+          "username": "quiet-farmer",
+          "value": 2110
+        }
+      }
+    ]
   }
 }
 ```
@@ -9079,7 +9137,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 49。
+- 协议版本随对外协议内容的每次变化递增；当前为 50。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

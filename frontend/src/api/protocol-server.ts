@@ -2,10 +2,10 @@
 // （AISLG-61）。唯一事实来源是 backend/common/src/protocol-server.ts；
 // protocol.ts 原名再导出，既有 import 路径不变。
 
-/** 排行榜类别（v23 AISLG-61） */
+/** 排行榜类别（v23 AISLG-61；v50 AISLG-133 新增 model 模型榜） */
 import type { TroopKind } from './protocol';
 
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder'] as const;
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 
@@ -17,14 +17,35 @@ export interface LeaderboardEntryView {
   cityName: string;
   value: number;
   agentOnline: boolean;
+  /** Agent 自报的模型名原文（v50；null = 从未声明）。自报不验证，展示标注「自报」 */
+  agentModel: string | null;
+}
+
+/** 模型榜单行（v50，AISLG-133） */
+export interface ModelLeaderboardEntryView {
+  rank: number;
+  /** 归类标识：undeclared 未声明 / other 其他 / 名单内模型 id */
+  modelId: string;
+  /** 展示名（如 Claude Opus 5.5、未声明、其他） */
+  label: string;
+  /** 该模型最近 7 天 Agent 上线过、且进了战力统计的账号数 */
+  players: number;
+  /** 该模型实力前 10 名的平均战力（排名依据） */
+  value: number;
+  /** 该模型战力第一的玩家（展示用） */
+  topPlayer: { username: string; value: number } | null;
 }
 
 /** GET_LEADERBOARD 响应载荷 */
 export interface GetLeaderboardResponseData {
   kind: LeaderboardKind;
   updatedAt: string;
+  /** 前 50 名（玩家三榜）；kind=model 为空数组 */
   entries: LeaderboardEntryView[];
+  /** 我的名次与数值；kind=model 恒为 null */
   me: { rank: number; value: number } | null;
+  /** 模型榜条目（仅 kind=model） */
+  modelEntries?: ModelLeaderboardEntryView[];
 }
 
 /** 排行榜弹窗的数据视图（当前榜 + 快照） */

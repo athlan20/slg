@@ -60,6 +60,7 @@ export const PROTOCOL_CHANGELOG: readonly ProtocolChange[] = [
   { version: 47, summary: '双站点与 Agent 令牌-only 登录（AISLG-130）：游戏两个站（国内站 / 国际站 slg.yuntianyou.cc）共用同一套服务与数据库、账号通用，按连接访问的 Host 区分站点。国际站整站关闭账号密码登录（LOGIN 密码分支返回新错误码 PASSWORD_LOGIN_CLOSED，界面按 GET /auth/config 的 passwordLogin=false 隐藏密码表单，绕过界面直发也照样被拒）；国内站照旧。Agent 一律不能用账号密码登录（哪个站都一样），LOGIN 密码分支遇 asAgent=true 返回新错误码 AGENT_PASSWORD_FORBIDDEN，提示改用永久令牌（v46）——密码登录自此只属于玩家本人。GitHub 登录按站点分套（OAuth App 回调地址只能填一个，两站各建一个）：新环境变量 GITHUB_SITES（JSON，键为 Host，支持 "default" 兜底）替代旧四变量（仍可用），state 记发起站点、回调按它选配置套并跳回对应前端；/auth/config 的 passwordLogin 与 githubEnabled 按请求 Host 下发。协议消息结构无变化。' },
   { version: 48, summary: '关闭密码登录的自动注册：LOGIN 密码分支遇到不存在的用户名不再建号，返回新错误码 SIGNUP_CLOSED（提示改走第三方登录注册）；已有账号的密码登录不受影响。新账号自此只能经第三方登录创建（Google / GitHub / 微信扫码）。移除错误码 USERNAME_TAKEN（并发同名注册专用，随注册通道关闭而消失）。协议消息结构无变化。' },
   { version: 49, summary: '作战方针模块整体移除：删除 SET_AGENT_DIRECTIVE（op 38）与推送 PUSH_AGENT_DIRECTIVE（op 2008），GET_AGENT_INFO 不再返回 directive 字段（agent_directives 表随上线清理删除）。玩家对 Agent 的打法意图改为与自己的 Agent 直接讨论，不再经游戏设置。老客户端发 op 38 会收到 UNKNOWN_OP。' },
+  { version: 50, summary: '排行榜按 AI 模型分组（AISLG-133）：LOGIN 请求新增可选 agentModel（仅 asAgent=true 生效：Agent 自报驱动自己的模型 / 脚本名，限长 64、以最近一次声明为准，不填也能正常登录）。GET_LEADERBOARD 玩家三榜条目新增 agentModel（自报原文，null = 从未声明）；新增 kind=model 模型榜，响应经 modelEntries 按归类后的模型聚合下发（entries 为空、me 为 null）：只统计最近 7 天 Agent 上线过且进了战力统计的账号，排名 = 该模型实力前 10 名的平均战力，未声明与名单外（「其他」）同样是组。模型为自报口径，不验证。' },
 ];
 
 /** 增量变更的 HTTP 路径（与 /agent-api.md 同域名；since 为调用方手上文档的版本号） */

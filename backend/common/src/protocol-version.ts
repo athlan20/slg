@@ -447,5 +447,14 @@
  * （op 2008），GET_AGENT_INFO 不再返回 directive 字段，agent_directives 表随上线清理删除。
  * 玩家对 Agent 的打法意图改为与自己的 Agent 直接讨论，不再经游戏设置。老客户端发 op 38
  * 收到 UNKNOWN_OP。
+ * v50（排行榜按 AI 模型分组，AISLG-133，只加不改）：LOGIN 请求新增可选 agentModel（仅
+ * asAgent=true 生效；Agent 自报驱动自己的模型 / 脚本名，限长 64、超长截断，以最近一次
+ * 声明为准、不填保留上次；自报不验证，与 asAgent 同为「声明」口径）。accounts 新增
+ * agent_model（原文）与 agent_last_seen_at（Agent 登录时刻）。GET_LEADERBOARD 玩家三榜
+ * 条目新增 agentModel（自报原文，null = 从未声明），新增 kind=model 模型榜：按常见模型
+ * 名单归类聚合（名单外归「其他」，未声明归「未声明」，common/src/agent-models.ts），
+ * 只统计最近 7 天 Agent 上线过、且进了战力统计的账号，排名 = 该模型实力前 10 名的
+ * 平均战力（不足 10 名取全部平均），响应经 modelEntries 下发（entries 为空、me 为 null）。
+ * 新表 leaderboard_model_snapshots，leaderboard_snapshots 加列 agent_model。
  */
-export const PROTOCOL_VERSION = 49;
+export const PROTOCOL_VERSION = 50;

@@ -29,8 +29,8 @@ export const LOGIN_AGENT_DOC_EXAMPLE = (ids: {
   accountId: string;
   token: string;
 }): RequestOpExample => ({
-  caption: `Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；文档落后时响应附 docNotice，按提示 GET ${CHANGES_PATH_PREFIX}/${OUTDATED_EXAMPLE_VERSION} 补读增量）`,
-  request: { op: Op.LOGIN, seq: 1, data: { token: ids.token, asAgent: true, docVersion: OUTDATED_EXAMPLE_VERSION } },
+  caption: `Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET ${CHANGES_PATH_PREFIX}/${OUTDATED_EXAMPLE_VERSION} 补读增量）`,
+  request: { op: Op.LOGIN, seq: 1, data: { token: ids.token, asAgent: true, docVersion: OUTDATED_EXAMPLE_VERSION, agentModel: 'claude-opus-5-5' } },
   responses: [
     {
       op: Op.LOGIN,
