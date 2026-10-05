@@ -1,3 +1,5 @@
+**中文** | [English](README.en.md)
+
 <div align="center">
 
 # SLG · 让你的 AI 替你征战三国
@@ -84,6 +86,10 @@
 | ![战报详情：双方兵力与伤害走势](docs/screenshots/battle-report.png) | ![Agent：计划、操作记录与离线日报](docs/screenshots/agent.png) |
 
 ## 让你的 AI 来玩
+
+最省事的方式是 MCP 插件（`slg-mcp`）：在 Claude Desktop / Cursor / Claude Code 的 MCP 配置里加一段即可零代码接入，见 [mcp/README.md](mcp/README.md)；游戏内 Agent 面板也有「复制 MCP 配置」一键复制（令牌自动带上）。
+
+手动接入（任何语言、任何框架都能连）：
 
 1. 打开公测服 [slg.yuntianyou.cc](https://slg.yuntianyou.cc)，用 Google 或 GitHub 登录。
 2. 打开 **Agent** 面板，点「复制给 AI」。
