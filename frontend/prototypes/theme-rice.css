@@ -1,0 +1,31 @@
+/* 方案 A · 宣纸朱印：浅色国风，暖米底 + 朱红强调 + 宋体标题 */
+:root {
+  --paper: #f6f2e9;
+  --card: #fffdf8;
+  --card-2: #fdfaf4;
+  --cell-bg: #fbf8f1;
+  --line: #e4dcca;
+  --line-2: #efe8da;
+  --ink: #26221d;
+  --ink-2: #6d6458;
+  --ink-3: #9d9383;
+  --accent: #a8322a;
+  --accent-on: #fff;
+  --accent-wash: #fdf3f1;
+  --accent-2: #b08a3e;
+  --enemy: #3a342c;
+  --ok: #4e7a4a;
+  --tile-line: rgba(0, 0, 0, 0.04);
+  --font-title: "Songti SC", "STSong", "Noto Serif SC", "SimSun", serif;
+  --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  --t-plain: #ded2b8;
+  --t-forest: #a8b899;
+  --t-grass: #c3d0a5;
+  --t-hill: #c8b899;
+  --t-desert: #e2d8be;
+  --t-water: #9db3c0;
+  --t-marsh: #aeb196;
+  --t-self: #a8322a;
+  --t-npc: #3a342c;
+}

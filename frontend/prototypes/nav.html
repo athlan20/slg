@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>导航工作区 · 样稿</title>
+    <link rel="stylesheet" href="city-dark-themes.css" />
+    <link rel="stylesheet" href="console.css" />
+    <link rel="stylesheet" href="console-panels.css" />
+    <link rel="stylesheet" href="nav.css" />
+  </head>
+  <body>
+    <!-- 方案 D「导航工作区」：左侧常驻导航（总览 / 地图 / 城池 / 军队 / 养成 / 情报 / Agent），
+         工作区一次只放一页、每页按单屏排版；顶栏只放资源与警报，底部一行进行中的事。窄屏导航变底部图标栏。 -->
+    <div class="nav" role="导航布局">
+      <aside class="side" role="导航-侧栏">
+        <button class="city-switch" data-action="toggle-cities" role="导航-城池切换">
+          <span class="city-badge">襄</span>
+          <span class="city-meta"><b>襄阳</b><small>Lv9 · 共 3 城</small></span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="city-menu" hidden></div>
+        <nav class="side-nav" role="导航-菜单"></nav>
+        <div class="side-foot" role="导航-侧栏底部">
+          <button class="account" data-action="toggle-account">xiling ▾</button>
+          <div class="account-menu" hidden>
+            <button>城池改名</button><button>切换账号</button><button class="danger" data-action="reset">重置账号</button>
+            <div class="theme-row"></div>
+            <div class="layout-row"></div>
+          </div>
+        </div>
+      </aside>
+      <header class="topbar nav-top" role="导航-顶栏">
+        <h1 class="page-title" role="导航-页面标题"></h1>
+        <div class="res-strip" role="导航-资源条"></div>
+        <div class="top-flags" role="导航-警报"></div>
+        <div class="top-actions">
+          <button class="pill" data-action="exchange">集市</button>
+          <button class="pill" data-action="leaderboard">榜</button>
+        </div>
+      </header>
+      <main class="work" role="导航-工作区"></main>
+      <footer class="nav-foot" role="导航-底栏">
+        <span class="faint">进行中</span>
+        <div class="hud-strip" role="导航-单行时间线"></div>
+        <div class="nav-ticker" role="导航-全服播报"></div>
+      </footer>
+    </div>
+    <div class="alert-toast" hidden></div>
+
+    <script src="console-data.js"></script>
+    <script src="console-map.js"></script>
+    <script src="console-right.js"></script>
+    <script src="console-modal.js"></script>
+    <script src="console-views.js"></script>
+    <script src="nav.js"></script>
+  </body>
+</html>

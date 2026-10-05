@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>盯盘仪表盘 · 样稿</title>
+    <link rel="stylesheet" href="city-dark-themes.css" />
+    <link rel="stylesheet" href="console.css" />
+    <link rel="stylesheet" href="console-panels.css" />
+    <link rel="stylesheet" href="board.css" />
+  </head>
+  <body>
+    <!-- 方案 C「盯盘仪表盘」：面向「Agent 托管、人来盯」的玩法。顶部是关键指标，下面是等权的组件格：
+         城务 / 地图 / 军情 / 时间线 / Agent 托管 / 情报。地图只是其中一格；点地块时右上「军情」格换成操作表单。 -->
+    <div class="board" role="仪表盘布局">
+      <header class="topbar" role="仪表盘-顶栏">
+        <button class="city-switch" data-action="toggle-cities">
+          <span class="city-badge">襄</span>
+          <span class="city-meta"><b>襄阳</b><small>Lv9 · 132,88 · 共 3 城</small></span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="city-menu" hidden></div>
+        <div class="res-strip" role="仪表盘-资源条"></div>
+        <div class="top-flags" role="仪表盘-警报"></div>
+        <div class="top-actions">
+          <button class="pill" data-action="exchange">集市</button>
+          <button class="pill" data-action="leaderboard">榜</button>
+          <button class="account" data-action="toggle-account">xiling ▾</button>
+          <div class="account-menu" hidden>
+            <button>城池改名</button><button>切换账号</button><button class="danger" data-action="reset">重置账号</button>
+            <div class="theme-row"></div>
+            <div class="layout-row"></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="kpis" role="仪表盘-关键指标"></section>
+
+      <main class="grid" role="仪表盘-组件格">
+        <section class="w w-city" role="组件-城务">
+          <div class="w-head"><div class="rail mini" role="组件-城务分类"></div></div>
+          <div class="w-body dock-panel" role="组件-城务内容"></div>
+        </section>
+        <section class="w w-map" role="组件-地图">
+          <div class="w-head">
+            <h3>地图</h3>
+            <div class="seg"><button data-view="world">世界</button><button data-view="city">城内</button></div>
+            <div class="layers">
+              <label><input type="checkbox" data-layer="moving" checked />流寇·商队</label>
+              <label><input type="checkbox" data-layer="yt" checked />黄巾</label>
+              <label><input type="checkbox" data-layer="mine" checked />领地</label>
+            </div>
+          </div>
+          <div class="map-wrap" role="组件-地图区"><div class="map"></div><svg class="routes"></svg><div class="yt-card"></div></div>
+        </section>
+        <section class="w w-ctx" role="组件-军情或选中"><div class="w-body ctx"></div></section>
+        <section class="w w-lanes" role="组件-时间线">
+          <div class="w-head"><h3>进行中</h3><span class="meta">按剩余时间</span></div>
+          <div class="w-body lanes"></div>
+        </section>
+        <section class="w w-agent" role="组件-Agent托管">
+          <div class="w-head"><h3>Agent 托管</h3><span class="meta"><i class="dot on"></i> 在线 · 今日 23 次操作</span></div>
+          <div class="w-body agent-split"><div class="agent-form" role="Agent-方针"></div><div class="agent-log" role="Agent-最近操作"></div></div>
+        </section>
+        <section class="w w-intel" role="组件-情报">
+          <div class="tabs"></div>
+          <div class="w-body intel-body"></div>
+        </section>
+      </main>
+      <nav class="board-tabs" role="仪表盘-窄屏分页签"></nav>
+    </div>
+    <div class="alert-toast" hidden></div>
+
+    <script src="console-data.js"></script>
+    <script src="console-map.js"></script>
+    <script src="console-right.js"></script>
+    <script src="console-modal.js"></script>
+    <script src="console-views.js"></script>
+    <script src="board.js"></script>
+  </body>
+</html>

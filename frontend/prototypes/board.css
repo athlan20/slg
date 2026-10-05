@@ -1,0 +1,99 @@
+/* 方案 C「盯盘仪表盘」：顶栏 + 指标行 + 3 列 × 2 行组件格（城务占左列两行）。 */
+
+.board {
+  height: 100dvh; padding: 8px; gap: 8px; overflow: hidden;
+  display: grid; grid-template-rows: 52px 62px minmax(0, 1fr) auto;
+}
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 2fr); gap: 8px; min-height: 0; }
+.kpi {
+  display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0;
+  padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+}
+.kpi span { color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+.kpi b { font-size: 19px; font-weight: 600; line-height: 1.15; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+.kpi small { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi small .up { color: var(--ok); }
+.kpi.cast { justify-content: space-between; }
+.kpi.cast p { margin: 0; font-size: 11.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi.cast b { font-size: 11.5px; color: var(--gold); font-weight: 500; font-family: inherit; }
+
+.grid {
+  display: grid; gap: 8px; min-height: 0;
+  grid-template-columns: 300px minmax(0, 0.75fr) minmax(0, 1.15fr) 340px;
+  grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-areas: 'city map map ctx' 'city lanes agent intel';
+}
+.w { min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.w-city { grid-area: city; } .w-map { grid-area: map; } .w-ctx { grid-area: ctx; }
+.w-lanes { grid-area: lanes; } .w-agent { grid-area: agent; } .w-intel { grid-area: intel; }
+.w-head { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid var(--line-soft); flex-shrink: 0; font-size: 12px; color: var(--text-dim); }
+.w-head h3 { margin: 0; font-size: 13px; color: var(--text); font-weight: 600; }
+.w-head .meta { margin-left: auto; color: var(--text-faint); font-size: 11.5px; }
+.w-head .layers { margin-left: auto; }
+.w-body { flex: 1; min-height: 0; padding: 10px; display: flex; flex-direction: column; gap: 7px; overflow: hidden; }
+.w-ctx .ctx { border-bottom: 0; }
+/* 选中地块时操作表单需要更高：右列两行都给它，情报组件让位（✕ 关闭后恢复） */
+.board.has-tile .grid { grid-template-areas: 'city map map ctx' 'city lanes agent ctx'; }
+.board.has-tile .w-intel { display: none; }
+textarea { overflow: hidden; }
+
+/* 城务组件：图标轨横排在组件头部 */
+.rail.mini { flex-direction: row; padding: 0; border: 0; background: none; gap: 2px; width: 100%; }
+.rail.mini button { flex: 1; flex-direction: row; justify-content: center; gap: 4px; padding: 4px 0; font-size: 11.5px; }
+.rail.mini button b { font-size: 12.5px; }
+.rail.mini .badge { top: -2px; right: 2px; }
+
+.w-map .map-wrap { flex: 1; }
+.w-map .yt-card { width: 200px; }
+
+/* 时间线组件：四条泳道竖排、每条一行 */
+.w-lanes .lanes { background: none; border: 0; border-radius: 0; padding: 10px; grid-template-rows: repeat(4, auto); align-content: start; gap: 10px; }
+.w-lanes .lane { grid-template-columns: 34px minmax(0, 1fr); align-items: start; }
+.w-lanes .lane-items { flex-wrap: wrap; row-gap: 4px; }
+
+/* Agent 托管：左方针 · 右最近操作 */
+.agent-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.agent-form, .agent-log { min-height: 0; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.agent-form .directive { grid-template-columns: auto minmax(0, 1fr); }
+.agent-form > .ph { display: none; }
+.agent-form > div:last-child { flex-wrap: wrap; }
+
+.board-tabs { display: none; }
+
+@media (min-width: 1600px) { .grid { grid-template-columns: 340px minmax(0, 0.75fr) minmax(0, 1.15fr) 380px; } }
+@media (max-width: 1279px) {
+  .board.has-tile .grid { grid-template-areas: 'city map ctx' 'city agent ctx'; }
+  .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .kpi.cast { display: none; }
+  .grid { grid-template-columns: 280px minmax(0, 1fr) 320px; grid-template-areas: 'city map ctx' 'city agent intel'; }
+  .w-lanes { display: none; }
+  .agent-split { grid-template-columns: minmax(0, 1fr); }
+  .agent-log { display: none; }
+  .w-map .layers { display: none; }
+  .flag.warn, .flag.ok { display: none; }
+}
+@media (max-height: 800px) {
+  .board { grid-template-rows: 46px 50px minmax(0, 1fr) auto; }
+  .kpi { padding: 4px 10px; } .kpi b { font-size: 16px; } .kpi small { display: none; }
+  .agent-form .directive textarea, .agent-form .directive > span:nth-of-type(3) { display: none; }
+  .agent-form > div:last-child .btn:nth-child(3) { display: none; }
+}
+/* < 1024：指标两行，组件格变成单格 + 底部分页签 */
+@media (max-width: 1023px) {
+  .board { grid-template-rows: auto auto minmax(0, 1fr) 46px; }
+  .board .topbar { flex-wrap: wrap; height: auto; padding: 6px 8px; gap: 6px; }
+  .board .res-strip { order: 3; flex-basis: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .board .top-flags, .board .pill { display: none; }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kpi { padding: 4px 8px; } .kpi b { font-size: 15px; } .kpi small { display: none; }
+  .grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: 'one'; }
+  .w { grid-area: one; display: none; }
+  .board[data-pane='city'] .w-city, .board[data-pane='map'] .w-map, .board[data-pane='ctx'] .w-ctx,
+  .board[data-pane='agent'] .w-agent, .board[data-pane='intel'] .w-intel { display: flex; }
+  .agent-split { grid-template-columns: minmax(0, 1fr); }
+  .agent-log { display: none; }
+  .w-map .layers { display: none; }
+  .board-tabs { display: flex; gap: 4px; }
+  .board-tabs button { flex: 1; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text-dim); font-size: 12px; }
+  .board-tabs button.on { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-soft); }
+}

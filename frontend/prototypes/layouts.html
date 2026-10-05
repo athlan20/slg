@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>单屏布局方案对比</title>
+    <link rel="stylesheet" href="city-dark-themes.css" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; overflow: hidden; }
+      body { background: var(--bg); color: var(--text); font: 13px/1.5 -apple-system, 'PingFang SC', sans-serif; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+      h1 { margin: 0; font-size: 17px; }
+      h1 small { color: var(--text-faint); font-weight: 400; font-size: 12px; margin-left: 8px; }
+      .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .card { min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+      .head { display: flex; align-items: baseline; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); }
+      .head b { font-size: 14px; } .head span { color: var(--text-dim); font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .head a { color: var(--accent); text-decoration: none; font-size: 12px; white-space: nowrap; }
+      .frame { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+      /* 1440×900 的页面按卡片尺寸等比缩放预览（脚本里算缩放比） */
+      .frame iframe { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+      .frame a { position: absolute; inset: 0; }
+      @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(0, 1fr)); } .head span { display: none; } }
+    </style>
+  </head>
+  <body>
+    <h1 role="方案对比-标题">单屏布局方案对比<small>四套布局都不出现竖向滚动条；内容与皮肤共用，只是摆法不同。点预览进入。</small></h1>
+    <main class="grid" role="方案对比-列表">
+      <section class="card" role="方案A">
+        <div class="head"><b>A 三栏控制台</b><span>左城务 · 中地图 · 右情报 · 底时间线。信息密度最高，所有东西同屏，适合手动玩的老玩家。</span><a href="console.html">打开 →</a></div>
+        <div class="frame"><iframe src="console.html" loading="lazy" title="A"></iframe><a href="console.html" aria-label="打开 A"></a></div>
+      </section>
+      <section class="card" role="方案B">
+        <div class="head"><b>B 沉浸地图</b><span>地图铺满整屏，面板全部浮在地图上，用时才展开。最像手游 SLG，地图感最强。</span><a href="hud.html">打开 →</a></div>
+        <div class="frame"><iframe src="hud.html" loading="lazy" title="B"></iframe><a href="hud.html" aria-label="打开 B"></a></div>
+      </section>
+      <section class="card" role="方案C">
+        <div class="head"><b>C 盯盘仪表盘</b><span>关键指标 + 等权组件格，Agent 托管独占一格。适合「Agent 在玩、人来看」。</span><a href="board.html">打开 →</a></div>
+        <div class="frame"><iframe src="board.html" loading="lazy" title="C"></iframe><a href="board.html" aria-label="打开 C"></a></div>
+      </section>
+      <section class="card" role="方案D">
+        <div class="head"><b>D 导航工作区</b><span>左侧导航切页，每页单屏。最像普通应用、最好上手，也最容易适配手机。</span><a href="nav.html">打开 →</a></div>
+        <div class="frame"><iframe src="nav.html" loading="lazy" title="D"></iframe><a href="nav.html" aria-label="打开 D"></a></div>
+      </section>
+    </main>
+    <script>
+      function fit() {
+        document.querySelectorAll('.frame').forEach((f) => {
+          const s = Math.min(f.clientWidth / 1440, f.clientHeight / 900);
+          f.querySelector('iframe').style.transform = `scale(${s})`;
+        });
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    </script>
+  </body>
+</html>

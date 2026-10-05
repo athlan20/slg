@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>单屏控制台 · 样稿</title>
+    <link rel="stylesheet" href="city-dark-themes.css" />
+    <link rel="stylesheet" href="console.css" />
+    <link rel="stylesheet" href="console-panels.css" />
+  </head>
+  <body>
+    <!-- 单屏控制台：整页固定 100dvh、不出现竖向滚动条。
+         顶栏（城池 / 资源 / 警报）+ 三栏（左 城务 · 中 地图 · 右 情报）+ 底部时间线。
+         原先的地块详情 / 建筑详情弹窗改为在右栏「情报」里就地展开；长列表一律分页，不滚动。 -->
+    <div class="shell" role="控制台">
+      <header class="topbar" role="顶栏">
+        <button class="city-switch" role="顶栏-城池切换" data-action="toggle-cities">
+          <span class="city-badge" data-bind="city-short">襄</span>
+          <span class="city-meta">
+            <b data-bind="city-name">襄阳</b>
+            <small data-bind="city-sub">Lv9 · 132,88 · 共 3 城</small>
+          </span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="city-menu" role="顶栏-城池列表" hidden></div>
+        <div class="res-strip" role="顶栏-资源条"></div>
+        <div class="top-flags" role="顶栏-状态标记"></div>
+        <div class="top-actions" role="顶栏-操作">
+          <button class="pill" role="顶栏-集市按钮" data-action="exchange">集市</button>
+          <button class="pill" role="顶栏-排行榜按钮" data-action="leaderboard">榜</button>
+          <span class="status" role="顶栏-Agent状态"><i class="dot on"></i>Agent</span>
+          <button class="account" role="顶栏-账号菜单" data-action="toggle-account">xiling ▾</button>
+          <div class="account-menu" role="顶栏-账号菜单列表" hidden>
+            <button>城池改名</button>
+            <button>切换账号</button>
+            <button class="danger" data-action="reset">重置账号</button>
+            <div class="theme-row" role="顶栏-主题切换"></div>
+            <div class="layout-row" role="顶栏-布局方案切换"></div>
+          </div>
+        </div>
+      </header>
+
+      <main class="body" role="主体">
+        <aside class="dock left" role="左栏-城务">
+          <nav class="rail" role="左栏-分类"></nav>
+          <section class="dock-panel" role="左栏-面板"></section>
+        </aside>
+
+        <section class="stage" role="中栏-地图">
+          <div class="stage-bar" role="中栏-工具条">
+            <div class="seg" role="中栏-视图切换">
+              <button data-view="world" class="on">世界</button>
+              <button data-view="city">城内</button>
+            </div>
+            <span class="stage-pos" role="中栏-视野坐标">视野中心 132,88</span>
+            <div class="layers" role="中栏-图层开关">
+              <label><input type="checkbox" data-layer="moving" checked />流寇·商队</label>
+              <label><input type="checkbox" data-layer="yt" checked />黄巾</label>
+              <label><input type="checkbox" data-layer="mine" checked />我的领地</label>
+            </div>
+            <div class="pan" role="中栏-平移">
+              <button>◀</button><button>▲</button><button>▼</button><button>▶</button>
+            </div>
+          </div>
+          <div class="map-wrap" role="中栏-地图区">
+            <div class="map" role="中栏-地图网格"></div>
+            <svg class="routes" role="中栏-移动目标路线"></svg>
+            <div class="yt-card" role="中栏-黄巾浮卡"></div>
+            <div class="legend" role="中栏-图例"></div>
+          </div>
+        </section>
+
+        <aside class="dock right" role="右栏-情报">
+          <section class="ctx" role="右栏-选中详情"></section>
+          <section class="intel" role="右栏-情报列表">
+            <div class="tabs" role="右栏-情报分类"></div>
+            <div class="intel-body" role="右栏-情报内容"></div>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="timeline" role="底栏-时间线">
+        <div class="lanes" role="底栏-队列泳道"></div>
+        <div class="ticker" role="底栏-全服播报"></div>
+      </footer>
+    </div>
+
+    <div class="alert-toast" role="NPC来袭提醒" hidden></div>
+
+    <script src="console-data.js"></script>
+    <script src="console-map.js"></script>
+    <script src="console-right.js"></script>
+    <script src="console-modal.js"></script>
+    <script src="console-views.js"></script>
+    <script src="console.js"></script>
+  </body>
+</html>

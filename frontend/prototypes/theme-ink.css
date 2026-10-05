@@ -1,0 +1,45 @@
+/* 方案 B · 水墨：纯白底 + 全灰阶地形，朱砂只点最关键状态，留白最大 */
+:root {
+  --paper: #ffffff;
+  --card: #ffffff;
+  --card-2: #fafafa;
+  --cell-bg: #fbfbfb;
+  --line: #e2e2e2;
+  --line-2: #eeeeee;
+  --ink: #111111;
+  --ink-2: #5c5c5c;
+  --ink-3: #9a9a9a;
+  --accent: #c0392b;
+  --accent-on: #fff;
+  --accent-wash: #fdf4f3;
+  --accent-2: #8a8a8a;
+  --enemy: #2b2b2b;
+  --ok: #3f6b3c;
+  --tile-line: rgba(0, 0, 0, 0.05);
+  --font-title: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-body: var(--font-title);
+
+  /* 地形走灰阶明度阶梯，靠深浅而不是色相区分 */
+  --t-plain: #eeeeee;
+  --t-forest: #bcbcbc;
+  --t-grass: #d7d7d7;
+  --t-hill: #cccccc;
+  --t-desert: #e6e6e6;
+  --t-water: #a8a8a8;
+  --t-marsh: #c2c2c2;
+  --t-self: #c0392b;
+  --t-npc: #1a1a1a;
+}
+
+/* 水墨方案：标题改字重与字距拉开层级，去掉宋体的装饰感 */
+.block-head h2,
+.hud-city h1,
+.h-top b,
+.q-row b,
+.chip b { font-weight: 700; letter-spacing: 3px; }
+
+/* 留白比其它方案更大一档，靠间距而不是边框分组 */
+.frame { gap: 18px; }
+.board { gap: 18px; }
+.block { padding: 16px 18px 18px; }
+.legend { margin-top: 14px; }

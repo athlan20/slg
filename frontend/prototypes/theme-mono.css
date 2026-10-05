@@ -1,0 +1,47 @@
+/* 方案 D · 数据台：冷白 + 单一青蓝强调，几何化、无国风装饰，最像运营后台 */
+:root {
+  --paper: #f5f7f9;
+  --card: #ffffff;
+  --card-2: #f8fafc;
+  --cell-bg: #f8fafc;
+  --line: #dfe4ea;
+  --line-2: #eceff3;
+  --ink: #131920;
+  --ink-2: #5a6875;
+  --ink-3: #93a0ad;
+  --accent: #2f6fed;
+  --accent-on: #fff;
+  --accent-wash: #eff4ff;
+  --accent-2: #6b7a8d;
+  --enemy: #334155;
+  --ok: #2f9e6f;
+  --tile-line: rgba(19, 25, 32, 0.05);
+  --font-title: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-body: var(--font-title);
+
+  --t-plain: #e7ebef;
+  --t-forest: #b7c8bd;
+  --t-grass: #cddcc9;
+  --t-hill: #d8d2c4;
+  --t-desert: #eae4d6;
+  --t-water: #b6c9da;
+  --t-marsh: #c0c5bb;
+  --t-self: #2f6fed;
+  --t-npc: #334155;
+}
+
+/* 数据台方案：不用衬线，层级靠字重与大小，块头改成细分隔的等宽小标签 */
+.block-head { border-bottom: 1px solid var(--line-2); }
+.block-head h2 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: none;
+}
+.block-head span,
+.ck { font-variant-numeric: tabular-nums; }
+
+/* 稍加圆角，弱化手工感，强化界面感 */
+.hud, .block, .strip, .cell { border-radius: 3px; }
+.seal { border-radius: 3px; }
+.bar, .bar i { border-radius: 2px; }

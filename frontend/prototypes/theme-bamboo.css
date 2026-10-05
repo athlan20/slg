@@ -1,0 +1,39 @@
+/* 方案 C · 竹简夜：深墨底 + 米白字，朱红提亮、赭金作次，适合长时间挂机盯盘 */
+:root {
+  --paper: #17150f;
+  --card: #201d17;
+  --card-2: #26221b;
+  --cell-bg: #26221b;
+  --line: #3b352b;
+  --line-2: #322d24;
+  --ink: #ece5d6;
+  --ink-2: #a79d8b;
+  --ink-3: #7a7161;
+  --accent: #c9584c;
+  --accent-on: #1a1712;
+  --accent-wash: #2c2320;
+  --accent-2: #c8a35a;
+  --enemy: #8f9aa2;
+  --ok: #79a86f;
+  --tile-line: rgba(255, 255, 255, 0.05);
+  --font-title: "Songti SC", "STSong", "Noto Serif SC", "SimSun", serif;
+  --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  /* 地形在低明度区间重新拉开对比 */
+  --t-plain: #4a4438;
+  --t-forest: #55603f;
+  --t-grass: #5d6a41;
+  --t-hill: #5a5140;
+  --t-desert: #6d6350;
+  --t-water: #3b4a55;
+  --t-marsh: #4d5340;
+  --t-self: #c9584c;
+  --t-npc: #ece5d6;
+}
+
+/* 暗底上印章反色：白底朱字，像盖在墨稿上的印 */
+.seal { background: var(--ink); color: #17150f; }
+
+/* 暗底细线会显得更重，边框压暗一档 */
+.hud, .block, .strip { border-color: #332e26; }
+.bar { background: #322d24; }

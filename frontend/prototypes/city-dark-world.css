@@ -1,0 +1,202 @@
+/* SLG 主界面设计稿 · 世界地图
+   视野网格 + 坐标轴 + 地块详情 + 图例；颜色全部引用 city-dark-themes.css 变量。
+   地形色块：--t-plain/forest/grass/hill/desert/lake/marsh/gold。 */
+
+.world-layout {
+  display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap;
+}
+
+/* ---------- 地图视野 ---------- */
+
+.world-viewport {
+  position: relative;
+  padding: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  --tile: 28px;
+}
+
+.world-cols {
+  display: grid;
+  grid-template-columns: repeat(10, var(--tile, 28px));
+  margin-left: 20px; /* 与行坐标轴同宽 */
+  margin-bottom: 2px;
+}
+.world-cols span,
+.world-rows span {
+  font: 9px var(--mono);
+  color: var(--text-faint);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.world-main { display: flex; gap: 2px; }
+.world-rows {
+  display: grid;
+  grid-template-rows: repeat(10, var(--tile, 28px));
+  width: 18px;
+}
+.world-rows span { display: grid; place-items: center; text-align: right; }
+
+.world-grid {
+  display: grid;
+  grid-template-columns: repeat(10, var(--tile, 28px));
+  grid-template-rows: repeat(10, var(--tile, 28px));
+  gap: 2px;
+}
+
+/* ---------- 地块 ---------- */
+
+.tile {
+  position: relative;
+  border: 0; padding: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  display: grid; place-items: center;
+  font: 9px var(--mono);
+  color: var(--text-dim);
+}
+.tile:hover { outline: 1px solid var(--accent-dim); outline-offset: -1px; }
+.tile.selected { outline: 2px solid var(--accent); outline-offset: -1px; z-index: 1; }
+
+.tile.t-plain  { background: var(--t-plain); }
+.tile.t-forest { background: var(--t-forest); }
+.tile.t-grass  { background: var(--t-grass); }
+.tile.t-hill   { background: var(--t-hill); }
+.tile.t-desert { background: var(--t-desert); }
+.tile.t-lake   { background: var(--t-lake); }
+.tile.t-marsh  { background: var(--t-marsh); }
+.tile.t-gold_mine { background: var(--t-gold); }
+
+.tile svg { width: 14px; height: 14px; color: var(--text-dim); }
+.tile.t-gold_mine svg { color: var(--gold); }
+
+.tile .tl-lv {
+  position: absolute; right: 2px; bottom: 1px;
+  font-size: 8px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 城池实体标记：形状区分敌我，不依赖颜色记忆 */
+.tile .mark {
+  width: 15px; height: 15px;
+  display: grid; place-items: center;
+  font-size: 9px; font-weight: 600;
+}
+.tile .mark-self {
+  background: var(--accent); color: var(--bg);
+  border-radius: 4px;
+  box-shadow: 0 0 8px var(--accent);
+}
+.tile .mark-npc {
+  background: var(--gold); color: var(--bg);
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+.tile .mark-npc u { transform: rotate(-45deg); text-decoration: none; }
+.tile .mark-enemy {
+  background: var(--warn); color: var(--bg);
+  border-radius: 2px;
+}
+.tile .mark-ally {
+  background: transparent; color: var(--accent);
+  border: 1.5px solid var(--accent-dim);
+  border-radius: 2px;
+}
+
+/* 城池名字标签：浮在格子上方 */
+.tile .tag {
+  position: absolute; top: -13px; left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 9px; line-height: 1.2; font-style: normal;
+  padding: 0 4px; border-radius: 2px;
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  color: var(--text-dim);
+  pointer-events: none;
+  z-index: 2;
+}
+.tile .tag-self  { color: var(--accent); border-color: var(--accent-dim); }
+.tile .tag-npc   { color: var(--gold); border-color: var(--gold-dim); }
+.tile .tag-enemy { color: var(--warn); }
+
+/* ---------- 悬浮提示 ---------- */
+
+.world-tooltip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  padding: 5px 8px;
+  background: var(--panel);
+  border: 1px solid var(--accent-dim);
+  border-radius: 4px;
+  font-size: 10px; line-height: 1.5;
+  color: var(--text);
+  white-space: nowrap;
+}
+.world-tooltip em {
+  font-style: normal; color: var(--text-faint); font-family: var(--mono);
+}
+.world-tooltip b { font-weight: 600; }
+
+/* ---------- 地块详情 ---------- */
+
+.tile-inspector {
+  flex: 1; min-width: 148px;
+  padding: 2px 2px 0;
+}
+.tile-inspector .tile-kind {
+  display: inline-block;
+  font-size: 9px; padding: 1px 6px; border-radius: 3px;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  margin-left: 6px;
+}
+.tile-inspector .tile-kind.wild  { color: var(--accent); border-color: var(--accent-dim); }
+.tile-inspector .tile-kind.npc   { color: var(--gold); border-color: var(--gold-dim); }
+.tile-inspector .tile-kind.enemy { color: var(--warn); }
+
+.tile-actions {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 10px;
+}
+.tile-actions .inspector-primary { flex: 1; margin-top: 0; }
+.tile-actions .ghost {
+  padding: 7px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tile-actions .ghost:hover { border-color: var(--accent-dim); color: var(--accent); }
+
+/* ---------- 图例 ---------- */
+
+.world-legend {
+  list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px 12px;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+.world-legend li {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--text-dim);
+}
+.world-legend li em {
+  font-style: normal; color: var(--text-faint); font-family: var(--mono);
+  font-size: 9px;
+}
+.world-legend i { width: 9px; height: 9px; border-radius: 2px; }
+.world-legend .lg-self  { background: var(--accent); border-radius: 3px; }
+.world-legend .lg-npc   { background: var(--gold); transform: rotate(45deg); }
+.world-legend .lg-enemy { background: var(--warn); }
+.world-legend .lg-ally  { background: transparent; border: 1.5px solid var(--accent-dim); }
+
+@media (max-width: 1100px) {
+  .world-layout { flex-direction: column; }
+  .tile-inspector { width: 100%; }
+}

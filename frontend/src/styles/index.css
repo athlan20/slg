@@ -1,0 +1,203 @@
+@import 'tailwindcss';
+@import './themes.css';
+@import './shell.css';
+
+/* 矮屏（高度 ≤ 760）：顶栏压到 46px、资源格去掉进度条等（docs/frontend-nav-layout.md 第 3 节断点） */
+@custom-variant short (@media (max-height: 760px));
+/* 偏矮（高度 ≤ 840）：城池概况等次要的副标行隐藏，给主内容留高度 */
+@custom-variant compact (@media (max-height: 840px));
+
+/* 主题变量映射为 Tailwind 工具类。
+   inline 让工具类保留 var() 引用，data-theme 切换才能即时生效。 */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-fg: var(--text);
+  --color-dim: var(--text-dim);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-gold: var(--gold);
+  /* 胜 / 正向反馈色：与在线状态绿灯同色，四套皮肤各自配色 */
+  --color-ok: var(--st-online);
+
+  /* 在线状态灯：绿在线 / 灰离线 / 红异常，四套皮肤各自配色 */
+  --color-st-online: var(--st-online);
+  --color-st-offline: var(--st-offline);
+  --color-st-error: var(--st-error);
+
+  /* 地形色：与 prototypes/city-dark-themes.css 同名，地方风味靠主题变量给 */
+  --color-t-plain: var(--t-plain);
+  --color-t-forest: var(--t-forest);
+  --color-t-grass: var(--t-grass);
+  --color-t-hill: var(--t-hill);
+  --color-t-desert: var(--t-desert);
+  --color-t-lake: var(--t-lake);
+  --color-t-marsh: var(--t-marsh);
+  --color-t-gold: var(--t-gold);
+
+  --radius-panel: 6px;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+@layer base {
+  /* 外壳锁定一屏：页面本身不滚动，内容放不下由各区块分页 / 截断（登录页自己带 overflow-y-auto） */
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.2s, color 0.2s;
+  }
+}
+
+/* 单选 / 复选框按主题着色：浏览器默认控件在深色皮肤下是刺眼的纯白，
+   这里去掉原生外观，底色取面板色、边框取线条色、选中点 / 勾取强调色，随皮肤切换。 */
+@layer base {
+  input[type='radio'],
+  input[type='checkbox'] {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  input[type='radio'] {
+    border-radius: 9999px;
+  }
+
+  input[type='checkbox'] {
+    border-radius: 3px;
+  }
+
+  input[type='radio']::before,
+  input[type='checkbox']::before {
+    content: '';
+    transform: scale(0);
+    transition: transform 0.12s ease-out;
+  }
+
+  input[type='radio']::before {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  input[type='checkbox']::before {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+  }
+
+  input[type='radio']:checked,
+  input[type='checkbox']:checked {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  input[type='radio']:checked::before,
+  input[type='checkbox']:checked::before {
+    transform: scale(1);
+  }
+
+  input[type='radio']:hover:not(:disabled),
+  input[type='checkbox']:hover:not(:disabled) {
+    border-color: var(--accent-dim);
+  }
+
+  input[type='radio']:focus-visible,
+  input[type='checkbox']:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  input[type='radio']:disabled,
+  input[type='checkbox']:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+/* 重复出现的面板外壳与进度条，收成组件类，避免每个组件重复一长串工具类 */
+@layer components {
+  .panel {
+    @apply rounded-panel border border-line bg-panel p-3;
+  }
+
+  .panel-head {
+    @apply mb-2 flex items-baseline justify-between border-b border-line-soft pb-2;
+  }
+
+  .panel-head h2 {
+    @apply border-l-2 border-accent pl-2 text-xs font-semibold tracking-widest;
+  }
+
+  .panel-head span {
+    @apply font-mono text-[10px] text-faint;
+  }
+
+  .bar {
+    @apply h-[3px] overflow-hidden rounded bg-line-soft;
+  }
+
+  .bar > i {
+    @apply block h-full rounded bg-accent;
+  }
+
+  .bar > i.low {
+    @apply bg-warn;
+  }
+
+  .tag {
+    @apply shrink-0 rounded border px-1.5 text-[9px] leading-4;
+    border-color: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .tag.actor-player {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .tag.actor-system {
+    border-color: var(--line);
+    color: var(--text-faint);
+  }
+
+  .btn {
+    @apply cursor-pointer rounded border border-accent-dim bg-transparent px-2 py-1 font-mono text-[10px] text-accent transition-colors;
+  }
+
+  .btn:hover:not(:disabled) {
+    @apply bg-accent-soft;
+  }
+
+  .btn:disabled {
+    @apply cursor-not-allowed border-line text-faint;
+  }
+}

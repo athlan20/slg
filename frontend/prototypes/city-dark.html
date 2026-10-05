@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SLG · 主界面设计稿（深色极简）</title>
+    <link rel="stylesheet" href="city-dark-themes.css" />
+    <link rel="stylesheet" href="city-dark.css" />
+    <link rel="stylesheet" href="city-dark-buildings.css" />
+    <link rel="stylesheet" href="city-dark-world.css" />
+  </head>
+  <body>
+    <div class="frame">
+
+      <!-- 顶栏：城池 / 资源 / 钱包与连接 -->
+      <header class="hud">
+        <div class="hud-city">
+          <span class="sigil">襄</span>
+          <div class="hud-city-meta">
+            <h1>襄阳<em>县城 Lv3</em></h1>
+            <p>132,88 · 三服 · 民心 86</p>
+          </div>
+        </div>
+
+        <ul class="res">
+          <li><span class="k">金</span><b>12,480</b><i>+820/h</i></li>
+          <li><span class="k">粮</span><b>48,200</b><i>+1,240/h</i></li>
+          <li><span class="k">木</span><b>33,100</b><i>+980/h</i></li>
+          <li><span class="k">石</span><b>8,640</b><i>+410/h</i></li>
+          <li><span class="k">铁</span><b>5,230</b><i>+260/h</i></li>
+          <li class="pop"><span class="k">人</span><b>4,820</b><i>/6,000</i></li>
+        </ul>
+
+        <div class="hud-side">
+          <div class="wallet"><span>元宝 <b>320</b></span><span>礼金 <b>58</b></span></div>
+          <div class="conn"><i></i>已连接 · Agent 在线</div>
+        </div>
+      </header>
+
+      <!-- 主体三栏 -->
+      <main class="board">
+
+        <!-- 左栏：格位、详情和资源总览共用一个建筑工作区 -->
+        <section class="col col-buildings" role="城池建筑栏">
+          <div class="panel building-workbench" role="城池建筑工作区">
+            <div class="ph"><h2>城池建筑</h2><span>19 建 · 6 空 · 1 升级中</span></div>
+            <div class="building-intro" role="建筑工作区说明">
+              <span>选择格位，查看建筑并在右侧操作</span>
+              <span>资源库存与产量见顶栏</span>
+            </div>
+            <div class="building-layout" role="建筑格位与详情">
+              <div class="building-map" role="城内格位区域">
+                <div class="city-grid" role="城内格位列表">
+                  <button type="button" class="cell" role="建筑格位-官府" data-name="官府" data-level="9" data-effect="城池管理"><span class="cn">府</span><span class="cl">9</span></button>
+                  <button type="button" class="cell selected" role="建筑格位-农田" data-name="农田" data-kind="farm" data-level="12" data-effect="粮 +1,240/h" aria-pressed="true"><span class="cn">田</span><span class="cl">12</span></button>
+                  <button type="button" class="cell" role="建筑格位-伐木场" data-name="伐木场" data-kind="lumber_mill" data-level="10" data-effect="木 +980/h"><span class="cn">木</span><span class="cl">10</span></button>
+                  <button type="button" class="cell" role="建筑格位-采石场" data-name="采石场" data-kind="quarry" data-level="8" data-effect="石 +410/h"><span class="cn">石</span><span class="cl">8</span></button>
+                  <button type="button" class="cell" role="建筑格位-铁矿" data-name="铁矿" data-kind="iron_mine" data-level="7" data-effect="铁 +260/h"><span class="cn">铁</span><span class="cl">7</span></button>
+                  <button type="button" class="cell" role="建筑格位-民居" data-name="民居" data-level="11" data-effect="人口容量"><span class="cn">居</span><span class="cl">11</span></button>
+                  <button type="button" class="cell" role="建筑格位-太学院" data-name="太学院" data-level="6" data-effect="科技研究"><span class="cn">学</span><span class="cl">6</span></button>
+                  <button type="button" class="cell busy" role="建筑格位-校场" data-name="校场" data-level="5" data-effect="部队调度" data-busy="true"><span class="cn">校</span><span class="cl">5→6</span></button>
+                  <button type="button" class="cell" role="建筑格位-军营" data-name="军营" data-level="8" data-effect="训练部队"><span class="cn">营</span><span class="cl">8</span></button>
+                  <button type="button" class="cell" role="建筑格位-招贤馆" data-name="招贤馆" data-level="7" data-effect="招募将领"><span class="cn">贤</span><span class="cl">7</span></button>
+                  <button type="button" class="cell" role="建筑格位-鸿胪寺" data-name="鸿胪寺" data-level="5" data-effect="联盟管理"><span class="cn">鸿</span><span class="cl">5</span></button>
+                  <button type="button" class="cell" role="建筑格位-市场" data-name="市场" data-level="6" data-effect="资源交易"><span class="cn">市</span><span class="cl">6</span></button>
+                  <button type="button" class="cell" role="建筑格位-铁匠铺" data-name="铁匠铺" data-level="4" data-effect="装备打造"><span class="cn">匠</span><span class="cl">4</span></button>
+                  <button type="button" class="cell" role="建筑格位-工坊" data-name="工坊" data-level="4" data-effect="器械制造"><span class="cn">坊</span><span class="cl">4</span></button>
+                  <button type="button" class="cell" role="建筑格位-粮仓" data-name="粮仓" data-level="9" data-effect="粮食存储"><span class="cn">仓</span><span class="cl">9</span></button>
+                  <button type="button" class="cell" role="建筑格位-库房" data-name="库房" data-level="9" data-effect="资源存储"><span class="cn">库</span><span class="cl">9</span></button>
+                  <button type="button" class="cell" role="建筑格位-驿站" data-name="驿站" data-level="5" data-effect="城池联络"><span class="cn">驿</span><span class="cl">5</span></button>
+                  <button type="button" class="cell" role="建筑格位-烽火台" data-name="烽火台" data-level="3" data-effect="城池预警"><span class="cn">烽</span><span class="cl">3</span></button>
+                  <button type="button" class="cell" role="建筑格位-城墙" data-name="城墙" data-level="7" data-effect="城池防御"><span class="cn">城</span><span class="cl">7</span></button>
+                  <button type="button" class="cell vacant" role="建筑格位-空位20" data-empty="true" aria-label="空格位 20，可选择建筑"><span class="cn">＋</span><span class="cl">空位</span></button>
+                  <button type="button" class="cell vacant" role="建筑格位-空位21" data-empty="true" aria-label="空格位 21，可选择建筑"><span class="cn">＋</span><span class="cl">空位</span></button>
+                  <button type="button" class="cell vacant" role="建筑格位-空位22" data-empty="true" aria-label="空格位 22，可选择建筑"><span class="cn">＋</span><span class="cl">空位</span></button>
+                  <button type="button" class="cell vacant" role="建筑格位-空位23" data-empty="true" aria-label="空格位 23，可选择建筑"><span class="cn">＋</span><span class="cl">空位</span></button>
+                  <button type="button" class="cell vacant" role="建筑格位-空位24" data-empty="true" aria-label="空格位 24，可选择建筑"><span class="cn">＋</span><span class="cl">空位</span></button>
+                  <button type="button" class="cell vacant" role="建筑格位-空位25" data-empty="true" aria-label="空格位 25，可选择建筑"><span class="cn">＋</span><span class="cl">空位</span></button>
+                </div>
+                <p class="hint">格位是操作入口 · 青色表示当前选中 · 高亮表示升级中</p>
+              </div>
+              <aside class="building-inspector" role="建筑格位详情" aria-live="polite">
+                <p class="inspector-kicker" id="inspector-position">格位 02 · 已建成</p>
+                <div class="inspector-title" role="选中建筑标题">
+                  <span class="inspector-icon" id="inspector-icon">田</span>
+                  <div role="选中建筑名称"><h3 id="inspector-name">农田</h3><p id="inspector-level">Lv 12</p></div>
+                </div>
+                <dl class="inspector-facts" role="选中建筑信息">
+                  <div role="建筑作用"><dt>作用</dt><dd id="inspector-effect">粮 +1,240/h</dd></div>
+                  <div role="建筑状态"><dt>状态</dt><dd id="inspector-status">已建成</dd></div>
+                </dl>
+                <button type="button" class="inspector-primary" id="inspector-action" role="建筑操作按钮">查看升级条件</button>
+                <div class="build-catalog" id="build-catalog" role="空位建筑选择" hidden>
+                  <p>选择要放入此格位的建筑</p>
+                  <button type="button" data-catalog-kind="农田">农田 <span>产粮</span></button>
+                  <button type="button" data-catalog-kind="伐木场">伐木场 <span>产木</span></button>
+                  <button type="button" data-catalog-kind="采石场">采石场 <span>产石</span></button>
+                  <button type="button" data-catalog-kind="铁矿">铁矿 <span>产铁</span></button>
+                </div>
+                <p class="inspector-feedback" id="inspector-feedback" role="建筑操作提示">建造与升级条件待确定；此处展示交互位置。</p>
+              </aside>
+            </div>
+            <details class="building-overview" role="资源建筑总览" open>
+              <summary role="资源总览展开按钮"><b>资源建筑总览</b><span>按类型查看 · 点击定位格位</span></summary>
+              <div class="overview-list" role="资源建筑定位列表">
+                <button type="button" data-focus-kind="farm" role="定位农田"><span>农田 <i>×1</i></span><em>粮 +1,240/h</em><strong>定位 ›</strong></button>
+                <button type="button" data-focus-kind="lumber_mill" role="定位伐木场"><span>伐木场 <i>×1</i></span><em>木 +980/h</em><strong>定位 ›</strong></button>
+                <button type="button" data-focus-kind="quarry" role="定位采石场"><span>采石场 <i>×1</i></span><em>石 +410/h</em><strong>定位 ›</strong></button>
+                <button type="button" data-focus-kind="iron_mine" role="定位铁矿"><span>铁矿 <i>×1</i></span><em>铁 +260/h</em><strong>定位 ›</strong></button>
+              </div>
+            </details>
+          </div>
+
+          <div class="panel">
+            <div class="ph"><h2>建造队列</h2><span>1 项进行中</span></div>
+            <ul class="queue">
+              <li>
+                <div class="q-row"><b>校场</b><span>Lv 5 → 6</span><em>00:42:15</em></div>
+                <div class="bar"><i style="width: 38%"></i></div>
+                <div class="q-by">Agent 发起<button type="button">加速</button></div>
+              </li>
+              <li class="queued">
+                <div class="q-row"><b>城墙</b><span>Lv 7 → 8</span><em>待开始</em></div>
+                <div class="q-by">玩家 发起</div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="panel">
+            <div class="ph"><h2>科技</h2><span>24 项</span></div>
+            <div class="tech">
+              <div class="t-row"><b>研究技巧</b><span>Lv 4</span><em>01:18:40</em></div>
+              <div class="bar"><i style="width: 62%"></i></div>
+              <div class="t-tags">
+                <span>种植 7</span><span>砍伐 6</span><span>挖掘 4</span><span>冶炼 3</span>
+                <span>统帅 5</span><span>侦察 2</span><span>练兵 5</span><span>行军 4</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 中栏：世界地图 + 行军 / 战场 -->
+        <section class="col col-world">
+          <div class="panel">
+            <div class="ph"><h2>世界地图</h2><span>视野 10×10 · 中心 132,88</span></div>
+            <div class="world-layout" role="世界地图工作区">
+              <div class="world-viewport" role="地图视野">
+                <div class="world-cols" id="world-cols" role="地图坐标轴-列"></div>
+                <div class="world-main">
+                  <div class="world-rows" id="world-rows" role="地图坐标轴-行"></div>
+                  <div class="world-grid" id="world-grid" role="地块列表"></div>
+                </div>
+                <div class="world-tooltip" id="world-tooltip" role="地块悬浮提示" hidden></div>
+              </div>
+              <aside class="tile-inspector" role="地块详情" aria-live="polite">
+                <p class="inspector-kicker" id="tile-coord">132,88</p>
+                <div class="inspector-title" role="选中地块标题">
+                  <span class="inspector-icon" id="tile-icon">城</span>
+                  <div role="选中地块名称"><h3 id="tile-name">襄阳</h3><p id="tile-sub">县城 Lv3 · 本城</p></div>
+                </div>
+                <dl class="inspector-facts" role="选中地块信息" id="tile-facts"></dl>
+                <div class="tile-actions" role="地块操作" id="tile-actions"></div>
+                <p class="inspector-feedback" id="tile-feedback" role="地块操作提示">选择左侧地块查看详情与操作。</p>
+              </aside>
+            </div>
+            <ul class="world-legend" id="world-legend" role="地图图例"></ul>
+          </div>
+
+          <div class="world-split">
+            <div class="panel">
+              <div class="ph"><h2>行军</h2><span>3 支在外</span></div>
+              <ul class="march">
+                <li>
+                  <div class="m-row"><b>张辽 · 骑 2,400</b><em>00:12</em></div>
+                  <div class="m-sub">掠夺 · 野地 Lv7</div>
+                  <div class="bar"><i style="width: 72%"></i></div>
+                </li>
+                <li>
+                  <div class="m-row"><b>关羽 · 步 5,600</b><em>00:31</em></div>
+                  <div class="m-sub">驻守 · 同盟城</div>
+                  <div class="bar"><i style="width: 46%"></i></div>
+                </li>
+                <li class="back">
+                  <div class="m-row"><b>甘宁 · 弓 1,800</b><em>01:04</em></div>
+                  <div class="m-sub">返程 · 载粮 4,200</div>
+                  <div class="bar"><i style="width: 28%"></i></div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="panel">
+              <div class="ph"><h2>战场</h2><span>官渡 · 回合 3</span></div>
+              <div class="field">
+                <div class="f-sides">
+                  <span class="side a">曹军 <b>12,400</b></span>
+                  <span class="side b">袁军 <b>9,800</b></span>
+                </div>
+                <div class="lane">
+                  <i class="unit a" style="left: 22%"></i>
+                  <i class="unit b" style="left: 74%"></i>
+                </div>
+                <p class="f-meta">距离 520 · 射程 240 · 下回合 00:30</p>
+              </div>
+              <div class="trick">
+                <span class="ck">计谋</span><b>坚壁清野</b><em>生效 02:14</em>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 右栏：名将 + Agent + 事件 -->
+        <section class="col col-side">
+          <div class="panel">
+            <div class="ph"><h2>名将</h2><span>3/12 · 全服唯一</span></div>
+            <ul class="heroes">
+              <li>
+                <div class="h-top"><b>关羽</b><span class="hs in">城内</span></div>
+                <dl><div><dt>勇</dt><dd>98</dd></div><div><dt>智</dt><dd>76</dd></div><div><dt>政</dt><dd>65</dd></div><div><dt>统</dt><dd>92</dd></div></dl>
+                <div class="troop"><span>8,400 / 9,200</span><div class="bar"><i style="width: 91%"></i></div></div>
+              </li>
+              <li>
+                <div class="h-top"><b>诸葛亮</b><span class="hs warn">重伤</span></div>
+                <dl><div><dt>勇</dt><dd>42</dd></div><div><dt>智</dt><dd>100</dd></div><div><dt>政</dt><dd>96</dd></div><div><dt>统</dt><dd>88</dd></div></dl>
+                <div class="troop"><span>0 / 8,800</span><div class="bar"><i class="low" style="width: 0%"></i></div></div>
+              </li>
+              <li>
+                <div class="h-top"><b>张辽</b><span class="hs out">出征</span></div>
+                <dl><div><dt>勇</dt><dd>91</dd></div><div><dt>智</dt><dd>74</dd></div><div><dt>政</dt><dd>58</dd></div><div><dt>统</dt><dd>85</dd></div></dl>
+                <div class="troop"><span>2,400 / 8,500</span><div class="bar"><i style="width: 28%"></i></div></div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="panel panel-agent">
+            <div class="ph"><h2>Agent</h2><span>关联同一账号</span></div>
+            <div class="agent">
+              <div class="a-head">
+                <span class="a-avatar">A</span>
+                <div class="a-name"><b>城池托管 Agent</b><p>委托范围 · 全部</p></div>
+                <span class="a-state">在线</span>
+              </div>
+              <dl>
+                <div><dt>连接</dt><dd>WebSocket 已连接</dd></div>
+                <div><dt>身份</dt><dd>登录连接声明</dd></div>
+                <div><dt>最近动作</dt><dd>发起校场升级 · 2 分钟前</dd></div>
+              </dl>
+              <p class="hint">玩家 / Agent 共用账号凭证，是连接声明的来源标记，不是可独立验证的身份。</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="ph"><h2>事件</h2><span>最近 6 条 · 断线按需查询</span></div>
+            <ol class="events">
+              <li><span class="et">17:04</span><span class="eb">Agent</span>发起校场升级至 Lv 6</li>
+              <li><span class="et">16:58</span><span class="eb me">玩家</span>张辽部抵达野地 Lv7</li>
+              <li><span class="et">16:41</span><span class="eb sys">系统</span>农田产出结算 +1,240 粮</li>
+              <li><span class="et">16:30</span><span class="eb">Agent</span>市场挂单 木材 8,000</li>
+              <li><span class="et">16:12</span><span class="eb sys">系统</span>官渡之战第 2 回合战报</li>
+              <li><span class="et">15:57</span><span class="eb me">玩家</span>诸葛亮重伤入治疗队列</li>
+            </ol>
+          </div>
+        </section>
+      </main>
+
+      <!-- 底条：联盟 / 今日 / 说明 -->
+      <footer class="strip">
+        <div class="chip"><span class="ck">联盟</span><b>汉室</b><span class="cv">鸿胪寺 Lv5 · 42/50</span></div>
+        <div class="chip"><span class="ck">今日</span><b>建造 1 · 出征 1</b><span class="cv">已完成 1 项</span><div class="bar"><i style="width: 50%"></i></div></div>
+        <div class="chip"><span class="ck">城防</span><b>箭塔 320</b><span class="cv">陷阱 · 拒马 · 滚木 · 擂石</span></div>
+        <div class="skins">
+          <span class="ck">皮肤</span>
+          <button type="button" data-theme="night" style="--swatch:#2dd4bf">暗夜</button>
+          <button type="button" data-theme="crimson" style="--swatch:#e8564a">赤霄</button>
+          <button type="button" data-theme="gilded" style="--swatch:#d9a441">鎏金</button>
+          <button type="button" data-theme="paper" style="--swatch:#b03a2e">宣纸</button>
+        </div>
+        <p class="disclaimer">设计样稿 · 不代表已确定的协议号、数据结构或业务数值</p>
+      </footer>
+    </div>
+
+    <script src="city-dark-buildings.js"></script>
+    <script src="city-dark-world.js"></script>
+    <script>
+      // 皮肤切换：只写 <html data-theme>，选择存入 localStorage；纯视觉演示，不涉及游戏数据
+      (function () {
+        var root = document.documentElement;
+        var buttons = Array.prototype.slice.call(document.querySelectorAll(".skins button"));
+        function apply(name) {
+          root.setAttribute("data-theme", name);
+          try { localStorage.setItem("slg-city-theme", name); } catch (e) {}
+          buttons.forEach(function (b) { b.classList.toggle("on", b.dataset.theme === name); });
+        }
+        var saved = null;
+        try { saved = localStorage.getItem("slg-city-theme"); } catch (e) {}
+        apply(saved || "night");
+        buttons.forEach(function (b) {
+          b.addEventListener("click", function () { apply(b.dataset.theme); });
+        });
+      })();
+    </script>
+  </body>
+</html>

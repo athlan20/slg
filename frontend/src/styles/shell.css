@@ -1,0 +1,181 @@
+/* 导航外壳与页面网格（docs/frontend-nav-layout.md 第 3 / 5 节）。
+   外壳 100dvh 锁定一屏；所有网格子项 min-height: 0 / min-width: 0，内容放不下由组件分页或截断，
+   任何一层都不出现竖向滚动条。断点：≥1280 标准；1024–1279 图标栏 + 三栏页变两栏；<1024 底部导航 + 每页一个主区块。 */
+
+.nav-shell {
+  height: 100dvh;
+  padding: 8px;
+  gap: 8px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  grid-template-rows: 52px minmax(0, 1fr) 40px;
+  grid-template-areas: 'side top' 'side work' 'side foot';
+}
+.nav-shell > * {
+  min-width: 0;
+  min-height: 0;
+}
+.nav-top {
+  grid-area: top;
+}
+.nav-work {
+  grid-area: work;
+  display: flex;
+  flex-direction: column;
+}
+.nav-foot {
+  grid-area: foot;
+}
+
+@media (max-width: 1279px) {
+  .nav-shell {
+    grid-template-columns: 60px minmax(0, 1fr);
+  }
+}
+@media (max-height: 760px) {
+  .nav-shell {
+    grid-template-rows: 46px minmax(0, 1fr) 40px;
+  }
+}
+@media (max-width: 1023px) {
+  .nav-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) 56px;
+    grid-template-areas: 'top' 'work' 'side';
+  }
+}
+
+/* ---------- 页面网格：work = 当前页的固定网格；block = 一个区块（卡片）的外壳 ---------- */
+.work {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+}
+.work > .block {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.work > .block > * {
+  flex: 1 1 0;
+  min-height: 0;
+}
+.mobile-tabs {
+  display: none;
+}
+
+/* 总览 = 状态看板（不放地图，地图只在地图页）：军情 · 进行中 / 兵力与人口 · 最近动态 */
+.p-overview {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  grid-template-areas: 'ctx lanes' 'army events';
+}
+.p-overview > .a-ctx {
+  grid-area: ctx;
+}
+.p-overview > .a-lanes {
+  grid-area: lanes;
+}
+.p-overview > .a-army {
+  grid-area: army;
+}
+.p-overview > .a-events {
+  grid-area: events;
+}
+.p-map {
+  grid-template-columns: minmax(0, 1fr) 360px;
+}
+/* 城池：顶部是建造队列（三个槽位，一直可见），下面左城内建筑、右选中建筑详情 */
+.p-city {
+  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: 'queue queue' 'grid detail' 'stats detail';
+}
+.p-city > .a-queue {
+  grid-area: queue;
+}
+.p-city > .a-grid {
+  grid-area: grid;
+}
+.p-city > .a-stats {
+  grid-area: stats;
+}
+.p-city > .a-detail {
+  grid-area: detail;
+}
+/* 内容定高的块（队列条 / 城内视图）：按内容撑开，不参与「均分剩余高度」 */
+.work > .block.fit,
+.work > .block.fit > * {
+  flex: none;
+}
+.p-army,
+.p-intel,
+.p-agent {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.p-growth {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* 1024–1279：三栏页变两栏（第三块隐藏，内容在别的页面也能找到）；地图页右栏收窄 */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .p-army,
+  .p-intel,
+  .p-agent {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .work > .block.hide-md {
+    display: none;
+  }
+  .p-map {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+/* < 1024：每页只显示一个区块（页内用顶部分段条切换）；地图页选中地块后换成操作表单、城池页选中建筑后换成详情 */
+@media (max-width: 1023px) {
+  .work {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .work > .block {
+    display: none;
+    flex: 1;
+  }
+  .work > .block.on {
+    display: flex;
+  }
+  /* 常驻块（城池页的建造队列）：手机上也一直显示，按内容高度，不参与分段切换 */
+  .work > .block.always {
+    display: flex;
+    flex: none;
+  }
+  .work > .block.always > * {
+    flex: none;
+  }
+  .mobile-tabs {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .mobile-tabs > button {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .mobile-tabs > button.on {
+    color: var(--accent);
+    border-color: var(--accent-dim);
+    background: var(--accent-soft);
+  }
+}

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SLG · 城池主界面样稿</title>
+    <link rel="stylesheet" href="city-main.css" />
+    <link id="theme" rel="stylesheet" href="theme-rice.css" />
+  </head>
+  <body>
+    <div class="frame">
+      <div class="themebar">
+        <span>视觉方案</span>
+        <div class="theme-switch">
+          <button type="button" data-theme="theme-rice" class="on">宣纸朱印</button>
+          <button type="button" data-theme="theme-ink">水墨</button>
+          <button type="button" data-theme="theme-bamboo">竹简夜</button>
+          <button type="button" data-theme="theme-mono">数据台</button>
+        </div>
+        <span class="themebar-note">只切换配色与字体，布局与信息结构不变</span>
+      </div>
+
+      <header class="hud">
+        <div class="hud-city">
+          <span class="seal">SLG</span>
+          <div>
+            <h1>襄阳<span class="rank">县城</span></h1>
+            <p>坐标 132,88 · 三服 · 民心 86</p>
+          </div>
+        </div>
+
+        <ul class="resources">
+          <li><span class="rk">黄金</span><span class="rv">12,480</span><span class="rr">820/h</span></li>
+          <li><span class="rk">粮食</span><span class="rv">48,200</span><span class="rr">1,240/h</span></li>
+          <li><span class="rk">木材</span><span class="rv">33,100</span><span class="rr">980/h</span></li>
+          <li><span class="rk">石料</span><span class="rv">8,640</span><span class="rr">410/h</span></li>
+          <li><span class="rk">铁锭</span><span class="rv">5,230</span><span class="rr">260/h</span></li>
+          <li class="pop"><span class="rk">人口</span><span class="rv">4,820</span><span class="rr">/ 6,000</span></li>
+        </ul>
+
+        <div class="hud-side">
+          <div class="wallet"><span>元宝 <b>320</b></span><span>礼金 <b>58</b></span></div>
+          <div class="conn"><i></i>已连接 · Agent 在线</div>
+        </div>
+      </header>
+
+      <main class="board">
+        <section class="col">
+          <div class="block">
+            <div class="block-head"><h2>城内</h2><span>已建 19 · 空位 6</span></div>
+            <div class="city-grid">
+              <div class="cell"><span class="cn">府</span><span class="cl">9</span></div>
+              <div class="cell"><span class="cn">田</span><span class="cl">12</span></div>
+              <div class="cell"><span class="cn">木</span><span class="cl">10</span></div>
+              <div class="cell"><span class="cn">石</span><span class="cl">8</span></div>
+              <div class="cell"><span class="cn">铁</span><span class="cl">7</span></div>
+              <div class="cell"><span class="cn">居</span><span class="cl">11</span></div>
+              <div class="cell"><span class="cn">学</span><span class="cl">6</span></div>
+              <div class="cell building"><span class="cn">校</span><span class="cl">5→6</span></div>
+              <div class="cell"><span class="cn">营</span><span class="cl">8</span></div>
+              <div class="cell"><span class="cn">贤</span><span class="cl">7</span></div>
+              <div class="cell"><span class="cn">鸿</span><span class="cl">5</span></div>
+              <div class="cell"><span class="cn">市</span><span class="cl">6</span></div>
+              <div class="cell"><span class="cn">匠</span><span class="cl">4</span></div>
+              <div class="cell"><span class="cn">坊</span><span class="cl">4</span></div>
+              <div class="cell"><span class="cn">仓</span><span class="cl">9</span></div>
+              <div class="cell"><span class="cn">库</span><span class="cl">9</span></div>
+              <div class="cell"><span class="cn">驿</span><span class="cl">5</span></div>
+              <div class="cell"><span class="cn">烽</span><span class="cl">3</span></div>
+              <div class="cell"><span class="cn">城</span><span class="cl">7</span></div>
+              <div class="cell empty"><span class="cn">＋</span></div>
+              <div class="cell slot"></div>
+              <div class="cell slot"></div>
+              <div class="cell slot"></div>
+              <div class="cell slot"></div>
+              <div class="cell slot"></div>
+            </div>
+            <p class="note">点击空格位可新建建筑 · 红框为升级中</p>
+          </div>
+
+          <div class="block">
+            <div class="block-head"><h2>建造队列</h2><span>1 项进行中</span></div>
+            <ul class="queue">
+              <li>
+                <div class="q-row"><b>校场</b><span>Lv 5 → 6</span><em>00:42:15</em></div>
+                <div class="bar"><i style="width: 38%"></i></div>
+                <div class="q-by">发起者 · Agent<button type="button">加速</button></div>
+              </li>
+              <li class="queued">
+                <div class="q-row"><b>城墙</b><span>Lv 7 → 8</span><em>待开始</em></div>
+                <div class="q-by">发起者 · 玩家</div>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="col col-world">
+          <div class="block">
+            <div class="block-head"><h2>世界地图</h2><span>区块 132,88 · 10×10 格 / 块</span></div>
+            <div class="world">
+              <div class="wrow"><i class="t-f"></i><i class="t-f"></i><i class="t-p"></i><i class="t-g"></i><i class="t-p"></i><i class="t-p"></i><i class="t-h"></i><i class="t-p"></i><i class="t-p"></i><i class="t-d"></i><i class="t-d"></i><i class="t-f"></i></div>
+              <div class="wrow"><i class="t-f"></i><i class="t-p"></i><i class="t-p"></i><i class="t-g"></i><i class="t-p"></i><i class="t-h"></i><i class="t-h"></i><i class="t-p"></i><i class="t-d"></i><i class="t-d"></i><i class="t-f"></i><i class="t-f"></i></div>
+              <div class="wrow"><i class="t-p"></i><i class="t-p"></i><i class="t-g"></i><i class="t-g"></i><i class="t-p"></i><i class="t-p"></i><i class="t-h"></i><i class="t-h"></i><i class="t-h"></i><i class="t-d npc"></i><i class="t-f"></i><i class="t-p"></i></div>
+              <div class="wrow"><i class="t-g"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-f"></i><i class="t-p"></i><i class="t-p"></i><i class="t-h"></i><i class="t-h"></i><i class="t-d"></i><i class="t-d"></i><i class="t-p"></i></div>
+              <div class="wrow"><i class="t-p"></i><i class="t-p"></i><i class="t-p lv" data-lv="7"></i><i class="t-self"></i><i class="t-self"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-h"></i><i class="t-d"></i><i class="t-p"></i><i class="t-p"></i></div>
+              <div class="wrow"><i class="t-g"></i><i class="t-p"></i><i class="t-p"></i><i class="t-self"></i><i class="t-self"></i><i class="t-p"></i><i class="t-f"></i><i class="t-p"></i><i class="t-p"></i><i class="t-h"></i><i class="t-p"></i><i class="t-g"></i></div>
+              <div class="wrow"><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-f"></i><i class="t-f"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i></div>
+              <div class="wrow"><i class="t-h"></i><i class="t-p"></i><i class="t-p"></i><i class="t-f"></i><i class="t-p"></i><i class="t-w"></i><i class="t-w"></i><i class="t-p"></i><i class="t-p"></i><i class="t-g"></i><i class="t-p"></i><i class="t-p"></i></div>
+              <div class="wrow"><i class="t-h"></i><i class="t-h"></i><i class="t-p"></i><i class="t-f"></i><i class="t-p"></i><i class="t-w"></i><i class="t-w"></i><i class="t-p"></i><i class="t-g"></i><i class="t-g"></i><i class="t-p"></i><i class="t-m"></i></div>
+              <div class="wrow"><i class="t-p"></i><i class="t-h"></i><i class="t-h"></i><i class="t-p"></i><i class="t-p"></i><i class="t-w"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p target"></i><i class="t-m"></i><i class="t-m"></i><i class="t-p"></i></div>
+              <div class="wrow"><i class="t-p"></i><i class="t-p"></i><i class="t-h"></i><i class="t-h"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-m"></i><i class="t-m"></i><i class="t-p"></i><i class="t-p"></i></div>
+              <div class="wrow"><i class="t-p ally"></i><i class="t-p"></i><i class="t-p"></i><i class="t-h"></i><i class="t-p"></i><i class="t-p"></i><i class="t-f"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i><i class="t-p"></i></div>
+            </div>
+            <ul class="legend">
+              <li><i class="t-p"></i>平原</li>
+              <li><i class="t-f"></i>森林</li>
+              <li><i class="t-g"></i>草原</li>
+              <li><i class="t-h"></i>丘陵</li>
+              <li><i class="t-d"></i>荒漠</li>
+              <li><i class="t-w"></i>湖泊</li>
+              <li><i class="t-m"></i>沼泽</li>
+              <li><i class="t-self"></i>本城</li>
+              <li><i class="t-npc-dot"></i>名城 / 玩家城</li>
+            </ul>
+          </div>
+
+          <div class="world-split">
+            <div class="block">
+              <div class="block-head"><h2>行军</h2><span>3 支部队在外</span></div>
+              <ul class="march">
+                <li>
+                  <div class="m-row"><b>张辽 · 骑兵 2,400</b><span>掠夺 · 野地 Lv7</span><em>00:12</em></div>
+                  <div class="bar"><i style="width: 72%"></i></div>
+                </li>
+                <li>
+                  <div class="m-row"><b>关羽 · 步兵 5,600</b><span>驻守 · 同盟城</span><em>00:31</em></div>
+                  <div class="bar"><i style="width: 46%"></i></div>
+                </li>
+                <li class="back">
+                  <div class="m-row"><b>甘宁 · 弓兵 1,800</b><span>返程 · 载回粮 4,200</span><em>01:04</em></div>
+                  <div class="bar"><i style="width: 28%"></i></div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="block">
+              <div class="block-head"><h2>战场</h2><span>官渡之战 · 第 3 回合</span></div>
+              <div class="field">
+                <div class="axis">
+                  <span class="side a">曹军<b>12,400</b></span>
+                  <div class="lane">
+                    <i class="unit a" style="left: 22%"></i>
+                    <i class="unit b" style="left: 74%"></i>
+                  </div>
+                  <span class="side b">袁军<b>9,800</b></span>
+                </div>
+                <p class="field-note">射程 240 · 下一回合 00:00:30 · 距离 520</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="col col-side">
+          <div class="block">
+            <div class="block-head"><h2>名将</h2><span>3 / 12 · 全服唯一</span></div>
+            <ul class="heroes">
+              <li>
+                <div class="h-top"><b>关羽</b><span class="hs">城内</span></div>
+                <dl>
+                  <div><dt>勇武</dt><dd>98</dd></div>
+                  <div><dt>智谋</dt><dd>76</dd></div>
+                  <div><dt>内政</dt><dd>65</dd></div>
+                  <div><dt>统率</dt><dd>92</dd></div>
+                </dl>
+                <div class="troop"><span>带兵 8,400 / 9,200</span><div class="bar"><i style="width: 91%"></i></div></div>
+              </li>
+              <li>
+                <div class="h-top"><b>诸葛亮</b><span class="hs warn">重伤</span></div>
+                <dl>
+                  <div><dt>勇武</dt><dd>42</dd></div>
+                  <div><dt>智谋</dt><dd>100</dd></div>
+                  <div><dt>内政</dt><dd>96</dd></div>
+                  <div><dt>统率</dt><dd>88</dd></div>
+                </dl>
+                <div class="troop"><span>带兵 0 / 8,800</span><div class="bar"><i class="low" style="width: 0%"></i></div></div>
+              </li>
+              <li>
+                <div class="h-top"><b>张辽</b><span class="hs out">出征</span></div>
+                <dl>
+                  <div><dt>勇武</dt><dd>91</dd></div>
+                  <div><dt>智谋</dt><dd>74</dd></div>
+                  <div><dt>内政</dt><dd>58</dd></div>
+                  <div><dt>统率</dt><dd>85</dd></div>
+                </dl>
+                <div class="troop"><span>带兵 2,400 / 8,500</span><div class="bar"><i style="width: 28%"></i></div></div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="block block-agent">
+            <div class="block-head"><h2>Agent</h2><span>关联同一账号</span></div>
+            <div class="agent">
+              <div class="a-head"><span class="a-avatar">A</span><div><b>城池托管 Agent</b><p>委托范围 · 全部</p></div><span class="a-state">在线</span></div>
+              <dl>
+                <div><dt>连接状态</dt><dd>WebSocket 已连接</dd></div>
+                <div><dt>身份来源</dt><dd>登录连接声明</dd></div>
+                <div><dt>最近动作</dt><dd>发起校场升级 · 2 分钟前</dd></div>
+              </dl>
+              <p class="note">玩家 / Agent 共用账号凭证，是连接声明的来源标记，不是可独立验证的身份。</p>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-head"><h2>事件</h2><span>最近 6 条 · 断线按需查询</span></div>
+            <ol class="events">
+              <li><span class="et">17:04</span><span class="eb">Agent</span>发起校场升级至 Lv 6</li>
+              <li><span class="et">16:58</span><span class="eb me">玩家</span>张辽部抵达野地 Lv7</li>
+              <li><span class="et">16:41</span><span class="eb sys">系统</span>农田产出结算 +1,240 粮</li>
+              <li><span class="et">16:30</span><span class="eb">Agent</span>市场挂单 木材 8,000</li>
+              <li><span class="et">16:12</span><span class="eb sys">系统</span>官渡之战第 2 回合战报</li>
+              <li><span class="et">15:57</span><span class="eb me">玩家</span>诸葛亮重伤入治疗队列</li>
+            </ol>
+          </div>
+        </section>
+      </main>
+
+      <footer class="strip">
+        <div class="chip"><span class="ck">科技</span><b>研究技巧</b><span class="cv">Lv 4 · 24 项</span><div class="bar"><i style="width: 62%"></i></div></div>
+        <div class="chip"><span class="ck">计谋</span><b>坚壁清野</b><span class="cv">生效中 02:14</span></div>
+        <div class="chip"><span class="ck">联盟</span><b>汉室</b><span class="cv">鸿胪寺 Lv5 · 42/50</span></div>
+        <div class="chip"><span class="ck">今日</span><b>建造 1 / 出征 1</b><span class="cv">已完成 1 项</span><div class="bar"><i style="width: 50%"></i></div></div>
+        <p class="disclaimer">视觉样稿 · 不代表已确定的协议号、数据结构或业务数值</p>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        var link = document.getElementById("theme");
+        var buttons = document.querySelectorAll(".theme-switch button");
+        buttons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            link.href = btn.dataset.theme + ".css";
+            buttons.forEach(function (b) { b.classList.toggle("on", b === btn); });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

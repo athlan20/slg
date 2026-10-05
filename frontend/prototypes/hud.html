@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>沉浸地图 · 样稿</title>
+    <link rel="stylesheet" href="city-dark-themes.css" />
+    <link rel="stylesheet" href="console.css" />
+    <link rel="stylesheet" href="console-panels.css" />
+    <link rel="stylesheet" href="hud.css" />
+  </head>
+  <body>
+    <!-- 方案 B「沉浸地图」：地图铺满整屏，所有面板都是浮在地图上的半透明 HUD。
+         左侧图标坞点开城务抽屉（再点收起），右侧情报卡可折叠，底部指挥条放视图切换 / 图层 / 单行时间线。 -->
+    <div class="hud" role="沉浸布局">
+      <div class="map-wrap hud-map" role="沉浸-地图">
+        <div class="map" role="沉浸-地图网格"></div>
+        <svg class="routes" role="沉浸-移动目标路线"></svg>
+      </div>
+
+      <header class="topbar hud-top glass" role="沉浸-顶栏">
+        <button class="city-switch" data-action="toggle-cities" role="沉浸-城池切换">
+          <span class="city-badge">襄</span>
+          <span class="city-meta"><b>襄阳</b><small>Lv9 · 132,88 · 共 3 城</small></span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="city-menu" hidden role="沉浸-城池下拉"></div>
+        <div class="res-strip" role="沉浸-资源条"></div>
+        <div class="top-flags" role="沉浸-警报"></div>
+        <div class="top-actions" role="沉浸-操作">
+          <button class="pill" data-action="exchange">集市</button>
+          <button class="pill" data-action="leaderboard">榜</button>
+          <button class="account" data-action="toggle-account">xiling ▾</button>
+          <div class="account-menu" hidden role="沉浸-账号菜单">
+            <button>城池改名</button><button>切换账号</button><button class="danger" data-action="reset">重置账号</button>
+            <div class="theme-row"></div>
+            <div class="layout-row"></div>
+          </div>
+        </div>
+      </header>
+
+      <nav class="rail hud-rail glass" role="沉浸-城务图标坞"></nav>
+      <section class="dock-panel hud-drawer glass" role="沉浸-城务抽屉" hidden></section>
+
+      <aside class="hud-card glass" role="沉浸-情报卡">
+        <div class="tabs hud-tabs" role="沉浸-情报分类"></div>
+        <div class="hud-card-body" role="沉浸-情报内容"></div>
+      </aside>
+      <div class="yt-card hud-yt" role="沉浸-黄巾浮卡"></div>
+
+      <footer class="hud-bar glass" role="沉浸-指挥条">
+        <div class="seg"><button data-view="world">世界</button><button data-view="city">城内</button></div>
+        <div class="layers">
+          <label><input type="checkbox" data-layer="moving" checked />流寇·商队</label>
+          <label><input type="checkbox" data-layer="yt" checked />黄巾</label>
+          <label><input type="checkbox" data-layer="mine" checked />领地</label>
+        </div>
+        <div class="hud-strip" role="沉浸-单行时间线"></div>
+        <div class="hud-ticker" role="沉浸-全服播报"></div>
+      </footer>
+    </div>
+    <div class="alert-toast" hidden role="NPC来袭提醒"></div>
+
+    <script src="console-data.js"></script>
+    <script src="console-map.js"></script>
+    <script src="console-right.js"></script>
+    <script src="console-modal.js"></script>
+    <script src="console-views.js"></script>
+    <script src="hud.js"></script>
+  </body>
+</html>

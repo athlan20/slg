@@ -1,0 +1,23 @@
+.DS_Store
+.idea/
+.workbuddy/
+node_modules/
+dist/
+build/
+coverage/
+test-results/
+playwright-report/
+.rsbuild/
+*.log
+*.pid
+*.pid.lock
+.env
+.env.*
+!.env.example
+
+# AI 会话工作目录
+.aiwork/
+
+README2.md
+CLAUDE.local.md
+wechat-minigame

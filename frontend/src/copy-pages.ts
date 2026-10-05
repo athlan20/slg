@@ -1,0 +1,165 @@
+// 各页面（地图 / 城池 / 军队 / 养成 / 情报 / Agent / 总览）的页面级文案：区块标题、空态、摘要行、按钮。
+// 沿用旧面板文案的地方直接引用 copy.ts / copy-*.ts，这里只放导航重构后新增的句子。
+
+export const MAPUI_COPY = {
+  title: '世界地图',
+  layerMoving: '流寇·商队',
+  layerYt: '黄巾',
+  layerMine: '领地',
+  legendToggle: '图例',
+  back: '返回地图',
+};
+
+export const TARGET_COPY = {
+  summaryTitle: '军情',
+  summaryHint: '点地图格查看详情与操作',
+  movingTitle: '流寇与商队',
+  detailTitle: (x: number, y: number) => `(${x},${y})`,
+  close: '取消选中',
+  factDistance: '距离',
+  factGarrison: '守军',
+  factScout: '上次侦察',
+  distance: (cells: number) => `${cells} 格`,
+  unknown: '—',
+  notScouted: '未侦察',
+  loading: '加载地块信息…',
+  ownerNone: '无主',
+  actions: {
+    plunder: '掠夺',
+    occupy: '占领',
+    scout: '侦察',
+    clear: '清剿',
+    intercept: '截击',
+    reinforce: '增援',
+    recall: '撤回驻军',
+    transfer: '调兵',
+    transport: '运输',
+  },
+  confirm: (action: string) => `确认${action}`,
+  noOps: '这块地没有可用的操作',
+  ownCityHere: '当前所在城池',
+  otherCityHint: '他人城池只能侦察；玩家对抗尚未开放',
+  recallHint: '驻军将返回出发城，并放弃该野地的占领。',
+  verdict: {
+    power: (power: number) => `战力 ${power}`,
+    enemy: (power: number) => `守军约 ${power}`,
+    carry: (carry: number) => `负重 ${carry}`,
+  },
+  heroLabel: '随队将领',
+};
+
+export const SUMMARY_COPY = {
+  title: '军情',
+  hint: '点地图格查看详情与操作',
+  empty: '暂无需要关注的军情',
+  idle: '空闲',
+  npc: (target: string, level: number | null) => `NPC 来袭 · ${target}${level !== null && level > 0 ? ` Lv${level}` : ''}`,
+  npcSub: (min: number, max: number, beacon: number | undefined) => `兵力约 ${min}–${max}${beacon !== undefined ? ` · 烽火台 ${beacon} 级` : ''}`,
+  npcCity: '主城',
+  npcWild: (x: number, y: number) => `野地 (${x},${y})`,
+  yt: (stage: string) => `黄巾之乱 · ${stage}`,
+  ytStageBoss: '老巢已现',
+  ytStageOuter: '外围清剿',
+  ytSub: (cleared: number, total: number, mine: string) => `已清 ${cleared}/${total} · ${mine}`,
+  ytMine: (killed: number, rank: number) => `我的贡献 ${killed}（第 ${rank} 名）`,
+  ytMineNone: '我还没有贡献',
+  starve: '断粮预警',
+  truce: '免战中',
+  starveSub: (net: number, left: string | null) => `粮净产 ${net >= 0 ? '+' : ''}${net}/h${left ? `，约 ${left} 后断粮` : ''}`,
+  truceSub: (left: string) => `免战剩 ${left}`,
+  goRecruit: '去征兵',
+  moving: (count: number) => `流寇 / 商队 · ${count} 支`,
+  movingNearest: (label: string, level: number, dist: number | null) => `最近：${label} Lv${level}${dist !== null ? `，${dist} 格外` : ''}`,
+  movingRecommend: (x: number, y: number) => `推荐截击格 (${x},${y})`,
+  locate: '定位',
+  agentNext: 'Agent 下一步',
+  agentNone: '尚未汇报',
+  agentOnline: '在线',
+  agentOffline: '离线',
+};
+
+export const CITY_PAGE_COPY = {
+  gridTitle: '城内',
+  detailEmptyTitle: '建筑详情',
+  placeholder: '点选左侧建筑查看详情',
+  gridMeta: (built: number, total: number) => `${built}/${total} 已建`,
+  statsTitle: '城池概况',
+  statPopulation: '人口',
+  statDeploy: '在外部队',
+  statDeploySub: '≤ 校场等级',
+  statDefense: '守城加成',
+  statDefenseSub: '城墙 / 科技',
+  queueTitle: '建造队列',
+  queueMeta: (used: number, slots: number) => `已用 ${used} / ${slots} 个槽位`,
+  emptySlot: '空位 · 可排队建造',
+  deployMeta: '在外部队',
+};
+
+export const ARMY_COPY = {
+  recruitTitle: '征兵',
+  recruitMeta: (barracks: number, popLeft: number) => `军营 Lv${barracks} · 人口余 ${popLeft}`,
+  colTroop: '兵种',
+  colHome: '城内',
+  colOut: '在外',
+  colCount: '招募',
+  locked: (level: number) => `需军营 Lv${level}`,
+  noBarracks: '尚未建造军营',
+  submit: '招募',
+  queueTitle: '征兵队列',
+  marchTitle: '行军',
+  marchMeta: (out: number) => `在外 ${out} 支`,
+  marchEmpty: '没有在外的部队',
+  marchLocate: '定位',
+  marchStateMarching: '行军',
+  marchStateReturn: '返程',
+  marchStateAmbush: '埋伏中',
+  territoryTitle: '领地',
+  territoryMeta: (count: number, cap: number) => `${count} / ${cap}（官府等级）`,
+  tag: {
+    porter: '运输',
+    militia: '基础',
+    scout: '侦察',
+    pikeman: '克骑',
+    swordsman: '抗弓',
+    archer: '远程',
+    cavalry: '反远程',
+    iron_cavalry: '重骑',
+    supply_wagon: '后勤',
+    ballista: '器械',
+    siege_ram: '攻城',
+  } as Record<string, string>,
+};
+
+export const INTEL_COPY = {
+  reportsTitle: '战报',
+  eventsTitle: '动态',
+  agentLogTitle: 'Agent 操作记录',
+  agentLogMeta: (n: number) => `${n} 条`,
+  agentLogEmpty: 'Agent 还没有做过任何操作',
+  noAgentReport: 'Agent 还没有留下日报',
+  offlineLoading: '日报加载中…',
+  fullReport: '查看完整日报',
+};
+
+export const WARN_COPY = {
+  reinforceCity: '去征兵增援',
+  reinforceWild: '定位目标',
+};
+
+export const BOARD_COPY = {
+  ytTitle: '黄巾之乱',
+};
+
+export const OVERVIEW_COPY = {
+  armyTitle: '兵力与人口',
+  goArmy: '去军队 ›',
+  totalTroops: '总兵力',
+  power: '城内战力',
+  population: '人口',
+  defense: '守城加成',
+  home: '城内',
+  out: '在外',
+  homeOutHint: '每格「城内 / 在外」',
+  eventsTitle: '最近动态',
+  lanesTitle: '进行中',
+};

@@ -1,0 +1,40 @@
+{
+  "name": "slg-backend",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "description": "SLG 第一期后端最小闭环：Fastify WebSocket API + 独立 Worker + 共享规则",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "api": "tsx --env-file=.env api/src/index.ts",
+    "worker": "tsx --env-file=.env worker/src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "smoke": "tsx --env-file=.env scripts/smoke.ts",
+    "calibrate:battle": "tsx scripts/battle-calibration.ts",
+    "calibrate:troops": "tsx scripts/troop-calibration.ts",
+    "calibrate:tower": "tsx scripts/tower-calibration.ts",
+    "calibrate:hero": "tsx scripts/hero-calibration.ts",
+    "calibrate:pvp": "tsx scripts/pvp-calibration.ts",
+    "calibrate:plunder": "tsx scripts/plunder-calibration.ts",
+    "gen:api-doc": "tsx scripts/gen-agent-api.ts",
+    "check:api-doc": "tsx scripts/gen-agent-api.ts --check"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fastify/websocket": "^11.0.0",
+    "fastify": "^5.0.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.11.0",
+    "@types/ws": "^8.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "ws": "^8.18.0"
+  }
+}

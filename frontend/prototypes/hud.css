@@ -1,0 +1,72 @@
+/* 方案 B「沉浸地图」：地图铺满 100dvh，面板全部浮动（glass）。共用组件样式来自 console.css / console-panels.css。 */
+
+.hud { position: relative; height: 100dvh; overflow: hidden; }
+.hud-map { position: absolute; inset: 0; }
+.hud-map .map { inset: 0; gap: 1px; }
+.hud-map .tile { border-radius: 0; }
+
+.glass {
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.hud-top { position: absolute; top: 10px; left: 10px; right: 10px; height: 52px; z-index: 10; }
+.hud-top .res-strip { max-width: 760px; }
+
+.hud-rail {
+  position: absolute; left: 10px; top: 72px; width: 52px; z-index: 10; padding: 6px 4px; border-right: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.hud-drawer {
+  position: absolute; left: 70px; top: 72px; bottom: 74px; width: 310px; z-index: 9;
+  padding: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.hud-drawer .close { position: absolute; right: 8px; top: 8px; }
+
+.hud-card {
+  position: absolute; right: 10px; top: 72px; bottom: 74px; width: 350px; z-index: 9;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.hud-card.folded { bottom: auto; }
+.hud-card.folded .hud-card-body { display: none; }
+.hud-tabs .fold { margin-left: auto; color: var(--text-faint); }
+.hud-card-body { flex: 1; min-height: 0; padding: 10px; display: flex; flex-direction: column; gap: 7px; overflow: hidden; }
+.hud-card-body > .ctx-inner { display: flex; flex-direction: column; gap: 7px; min-height: 0; flex: 1; }
+
+.hud-yt { left: auto; right: 372px; top: 72px; z-index: 8; }
+.hud-card.folded ~ .hud-yt { right: 372px; }
+
+.hud-bar {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; height: 54px; z-index: 10;
+  display: flex; align-items: center; gap: 12px; padding: 0 12px; font-size: 12px; color: var(--text-dim);
+}
+.hud-bar .layers { margin-left: 0; display: flex; }
+.hud-strip { flex: 1; min-width: 0; display: flex; gap: 6px; overflow: hidden; }
+.hud-strip .chip > .faint { margin-right: -2px; }
+.hud-ticker { width: 300px; flex-shrink: 0; overflow: hidden; }
+.hud-ticker p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; }
+.hud-ticker p + p { display: none; }
+.hud-ticker b { color: var(--gold); font-weight: 500; }
+
+@media (max-width: 1279px) {
+  .hud-ticker { display: none; }
+  .hud-card { width: 310px; }
+  .hud-yt { right: 332px; }
+}
+/* < 1024：图标坞横到底部指挥条上方；抽屉与情报卡变成底部抽屉（同一时间只开一个） */
+@media (max-width: 1023px) {
+  .hud-top { height: auto; flex-wrap: wrap; padding: 6px 8px; }
+  .hud-top .res-strip { order: 3; flex-basis: 100%; max-width: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hud-top .top-flags, .hud-top .pill { display: none; }
+  .hud-rail { top: auto; bottom: 72px; left: 10px; right: 10px; width: auto; flex-direction: row; justify-content: space-around; }
+  .hud-drawer, .hud-card { left: 10px; right: 10px; width: auto; top: 30%; bottom: 128px; }
+  .hud-card.folded { top: auto; bottom: 128px; }
+  /* 城务抽屉内容多（征兵 11 行 + 队列），从顶栏下沿起；情报卡保留上方一截地图可见 */
+  .hud-drawer { top: 168px; }
+  .hud-yt { display: none; }
+  .hud-bar .layers, .hud-strip { display: none; }
+  .hud-bar { justify-content: center; }
+}

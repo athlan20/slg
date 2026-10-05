@@ -1,0 +1,17 @@
+{
+  "name": "slg",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "SLG 根包：跨前后端端到端测试工具（浏览器 E2E 用 Playwright）",
+  "scripts": {
+    "test:e2e": "playwright test --pass-with-no-tests",
+    "test:wechat": "cd backend && npx tsx --test ../test/wechat/wechat-login.test.ts ../test/wechat/minigame-flow.test.ts",
+    "test:google": "cd backend && npx tsx --test ../test/google/google-login.test.ts",
+    "test:github": "cd backend && npx tsx --test ../test/github/github-login.test.ts",
+    "test:minigame": "node --test wechat-minigame/test/match-logic.test.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

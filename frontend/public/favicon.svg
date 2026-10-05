@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="SLG">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="36%" r="80%">
+      <stop offset="0%" stop-color="#1b2340"/>
+      <stop offset="56%" stop-color="#101525"/>
+      <stop offset="100%" stop-color="#0a0e18"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 底板：暗夜圆角方 -->
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <g stroke-linejoin="round" stroke-linecap="round" fill="none">
+    <!-- 青色背光：盾外沿的冷边 -->
+    <path d="M91,124 C91,96 160,70 256,70 C352,70 421,96 421,124
+             L421,320 C421,398 348,442 256,476 C164,442 91,398 91,320 Z"
+          stroke="#2dd4bf" stroke-width="62" opacity="0.5"/>
+    <!-- 金色盾身 -->
+    <path d="M91,124 C91,96 160,70 256,70 C352,70 421,96 421,124
+             L421,320 C421,398 348,442 256,476 C164,442 91,398 91,320 Z"
+          stroke="#e0b848" stroke-width="38" fill="#0c1220"/>
+  </g>
+
+  <!-- 城内：三垛城墙 -->
+  <path d="M168,152 h40 v44 h28 v-44 h40 v44 h28 v-44 h40 v234 h-176 z" fill="#e0b848"/>
+  <!-- 城门洞：拱门挖穿墙底 -->
+  <path d="M218,386 L218,348 A38,38 0 0 1 294,348 L294,386 Z" fill="#0c1220"/>
+</svg>

@@ -1,0 +1,90 @@
+/* 方案 D「导航工作区」：侧栏 + 顶栏 + 单页工作区 + 底部一行。每页内部是固定网格，内容超出就分页。 */
+
+.nav {
+  height: 100dvh; padding: 8px; gap: 8px; overflow: hidden;
+  display: grid; grid-template-columns: 176px minmax(0, 1fr); grid-template-rows: 52px minmax(0, 1fr) 40px;
+  grid-template-areas: 'side top' 'side work' 'side foot';
+}
+.side {
+  grid-area: side; position: relative; display: flex; flex-direction: column; gap: 8px; padding: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; min-height: 0;
+}
+.side .city-menu { top: 52px; left: 4px; }
+.side-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; min-height: 0; }
+.side-nav button {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border: 0; border-radius: 5px; background: none; color: var(--text-dim); text-align: left; font-size: 13px;
+}
+.side-nav button b { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 4px; border: 1px solid var(--line); font-size: 12px; font-weight: 600; }
+.side-nav button.on { background: var(--accent-soft); color: var(--accent); }
+.side-nav button.on b { border-color: var(--accent-dim); }
+.side-nav .badge { margin-left: auto; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--line); color: var(--text); font-size: 10.5px; text-align: center; }
+.side-nav .badge.hot { background: var(--bad); color: var(--bg); }
+.side-foot { position: relative; }
+.side-foot .account { width: 100%; text-align: left; }
+.side-foot .account-menu { top: auto; bottom: 36px; left: 0; right: auto; }
+
+.nav-top { grid-area: top; }
+.page-title { margin: 0 6px 0 4px; font-size: 16px; font-weight: 600; white-space: nowrap; }
+.work { grid-area: work; min-height: 0; display: grid; gap: 8px; }
+.nav-foot {
+  grid-area: foot; display: flex; align-items: center; gap: 10px; padding: 0 10px; min-width: 0;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px;
+}
+.nav-foot .hud-strip { flex: 1; min-width: 0; display: flex; gap: 6px; overflow: hidden; }
+.nav-ticker { width: 340px; flex-shrink: 0; overflow: hidden; }
+.nav-ticker p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
+.nav-ticker p + p { display: none; }
+.nav-ticker b { color: var(--gold); font-weight: 500; }
+
+/* 工作区里的卡片 */
+.card { min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.card.flush { padding: 0; }
+.card .map-wrap { flex: 1; }
+.card-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); font-size: 12px; color: var(--text-dim); flex-shrink: 0; }
+.card-head h3 { margin: 0; font-size: 13px; color: var(--text); }
+.card-head .layers { margin-left: auto; }
+
+/* 各页网格 */
+.p-overview { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: 'map ctx' 'map lanes'; }
+.p-overview .a-map { grid-area: map; } .p-overview .a-ctx { grid-area: ctx; } .p-overview .a-lanes { grid-area: lanes; }
+.a-lanes .lanes { flex: 1; background: none; border: 0; padding: 0; grid-template-rows: repeat(4, auto); align-content: start; gap: 10px; }
+.a-lanes .lane-items { flex-wrap: wrap; row-gap: 4px; }
+.p-map { grid-template-columns: minmax(0, 1fr) 360px; }
+.p-city { grid-template-columns: minmax(0, 1fr) 340px; }
+.p-army, .p-intel, .p-agent { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.p-growth { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.p-growth .tech-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 6px; }
+
+@media (max-width: 1279px) {
+  .nav { grid-template-columns: 60px minmax(0, 1fr); }
+  .side .city-meta, .side .caret, .side-nav button span, .side-nav .badge { display: none; }
+  .side-nav button { justify-content: center; padding: 8px 0; }
+  .side-foot .account { font-size: 0; } .side-foot .account::after { content: '我'; font-size: 12px; }
+  .nav-ticker, .flag.warn, .flag.ok { display: none; }
+  .p-army, .p-intel, .p-agent { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .p-army > :nth-child(3), .p-intel > :nth-child(3), .p-agent > :nth-child(3) { display: none; }
+  .p-map { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+/* < 1024：侧栏变底部图标栏；每页只留第一块（地图页留选中详情） */
+@media (max-width: 1023px) {
+  .nav { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) 56px; grid-template-areas: 'top' 'work' 'side'; }
+  .nav-foot { display: none; }
+  .side { flex-direction: row; padding: 4px; align-items: stretch; }
+  .side .city-switch { display: none; }
+  .side-nav { flex-direction: row; justify-content: space-around; }
+  .side-nav button { flex: 1; flex-direction: column; gap: 2px; padding: 4px 0; font-size: 10.5px; }
+  .side-nav button span { display: inline; }
+  .side-foot { display: flex; align-items: center; }
+  .side-foot .account-menu { right: 0; left: auto; }
+  .nav-top { flex-wrap: wrap; height: auto; padding: 6px 8px; gap: 6px; }
+  .nav-top .res-strip { order: 3; flex-basis: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .nav-top .top-flags, .nav-top .pill { display: none; }
+  .work { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1fr) !important; grid-template-areas: none !important; }
+  .work > * { grid-area: auto !important; }
+  .work > :not(:first-child) { display: none; }
+  .p-map.has-tile > :first-child { display: none; }
+  .p-map.has-tile > :nth-child(2) { display: flex; }
+  .p-city.picked > :first-child { display: none; }
+  .p-city.picked > :nth-child(2) { display: flex; }
+}

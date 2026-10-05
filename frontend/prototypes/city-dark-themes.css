@@ -1,0 +1,108 @@
+/* SLG 主界面设计稿 · 主题变量层
+   通过 <html data-theme="..."> 切换；city-dark.css 只引用变量。
+   新增皮肤：复制一个主题块，改变量值即可。 */
+
+/* 暗夜（默认）：深灰蓝底 + 单一青色 */
+:root,
+[data-theme="night"] {
+  --bg: #0a0d12;
+  --panel: #10151d;
+  --panel-2: #141a24;
+  --line: #1e2733;
+  --line-soft: #182030;
+  --text: #d7dee8;
+  --text-dim: #7c8898;
+  --text-faint: #4d5866;
+  --accent: #2dd4bf;
+  --accent-dim: #1b6e64;
+  --accent-soft: rgba(45, 212, 191, 0.10);
+  --warn: #e0653a;
+  --gold: #d9a441;
+  --gold-dim: rgba(217, 164, 65, 0.4);
+  --t-plain: #16202c;
+  --t-forest: #14251f;
+  --t-grass: #1a2417;
+  --t-hill: #221f16;
+  --t-desert: #26201a;
+  --t-lake: #12222b;
+  --t-marsh: #1d1a26;
+  --t-gold: #28220f;
+}
+
+/* 赤霄：暗红岩底 + 朱红强调，警告转琥珀 */
+[data-theme="crimson"] {
+  --bg: #110a0c;
+  --panel: #1a1013;
+  --panel-2: #211419;
+  --line: #332028;
+  --line-soft: #291a20;
+  --text: #e9dcd7;
+  --text-dim: #9c887f;
+  --text-faint: #6b534c;
+  --accent: #e8564a;
+  --accent-dim: #7e2f28;
+  --accent-soft: rgba(232, 86, 74, 0.10);
+  --warn: #e0a03a;
+  --gold: #d9a441;
+  --gold-dim: rgba(217, 164, 65, 0.4);
+  --t-plain: #241a20;
+  --t-forest: #17241d;
+  --t-grass: #21241a;
+  --t-hill: #271f16;
+  --t-desert: #2b211a;
+  --t-lake: #162028;
+  --t-marsh: #241a24;
+  --t-gold: #2b2113;
+}
+
+/* 鎏金：墨黑底 + 金色强调，适合挂机盯盘 */
+[data-theme="gilded"] {
+  --bg: #0d0b07;
+  --panel: #151209;
+  --panel-2: #1b1710;
+  --line: #2e2718;
+  --line-soft: #252014;
+  --text: #e6dfcd;
+  --text-dim: #9a8f74;
+  --text-faint: #6b6248;
+  --accent: #d9a441;
+  --accent-dim: #7a5c1e;
+  --accent-soft: rgba(217, 164, 65, 0.10);
+  --warn: #d95f3a;
+  --gold: #f0c869;
+  --gold-dim: rgba(240, 200, 105, 0.4);
+  --t-plain: #1f1a12;
+  --t-forest: #182216;
+  --t-grass: #222211;
+  --t-hill: #26200f;
+  --t-desert: #2a2416;
+  --t-lake: #15211f;
+  --t-marsh: #221d14;
+  --t-gold: #2a230f;
+}
+
+/* 宣纸：浅色米白底 + 朱砂强调，白天友好 */
+[data-theme="paper"] {
+  --bg: #f0ebdf;
+  --panel: #faf6ec;
+  --panel-2: #f0ead9;
+  --line: #d9d0ba;
+  --line-soft: #e4dcc8;
+  --text: #33383f;
+  --text-dim: #7a7263;
+  --text-faint: #a89f8c;
+  --accent: #b03a2e;
+  --accent-dim: #cf8577;
+  --accent-soft: rgba(176, 58, 46, 0.08);
+  --warn: #c2410c;
+  --gold: #9a7418;
+  --gold-dim: rgba(154, 116, 24, 0.4);
+  --t-plain: #e7e1d0;
+  --t-forest: #d5dfcd;
+  --t-grass: #dfe4c7;
+  --t-hill: #e5dabe;
+  --t-desert: #ecdfc3;
+  --t-lake: #cfdfe3;
+  --t-marsh: #dbd3dd;
+  --t-gold: #eadfae;
+}
