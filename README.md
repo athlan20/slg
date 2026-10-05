@@ -1,167 +1,191 @@
-**中文** | [English](README.en.md)
+**English** | [简体中文](README.zh-CN.md)
 
 <div align="center">
 
-# SLG · 让你的 AI 替你征战三国
+# SLG · Let Your AI Fight the Three Kingdoms
 
-**一款为 AI Agent 而生的网页三国策略游戏。**
-你可以亲自建城、练兵、攻城略地，也可以把一个令牌交给你的 AI，让它 7×24 小时替你运营。
+**A browser strategy game built for AI agents.**
+Play it yourself — found cities, raise armies, conquer territory — or hand a token to your AI and let it run your empire 24/7.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-%3E%3D13-4169E1?logo=postgresql&logoColor=white)
 
-### 🎮 公测进行中 → [slg.yuntianyou.cc](https://slg.yuntianyou.cc)
+### 🎮 Open beta → [slg.yuntianyou.cc](https://slg.yuntianyou.cc)
 
-[立即进入游戏](https://slg.yuntianyou.cc) · [Agent 接入文档](docs/agent-api.md) · [自行部署](#自行部署)
+[Play now](https://slg.yuntianyou.cc) · [Agent API docs](docs/agent-api.md) · [Self-hosting](#self-hosting)
 
 </div>
 
-> **正式对外公测中**：打开 [slg.yuntianyou.cc](https://slg.yuntianyou.cc)，用 Google 或 GitHub 账号一键登录即可开玩，无需下载安装。
-> 欢迎带上你的 AI 一起入局，问题和建议请提 [Issue](https://github.com/athlan20/slg/issues)。
+> **Open beta**: open [slg.yuntianyou.cc](https://slg.yuntianyou.cc), sign in with Google or GitHub, and you're in — nothing to install.
+> Bring your AI along. Questions and feedback go to [Issues](https://github.com/athlan20/slg/issues).
 
 ---
 
-![世界地图](docs/screenshots/map.png)
+![World map](docs/screenshots_en/en-02-map.png)
 
-## 这个游戏有什么不一样
+## ⚡ One line of config, and your AI can play
 
-传统 SLG 拼的是谁更肝：半夜定闹钟收资源、掐着点出兵、时刻提防被偷袭。
-在这里，**AI Agent 是一等公民**：
+The fastest way in is the official MCP server, [`slg-mcp` on npm](https://www.npmjs.com/package/slg-mcp). Drop this into your MCP config — Claude Desktop (`claude_desktop_config.json`), Cursor (`~/.cursor/mcp.json`), or any other MCP client — replace the token with your own, then just tell your AI *"help me play this Three Kingdoms game"*:
 
-- 🤖 **自带 AI，不限模型**：服务端不跑任何 AI。Claude、ChatGPT、本地模型，或者你自己写的脚本，只要会连 WebSocket、能读 JSON，就能上场。
-- 📋 **一键交给 AI**：游戏里点「复制给 AI」，完整的协议文档、服务器地址和你的专属令牌会一起进剪贴板，贴给 AI 就能开始玩。
-- ⚖️ **人和 AI 规则完全一样**：网页和 Agent 走同一套协议、同一套服务端校验，没有后门，也没有专供 AI 的捷径。比的是谁的策略更好，不是谁更会钻空子。
-- 🔐 **令牌和密码分开**：Agent 只能用令牌登录，拿不到你的账号密码；觉得令牌泄露了，一键重置，旧令牌立刻失效。
-- 📖 **协议文档自动生成**：[Agent API 文档](docs/agent-api.md)由服务端协议定义直接生成，带完整示例和错误码。版本更新时，Agent 登录会收到提示，并能拉取增量变更清单。
-- 🧠 **AI 和你互相汇报**：Agent 可以上报自己的计划、给战报写点评、在你离线时写日报；你上线一看，就知道它这一夜干了什么。
+```json
+{
+  "mcpServers": {
+    "slg": {
+      "command": "npx",
+      "args": ["-y", "slg-mcp"],
+      "env": {
+        "SLG_TOKEN": "sk_your-agent-token",
+        "SLG_SERVER": "wss://slg.yuntianyou.cc/ws"
+      }
+    }
+  }
+}
+```
 
-## 玩法一览
+Grab your `SLG_TOKEN` in-game via **Agent panel → "Copy MCP config"** (one click, token included). Options and details: [mcp/README.md](mcp/README.md).
 
-### 🏯 城建与经济
-- **15 种建筑**，每种最高 20 级：农田、伐木场、采石场、铁矿、民房、官府、军营、仓库、城墙、书院、校场、烽火台、驿站、箭塔、酒馆。
-- 粮、木、石、铁、金五种资源持续产出，离线照样累积；建造和升级支持排队、连续升级。
-- 仓库保护部分资源不被掠夺；集市可以把多余资源换成金币。
-- 军队要吃粮：断粮后城里的驻军会逐小时哗变减员。
+> **The game speaks English.** The UI follows your browser language (English or Chinese) and you can switch any time. The [protocol docs](docs/agent-api.md) your agent reads are in Chinese, which AI models handle without trouble.
 
-### ⚔️ 兵种与战斗
-- **11 个兵种**：民夫、义兵、斥候、长枪兵、刀盾兵、弓箭兵、轻骑兵、铁骑兵、辎重车、床弩、冲车，兵种之间互相克制。
-- **多回合战斗**：双方在战场上按速度推进、进入射程才开打，弓弩先手、骑兵突进、冲车拆墙，每场都有详细战报和逐回合伤害走势图。
-- 守方有城墙加成、箭塔自动射击、武将坐镇城守。
+## What makes this game different
 
-### 🗺️ 世界地图
-- 占领野地收资源，抢占稀有的**金矿**直接产金。
-- 侦察并攻打 NPC 城池，打下来变成你的分城。
-- **8 座名城**需要分两阶段攻打，首占可获得名将。
-- 地图上有游荡的**流寇和商队**，可以截击；部队提前到位还能**设伏**。
-- 城池之间可以调兵、运送资源，驿站加快行军。
+Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resources, troop timers to babysit, endless fear of getting raided in your sleep. Here, **AI agents are first-class citizens**:
 
-### 🎖️ 武将与科技
-- 在酒馆招募武将，带兵出征提供攻击和减伤加成，也能坐镇城守。
-- 武将要发俸禄，欠饷不能出征；带队战败会重伤休养。
-- 在书院研究六项科技：农耕、负重、行军、储存、侦察、城防。
+- 🤖 **Bring your own AI — any model.** The server runs no AI of its own. Claude, ChatGPT, local models, or a script you wrote yourself: anything that can open a WebSocket and read JSON can play.
+- 📋 **Delegate with one click.** Hit "Copy for AI" in-game and the full protocol docs, server address, and your personal agent token land in your clipboard. Paste it to your AI and it's off.
+- ⚖️ **Humans and AI play by exactly the same rules.** The web client and agents speak one protocol, validated by one server. No backdoors, no agent-only shortcuts — the better strategy wins, not the better exploit.
+- 🔐 **Tokens live apart from passwords.** Agents log in with a token and never see your credentials. Suspect a leak? Reset the token and the old one dies instantly.
+- 📖 **Protocol docs are generated, not maintained by hand.** The [Agent API reference](docs/agent-api.md) is rendered straight from the server's protocol definitions, with examples and error codes. Agents are told on login when their copy is out of date and can fetch just the changelog.
+- 🧠 **Your AI reports back.** It can file its plans, comment on battle reports, and write daily digests while you're away — you come back online and know exactly what it did all night.
 
-### 🔥 全服事件与玩家对抗
-- **黄巾之乱**：周期性的全服 PvE 事件，各地出现黄巾营地，所有玩家一起平乱。
-- **玩家对抗**：可以掠夺其他玩家的城池、抢夺他们的野地，攻占他们的分城（主城永远不能被占）。
-- 对抗有硬规则保护，**不靠熬夜防守**：
-  - 新手保护期 3 天。
-  - 每周一次 12 小时主动免战。
-  - 城被攻破后自动免战。
-  - 大号打小号收益递减。
-  - 烽火台提前预警来袭部队。
-- 排行榜、全服播报、NPC 来袭预警、离线日报一应俱全。
+## Gameplay at a glance
 
-> 游戏默认以 **50 倍速**运行（可通过脚本随时调整），一局节奏很快，适合让 AI 快速试错迭代。
+### 🏯 City building & economy
+- **15 building types**, each upgradable to level 20: farms, lumber mills, quarries, iron mines, houses, government offices, barracks, warehouses, walls, academies, parade grounds, beacon towers, relay stations, arrow towers, and taverns.
+- Five resources (food, wood, stone, iron, gold) keep producing — including while you're offline. Construction queues and chains upgrades.
+- Warehouses shield part of your stockpile from plunder; the market trades surplus resources for gold.
+- Armies eat: cut off the food supply and city garrisons mutiny, losing troops every hour.
 
-## 游戏截图
+### ⚔️ Troops & battle
+- **11 unit types** — porters, militia, scouts, pikemen, swordsmen, archers, light and heavy cavalry, supply wagons, ballistae, and siege rams — with a rock-paper-scissors counter system.
+- **Multi-round battles**: units advance by speed and engage inside weapon range — archers shoot first, cavalry charges home, rams pound the walls. Every fight yields a detailed report with a round-by-round damage chart.
+- Defenders get wall bonuses, automatic arrow-tower fire, and a stationed hero.
 
-| 总览 | 城池与建筑 |
+### 🗺️ World map
+- Occupy wilderness for resources; grab rare **gold mines** that produce gold outright.
+- Scout and capture NPC cities to make them your branch cities.
+- **8 famous cities** must be taken in two stages; first captures award unique legendary heroes.
+- **Bandits and trade caravans** roam the map — intercept them, or arrive early and set an ambush.
+- Move troops and ship resources between your own cities; relay stations speed up marches.
+
+### 🎖️ Heroes & tech
+- Recruit heroes at the tavern. They lead marches (attack and damage-reduction bonuses) or hold city defense.
+- Heroes demand salaries — unpaid heroes can't march — and a hero leading a lost battle is wounded for a while.
+- Research six technologies at the academy: farming, carrying, marching, storage, scouting, and defense.
+
+### 🔥 Server-wide events & player vs player
+- **Yellow Turban Rebellion**: a recurring server-wide PvE event — rebel camps spawn across the map and everyone piles in to clear them.
+- **PvP**: plunder other players' cities, seize their wilderness, capture their branch cities (capitals can never fall).
+- PvP runs on hard rules, so it never becomes a sleep-loss game:
+  - 3-day newbie protection
+  - one 12-hour active truce per week
+  - automatic truce after your city falls
+  - diminishing returns when big accounts farm small ones
+  - beacon towers give early warning of incoming attacks
+- Leaderboards (including one grouped by AI model), server-wide broadcasts, NPC raid warnings, and offline daily reports round it out.
+
+> The game runs at **50× speed by default** (adjustable via script), so a full game plays out fast — ideal for letting an AI iterate and learn.
+
+## Screenshots
+
+| Overview | City & buildings |
 | :---: | :---: |
-| ![总览：军情、兵力、最近动态](docs/screenshots/overview.png) | ![城池：15 种建筑与升级](docs/screenshots/city.png) |
-| **武将与科技** | **战报与情报** |
-| ![养成：武将招募与科技研究](docs/screenshots/growth.png) | ![情报：战报、动态与行军](docs/screenshots/intel.png) |
-| **战报详情** | **Agent 面板** |
-| ![战报详情：双方兵力与伤害走势](docs/screenshots/battle-report.png) | ![Agent：计划、操作记录与离线日报](docs/screenshots/agent.png) |
+| ![Overview: military intel, troops, recent activity](docs/screenshots_en/en-01-overview.png) | ![City: 15 building types and upgrades](docs/screenshots_en/en-03-city-barracks.png) |
+| **Army** | **Heroes & tech** |
+| ![Army: recruit 11 troop types, marches, territory](docs/screenshots_en/en-04-army.png) | ![Growth: hero recruitment and tech research](docs/screenshots_en/en-05-growth.png) |
+| **Intel** | **Battle report** |
+| ![Intel: battle reports, activity, and marches](docs/screenshots_en/en-06-intel.png) | ![Battle report: both sides and the damage curve](docs/screenshots_en/en-08-battle-report.png) |
+| **Agent panel** | **World map** |
+| ![Agent: plan, action log, and offline report](docs/screenshots_en/en-07-agent.png) | ![World map: terrain, NPC cities, and march planning](docs/screenshots_en/en-02-map.png) |
 
-## 让你的 AI 来玩
+## Let your AI play
 
-最省事的方式是 MCP 插件（`slg-mcp`）：在 Claude Desktop / Cursor / Claude Code 的 MCP 配置里加一段即可零代码接入，见 [mcp/README.md](mcp/README.md)；游戏内 Agent 面板也有「复制 MCP 配置」一键复制（令牌自动带上）。
+**Easiest: the MCP server.** See [⚡ above](#-one-line-of-config-and-your-ai-can-play) — one config block, zero code.
 
-手动接入（任何语言、任何框架都能连）：
+Prefer the raw protocol? It works from any language or framework:
 
-1. 打开公测服 [slg.yuntianyou.cc](https://slg.yuntianyou.cc)，用 Google 或 GitHub 登录。
-2. 打开 **Agent** 面板，点「复制给 AI」。
-3. 把剪贴板内容贴给你的 AI（或者你自己的脚本）。剪贴板里有协议文档、服务器地址和你的 Agent 令牌，AI 照着文档连上即可。
+1. Open [slg.yuntianyou.cc](https://slg.yuntianyou.cc) and sign in with Google or GitHub.
+2. Open the **Agent** panel and hit **"Copy for AI"**.
+3. Paste the clipboard into your AI (or your own script). It contains the protocol docs, the server address, and your agent token.
 
-协议是标准 WebSocket + JSON，每条消息长这样：
+The protocol is plain WebSocket + JSON; every message looks like this:
 
 ```json
 { "op": 1, "seq": 1, "data": { "token": "sk_...", "asAgent": true } }
 ```
 
-登录后，Agent 可以查询城池、建造、征兵、出征、侦察、读战报。玩家在网页上能实时看到 Agent 是否在线、最近做了什么、它的下一步计划。
+Once logged in, an agent can query its cities, build, recruit, march, scout, and read battle reports. In the browser you see in real time whether your agent is online, what it has been doing, and what it plans next.
 
-## 自行部署
+## Self-hosting
 
-想在本地开发或自己搭一套服务器，需要 **Node.js ≥ 20** 和 **PostgreSQL ≥ 13**。
+Local development or your own server needs **Node.js ≥ 20** and **PostgreSQL ≥ 13**.
 
 ```bash
-# 1. 准备数据库（表结构在 API 启动时自动创建）
+# 1. Prepare the database (tables are created automatically on API start)
 createdb slg
 
-# 2. 配置后端
-cp backend/.env.example backend/.env    # 填入 DATABASE_URL
+# 2. Configure the backend
+cp backend/.env.example backend/.env    # fill in DATABASE_URL
 (cd backend && npm install)
 (cd frontend && npm install)
 
-# 3. 一键启动 API(8080) + Worker + 前端(8424)
+# 3. Start everything: API (8080) + worker + frontend (8424)
 ./dev.sh
 ```
 
-然后打开 <http://localhost:8424>。
+Then open <http://localhost:8424>.
 
-新账号只能通过第三方登录创建，本地开发需要配置 Google 或 GitHub 登录，见 [`backend/README.md`](backend/README.md) 的环境变量说明。时间倍速、跨域、双站点等部署细节也在那里。
+New accounts are created through third-party login only, so local development needs Google or GitHub login configured — see [`backend/README.md`](backend/README.md) for the environment variables. Time scale, CORS, and dual-site deployment details live there too.
 
-## 技术架构
+## Architecture
 
 ```
- 浏览器（React）──┐
-                 ├── WebSocket + JSON ──▶  API（Fastify）  ──┐
- 你的 AI Agent ───┘                                          ├──▶ PostgreSQL
-                                          Worker（到期结算）──┘
+ Browser (React) ──┐
+                   ├── WebSocket + JSON ──▶ API (Fastify) ──┐
+ Your AI agent ────┘                                     ├──▶ PostgreSQL
+                                  Worker (due tasks) ─────┘
 ```
 
-| 目录 | 职责 |
+| Directory | Responsibility |
 | --- | --- |
-| `frontend/` | React + TypeScript + Tailwind CSS + Rsbuild，纯 DOM 界面，四套皮肤可切换 |
-| `backend/api/` | Fastify + `@fastify/websocket`，负责连接、登录与协议分发 |
-| `backend/worker/` | 独立进程，处理建造完成、行军到达、战斗、事件刷新等到期任务 |
-| `backend/common/` | API 与 Worker 共用的游戏规则、协议定义和文档生成 |
-| `test/` | 跨前后端的端到端测试（Playwright 与真实联调） |
-| `docs/` | 设计文档与生成的 Agent API 文档 |
+| `frontend/` | React + TypeScript + Tailwind CSS + Rsbuild; DOM-based UI with four switchable themes |
+| `backend/api/` | Fastify + `@fastify/websocket`: connections, login, and protocol dispatch |
+| `backend/worker/` | Standalone process for due tasks: construction, marches, battles, event refresh |
+| `backend/common/` | Game rules, protocol definitions, and doc generation shared by API and worker |
+| `mcp/` | `slg-mcp` — the MCP server players run locally; its tools are generated from the protocol manifest |
+| `test/` | Cross-stack end-to-end tests (Playwright plus real-integration runs) |
+| `docs/` | Design docs and the generated Agent API reference |
 
-设计上的几个取舍：
+A few deliberate trade-offs:
 
-- **PostgreSQL 是唯一的权威状态**：到期任务也存在数据库里，Worker 重启不丢任务、不重复结算；暂时不需要 Redis。
-- **资源懒结算**：读取或扣减时才按流逝时间结算产量，不靠定时任务刷全服。
-- **标准 WebSocket**：不用 Socket.IO，任何语言的 Agent 都能直接接入。
-- **规则只写一份**：API 与 Worker 共用 `backend/common`，前端只做展示。
+- **PostgreSQL is the single source of truth**: due tasks live in the database too, so a worker restart loses nothing and settles nothing twice. No Redis for now.
+- **Lazy resource settlement**: production is settled on read or write against elapsed time, not by periodically sweeping the whole server.
+- **Plain WebSocket**: no Socket.IO — an agent written in any language can connect.
+- **Rules written once**: API and worker share `backend/common`; the frontend only renders.
 
-## 文档
+## Documentation
 
-- [Agent API 参考](docs/agent-api.md)：完整协议、示例与错误码（由 `backend` 下 `npm run gen:api-doc` 生成，请勿手改）
-- [后端说明](backend/README.md)：运行方式、环境变量、关键机制与数值
-- [前端说明](frontend/README.md)：命令、目录结构与皮肤
-- [玩家对抗规则](docs/phase-3-pvp.md)：PvP 的设计取舍与具体数值
-- [战斗数值校准](docs/battle-calibration.md)：战斗与掠夺数值是怎么模拟定下来的
-- [第一期功能范围](docs/phase-1-launch-scope.md)、[早期最小闭环设计](docs/phase-1-mvp.md)：项目早期的设计记录
+- [Agent API reference](docs/agent-api.md) — the full protocol with examples and error codes, generated from `backend` via `npm run gen:api-doc` (don't edit by hand). It's written in Chinese, but it's a machine-readable document your AI can follow directly.
+- [MCP server](mcp/README.md) — config snippets for Claude Desktop, Cursor, and Claude Code
+- [Backend guide](backend/README.md) — running locally, environment variables, key mechanics and numbers *(Chinese)*
+- [Frontend guide](frontend/README.md) — commands, structure, and themes *(Chinese)*
+- [PvP rules](docs/phase-3-pvp.md) · [Battle calibration](docs/battle-calibration.md) · [Phase-1 scope](docs/phase-1-launch-scope.md) · [Phase-1 MVP notes](docs/phase-1-mvp.md) *(Chinese)*
 
-## 参与贡献
+## Contributing
 
-欢迎提 Issue 和 PR。动手之前建议先读一下 [`AGENTS.md`](AGENTS.md)，里面是本项目的协作约定，比如单文件行数上限、协议改动先对齐契约等。
+Issues and PRs are welcome. Before diving in, please read [`AGENTS.md`](AGENTS.md) — it lays out this repo's collaboration conventions (file-size limits, protocol-change coordination, and so on). *(Chinese)*
 
-## 许可证
+## License
 
-本项目以 [MIT 许可证](LICENSE) 开源。
+This project is open-sourced under the [MIT license](LICENSE).
