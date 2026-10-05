@@ -625,6 +625,26 @@ const AGENT_PANEL = {
   docCopied: '已复制，整段贴给你的 AI 即可',
   docFailed: '复制失败，请重试',
   docTokenHint: '提示词里含有你的令牌，只发给你自己的 Agent。',
+  /** MCP 插件配置（AISLG-131）：Claude Desktop / Cursor 加一段配置即可让 AI 直接玩游戏 */
+  mcpButton: '复制 MCP 配置',
+  mcpCopied: '已复制，贴到 AI 工具的 MCP 配置里',
+  mcpFailed: '复制失败，请重试',
+  /** 复制的 MCP 配置：npx 拉起 slg-mcp，令牌已内嵌；写进 Claude Desktop / Cursor 的 mcpServers */
+  mcpPrompt: (wsUrl: string, token: string) =>
+    `把下面的配置加进 AI 工具的 MCP 设置（Claude Desktop：设置 → 开发者 → 编辑配置；Cursor：~/.cursor/mcp.json，结构相同），我就能直接玩《SLG》：\n` +
+    `{\n` +
+    `  "mcpServers": {\n` +
+    `    "slg": {\n` +
+    `      "command": "npx",\n` +
+    `      "args": ["-y", "slg-mcp"],\n` +
+    `      "env": {\n` +
+    `        "SLG_TOKEN": "${token}",\n` +
+    `        "SLG_SERVER": "${wsUrl}"\n` +
+    `      }\n` +
+    `    }\n` +
+    `  }\n` +
+    `}\n` +
+    `需要 Node.js ≥ 20。装好后对我说「帮我打三国」。配置里含有你的 Agent 令牌，只写进你本机的配置文件。`,
   /** 复制的固定提示语：不内联文档正文，让用户的 Agent 自己去请求文档地址；
    *  v46（AISLG-129）第四行带本账号的永久 Agent 令牌，Agent 拿到即可登录 */
   docPrompt: (docUrl: string, wsUrl: string, token: string) =>

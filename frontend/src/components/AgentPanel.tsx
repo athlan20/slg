@@ -26,6 +26,13 @@ const DOC_BUTTON_LABEL: Record<DocCopyState, string> = {
   failed: COPY.agentPanel.docFailed,
 };
 
+/** MCP 配置复制（AISLG-131）：npx 拉起 slg-mcp，令牌内嵌进 mcpServers JSON */
+const MCP_BUTTON_LABEL: Record<DocCopyState, string> = {
+  idle: COPY.agentPanel.mcpButton,
+  copied: COPY.agentPanel.mcpCopied,
+  failed: COPY.agentPanel.mcpFailed,
+};
+
 /** 写剪贴板：优先 Clipboard API；页面未聚焦等场景被权限拦截时退回 textarea + execCommand */
 export async function writeClipboard(text: string): Promise<void> {
   try {
@@ -54,12 +61,17 @@ export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: A
   // 复制接入文档：不请求任何接口，只把固定提示语写入剪贴板——由用户的 Agent
   // 按提示语自行 GET 文档地址（AGENT_API_DOC_URL）后阅读接入
   const [docCopy, setDocCopy] = useState<DocCopyState>('idle');
+  const [mcpCopy, setMcpCopy] = useState<DocCopyState>('idle');
   const revertTimerRef = useRef<number | null>(null);
+  const mcpRevertTimerRef = useRef<number | null>(null);
 
   useEffect(
     () => () => {
       if (revertTimerRef.current !== null) {
         window.clearTimeout(revertTimerRef.current);
+      }
+      if (mcpRevertTimerRef.current !== null) {
+        window.clearTimeout(mcpRevertTimerRef.current);
       }
     },
     [],
@@ -81,6 +93,24 @@ export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: A
       window.clearTimeout(revertTimerRef.current);
     }
     revertTimerRef.current = window.setTimeout(() => setDocCopy('idle'), 2500);
+  }
+
+  /** 复制 MCP 配置（AISLG-131）：同样取本账号令牌，拼成 mcpServers JSON 一键复制 */
+  async function copyMcp() {
+    try {
+      const tokenInfo = await session.security.getAgentToken();
+      if (!tokenInfo) {
+        throw new Error('token unavailable');
+      }
+      await writeClipboard(COPY.agentPanel.mcpPrompt(WS_URL, tokenInfo.token));
+      setMcpCopy('copied');
+    } catch {
+      setMcpCopy('failed');
+    }
+    if (mcpRevertTimerRef.current !== null) {
+      window.clearTimeout(mcpRevertTimerRef.current);
+    }
+    mcpRevertTimerRef.current = window.setTimeout(() => setMcpCopy('idle'), 2500);
   }
 
   const online = agent?.agentOnline ?? false;
@@ -146,6 +176,14 @@ export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: A
           onClick={() => void copyDoc()}
         >
           {DOC_BUTTON_LABEL[docCopy]}
+        </button>
+        <button
+          type="button"
+          role="Agent面板-复制MCP配置按钮"
+          className={`btn min-w-0 flex-1 truncate py-1 ${mcpCopy === 'copied' ? 'text-accent' : mcpCopy === 'failed' ? 'text-warn' : ''}`}
+          onClick={() => void copyMcp()}
+        >
+          {MCP_BUTTON_LABEL[mcpCopy]}
         </button>
         {/* 离线日报入口（1024–1279 两栏时日报摘要卡隐藏，这里留一个入口） */}
         <button type="button" role="Agent面板-离线日报按钮" className="btn hidden shrink-0 py-1 max-xl:block" onClick={onOpenOfflineReport}>

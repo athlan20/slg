@@ -1,0 +1,51 @@
+{
+  "name": "slg-mcp",
+  "version": "0.1.0",
+  "description": "《SLG · 让你的 AI 替你征战三国》的 MCP 服务：装进 Claude Desktop / Cursor / Claude Code，AI 就能直接查城池、建造、征兵、出征、看战报。",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "slg-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "manifest",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/athlan20/slg.git",
+    "directory": "mcp"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "slg",
+    "game",
+    "ai-agent",
+    "claude",
+    "cursor"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test test/*.test.ts",
+    "sync:manifest": "node scripts/sync-manifest.mjs",
+    "prepublishOnly": "npm run sync:manifest && npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "ws": "^8.18.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

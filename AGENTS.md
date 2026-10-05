@@ -15,6 +15,7 @@
 - `backend/worker/`：独立的 Node.js 后台进程；不要为它引入不必要的 Web 框架。
 - `backend/common/`：API 与 Worker 共用的规则、类型和协议约定；不要在两个进程中重复实现同一规则。
 - `wechat-minigame/`：微信小游戏，网页微信扫码登录的“扫码器”，附单机翻牌配对过审内容；canvas 绘制、纯 JS，只通过标准 WebSocket 与 `backend/api/` 通信，设计见 `docs/wechat-qr-login.md`。
+- `mcp/`：独立 npm 包 `slg-mcp`——运行在玩家本机的 MCP 服务（stdio，Node + TypeScript，官方 `@modelcontextprotocol/sdk`）；工具由捆绑的 `manifest/agent-api.json` 副本在启动时生成，协议变更后需在 `mcp/` 下跑 `npm run sync:manifest` 同步，不手写工具。
 - `test/`：根目录的跨前后端端到端测试，覆盖真实联调流程；不要把单个模块的单元测试混放于此。
 - PostgreSQL 是初期权威状态和到期任务的存储；未经明确决定，不增加 Redis、Socket.IO、Canvas 或 2D 游戏引擎。
 
