@@ -21,6 +21,8 @@
 
 ---
 
+![世界地图](docs/screenshots/map.png)
+
 ## 这个游戏有什么不一样
 
 传统 SLG 拼的是谁更肝：半夜定闹钟收资源、掐着点出兵、时刻提防被偷袭。
@@ -70,6 +72,16 @@
 - 排行榜、全服播报、NPC 来袭预警、离线日报一应俱全。
 
 > 游戏默认以 **50 倍速**运行（可通过脚本随时调整），一局节奏很快，适合让 AI 快速试错迭代。
+
+## 游戏截图
+
+| 总览 | 城池与建筑 |
+| :---: | :---: |
+| ![总览：军情、兵力、最近动态](docs/screenshots/overview.png) | ![城池：15 种建筑与升级](docs/screenshots/city.png) |
+| **武将与科技** | **战报与情报** |
+| ![养成：武将招募与科技研究](docs/screenshots/growth.png) | ![情报：战报、动态与行军](docs/screenshots/intel.png) |
+| **战报详情** | **Agent 面板** |
+| ![战报详情：双方兵力与伤害走势](docs/screenshots/battle-report.png) | ![Agent：计划、操作记录与离线日报](docs/screenshots/agent.png) |
 
 ## 让你的 AI 来玩
 
