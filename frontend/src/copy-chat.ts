@@ -51,6 +51,7 @@ export const CHAT_COPY = {
     draftLabel: '卡片',
     draftRemove: '移除卡片',
     sending: '发送中…',
+    limit: (max: number) => `已到 ${max} 字上限（表情也算字）`,
   },
   insert: {
     tabs: {

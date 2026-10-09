@@ -664,7 +664,7 @@ export interface RecruitStatePushData {
   recruit: RecruitView;
 }
 
-// 聊天（v51）的载荷类型与内置表情
+// 聊天（v51）的载荷类型与常量
 export type {
   ChatCardRequest,
   ChatCardView,
@@ -680,4 +680,4 @@ export type {
   ChatSendResponseData,
   PushChatMessageData,
 } from './protocol-chat';
-export { CHAT_EMOJIS, CHAT_RATE_LIMIT_MS, CHAT_TEXT_MAX_CHARS, CHAT_WORLD_MIN_GOVERNMENT } from './protocol-chat';
+export { CHAT_RATE_LIMIT_MS, CHAT_TEXT_MAX_CHARS, CHAT_WORLD_MIN_GOVERNMENT } from './protocol-chat';

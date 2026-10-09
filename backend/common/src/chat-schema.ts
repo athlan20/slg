@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   sender_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   recipient_id uuid REFERENCES accounts(id) ON DELETE CASCADE,
   text text,
-  emoji text,
   card jsonb,
   report_detail jsonb,
   created_at timestamptz NOT NULL DEFAULT now()

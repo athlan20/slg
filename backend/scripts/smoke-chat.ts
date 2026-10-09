@@ -9,7 +9,7 @@
 
 import pg from 'pg';
 import { Op, type ErrorCode, type ResponseFrame } from '../common/src/protocol';
-import { CHAT_EMOJIS, CHAT_TEXT_MAX_CHARS, type ChatMessageView } from '../common/src/protocol-chat';
+import { CHAT_TEXT_MAX_CHARS, type ChatMessageView } from '../common/src/protocol-chat';
 import { Client, check, dataOf, step, stepTotal } from './smoke-client';
 import { seedAccount } from './smoke-account';
 import { pruneChatMessages } from '../api/src/chat-db';
@@ -235,16 +235,18 @@ async function main(): Promise<void> {
   );
   expectOk(await sendWorld(leo, '被拒绝的请求没有占用限频'), '之后的正常发言仍然成功');
 
-  step('表情：内置表情可发；表情不能与文字同发；不在表里的表情被拒绝');
+  step('表情直接写在文字里：可以和文字混排；表情算 1 个字；屏蔽词中间插表情也拦得住');
   const emo = await newPlayer('emo', 3);
-  const emojiMsg = messageOf(await emo.client.request(Op.CHAT_SEND, { channel: 'world', emoji: CHAT_EMOJIS[0] }));
-  check(emojiMsg.type === 'emoji' && emojiMsg.emoji === CHAT_EMOJIS[0], '表情消息类型为 emoji');
-  expectError(
-    await emo.client.request(Op.CHAT_SEND, { channel: 'world', emoji: CHAT_EMOJIS[0], text: '混发' }),
-    'INVALID_PARAMS',
-    '表情与文字同发',
-  );
-  expectError(await emo.client.request(Op.CHAT_SEND, { channel: 'world', emoji: '🦄' }), 'INVALID_PARAMS', '未内置的表情');
+  const mixedText = '今晚打洛阳🔥 带好粮🍖';
+  const mixedMsg = messageOf(await emo.client.request(Op.CHAT_SEND, { channel: 'world', text: mixedText }));
+  check(mixedMsg.type === 'text' && mixedMsg.text === mixedText, '混排文字原样保存，类型为 text');
+  const emoBanned = await newPlayer('emo2', 3);
+  const bannedMsg = messageOf(await emoBanned.client.request(Op.CHAT_SEND, { channel: 'world', text: '示😀例屏蔽词' }));
+  check(bannedMsg.text === '******', `屏蔽词中间插表情仍被整段替换（得到 ${bannedMsg.text}）`);
+  const emoLong = await newPlayer('emo3', 3);
+  expectOk(await emoLong.client.request(Op.CHAT_SEND, { channel: 'world', text: '😀'.repeat(CHAT_TEXT_MAX_CHARS) }), '100 个表情（各算 1 个字）可以发');
+  const emoOver = await newPlayer('emo4', 3);
+  expectError(await emoOver.client.request(Op.CHAT_SEND, { channel: 'world', text: '😀'.repeat(CHAT_TEXT_MAX_CHARS + 1) }), 'INVALID_PARAMS', '101 个表情超过 100 字');
 
   step('参数校验：空消息、超长、非法频道、私聊给自己，合法消息不受影响');
   const val = await newPlayer('val', 3);

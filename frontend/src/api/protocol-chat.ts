@@ -6,12 +6,6 @@ import type { BattleReportView, TerrainKind, TileKind } from './protocol-world';
 export type ChatChannel = 'world' | 'private';
 export type ChatCardKind = 'coord' | 'hero' | 'report' | 'city';
 
-/** 内置表情（与服务端白名单一致；发送时只接受这里的取值） */
-export const CHAT_EMOJIS: readonly string[] = [
-  '😀', '😂', '😅', '😎', '🤔', '😭', '😡', '😱', '😏', '👍', '👎', '👏',
-  '🙏', '🤝', '🎉', '🔥', '💰', '🍖', '🐎', '👑', '🏯', '🎯', '💪', '🌾',
-];
-
 /** 单条文字上限（字符数，去首尾空白后） */
 export const CHAT_TEXT_MAX_CHARS = 100;
 /** 世界频道发言所需的主城官府等级 */
@@ -43,9 +37,8 @@ export interface ChatMessageView {
   channel: ChatChannel;
   sender: ChatPlayerView;
   recipient: ChatPlayerView | null;
-  type: 'text' | 'emoji' | 'card';
+  type: 'text' | 'card';
   text: string | null;
-  emoji: string | null;
   card: ChatCardView | null;
   createdAt: string;
 }
@@ -73,7 +66,6 @@ export interface ChatSendRequestData {
   channel: ChatChannel;
   peerId?: string;
   text?: string;
-  emoji?: string;
   card?: ChatCardRequest;
 }
 

@@ -13,17 +13,7 @@ export type ChatChannel = (typeof CHAT_CHANNELS)[number];
 export const CHAT_CARD_KINDS = ['coord', 'hero', 'report', 'city'] as const;
 export type ChatCardKind = (typeof CHAT_CARD_KINDS)[number];
 
-/** 内置表情（先放一组常用 emoji，之后再加三国风格表情包）；发送时只接受这里的取值 */
-export const CHAT_EMOJIS: readonly string[] = [
-  '😀', '😂', '😅', '😎', '🤔', '😭', '😡', '😱', '😏', '👍', '👎', '👏',
-  '🙏', '🤝', '🎉', '🔥', '💰', '🍖', '🐎', '👑', '🏯', '🎯', '💪', '🌾',
-];
-
-export function isChatEmoji(value: unknown): value is string {
-  return typeof value === 'string' && CHAT_EMOJIS.includes(value);
-}
-
-/** 单条文字上限（去首尾空白后，按 Unicode 码点计）；超出返回 INVALID_PARAMS */
+/** 单条文字上限（去首尾空白后，按字形计：一个表情算 1 个字）；超出返回 INVALID_PARAMS */
 export const CHAT_TEXT_MAX_CHARS = 100;
 /** 世界频道发言所需的主城官府等级（v51，防刷小号；私聊不设门槛） */
 export const CHAT_WORLD_MIN_GOVERNMENT = 3;
@@ -67,10 +57,9 @@ export interface ChatMessageView {
   sender: ChatPlayerView;
   /** 私聊的对方；世界频道为 null */
   recipient: ChatPlayerView | null;
-  /** text 纯文字；emoji 表情；card 卡片（卡片可附一句文字，放在 text 里） */
-  type: 'text' | 'emoji' | 'card';
+  /** text 纯文字（表情直接写在文字里，不单独成类型）；card 卡片（卡片可附一句文字，放在 text 里） */
+  type: 'text' | 'card';
   text: string | null;
-  emoji: string | null;
   card: ChatCardView | null;
   createdAt: string;
 }
@@ -99,14 +88,13 @@ export type ChatCardRequest =
   | { kind: 'city'; cityId: string };
 
 /**
- * CHAT_SEND 请求：text / emoji / card 至少给一个；emoji 不与 text、card 同发；
- * card 可附一句 text。text 去首尾空白后 1..100 字；屏蔽词在服务端替换成 *。
+ * CHAT_SEND 请求：text 与 card 至少给一个；card 可附一句 text。表情直接写在 text 里（不单独成类型）。
+ * text 去首尾空白后不超过 100 字（按字形计，一个表情算 1 个字）；屏蔽词在服务端替换成 *。
  */
 export interface ChatSendRequestData {
   channel: ChatChannel;
   peerId?: string;
   text?: string;
-  emoji?: string;
   card?: ChatCardRequest;
 }
 
