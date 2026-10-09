@@ -14,6 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "smoke": "tsx --env-file=.env scripts/smoke.ts",
+    "smoke:chat": "tsx --env-file=.env scripts/smoke-chat.ts",
+    "chat:mute": "tsx --env-file=.env scripts/chat-mute.ts",
     "calibrate:battle": "tsx scripts/battle-calibration.ts",
     "calibrate:troops": "tsx scripts/troop-calibration.ts",
     "calibrate:tower": "tsx scripts/tower-calibration.ts",

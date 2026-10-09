@@ -10,6 +10,7 @@ import { NavProvider } from './state/NavContext';
 import { ScoutReportModalProvider } from './state/scoutReportModal';
 import { useGameSession } from './state/useGameSession';
 import { useIncomingAttacks } from './state/useIncomingAttacks';
+import { reportShareLabel } from './components/chat/chatText';
 
 export default function App() {
   const session = useGameSession();
@@ -59,7 +60,10 @@ export default function App() {
 
   return (
     <HeroContext.Provider value={heroPick}>
-      <BattleReportModalProvider fetchReportById={session.world.fetchBattleReportById}>
+      <BattleReportModalProvider
+        fetchReportById={session.world.fetchBattleReportById}
+        onShareReport={(report) => session.chat.shareDraft({ card: { kind: 'report', reportId: report.id }, label: reportShareLabel(report) })}
+      >
         <ScoutReportModalProvider city={session.city}>
           <GameContext.Provider value={game}>
             <NavProvider>

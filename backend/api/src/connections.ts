@@ -119,6 +119,25 @@ export class ConnectionRegistry {
     return sent;
   }
 
+  /** 推送给账号的玩家连接（跳过 Agent 连接；聊天专用，v51：Agent 不能读写聊天）。 */
+  broadcastToPlayers(accountId: string, frame: PushFrame, except?: ConnInfo): number {
+    frame.eventId = this.nextEventId(accountId);
+    let sent = 0;
+    for (const conn of this.connectionsOf(accountId)) {
+      if (conn === except || conn.role !== 'player') {
+        continue;
+      }
+      this.send(conn, frame);
+      sent += 1;
+    }
+    return sent;
+  }
+
+  /** 当前有在线连接的账号 id（聊天世界频道按账号扇出时使用） */
+  onlineAccountIds(): string[] {
+    return Array.from(this.byAccount.keys());
+  }
+
   /** 全服广播（v23，AISLG-60）：推给当前所有在线连接。eventId 仍按账号维度注入，
    *  同一次广播各账号拿到各自的 eventId（客户端去重逻辑不变）。 */
   broadcastAll(frame: PushFrame): number {

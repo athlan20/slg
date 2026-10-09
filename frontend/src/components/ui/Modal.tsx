@@ -21,6 +21,14 @@ interface ModalProps {
   children: ReactNode;
 }
 
+/** 当前挂着的弹窗数：全局快捷键（聊天浮窗的 Esc）据此让位，有弹窗时先关弹窗 */
+let openModalCount = 0;
+
+/** 是否有弹窗正开着 */
+export function isModalOpen(): boolean {
+  return openModalCount > 0;
+}
+
 const ACCENT_BAR: Record<NonNullable<ModalProps['accent']>, string> = {
   accent: 'bg-accent',
   gold: 'bg-gold',
@@ -31,6 +39,12 @@ const ACCENT_BAR: Record<NonNullable<ModalProps['accent']>, string> = {
 export function Modal({ role, title, onClose, size = 'md', accent = 'accent', fill = false, headExtra, children }: ModalProps) {
   const copy = useCopy();
   const { MODAL_COPY } = copy;
+  useEffect(() => {
+    openModalCount += 1;
+    return () => {
+      openModalCount -= 1;
+    };
+  }, []);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

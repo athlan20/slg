@@ -3,6 +3,7 @@
 // 保证 API / Worker 两进程并发启动时只建一次表；引入正式迁移工具时替换 ensureSchema。
 
 import pg from 'pg';
+import { CHAT_SCHEMA_SQL } from './chat-schema';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -647,7 +648,7 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + CHAT_SCHEMA_SQL);
         return;
       } catch (err) {
         if ((err as { code?: string }).code !== '40P01' || attempt >= 5) {

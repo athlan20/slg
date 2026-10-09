@@ -34,6 +34,10 @@ interface SidebarProps {
   onReset: () => void;
   onExchange: () => void;
   onLeaderboard: () => void;
+  /** 手机端底部图标栏的聊天入口（AISLG-138）：点开全屏聊天；角标为私聊未读数 */
+  chatOpen: boolean;
+  chatUnread: number;
+  onToggleChat: () => void;
 }
 
 /** 连接状态灯样式与文字（文字用户可见，按当前语言取文案包，不能放模块常量） */
@@ -51,8 +55,8 @@ function connectionLamp(connection: ConnectionStatus): { lamp: string; label: st
 export function Sidebar(props: SidebarProps) {
   const copy = useCopy();
   const lang = useLang();
-  const { COPY, CITY_COPY, NAV_COPY, EXTRA_AUTH } = copy;
-  const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded } = props;
+  const { COPY, CITY_COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY } = copy;
+  const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded, chatOpen, chatUnread, onToggleChat } = props;
   const [cityOpen, setCityOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const rootRef = useRef<HTMLElement | null>(null);
@@ -179,6 +183,28 @@ export function Sidebar(props: SidebarProps) {
             </button>
           );
         })}
+        {/* 手机端（< 1024）底部图标栏的聊天入口；桌面端聊天入口在底栏左侧（收起条） */}
+        <button
+          type="button"
+          role="导航-聊天"
+          aria-pressed={chatOpen}
+          title={CHAT_COPY.launcher.label}
+          onClick={onToggleChat}
+          className="relative hidden min-w-0 cursor-pointer flex-col items-center gap-0.5 rounded-[5px] px-0 py-1 text-[10.5px] text-dim hover:text-fg max-lg:flex max-lg:flex-1"
+        >
+          <b className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded border border-line text-[12px] font-semibold">
+            {CHAT_COPY.launcher.label.slice(0, 1)}
+          </b>
+          <span className="max-lg:inline">{CHAT_COPY.launcher.label}</span>
+          {chatUnread > 0 ? (
+            <i
+              role="导航-聊天-角标"
+              className="absolute right-1.5 top-0 rounded-full bg-st-error px-1 text-center text-[9.5px] not-italic text-bg"
+            >
+              {chatUnread > 99 ? '99+' : chatUnread}
+            </i>
+          ) : null}
+        </button>
       </nav>
 
       <div role="导航-侧栏底部" className="relative shrink-0 max-lg:flex max-lg:items-center">

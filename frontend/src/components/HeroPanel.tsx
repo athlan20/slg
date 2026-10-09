@@ -7,7 +7,9 @@ import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import type { CityList } from '../state/useCityList';
 import type { HeroSession } from '../state/heroSession';
+import { useGame } from '../state/GameContext';
 import { useNow } from '../state/useNow';
+import { heroShareLabel } from './chat/chatText';
 import { HeroCard } from './HeroCard';
 import { HeroTavern } from './HeroTavern';
 import { Card } from './ui/Card';
@@ -22,6 +24,7 @@ interface HeroPanelProps {
 export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
   const copy = useCopy();
   const { EXTRA_PANEL, HERO_COPY } = copy;
+  const { chat } = useGame().session;
   const { state, error, busy } = session;
   const now = useNow(state !== null && state.heroes.length > 0);
   const cityNames: Record<string, string> = Object.fromEntries(cityList.cities.map((item) => [item.id, item.name]));
@@ -64,6 +67,7 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
                 onAssign={() => void session.assignGuard(hero.id)}
                 onRemoveGuard={() => void session.assignGuard(null)}
                 onDismiss={() => void session.dismiss(hero.id)}
+                onShare={() => chat.shareDraft({ card: { kind: 'hero', heroId: hero.id }, label: heroShareLabel(tName(hero.name), hero.level) })}
               />
             )}
           />

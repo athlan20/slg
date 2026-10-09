@@ -14,6 +14,7 @@ import { MapPage } from '../pages/MapPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { AccountDialogs, type AccountDialogMode } from './AccountDialogs';
 import { BottomBar } from './BottomBar';
+import { ChatWindow } from '../chat/ChatWindow';
 import { Sidebar, type NavBadges } from './Sidebar';
 import { TopBar } from './TopBar';
 
@@ -53,6 +54,9 @@ export function AppShell() {
         onReset={() => setDialog('reset')}
         onExchange={() => setExchangeRequest((n) => n + 1)}
         onLeaderboard={() => openLeaderboard()}
+        chatOpen={session.chat.open}
+        chatUnread={session.chat.unreadTotal}
+        onToggleChat={() => session.chat.setOpen(!session.chat.open)}
       />
       <TopBar
         page={page}
@@ -79,6 +83,7 @@ export function AppShell() {
         broadcasts={session.broadcasts}
         onOpenBroadcasts={() => void session.fetchServerBroadcasts()}
       />
+      <ChatWindow />
       {dialog ? (
         <AccountDialogs
           mode={dialog}

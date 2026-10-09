@@ -20,6 +20,7 @@ import { ScoutForm } from './forms/ScoutForm';
 import { TransportForm } from './forms/TransportForm';
 import type { TargetCtx, TroopInput } from './forms/targetTypes';
 import { TargetHeader } from './TargetHeader';
+import { TargetChatActions } from './TargetChatActions';
 
 type Act = 'plunder' | 'occupy' | 'scout' | 'clear' | 'intercept' | 'reinforce' | 'recall' | 'transfer' | 'transport';
 
@@ -126,6 +127,7 @@ export function TargetPanel() {
           isOwnCity={isOwnCity}
           onClose={world.deselectTile}
         />
+        <TargetChatActions x={x} y={y} detail={detail} accountId={accountId} />
         {world.error ? (
           <p role="世界地图详情区-错误" className="line-clamp-2 shrink-0 text-[12px] text-warn" title={world.error}>
             {world.error}

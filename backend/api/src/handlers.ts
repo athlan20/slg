@@ -52,6 +52,7 @@ import { handleWechatOp, onWxConnectionClosed, type WxService } from './handlers
 import { handleGoogleBind, handleGoogleLogin, type GoogleService } from './handlers-google';
 import { handleGithubAuthStart, handleOauthRedeem, type GithubService } from './handlers-github';
 import { handleGetServerBroadcasts } from './handlers-server';
+import { handleChatOp } from './handlers-chat';
 import { handleGetLeaderboard } from './handlers-leaderboard';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
 import { loadCityState } from './views';
@@ -353,6 +354,14 @@ async function dispatchOp(
       break;
     case Op.RESET_ACCOUNT:
       await handleResetAccount(ctx, conn, op, seq, data);
+      break;
+    case Op.CHAT_HISTORY:
+    case Op.CHAT_SEND:
+    case Op.CHAT_CONVERSATIONS:
+    case Op.CHAT_READ:
+    case Op.CHAT_BLOCK:
+    case Op.CHAT_REPORT_DETAIL:
+      await handleChatOp(ctx, conn, op, seq, data);
       break;
     case Op.BUILD_FARM:
       // 兼容入口（协议 v2 及以前）：等价于 BUILD 且 kind='farm'，忽略请求参数

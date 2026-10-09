@@ -456,5 +456,10 @@
  * 只统计最近 7 天 Agent 上线过、且进了战力统计的账号，排名 = 该模型实力前 10 名的
  * 平均战力（不足 10 名取全部平均），响应经 modelEntries 下发（entries 为空、me 为 null）。
  * 新表 leaderboard_model_snapshots，leaderboard_snapshots 加列 agent_model。
+ * v51（聊天，AISLG-138，只加不改）：新增玩家专属的聊天协议（op 66–71 与推送 2019，仅玩家连接，
+ * Agent 连接返回 AGENT_FORBIDDEN，对外 Agent 文档不收录）：世界频道与私聊的消息查询 / 发送，
+ * 私聊会话与未读，已读标记，屏蔽与取消屏蔽，战报卡片详情。新增错误码 CHAT_GOVERNMENT_TOO_LOW /
+ * CHAT_MUTED / CHAT_BLOCKED / CHAT_RATE_LIMITED。新表 chat_messages / chat_blocks / chat_reads，
+ * accounts 加列 chat_muted_until。
  */
-export const PROTOCOL_VERSION = 50;
+export const PROTOCOL_VERSION = 51;

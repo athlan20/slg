@@ -12,6 +12,7 @@ import { useCopy } from '../../i18n/bundle';
 import { buildProgressItems } from '../../state/progressItems';
 import { useNow } from '../../state/useNow';
 import { Modal } from '../ui/Modal';
+import { ChatChip } from '../chat/ChatChip';
 import { PagedList } from '../ui/PagedList';
 
 interface BottomBarProps {
@@ -34,6 +35,7 @@ export function BottomBar({ city, research, broadcasts, onOpenBroadcasts }: Bott
       role="导航-底栏"
       className="nav-foot flex min-w-0 items-center gap-2.5 rounded-panel border border-line bg-panel px-2.5 text-[11.5px] max-lg:hidden"
     >
+      <ChatChip />
       <span className="shrink-0 text-faint">{FOOT_COPY.running}</span>
       <div role="导航-单行时间线" className="flex min-w-0 flex-1 gap-1.5 overflow-hidden">
         {items.length === 0 ? (
