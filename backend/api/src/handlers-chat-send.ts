@@ -1,13 +1,11 @@
-// CHAT_SEND（v51，AISLG-138）：发送文字 / 表情 / 卡片。
+// CHAT_SEND（v51，AISLG-138）：发送文字（表情直接写在文字里）或卡片。
 // 顺序：参数 → 事务内锁住发送人账号 → 禁言 → 世界频道官府门槛 / 私聊对象与屏蔽 → 同频道限频 → 卡片快照 →
 // 屏蔽词替换 → 落库。提交后才回包并推送（推送失败不影响发送结果）。仅限玩家连接（由 handlers-chat.ts 把关）。
 
 import { Op, type ErrorCode } from '../../common/src/protocol';
 import {
   CHAT_RATE_LIMIT_MS,
-  CHAT_TEXT_MAX_CHARS,
   CHAT_WORLD_MIN_GOVERNMENT,
-  isChatEmoji,
   type ChatCardRequest,
   type ChatCardView,
   type ChatChannel,
@@ -21,7 +19,7 @@ import * as db from './chat-db';
 import { buildChatCard } from './chat-cards';
 import { bannedWordFilter, type BannedWordFilter } from './chat-words';
 import { chatMessageView } from './chat-view';
-import { isUuid, readCardRequest, readChannel } from './chat-validate';
+import { isUuid, normalizeChatText, readCardRequest, readChannel } from './chat-validate';
 
 /** 保留期清理的节流周期（毫秒）：发送路径上最多每分钟清一次，不阻塞发言 */
 const PRUNE_INTERVAL_MS = 60_000;
@@ -31,7 +29,6 @@ interface SendRequest {
   channel: ChatChannel;
   peerId: string | undefined;
   text: string | null;
-  emoji: string | null;
   card: ChatCardRequest | null;
 }
 
@@ -39,7 +36,7 @@ type SendOutcome =
   | { ok: true; message: ChatMessageView; recipientId: string | null }
   | { ok: false; code: ErrorCode; data?: Record<string, unknown> };
 
-/** 解析并做形状校验；text 去首尾空白后为空视为未填（卡片可不附文字） */
+/** 解析并做形状校验：文字去首尾空白后超过 100 字（按字形计）即非法；文字为空时只有卡片消息才合法 */
 function parseSendRequest(data: Record<string, unknown> | undefined): SendRequest | null {
   const channel = readChannel(data?.channel);
   if (!channel) {
@@ -49,12 +46,8 @@ function parseSendRequest(data: Record<string, unknown> | undefined): SendReques
   if (rawText !== null && typeof rawText !== 'string') {
     return null;
   }
-  const text = typeof rawText === 'string' ? rawText.trim() : '';
-  if (Array.from(text).length > CHAT_TEXT_MAX_CHARS) {
-    return null;
-  }
-  const rawEmoji = data?.emoji ?? null;
-  if (rawEmoji !== null && !isChatEmoji(rawEmoji)) {
+  const text = normalizeChatText(typeof rawText === 'string' ? rawText : '');
+  if (text === null) {
     return null;
   }
   const rawCard = data?.card ?? null;
@@ -62,12 +55,7 @@ function parseSendRequest(data: Record<string, unknown> | undefined): SendReques
   if (rawCard !== null && card === null) {
     return null;
   }
-  const emoji = rawEmoji as string | null;
-  // 表情独占一条消息；文字与卡片至少要有一个
-  if (emoji !== null && (text.length > 0 || card !== null)) {
-    return null;
-  }
-  if (emoji === null && text.length === 0 && card === null) {
+  if (text.length === 0 && card === null) {
     return null;
   }
   const peerId = data?.peerId;
@@ -75,7 +63,6 @@ function parseSendRequest(data: Record<string, unknown> | undefined): SendReques
     channel,
     peerId: typeof peerId === 'string' ? peerId : undefined,
     text: text.length > 0 ? text : null,
-    emoji,
     card,
   };
 }
@@ -148,7 +135,6 @@ async function sendInTransaction(
       senderId: accountId,
       recipientId,
       text,
-      emoji: req.emoji,
       card,
       reportDetail,
     });
@@ -162,7 +148,6 @@ async function sendInTransaction(
         recipient_id: recipientId,
         recipient_name: recipientName,
         text,
-        emoji: req.emoji,
         card,
         created_at: inserted.createdAt,
       },

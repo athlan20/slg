@@ -52,6 +52,7 @@ export const CHAT_COPY_EN = {
     draftLabel: 'Card',
     draftRemove: 'Remove card',
     sending: 'Sending…',
+    limit: (max: number) => `Reached the ${max}-character limit (emoji count as characters)`,
   },
   insert: {
     tabs: {

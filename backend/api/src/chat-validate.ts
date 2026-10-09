@@ -16,13 +16,17 @@ export function readChannel(value: unknown): ChatChannel | null {
   return value === 'world' || value === 'private' ? value : null;
 }
 
-/** 去首尾空白后的文字：空串或超过 100 码点返回 null（调用方据此返回 INVALID_PARAMS） */
+/** 字数：按字形（grapheme）计，表情（含肤色、ZWJ 组合）各算 1 个字 */
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+export function chatLength(text: string): number {
+  return Array.from(graphemes.segment(text)).length;
+}
+
+/** 去首尾空白后的文字：超过 100 字返回 null（调用方据此返回 INVALID_PARAMS）；空串原样返回（卡片可不附文字） */
 export function normalizeChatText(value: string): string | null {
   const text = value.trim();
-  if (text.length === 0 || Array.from(text).length > CHAT_TEXT_MAX_CHARS) {
-    return null;
-  }
-  return text;
+  return chatLength(text) > CHAT_TEXT_MAX_CHARS ? null : text;
 }
 
 /** 卡片请求：只认 kind 与对应的 id / 坐标；坐标的范围由调用方按地图大小判断 */

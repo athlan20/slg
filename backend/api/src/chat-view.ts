@@ -9,7 +9,7 @@ export function playerView(accountId: string, username: string, filter: BannedWo
 }
 
 export function chatMessageView(row: ChatMessageRow, filter: BannedWordFilter): ChatMessageView {
-  const type = row.card ? 'card' : row.emoji ? 'emoji' : 'text';
+  const type = row.card ? 'card' : 'text';
   return {
     id: Number(row.id),
     channel: row.channel as ChatChannel,
@@ -17,7 +17,6 @@ export function chatMessageView(row: ChatMessageRow, filter: BannedWordFilter): 
     recipient: row.recipient_id ? playerView(row.recipient_id, row.recipient_name ?? '', filter) : null,
     type,
     text: row.text,
-    emoji: row.emoji,
     card: row.card,
     createdAt: row.created_at.toISOString(),
   };

@@ -1,34 +1,35 @@
-// 聊天参数校验（v51，AISLG-138）的单元测试：文字长度、卡片形状、表情白名单、协议号与文档隐藏规则。
+// 聊天参数校验（v51，AISLG-138）的单元测试：文字长度（按字形计）、卡片形状、协议号与文档隐藏规则。
 // 不需要数据库。
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CHAT_EMOJIS, CHAT_TEXT_MAX_CHARS, isChatEmoji } from '../common/src/protocol-chat';
+import { CHAT_TEXT_MAX_CHARS } from '../common/src/protocol-chat';
 import { Op, ErrorCode } from '../common/src/protocol';
 import { OP_DOC } from '../common/src/protocol-doc-ops';
 import { AGENT_HIDDEN_ERROR_CODES, AGENT_HIDDEN_OPS } from '../common/src/protocol-doc-ops-chat';
 import { renderAgentApiMarkdown, buildAgentApiManifest } from '../common/src/protocol-doc-render';
-import { isUuid, normalizeChatText, readCardRequest, readChannel } from '../api/src/chat-validate';
+import { chatLength, isUuid, normalizeChatText, readCardRequest, readChannel } from '../api/src/chat-validate';
 
 const UUID = '4f0c1a2e-8d3b-4c5e-9a7f-1b2c3d4e5f60';
 
-test('文字：去首尾空白；空白串与超过 100 码点的文字返回 null', () => {
+test('文字：去首尾空白；空白串原样返回空串（卡片可不附文字）；超过 100 字返回 null', () => {
   assert.equal(normalizeChatText('  你好  '), '你好');
-  assert.equal(normalizeChatText('   '), null);
+  assert.equal(normalizeChatText('   '), '');
   assert.equal(normalizeChatText('a'.repeat(CHAT_TEXT_MAX_CHARS)), 'a'.repeat(CHAT_TEXT_MAX_CHARS));
   assert.equal(normalizeChatText('a'.repeat(CHAT_TEXT_MAX_CHARS + 1)), null);
 });
 
-test('文字长度按码点计：100 个 emoji 合法，101 个不合法', () => {
+test('文字长度按字形计：表情（含肤色、组合）各算 1 个字，100 个合法，101 个不合法', () => {
   assert.notEqual(normalizeChatText('😀'.repeat(CHAT_TEXT_MAX_CHARS)), null);
   assert.equal(normalizeChatText('😀'.repeat(CHAT_TEXT_MAX_CHARS + 1)), null);
+  assert.equal(chatLength('👍🏻'), 1);
+  assert.equal(chatLength('👨‍👩‍👧'), 1);
+  assert.notEqual(normalizeChatText('👍🏻'.repeat(CHAT_TEXT_MAX_CHARS)), null);
 });
 
-test('表情：只接受内置表情表中的字符', () => {
-  assert.ok(CHAT_EMOJIS.length >= 20);
-  assert.equal(isChatEmoji(CHAT_EMOJIS[0]), true);
-  assert.equal(isChatEmoji('🦄'), false);
-  assert.equal(isChatEmoji(42), false);
+test('表情直接写在文字里：任意表情都不做白名单，混排文字原样返回', () => {
+  assert.equal(normalizeChatText('今晚打洛阳🔥 带好粮🍖'), '今晚打洛阳🔥 带好粮🍖');
+  assert.equal(normalizeChatText('🦄'), '🦄');
 });
 
 test('频道：只认 world 与 private', () => {

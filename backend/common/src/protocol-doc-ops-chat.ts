@@ -16,7 +16,6 @@ const CHAT_MESSAGE_SAMPLE = {
   recipient: null,
   type: 'text',
   text: '有人一起打黄巾吗',
-  emoji: null,
   card: null,
   createdAt: '2026-10-09T10:00:00.000Z',
 } as const;
@@ -29,7 +28,6 @@ const CHAT_CARD_SAMPLE = {
   recipient: null,
   type: 'card',
   text: '这块地不错',
-  emoji: null,
   card: { kind: 'coord', x: 120, y: 340, terrain: 'forest', tileKind: 'wilderness', level: 4 },
   createdAt: '2026-10-09T10:01:00.000Z',
 } as const;
@@ -64,12 +62,11 @@ export const REQUEST_CHAT_SEND: RequestOpDoc = {
   name: 'CHAT_SEND',
   title: '发送聊天消息（v51，AISLG-138）',
   preAuth: false,
-  summary: `${PLAYER_ONLY}发送文字、表情或卡片。text / emoji / card 至少给一个；emoji 不与 text、card 同发；card 可附一句 text。文字去首尾空白后 1..100 字，屏蔽词在服务端整段替换成 *（匹配前忽略空格与标点）。卡片只传 id 或坐标，快照由服务端生成：coord 需在地图范围内；hero / report / city 的 id 必须属于本账号。世界频道需主城官府 ≥ 3 级；私聊不设等级门槛，对方屏蔽了你则失败。同一频道每 10 秒一条。账号被禁言时全部发送失败。`,
+  summary: `${PLAYER_ONLY}发送文字或卡片。text 与 card 至少给一个；card 可附一句 text。表情直接写在文字里，不单独成类型。文字去首尾空白后不超过 100 字（按字形计，一个表情算 1 个字）；屏蔽词在服务端整段替换成 *（匹配前忽略空格、标点与表情）。卡片只传 id 或坐标，快照由服务端生成：coord 需在地图范围内；hero / report / city 的 id 必须属于本账号。世界频道需主城官府 ≥ 3 级；私聊不设等级门槛，对方屏蔽了你则失败。同一频道每 10 秒一条。账号被禁言时全部发送失败。`,
   requestFields: [
     { name: 'channel', type: "'world' | 'private'", desc: '必填。频道。' },
     { name: 'peerId', type: 'string', desc: '私聊必填：对方账号 id（不能是自己）。' },
-    { name: 'text', type: 'string', desc: '可选。文字，1..100 字（去首尾空白后）。' },
-    { name: 'emoji', type: 'string', desc: '可选。表情，只接受内置表情表中的字符（不与 text、card 同发）。' },
+    { name: 'text', type: 'string', desc: '可选。文字（表情直接写在里面，如「今晚打洛阳🔥」）。去首尾空白后不超过 100 字，一个表情算 1 个字。' },
     { name: 'card', type: 'object', desc: '可选。卡片：{ kind: "coord", x, y } | { kind: "hero", heroId } | { kind: "report", reportId } | { kind: "city", cityId }。' },
   ],
   dataFields: [
@@ -196,7 +193,7 @@ export const PUSH_CHAT_MESSAGE: PushOpDoc = {
   title: '推送：聊天新消息（v51，AISLG-138）',
   summary: '有新消息时推送给玩家连接（Agent 连接不收）。世界频道推给所有在线玩家，但不推给屏蔽了发言人的玩家；私聊推给对方的在线玩家连接，并推给发送人自己的其他在线连接。发送人本连接的结果经 CHAT_SEND 直接返回，不重复推送。',
   dataFields: [
-    { name: 'message', type: 'object', desc: '消息视图：{ id, channel, sender, recipient, type, text, emoji, card, createdAt }。type 为 text / emoji / card；card 为卡片快照（kind 为 coord / hero / report / city）。' },
+    { name: 'message', type: 'object', desc: '消息视图：{ id, channel, sender, recipient, type, text, card, createdAt }。type 为 text / card；card 为卡片快照（kind 为 coord / hero / report / city）。' },
   ],
   examples: [{ op: Op.PUSH_CHAT_MESSAGE, push: true, data: { message: CHAT_MESSAGE_SAMPLE } }],
 };

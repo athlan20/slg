@@ -30,7 +30,6 @@ export type ChatSendResult = { ok: true } | { ok: false; message: string };
 export interface ChatSendInput {
   channel: 'world' | 'private';
   text?: string;
-  emoji?: string;
   card?: ChatCardRequest;
 }
 
@@ -375,7 +374,6 @@ export function useChat(deps: {
         channel: input.channel,
         ...(input.channel === 'private' && target ? { peerId: target.accountId } : {}),
         ...(input.text ? { text: input.text } : {}),
-        ...(input.emoji ? { emoji: input.emoji } : {}),
         ...(input.card ? { card: input.card } : {}),
       });
       if (!result.ok) {

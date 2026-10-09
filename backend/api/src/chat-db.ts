@@ -16,13 +16,12 @@ export interface ChatMessageRow {
   recipient_id: string | null;
   recipient_name: string | null;
   text: string | null;
-  emoji: string | null;
   card: ChatCardView | null;
   created_at: Date;
 }
 
 const MESSAGE_SELECT = `SELECT m.id, m.channel, m.sender_id, s.username AS sender_name,
-       m.recipient_id, r.username AS recipient_name, m.text, m.emoji, m.card, m.created_at
+       m.recipient_id, r.username AS recipient_name, m.text, m.card, m.created_at
   FROM chat_messages m
   JOIN accounts s ON s.id = m.sender_id
   LEFT JOIN accounts r ON r.id = m.recipient_id`;
@@ -190,7 +189,6 @@ export interface NewChatMessage {
   senderId: string;
   recipientId: string | null;
   text: string | null;
-  emoji: string | null;
   card: ChatCardView | null;
   /** 战报卡片的分享快照（仅 report 卡片；列表查询不读它） */
   reportDetail: unknown | null;
@@ -198,15 +196,14 @@ export interface NewChatMessage {
 
 export async function insertChatMessage(q: Q, msg: NewChatMessage): Promise<{ id: number; createdAt: Date }> {
   const res = await q.query(
-    `INSERT INTO chat_messages (channel, sender_id, recipient_id, text, emoji, card, report_detail)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb)
+    `INSERT INTO chat_messages (channel, sender_id, recipient_id, text, card, report_detail)
+     VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
      RETURNING id, created_at`,
     [
       msg.channel,
       msg.senderId,
       msg.recipientId,
       msg.text,
-      msg.emoji,
       msg.card === null ? null : JSON.stringify(msg.card),
       msg.reportDetail === null ? null : JSON.stringify(msg.reportDetail),
     ],
