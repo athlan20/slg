@@ -82,6 +82,13 @@ export const Op = {
   GET_AGENT_TOKEN: 64,
   /** 重置永久 Agent 令牌（v46）：仅玩家连接，旧令牌立即失效、用它在线的连接被断开 */
   RESET_AGENT_TOKEN: 65,
+  /** 聊天（v51）：消息查询 / 发送 / 私聊会话与未读 / 已读 / 屏蔽 / 战报卡片详情（仅玩家连接） */
+  CHAT_HISTORY: 66,
+  CHAT_SEND: 67,
+  CHAT_CONVERSATIONS: 68,
+  CHAT_READ: 69,
+  CHAT_BLOCK: 70,
+  CHAT_REPORT_DETAIL: 71,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -125,6 +132,8 @@ export const Op = {
   PUSH_HERO_STATE: 2016,
   /** 玩家部队来袭预警推送（v38 AISLG-122）：被袭击账号全部在线连接收到 */
   PUSH_ATTACK_WARNING: 2017,
+  /** 聊天新消息推送（v51）：世界频道 / 私聊，仅推给玩家连接 */
+  PUSH_CHAT_MESSAGE: 2019,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -198,6 +207,10 @@ export type ErrorCode =
   | 'RATE_LIMITED'
   | 'AGENT_PASSWORD_FORBIDDEN'
   | 'PASSWORD_LOGIN_CLOSED'
+  | 'CHAT_GOVERNMENT_TOO_LOW'
+  | 'CHAT_MUTED'
+  | 'CHAT_BLOCKED'
+  | 'CHAT_RATE_LIMITED'
   | 'INTERNAL';
 
 export interface Resources {
@@ -650,3 +663,21 @@ export interface RecruitStatePushData {
   reason: 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled';
   recruit: RecruitView;
 }
+
+// 聊天（v51）的载荷类型与内置表情
+export type {
+  ChatCardRequest,
+  ChatCardView,
+  ChatChannel,
+  ChatConversationView,
+  ChatConversationsResponseData,
+  ChatHistoryRequestData,
+  ChatHistoryResponseData,
+  ChatMessageView,
+  ChatPlayerView,
+  ChatReportDetailResponseData,
+  ChatSendRequestData,
+  ChatSendResponseData,
+  PushChatMessageData,
+} from './protocol-chat';
+export { CHAT_EMOJIS, CHAT_RATE_LIMIT_MS, CHAT_TEXT_MAX_CHARS, CHAT_WORLD_MIN_GOVERNMENT } from './protocol-chat';

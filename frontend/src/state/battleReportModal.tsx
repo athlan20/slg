@@ -19,26 +19,28 @@ export function emitBattleCommentPatched(reportId: number, comment: BattleReport
 }
 
 export interface BattleReportModalApi {
-  /** 弹出指定战报的详情弹窗（重复打开新战报会替换当前弹窗） */
-  openBattleReport: (report: BattleReportView) => void;
+  /** 弹出指定战报的详情弹窗（重复打开新战报会替换当前弹窗）；shareable 默认 true（本人战报可分享到聊天，聊天里打开的别人的战报不可） */
+  openBattleReport: (report: BattleReportView, options?: { shareable?: boolean }) => void;
   /** 只有战报 id 的入口（事件流 detail.reportId）：反查成功后弹出，失败给提示态 */
   openBattleReportById: (reportId: number) => void;
   closeBattleReport: () => void;
 }
 
 type ModalState =
-  | { status: 'ready'; report: BattleReportView }
+  | { status: 'ready'; report: BattleReportView; shareable: boolean }
   | { status: 'loading' | 'error'; reportId: number };
 
 interface BattleReportModalProviderProps {
   children: ReactNode;
   /** 按 id 反查单份战报（worldSession.fetchBattleReportById；查不到返回 null） */
   fetchReportById: (reportId: number) => Promise<BattleReportView | null>;
+  /** 点「分享」：把这份战报放进聊天输入框（AISLG-138；缺省则弹窗不显示分享按钮） */
+  onShareReport?: (report: BattleReportView) => void;
 }
 
 const BattleReportModalContext = createContext<BattleReportModalApi | null>(null);
 
-export function BattleReportModalProvider({ children, fetchReportById }: BattleReportModalProviderProps) {
+export function BattleReportModalProvider({ children, fetchReportById, onShareReport }: BattleReportModalProviderProps) {
   const copy = useCopy();
   const { COPY } = copy;
   const [state, setState] = useState<ModalState | null>(null);
@@ -59,9 +61,9 @@ export function BattleReportModalProvider({ children, fetchReportById }: BattleR
     return () => commentEventTarget.removeEventListener('comment', onComment);
   }, []);
 
-  const openBattleReport = useCallback((report: BattleReportView) => {
+  const openBattleReport = useCallback((report: BattleReportView, options?: { shareable?: boolean }) => {
     requestSeqRef.current += 1;
-    setState({ status: 'ready', report });
+    setState({ status: 'ready', report, shareable: options?.shareable ?? true });
   }, []);
 
   const openBattleReportById = useCallback(
@@ -71,7 +73,7 @@ export function BattleReportModalProvider({ children, fetchReportById }: BattleR
       fetchReportById(reportId)
         .then((report) => {
           if (requestSeqRef.current === seq) {
-            setState(report ? { status: 'ready', report } : { status: 'error', reportId });
+            setState(report ? { status: 'ready', report, shareable: true } : { status: 'error', reportId });
           }
         })
         .catch(() => {
@@ -97,7 +99,11 @@ export function BattleReportModalProvider({ children, fetchReportById }: BattleR
     <BattleReportModalContext.Provider value={api}>
       {children}
       {state?.status === 'ready' ? (
-        <BattleReportModal report={state.report} onClose={closeBattleReport} />
+        <BattleReportModal
+          report={state.report}
+          onClose={closeBattleReport}
+          onShare={state.shareable && onShareReport ? () => onShareReport(state.report) : undefined}
+        />
       ) : state ? (
         <div
           role="战报弹窗-加载态"

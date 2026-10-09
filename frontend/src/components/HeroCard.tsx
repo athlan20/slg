@@ -8,6 +8,7 @@ import type { HeroView } from '../api/protocol';
 import { formatClock } from '../api/format';
 import { getCopy, useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
+import { ChatShareButton } from './chat/ChatShareButton';
 
 const HERO_LEVEL_MAX = 20;
 
@@ -22,6 +23,8 @@ interface HeroCardProps {
   onAssign: () => void;
   onRemoveGuard: () => void;
   onDismiss: () => void;
+  /** 分享到聊天（AISLG-138）：有值时显示「分享武将」按钮 */
+  onShare?: () => void;
 }
 
 function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number): { text: string; tone: string } {
@@ -44,9 +47,9 @@ function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number
 
 const smallBtn = 'cursor-pointer rounded border px-1.5 text-[11.5px] disabled:cursor-not-allowed disabled:opacity-40';
 
-export function HeroCard({ hero, currentCityId, cityNames, busy, now, onAssign, onRemoveGuard, onDismiss }: HeroCardProps) {
+export function HeroCard({ hero, currentCityId, cityNames, busy, now, onAssign, onRemoveGuard, onDismiss, onShare }: HeroCardProps) {
   const copy = useCopy();
-  const { HERO_COPY } = copy;
+  const { HERO_COPY, CHAT_COPY } = copy;
   const [confirming, setConfirming] = useState(false);
   const status = statusOf(hero, cityNames, now);
   const guardsHere = currentCityId !== null && hero.guardCityId === currentCityId;
@@ -90,6 +93,7 @@ export function HeroCard({ hero, currentCityId, cityNames, busy, now, onAssign, 
           </div>
         </div>
         <div role="武将面板-操作" className="flex shrink-0 items-center gap-1">
+          {onShare ? <ChatShareButton role="武将面板-分享按钮" label={CHAT_COPY.share.hero} onClick={onShare} /> : null}
           {guardsHere ? (
             <button type="button" role="武将面板-撤任城守按钮" disabled={busy} onClick={onRemoveGuard} className={`${smallBtn} border-line text-dim hover:text-fg`}>
               {HERO_COPY.card.removeGuard}

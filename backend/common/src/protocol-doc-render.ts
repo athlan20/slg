@@ -2,11 +2,12 @@
 // 生成脚本（scripts/gen-agent-api.ts）与 API 文档路由共用本模块；渲染是纯函数、
 // 协议号按数字升序、字段按清单书写顺序输出，保证「重新生成 + git diff」可作漂移检查。
 
-import { PROTOCOL_VERSION, TROOP_KINDS, type TroopKind } from './protocol';
+import { PROTOCOL_VERSION, TROOP_KINDS, type ErrorCode, type TroopKind } from './protocol';
 import { BUILDING_INFO, INITIAL_RESOURCES } from './rules';
 import { TROOP_INFO } from './troops';
 import { GUIDE_RUNS, nativeAttackGuide } from './native-guide';
 import { OP_DOC } from './protocol-doc-ops';
+import { AGENT_HIDDEN_ERROR_CODES, AGENT_HIDDEN_OPS } from './protocol-doc-ops-chat';
 import { CHANGES_PATH_PREFIX } from './protocol-changelog';
 import {
   CONNECTION_RULES,
@@ -17,6 +18,7 @@ import {
   PROTOCOL_COMPAT_POLICY,
   TIME_SCALE_DOC,
   TROOPS_DOC,
+  type ErrorDoc,
   type FieldDoc,
   type OpDoc,
 } from './protocol-doc';
@@ -24,8 +26,19 @@ import { WALKTHROUGH } from './protocol-doc-walkthrough';
 
 const AS_OP_DOC = OP_DOC as Record<number, OpDoc>;
 
+/** Agent 文档可见的协议号（聊天等仅限玩家的协议不收录，见 protocol-doc-ops-chat.ts） */
 function opNumbers(): number[] {
-  return Object.keys(OP_DOC).map(Number).sort((a, b) => a - b);
+  return Object.keys(OP_DOC)
+    .map(Number)
+    .filter((op) => !AGENT_HIDDEN_OPS.has(op))
+    .sort((a, b) => a - b);
+}
+
+/** Agent 文档可见的错误码（去掉聊天专属错误码） */
+function visibleErrorDoc(): Record<string, ErrorDoc> {
+  return Object.fromEntries(
+    Object.entries(ERROR_DOC).filter(([code]) => !AGENT_HIDDEN_ERROR_CODES.has(code as ErrorCode)),
+  );
 }
 
 function jsonBlock(value: unknown): string {
@@ -155,7 +168,7 @@ function renderOp(op: number): string[] {
 }
 
 function renderErrors(): string[] {
-  const rows = Object.entries(ERROR_DOC).map(
+  const rows = Object.entries(visibleErrorDoc()).map(
     ([code, doc]) => `| \`${code}\` | ${cell(doc.desc)} | ${cell(doc.action)} |`,
   );
   return [
@@ -303,7 +316,7 @@ export function buildAgentApiManifest(): Record<string, unknown> {
     connectionRules: CONNECTION_RULES,
     frames: FRAME_EXAMPLES,
     ops: opNumbers().map((op) => ({ op, ...AS_OP_DOC[op] })),
-    errorCodes: ERROR_DOC,
+    errorCodes: visibleErrorDoc(),
     glossary: GLOSSARY,
     walkthrough: WALKTHROUGH,
   };

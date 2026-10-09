@@ -85,6 +85,7 @@ Agent API 文档：`GET /agent-api.md` 与 `GET /agent-api.json`（运行时从�
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_REDIRECT_URI` / `FRONTEND_URL` | 不配置 | GitHub 一键登录（v45）：在 GitHub 上建一个 **OAuth App**（不是 GitHub App），回调地址填 `GITHUB_REDIRECT_URI`（如 `https://slgws.example.cn/auth/github/callback`）。四项缺一即整体关闭：`GITHUB_AUTH_START` 返回 `GITHUB_UNAVAILABLE`、`/auth/config` 的 `githubEnabled=false`。`FRONTEND_URL` 为授权完成 / 取消后 302 跳回的前端地址。Secret 只放 `.env`，不要提交。**v47 起改按站点分套**，这四个变量成为任何 Host 都能用的 `default` 套（既有部署不用改）。 |
 | `GITHUB_SITES` | 不配置 | **v47 双站点**：GitHub OAuth App 按站点分开配置（一个 OAuth App 只能填一个回调地址），JSON 形如 `{"slg.example.cn":{...},"slg.yuntianyou.cc":{...}}`，键为站点 Host，值同上一栏四项（另可加 `apiBase`）；也接受 `"default"` 键作为兜底。某 Host 没配则回落到 `default` 套，两者都没有则该站 `githubEnabled=false`。授权 `state` 会记住发起站点，回调按它选配置套并 302 回该站前端。 |
 | `PASSWORD_LOGIN_DISABLED_HOSTS` | 不配置 | **v47 双站点**：整站关闭账号密码登录的 Host 列表，逗号分隔（如 `slg.yuntianyou.cc`；带端口 / 大小写不影响匹配）。列出的站点上 `LOGIN` 的密码分支返回 `PASSWORD_LOGIN_CLOSED`（绕过界面直发也一样），`/auth/config` 下发 `passwordLogin=false`、`wechatEnabled=false`，前端隐藏密码表单与微信入口，只剩 Google / GitHub。Agent 用账号密码登录在任何站都会被拒（`AGENT_PASSWORD_FORBIDDEN`，与本站配置无关）。 |
+| `CHAT_BANNED_WORDS_FILE` | 不配置（用 `backend/config/chat-banned-words.txt`，没有则用仓库内示例表） | 聊天屏蔽词表路径（v51，AISLG-138）：词表放在默认位置就不用配；放在别处才配这一项。UTF-8（可带 BOM），CRLF / LF 均可，每行一个词。词表是运营数据，只放服务器，不进仓库（`.gitignore` 已忽略 `backend/config/chat-banned-words.txt`）。配置了路径却读不到则 API 启动失败（不在没有过滤的状态下开放聊天）；改词表需重启 API。 |
 | `GITHUB_API_BASE` | `https://github.com` | GitHub 接口根地址，仅联调测试时指向假 GitHub 服务（`test/github/harness.ts`），线上不要配置。 |
 | `NODE_USE_ENV_PROXY` + `HTTPS_PROXY` | 不启用 | Node ≥ 24 的出站代理开关（v44）：设 `NODE_USE_ENV_PROXY=1` 并配 `HTTPS_PROXY=http://代理地址:端口`，API 校验 Google ID Token / 调 GitHub 接口的出站请求即走代理（代码无需改动；部署前再定要不要配，见下）。 |
 
@@ -137,6 +138,15 @@ Host 传下来，否则两站会被当成同一个站）：
   `AGENT_PASSWORD_LOGIN`；Agent 文档（`docs/agent-api.md`）已去掉「用账号密码登录」的说明。
 - 前端按页面域名选连接地址（`frontend/src/api/client.ts` 的 `PRODUCTION_WS_BY_HOST`）：`.cn` → `slgws.example.cn`，
   `.cc` → 同域名 `slg.yuntianyou.cc`；「复制给 AI」的提示词里文档地址与服务器地址随之变成 `.cc` 的。
+
+### 聊天运维须知（v51，AISLG-138）
+
+- **屏蔽词**：启动时读入词表（`CHAT_BANNED_WORDS_FILE` → `backend/config/chat-banned-words.txt` → 示例表，按此顺序取第一个；启动日志 `chat banned words: N entries from …` 会写明用的是哪份，看到 `example list` 说明正式词表没放好）。匹配前先去掉空格、标点、符号、emoji 与零宽字符，所以在词中间插空格或标点也拦得住（词表里的这类字符同样忽略）；命中的词整段替换成等长的 `*`（大小写不敏感，全角 / 半角等价）。国际站与国内站共用同一个世界频道，因此只配一份词表。
+- **禁言**：`npm run chat:mute -- <用户名> <分钟>` 禁言（`0` 解除，不带分钟数则查看状态），发言时实时生效，无需重启。
+- **保留期**：世界频道保留最近 7 天、最多 1000 条；私聊保留 30 天。按真实时间计算，不随 `time_scale` 缩放。清理在发送时按每分钟节流执行，查询侧即时过滤。
+- **限频**：同一账号、同一频道每 10 秒一条（世界与私聊各自计算）。世界频道需主城官府 ≥ 3 级。
+- **仅限玩家**：聊天协议对 Agent 连接一律返回 `AGENT_FORBIDDEN`，对外 Agent 文档不收录（见 `protocol-doc-ops-chat.ts`）。
+- **冒烟**：`npm run smoke:chat` 与 `npm run smoke` 一样读 `backend/.env`（本机开发库与 8080 API）。要跑在临时库上，用环境变量覆盖 `DATABASE_URL` 与 `WS_URL`（进程环境优先于 `.env`，见 `--env-file` 的约定）。会在库里新建 `chat_` 前缀的测试账号；`CHAT_SMOKE_PRUNE=1` 才会按保留期清理整张消息表，只在临时库上设。
 
 ### 全局时间缩放 time_scale（v20，AISLG-38）——部署与运维须知
 

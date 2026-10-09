@@ -72,6 +72,10 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   OAUTH_CODE_INVALID: '登录码无效或已过期，请重新发起登录',
   GITHUB_ALREADY_BOUND: '该 GitHub 账号已绑定其他账号，或当前账号已绑定了别的 GitHub 账号',
   RATE_LIMITED: '请求过于频繁，请稍后再试',
+  CHAT_GOVERNMENT_TOO_LOW: '主城官府需达到 3 级才能在世界频道发言',
+  CHAT_MUTED: '账号已被禁言，暂时不能发言',
+  CHAT_BLOCKED: '对方已屏蔽你，无法发送私聊',
+  CHAT_RATE_LIMITED: '发言太快了，请稍后再发',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除
   INTERNAL: '服务端内部错误',
 };

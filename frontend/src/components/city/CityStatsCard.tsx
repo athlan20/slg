@@ -7,10 +7,17 @@ import { useCopy } from '../../i18n/bundle';
 import type { CityView } from '../../api/protocol';
 import { Card } from '../ui/Card';
 import { PagedList } from '../ui/PagedList';
+import { useGame } from '../../state/GameContext';
+import { ChatShareButton } from '../chat/ChatShareButton';
+import { cityShareLabel } from '../chat/chatText';
+import { tName } from '../../i18n/names';
 
 export function CityStatsCard({ city }: { city: CityView | null }) {
   const copy = useCopy();
-  const { CITY_PAGE_COPY, RESOURCE_LABEL } = copy;
+  const { CITY_PAGE_COPY, RESOURCE_LABEL, CHAT_COPY } = copy;
+  const { session } = useGame();
+  const ref = city ? session.cityList.cities.find((item) => item.id === city.id) : undefined;
+  const shareable = ref !== undefined && ref.x !== null && ref.y !== null;
   // 资源遍历顺序来自文案包的资源键（各语言一致）
   const KEYS = Object.keys(RESOURCE_LABEL) as Array<keyof Resources>;
   const tiles: Array<{ key: string; label: string; value: string; sub: string; warn?: boolean }> = [];
@@ -39,7 +46,25 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
     rows.push(tiles.slice(i, i + 4));
   }
   return (
-    <Card role="城池页-概况" title={CITY_PAGE_COPY.statsTitle}>
+    <Card
+      role="城池页-概况"
+      title={CITY_PAGE_COPY.statsTitle}
+      actions={
+        city ? (
+          <ChatShareButton
+            role="城池页-概况-分享按钮"
+            label={CHAT_COPY.share.city}
+            disabled={!shareable}
+            onClick={() =>
+              session.chat.shareDraft({
+                card: { kind: 'city', cityId: city.id },
+                label: cityShareLabel(tName(city.name), ref?.x ?? 0, ref?.y ?? 0),
+              })
+            }
+          />
+        ) : null
+      }
+    >
       <PagedList
         role="城池页-概况-列表"
         items={rows}

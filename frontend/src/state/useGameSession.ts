@@ -57,6 +57,7 @@ import { useHeroSession, type HeroSession } from './heroSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useSessionExtras } from './session-extras';
+import { useChat, type ChatState } from './useChat';
 import { emitBattleCommentPatched } from './battleReportModal';
 import { useCityList, type CityList } from './useCityList';
 
@@ -150,6 +151,8 @@ export interface GameSession {
   techSession: TechSession;
   /** 武将会话（v36 AISLG-114）：武将 / 酒馆候选 / 招募 / 解雇 / 城守 / 出征带将选择 */
   heroSession: HeroSession;
+  /** 聊天（v51 AISLG-138）：浮窗开合 / 世界与私聊消息 / 未读 / 屏蔽 / 发送 / 分享草稿 */
+  chat: ChatState;
   /** 移动目标会话（v28 AISLG-78）：流寇 / 运粮商队列表 */
   moving: MovingTargetsSession;
   /** 黄巾之乱会话（v29 AISLG-76）：事件进度 / 营地 / 我的贡献 / 贡献榜 */
@@ -332,6 +335,7 @@ export function useGameSession(): GameSession {
 
   // 会话扩展切片（v23）：离线日报 / 全服播报 / 排行榜——状态与动作拆在 session-extras
   const extras = useSessionExtras(clientRef);
+  const chat = useChat({ clientRef, online: connection === 'online', accountId: account?.accountId ?? null });
   const { checkOfflineReportRef, fetchServerBroadcasts, onBroadcastPush, onNpcWarningPush, resetNpcWarnings } = extras;
 
   /** 推送先做乐观更新，再防抖走一轮按需查询对齐权威状态 */
@@ -1056,6 +1060,7 @@ export function useGameSession(): GameSession {
     world,
     techSession,
     heroSession,
+    chat,
     moving,
     yellowTurban,
     loadOlderEvents,

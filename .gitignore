@@ -21,3 +21,6 @@ playwright-report/
 README2.md
 CLAUDE.local.md
 wechat-minigame
+
+# 聊天屏蔽词表（运营数据，只放服务器）
+/backend/config/chat-banned-words.txt

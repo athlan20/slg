@@ -94,6 +94,7 @@ import {
   REQUEST_SCOUT,
 } from './protocol-doc-ops-battle';
 import { PUSH_ATTACK_WARNING, REQUEST_TRUCE } from './protocol-doc-ops-pvp';
+import { CHAT_OP_DOC } from './protocol-doc-ops-chat';
 
 const REQUEST_GET_STATE: RequestOpDoc = {
   kind: 'request',
@@ -455,4 +456,6 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.PUSH_HERO_STATE]: PUSH_HERO_STATE,
   [Op.PUSH_ATTACK_WARNING]: PUSH_ATTACK_WARNING,
   [Op.PUSH_WX_QR_STATUS]: PUSH_WX_QR_STATUS,
+  // 聊天（v51）：条目在 protocol-doc-ops-chat.ts，对外 Agent 文档不收录
+  ...CHAT_OP_DOC,
 };

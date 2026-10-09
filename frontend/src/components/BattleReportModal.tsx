@@ -18,36 +18,43 @@ import { BattleRoundChart } from './BattleRoundChart';
 interface BattleReportModalProps {
   report: BattleReportView;
   onClose: () => void;
+  /** 有值时标题栏显示「分享」（AISLG-138：把本场战报放进聊天输入框） */
+  onShare?: () => void;
 }
 
 function totalOf(army: ArmyCounts): number {
   return TROOP_KINDS.reduce((sum, kind) => sum + army[kind], 0);
 }
 
-function kindTitle(report: BattleReportView): string {
+/** 战斗类别的界面名称（战报弹窗标题与聊天里的战报卡片共用） */
+export function battleKindTitle(kind: BattleReportView['kind']): string {
   const { COPY, MOVING_COPY, YT_COPY } = getCopy();
-  if (report.kind === 'intercept') {
+  if (kind === 'intercept') {
     return MOVING_COPY.report.kind;
   }
-  if (report.kind === 'yellow_turban') {
+  if (kind === 'yellow_turban') {
     return YT_COPY.report.kind;
   }
-  if (report.kind === 'wilderness') {
+  if (kind === 'wilderness') {
     return COPY.battleReport.kindWilderness;
   }
-  if (report.kind === 'city_raid') {
+  if (kind === 'city_raid') {
     return COPY.battleReport.kindCityRaid;
   }
-  if (report.kind === 'pvp_raid') {
+  if (kind === 'pvp_raid') {
     return COPY.battleReport.kindPvpRaid;
   }
-  if (report.kind === 'pvp_wilderness') {
+  if (kind === 'pvp_wilderness') {
     return COPY.battleReport.kindPvpWilderness;
   }
-  if (report.kind === 'pvp_conquest') {
+  if (kind === 'pvp_conquest') {
     return COPY.battleReport.kindPvpConquest;
   }
-  return report.kind === 'npc_city' ? COPY.battleReport.kindNpcCity : COPY.battleReport.kindNpcRaid;
+  return kind === 'npc_city' ? COPY.battleReport.kindNpcCity : COPY.battleReport.kindNpcRaid;
+}
+
+function kindTitle(report: BattleReportView): string {
+  return battleKindTitle(report.kind);
 }
 
 function endReasonText(report: BattleReportView): string {
@@ -130,9 +137,9 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
 /** 逐回合明细每页格数（8 列 × 2 行）：长战报分页，不出滚动条 */
 const ROUNDS_PER_PAGE = 16;
 
-export function BattleReportModal({ report, onClose }: BattleReportModalProps) {
+export function BattleReportModal({ report, onClose, onShare }: BattleReportModalProps) {
   const copy = useCopy();
-  const { COPY, DEFENSE_COPY, EXTRA_PANEL } = copy;
+  const { COPY, DEFENSE_COPY, EXTRA_PANEL, CHAT_COPY } = copy;
   const [view, setView] = useState<'chart' | 'rounds'>('chart');
   const [roundPage, setRoundPage] = useState(0);
   const mineIsAttacker = report.role === 'attacker';
@@ -167,12 +174,24 @@ export function BattleReportModal({ report, onClose }: BattleReportModalProps) {
         </>
       }
       headExtra={
+        <>
+        {onShare ? (
+          <button
+            type="button"
+            role="战报弹窗-分享按钮"
+            onClick={onShare}
+            className="shrink-0 cursor-pointer rounded border border-line px-2 py-0.5 text-[12px] text-dim hover:border-accent hover:text-accent"
+          >
+            {CHAT_COPY.share.report}
+          </button>
+        ) : null}
         <span
           role="战报弹窗-胜负徽章"
           className={`shrink-0 rounded border px-2 py-0.5 text-[14px] font-bold tracking-[0.25em] ${report.won ? 'border-gold bg-gold/10 text-gold' : 'border-warn bg-warn/10 text-warn'}`}
         >
           {result}
         </span>
+        </>
       }
     >
       <p role="战报弹窗-头部" className="truncate font-mono text-[12px] text-faint">

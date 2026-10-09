@@ -16,6 +16,7 @@ import { createGoogleService } from './handlers-google';
 import { readGoogleConfig } from './google';
 import { createGithubService, sweepGithubOauth } from './handlers-github';
 import { createGithubClient } from './github';
+import { initBannedWordFilter } from './chat-words';
 import {
   githubSiteFor,
   hostFromHeaders,
@@ -61,6 +62,8 @@ async function main(): Promise<void> {
   // v12：首次启动生成世界并回填存量城池坐标（幂等；与 Worker 并发由咨询锁串行化）
   await ensureWorld(pool);
   console.log('slg-api world ready');
+  // v51（AISLG-138）：聊天屏蔽词表在启动时读入（配置了 CHAT_BANNED_WORDS_FILE 却读不到则启动失败）
+  initBannedWordFilter();
   // v20：全局时间缩放从 settings 预热（AISLG-38）；定期刷新，切换无需重启
   await refreshTimeScale(pool).catch(() => undefined);
   setInterval(() => {

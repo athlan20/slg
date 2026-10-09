@@ -106,6 +106,18 @@ export const Op = {
   GET_AGENT_TOKEN: 64,
   /** C→S 重置永久 Agent 令牌（v46：无参数；仅玩家连接，旧令牌立即失效、用它在线的连接被断开） */
   RESET_AGENT_TOKEN: 65,
+  /** C→S 聊天：查询世界频道或与某玩家的私聊消息（v51，仅玩家连接） */
+  CHAT_HISTORY: 66,
+  /** C→S 聊天：发送文字 / 表情 / 卡片（v51，仅玩家连接；世界频道需主城官府 ≥ 3 级） */
+  CHAT_SEND: 67,
+  /** C→S 聊天：私聊会话列表、未读数与屏蔽名单（v51，仅玩家连接） */
+  CHAT_CONVERSATIONS: 68,
+  /** C→S 聊天：把与某玩家的私聊标记为已读（v51，仅玩家连接） */
+  CHAT_READ: 69,
+  /** C→S 聊天：屏蔽 / 取消屏蔽某个玩家（v51，仅玩家连接） */
+  CHAT_BLOCK: 70,
+  /** C→S 聊天：打开一条战报卡片的详情（v51，仅玩家连接） */
+  CHAT_REPORT_DETAIL: 71,
   /** C→S 发起农场建造（兼容入口：等价于 BUILD 且 kind='farm'） */
   BUILD_FARM: 20,
   /** S→C 推送：农场建造状态变化（进入建造 / 完成） */
@@ -145,6 +157,8 @@ export const Op = {
   PUSH_ATTACK_WARNING: 2017,
   /** S→C 推送：微信扫码登录 / 绑定的状态变化（v43：scanned / confirmed / canceled / expired；只推给生成二维码的网页连接） */
   PUSH_WX_QR_STATUS: 2018,
+  /** S→C 推送：聊天新消息（v51；世界频道按屏蔽关系过滤，私聊推给双方的玩家连接；Agent 连接不收） */
+  PUSH_CHAT_MESSAGE: 2019,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -291,6 +305,14 @@ export const ErrorCode = {
   /** 请求过于频繁（v43：二维码生成 / Google 登录尝试 / GitHub 授权发起均按 IP 限频，20 次/分钟） */
   RATE_LIMITED: 'RATE_LIMITED',
   // AGENT_TOKEN_LIMIT（v43，多令牌上限）已随 v46 移除：每账号一个永久令牌，无上限概念。
+  /** 聊天：主城官府未达世界频道发言门槛（v51，官府 ≥ 3 级） */
+  CHAT_GOVERNMENT_TOO_LOW: 'CHAT_GOVERNMENT_TOO_LOW',
+  /** 聊天：账号被运营禁言（v51），响应附 until */
+  CHAT_MUTED: 'CHAT_MUTED',
+  /** 聊天：对方已屏蔽你，不能发私聊（v51） */
+  CHAT_BLOCKED: 'CHAT_BLOCKED',
+  /** 聊天：同一频道发言过快（v51，每 10 秒一条），响应附 retryAfterSeconds */
+  CHAT_RATE_LIMITED: 'CHAT_RATE_LIMITED',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;

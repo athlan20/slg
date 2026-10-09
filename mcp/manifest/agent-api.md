@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**50** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**51** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 50）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 51）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -18,7 +18,7 @@
 - GitHub 一键登录（v45）与 Agent 无关：网页经 GITHUB_AUTH_START 拿到 GitHub 授权地址后整页跳转，授权结果由 HTTP 回调（GET /auth/github/callback）302 带回前端，网页用 OAUTH_REDEEM 把 60 秒一次性登录码换成会话令牌再 LOGIN；没绑定过的 GitHub 账号自动建号（无密码），这类账号的 Agent 接入同样走「Agent 令牌」。
 - 每条请求帧可携带 seq（正整数，由客户端自增分配）；响应帧原样带回该值用于关联请求，推送帧没有 seq。
 - 同一账号允许多条连接同时在线（典型：玩家网页 + 若干 Agent）。指令的直接结果只回发起连接；账号的状态变化推送给该账号所有在线连接。
-- 个别协议对连接声明的登录类型有限制：RESET_ACCOUNT 仅限玩家连接，AGENT_REPORT_PLAN 仅限 Agent 连接（越权返回 AGENT_FORBIDDEN）。该限制基于自报 role，不是可独立验证的安全边界。
+- 个别协议对连接声明的登录类型有限制：RESET_ACCOUNT 仅限玩家连接，AGENT_REPORT_PLAN 仅限 Agent 连接（越权返回 AGENT_FORBIDDEN）。该限制基于自报 role，不是可独立验证的安全边界。聊天仅限玩家本人（Agent 连接不可用，本文档不收录聊天接口）。
 - GET_AGENT_TOKEN / RESET_AGENT_TOKEN 仅限玩家连接（op 64 / 65，v46）。每个账号有一个永久 Agent 令牌（sk_ 前缀，建号自动生成、永不过期），玩家「复制给 AI」的提示词里自带令牌；你用 LOGIN {token, asAgent: true} 登录即可，玩家不必交出账号密码。令牌失效（玩家重置，SESSION_INVALID / close code 4003）时不要重试，请玩家重新发一次新提示词。
 - LOGIN 支持密码与令牌（token）两种方式：密码登录成功签发会话令牌、令牌登录免密并滑动续期（有效期 30 天，部署配置可调）。令牌可持久保存（如浏览器 localStorage）实现自动登录；收到 SESSION_INVALID 时丢弃令牌并在该站重新登录。**双站点（v47，AISLG-130）**：游戏两个站（国内站 / 国际站 slg.yuntianyou.cc）共用同一套服务与数据库、账号通用；**国际站不开放账号密码登录**（LOGIN 密码登录返回 PASSWORD_LOGIN_CLOSED），只有 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再去国际站用绑定方式登录进同一个号（绑定后密码在国内站照样可用）。
 - Agent 一律不能用账号密码登录（任何站都一样，LOGIN 密码登录返回 AGENT_PASSWORD_FORBIDDEN）：**只用玩家的永久 Agent 令牌** LOGIN {token, asAgent: true}——令牌来自玩家在本站网页「复制给 AI」的提示词（v46，sk_ 前缀、永不过期）。账号也无法自行创建（v48 起密码登录不存在的用户名返回 SIGNUP_CLOSED，不再自动注册；新账号只能由玩家经 Google / GitHub / 微信扫码登录创建）。
@@ -440,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 50,
+    "protocolVersion": 51,
     "docNotice": null
   }
 }
@@ -502,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 50,
+    "protocolVersion": 51,
     "docNotice": null
   }
 }
@@ -522,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/47 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/48 补读增量）**
 
 请求：
 
@@ -533,7 +533,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 47,
+    "docVersion": 48,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 50,
-    "docNotice": "接口文档已从 v47 更新到 v50：请 GET /agent-api/changes/47 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 51,
+    "docNotice": "接口文档已从 v48 更新到 v51：请 GET /agent-api/changes/48 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -9137,7 +9137,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 50。
+- 协议版本随对外协议内容的每次变化递增；当前为 51。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 
