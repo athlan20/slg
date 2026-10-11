@@ -43,6 +43,7 @@ export type EventType =
   | 'guard_changed'
   | 'city_renamed'
   | 'account_reset'
+  | 'account_renamed'
   | 'agent_connected'
   | 'agent_disconnected';
 

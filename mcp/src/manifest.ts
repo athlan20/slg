@@ -42,7 +42,7 @@ export interface AgentApiManifest {
 }
 
 /** 仅玩家连接可调、不生成工具的 op 名（preAuth 之外的补充名单） */
-const PLAYER_ONLY_OPS = new Set(['RESET_ACCOUNT', 'GOOGLE_BIND', 'GET_AGENT_TOKEN', 'RESET_AGENT_TOKEN']);
+const PLAYER_ONLY_OPS = new Set(['RESET_ACCOUNT', 'GOOGLE_BIND', 'GET_AGENT_TOKEN', 'RESET_AGENT_TOKEN', 'SET_NICKNAME']);
 
 /** 由本服务自行管理、不作为工具暴露的 op 名 */
 const SELF_MANAGED_OPS = new Set(['LOGIN', 'LOGOUT']);

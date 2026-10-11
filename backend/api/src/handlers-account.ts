@@ -1,5 +1,6 @@
-// 账号级城池管理协议（v7/v9）：RENAME_CITY 城池改名与 RESET_ACCOUNT 一键重置。
-// 从 handlers-city.ts 拆出以控制单文件行数；协议分发见 handlers.ts。
+// 账号级城池管理协议（v7/v9）：RENAME_CITY 城池改名与 RESET_ACCOUNT 一键重置；
+// v52（AISLG-142）加 SET_NICKNAME 修改账号昵称。从 handlers-city.ts 拆出以控制单文件行数；
+// 协议分发见 handlers.ts。
 import { EventType, Op, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { INITIAL_BUILDINGS, INITIAL_POPULATION, INITIAL_RESOURCES } from '../../common/src/rules';
@@ -9,6 +10,101 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { loadCityState, lockCitySnapshot } from './views';
 import { CITY_NAME_MAX } from './handlers-city';
+
+/** 昵称长度上限（v52）：与 LOGIN 密码分支的用户名同限（1..32）——昵称就是账号 username */
+export const NICKNAME_MAX = 32;
+
+/** 读 SET_NICKNAME 的昵称入参：非字符串、或 trim 后为空 / 超长均视为非法（null） */
+export function readNickname(data: Record<string, unknown> | undefined): string | null {
+  const raw = readString(data, 'nickname');
+  if (raw === null) {
+    return null;
+  }
+  const nickname = raw.trim();
+  return nickname.length >= 1 && nickname.length <= NICKNAME_MAX ? nickname : null;
+}
+
+/**
+ * 修改账号昵称（v52，AISLG-142，仅玩家连接）：昵称即账号 username——聊天、地图归属、
+ * 排行榜展示的都是它，Google / GitHub / 微信自动建号时的随机名（g_xxxxxx 等）由此改成
+ * 自己的。昵称全服唯一（accounts.username 的 UNIQUE 约束），撞名返回 NICKNAME_TAKEN；
+ * 它同时是密码登录键，改名后密码登录用新昵称（第三方与令牌登录绑定账号 id，不受影响）。
+ * 同名提交幂等成功（不写事件）；改名写 account_renamed 事件，并推 PUSH_ACCOUNT_STATE
+ * （account_renamed）给同账号其他在线连接——聊天 / 地图等展示实时读 accounts，自动生效
+ * （排行榜快照由 Worker 每 10 分钟重算覆盖）。
+ */
+export async function handleSetNickname(
+  ctx: HandlerContext,
+  conn: ConnInfo,
+  op: number,
+  seq: number | undefined,
+  data: Record<string, unknown> | undefined,
+): Promise<void> {
+  // 昵称属账号身份信息，与令牌重置同口径：仅玩家连接（role 是自报标记，拦诚实声明的 Agent）
+  if (conn.role !== 'player') {
+    respondError(ctx.registry, conn, op, seq, 'AGENT_FORBIDDEN');
+    return;
+  }
+  const nickname = readNickname(data);
+  if (nickname === null) {
+    respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+    return;
+  }
+  const accountId = conn.accountId as string;
+  const role = conn.role as InitiatorRole;
+  const client = await ctx.pool.connect();
+  let changed = false;
+  try {
+    await client.query('BEGIN');
+    const current = await client.query(`SELECT username FROM accounts WHERE id = $1 FOR UPDATE`, [accountId]);
+    if (!current.rowCount) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'INTERNAL');
+      return;
+    }
+    const from = current.rows[0].username as string;
+    changed = from !== nickname;
+    if (changed) {
+      try {
+        await client.query(`UPDATE accounts SET username = $2 WHERE id = $1`, [accountId, nickname]);
+      } catch (err) {
+        // 并发改名撞了唯一约束：后提交方拿到 NICKNAME_TAKEN
+        if ((err as { code?: string }).code !== '23505') {
+          throw err;
+        }
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'NICKNAME_TAKEN');
+        return;
+      }
+      await insertEvent(client, {
+        accountId,
+        type: EventType.ACCOUNT_RENAMED,
+        initiator: role,
+        detail: { from, to: nickname },
+      });
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  // 发起连接拿直接响应，其余在线连接（含 Agent）收到推送；服务端连接登记同步新名。
+  // 同名提交不广播（幂等成功，状态没有变化）
+  for (const c of ctx.registry.connectionsOf(accountId)) {
+    c.username = nickname;
+  }
+  respondOk(ctx.registry, conn, op, seq, { username: nickname });
+  if (changed) {
+    ctx.registry.broadcast(
+      accountId,
+      { op: Op.PUSH_ACCOUNT_STATE, push: true, data: { reason: 'account_renamed', username: nickname } },
+      conn,
+    );
+  }
+}
 
 export async function handleRenameCity(
   ctx: HandlerContext,

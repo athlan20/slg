@@ -1,5 +1,5 @@
 {
-  "version": 51,
+  "version": 52,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 51,
+                "protocolVersion": 52,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 51,
+                "protocolVersion": 52,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/48 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/49 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 48,
+              "docVersion": 49,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 51,
-                "docNotice": "接口文档已从 v48 更新到 v51：请 GET /agent-api/changes/48 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 52,
+                "docNotice": "接口文档已从 v49 更新到 v52：请 GET /agent-api/changes/49 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -7202,6 +7202,98 @@
       "agentNote": "仅玩家连接可调用。Agent 侧的感知：旧令牌的连接被断开（close code 4003）、再登录 SESSION_INVALID——此时请玩家重新发新提示词。"
     },
     {
+      "op": 72,
+      "kind": "request",
+      "name": "SET_NICKNAME",
+      "title": "修改昵称",
+      "preAuth": false,
+      "summary": "修改账号昵称（v52，AISLG-142）。昵称即账号 username：聊天、地图地块归属、排行榜展示的都是它——Google / GitHub / 微信登录自动建号时是随机名（g_xxxxxx 之类），由此改成自己的。昵称全服唯一（撞名返回 NICKNAME_TAKEN），trim 后须为 1..32 字符；与当前昵称相同的提交幂等成功（不写事件）。改名写入事件流（account_renamed），同账号其他在线连接收到 PUSH_ACCOUNT_STATE（account_renamed）推送。昵称同时是密码登录键：改名后密码登录用新昵称；第三方登录与令牌登录绑定账号 id，不受影响。**仅限玩家连接调用**：Agent 连接返回 AGENT_FORBIDDEN——该限制基于自报 role，拦住诚实声明的 Agent，不是可独立验证的安全边界。",
+      "requestFields": [
+        {
+          "name": "nickname",
+          "type": "string",
+          "desc": "必填。新昵称（trim 后 1..32 字符）；缺失、非字符串、为空或超长返回 INVALID_PARAMS。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "username",
+          "type": "string",
+          "desc": "新昵称（等于请求的 nickname 去首尾空白），即账号的新 username。"
+        }
+      ],
+      "errors": [
+        "AGENT_FORBIDDEN",
+        "INVALID_PARAMS",
+        "NICKNAME_TAKEN"
+      ],
+      "examples": [
+        {
+          "caption": "改名成功",
+          "request": {
+            "op": 72,
+            "seq": 1,
+            "data": {
+              "nickname": "卧龙先生"
+            }
+          },
+          "responses": [
+            {
+              "op": 72,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "username": "卧龙先生"
+              }
+            }
+          ]
+        },
+        {
+          "caption": "昵称被占用",
+          "request": {
+            "op": 72,
+            "seq": 2,
+            "data": {
+              "nickname": "卧龙先生"
+            }
+          },
+          "responses": [
+            {
+              "op": 72,
+              "seq": 2,
+              "ok": false,
+              "error": {
+                "code": "NICKNAME_TAKEN",
+                "message": "这个昵称已经被别人用了，换一个试试"
+              }
+            }
+          ]
+        },
+        {
+          "caption": "Agent 连接调用被拒",
+          "request": {
+            "op": 72,
+            "seq": 3,
+            "data": {
+              "nickname": "卧龙先生"
+            }
+          },
+          "responses": [
+            {
+              "op": 72,
+              "seq": 3,
+              "ok": false,
+              "error": {
+                "code": "AGENT_FORBIDDEN",
+                "message": "该操作不允许当前连接的登录类型调用（仅限玩家或仅限 Agent，见协议说明）"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "Agent 连接无权调用（AGENT_FORBIDDEN）：昵称是账号身份信息，由玩家在网页「账号设置」里修改；需要改名时提示玩家本人操作，不要改用 player 身份重连绕过。改名后本地缓存的 username 全部过期：聊天、地图归属、排行榜的展示名以新昵称为准（同账号其他连接会收到 PUSH_ACCOUNT_STATE 推送）。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -8377,6 +8469,36 @@
         }
       ],
       "agentNote": "仅供网页使用，Agent 不会收到。"
+    },
+    {
+      "op": 2020,
+      "kind": "push",
+      "name": "PUSH_ACCOUNT_STATE",
+      "title": "推送：账号级状态变化",
+      "summary": "账号级状态变化时推送给该账号全部在线连接（发起连接除外，含 Agent 连接）：account_renamed=昵称被 SET_NICKNAME 修改（v52）。推送只携带变化摘要，完整现状按需查询。",
+      "dataFields": [
+        {
+          "name": "reason",
+          "type": "'account_renamed'",
+          "desc": "触发本次推送的状态变化。"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "desc": "账号的新昵称（即新 username）。"
+        }
+      ],
+      "examples": [
+        {
+          "op": 2020,
+          "push": true,
+          "data": {
+            "reason": "account_renamed",
+            "username": "卧龙先生"
+          }
+        }
+      ],
+      "agentNote": "收到 account_renamed 后，本地缓存的 username 已过期：后续展示（聊天、地图归属、排行榜）与对外称呼一律用新昵称。"
     }
   ],
   "errorCodes": {
@@ -8631,6 +8753,10 @@
     "RATE_LIMITED": {
       "desc": "（v43）请求过于频繁：同一 IP 每分钟最多生成 20 张微信二维码（v44 起 Google 登录尝试、v45 起 GitHub 授权发起同样限频，各 20 次/分钟）。",
       "action": "等待一分钟后再试；不要连续重试。"
+    },
+    "NICKNAME_TAKEN": {
+      "desc": "（v52）SET_NICKNAME 的昵称已被其他账号占用：昵称即账号 username，全服唯一。仅玩家连接可用。",
+      "action": "换一个昵称重试。Agent 无权改名（AGENT_FORBIDDEN），需要时提示玩家本人在网页改。"
     },
     "AGENT_PASSWORD_FORBIDDEN": {
       "desc": "（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。",

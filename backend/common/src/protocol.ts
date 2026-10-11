@@ -118,6 +118,8 @@ export const Op = {
   CHAT_BLOCK: 70,
   /** C→S 聊天：打开一条战报卡片的详情（v51，仅玩家连接） */
   CHAT_REPORT_DETAIL: 71,
+  /** C→S 修改账号昵称（data.nickname；v52，仅玩家连接；昵称即账号 username，全服唯一，重名返回 NICKNAME_TAKEN） */
+  SET_NICKNAME: 72,
   /** C→S 发起农场建造（兼容入口：等价于 BUILD 且 kind='farm'） */
   BUILD_FARM: 20,
   /** S→C 推送：农场建造状态变化（进入建造 / 完成） */
@@ -159,6 +161,8 @@ export const Op = {
   PUSH_WX_QR_STATUS: 2018,
   /** S→C 推送：聊天新消息（v51；世界频道按屏蔽关系过滤，私聊推给双方的玩家连接；Agent 连接不收） */
   PUSH_CHAT_MESSAGE: 2019,
+  /** S→C 推送：账号级状态变化（v52：account_renamed=昵称被 SET_NICKNAME 修改；账号全部在线连接收到，含 Agent） */
+  PUSH_ACCOUNT_STATE: 2020,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -313,6 +317,8 @@ export const ErrorCode = {
   CHAT_BLOCKED: 'CHAT_BLOCKED',
   /** 聊天：同一频道发言过快（v51，每 10 秒一条），响应附 retryAfterSeconds */
   CHAT_RATE_LIMITED: 'CHAT_RATE_LIMITED',
+  /** 昵称已被其他账号占用（v52，SET_NICKNAME；昵称即账号 username，全服唯一） */
+  NICKNAME_TAKEN: 'NICKNAME_TAKEN',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;

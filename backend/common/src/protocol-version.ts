@@ -461,5 +461,11 @@
  * 私聊会话与未读，已读标记，屏蔽与取消屏蔽，战报卡片详情。新增错误码 CHAT_GOVERNMENT_TOO_LOW /
  * CHAT_MUTED / CHAT_BLOCKED / CHAT_RATE_LIMITED。新表 chat_messages / chat_blocks / chat_reads，
  * accounts 加列 chat_muted_until。
+ * v52（自定义昵称，AISLG-142，只加不改）：新增 SET_NICKNAME（op 72，仅玩家连接，Agent 返回
+ * AGENT_FORBIDDEN）——修改账号昵称。昵称即账号 username（聊天、地图归属、排行榜展示的都是它；
+ * Google / GitHub / 微信自动建号时是随机名 g_xxxxxx 之类，由此改成自己的），全服唯一，撞名返回
+ * 新错误码 NICKNAME_TAKEN；昵称同时是密码登录键，改名后密码登录用新昵称（第三方与令牌登录绑定
+ * 账号 id，不受影响）。新增推送 PUSH_ACCOUNT_STATE（op 2020，reason=account_renamed，账号全部
+ * 在线连接收到，含 Agent）与事件 account_renamed（detail={from,to}）。消息结构其余无变化。
  */
-export const PROTOCOL_VERSION = 51;
+export const PROTOCOL_VERSION = 52;

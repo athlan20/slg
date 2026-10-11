@@ -430,6 +430,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v51）聊天：同一频道两次发言间隔不足 10 秒，响应附 retryAfterSeconds。仅玩家连接可用。',
     action: '等待 retryAfterSeconds 秒后再发；不要连续重试。Agent 不涉及聊天。',
   },
+  NICKNAME_TAKEN: {
+    desc: '（v52）SET_NICKNAME 的昵称已被其他账号占用：昵称即账号 username，全服唯一。仅玩家连接可用。',
+    action: '换一个昵称重试。Agent 无权改名（AGENT_FORBIDDEN），需要时提示玩家本人在网页改。',
+  },
   AGENT_PASSWORD_FORBIDDEN: {
     desc: '（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。',
     action: '改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。',

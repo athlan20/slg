@@ -76,6 +76,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   CHAT_MUTED: '账号已被禁言，暂时不能发言',
   CHAT_BLOCKED: '对方已屏蔽你，无法发送私聊',
   CHAT_RATE_LIMITED: '发言太快了，请稍后再发',
+  NICKNAME_TAKEN: '这个昵称已经被别人用了，换一个试试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除
   INTERNAL: '服务端内部错误',
 };

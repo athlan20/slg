@@ -190,6 +190,8 @@ function baseEventText(view: EventView): string {
       return EXTRA_STATE.event.cityRenamed(String(view.detail.from ?? ''), String(view.detail.to ?? ''));
     case 'account_reset':
       return EXTRA_STATE.event.accountReset;
+    case 'account_renamed':
+      return EXTRA_STATE.event.accountRenamed(String(view.detail.from ?? ''), String(view.detail.to ?? ''));
     case 'march_started': {
       const troops = troopsSuffix(view.detail.troops as Record<string, unknown> | undefined);
       const task = view.detail.task === 'plunder' ? EXTRA_STATE.event.marchTaskPlunder : view.detail.task === 'occupy' ? EXTRA_STATE.event.marchTaskOccupy : '';

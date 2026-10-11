@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiClient } from '../api/client';
 import {
   Op,
+  type AccountStatePushData,
   type AgentInfoView,
   type AgentPlanPushData,
   type BattleReportCommentPushData,
@@ -425,6 +426,13 @@ export function useGameSession(): GameSession {
         const data = frame.data as unknown as AgentPlanPushData;
         setAgent((prev) => (prev ? { ...prev, plan: data } : prev));
         return;
+      } else if (frame.op === Op.PUSH_ACCOUNT_STATE) {
+        // v52（AISLG-142）：昵称被其他连接 SET_NICKNAME 改掉——按推送更新账号名，
+        // account_renamed 事件由下方防抖增量查询补进事件流
+        const data = frame.data as unknown as AccountStatePushData;
+        if (data.reason === 'account_renamed' && typeof data.username === 'string') {
+          setAccount((prev) => (prev ? { ...prev, username: data.username } : prev));
+        }
       } else if (frame.op === Op.PUSH_CITY_STATE) {
         const data = frame.data as unknown as CityStatePushData;
         if (data.reason === 'city_renamed') {
@@ -729,7 +737,7 @@ export function useGameSession(): GameSession {
     },
     [ensureClient, tokenLogin],
   );
-  const security = useAccountSecurity({ clientRef, setAgent });
+  const security = useAccountSecurity({ clientRef, setAgent, setAccount });
 
   useEffect(() => {
     aliveRef.current = true;

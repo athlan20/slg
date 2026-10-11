@@ -128,6 +128,8 @@ export const EventType = {
   CITY_RENAMED: 'city_renamed',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
+  /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */
+  ACCOUNT_RENAMED: 'account_renamed',
   /** v11：征兵开始（立即征募或队首激活） */
   RECRUIT_STARTED: 'recruit_started',
   /** v11：征兵进入排队 */

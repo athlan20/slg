@@ -58,6 +58,19 @@ export const WECHAT_COPY_EN = {
   settings: {
     title: 'Account Settings',
   },
+  nickname: {
+    title: 'Nickname',
+    desc: 'The name shown in chat, on the map and on leaderboards. Accounts created via third-party sign-in get a random one — make it yours. Nicknames are unique across the server; on the CN site it is also your password-login username.',
+    current: (name: string) => `Current nickname: ${name}`,
+    placeholder: '1..32 characters',
+    submit: 'Save',
+    busy: 'Saving…',
+    empty: 'Nickname cannot be empty',
+    done: (name: string) => `Changed to ${name}`,
+    invalidParams: 'Nickname must be 1..32 characters after trimming',
+    taken: 'This nickname is already taken — try another one',
+    fallback: 'Failed to save, please retry',
+  },
   errors: {
     fallback: 'Operation failed, please retry',
     connect: 'Could not connect to the server, please try again later',

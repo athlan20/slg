@@ -1,7 +1,7 @@
 // LOGIN / LOGOUT 的协议文档（从 protocol-doc-ops.ts 拆出以控制单文件行数；v32 起含文档版本字段）。
 
 import { Op } from './protocol';
-import type { RequestOpDoc } from './protocol-doc';
+import type { PushOpDoc, RequestOpDoc } from './protocol-doc';
 import { ACCOUNT_ID, TOKEN, TOKEN_EXPIRES_AT } from './protocol-doc-shared';
 import { LOGIN_AGENT_DOC_EXAMPLE, LOGIN_DOC_VERSION_REQUEST_FIELD, LOGIN_VERSION_DATA_FIELDS, LOGIN_VERSION_PLAYER_DATA } from './protocol-doc-login-version';
 
@@ -152,4 +152,68 @@ export const REQUEST_LOGOUT: RequestOpDoc = {
   ],
   agentNote:
     '「退出登录」应调用本协议（服务端吊销令牌）并同时清除本地保存的令牌；只清本地存储不足以让令牌失效。登出后重新连接须重新登录：Agent 用玩家的永久令牌（token 登录的 LOGOUT 只断连接、不吊销永久令牌），玩家用该站支持的登录方式（国内站可账号密码，国际站用 Google / GitHub）。',
+};
+
+export const REQUEST_SET_NICKNAME: RequestOpDoc = {
+  kind: 'request',
+  name: 'SET_NICKNAME',
+  title: '修改昵称',
+  preAuth: false,
+  summary:
+    '修改账号昵称（v52，AISLG-142）。昵称即账号 username：聊天、地图地块归属、排行榜展示的都是它——Google / GitHub / 微信登录自动建号时是随机名（g_xxxxxx 之类），由此改成自己的。昵称全服唯一（撞名返回 NICKNAME_TAKEN），trim 后须为 1..32 字符；与当前昵称相同的提交幂等成功（不写事件）。改名写入事件流（account_renamed），同账号其他在线连接收到 PUSH_ACCOUNT_STATE（account_renamed）推送。昵称同时是密码登录键：改名后密码登录用新昵称；第三方登录与令牌登录绑定账号 id，不受影响。**仅限玩家连接调用**：Agent 连接返回 AGENT_FORBIDDEN——该限制基于自报 role，拦住诚实声明的 Agent，不是可独立验证的安全边界。',
+  requestFields: [
+    { name: 'nickname', type: 'string', desc: '必填。新昵称（trim 后 1..32 字符）；缺失、非字符串、为空或超长返回 INVALID_PARAMS。' },
+  ],
+  dataFields: [
+    { name: 'username', type: 'string', desc: '新昵称（等于请求的 nickname 去首尾空白），即账号的新 username。' },
+  ],
+  errors: ['AGENT_FORBIDDEN', 'INVALID_PARAMS', 'NICKNAME_TAKEN'],
+  examples: [
+    {
+      caption: '改名成功',
+      request: { op: Op.SET_NICKNAME, seq: 1, data: { nickname: '卧龙先生' } },
+      responses: [{ op: Op.SET_NICKNAME, seq: 1, ok: true, data: { username: '卧龙先生' } }],
+    },
+    {
+      caption: '昵称被占用',
+      request: { op: Op.SET_NICKNAME, seq: 2, data: { nickname: '卧龙先生' } },
+      responses: [
+        { op: Op.SET_NICKNAME, seq: 2, ok: false, error: { code: 'NICKNAME_TAKEN', message: '这个昵称已经被别人用了，换一个试试' } },
+      ],
+    },
+    {
+      caption: 'Agent 连接调用被拒',
+      request: { op: Op.SET_NICKNAME, seq: 3, data: { nickname: '卧龙先生' } },
+      responses: [
+        {
+          op: Op.SET_NICKNAME,
+          seq: 3,
+          ok: false,
+          error: { code: 'AGENT_FORBIDDEN', message: '该操作不允许当前连接的登录类型调用（仅限玩家或仅限 Agent，见协议说明）' },
+        },
+      ],
+    },
+  ],
+  agentNote:
+    'Agent 连接无权调用（AGENT_FORBIDDEN）：昵称是账号身份信息，由玩家在网页「账号设置」里修改；需要改名时提示玩家本人操作，不要改用 player 身份重连绕过。改名后本地缓存的 username 全部过期：聊天、地图归属、排行榜的展示名以新昵称为准（同账号其他连接会收到 PUSH_ACCOUNT_STATE 推送）。',
+};
+
+export const PUSH_ACCOUNT_STATE: PushOpDoc = {
+  kind: 'push',
+  name: 'PUSH_ACCOUNT_STATE',
+  title: '推送：账号级状态变化',
+  summary:
+    '账号级状态变化时推送给该账号全部在线连接（发起连接除外，含 Agent 连接）：account_renamed=昵称被 SET_NICKNAME 修改（v52）。推送只携带变化摘要，完整现状按需查询。',
+  dataFields: [
+    { name: 'reason', type: "'account_renamed'", desc: '触发本次推送的状态变化。' },
+    { name: 'username', type: 'string', desc: '账号的新昵称（即新 username）。' },
+  ],
+  examples: [
+    {
+      op: Op.PUSH_ACCOUNT_STATE,
+      push: true,
+      data: { reason: 'account_renamed', username: '卧龙先生' },
+    },
+  ],
+  agentNote: '收到 account_renamed 后，本地缓存的 username 已过期：后续展示（聊天、地图归属、排行榜）与对外称呼一律用新昵称。',
 };
