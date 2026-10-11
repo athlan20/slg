@@ -46,6 +46,7 @@ export const EXTRA_STATE_EN = {
   event: {
     cityRenamed: (from: string, to: string) => `City renamed: ${from} → ${to}`,
     accountReset: 'Account data has been reset to the initial state',
+    accountRenamed: (from: string, to: string) => `Nickname changed: ${from} → ${to}`,
     marchTaskPlunder: ' (plunder)',
     marchTaskOccupy: ' (occupy)',
     marchReturn: (pos: string, clock: string) => `Garrison set out from ${pos} for home, arriving about ${clock}`,

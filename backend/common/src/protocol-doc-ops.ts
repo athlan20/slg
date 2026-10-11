@@ -8,7 +8,7 @@ import { EXCHANGE_INPUT_PER_GOLD, FARM_COST, INITIAL_RESOURCES } from './rules';
 import type { OpDoc, RequestOpDoc } from './protocol-doc';
 import { withCityId } from './protocol-doc-ops-city-scope';
 import { EMPTY_ARMY } from './protocol-doc-army-consts';
-import { REQUEST_LOGIN, REQUEST_LOGOUT } from './protocol-doc-ops-auth';
+import { REQUEST_LOGIN, REQUEST_LOGOUT, REQUEST_SET_NICKNAME, PUSH_ACCOUNT_STATE } from './protocol-doc-ops-auth';
 import {
   AFTER_COST,
   BUILD_VIEW,
@@ -393,6 +393,8 @@ export const REQUEST_EXCHANGE: RequestOpDoc = {
 export const OP_DOC: Record<Op, OpDoc> = {
   [Op.LOGIN]: REQUEST_LOGIN,
   [Op.LOGOUT]: REQUEST_LOGOUT,
+  [Op.SET_NICKNAME]: REQUEST_SET_NICKNAME,
+  [Op.PUSH_ACCOUNT_STATE]: PUSH_ACCOUNT_STATE,
   [Op.GET_STATE]: withCityId(REQUEST_GET_STATE),
   [Op.GET_EVENTS]: REQUEST_GET_EVENTS,
   [Op.GET_AGENT_INFO]: REQUEST_GET_AGENT_INFO,

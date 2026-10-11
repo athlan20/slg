@@ -61,6 +61,7 @@ export const EXTRA_STATE = {
   event: {
     cityRenamed: (from: string, to: string) => `城池改名：${from} → ${to}`,
     accountReset: '账号数据已重置，回到开号初始状态',
+    accountRenamed: (from: string, to: string) => `昵称修改：${from} → ${to}`,
     marchTaskPlunder: '（掠夺）',
     marchTaskOccupy: '（占领）',
     marchReturn: (pos: string, clock: string) => `驻军自 ${pos} 启程返城，预计 ${clock} 到达`,

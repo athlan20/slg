@@ -89,6 +89,8 @@ export const Op = {
   CHAT_READ: 69,
   CHAT_BLOCK: 70,
   CHAT_REPORT_DETAIL: 71,
+  /** 修改账号昵称（v52，AISLG-142）：data.nickname；仅玩家连接；昵称即账号 username，全服唯一（NICKNAME_TAKEN） */
+  SET_NICKNAME: 72,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -134,6 +136,8 @@ export const Op = {
   PUSH_ATTACK_WARNING: 2017,
   /** 聊天新消息推送（v51）：世界频道 / 私聊，仅推给玩家连接 */
   PUSH_CHAT_MESSAGE: 2019,
+  /** 账号级状态变化推送（v52）：account_renamed=昵称被 SET_NICKNAME 修改；账号全部在线连接收到 */
+  PUSH_ACCOUNT_STATE: 2020,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -211,6 +215,7 @@ export type ErrorCode =
   | 'CHAT_MUTED'
   | 'CHAT_BLOCKED'
   | 'CHAT_RATE_LIMITED'
+  | 'NICKNAME_TAKEN'
   | 'INTERNAL';
 
 export interface Resources {
@@ -631,6 +636,24 @@ export interface CityStatePushData {
 /** RESET_ACCOUNT（op 26）请求载荷：重置不可逆，confirm 必须显式为 true */
 export interface ResetAccountRequestData {
   confirm: boolean;
+}
+
+/** SET_NICKNAME（op 72）请求载荷：昵称 trim 后 1..32 字符；全服唯一，撞名 NICKNAME_TAKEN */
+export interface SetNicknameRequestData {
+  nickname: string;
+}
+
+export interface SetNicknameResponseData {
+  /** 新昵称（即账号新 username） */
+  username: string;
+}
+
+/** PUSH_ACCOUNT_STATE（op 2020）推送载荷：账号级状态变化（v52） */
+export interface AccountStatePushData {
+  /** account_renamed=昵称被修改 */
+  reason: 'account_renamed';
+  /** 新昵称 */
+  username: string;
 }
 
 /** RESET_ACCOUNT 响应载荷：重置完成后的城池现状（即开号初始状态） */

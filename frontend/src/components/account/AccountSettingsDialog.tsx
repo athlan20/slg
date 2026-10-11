@@ -1,4 +1,4 @@
-// 账号设置弹窗（侧栏账号菜单进入）：绑定微信 / 绑定 Google / 绑定 GitHub + Agent 令牌几块。
+// 账号设置弹窗（侧栏账号菜单进入）：昵称 / 绑定微信 / 绑定 Google / 绑定 GitHub + Agent 令牌几块。
 // 内容可能较高（二维码、令牌列表），内部自行滚动。
 
 import { useEffect } from 'react';
@@ -8,6 +8,7 @@ import { Modal } from '../ui/Modal';
 import { AgentTokenBlock } from './AgentTokenBlock';
 import { GithubBindBlock } from './GithubBindBlock';
 import { GoogleBindBlock } from './GoogleBindBlock';
+import { NicknameBlock } from './NicknameBlock';
 import { WechatBindBlock } from './WechatBindBlock';
 
 export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
@@ -23,6 +24,7 @@ export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal role="账号设置弹窗" title={WECHAT_COPY.settings.title} accent="none" onClose={onClose}>
       <div role="账号设置弹窗-内容" className="flex min-h-0 flex-col gap-2 overflow-y-auto">
+        <NicknameBlock />
         <WechatBindBlock />
         <GoogleBindBlock />
         <GithubBindBlock />

@@ -56,6 +56,19 @@ export const WECHAT_COPY = {
   settings: {
     title: '账号设置',
   },
+  nickname: {
+    title: '昵称',
+    desc: '聊天、地图与排行榜里展示的名字。第三方登录自动建号时是随机的，改成自己的吧；昵称全服唯一，国内站它也是密码登录的用户名。',
+    current: (name: string) => `当前昵称：${name}`,
+    placeholder: '1..32 字符',
+    submit: '保存',
+    busy: '保存中…',
+    empty: '昵称不能为空',
+    done: (name: string) => `已改为 ${name}`,
+    invalidParams: '昵称去掉首尾空白后需为 1..32 字符',
+    taken: '这个昵称已经被别人用了，换一个试试',
+    fallback: '保存失败，请重试',
+  },
   errors: {
     fallback: '操作失败，请重试',
     connect: '无法连接服务，请稍后再试',

@@ -114,6 +114,19 @@ export function renameErrorText(code: ErrorCode | undefined, message: string | u
   }
 }
 
+/** 昵称保存失败的人读提示（账号设置弹窗内显示，v52 AISLG-142） */
+export function nicknameErrorText(code: ErrorCode | undefined, message: string | undefined): string {
+  const { WECHAT_COPY } = getCopy();
+  switch (code) {
+    case 'NICKNAME_TAKEN':
+      return WECHAT_COPY.nickname.taken;
+    case 'INVALID_PARAMS':
+      return WECHAT_COPY.nickname.invalidParams;
+    default:
+      return message ?? WECHAT_COPY.nickname.fallback;
+  }
+}
+
 /** 征兵 / 取消征兵失败的人读提示（征兵面板内显示，v11） */
 export function recruitErrorText(
   code: ErrorCode | undefined,

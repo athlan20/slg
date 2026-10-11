@@ -25,7 +25,7 @@ import {
   handleExchange,
   handleUpgrade,
 } from './handlers-city';
-import { handleRenameCity, handleResetAccount } from './handlers-account';
+import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
 import {
   handleGetTile,
@@ -354,6 +354,9 @@ async function dispatchOp(
       break;
     case Op.RESET_ACCOUNT:
       await handleResetAccount(ctx, conn, op, seq, data);
+      break;
+    case Op.SET_NICKNAME:
+      await handleSetNickname(ctx, conn, op, seq, data);
       break;
     case Op.CHAT_HISTORY:
     case Op.CHAT_SEND:
