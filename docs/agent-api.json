@@ -1,5 +1,5 @@
 {
-  "version": 52,
+  "version": 53,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 52,
+                "protocolVersion": 53,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 52,
+                "protocolVersion": 53,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/49 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/50 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 49,
+              "docVersion": 50,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 52,
-                "docNotice": "接口文档已从 v49 更新到 v52：请 GET /agent-api/changes/49 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 53,
+                "docNotice": "接口文档已从 v50 更新到 v53：请 GET /agent-api/changes/50 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -5479,13 +5479,13 @@
         },
         {
           "name": "broadcasts[].type",
-          "type": "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished'",
-          "desc": "播报类型（后五类为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场，必达、不受每分钟 3 条限频）。"
+          "type": "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished' | 'hero_granted' | 'city_conquered' | 'arena_champion'",
+          "desc": "播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；以上均必达、不受每分钟 3 条限频）。"
         },
         {
           "name": "broadcasts[].detail",
           "type": "object",
-          "desc": "按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）。"
+          "desc": "按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）。"
         },
         {
           "name": "broadcasts[].createdAt",
@@ -7294,6 +7294,616 @@
       "agentNote": "Agent 连接无权调用（AGENT_FORBIDDEN）：昵称是账号身份信息，由玩家在网页「账号设置」里修改；需要改名时提示玩家本人操作，不要改用 player 身份重连绕过。改名后本地缓存的 username 全部过期：聊天、地图归属、排行榜的展示名以新昵称为准（同账号其他连接会收到 PUSH_ACCOUNT_STATE 推送）。"
     },
     {
+      "op": 73,
+      "kind": "request",
+      "name": "GET_ARENA",
+      "title": "查询竞技场",
+      "preAuth": false,
+      "summary": "（v53，AISLG-145）返回我在竞技场的完整状态：名次、阵容、今日挑战与被挑战次数、可挑战对手、榜单前 100 名与规则常量。进入竞技场时先调用一次；之后以 ARENA_CHALLENGE / SET_ARENA_LINEUP 的响应为准，不必重复查询。第一次访问时系统会补齐 20 个守擂者（占榜首 1–20 名）。玩家与 Agent 同一套规则。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "joined",
+          "type": "boolean",
+          "desc": "是否已入榜（第一次保存阵容时入榜）。"
+        },
+        {
+          "name": "rank",
+          "type": "number | null",
+          "desc": "当前名次；未入榜为 null。"
+        },
+        {
+          "name": "bestRank",
+          "type": "number | null",
+          "desc": "历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。"
+        },
+        {
+          "name": "totalEntries",
+          "type": "number",
+          "desc": "榜上席位总数（含 20 个系统守擂者）。"
+        },
+        {
+          "name": "lineup",
+          "type": "Array<Fighter | null>",
+          "desc": "我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。"
+        },
+        {
+          "name": "challengesLeft / challengesMax",
+          "type": "number",
+          "desc": "本竞技日剩余 / 上限挑战次数（上限 5）。"
+        },
+        {
+          "name": "defendedToday / defendedMax",
+          "type": "number",
+          "desc": "本竞技日我被挑战的次数 / 上限（上限 10）。"
+        },
+        {
+          "name": "nextDayAt",
+          "type": "string (ISO)",
+          "desc": "下一个竞技日开始的时刻（次数重置、每日奖励发放）。"
+        },
+        {
+          "name": "dailyReward",
+          "type": "number",
+          "desc": "按当前名次，下一次发放的每日奖励（金币）；未入榜为 0。"
+        },
+        {
+          "name": "opponents",
+          "type": "Opponent[]",
+          "desc": "可挑战的对手，按名次从近到远：entryId（ARENA_CHALLENGE 用）、rank、username、npc、lineup（匿名，heroId 恒为 null）、defendedToday。"
+        },
+        {
+          "name": "top",
+          "type": "Array<{rank, username, npc}>",
+          "desc": "榜单前 100 名（实时，不挂进现有排行榜）。"
+        },
+        {
+          "name": "rules",
+          "type": "object",
+          "desc": "规则常量：slots、dailyChallenges、dailyDefendedMax、maxRankGap、pairCooldownSeconds、dailyRewards、milestoneRewards、armyBase、armyPerLead、armyKinds（标准军队人数 = armyBase + 统率 × armyPerLead）。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "已入榜",
+          "request": {
+            "op": 73,
+            "seq": 1
+          },
+          "responses": [
+            {
+              "op": 73,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "joined": true,
+                "rank": 21,
+                "bestRank": 21,
+                "totalEntries": 21,
+                "lineup": [
+                  {
+                    "heroId": "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+                    "name": "关羽",
+                    "lead": 88,
+                    "force": 96,
+                    "wit": 45,
+                    "level": 12
+                  },
+                  null,
+                  null
+                ],
+                "challengesLeft": 5,
+                "challengesMax": 5,
+                "defendedToday": 0,
+                "defendedMax": 10,
+                "nextDayAt": "2026-10-12T16:00:00.000Z",
+                "dailyReward": 1000,
+                "opponents": [
+                  {
+                    "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d",
+                    "rank": 11,
+                    "username": "守擂·张飞",
+                    "npc": true,
+                    "lineup": [
+                      {
+                        "heroId": null,
+                        "name": "张飞",
+                        "lead": 66,
+                        "force": 60,
+                        "wit": 57,
+                        "level": 22
+                      },
+                      null,
+                      null
+                    ],
+                    "defendedToday": 0
+                  }
+                ],
+                "top": [
+                  {
+                    "rank": 1,
+                    "username": "卧龙先生",
+                    "npc": false
+                  }
+                ],
+                "rules": {
+                  "slots": 3,
+                  "dailyChallenges": 5,
+                  "dailyDefendedMax": 10,
+                  "maxRankGap": 10,
+                  "pairCooldownSeconds": 300,
+                  "dailyRewards": [
+                    {
+                      "upTo": 1,
+                      "gold": 50000
+                    },
+                    {
+                      "upTo": 10,
+                      "gold": 30000
+                    },
+                    {
+                      "upTo": 50,
+                      "gold": 15000
+                    },
+                    {
+                      "upTo": 200,
+                      "gold": 5000
+                    },
+                    {
+                      "upTo": null,
+                      "gold": 1000
+                    }
+                  ],
+                  "milestoneRewards": [
+                    {
+                      "upTo": 200,
+                      "gold": 20000
+                    },
+                    {
+                      "upTo": 50,
+                      "gold": 50000
+                    },
+                    {
+                      "upTo": 10,
+                      "gold": 100000
+                    },
+                    {
+                      "upTo": 1,
+                      "gold": 300000
+                    }
+                  ],
+                  "armyBase": 2000,
+                  "armyPerLead": 2,
+                  "armyKinds": [
+                    "swordsman",
+                    "archer"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": 74,
+      "kind": "request",
+      "name": "SET_ARENA_LINEUP",
+      "title": "保存竞技场阵容",
+      "preAuth": false,
+      "summary": "（v53，AISLG-145）保存竞技场阵容：heroIds 为 3 个号位（1/2/3 号位），空位用 null；至少要有 1 名武将，同一武将不能占两个号位，武将必须属于本账号。第一次保存即入榜，排在榜尾（名次 = 当前总人数 + 1 之后的最后一名）。阵容随时可改，改完马上生效：别人挑战你时用的是你保存那一刻的阵容与武将当时的属性。武将重伤、没发俸禄、正在外出都不影响参赛（对战是模拟的）。",
+      "requestFields": [
+        {
+          "name": "heroIds",
+          "type": "Array<string | null>",
+          "desc": "必填。长度 ≤ 3 的数组，元素为武将 id 或 null（空位）；至少一个非 null；不能重复。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "joined",
+          "type": "boolean",
+          "desc": "是否已入榜（第一次保存阵容时入榜）。"
+        },
+        {
+          "name": "rank",
+          "type": "number | null",
+          "desc": "当前名次；未入榜为 null。"
+        },
+        {
+          "name": "bestRank",
+          "type": "number | null",
+          "desc": "历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。"
+        },
+        {
+          "name": "totalEntries",
+          "type": "number",
+          "desc": "榜上席位总数（含 20 个系统守擂者）。"
+        },
+        {
+          "name": "lineup",
+          "type": "Array<Fighter | null>",
+          "desc": "我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。"
+        },
+        {
+          "name": "challengesLeft / challengesMax",
+          "type": "number",
+          "desc": "本竞技日剩余 / 上限挑战次数（上限 5）。"
+        },
+        {
+          "name": "defendedToday / defendedMax",
+          "type": "number",
+          "desc": "本竞技日我被挑战的次数 / 上限（上限 10）。"
+        },
+        {
+          "name": "nextDayAt",
+          "type": "string (ISO)",
+          "desc": "下一个竞技日开始的时刻（次数重置、每日奖励发放）。"
+        },
+        {
+          "name": "dailyReward",
+          "type": "number",
+          "desc": "按当前名次，下一次发放的每日奖励（金币）；未入榜为 0。"
+        },
+        {
+          "name": "opponents",
+          "type": "Opponent[]",
+          "desc": "可挑战的对手，按名次从近到远：entryId（ARENA_CHALLENGE 用）、rank、username、npc、lineup（匿名，heroId 恒为 null）、defendedToday。"
+        },
+        {
+          "name": "top",
+          "type": "Array<{rank, username, npc}>",
+          "desc": "榜单前 100 名（实时，不挂进现有排行榜）。"
+        },
+        {
+          "name": "rules",
+          "type": "object",
+          "desc": "规则常量：slots、dailyChallenges、dailyDefendedMax、maxRankGap、pairCooldownSeconds、dailyRewards、milestoneRewards、armyBase、armyPerLead、armyKinds（标准军队人数 = armyBase + 统率 × armyPerLead）。"
+        }
+      ],
+      "errors": [
+        "HERO_NOT_FOUND",
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "第一次保存阵容，入榜",
+          "request": {
+            "op": 74,
+            "seq": 2,
+            "data": {
+              "heroIds": [
+                "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+                null,
+                null
+              ]
+            }
+          },
+          "responses": [
+            {
+              "op": 74,
+              "seq": 2,
+              "ok": true,
+              "data": {
+                "joined": true,
+                "rank": 21,
+                "bestRank": 21,
+                "totalEntries": 21,
+                "lineup": [
+                  {
+                    "heroId": "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+                    "name": "关羽",
+                    "lead": 88,
+                    "force": 96,
+                    "wit": 45,
+                    "level": 12
+                  },
+                  null,
+                  null
+                ],
+                "challengesLeft": 5,
+                "challengesMax": 5,
+                "defendedToday": 0,
+                "defendedMax": 10,
+                "nextDayAt": "2026-10-12T16:00:00.000Z",
+                "dailyReward": 1000,
+                "opponents": [
+                  {
+                    "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d",
+                    "rank": 11,
+                    "username": "守擂·张飞",
+                    "npc": true,
+                    "lineup": [
+                      {
+                        "heroId": null,
+                        "name": "张飞",
+                        "lead": 66,
+                        "force": 60,
+                        "wit": 57,
+                        "level": 22
+                      },
+                      null,
+                      null
+                    ],
+                    "defendedToday": 0
+                  }
+                ],
+                "top": [
+                  {
+                    "rank": 1,
+                    "username": "卧龙先生",
+                    "npc": false
+                  }
+                ],
+                "rules": {
+                  "slots": 3,
+                  "dailyChallenges": 5,
+                  "dailyDefendedMax": 10,
+                  "maxRankGap": 10,
+                  "pairCooldownSeconds": 300,
+                  "dailyRewards": [
+                    {
+                      "upTo": 1,
+                      "gold": 50000
+                    },
+                    {
+                      "upTo": 10,
+                      "gold": 30000
+                    },
+                    {
+                      "upTo": 50,
+                      "gold": 15000
+                    },
+                    {
+                      "upTo": 200,
+                      "gold": 5000
+                    },
+                    {
+                      "upTo": null,
+                      "gold": 1000
+                    }
+                  ],
+                  "milestoneRewards": [
+                    {
+                      "upTo": 200,
+                      "gold": 20000
+                    },
+                    {
+                      "upTo": 50,
+                      "gold": 50000
+                    },
+                    {
+                      "upTo": 10,
+                      "gold": 100000
+                    },
+                    {
+                      "upTo": 1,
+                      "gold": 300000
+                    }
+                  ],
+                  "armyBase": 2000,
+                  "armyPerLead": 2,
+                  "armyKinds": [
+                    "swordsman",
+                    "archer"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "caption": "阵容里有不属于本账号的武将",
+          "request": {
+            "op": 74,
+            "seq": 3,
+            "data": {
+              "heroIds": [
+                "00000000-0000-4000-8000-000000000000",
+                null,
+                null
+              ]
+            }
+          },
+          "responses": [
+            {
+              "op": 74,
+              "seq": 3,
+              "ok": false,
+              "error": {
+                "code": "HERO_NOT_FOUND",
+                "message": "该武将不存在或不属于本账号"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": 75,
+      "kind": "request",
+      "name": "ARENA_CHALLENGE",
+      "title": "发起竞技挑战",
+      "preAuth": false,
+      "summary": "（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；刀盾 / 弓箭各一半），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。",
+      "requestFields": [
+        {
+          "name": "entryId",
+          "type": "string",
+          "desc": "必填。对手席位 id，即 GET_ARENA 的 opponents[].entryId。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "match",
+          "type": "Match",
+          "desc": "本场战报：role（我是 challenger 还是 defender）、双方名次前后、challengerWon、challengerWins / defenderWins、rounds（实际进行的局，每局含 slot、winner、reason 与交战摘要）、双方阵容快照。"
+        },
+        {
+          "name": "rank",
+          "type": "number",
+          "desc": "挑战后我的名次。"
+        },
+        {
+          "name": "bestRank",
+          "type": "number",
+          "desc": "挑战后的历史最好名次。"
+        },
+        {
+          "name": "challengesLeft",
+          "type": "number",
+          "desc": "本竞技日剩余挑战次数。"
+        },
+        {
+          "name": "milestoneGold",
+          "type": "number",
+          "desc": "本次历史最好名次升进新名次档拿到的一次性奖励（金币），没有为 0。入榜时不发。"
+        },
+        {
+          "name": "milestoneTiers",
+          "type": "number[]",
+          "desc": "本次升进的名次档（如 [10] 表示首次进入前 10）。"
+        }
+      ],
+      "errors": [
+        "ARENA_NOT_JOINED",
+        "ARENA_TARGET_INVALID",
+        "ARENA_NO_CHALLENGES",
+        "ARENA_TARGET_BUSY",
+        "ARENA_PAIR_COOLDOWN",
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "挑战成功，互换名次",
+          "request": {
+            "op": 75,
+            "seq": 4,
+            "data": {
+              "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d"
+            }
+          },
+          "responses": [
+            {
+              "op": 75,
+              "seq": 4,
+              "ok": true,
+              "data": {
+                "match": {
+                  "id": 101,
+                  "createdAt": "2026-10-12T08:00:00.000Z",
+                  "role": "challenger",
+                  "challenger": {
+                    "username": "我",
+                    "rankBefore": 21,
+                    "rankAfter": 11
+                  },
+                  "defender": {
+                    "username": "守擂·张飞",
+                    "npc": true,
+                    "rankBefore": 11,
+                    "rankAfter": 21
+                  },
+                  "challengerWon": true,
+                  "challengerWins": 2,
+                  "defenderWins": 1,
+                  "rounds": [],
+                  "challengerLineup": [],
+                  "defenderLineup": []
+                },
+                "rank": 11,
+                "bestRank": 11,
+                "challengesLeft": 4,
+                "milestoneGold": 0,
+                "milestoneTiers": []
+              }
+            }
+          ]
+        },
+        {
+          "caption": "名次变化后对手已不在范围内",
+          "request": {
+            "op": 75,
+            "seq": 5,
+            "data": {
+              "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d"
+            }
+          },
+          "responses": [
+            {
+              "op": 75,
+              "seq": 5,
+              "ok": false,
+              "error": {
+                "code": "ARENA_TARGET_INVALID",
+                "message": "这个对手现在不能挑战（名次已变化：必须比你靠前且差距不超过 10 名），请刷新对手列表"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "挑战前先看 opponents 里的 rank 与 defendedToday；ARENA_NO_CHALLENGES / ARENA_TARGET_BUSY 响应附 nextDayAt 与 retryAfterSeconds，等到那时再试。ARENA_PAIR_COOLDOWN 附 retryAfterSeconds。名次会被别人的挑战改变，遇到 ARENA_TARGET_INVALID 应重拉 GET_ARENA。"
+    },
+    {
+      "op": 76,
+      "kind": "request",
+      "name": "GET_ARENA_REPORTS",
+      "title": "查询竞技场战报",
+      "preAuth": false,
+      "summary": "（v53，AISLG-145）返回我参与过的竞技战报（我挑战别人的、别人挑战我的），按时间从新到旧。战报保留 7 天，过期自动清理。战报里只有对手武将的名字与属性，不含武将 id。翻页：取最后一条的 id 作为 beforeId 再查，直到 hasMore 为 false。",
+      "requestFields": [
+        {
+          "name": "limit",
+          "type": "number",
+          "desc": "可选，1..50，默认 20。"
+        },
+        {
+          "name": "beforeId",
+          "type": "number",
+          "desc": "可选。只取 id 小于它的更早战报。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "reports",
+          "type": "Match[]",
+          "desc": "战报列表，每条与 ARENA_CHALLENGE 响应里的 match 结构相同（role 指明我是哪一方）。"
+        },
+        {
+          "name": "hasMore",
+          "type": "boolean",
+          "desc": "是否还有更早的战报。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "最近一页战报",
+          "request": {
+            "op": 76,
+            "seq": 6,
+            "data": {
+              "limit": 20
+            }
+          },
+          "responses": [
+            {
+              "op": 76,
+              "seq": 6,
+              "ok": true,
+              "data": {
+                "reports": [],
+                "hasMore": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -8499,6 +9109,73 @@
         }
       ],
       "agentNote": "收到 account_renamed 后，本地缓存的 username 已过期：后续展示（聊天、地图归属、排行榜）与对外称呼一律用新昵称。"
+    },
+    {
+      "op": 2021,
+      "kind": "push",
+      "name": "PUSH_ARENA_STATE",
+      "title": "推送：竞技场状态变化",
+      "summary": "（v53，AISLG-145）竞技场状态变化时推送给该账号全部在线连接（含 Agent 连接）。reason=challenged：被人挑战（名次可能已变化，defeated 表示我是否被打败，rank 为我挑战后的名次）；daily_reward：每日奖励到账（gold）；milestone：首次进入新名次档拿到一次性奖励（gold、tiers）。推送只带变化摘要，完整状态用 GET_ARENA 查询。",
+      "dataFields": [
+        {
+          "name": "reason",
+          "type": "'challenged' | 'daily_reward' | 'milestone'",
+          "desc": "触发本次推送的状态变化。"
+        },
+        {
+          "name": "challenger",
+          "type": "string",
+          "desc": "challenged：挑战方的昵称。"
+        },
+        {
+          "name": "defeated",
+          "type": "boolean",
+          "desc": "challenged：我是否被打败（true 表示挑战方赢，我的名次已下沉）。"
+        },
+        {
+          "name": "rank",
+          "type": "number",
+          "desc": "challenged：挑战结束后我的名次；daily_reward：发放时我的名次。"
+        },
+        {
+          "name": "matchId",
+          "type": "number",
+          "desc": "challenged：本场战报 id，可用 GET_ARENA_REPORTS 查详情。"
+        },
+        {
+          "name": "gold",
+          "type": "number",
+          "desc": "daily_reward / milestone：到账的金币。"
+        },
+        {
+          "name": "tiers",
+          "type": "number[]",
+          "desc": "milestone：本次新进入的名次档。"
+        }
+      ],
+      "examples": [
+        {
+          "op": 2021,
+          "push": true,
+          "data": {
+            "reason": "challenged",
+            "challenger": "卧龙先生",
+            "defeated": true,
+            "rank": 12,
+            "matchId": 101
+          }
+        },
+        {
+          "op": 2021,
+          "push": true,
+          "data": {
+            "reason": "daily_reward",
+            "gold": 1000,
+            "rank": 21
+          }
+        }
+      ],
+      "agentNote": "收到 challenged 且 defeated 为 true 时，名次已下沉：如需反击，先 GET_ARENA 拿最新 opponents，再决定是否挑战。daily_reward 只表示金币已进主城，无需另行领取。"
     }
   ],
   "errorCodes": {
@@ -8757,6 +9434,26 @@
     "NICKNAME_TAKEN": {
       "desc": "（v52）SET_NICKNAME 的昵称已被其他账号占用：昵称即账号 username，全服唯一。仅玩家连接可用。",
       "action": "换一个昵称重试。Agent 无权改名（AGENT_FORBIDDEN），需要时提示玩家本人在网页改。"
+    },
+    "ARENA_NOT_JOINED": {
+      "desc": "（v53，AISLG-145）竞技场：账号还没入榜（从未保存过阵容），或阵容里一名武将都没有，不能发起挑战。",
+      "action": "先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容（第一次保存即入榜，排在最后一名），再挑战。"
+    },
+    "ARENA_TARGET_INVALID": {
+      "desc": "（v53，AISLG-145）竞技场：entryId 对应的席位不存在，或当前名次不在可挑战范围（必须比自己靠前，且差距不超过 maxRankGap 名）。名次会随别人的挑战变化，列表可能已过期。",
+      "action": "重拉 GET_ARENA 取最新 opponents，再挑一个还在范围内的对手。"
+    },
+    "ARENA_NO_CHALLENGES": {
+      "desc": "（v53，AISLG-145）竞技场：当前竞技日挑战次数已用完（上限 dailyChallenges）；响应附 nextDayAt（次数重置时刻）与 retryAfterSeconds。",
+      "action": "等到 nextDayAt 之后再挑战；竞技日长度随全局时间缩放。"
+    },
+    "ARENA_TARGET_BUSY": {
+      "desc": "（v53，AISLG-145）竞技场：对手当前竞技日被挑战的次数已达上限（dailyDefendedMax，防止被围攻）；响应附 nextDayAt 与 retryAfterSeconds。",
+      "action": "换一个对手，或等到 nextDayAt 之后。"
+    },
+    "ARENA_PAIR_COOLDOWN": {
+      "desc": "（v53，AISLG-145）竞技场：刚挑战过同一个对手，冷却未结束（pairCooldownSeconds，随时间缩放）；响应附 retryAfterSeconds。",
+      "action": "等 retryAfterSeconds 秒后再挑战同一人，或先换别的对手。"
     },
     "AGENT_PASSWORD_FORBIDDEN": {
       "desc": "（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。",

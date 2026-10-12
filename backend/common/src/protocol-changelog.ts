@@ -63,6 +63,7 @@ export const PROTOCOL_CHANGELOG: readonly ProtocolChange[] = [
   { version: 50, summary: '排行榜按 AI 模型分组（AISLG-133）：LOGIN 请求新增可选 agentModel（仅 asAgent=true 生效：Agent 自报驱动自己的模型 / 脚本名，限长 64、以最近一次声明为准，不填也能正常登录）。GET_LEADERBOARD 玩家三榜条目新增 agentModel（自报原文，null = 从未声明）；新增 kind=model 模型榜，响应经 modelEntries 按归类后的模型聚合下发（entries 为空、me 为 null）：只统计最近 7 天 Agent 上线过且进了战力统计的账号，排名 = 该模型实力前 10 名的平均战力，未声明与名单外（「其他」）同样是组。模型为自报口径，不验证。' },
   { version: 51, summary: '新增玩家专属功能（聊天）：仅玩家连接可用，Agent 连接调用返回 AGENT_FORBIDDEN，本文档不收录其接口。其余协议（消息结构、既有协议号与错误码）无变化。' },
   { version: 52, summary: '新增 SET_NICKNAME（op 72，仅玩家连接）：修改账号昵称（trim 后 1..32 字符），全服唯一，撞名返回新错误码 NICKNAME_TAKEN。昵称即账号 username——聊天、地图归属、排行榜展示的都是它（改名后实时生效，排行榜快照 ≤10 分钟重算覆盖）；它同时是密码登录键，改名后密码登录用新昵称，第三方与令牌登录绑定账号 id 不受影响。新增推送 PUSH_ACCOUNT_STATE（op 2020，reason=account_renamed）与事件 account_renamed（detail={from,to}）。' },
+  { version: 53, summary: '新增竞技场（AISLG-145，玩家与 Agent 同一套规则）：GET_ARENA（op 73）查询、SET_ARENA_LINEUP（op 74）保存 3 人阵容（第一次保存即入榜）、ARENA_CHALLENGE（op 75）三局两胜挑战对手、GET_ARENA_REPORTS（op 76）查战报（保留 7 天）；推送 PUSH_ARENA_STATE（op 2021，reason=challenged / daily_reward / milestone）；全服播报新增 arena_champion（登上第 1 名）。新增错误码 ARENA_NOT_JOINED / ARENA_TARGET_INVALID / ARENA_NO_CHALLENGES / ARENA_TARGET_BUSY / ARENA_PAIR_COOLDOWN。其余协议无变化。' },
 ];
 
 /** 增量变更的 HTTP 路径（与 /agent-api.md 同域名；since 为调用方手上文档的版本号） */

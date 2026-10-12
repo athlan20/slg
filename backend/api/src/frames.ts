@@ -77,6 +77,11 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   CHAT_BLOCKED: '对方已屏蔽你，无法发送私聊',
   CHAT_RATE_LIMITED: '发言太快了，请稍后再发',
   NICKNAME_TAKEN: '这个昵称已经被别人用了，换一个试试',
+  ARENA_NOT_JOINED: '还没进竞技场：先保存一个至少有 1 名武将的阵容',
+  ARENA_TARGET_INVALID: '这个对手现在不能挑战（名次已变化：必须比你靠前且差距不超过 10 名），请刷新对手列表',
+  ARENA_NO_CHALLENGES: '今天的竞技场挑战次数用完了，等下个竞技日再来',
+  ARENA_TARGET_BUSY: '这个对手今天被挑战的次数已达上限，换一个或明天再来',
+  ARENA_PAIR_COOLDOWN: '刚挑战过这位对手，冷却中，稍后再试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除
   INTERNAL: '服务端内部错误',
 };

@@ -120,6 +120,14 @@ export const Op = {
   CHAT_REPORT_DETAIL: 71,
   /** C→S 修改账号昵称（data.nickname；v52，仅玩家连接；昵称即账号 username，全服唯一，重名返回 NICKNAME_TAKEN） */
   SET_NICKNAME: 72,
+  /** C→S 查询竞技场（v53，AISLG-145：我的名次 / 阵容 / 今日次数 / 可挑战对手 / 榜单前 100 / 规则常量） */
+  GET_ARENA: 73,
+  /** C→S 保存竞技场阵容（v53，AISLG-145：data.heroIds 三个号位，空位 null；第一次保存即入榜，排在最后一名） */
+  SET_ARENA_LINEUP: 74,
+  /** C→S 发起竞技挑战（v53，AISLG-145：data.entryId；三局两胜，赢了与对手互换名次，当场算完） */
+  ARENA_CHALLENGE: 75,
+  /** C→S 查询竞技场战报（v53，AISLG-145：我挑战过的和挑战过我的，保留 7 天） */
+  GET_ARENA_REPORTS: 76,
   /** C→S 发起农场建造（兼容入口：等价于 BUILD 且 kind='farm'） */
   BUILD_FARM: 20,
   /** S→C 推送：农场建造状态变化（进入建造 / 完成） */
@@ -163,6 +171,8 @@ export const Op = {
   PUSH_CHAT_MESSAGE: 2019,
   /** S→C 推送：账号级状态变化（v52：account_renamed=昵称被 SET_NICKNAME 修改；账号全部在线连接收到，含 Agent） */
   PUSH_ACCOUNT_STATE: 2020,
+  /** S→C 推送：竞技场状态变化（v53：challenged 被挑战 / daily_reward 每日奖励到账 / milestone 首次进入新名次档；账号全部在线连接收到，含 Agent） */
+  PUSH_ARENA_STATE: 2021,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -319,6 +329,16 @@ export const ErrorCode = {
   CHAT_RATE_LIMITED: 'CHAT_RATE_LIMITED',
   /** 昵称已被其他账号占用（v52，SET_NICKNAME；昵称即账号 username，全服唯一） */
   NICKNAME_TAKEN: 'NICKNAME_TAKEN',
+  /** 竞技场：还没入榜（先 SET_ARENA_LINEUP 保存阵容）或阵容里一名武将都没有（v53，AISLG-145） */
+  ARENA_NOT_JOINED: 'ARENA_NOT_JOINED',
+  /** 竞技场：对手席位不存在，或名次已变化不在可挑战范围内（v53；须比自己靠前且差距 ≤ 10 名） */
+  ARENA_TARGET_INVALID: 'ARENA_TARGET_INVALID',
+  /** 竞技场：今日挑战次数已用完（v53），响应附 nextDayAt 与 retryAfterSeconds */
+  ARENA_NO_CHALLENGES: 'ARENA_NO_CHALLENGES',
+  /** 竞技场：对手今日被挑战的次数已达上限（v53），响应附 nextDayAt 与 retryAfterSeconds */
+  ARENA_TARGET_BUSY: 'ARENA_TARGET_BUSY',
+  /** 竞技场：刚挑战过同一个对手，冷却中（v53），响应附 retryAfterSeconds */
+  ARENA_PAIR_COOLDOWN: 'ARENA_PAIR_COOLDOWN',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -645,6 +665,24 @@ export type {
   HeroStatePushData,
 } from './protocol-hero';
 export type { MovingKind } from './moving-target';
+
+// 竞技场（v53，AISLG-145）的载荷类型在 protocol-arena.ts，规则与数值在 arena.ts
+export type {
+  ArenaFighterView,
+  ArenaOpponentView,
+  ArenaTopEntryView,
+  ArenaRulesView,
+  ArenaStateView,
+  GetArenaResponseData,
+  SetArenaLineupRequestData,
+  SetArenaLineupResponseData,
+  ArenaChallengeRequestData,
+  ArenaMatchView,
+  ArenaChallengeResponseData,
+  GetArenaReportsRequestData,
+  GetArenaReportsResponseData,
+  ArenaStatePushData,
+} from './protocol-arena';
 
 // 玩家对抗（一）（v38，AISLG-122）的载荷类型在 protocol-pvp.ts，规则与数值在 protection.ts
 export type {

@@ -434,6 +434,26 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v52）SET_NICKNAME 的昵称已被其他账号占用：昵称即账号 username，全服唯一。仅玩家连接可用。',
     action: '换一个昵称重试。Agent 无权改名（AGENT_FORBIDDEN），需要时提示玩家本人在网页改。',
   },
+  ARENA_NOT_JOINED: {
+    desc: '（v53，AISLG-145）竞技场：账号还没入榜（从未保存过阵容），或阵容里一名武将都没有，不能发起挑战。',
+    action: '先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容（第一次保存即入榜，排在最后一名），再挑战。',
+  },
+  ARENA_TARGET_INVALID: {
+    desc: '（v53，AISLG-145）竞技场：entryId 对应的席位不存在，或当前名次不在可挑战范围（必须比自己靠前，且差距不超过 maxRankGap 名）。名次会随别人的挑战变化，列表可能已过期。',
+    action: '重拉 GET_ARENA 取最新 opponents，再挑一个还在范围内的对手。',
+  },
+  ARENA_NO_CHALLENGES: {
+    desc: '（v53，AISLG-145）竞技场：当前竞技日挑战次数已用完（上限 dailyChallenges）；响应附 nextDayAt（次数重置时刻）与 retryAfterSeconds。',
+    action: '等到 nextDayAt 之后再挑战；竞技日长度随全局时间缩放。',
+  },
+  ARENA_TARGET_BUSY: {
+    desc: '（v53，AISLG-145）竞技场：对手当前竞技日被挑战的次数已达上限（dailyDefendedMax，防止被围攻）；响应附 nextDayAt 与 retryAfterSeconds。',
+    action: '换一个对手，或等到 nextDayAt 之后。',
+  },
+  ARENA_PAIR_COOLDOWN: {
+    desc: '（v53，AISLG-145）竞技场：刚挑战过同一个对手，冷却未结束（pairCooldownSeconds，随时间缩放）；响应附 retryAfterSeconds。',
+    action: '等 retryAfterSeconds 秒后再挑战同一人，或先换别的对手。',
+  },
   AGENT_PASSWORD_FORBIDDEN: {
     desc: '（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。',
     action: '改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。',

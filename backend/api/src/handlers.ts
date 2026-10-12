@@ -39,6 +39,7 @@ import { handleGetYellowTurban } from './handlers-yt';
 import { handleCancelResearch, handleGetTechs, handleResearchTech } from './handlers-tech';
 import { handleAssignHero, handleDismissHero, handleGetHeroes, handleRecruitHero } from './handlers-hero';
 import { handleTruce } from './handlers-pvp';
+import { handleArenaChallenge, handleGetArena, handleGetArenaReports, handleSetArenaLineup } from './handlers-arena';
 import {
   handleAgentCommentReport,
   handleGetBattleReports,
@@ -238,6 +239,18 @@ async function dispatchOp(
       break;
     case Op.TRUCE:
       await handleTruce(ctx, conn, op, seq);
+      break;
+    case Op.GET_ARENA:
+      await handleGetArena(ctx, conn, op, seq);
+      break;
+    case Op.SET_ARENA_LINEUP:
+      await handleSetArenaLineup(ctx, conn, op, seq, data);
+      break;
+    case Op.ARENA_CHALLENGE:
+      await handleArenaChallenge(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_ARENA_REPORTS:
+      await handleGetArenaReports(ctx, conn, op, seq, data);
       break;
     case Op.GET_TECHS:
       await handleGetTechs(ctx, conn, op, seq);

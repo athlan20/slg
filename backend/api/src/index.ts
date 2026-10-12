@@ -7,6 +7,7 @@ import websocketPlugin from '@fastify/websocket';
 import type { WebSocket } from 'ws';
 import { createPool, ensureSchema, readDbConfig } from '../../common/src/db';
 import { ensureWorld } from '../../common/src/world-db';
+import { seedArenaNpcs } from '../../common/src/arena-db';
 import { getTimeScale, refreshTimeScale, timeScaleStale } from '../../common/src/time-scale';
 import { registerCors } from './cors';
 import { handleMessage, handleConnectionClosed, type HandlerContext } from './handlers';
@@ -59,6 +60,8 @@ async function main(): Promise<void> {
   const pool = createPool('slg-api', 8);
   await ensureSchema(pool);
   console.log('slg-api database schema ready');
+  // v53（AISLG-145）：竞技场系统守擂者启动时补齐（只读路径不再为补种抢锁；幂等，咨询锁串行化）
+  await seedArenaNpcs(pool);
   // v12：首次启动生成世界并回填存量城池坐标（幂等；与 Worker 并发由咨询锁串行化）
   await ensureWorld(pool);
   console.log('slg-api world ready');
