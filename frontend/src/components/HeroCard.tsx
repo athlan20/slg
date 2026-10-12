@@ -4,13 +4,16 @@
  */
 
 import { useState } from 'react';
-import type { HeroView } from '../api/protocol';
+import type { HeroView, TrainingTier } from '../api/protocol';
 import { formatClock } from '../api/format';
 import { getCopy, useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
+import { heroAtHome } from '../state/heroSession';
 import { ChatShareButton } from './chat/ChatShareButton';
 
-const HERO_LEVEL_MAX = 20;
+const HERO_LEVEL_MAX = 40;
+const TRAIN_TIERS: TrainingTier[] = [1, 2, 3];
+const TRAIN_HOURS: Record<TrainingTier, number> = { 1: 1, 2: 4, 3: 12 };
 
 interface HeroCardProps {
   hero: HeroView;
@@ -25,6 +28,11 @@ interface HeroCardProps {
   onDismiss: () => void;
   /** 分享到聊天（AISLG-138）：有值时显示「分享武将」按钮 */
   onShare?: () => void;
+  /** 加点 / 历练 / 赏赐 / 洗点（v54，AISLG-144） */
+  onAllocate: (attr: 'lead' | 'force' | 'wit') => void;
+  onTrain: (tier: TrainingTier) => void;
+  onGift: () => void;
+  onReset: () => void;
 }
 
 function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number): { text: string; tone: string } {
@@ -34,6 +42,9 @@ function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number
   }
   if (hero.arrears) {
     return { text: HERO_COPY.card.statusArrears, tone: 'text-warn' };
+  }
+  if (hero.training) {
+    return { text: HERO_COPY.card.statusTraining(formatClock(hero.training.endsAt)), tone: 'text-accent' };
   }
   if (hero.marchingMarchId) {
     return { text: HERO_COPY.card.statusMarching, tone: 'text-accent' };
@@ -47,13 +58,29 @@ function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number
 
 const smallBtn = 'cursor-pointer rounded border px-1.5 text-[11.5px] disabled:cursor-not-allowed disabled:opacity-40';
 
-export function HeroCard({ hero, currentCityId, cityNames, busy, now, onAssign, onRemoveGuard, onDismiss, onShare }: HeroCardProps) {
+export function HeroCard({
+  hero,
+  currentCityId,
+  cityNames,
+  busy,
+  now,
+  onAssign,
+  onRemoveGuard,
+  onDismiss,
+  onShare,
+  onAllocate,
+  onTrain,
+  onGift,
+  onReset,
+}: HeroCardProps) {
   const copy = useCopy();
   const { HERO_COPY, CHAT_COPY } = copy;
   const [confirming, setConfirming] = useState(false);
   const status = statusOf(hero, cityNames, now);
   const guardsHere = currentCityId !== null && hero.guardCityId === currentCityId;
-  const canAssign = !guardsHere && !hero.marchingMarchId && currentCityId !== null;
+  const canAssign = !guardsHere && !hero.marchingMarchId && !hero.training && currentCityId !== null;
+  const atHome = heroAtHome(hero);
+  const growth = HERO_COPY.growth;
   const expPercent = hero.expNext > 0 ? Math.min(100, Math.round((hero.exp / hero.expNext) * 100)) : 100;
   const detail = [
     HERO_COPY.card.attrs(hero.lead, hero.force, hero.wit),
@@ -85,6 +112,55 @@ export function HeroCard({ hero, currentCityId, cityNames, busy, now, onAssign, 
       <p role="武将面板-属性" className="truncate font-mono text-[11.5px] text-dim" title={detail}>
         {detail}
       </p>
+
+      <div role="武将面板-培养" className="flex flex-wrap items-center gap-1 text-[11px]" title={atHome ? undefined : growth.busyHint}>
+        {hero.freePoints > 0 ? <span className="mr-0.5 font-mono text-accent">{growth.points(hero.freePoints)}</span> : null}
+        {(['lead', 'force', 'wit'] as const).map((attr) => (
+          <button
+            key={attr}
+            type="button"
+            role={`武将面板-加点-${attr}`}
+            disabled={busy || !atHome || hero.freePoints <= 0}
+            onClick={() => onAllocate(attr)}
+            className={`${smallBtn} border-accent text-accent disabled:border-line disabled:text-faint`}
+          >
+            {attr === 'lead' ? growth.addLead : attr === 'force' ? growth.addForce : growth.addWit}
+          </button>
+        ))}
+        {TRAIN_TIERS.map((tier) => (
+          <button
+            key={tier}
+            type="button"
+            role={`武将面板-历练-${tier}`}
+            disabled={busy || !atHome}
+            title={growth.trainHint}
+            onClick={() => onTrain(tier)}
+            className={`${smallBtn} border-line text-dim hover:text-fg disabled:text-faint`}
+          >
+            {growth.train(TRAIN_HOURS[tier])}
+          </button>
+        ))}
+        <button
+          type="button"
+          role="武将面板-赏赐按钮"
+          disabled={busy || hero.dailyLeft.gift <= 0}
+          title={growth.giftHint(hero.dailyLeft.gift)}
+          onClick={onGift}
+          className={`${smallBtn} border-line text-dim hover:text-fg disabled:text-faint`}
+        >
+          {growth.gift}
+        </button>
+        <button
+          type="button"
+          role="武将面板-洗点按钮"
+          disabled={busy || !atHome || hero.dailyLeft.reset <= 0}
+          title={growth.resetHint(hero.dailyLeft.reset)}
+          onClick={onReset}
+          className={`${smallBtn} border-line text-dim hover:text-fg disabled:text-faint`}
+        >
+          {growth.reset}
+        </button>
+      </div>
 
       <div className="flex items-center gap-2">
         <div role="武将面板-经验条" className="flex min-w-0 flex-1 items-center gap-1.5" title={HERO_COPY.card.exp(hero.exp, hero.expNext)}>

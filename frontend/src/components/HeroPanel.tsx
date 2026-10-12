@@ -11,6 +11,7 @@ import { useGame } from '../state/GameContext';
 import { useNow } from '../state/useNow';
 import { heroShareLabel } from './chat/chatText';
 import { HeroCard } from './HeroCard';
+import { HeroFriendship } from './HeroFriendship';
 import { HeroTavern } from './HeroTavern';
 import { Card } from './ui/Card';
 import { PagedList } from './ui/PagedList';
@@ -68,10 +69,20 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
                 onRemoveGuard={() => void session.assignGuard(null)}
                 onDismiss={() => void session.dismiss(hero.id)}
                 onShare={() => chat.shareDraft({ card: { kind: 'hero', heroId: hero.id }, label: heroShareLabel(tName(hero.name), hero.level) })}
+                onAllocate={(attr) => void session.allocate(hero.id, { [attr]: 1 })}
+                onTrain={(tier) => void session.train(hero.id, tier)}
+                onGift={() => void session.gift(hero.id)}
+                onReset={() => void session.reset(hero.id)}
               />
             )}
           />
           <HeroTavern state={state} city={city} busy={busy} onRecruit={(id) => void session.recruit(id)} />
+          <HeroFriendship
+            state={state}
+            busy={busy}
+            onBefriend={(name) => void session.befriend(name)}
+            onRecruit={(name) => void session.recruitFamous(name)}
+          />
         </>
       )}
     </Card>

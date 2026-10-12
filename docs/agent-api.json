@@ -1,5 +1,5 @@
 {
-  "version": 53,
+  "version": 54,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 53,
+                "protocolVersion": 54,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 53,
+                "protocolVersion": 54,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/50 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/51 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 50,
+              "docVersion": 51,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 53,
-                "docNotice": "接口文档已从 v50 更新到 v53：请 GET /agent-api/changes/50 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 54,
+                "docNotice": "接口文档已从 v51 更新到 v54：请 GET /agent-api/changes/51 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -3855,6 +3855,11 @@
           "desc": "黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small|medium|large|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。"
         },
         {
+          "name": "tiles[].wildFamous",
+          "type": "boolean",
+          "desc": "在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将（公开，名字与属性需侦察）。被获得后标记撤下，名将归属见 GET_HEROES 的 famousClaims。"
+        },
+        {
           "name": "tiles[].famous",
           "type": "object | null",
           "desc": "名城信息（v24 新增，AISLG-56）：{ name 名城名, stage 当前阶段（outer 外围阶段须先清外围 / keeper 外围已清、可攻城守并占领）, bonusPercent 占领后的独占加成（该城产量 +N%）, recoversAt 城守阶段外围恢复满编的时刻（超时无人攻下城守则恢复；外围阶段为 null） }；全图 8 座名城，对全服可见；非名城为 null。"
@@ -3994,6 +3999,11 @@
           "desc": "玩家城与他人占领野地的保护状态（v38 / v39）：{ newbieUntil 新手保护截止（含其野地）, truceUntil 被动免战截止（仅城池；野地恒 null——城级免战不保护野地）, shieldUntil 主动免战截止（含其野地）, ownerChangedUntil 换主保护截止（仅野地：刚被抢占后 1 小时基准随缩放，期间玩家与 NPC 都不能再抢） }，任一截止时刻未到即受保护（MARCH 被拒，错误码与时限见 MARCH）；非玩家目标、自己的地为 null。到期自动失效，无事件。"
         },
         {
+          "name": "tile.wildFamousIntel",
+          "type": "object | null",
+          "desc": "在野名将情报（v54，AISLG-144）：未被获得的在野名将所在野地才有 { scouted, name, attrs { lead, force, wit } }；未侦察过时 scouted=false、name / attrs 为 null，侦察后（SCOUT 完成）给出名字与三项属性。其余为 null。"
+        },
+        {
           "name": "tile.plunderedAt",
           "type": "string | null",
           "desc": "最近一次成功掠夺（攻方胜利）的时间（v16，ISO 8601）：距其 24 小时内该地块处于掠夺冷却（基准值，实际受全局时间缩放等比缩短；MARCH task='plunder' 被拒，PLUNDER_COOLDOWN）；从未被掠为 null。"
@@ -4036,7 +4046,8 @@
                   },
                   "npc": null,
                   "scoutedAt": null,
-                  "plunderedAt": null
+                  "plunderedAt": null,
+                  "wildFamousIntel": null
                 }
               }
             }
@@ -6141,7 +6152,7 @@
       "name": "GET_HEROES",
       "title": "查询武将（账号武将 / 酒馆候选 / 名将归属，v36，AISLG-114/115/116）",
       "preAuth": false,
-      "summary": "返回账号全部武将（含属性、等级 / 经验、俸禄、欠饷 / 重伤状态、占用关系）、当前（或指定）城酒馆的候选（每城一座酒馆，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限，以及全部 11 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从酒馆所在城扣）。**名将**（三项各 45–65）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级三项属性各 +1（名将 +2），上限 20 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。",
+      "summary": "返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（每城一座酒馆，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限、全部 40 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null，在野名将附 wildAt 落位），以及在野名将的结交进度（friendships）与结交资格（unlocks）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从酒馆所在城扣）。**名将**（三项各 45–65）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 3、名将 5，由玩家分到三项属性，v54 起升级不再自动加属性），上限 40 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。",
       "requestFields": [
         {
           "name": "cityId",
@@ -6183,7 +6194,22 @@
         {
           "name": "famousClaims",
           "type": "array",
-          "desc": "全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt }。"
+          "desc": "全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将的落位 { x, y, level } 或 null }。"
+        },
+        {
+          "name": "friendships",
+          "type": "array",
+          "desc": "结交进度（v54）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 已被他人招揽（作废）}。"
+        },
+        {
+          "name": "unlocks",
+          "type": "string[]",
+          "desc": "结交资格（v54）：打赢过其野地守军、且尚未被他人获得的在野名将名。"
+        },
+        {
+          "name": "friendshipCap",
+          "type": "number",
+          "desc": "同时结交上限（v54，固定 2）。"
         }
       ],
       "errors": [],
@@ -6219,9 +6245,11 @@
                     "level": 3,
                     "exp": 240,
                     "expNext": 60,
+                    "freePoints": 6,
                     "salaryPerHour": 60,
                     "arrears": false,
                     "woundedUntil": null,
+                    "training": null,
                     "guardCityId": null,
                     "marchingMarchId": null,
                     "bonus": {
@@ -6229,7 +6257,11 @@
                       "defPercent": 4.5,
                       "leadCap": 640
                     },
-                    "guardProductionPercent": 1.5
+                    "guardProductionPercent": 1.5,
+                    "dailyLeft": {
+                      "gift": 3,
+                      "reset": 1
+                    }
                   }
                 ],
                 "candidates": [
@@ -6248,7 +6280,8 @@
                     "name": "吕布",
                     "sourceLabel": "首占名城「洛阳」",
                     "ownerUsername": null,
-                    "grantedAt": null
+                    "grantedAt": null,
+                    "wildAt": null
                   },
                   "（共 11 名，其余略）"
                 ]
@@ -6257,7 +6290,7 @@
           ]
         }
       ],
-      "agentNote": "配将出征流程：GET_HEROES 挑选 arrears=false 且 woundedUntil 为 null / 已过期、marchingMarchId 与 guardCityId 都为 null 的武将，MARCH / SCOUT 带 heroId 即随队（一支部队至多一名，同一武将同一时间只能在一支部队里，城守不能出征）。经验与等级在 heroes[] 里实时可查（expNext = 距下一级还差多少）。名将归属见 famousClaims——未被获得的名将按 sourceLabel 的条件争取（首占名城 / 老巢首杀 / 贡献前二）。收到 PUSH_HERO_STATE 后重拉本协议对齐。"
+      "agentNote": "培养与结交：加点 / 洗点 / 历练 / 赏赐见 ALLOCATE_HERO_POINTS 等协议；结交与招揽见 BEFRIEND_HERO / RECRUIT_FAMOUS_HERO（先看 unlocks）。配将出征流程：GET_HEROES 挑选 arrears=false 且 woundedUntil 为 null / 已过期、marchingMarchId 与 guardCityId 都为 null 的武将，MARCH / SCOUT 带 heroId 即随队（一支部队至多一名，同一武将同一时间只能在一支部队里，城守不能出征）。经验与等级在 heroes[] 里实时可查（expNext = 距下一级还差多少）。名将归属见 famousClaims——未被获得的名将按 sourceLabel 的条件争取（首占名城 / 老巢首杀 / 贡献前二）。收到 PUSH_HERO_STATE 后重拉本协议对齐。"
     },
     {
       "op": 50,
@@ -6318,9 +6351,11 @@
                   "level": 3,
                   "exp": 240,
                   "expNext": 60,
+                  "freePoints": 6,
                   "salaryPerHour": 60,
                   "arrears": false,
                   "woundedUntil": null,
+                  "training": null,
                   "guardCityId": null,
                   "marchingMarchId": null,
                   "bonus": {
@@ -6328,7 +6363,11 @@
                     "defPercent": 4.5,
                     "leadCap": 640
                   },
-                  "guardProductionPercent": 1.5
+                  "guardProductionPercent": 1.5,
+                  "dailyLeft": {
+                    "gift": 3,
+                    "reset": 1
+                  }
                 }
               }
             }
@@ -6460,9 +6499,11 @@
                   "level": 3,
                   "exp": 240,
                   "expNext": 60,
+                  "freePoints": 6,
                   "salaryPerHour": 60,
                   "arrears": false,
                   "woundedUntil": null,
+                  "training": null,
                   "guardCityId": null,
                   "marchingMarchId": null,
                   "bonus": {
@@ -6470,7 +6511,11 @@
                     "defPercent": 4.5,
                     "leadCap": 640
                   },
-                  "guardProductionPercent": 1.5
+                  "guardProductionPercent": 1.5,
+                  "dailyLeft": {
+                    "gift": 3,
+                    "reset": 1
+                  }
                 }
               }
             }
@@ -7904,6 +7949,362 @@
       ]
     },
     {
+      "op": 77,
+      "kind": "request",
+      "name": "ALLOCATE_HERO_POINTS",
+      "title": "分配自由点数（v54，AISLG-144）",
+      "preAuth": false,
+      "summary": "把武将的自由点数（heroes[].freePoints）分到统率 lead / 武力 force / 智力 wit，三项各为非负整数，合计至少 1、不超过自由点数。只能对在家的武将操作（HERO_BUSY / HERO_TRAINING 拒绝）。培养（v54，AISLG-144）：升一级获得自由点数（普通将 3、名将 5），由玩家分到统率 / 武力 / 智力，等级上限 40；升级不再自动加属性。洗点花 等级 × 1000 金币，已分配点数全部退回，每个武将每游戏日 1 次。历练派出去 1 / 4 / 12 小时基准（随时间缩放），到点经验 = 基础经验 × 武将等级 ÷ 10（基础 200 / 1000 / 4000），到点自动到账，离线也结算。赏赐每次花 1000 金币 → 100 经验，每个武将每游戏日最多 3 次。加点 / 洗点 / 历练 / 解雇 / 出征 / 任城守都要求武将不在外出、不在城守、不在历练（赏赐不受限）。",
+      "requestFields": [
+        {
+          "name": "heroId",
+          "type": "string",
+          "desc": "武将 id。"
+        },
+        {
+          "name": "lead / force / wit",
+          "type": "number",
+          "desc": "分给三项的点数（可缺省，缺省为 0）。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "hero",
+          "type": "object",
+          "desc": "分配后的武将视图（结构同 GET_HEROES 的 heroes[] 元素）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_FOUND",
+        "HERO_BUSY",
+        "HERO_TRAINING",
+        "HERO_POINTS_INSUFFICIENT"
+      ],
+      "examples": [
+        {
+          "caption": "把 2 点给武力、1 点给统率",
+          "request": {
+            "op": 77,
+            "seq": 30,
+            "data": {
+              "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1",
+              "lead": 1,
+              "force": 2
+            }
+          },
+          "responses": [
+            {
+              "op": 77,
+              "seq": 30,
+              "ok": true,
+              "data": {
+                "hero": {
+                  "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+                  "freePoints": 0
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "武力 / 智力加成在 67 左右就封顶了（各 20%），多余点数优先给统率（统率 × 20 = 能吃满加成的兵数）。"
+    },
+    {
+      "op": 78,
+      "kind": "request",
+      "name": "RESET_HERO_POINTS",
+      "title": "洗点（v54，AISLG-144）",
+      "preAuth": false,
+      "summary": "把已分配的点数全部退回自由点数，属性还原到武将的初始值。花费 = 武将等级 × 1000 金币（主城扣）；每个武将每游戏日 1 次；没有已分配点数时拒绝（HERO_NOTHING_TO_RESET）。",
+      "requestFields": [
+        {
+          "name": "heroId",
+          "type": "string",
+          "desc": "武将 id。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "hero",
+          "type": "object",
+          "desc": "洗点后的武将视图（freePoints 已含退回的点数，dailyLeft.reset 已减 1）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_FOUND",
+        "HERO_BUSY",
+        "HERO_TRAINING",
+        "HERO_NOTHING_TO_RESET",
+        "HERO_DAILY_LIMIT",
+        "INSUFFICIENT_RESOURCES"
+      ],
+      "examples": [
+        {
+          "caption": "洗点",
+          "request": {
+            "op": 78,
+            "seq": 31,
+            "data": {
+              "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1"
+            }
+          },
+          "responses": [
+            {
+              "op": 78,
+              "seq": 31,
+              "ok": true,
+              "data": {
+                "hero": {
+                  "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+                  "freePoints": 4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "洗点是按等级收费的，武将越高越贵；先在低等级把点数想清楚再洗。"
+    },
+    {
+      "op": 79,
+      "kind": "request",
+      "name": "TRAIN_HERO",
+      "title": "派武将历练（v54，AISLG-144）",
+      "preAuth": false,
+      "summary": "派武将离家历练 1 / 4 / 12 小时基准（tier 1 / 2 / 3，随时间缩放）。到点经验 = 基础经验（200 / 1000 / 4000）× 开始历练时的武将等级 ÷ 10，由 Worker 到点结算（离线也结算），到账后推送 reason=training_done，升级的自由点数照常获得。历练期间武将不能带兵 / 城守 / 解雇 / 加点 / 洗点；赏赐不受限。",
+      "requestFields": [
+        {
+          "name": "heroId",
+          "type": "string",
+          "desc": "武将 id。"
+        },
+        {
+          "name": "tier",
+          "type": "number",
+          "desc": "档位 1 / 2 / 3。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "hero",
+          "type": "object",
+          "desc": "历练中的武将视图（training = { tier, endsAt, exp }）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_FOUND",
+        "HERO_BUSY",
+        "HERO_TRAINING"
+      ],
+      "examples": [
+        {
+          "caption": "派去历练 4 小时",
+          "request": {
+            "op": 79,
+            "seq": 32,
+            "data": {
+              "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1",
+              "tier": 2
+            }
+          },
+          "responses": [
+            {
+              "op": 79,
+              "seq": 32,
+              "ok": true,
+              "data": {
+                "hero": {
+                  "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+                  "training": {
+                    "tier": 2,
+                    "endsAt": "2026-10-12T12:00:00.000Z",
+                    "exp": 320
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "历练是把武将变成经验的最省心方式：不花金币，代价是这段时间它不能出战。等级越高，同档位给的经验越多。"
+    },
+    {
+      "op": 80,
+      "kind": "request",
+      "name": "GIFT_HERO",
+      "title": "赏赐武将（v54，AISLG-144）",
+      "preAuth": false,
+      "summary": "花 1000 金币（主城扣）给武将加 100 经验，每个武将每游戏日最多 3 次；外出 / 城守 / 历练中的武将也能赏赐。经验可能让武将升级并获得自由点数。",
+      "requestFields": [
+        {
+          "name": "heroId",
+          "type": "string",
+          "desc": "武将 id。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "hero",
+          "type": "object",
+          "desc": "赏赐后的武将视图（exp / level / freePoints / dailyLeft.gift 已更新）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_FOUND",
+        "HERO_DAILY_LIMIT",
+        "INSUFFICIENT_RESOURCES"
+      ],
+      "examples": [
+        {
+          "caption": "赏赐一次",
+          "request": {
+            "op": 80,
+            "seq": 33,
+            "data": {
+              "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1"
+            }
+          },
+          "responses": [
+            {
+              "op": 80,
+              "seq": 33,
+              "ok": true,
+              "data": {
+                "hero": {
+                  "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+                  "dailyLeft": {
+                    "gift": 2,
+                    "reset": 1
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "1000 金币换 100 经验，比历练贵，但不占用武将时间；适合临时凑等级。"
+    },
+    {
+      "op": 81,
+      "kind": "request",
+      "name": "BEFRIEND_HERO",
+      "title": "结交在野名将（v54，AISLG-144）",
+      "preAuth": false,
+      "summary": "对已获得结交资格（GET_HEROES 的 unlocks 里）的在野名将结交一次：花 500 × 野地等级 金币（主城扣），好感 +10（上限 100）。每个名将每游戏日最多 5 次；同时结交的名将最多 2 名。好感满 100 后不能再结交，改用 RECRUIT_FAMOUS_HERO。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。",
+      "requestFields": [
+        {
+          "name": "heroName",
+          "type": "string",
+          "desc": "在野名将名（GET_HEROES 的 unlocks / famousClaims）。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "friendship",
+          "type": "object",
+          "desc": "结交后的进度：{ heroName, favor 好感, todayLeft 今日剩余次数, cost 下次花费, lost }。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_UNLOCKED",
+        "FAMOUS_CLAIMED",
+        "HERO_FAVOR_FULL",
+        "HERO_FRIENDSHIP_LIMIT",
+        "HERO_DAILY_LIMIT",
+        "INSUFFICIENT_RESOURCES"
+      ],
+      "examples": [
+        {
+          "caption": "结交一次",
+          "request": {
+            "op": 81,
+            "seq": 34,
+            "data": {
+              "heroName": "关羽"
+            }
+          },
+          "responses": [
+            {
+              "op": 81,
+              "seq": 34,
+              "ok": true,
+              "data": {
+                "friendship": {
+                  "heroName": "关羽",
+                  "favor": 10,
+                  "todayLeft": 4,
+                  "cost": 1000,
+                  "lost": false
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "先在 GET_WORLD_MAP / GET_TILE 找 wildFamous 标记的野地，派部队打赢守军拿到资格。结交的金币花在主城，每次都要看 cost。"
+    },
+    {
+      "op": 82,
+      "kind": "request",
+      "name": "RECRUIT_FAMOUS_HERO",
+      "title": "招揽在野名将（v54，AISLG-144）",
+      "preAuth": false,
+      "summary": "好感满 100 后招揽该在野名将，加入账号为名将（名将上限 3 名，不占普通将上限）。全服唯一：已被他人获得返回 FAMOUS_CLAIMED；成功后全服播报（hero_granted）。名将的三项属性在落位时已固定，侦察看到的就是它。",
+      "requestFields": [
+        {
+          "name": "heroName",
+          "type": "string",
+          "desc": "在野名将名。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "hero",
+          "type": "object",
+          "desc": "新名将的武将视图。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_UNLOCKED",
+        "HERO_FAVOR_INSUFFICIENT",
+        "FAMOUS_CLAIMED",
+        "HERO_CAP_REACHED"
+      ],
+      "examples": [
+        {
+          "caption": "招揽成功",
+          "request": {
+            "op": 82,
+            "seq": 35,
+            "data": {
+              "heroName": "关羽"
+            }
+          },
+          "responses": [
+            {
+              "op": 82,
+              "seq": 35,
+              "ok": true,
+              "data": {
+                "hero": {
+                  "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+                  "name": "关羽",
+                  "famous": true
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "招揽是全服竞争：好感满的那一刻就去招，慢一步就会被 FAMOUS_CLAIMED。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -8862,12 +9263,12 @@
       "kind": "push",
       "name": "PUSH_HERO_STATE",
       "title": "推送：武将状态变化（v36，AISLG-114/115/116）",
-      "summary": "账号武将发生变化时推给该账号全部在线连接（含 Agent）：招募 / 解雇 / 城守任命、欠饷开始 / 恢复、带队战败重伤、战斗获得经验（含升级）、获得名将。载荷只带变化摘要，收到后重拉 GET_HEROES 对齐。",
+      "summary": "账号武将发生变化时推给该账号全部在线连接（含 Agent）：招募 / 解雇 / 城守任命、欠饷开始 / 恢复、带队战败重伤、战斗获得经验（含升级）、获得名将；v54 起还有历练开始 / 结束、加点 / 洗点、赏赐、结交进度变化。载荷只带变化摘要，收到后重拉 GET_HEROES 对齐。",
       "dataFields": [
         {
           "name": "reason",
           "type": "string",
-          "desc": "recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted。"
+          "desc": "recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）。"
         },
         {
           "name": "heroId",
@@ -9358,6 +9759,42 @@
     "HERO_ARREARS": {
       "desc": "（v36，AISLG-114）武将欠饷中（主城金币不足以支付俸禄），不能出征。",
       "action": "给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。"
+    },
+    "HERO_TRAINING": {
+      "desc": "（v54，AISLG-144）武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）。",
+      "action": "等历练结束（train_until 过去，经验到账并收到 reason=training_done 推送）后再操作。"
+    },
+    "HERO_POINTS_INSUFFICIENT": {
+      "desc": "（v54，AISLG-144）分配点数超过自由点数（附 freePoints）。",
+      "action": "先升级获得点数（每级普通将 3、名将 5），或减少分配数量。"
+    },
+    "HERO_NOTHING_TO_RESET": {
+      "desc": "（v54，AISLG-144）武将没有已分配的点数（属性等于初始值），洗点无意义。",
+      "action": "先加点再洗点；无需洗点时不必调用。"
+    },
+    "HERO_DAILY_LIMIT": {
+      "desc": "（v54，AISLG-144）今日次数已用完（附 limit）：赏赐每武将 3 次、洗点每武将 1 次、结交每名将 5 次，按游戏日（东八区自然日，随时间缩放）重置。",
+      "action": "等下一个游戏日（data.limit 为上限）再操作。"
+    },
+    "HERO_NOT_UNLOCKED": {
+      "desc": "（v54，AISLG-144）尚未获得该在野名将的结交资格：需先用部队打赢其所在野地的原住守军（GET_WORLD_MAP 的 wildFamous 标记此地）。",
+      "action": "派部队去该野地打守军；打赢后武将界面出现该名将的结交入口。"
+    },
+    "HERO_FRIENDSHIP_LIMIT": {
+      "desc": "（v54，AISLG-144）同时结交的在野名将已达上限 2 名（好感未满且未被他人招揽的才计入）。",
+      "action": "等其中一名好感满 100 并招揽，或它已被他人获得，腾出名额后再结交。"
+    },
+    "HERO_FAVOR_INSUFFICIENT": {
+      "desc": "（v54，AISLG-144）好感度未满 100，不能招揽（附 favor）。",
+      "action": "继续 BEFRIEND_HERO 结交（每次 +10，每日最多 5 次）。"
+    },
+    "HERO_FAVOR_FULL": {
+      "desc": "（v54，AISLG-144）好感度已满 100，不能再结交。",
+      "action": "直接 RECRUIT_FAMOUS_HERO 招揽。"
+    },
+    "FAMOUS_CLAIMED": {
+      "desc": "（v54，AISLG-144）该名将已被他人获得（全服唯一）。",
+      "action": "换一名在野名将；GET_HEROES 的 famousClaims 可查归属。"
     },
     "GUARD_ASSIGN_DENIED": {
       "desc": "（v36，AISLG-115）城守不能同时出征；城守只能任命未随行出征的本账号武将。",

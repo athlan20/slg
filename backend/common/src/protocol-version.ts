@@ -474,5 +474,14 @@
  * ARENA_NOT_JOINED / ARENA_TARGET_INVALID / ARENA_NO_CHALLENGES / ARENA_TARGET_BUSY /
  * ARENA_PAIR_COOLDOWN。新表 arena_entries / arena_daily / arena_matches（战报保留 7 天）。
  * 每日奖励由 Worker 的 arena-tick 按竞技日发放，金币直接进主城。
+ * v54（武将培养与在野名将，AISLG-144）：新增 ALLOCATE_HERO_POINTS（op 77）/ RESET_HERO_POINTS（op 78）/
+ * TRAIN_HERO（op 79）/ GIFT_HERO（op 80）/ BEFRIEND_HERO（op 81）/ RECRUIT_FAMOUS_HERO（op 82）。
+ * 升级不再自动加三项属性，改为得自由点数（普通将 3、名将 5，由玩家分配；洗点还原到初始属性）；
+ * 等级上限 20 → 40。名将扩到 40 名，其中 29 名在野（Lv3+ 野地，开服分配，地图标记 wildFamous，
+ * 侦察后 wildFamousIntel 给出名字与属性），打赢该野地守军即获结交资格（GET_HEROES.unlocks），
+ * 好感满 100 招揽（全服唯一）。HeroView 新增 freePoints / training / dailyLeft，GET_HEROES 新增
+ * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt。推送 PUSH_HERO_STATE 新增
+ * reason。新表 hero_unlocks / hero_friendship；account_heroes 新增 base_* / free_points / train_* /
+ * gift_* / reset_*；world_tiles 新增 wild_*。
  */
-export const PROTOCOL_VERSION = 53;
+export const PROTOCOL_VERSION = 54;

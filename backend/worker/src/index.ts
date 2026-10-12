@@ -27,6 +27,7 @@ import { processMovingTargets } from './moving-tick';
 import { processYellowTurban } from './yt-tick';
 import { processStarvation } from './starvation-tick';
 import { processHeroSalaries } from './hero-salary-tick';
+import { processHeroTraining } from './hero-training-tick';
 import { processArenaRewards } from './arena-tick';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import {
@@ -393,6 +394,12 @@ async function main(): Promise<void> {
       await processHeroSalaries(pool);
     } catch (err) {
       console.error('worker hero salary tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v54（AISLG-144）：武将历练到点结算——经验到账（离线也结算），升级得自由点数
+      await processHeroTraining(pool);
+    } catch (err) {
+      console.error('worker hero training tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v53（AISLG-145）：竞技场每日奖励——每个竞技日按当时名次给主城发金币

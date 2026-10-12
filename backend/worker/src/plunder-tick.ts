@@ -22,6 +22,7 @@ import pg from 'pg';
 import { EventType, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
+import { grantUnlock } from '../../common/src/hero-friendship-db';
 import { clearNativeGarrison, loadNativeGarrison, saveNativeGarrison } from '../../common/src/native-garrison';
 import { armyCarryCapacity } from '../../common/src/troops';
 import { TERRAIN_INFO, wildernessBonusRate, wildernessGatherRate, wildernessPlunderPool } from '../../common/src/world';
@@ -172,6 +173,10 @@ export async function resolvePlunderArrival(
     });
     notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
     return;
+  }
+  // v54（AISLG-144）：打赢在野名将所在野地的原住守军 → 获得该名将的结交资格
+  if (!npc && target.wild_hero) {
+    await grantUnlock(client, march.account_id, target.wild_hero);
   }
 
   // 连胜计数（v23 AISLG-60）：达到 5 的整数倍时写一条全服播报（限频内）

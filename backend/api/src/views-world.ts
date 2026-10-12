@@ -56,6 +56,12 @@ interface TileQueryRow extends TileRow {
   /** 城主的最早建城时刻（判定主城：created_at 相等即主城） */
   owner_created_at?: Date | null;
   owner_main_created_at?: Date | null;
+  /** 在野名将落位（v54）：名字 / 属性；wild_claimed 为该名将已被任何人获得 */
+  wild_hero?: string | null;
+  wild_lead?: number | null;
+  wild_force?: number | null;
+  wild_wit?: number | null;
+  wild_claimed?: boolean | null;
 }
 
 // $1 恒为请求账号 id（NPC 城池的 garrison 掩蔽按其侦察快照判定，v17；null 匹配不到任何行）
@@ -68,7 +74,9 @@ const TILE_SELECT = `
          COALESCE(ta.total, 0)::int AS garrison,
          si.detail->'garrison' AS intel_garrison, si.detail->'npcStock' AS intel_stock, si.scouted_at AS intel_at,
          si.detail->>'detail' AS intel_detail, si.detail->'garrisonTotal' AS intel_total,
-         row_to_json(yc) AS camp_json
+         row_to_json(yc) AS camp_json,
+         wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit,
+         EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero) AS wild_claimed
   FROM world_tiles wt
   LEFT JOIN cities c ON c.id = wt.owner_city_id
   LEFT JOIN accounts a ON a.id = c.account_id
@@ -192,7 +200,13 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     camp: campOf(row),
     protection: protectionView(row, requesterAccountId),
     durability: durabilityView(row, requesterAccountId),
+    wildFamous: wildFamousMarked(row),
   };
+}
+
+/** 在野名将标记（v54）：落位在此且尚未被获得（获得后标记撤下，名将归属见 GET_HEROES） */
+function wildFamousMarked(row: TileQueryRow): boolean {
+  return Boolean(row.wild_hero) && !row.wild_claimed;
 }
 
 /** 地块上的黄巾营地 / 老巢视图（v29 AISLG-76）；没有为 null */
@@ -275,6 +289,22 @@ export async function loadTileDetail(
     npc: npcView,
     scoutedAt,
     plunderedAt: row.plundered_at ? row.plundered_at.toISOString() : null,
+    wildFamousIntel: wildFamousDetail(row, scoutedAt !== null),
   };
   return detail;
+}
+
+/** 在野名将详情（v54）：未被获得才给出；名字与属性只对侦察过的账号开放 */
+function wildFamousDetail(row: TileQueryRow, scouted: boolean): TileDetailView['wildFamousIntel'] {
+  if (!wildFamousMarked(row)) {
+    return null;
+  }
+  if (!scouted) {
+    return { scouted: false, name: null, attrs: null };
+  }
+  return {
+    scouted: true,
+    name: row.wild_hero ?? null,
+    attrs: { lead: row.wild_lead ?? 0, force: row.wild_force ?? 0, wit: row.wild_wit ?? 0 },
+  };
 }

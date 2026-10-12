@@ -21,7 +21,7 @@ import {
   SALARY_PER_LEVEL_NORMAL,
   TAVERN_CANDIDATE_COUNT,
   applyHeroExp,
-  attrGainPerLevel,
+  heroPointsPerLevel,
   expForNextLevel,
   famousHeroForCity,
   guardProductionPercent,
@@ -105,7 +105,7 @@ test('俸禄：普通将 20 × 等级、名将 100 × 等级（金币 / 小时�
   assert.equal(salaryPerHour(20, true), 2000);
 });
 
-test('经验与成长：升到 L+1 需 100 × L²；每级三项 +1（名将 +2）；封顶 20 级', () => {
+test('经验与成长：升到 L+1 需 100 × L²；每级获得自由点数；封顶 40 级', () => {
   assert.equal(expForNextLevel(1), 100);
   assert.equal(expForNextLevel(3), 900);
   // 1 级 0 经验 + 250 → 升到 2 级（1→2 需 100，余 150；2→3 需 400，不够）
@@ -119,26 +119,33 @@ test('经验与成长：升到 L+1 需 100 × L²；每级三项 +1（名将 +2�
   // 战败减半由调用方乘好再传入（这里只验整数化）
   const r2 = applyHeroExp(1, 0, Math.floor(99 * 0.5), false);
   assert.equal(r2.level, 1, '不足 100 不升级');
-  // 名将每级 +2（属性成长量）
-  assert.equal(attrGainPerLevel(false), 1);
-  assert.equal(attrGainPerLevel(true), 2);
+  // v54：每级获得自由点数（普通将 3、名将 5），不再自动加属性
+  assert.equal(heroPointsPerLevel(false), 3);
+  assert.equal(heroPointsPerLevel(true), 5);
   // 满级后经验照加、不再升级
   let exp = expForNextLevel(19) - 1;
   const r3 = applyHeroExp(19, exp, 1, false);
-  assert.equal(r3.level, HERO_LEVEL_MAX);
+  assert.equal(r3.level, 20, '19 → 20 级');
   const r4 = applyHeroExp(HERO_LEVEL_MAX, 0, 999_999, false);
   assert.equal(r4.level, HERO_LEVEL_MAX);
   assert.ok(r4.exp >= 999_999, '满级经验累计不丢');
 });
 
-test('名将定义：8 名城 + 黄巾 3 名，名字全服唯一且与名城一一对应', () => {
-  assert.equal(ALL_FAMOUS_HEROES.length, 11);
+test('名将定义：8 名城 + 黄巾 3 名 + 在野 29 名 = 40 名，名字全服唯一且与名城一一对应', () => {
+  assert.equal(ALL_FAMOUS_HEROES.length, 40);
+  assert.equal(ALL_FAMOUS_HEROES.filter((def) => def.source.kind === 'wild').length, 29);
   const names = ALL_FAMOUS_HEROES.map((def) => def.name);
   assert.equal(new Set(names).size, names.length, '名字不重复');
   for (const city of ['官渡', '许昌', '洛阳', '长安', '成都', '建业', '襄阳', '邺城']) {
     assert.ok(famousHeroForCity(city), `${city} 绑定名将`);
   }
   assert.equal(famousHeroForCity('不存在'), null);
+});
+
+test('等级上限 40（v54）', () => {
+  assert.equal(HERO_LEVEL_MAX, 40);
+  const r = applyHeroExp(1, 0, 10 ** 9, false);
+  assert.equal(r.level, HERO_LEVEL_MAX);
 });
 
 test('引擎：同等兵力带武将攻击加成，固定种子下胜率显著高于不带（20% 封顶内不打穿）', () => {

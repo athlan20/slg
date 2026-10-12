@@ -128,6 +128,18 @@ export const Op = {
   ARENA_CHALLENGE: 75,
   /** C→S 查询竞技场战报（v53，AISLG-145：我挑战过的和挑战过我的，保留 7 天） */
   GET_ARENA_REPORTS: 76,
+  /** C→S 分配自由点数（v54，AISLG-144：data.heroId + lead / force / wit 各为非负整数，合计 ≥ 1；仅在家武将） */
+  ALLOCATE_HERO_POINTS: 77,
+  /** C→S 洗点（v54，AISLG-144：data.heroId；已分配点数全部退回，花金币 = 等级 × 1000，每日 1 次） */
+  RESET_HERO_POINTS: 78,
+  /** C→S 派武将历练（v54，AISLG-144：data.heroId + tier 1/2/3 = 1/4/12 小时基准，到点经验自动到账） */
+  TRAIN_HERO: 79,
+  /** C→S 赏赐武将（v54，AISLG-144：data.heroId；花 1000 金币 → 100 经验，每日 3 次） */
+  GIFT_HERO: 80,
+  /** C→S 结交在野名将（v54，AISLG-144：data.heroName；需结交资格，花 500 × 野地等级金币，好感 +10，每日 5 次） */
+  BEFRIEND_HERO: 81,
+  /** C→S 招揽在野名将（v54，AISLG-144：data.heroName；好感满 100 才能招揽，全服唯一） */
+  RECRUIT_FAMOUS_HERO: 82,
   /** C→S 发起农场建造（兼容入口：等价于 BUILD 且 kind='farm'） */
   BUILD_FARM: 20,
   /** S→C 推送：农场建造状态变化（进入建造 / 完成） */
@@ -282,6 +294,24 @@ export const ErrorCode = {
   HERO_ARREARS: 'HERO_ARREARS',
   /** 城守只能任命本账号、未随行出征的武将（v36，AISLG-115） */
   GUARD_ASSIGN_DENIED: 'GUARD_ASSIGN_DENIED',
+  /** 武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（v54，AISLG-144） */
+  HERO_TRAINING: 'HERO_TRAINING',
+  /** 自由点数不足以分配（v54，AISLG-144；附 freePoints） */
+  HERO_POINTS_INSUFFICIENT: 'HERO_POINTS_INSUFFICIENT',
+  /** 武将没有可洗回的点数（已分配为 0，v54，AISLG-144） */
+  HERO_NOTHING_TO_RESET: 'HERO_NOTHING_TO_RESET',
+  /** 今日次数已用完（赏赐 3 次 / 洗点 1 次 / 结交 5 次，按武将或名将计，游戏日重置；v54，AISLG-144；附 limit） */
+  HERO_DAILY_LIMIT: 'HERO_DAILY_LIMIT',
+  /** 尚未获得该在野名将的结交资格（需先打赢其所在野地的守军；v54，AISLG-144） */
+  HERO_NOT_UNLOCKED: 'HERO_NOT_UNLOCKED',
+  /** 同时结交的在野名将已达上限 2 名（v54，AISLG-144；好感未满且未被他人招揽的才计入） */
+  HERO_FRIENDSHIP_LIMIT: 'HERO_FRIENDSHIP_LIMIT',
+  /** 好感度未满 100，不能招揽（v54，AISLG-144；附 favor） */
+  HERO_FAVOR_INSUFFICIENT: 'HERO_FAVOR_INSUFFICIENT',
+  /** 好感度已满 100，无需再结交（v54，AISLG-144；直接招揽） */
+  HERO_FAVOR_FULL: 'HERO_FAVOR_FULL',
+  /** 名将已被他人获得（v54，AISLG-144） */
+  FAMOUS_CLAIMED: 'FAMOUS_CLAIMED',
   /** 目标玩家处于新手保护期（v38，AISLG-122：注册后 3 天或官府 5 级先到为准；不能被侦察 / 攻击），
    *  响应附 until 与 retryAfterSeconds */
   NEWBIE_PROTECTED: 'NEWBIE_PROTECTED',

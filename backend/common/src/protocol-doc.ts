@@ -342,6 +342,42 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v36，AISLG-114）武将欠饷中（主城金币不足以支付俸禄），不能出征。',
     action: '给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。',
   },
+  HERO_TRAINING: {
+    desc: '（v54，AISLG-144）武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）。',
+    action: '等历练结束（train_until 过去，经验到账并收到 reason=training_done 推送）后再操作。',
+  },
+  HERO_POINTS_INSUFFICIENT: {
+    desc: '（v54，AISLG-144）分配点数超过自由点数（附 freePoints）。',
+    action: '先升级获得点数（每级普通将 3、名将 5），或减少分配数量。',
+  },
+  HERO_NOTHING_TO_RESET: {
+    desc: '（v54，AISLG-144）武将没有已分配的点数（属性等于初始值），洗点无意义。',
+    action: '先加点再洗点；无需洗点时不必调用。',
+  },
+  HERO_DAILY_LIMIT: {
+    desc: '（v54，AISLG-144）今日次数已用完（附 limit）：赏赐每武将 3 次、洗点每武将 1 次、结交每名将 5 次，按游戏日（东八区自然日，随时间缩放）重置。',
+    action: '等下一个游戏日（data.limit 为上限）再操作。',
+  },
+  HERO_NOT_UNLOCKED: {
+    desc: '（v54，AISLG-144）尚未获得该在野名将的结交资格：需先用部队打赢其所在野地的原住守军（GET_WORLD_MAP 的 wildFamous 标记此地）。',
+    action: '派部队去该野地打守军；打赢后武将界面出现该名将的结交入口。',
+  },
+  HERO_FRIENDSHIP_LIMIT: {
+    desc: '（v54，AISLG-144）同时结交的在野名将已达上限 2 名（好感未满且未被他人招揽的才计入）。',
+    action: '等其中一名好感满 100 并招揽，或它已被他人获得，腾出名额后再结交。',
+  },
+  HERO_FAVOR_INSUFFICIENT: {
+    desc: '（v54，AISLG-144）好感度未满 100，不能招揽（附 favor）。',
+    action: '继续 BEFRIEND_HERO 结交（每次 +10，每日最多 5 次）。',
+  },
+  HERO_FAVOR_FULL: {
+    desc: '（v54，AISLG-144）好感度已满 100，不能再结交。',
+    action: '直接 RECRUIT_FAMOUS_HERO 招揽。',
+  },
+  FAMOUS_CLAIMED: {
+    desc: '（v54，AISLG-144）该名将已被他人获得（全服唯一）。',
+    action: '换一名在野名将；GET_HEROES 的 famousClaims 可查归属。',
+  },
   GUARD_ASSIGN_DENIED: {
     desc: '（v36，AISLG-115）城守不能同时出征；城守只能任命未随行出征的本账号武将。',
     action: '先撤任（ASSIGN_HERO heroId=null）再出征，或换其他武将带队。',

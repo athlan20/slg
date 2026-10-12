@@ -99,6 +99,18 @@ export const Op = {
   ARENA_CHALLENGE: 75,
   /** 查询竞技场战报（v53，AISLG-145） */
   GET_ARENA_REPORTS: 76,
+  /** 分配自由点数（v54，AISLG-144） */
+  ALLOCATE_HERO_POINTS: 77,
+  /** 洗点（v54，AISLG-144） */
+  RESET_HERO_POINTS: 78,
+  /** 派武将历练（v54，AISLG-144） */
+  TRAIN_HERO: 79,
+  /** 赏赐武将（v54，AISLG-144） */
+  GIFT_HERO: 80,
+  /** 结交在野名将（v54，AISLG-144） */
+  BEFRIEND_HERO: 81,
+  /** 招揽在野名将（v54，AISLG-144） */
+  RECRUIT_FAMOUS_HERO: 82,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -202,6 +214,15 @@ export type ErrorCode =
   | 'HERO_WOUNDED'
   | 'HERO_ARREARS'
   | 'GUARD_ASSIGN_DENIED'
+  | 'HERO_TRAINING'
+  | 'HERO_POINTS_INSUFFICIENT'
+  | 'HERO_NOTHING_TO_RESET'
+  | 'HERO_DAILY_LIMIT'
+  | 'HERO_NOT_UNLOCKED'
+  | 'HERO_FRIENDSHIP_LIMIT'
+  | 'HERO_FAVOR_INSUFFICIENT'
+  | 'HERO_FAVOR_FULL'
+  | 'FAMOUS_CLAIMED'
   | 'NEWBIE_PROTECTED'
   | 'TARGET_IN_TRUCE'
   | 'SELF_TRUCE_ACTIVE'
@@ -428,6 +449,14 @@ export type {
   HeroCandidateView,
   FamousClaimView,
   HeroStateView,
+  FriendshipView,
+  HeroTrainingView,
+  TrainingTier,
+  AllocateHeroPointsRequestData,
+  TrainHeroRequestData,
+  BefriendHeroRequestData,
+  BefriendHeroResponseData,
+  HeroOnlyResponseData,
   GetHeroesRequestData,
   GetHeroesResponseData,
   RecruitHeroRequestData,

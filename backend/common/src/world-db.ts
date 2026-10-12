@@ -5,6 +5,7 @@
 
 import pg from 'pg';
 import { ensureFamousCities } from './famous-city-db';
+import { ensureWildFamous } from './wild-famous-db';
 import {
   type TerrainKind,
   type TileKind,
@@ -68,6 +69,11 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
       console.log(
         `ensureWorld: repaired ${repaired.restored} city tiles in place, relocated ${repaired.relocated}`,
       );
+    }
+    // 在野名将落位（v54，AISLG-144）：缺谁补谁，落位后固定；世界重建时随地图重新分配
+    const wildPlaced = await ensureWildFamous(pool);
+    if (wildPlaced > 0) {
+      console.log(`ensureWorld: placed ${wildPlaced} wild famous heroes`);
     }
   } finally {
     try {
@@ -257,6 +263,11 @@ export interface TileRow {
   plundered_at: Date | null;
   /** 换主保护截止（v39，AISLG-123）：野地被玩家抢占后的一小段保护期内谁都不能再抢；其余为 null */
   owner_changed_until?: Date | null;
+  /** 在野名将落位（v54，AISLG-144）：该野地隐居着此名将；其余为 null */
+  wild_hero?: string | null;
+  wild_lead?: number | null;
+  wild_force?: number | null;
+  wild_wit?: number | null;
 }
 
 /** 读取单格（不加锁；需要一致写时由调用方 FOR UPDATE） */

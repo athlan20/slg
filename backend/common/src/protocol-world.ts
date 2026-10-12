@@ -78,6 +78,16 @@ export interface TileView {
   /** 他人分城的当前城防值（v40，AISLG-124；0..100，非 null 即可被「占领」攻打的分城；
    *  主城 / 野地 / NPC 城 / 自己的城为 null） */
   durability: number | null;
+  /** 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将（公开；名字与属性需侦察）；其余为 false */
+  wildFamous: boolean;
+}
+
+/** 在野名将的地块详情（v54，AISLG-144）：标记公开，名字与属性只对侦察过该地块的账号给出 */
+export interface WildFamousDetailView {
+  /** 本账号是否侦察过此地（侦察后才给出名字与属性） */
+  scouted: boolean;
+  name: string | null;
+  attrs: { lead: number; force: number; wit: number } | null;
 }
 
 /** GET_TILE 的单格详情 */
@@ -104,6 +114,8 @@ export interface TileDetailView extends TileView {
    * 掠夺冷却（MARCH task='plunder' 被拒；在途部队到达仍战斗但资源为零）；从未被掠为 null
    */
   plunderedAt: string | null;
+  /** 在野名将情报（v54，AISLG-144）：未被获得的在野名将所在野地才有，其余为 null */
+  wildFamousIntel: WildFamousDetailView | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */

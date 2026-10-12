@@ -8,10 +8,27 @@ import type pg from 'pg';
 import { TROOP_KINDS, type TroopKind } from './protocol';
 import { NATIVE_RECOVERY_PER_HOUR, nativeGarrison } from './battle';
 import { getTimeScale } from './time-scale';
+import { WILD_GARRISON_MULTIPLIER } from './hero-wild';
 
 export type TroopCounts = Partial<Record<TroopKind, number>>;
 
 const HOUR_MS = 60 * 60 * 1000;
+
+/** 地块的满编原住守军：在野名将所在的野地（wild_hero 非空）守军按 WILD_GARRISON_MULTIPLIER 加强（v54） */
+export function fullGarrisonOf(tile: { x: number; y: number; level: number; wild_hero?: string | null }): TroopCounts {
+  const base = nativeGarrison(tile.level, tile);
+  if (!tile.wild_hero) {
+    return base;
+  }
+  const boosted: TroopCounts = {};
+  for (const kind of TROOP_KINDS) {
+    const count = base[kind] ?? 0;
+    if (count > 0) {
+      boosted[kind] = count * WILD_GARRISON_MULTIPLIER;
+    }
+  }
+  return boosted;
+}
 
 /**
  * 纯函数：在满编 full 上叠加战后存量 remaining，经 elapsedMs 恢复后的当前守军。
@@ -39,14 +56,15 @@ export interface NativeStateRow {
   updatedAt: Date | null;
 }
 
-/** 当前原住守军：无状态 = 满编；有状态 = 按流逝时间恢复（now 缺省取本机时间） */
+/** 当前原住守军：无状态 = 满编；有状态 = 按流逝时间恢复（now 缺省取本机时间）；wild 为在野名将地块 */
 export function currentNativeGarrison(
   level: number,
   at: { x: number; y: number },
   state: NativeStateRow,
   now: Date = new Date(),
+  wild = false,
 ): TroopCounts {
-  const full = nativeGarrison(level, at);
+  const full = fullGarrisonOf({ ...at, level, wild_hero: wild ? 'wild' : null });
   if (!state.remaining || !state.updatedAt) {
     return full;
   }
@@ -56,17 +74,17 @@ export function currentNativeGarrison(
 /** 读某地块的原住守军当前存量（Worker 战斗 / 侦察用；调用方已持有目标地块行锁） */
 export async function loadNativeGarrison(
   client: pg.PoolClient | pg.Pool,
-  tile: { x: number; y: number; level: number },
+  tile: { x: number; y: number; level: number; wild_hero?: string | null },
 ): Promise<TroopCounts> {
   const res = await client.query(
     `SELECT remaining, now() AS now, updated_at FROM native_garrison_state WHERE x = $1 AND y = $2`,
     [tile.x, tile.y],
   );
   if (res.rowCount === 0) {
-    return nativeGarrison(tile.level, tile);
+    return fullGarrisonOf(tile);
   }
   const row = res.rows[0] as { remaining: TroopCounts; now: Date; updated_at: Date };
-  return currentNativeGarrison(tile.level, tile, { remaining: row.remaining, updatedAt: row.updated_at }, row.now);
+  return currentNativeGarrison(tile.level, tile, { remaining: row.remaining, updatedAt: row.updated_at }, row.now, Boolean(tile.wild_hero));
 }
 
 /**
@@ -75,10 +93,10 @@ export async function loadNativeGarrison(
  */
 export async function saveNativeGarrison(
   client: pg.PoolClient,
-  tile: { x: number; y: number; level: number },
+  tile: { x: number; y: number; level: number; wild_hero?: string | null },
   survivors: TroopCounts,
 ): Promise<void> {
-  const full = nativeGarrison(tile.level, tile);
+  const full = fullGarrisonOf(tile);
   const intact = TROOP_KINDS.every((kind) => (survivors[kind] ?? 0) >= (full[kind] ?? 0));
   if (intact) {
     await clearNativeGarrison(client, tile);

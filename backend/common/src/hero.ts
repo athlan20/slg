@@ -1,10 +1,11 @@
-// 武将系统的共用规则（v36，AISLG-114/115/116）：酒馆招将、带兵加成、俸禄与重伤、
-// 名将（全服唯一、从 PvE 获得）、城守、经验与成长。旧游戏只取玩法结构，
-// 不照搬数值。
+// 武将系统的共用规则（v36，AISLG-114/115/116；v54 AISLG-144 加点 / 洗点 / 历练 / 赏赐 / 结交）：
+// 酒馆招将、带兵加成、俸禄与重伤、名将（全服唯一、从 PvE 或在野结交获得）、城守、经验与成长。
+// 旧游戏只取玩法结构，不照搬数值。
 // API（招募 / 解雇 / 城守 / 出征配将校验）、Worker（俸禄 / 战斗结算 / 名将授予）与
 // 前端镜像共用本文件，不各自再实现一套数值；全部数值为占位，上线后按数据调整。
 
 import type { TroopKind } from './protocol';
+import { WILD_FAMOUS_HEROES } from './hero-wild';
 
 /** 普通将三项属性随机范围 */
 export const HERO_ATTR_MIN = 10;
@@ -38,15 +39,18 @@ export const SALARY_PER_LEVEL_NORMAL = 20;
 export const SALARY_PER_LEVEL_FAMOUS = 100;
 /** 带队战败后的重伤时长（基准小时，随全局时间缩放）；期间不能出征，不会死亡 */
 export const WOUND_HOURS = 2;
-/** 等级上限 */
-export const HERO_LEVEL_MAX = 20;
+/** 等级上限（v54：20 → 40） */
+export const HERO_LEVEL_MAX = 40;
 /** 升到 L+1 级需要的经验 = 100 × L²（占位） */
 export function expForNextLevel(level: number): number {
   return 100 * Math.max(1, Math.floor(level)) ** 2;
 }
-/** 每升一级三项属性各 + 的值：普通将 +1、名将 +2 */
-export function attrGainPerLevel(famous: boolean): number {
-  return famous ? 2 : 1;
+/**
+ * 每升一级获得的自由点数（v54：取代旧的三项属性自动成长）：普通将 3、名将 5。
+ * 点数由玩家自己分到统率 / 武力 / 智力（见 hero-growth.ts 的加点与洗点）。
+ */
+export function heroPointsPerLevel(famous: boolean): number {
+  return famous ? 5 : 3;
 }
 /** 城守：平时该城四资源产量 + 智力 × 0.1%（封顶 5%；金币不受影响） */
 export const GUARD_PROD_PERCENT_PER_WIT = 0.1;
@@ -141,14 +145,14 @@ export interface HeroExpResult {
   exp: number;
   /** 本次升到的最高等级（没升为 null） */
   leveledTo: number | null;
-  /** 本次升了几级（属性成长 = 升级数 × attrGainPerLevel） */
+  /** 本次升了几级（自由点数 = 升级数 × heroPointsPerLevel） */
   levelsGained: number;
 }
 
 /**
- * 经验与成长（v36，AISLG-116）：带队参战获得经验 = 本场歼灭敌军的参考战力
- * （战败减半由调用方先乘好再传入），升到 L+1 级需要 100 × L²；每升一级三项属性
- * 各 +1（名将 +2），封顶 20 级（满级后经验照加、不再升级）。
+ * 经验与成长（v36，AISLG-116；v54 AISLG-144）：带队参战获得经验 = 本场歼灭敌军的参考战力
+ * （战败减半由调用方先乘好再传入），升到 L+1 级需要 100 × L²；每升一级获得自由点数
+ * （普通将 3、名将 5，由玩家分配，见 heroPointsPerLevel），封顶 40 级（满级后经验照加、不再升级）。
  */
 export function applyHeroExp(
   level: number,
@@ -168,11 +172,12 @@ export function applyHeroExp(
 
 // ---- 名将定义（v36，AISLG-115）：只从 PvE 获得，全服唯一 ----
 
-/** 名将来源标识 */
+/** 名将来源标识（v54 新增 wild：在野名将，打赢其所在野地守军后结交招揽） */
 export type FamousHeroSource =
   | { kind: 'famous_city'; cityName: string }
   | { kind: 'yt_boss' }
-  | { kind: 'yt_rank'; rank: 1 | 2 };
+  | { kind: 'yt_rank'; rank: 1 | 2 }
+  | { kind: 'wild' };
 
 export interface FamousHeroDef {
   /** 名将名（全服唯一键） */
@@ -199,8 +204,13 @@ export const YT_HERO_RANKS: ReadonlyArray<FamousHeroDef> = [
   { name: '张梁', source: { kind: 'yt_rank', rank: 2 } },
 ];
 
-/** 名将来源 → 全部定义（视图 / 授予共用） */
-export const ALL_FAMOUS_HEROES: ReadonlyArray<FamousHeroDef> = [...FAMOUS_CITY_HEROES, YT_HERO_BOSS, ...YT_HERO_RANKS];
+/** 名将来源 → 全部定义（视图 / 授予共用）：名城 8 + 黄巾 3 + 在野 29 = 40 名 */
+export const ALL_FAMOUS_HEROES: ReadonlyArray<FamousHeroDef> = [
+  ...FAMOUS_CITY_HEROES,
+  YT_HERO_BOSS,
+  ...YT_HERO_RANKS,
+  ...WILD_FAMOUS_HEROES,
+];
 
 /** 按名城名反查绑定名将 */
 export function famousHeroForCity(cityName: string): FamousHeroDef | null {
@@ -215,6 +225,9 @@ export function famousSourceLabel(source: FamousHeroSource): string {
   if (source.kind === 'yt_boss') {
     return '黄巾老巢首杀';
   }
+  if (source.kind === 'wild') {
+    return '在野名将（打赢守军后结交招揽）';
+  }
   return `黄巾之乱贡献榜第 ${source.rank} 名`;
 }
 
@@ -225,6 +238,9 @@ export function famousSourceKey(source: FamousHeroSource): string {
   }
   if (source.kind === 'yt_boss') {
     return 'yt_boss';
+  }
+  if (source.kind === 'wild') {
+    return 'wild';
   }
   return `yt_rank:${source.rank}`;
 }
