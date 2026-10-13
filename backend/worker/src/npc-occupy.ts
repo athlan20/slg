@@ -15,7 +15,7 @@ import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/b
 import { checkOccupyNpcCity } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
 import { DURABILITY_MAX } from '../../common/src/protection';
-import { loadBranchStanding } from '../../common/src/branch-city-db';
+import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';
 import { loadBuildingLevels } from '../../common/src/production';
 import { INITIAL_POPULATION } from '../../common/src/rules';
 import { recordWinStreak, type ServerBroadcastCreated } from '../../common/src/server-broadcast';
@@ -54,9 +54,9 @@ export async function convertNpcCityToBranch(
     stock[key] = Math.max(0, Math.floor(npc.stock?.[key] ?? 0));
   }
   const ins = await client.query(
-    `INSERT INTO cities (account_id, name, gold, wood, food, stone, iron, population, x, y, famous_name, durability, durability_settled_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now()) RETURNING id`,
-    [accountId, cityName, stock.gold, stock.wood, stock.food, stock.stone, stock.iron, INITIAL_POPULATION, tile.x, tile.y, npc.famous?.name ?? null, DURABILITY_MAX],
+    `INSERT INTO cities (account_id, name, gold, wood, food, stone, iron, population, x, y, famous_name, durability, durability_settled_at, origin_level)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), $13) RETURNING id`,
+    [accountId, cityName, stock.gold, stock.wood, stock.food, stock.stone, stock.iron, INITIAL_POPULATION, tile.x, tile.y, npc.famous?.name ?? null, DURABILITY_MAX, tile.level],
   );
   const cityId = ins.rows[0].id as string;
   // v36（AISLG-115）：名城首占发绑定名将（全服唯一；已被他人获得或本账号名将满 3 名则跳过）
@@ -150,6 +150,7 @@ export async function resolveNpcOccupyArrival(
     fromGovernment: fromLevels.government,
     branchCount: standing.branchCount,
     targetLevel: tile.level,
+    discardCooldown: await loadDiscardCooldownActive(client, march.account_id, tile.x, tile.y),
   });
   await markMarchArrived(client, march.id);
   if (denial) {

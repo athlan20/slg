@@ -296,7 +296,7 @@ export interface CityRefView {
 export interface BranchInfoView {
   /** 现有分城数（不含主城） */
   count: number;
-  /** 分城上限 = floor(主城官府等级 ÷ 3) */
+  /** 分城上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽） */
   limit: number;
   /** 占领 NPC 城所需的主城官府最低等级 */
   minGovernment: number;

@@ -34,6 +34,7 @@ export const NAV_COPY = {
   account: '账号',
   accountShort: '我',
   rename: '城池改名',
+  discardBranch: '放弃分城',
   settings: '账号设置',
   switchAccount: '切换账号',
   reset: '重置账号',

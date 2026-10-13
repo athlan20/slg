@@ -60,6 +60,7 @@ export const EXTRA_STATE = {
   /** api/mapping.ts baseEventText：行军 / 野地 / NPC / 预警 / 玩家攻防等事件 */
   event: {
     cityRenamed: (from: string, to: string) => `城池改名：${from} → ${to}`,
+    cityDiscarded: (pos: string) => `放弃分城（${pos}），地块已回到 NPC 城池，名额已腾出`,
     accountReset: '账号数据已重置，回到开号初始状态',
     accountRenamed: (from: string, to: string) => `昵称修改：${from} → ${to}`,
     marchTaskPlunder: '（掠夺）',

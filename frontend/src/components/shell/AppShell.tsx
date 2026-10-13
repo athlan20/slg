@@ -53,6 +53,7 @@ export function AppShell() {
         onSettings={() => setDialog('settings')}
         onSwitchAccount={() => setDialog('switch')}
         onReset={() => setDialog('reset')}
+        onDiscardBranch={() => setDialog('discard')}
         onExchange={() => setExchangeRequest((n) => n + 1)}
         onLeaderboard={() => openLeaderboard()}
         chatOpen={session.chat.open}
@@ -94,6 +95,7 @@ export function AppShell() {
           onSwitchAccount={() => void session.logout()}
           onResetAccount={session.resetAccount}
           onRenameCity={session.renameCity}
+          onDiscardCity={() => session.discardCity(city?.id ?? '')}
         />
       ) : null}
     </div>

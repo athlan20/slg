@@ -55,7 +55,7 @@ export const CITY_COPY = {
   },
   errors: {
     governmentTooLow: '占领 NPC 城需要主城官府达到指定等级（见分城名额提示）',
-    branchLimit: '分城数量已达上限（分城上限 = 主城官府等级 ÷ 3，向下取整，升级主城官府可提高）',
+    branchLimit: '分城数量已达上限（分城上限 = 主城官府等级 ÷ 2，向下取整，升级主城官府可提高）',
     outerNotCleared: '名城外围驻军尚未清空，请先出征清理外围（掠夺），外围清空后限时内可攻城守并占领',
     transportInsufficient: '出发城的资源不足以运送这批货物（已按最新库存刷新）',
     targetLevelTooHigh: '目标 NPC 城等级高于出发城的官府等级，只能占领不高于出发城官府等级的城',

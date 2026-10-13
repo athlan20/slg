@@ -45,6 +45,7 @@ export const EXTRA_STATE_EN = {
   },
   event: {
     cityRenamed: (from: string, to: string) => `City renamed: ${from} → ${to}`,
+    cityDiscarded: (pos: string) => `Abandoned Branch City at ${pos}; the tile is an NPC city again and the quota is free`,
     accountReset: 'Account data has been reset to the initial state',
     accountRenamed: (from: string, to: string) => `Nickname changed: ${from} → ${to}`,
     marchTaskPlunder: ' (plunder)',

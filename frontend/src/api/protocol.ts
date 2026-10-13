@@ -127,6 +127,8 @@ export const Op = {
   GET_ACTIVITIES: 92,
   /** 领取活动奖励（v56）：data.id = 阶梯 id */
   CLAIM_ACTIVITY: 93,
+  /** C→S 放弃分城（v57，AISLG-153：data.cityId 必填、data.confirm 须为 true；主城不可放弃） */
+  DISCARD_CITY: 94,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -687,11 +689,25 @@ export interface BuildStatePushData {
 
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
-  /** city_renamed=城池改名；account_reset=账号数据被重置（v9） */
-  reason: 'city_renamed' | 'account_reset';
+  /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
+}
+
+/** DISCARD_CITY（op 94，v57）请求载荷：放弃分城，不可撤销，confirm 必须显式为 true */
+export interface DiscardCityRequestData {
+  cityId: string;
+  confirm: boolean;
+}
+
+/** DISCARD_CITY 响应载荷：被放弃的分城与其地块（已回到 NPC 城池）、本账号的占回冷却截止时刻（ISO 8601） */
+export interface DiscardCityResponseData {
+  cityId: string;
+  x: number;
+  y: number;
+  cooldownUntil: string;
 }
 
 /** RESET_ACCOUNT（op 26）请求载荷：重置不可逆，confirm 必须显式为 true */

@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**56** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**57** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 56）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 57）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -440,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 56,
+    "protocolVersion": 57,
     "docNotice": null
   }
 }
@@ -502,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 56,
+    "protocolVersion": 57,
     "docNotice": null
   }
 }
@@ -522,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/53 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/54 补读增量）**
 
 请求：
 
@@ -533,7 +533,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 53,
+    "docVersion": 54,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 56,
-    "docNotice": "接口文档已从 v53 更新到 v56：请 GET /agent-api/changes/53 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 57,
+    "docNotice": "接口文档已从 v54 更新到 v57：请 GET /agent-api/changes/54 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -706,7 +706,7 @@
 | city.marches | array | 本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。 |
 | city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0） }；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。 |
 | cities | array | v12 新增：账号全部城池 { id, name, level, x, y, isMain }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。 |
-| branch | object | v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 3), minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。 |
+| branch | object | v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。 |
 | city.storage | object | 储量上限（v7 新增，v8 规则确认；v22 AISLG-41 随全局缩放）：{ gold, food, wood, stone, iron }；四资源各自 = （10000 + 对应资源**建筑产量**（各生产建筑等级 × 每级速率之和，**不含**无建筑的 100/h 基础产量）× 100）× timeScale，金币 = 100 万 × timeScale——上限与产出同幅缩放，填满时长不受缩放影响：四资源恒为基准 100 小时；金币随官府等级与金矿占领加成变化（仅有官府产金时 = 10000 ÷ 官府等级 小时，官府 Lv4 时才是 2500 小时），请用 storage[k] ÷ production[k] 现算。达到上限后停止对应生产；已有超限存量不扣减。仓库不改变储量上限（v21 起防掠夺保护消费方已接入：NPC 袭击主城攻破后可掠量 = max(0, 存量 − 保护额)，保护量 4000×等级、四资源固定均分各 1000×等级；金币不受仓库保护，但 NPC 单次最多抢走存量的 5%（v41 AISLG-125）、玩家互掠为存量的 10%）。 |
 | city.queue | array | 建造队列（v4 新增）：第 1 项为在建（status=building，dueAt 非空），其余为排队（status=queued，dueAt 为 null），按入队顺序；已取消的条目不在其中（CANCEL_BUILD 取消）。 |
 | city.building | object \| null | 兼容字段：当前在建建筑（= queue 中 status=building 的首项），无在建时为 null。 |
@@ -3700,7 +3700,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | march.targetId | string \| null | 截击的移动目标 id（v28，AISLG-78）：purpose=intercept 及其撤回后的返程行军有值，其余为 null。 |
 | march.cargo | object \| null | 随行运送的资源（v26，Resources 形）：运输行军及其被撤回 / 目标失效后的返程行军携带，其余为 null。 |
 
-**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_RESOURCES`、`CARGO_OVER_CAPACITY`、`DEPLOY_LIMIT`、`MOVING_TARGET_GONE`、`TARGET_NOT_ATTACKABLE`、`INSUFFICIENT_TROOPS`、`PLUNDER_COOLDOWN`、`TASK_INVALID_FOR_TARGET`、`TERRITORY_LIMIT`、`GOVERNMENT_TOO_LOW`、`BRANCH_LIMIT`、`TARGET_LEVEL_TOO_HIGH`、`OUTER_NOT_CLEARED`、`NEWBIE_PROTECTED`、`TARGET_IN_TRUCE`、`SELF_TRUCE_ACTIVE`、`TILE_PROTECTED`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_RESOURCES`、`CARGO_OVER_CAPACITY`、`DEPLOY_LIMIT`、`MOVING_TARGET_GONE`、`TARGET_NOT_ATTACKABLE`、`INSUFFICIENT_TROOPS`、`PLUNDER_COOLDOWN`、`TASK_INVALID_FOR_TARGET`、`TERRITORY_LIMIT`、`GOVERNMENT_TOO_LOW`、`BRANCH_LIMIT`、`DISCARD_COOLDOWN`、`TARGET_LEVEL_TOO_HIGH`、`OUTER_NOT_CLEARED`、`NEWBIE_PROTECTED`、`TARGET_IN_TRUCE`、`SELF_TRUCE_ACTIVE`、`TILE_PROTECTED`（处置建议见第 4 节）
 
 **Agent 提示**：到达结算产生 march_completed 事件（purpose=plunder 时 outcome=plunder_won：含 loot 战利品、carry 负重、returning 返程行军 id；purpose=occupy 时 outcome=battle_won：含 occupied（false 时附 denial：野地为 TERRITORY_LIMIT，NPC 城为 GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH；NPC 城占领成功另含 cityId）），战斗另生成战报。掠夺量由幸存部队的负重封顶——想多带资源就多派民夫（单兵 carry 500，其余兵种 50–100）；同一地块 24 小时（基准）只能成功掠夺一次（GET_TILE 的 plunderedAt 可判冷却截止），占领不受冷却限制但受官府等级上限。**黄巾营地 / 老巢（v29，AISLG-76）**：目标格有进行中的营地（TileView.camp 非 null）时，MARCH 的掠夺任务即清剿营地——野战（无城墙）打营地当前守军（战后存量每小时恢复 25%），歼灭的黄巾单位数累计为贡献（输赢都算）；普通营地打赢消失并按幸存部队负重（含负重科技）装填掉落池（金 + 四资源）即时入账，清剿数 +1，达到 80% 出现老巢；老巢外围阶段打赢 = 外围清空（无战利品，限时内进入城守阶段），城守阶段打赢 = 老巢被击破（掉落 + 首杀播报 + 事件收场）；输方幸存部队撤回。task=occupy 返回 TASK_INVALID_FOR_TARGET，不受掠夺冷却限制。战报 kind='yellow_turban'，事件 march_completed 的 outcome=camp_won / camp_lost / boss_outer_cleared / boss_won（含 killed 歼敌数、campTier、stage）。**截击移动目标（带 targetId，v28，AISLG-78；v35 AISLG-112 改为「到了先埋伏」）**：目标路线与时刻表固定，发起时就把 arriveAt 定为预计接战时刻 = max(部队到达时刻, 目标进入选定格相邻范围（Chebyshev 距离 ≤ 1）的时刻)——部队提前到达则原地埋伏（MarchView.ambushAt 为埋伏开始时刻）等目标经过再开打，不必掐点；到达时目标已走出范围（太晚）→ 按到达时刻结算、「扑空」返程。接战为野战（无城墙，守军即目标守军，打赢目标消失，按幸存部队负重（含负重科技）装填其携带的资源即时入账，不钳储量上限；打输幸存部队撤回、目标原样留存）；目标已被他人击败或过时 → 「目标消失」，不接战、部队返程。埋伏期间部队照常占校场名额、按在外口径耗粮，可 RECALL_MARCH 撤回。三种结果都有战报（kind='intercept'，扑空 / 消失时 contact='missed' / 'gone'、endReason='no_contact'、rounds=0）与 march_completed 事件（outcome=intercepted / intercept_lost / intercept_missed / intercept_gone）。**运输（task=transport，v26，AISLG-79）**：目标必须是本账号的另一座城（出发城自身 / 野地 / NPC 城 / 他人城池返回 TASK_INVALID_FOR_TARGET）。发起即从出发城扣除 cargo 与派出部队；到达后货物**即时入账**目标城（与掠夺所得同规则：不钳储量上限），部队自动返程回出发城；运输队不会被 NPC 拦截（与「NPC 不攻击行军中的部队」同口径）；途中 RECALL_MARCH 撤回时货物随部队回到出发城，到达目标前目标城失效（如账号重置）同理带回。到达产生两条 march_completed 事件：出发城一条 outcome='transported'（含 cargo / cityId / cityName / returning），目标城一条 outcome='transport_received'（cityId 指向目标城，含 cargo / fromCityName）。同账号在线连接还会收到 PUSH_MARCH_STATE / PUSH_TILE_STATE / PUSH_BATTLE_REPORT。离线期间服务端照常结算，上线后用 GET_EVENTS（sinceId）补读。行军途中可 RECALL_MARCH 折返；城内驻军在 city.army，出征中的部队不在其中。
 
@@ -10504,6 +10504,93 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 94 · DISCARD_CITY — 放弃分城
+
+`C→S` 请求-响应 · 需登录后发送
+
+主动放弃一座分城（v57，AISLG-153）：分城转回 NPC 城池，腾出分城名额；主城不可放弃。城内资源、驻军、建筑与建造 / 征兵 / 研究队列作废（不返还），城守武将解除任命、武将本身保留；名下野地转为无主；地块回到同级 NPC 城池（名城恢复为未攻破的名城）。放弃后本账号冷却 = 放弃时的官府等级 天（按时间缩放，占位），冷却内不能再占回该城（占领时返回 DISCARD_COOLDOWN）。发起前须满足：该城没有部队在外（行军 / 返程 / 运输 / 侦察）、该城与其名下野地没有正在途中的行军、没有未结的 NPC 来袭、名下野地无驻军（先用 RECALL_MARCH 召回）。放弃不可撤销，必须显式携带 confirm=true 防误触。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| cityId | string | 必填。要放弃的分城 UUID（GET_STATE 的 cities[].id，且 isMain 为 false）。缺失返回 INVALID_PARAMS；主城返回 DISCARD_MAIN_CITY。 |
+| confirm | boolean | 必填，必须为 true；缺失或不为 true 返回 INVALID_PARAMS。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| cityId | string | 被放弃的分城 UUID（该城已从账号名下移除）。 |
+| x / y | number | 原分城地块坐标（已转回 NPC 城池）。 |
+| cooldownUntil | string | ISO 8601：冷却截止时刻；之前本账号再占领该 NPC 城返回 DISCARD_COOLDOWN。 |
+
+**可能错误**：`INVALID_PARAMS`、`DISCARD_MAIN_CITY`、`CITY_IN_BATTLE`、`ARMY_OUTSIDE`、`WILDERNESS_GARRISONED`（处置建议见第 4 节）
+
+**Agent 提示**：放弃前先 GET_STATE：确认目标 cities[] 中 isMain 为 false，并确认没有在途行军。放弃成功后 GET_STATE 的 cities / branch（count 减一）即时反映；同账号其他在线连接收到 PUSH_CITY_STATE（reason=city_discarded）推送，事件流新增 city_discarded。腾出的名额可以去占其他 NPC 城（但不能占回刚放弃的这一座，直到冷却结束）。
+
+**示例**
+
+**放弃分城成功（冷却 3 天：该分城放弃时官府 3 级）**
+
+请求：
+
+```json
+{
+  "op": 94,
+  "seq": 1,
+  "data": {
+    "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+    "confirm": true
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 94,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+    "x": 13,
+    "y": 18,
+    "cooldownUntil": "2026-10-16T08:00:00.000Z"
+  }
+}
+```
+
+**主城不能放弃**
+
+请求：
+
+```json
+{
+  "op": 94,
+  "seq": 2,
+  "data": {
+    "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+    "confirm": true
+  }
+}
+```
+
+失败响应（`DISCARD_MAIN_CITY`）：
+
+```json
+{
+  "op": 94,
+  "seq": 2,
+  "ok": false,
+  "error": {
+    "code": "DISCARD_MAIN_CITY",
+    "message": "主城不能放弃，只能放弃分城"
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -10667,13 +10754,13 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `S→C` 服务端推送 · 无 `seq`
 
-城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。
+城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。
 
 **data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| reason | 'city_renamed' \| 'account_reset' | 触发本次推送的状态变化。 |
+| reason | 'city_renamed' \| 'account_reset' \| 'city_discarded' | 触发本次推送的状态变化。 |
 | cityId | string | 城池 UUID。 |
 | name | string | reason=city_renamed 时的新城池名。 |
 
@@ -11750,8 +11837,13 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `TASK_INVALID_FOR_TARGET` | 该任务类型不适用于此目标（v16 起；v24 起 NPC 城池也可 task=occupy，本码当前不再由出征返回，保留兼容；玩家城池占领随玩家对抗阶段设计）。 | 改用 task=plunder（或不带 task，缺省即掠夺）。 |
 | `TERRITORY_LIMIT` | 该城占领的野地数已达官府等级上限（v16：上限 = 官府等级，MARCH task=occupy 发起时初核，Worker 到达时复核——胜利后超限不改归属、幸存部队返程）。 | 升级官府提高上限、召回一块野地驻军，或改用 task=plunder（掠夺不受占领上限限制）。 |
 | `GOVERNMENT_TOO_LOW` | 占领 NPC 城（MARCH task=occupy 目标为 NPC 城池）需要主城官府 ≥ 3 级（v24，AISLG-58）。 | 先升级主城官府到 3 级；或对该 NPC 城改用 task=plunder 掠夺。 |
-| `BRANCH_LIMIT` | 分城数已达上限（v24：上限 = floor(主城官府等级 ÷ 3)，名城同样计入；发起时初核，Worker 到达时复核——胜利后超限不建分城、幸存部队返程，事件记录 denial=BRANCH_LIMIT）。 | 升级主城官府（3 / 6 / 9 级各多 1 个名额），或改用 task=plunder 掠夺。 |
+| `BRANCH_LIMIT` | 分城数已达上限（v24 起：上限 = floor(主城官府等级 ÷ 2)，v57 由 ÷3 放宽，名城同样计入；发起时初核，Worker 到达时复核——胜利后超限不建分城、幸存部队返程，事件记录 denial=BRANCH_LIMIT）。 | 升级主城官府（每升 2 级多 1 个名额），或放弃一座不需要的分城（DISCARD_CITY），或改用 task=plunder 掠夺。 |
 | `TARGET_LEVEL_TOO_HIGH` | 目标 NPC 城等级高于出发城的官府等级（v24：只能占领不高于出发城官府等级的城）。 | 升级出发城的官府，或从官府更高的城出征，或先掠夺不占领。 |
+| `DISCARD_COOLDOWN` | 本账号刚放弃的分城仍在冷却中，不能再占领该 NPC 城（v57，AISLG-153）：冷却 = 放弃时的官府等级 天（按时间缩放）；MARCH task=occupy 发起时初核，Worker 到达时复核——胜利后冷却未结不建分城、幸存部队返程，事件记录 denial=DISCARD_COOLDOWN。 | 等冷却结束（冷却截止见 DISCARD_CITY 响应的 cooldownUntil），或改占其他 NPC 城；掠夺不受此限制。 |
+| `DISCARD_MAIN_CITY` | 主城不能放弃，DISCARD_CITY 只能放弃分城（v57，AISLG-153）。 | 如要放弃的是分城，请传该分城的 cityId（GET_STATE 的 cities[]，isMain 为 false）。 |
+| `CITY_IN_BATTLE` | 该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭，暂不能放弃（v57，AISLG-153）。 | 等待这些行军结算或 NPC 来袭结束后再放弃。 |
+| `ARMY_OUTSIDE` | 该分城仍有部队在外（行军 / 返程 / 运输 / 侦察），不能放弃（v57，AISLG-153）。 | 等部队回城或结算后再放弃。 |
+| `WILDERNESS_GARRISONED` | 名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。 | 先用 RECALL_MARCH 召回各块野地的驻军，再放弃。 |
 | `OUTER_NOT_CLEARED` | 名城外围驻军尚未清空时对其发起 task=occupy（v24，AISLG-56）：名城分两阶段攻打，先清外围、外围清空后才能攻城守并占领。 | 先对该名城出征 task=plunder（或不带 task）清理外围；外围清空后须在限时内（GET_TILE 的 famous.recoversAt）出征 task=occupy 攻城守，超时外围恢复满编。 |
 | `CARGO_OVER_CAPACITY` | 运输任务（MARCH task=transport，v26，AISLG-79）的货物总量超过所派编队的负重（Σ 数量 × 单兵 carry）。 | 减少 cargo 数量，或多派部队（民夫单兵负重最高）；负重表见 MARCH 说明。 |
 | `TECH_LEVEL_MAX` | 该科技已达等级上限（v27，AISLG-77：每项最高 10 级）。 | 研究其他科技；满级科技不需要再研究。 |
@@ -13116,7 +13208,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 56。
+- 协议版本随对外协议内容的每次变化递增；当前为 57。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

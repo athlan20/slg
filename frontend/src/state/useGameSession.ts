@@ -120,6 +120,8 @@ export interface GameSession {
   startTruce: () => Promise<string | null>;
   /** 城池改名；成功返回 null，失败返回人读错误（弹窗内展示） */
   renameCity: (name: string) => Promise<string | null>;
+  /** 放弃分城（v57，AISLG-153）：成功后当前城回到主城 */
+  discardCity: (cityId: string) => Promise<string | null>;
   /** 一键重置账号数据（v9，不可逆）；成功返回 null，失败返回人读错误（弹窗内展示） */
   resetAccount: () => Promise<string | null>;
   /** 离线日报（v23 AISLG-54）：非 null 时弹窗展示（上线自动弹出 / 手动打开） */
@@ -474,6 +476,11 @@ export function useGameSession(): GameSession {
         const data = frame.data as unknown as CityStatePushData;
         if (data.reason === 'city_renamed') {
           setCity((prev) => (prev && data.name && data.cityId === prev.id ? { ...prev, name: data.name } : prev));
+        } else if (data.reason === 'city_discarded') {
+          // 分城被放弃（可能是本账号另一连接发起）：选中的城可能已不存在，复位为主城并全量刷新
+          resetCityList();
+          void syncAll('initial');
+          return;
         } else if (data.reason === 'account_reset') {
           // 账号被其他连接重置：服务端事件流已清空，本地缓存全部失效，全量重拉
           lastEventIdRef.current = 0;
@@ -991,6 +998,30 @@ export function useGameSession(): GameSession {
     [scheduleSync],
   );
 
+  /** 放弃分城（v57，AISLG-153，仅玩家连接）：分城已从账号名下移除、地块转回 NPC 城池。发起连接收不到
+   *  PUSH_CITY_STATE，成功后直接复位为主城并全量重拉城池列表与状态 */
+  const discardCity = useCallback(
+    async (cityId: string): Promise<string | null> => {
+      const { COPY } = getCopy();
+      const client = clientRef.current;
+      if (!client?.connected) {
+        return COPY.session.connectFailed;
+      }
+      try {
+        const res = await client.request(Op.DISCARD_CITY, { cityId, confirm: true });
+        if (res.ok) {
+          resetCityList();
+          await syncAll('initial');
+          return null;
+        }
+        return res.error?.message ?? COPY.topbar.discardFallback;
+      } catch (err) {
+        return err instanceof Error ? err.message : COPY.topbar.discardFallback;
+      }
+    },
+    [syncAll, resetCityList],
+  );
+
   /** 一键重置账号数据（v9，仅玩家连接）：响应带回重置后的城池现状；
    *  服务端已清空事件流，本地同步清空并全量重拉（只剩 account_reset 审计事件）；
    *  世界数据（行军 / 领地 / 分城）一并重置，地图与详情清空重新加载 */
@@ -1107,6 +1138,7 @@ export function useGameSession(): GameSession {
     exchangeGold,
     startTruce,
     renameCity,
+    discardCity,
     resetAccount,
     ...extras,
     cityList,

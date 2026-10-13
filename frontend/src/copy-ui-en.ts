@@ -37,6 +37,7 @@ export const NAV_COPY_EN = {
   account: 'Account',
   accountShort: 'Me',
   rename: 'Rename City',
+  discardBranch: 'Abandon Branch City',
   settings: 'Account Settings',
   switchAccount: 'Switch Account',
   reset: 'Reset Account',

@@ -32,6 +32,8 @@ interface SidebarProps {
   onSettings: () => void;
   onSwitchAccount: () => void;
   onReset: () => void;
+  /** 放弃当前选中的分城（v57，AISLG-153）；菜单项只在选中分城时出现 */
+  onDiscardBranch: () => void;
   onExchange: () => void;
   onLeaderboard: () => void;
   /** 手机端底部图标栏的聊天入口（AISLG-138）：点开全屏聊天；角标为私聊未读数 */
@@ -248,6 +250,7 @@ export function Sidebar(props: SidebarProps) {
             className="absolute bottom-[calc(100%+4px)] left-0 z-30 flex w-[220px] flex-col rounded-md border border-line bg-panel-2 p-1 shadow-2xl max-lg:bottom-[calc(100%+8px)] max-lg:left-auto max-lg:right-0"
           >
             {cityLoaded ? menuItem('账号菜单-城池改名', NAV_COPY.rename, props.onRename) : null}
+            {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-放弃分城', NAV_COPY.discardBranch, props.onDiscardBranch, 'text-st-error') : null}
             {menuItem('账号菜单-账号设置', NAV_COPY.settings, props.onSettings)}
             {menuItem('账号菜单-切换账号', NAV_COPY.switchAccount, props.onSwitchAccount)}
             {menuItem('账号菜单-重置账号', NAV_COPY.reset, props.onReset, 'text-st-error')}

@@ -74,7 +74,7 @@ export const CITY_COPY_EN = {
     governmentTooLow:
       'Occupying an NPC city requires the Main City Government Hall at the specified level (see the Branch City quota hint)',
     branchLimit:
-      'Branch City limit reached (cap = Main City Government Hall level ÷ 3, rounded down; upgrade the Main City Government Hall to raise it)',
+      'Branch City limit reached (cap = Main City Government Hall level ÷ 2, rounded down; upgrade the Main City Government Hall to raise it)',
     outerNotCleared:
       'The outer-ring garrison of this Famous City is not cleared yet — march out and clear the outer ring first ' +
       '(Plunder); once cleared, you can attack the keeper and occupy within the time limit',

@@ -62,6 +62,7 @@ import { handleGetLeaderboard } from './handlers-leaderboard';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
 import { loadCityState } from './views';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
+import { handleDiscardCity } from './handlers-discard';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
 
 export interface HandlerContext {
@@ -388,6 +389,9 @@ async function dispatchOp(
       break;
     case Op.RESET_ACCOUNT:
       await handleResetAccount(ctx, conn, op, seq, data);
+      break;
+    case Op.DISCARD_CITY:
+      await handleDiscardCity(ctx, conn, op, seq, data);
       break;
     case Op.SET_NICKNAME:
       await handleSetNickname(ctx, conn, op, seq, data);

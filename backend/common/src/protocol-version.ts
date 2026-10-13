@@ -495,5 +495,9 @@
  * （连续签到 7 天一轮循环）、主线任务链（10 环、顺序解锁与领取）/ 支线（4 条、并行）/ 成就（6 条 × 3 档，
  * 逐档领取）、活动（开服冲刺限时 + 每日活跃）。进度均从既有数据派生，不新增埋点；奖励发往主城，
  * 领奖原子去重。新表 quest_claims / signin_state / quest_claims_once。无新增错误码（复用 INVALID_PARAMS）。
+ * v57（分城放宽与放弃分城，AISLG-155 / AISLG-153）：分城上限 floor(主城官府 ÷ 3) 改为 floor(主城官府 ÷ 2)（规则口径变化，名额只增不减）；
+ * 新增 DISCARD_CITY（op 94，玩家与 Agent 通用，cityId 必填、confirm 必须为 true）；新错误码 DISCARD_COOLDOWN / DISCARD_MAIN_CITY /
+ * CITY_IN_BATTLE / ARMY_OUTSIDE / WILDERNESS_GARRISONED；PUSH_CITY_STATE 新增 reason=city_discarded；EventType 新增 city_discarded。
+ * 新表 city_discards（放弃冷却，按地块）；cities 新增 origin_level（分城来源 NPC 等级）。
  */
-export const PROTOCOL_VERSION = 56;
+export const PROTOCOL_VERSION = 57;

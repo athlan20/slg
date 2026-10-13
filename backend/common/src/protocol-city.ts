@@ -58,10 +58,25 @@ export interface RenameCityResponseData {
   name: string;
 }
 
+/** DISCARD_CITY（op 94，v57，AISLG-153）请求载荷：cityId 必填（分城），confirm 必须显式为 true */
+export interface DiscardCityRequestData {
+  cityId: string;
+  confirm: boolean;
+}
+
+/** DISCARD_CITY 响应载荷：放弃的分城与其地块（已转回 NPC 城池）、本账号占回的冷却截止时刻 */
+export interface DiscardCityResponseData {
+  cityId: string;
+  x: number;
+  y: number;
+  /** ISO 8601；冷却期内本账号不能再占领该 NPC 城 */
+  cooldownUntil: string;
+}
+
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
-  /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason） */
-  reason: 'city_renamed' | 'account_reset';
+  /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -126,6 +141,8 @@ export const EventType = {
   BUILD_CANCELLED: 'build_cancelled',
   /** v7：城池改名 */
   CITY_RENAMED: 'city_renamed',
+  /** v57（AISLG-153）：分城被放弃，地块转回 NPC 城池（detail = { x, y, cooldownUntil }） */
+  CITY_DISCARDED: 'city_discarded',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
   /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */

@@ -15,7 +15,7 @@ import type { NpcCitySnapshot } from '../../common/src/world';
 import type { TileRow } from '../../common/src/world-db';
 import { checkOccupyNpcCity, type OccupyCityDenial } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
-import { loadBranchStanding } from '../../common/src/branch-city-db';import { parseCargo } from '../../common/src/transport';
+import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';import { parseCargo } from '../../common/src/transport';
 import { loadMovingTarget, rowIndexAt, rowStepMs } from '../../common/src/moving-target-db';
 import { loadCampAt } from '../../common/src/yellow-turban-db';
 import { reachWindowOf, routeIndexOfCell } from '../../common/src/moving-target';
@@ -239,6 +239,7 @@ export async function resolveMarchTarget(
         fromGovernment: governmentLevel,
         branchCount: standing.branchCount,
         targetLevel: tile.level,
+        discardCooldown: await loadDiscardCooldownActive(client, accountId, tile.x, tile.y),
       });
       return denial ? { purpose: null, reason: denial } : { purpose: 'occupy' };
     }

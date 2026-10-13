@@ -156,6 +156,8 @@ export const Op = {
   GET_ACTIVITIES: 92,
   /** C→S 领取活动奖励（data.id = 阶梯 id；v56；未达成 / 不在活动期 / 重复领取返回 INVALID_PARAMS） */
   CLAIM_ACTIVITY: 93,
+  /** C→S 放弃分城（v57，AISLG-153：data.cityId 必填、data.confirm 必须为 true；主城不能放弃，城内资源与驻军作废，地块转回 NPC 城） */
+  DISCARD_CITY: 94,
   /** C→S 查询将星塔（v55，AISLG-146：已通过的最高层 / 下一层敌方阵容与奖励 / 阵容（与竞技场共用）） */
   GET_STAR_TOWER: 83,
   /** C→S 挑战将星塔的下一层（v55，AISLG-146：无参数；三局两胜，赢了首通发奖励并推进进度，输了不扣任何东西） */
@@ -286,6 +288,16 @@ export const ErrorCode = {
   TARGET_LEVEL_TOO_HIGH: 'TARGET_LEVEL_TOO_HIGH',
   /** 名城外围未清空，不能攻城守 / 占领（v24，AISLG-56）：先出征清理外围 */
   OUTER_NOT_CLEARED: 'OUTER_NOT_CLEARED',
+  /** 放弃分城被拒：该城放弃冷却未结束，本账号暂不能再占回此 NPC 城（v57，AISLG-153；占领资格复核也返回它） */
+  DISCARD_COOLDOWN: 'DISCARD_COOLDOWN',
+  /** 放弃分城被拒：主城不能放弃（v57，AISLG-153） */
+  DISCARD_MAIN_CITY: 'DISCARD_MAIN_CITY',
+  /** 放弃分城被拒：该城或其名下野地正在被攻打 / 有 NPC 来袭未结（v57，AISLG-153） */
+  CITY_IN_BATTLE: 'CITY_IN_BATTLE',
+  /** 放弃分城被拒：该城仍有部队在外（行军 / 返程 / 运输 / 侦察），需先等其结束（v57，AISLG-153） */
+  ARMY_OUTSIDE: 'ARMY_OUTSIDE',
+  /** 放弃分城被拒：名下野地里仍有驻军，需先召回（v57，AISLG-153） */
+  WILDERNESS_GARRISONED: 'WILDERNESS_GARRISONED',
   /** 运输货物总量超过所派编队的负重（v26，AISLG-79） */
   CARGO_OVER_CAPACITY: 'CARGO_OVER_CAPACITY',
   /** 该科技已满级（v27，AISLG-77） */

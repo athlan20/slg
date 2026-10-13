@@ -190,6 +190,8 @@ function baseEventText(view: EventView): string {
       return EXTRA_STATE.event.cityRenamed(String(view.detail.from ?? ''), String(view.detail.to ?? ''));
     case 'account_reset':
       return EXTRA_STATE.event.accountReset;
+    case 'city_discarded':
+      return EXTRA_STATE.event.cityDiscarded(`${String(view.detail.x ?? '')},${String(view.detail.y ?? '')}`);
     case 'account_renamed':
       return EXTRA_STATE.event.accountRenamed(String(view.detail.from ?? ''), String(view.detail.to ?? ''));
     case 'march_started': {
