@@ -7952,7 +7952,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "done": true,
           "claimed": false,
           "reward": {
-            "gold": 1000,
+            "gold": 500,
             "wood": 0,
             "food": 0,
             "stone": 0,
@@ -8177,7 +8177,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "done": true,
           "claimed": true,
           "reward": {
-            "gold": 1000,
+            "gold": 500,
             "wood": 0,
             "food": 0,
             "stone": 0,
@@ -8341,7 +8341,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       }
     },
     "granted": {
-      "gold": 1000,
+      "gold": 500,
       "wood": 0,
       "food": 0,
       "stone": 0,

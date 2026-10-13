@@ -22,7 +22,7 @@ export interface DailyTaskDef {
 
 /** 日常任务清单（6 条）。eventType 取 events 表既有类型。 */
 export const DAILY_TASKS: readonly DailyTaskDef[] = [
-  { id: 'login', title: '每日登录', desc: '今日登录游戏', eventType: '', reward: { gold: 1000, wood: 0, food: 0, stone: 0, iron: 0 } },
+  { id: 'login', title: '每日登录', desc: '今日登录游戏', eventType: '', reward: { gold: 500, wood: 0, food: 0, stone: 0, iron: 0 } },
   { id: 'build', title: '大兴土木', desc: '完成 1 次建造或升级', eventType: 'build_completed', reward: { gold: 1500, wood: 1500, food: 0, stone: 0, iron: 0 } },
   { id: 'recruit', title: '招兵买马', desc: '征兵 1 次', eventType: 'recruit_started', reward: { gold: 0, wood: 0, food: 2000, stone: 0, iron: 0 } },
   { id: 'march', title: '出征沙场', desc: '出征 1 次', eventType: 'march_started', reward: { gold: 1500, wood: 0, food: 0, stone: 0, iron: 1500 } },

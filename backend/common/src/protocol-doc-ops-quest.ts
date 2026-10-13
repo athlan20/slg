@@ -9,7 +9,7 @@ import { exampleCity } from './protocol-doc-shared';
 const QUEST_STATE_EXAMPLE = {
   day: '2026-10-13',
   daily: [
-    { id: 'login', title: '每日登录', desc: '今日登录游戏', done: true, claimed: false, reward: { gold: 1000, wood: 0, food: 0, stone: 0, iron: 0 } },
+    { id: 'login', title: '每日登录', desc: '今日登录游戏', done: true, claimed: false, reward: { gold: 500, wood: 0, food: 0, stone: 0, iron: 0 } },
     { id: 'build', title: '大兴土木', desc: '完成 1 次建造或升级', done: true, claimed: false, reward: { gold: 1500, wood: 1500, food: 0, stone: 0, iron: 0 } },
     { id: 'recruit', title: '招兵买马', desc: '征兵 1 次', done: false, claimed: false, reward: { gold: 0, wood: 0, food: 2000, stone: 0, iron: 0 } },
     { id: 'march', title: '出征沙场', desc: '出征 1 次', done: false, claimed: false, reward: { gold: 1500, wood: 0, food: 0, stone: 0, iron: 1500 } },
@@ -82,7 +82,7 @@ export const REQUEST_CLAIM_DAILY: RequestOpDoc = {
           ok: true,
           data: {
             quest: { ...QUEST_STATE_EXAMPLE, daily: QUEST_STATE_EXAMPLE.daily.map((t) => (t.id === 'login' ? { ...t, claimed: true } : t)) },
-            granted: { gold: 1000, wood: 0, food: 0, stone: 0, iron: 0 },
+            granted: { gold: 500, wood: 0, food: 0, stone: 0, iron: 0 },
             city: exampleCity(),
           },
         },

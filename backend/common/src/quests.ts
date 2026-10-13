@@ -28,9 +28,20 @@ export type MetricSource =
   | { kind: 'signinTotal' }
   | { kind: 'dailyPoints' };
 
-/** 活动窗口（开服冲刺）：北京时区。本地自建，固定写死；改期只改这里。 */
-export const ACTIVITY_START = '2026-10-13T00:00:00+08:00';
-export const ACTIVITY_END = '2026-10-27T23:59:59+08:00';
+/**
+ * 活动窗口（开服冲刺）：北京时区。默认值见此处；环境变量 ACTIVITY_START / ACTIVITY_END（ISO 8601，带时区）可覆盖，
+ * 改期不用改代码。API 与 Worker 须读到同一份配置。格式不合法时回落默认值。
+ */
+const DEFAULT_ACTIVITY_START = '2026-10-13T00:00:00+08:00';
+const DEFAULT_ACTIVITY_END = '2026-10-27T23:59:59+08:00';
+
+function activityIso(envKey: string, fallback: string): string {
+  const raw = process.env[envKey];
+  return raw && !Number.isNaN(Date.parse(raw)) ? raw : fallback;
+}
+
+export const ACTIVITY_START = activityIso('ACTIVITY_START', DEFAULT_ACTIVITY_START);
+export const ACTIVITY_END = activityIso('ACTIVITY_END', DEFAULT_ACTIVITY_END);
 
 export interface QuestCtx {
   eventsAll: Map<string, number>;
