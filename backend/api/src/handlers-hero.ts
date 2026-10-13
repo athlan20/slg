@@ -1,7 +1,8 @@
-// 武将协议的处理逻辑（v36，AISLG-114/115/116）：GET_HEROES / RECRUIT_HERO /
-// DISMISS_HERO / ASSIGN_HERO。武将账号共享；酒馆候选每城一份、读取时惰性刷新；
+// 武将协议的处理逻辑（v36，AISLG-114/115/116；v54 AISLG-144 状态视图含结交进度）：GET_HEROES /
+// RECRUIT_HERO / DISMISS_HERO / ASSIGN_HERO。武将账号共享；酒馆候选每城一份、读取时惰性刷新；
 // 招募扣酒馆所在城的金币；解雇直接消失（名将回到全服可获得状态）；城守任命 /
-// 撤换（守城加成与产量加成的消费方在 city-raid 与 production）。
+// 撤换（守城加成与产量加成的消费方在 city-raid 与 production）。培养（加点 / 洗点 / 历练 /
+// 赏赐）与结交 / 招揽分别在 handlers-hero-growth.ts 与 handlers-hero-friendship.ts。
 // 锁序：城池行（lockCitySnapshot）→ 武将行 / 候选行，与 Worker 俸禄 tick 一致。
 
 import pg from 'pg';
@@ -9,6 +10,8 @@ import { EventType, Op, type ErrorCode, type HeroStateView, type InitiatorRole }
 import { insertEvent } from '../../common/src/events';
 import { loadBuildingLevels } from '../../common/src/production';
 import { recruitCost } from '../../common/src/hero';
+import { BEFRIEND_ACTIVE_CAP } from '../../common/src/hero-wild';
+import { loadFriendships, unlockedHeroNames } from '../../common/src/hero-friendship-db';
 import {
   assignCityGuard,
   heroBusyMarchMap,
@@ -44,6 +47,9 @@ export async function checkHeroMarchable(
   const hero = await loadHero(client, heroId);
   if (!hero || hero.account_id !== accountId) {
     return { ok: false, code: 'HERO_NOT_FOUND' };
+  }
+  if (hero.train_until) {
+    return { ok: false, code: 'HERO_TRAINING' };
   }
   const nowRes = await client.query(`SELECT now() AS now`);
   const now = (nowRes.rows[0].now as Date).getTime();
@@ -98,6 +104,9 @@ export async function buildHeroState(client: pg.PoolClient, accountId: string, c
     heroes: heroes.map((row) => heroView(row, guards.heroToCity.get(row.id) ?? null, busy.get(row.id) ?? null)),
     candidates,
     famousClaims: await loadFamousClaims(client),
+    friendships: await loadFriendships(client, accountId),
+    unlocks: await unlockedHeroNames(client, accountId),
+    friendshipCap: BEFRIEND_ACTIVE_CAP,
   };
 }
 
@@ -252,6 +261,11 @@ export async function handleDismissHero(
       respondError(ctx.registry, conn, op, seq, 'HERO_BUSY');
       return;
     }
+    if (hero.train_until) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'HERO_TRAINING');
+      return;
+    }
     // 名将的 famous_heroes 归属行随外键级联删除 → 回到全服可获得状态；城守随解雇撤任
     await client.query(`UPDATE cities SET guard_hero_id = NULL WHERE guard_hero_id = $1`, [hero.id]);
     await client.query(`DELETE FROM account_heroes WHERE id = $1`, [hero.id]);
@@ -314,6 +328,11 @@ export async function handleAssignHero(
       if (busy.has(hero.id)) {
         await client.query('ROLLBACK');
         respondError(ctx.registry, conn, op, seq, 'HERO_BUSY');
+        return;
+      }
+      if (hero.train_until) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'HERO_TRAINING');
         return;
       }
     }

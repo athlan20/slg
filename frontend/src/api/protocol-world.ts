@@ -71,6 +71,8 @@ export interface TileView {
   /** 他人分城的当前城防值（v40，AISLG-124；非 null 即可被「占领」攻打的分城）；
    *  主城 / 野地 / NPC 城 / 自己的城为 null */
   durability: number | null;
+  /** 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将 */
+  wildFamous: boolean;
 }
 
 /** 玩家城地块的保护状态（v38，AISLG-122）；三个截止任一未到即受保护 */
@@ -105,6 +107,8 @@ export interface TileDetailView extends TileView {
   scoutedAt: string | null;
   /** 最近一次成功掠夺的时间（v16）；距其 24 小时内处于掠夺冷却，从未被掠为 null */
   plunderedAt: string | null;
+  /** 在野名将情报（v54）：侦察后给出名字与属性 */
+  wildFamousIntel: { scouted: boolean; name: string | null; attrs: { lead: number; force: number; wit: number } | null } | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */

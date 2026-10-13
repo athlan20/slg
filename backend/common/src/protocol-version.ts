@@ -467,5 +467,21 @@
  * 新错误码 NICKNAME_TAKEN；昵称同时是密码登录键，改名后密码登录用新昵称（第三方与令牌登录绑定
  * 账号 id，不受影响）。新增推送 PUSH_ACCOUNT_STATE（op 2020，reason=account_renamed，账号全部
  * 在线连接收到，含 Agent）与事件 account_renamed（detail={from,to}）。消息结构其余无变化。
+ * v53（竞技场，AISLG-145，只加不改）：新增 GET_ARENA（op 73）、SET_ARENA_LINEUP（op 74）、
+ * ARENA_CHALLENGE（op 75）、GET_ARENA_REPORTS（op 76）与推送 PUSH_ARENA_STATE（op 2021，reason=
+ * challenged / daily_reward / milestone，账号全部在线连接收到，含 Agent）；全服广播新增
+ * arena_champion（登上第 1 名，必达）。玩家与 Agent 同一套规则，对外 Agent 文档收录。新增错误码
+ * ARENA_NOT_JOINED / ARENA_TARGET_INVALID / ARENA_NO_CHALLENGES / ARENA_TARGET_BUSY /
+ * ARENA_PAIR_COOLDOWN。新表 arena_entries / arena_daily / arena_matches（战报保留 7 天）。
+ * 每日奖励由 Worker 的 arena-tick 按竞技日发放，金币直接进主城。
+ * v54（武将培养与在野名将，AISLG-144）：新增 ALLOCATE_HERO_POINTS（op 77）/ RESET_HERO_POINTS（op 78）/
+ * TRAIN_HERO（op 79）/ GIFT_HERO（op 80）/ BEFRIEND_HERO（op 81）/ RECRUIT_FAMOUS_HERO（op 82）。
+ * 升级不再自动加三项属性，改为得自由点数（普通将 3、名将 5，由玩家分配；洗点还原到初始属性）；
+ * 等级上限 20 → 40。名将扩到 40 名，其中 29 名在野（Lv3+ 野地，开服分配，地图标记 wildFamous，
+ * 侦察后 wildFamousIntel 给出名字与属性），打赢该野地守军即获结交资格（GET_HEROES.unlocks），
+ * 好感满 100 招揽（全服唯一）。HeroView 新增 freePoints / training / dailyLeft，GET_HEROES 新增
+ * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt。推送 PUSH_HERO_STATE 新增
+ * reason。新表 hero_unlocks / hero_friendship；account_heroes 新增 base_* / free_points / train_* /
+ * gift_* / reset_*；world_tiles 新增 wild_*。
  */
-export const PROTOCOL_VERSION = 52;
+export const PROTOCOL_VERSION = 54;

@@ -21,6 +21,8 @@ export const SERVER_BROADCAST_TYPES = [
   'hero_granted',
   // v40（AISLG-124）玩家占领玩家分城：大事必达（不受每分钟限频）
   'city_conquered',
+  // v53（AISLG-145）竞技场：有人登上第 1 名，必达（不受每分钟限频）
+  'arena_champion',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];
@@ -93,7 +95,8 @@ export interface ServerBroadcastView {
    *  win_streak = { username, cityName, streak }；
    *  v29 黄巾之乱：yt_started = { totalCamps, endsAt }；yt_grown = { count, tier }（count 个营地升到 tier 档）；
    *  yt_boss = { x, y }；yt_boss_first_kill = { username, cityName }；
-   *  yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps } */
+   *  yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }；
+   *  arena_champion = { username, previous }（v53，登上第 1 名，previous 为被取代的原第 1 名） */
   detail: Record<string, unknown>;
   createdAt: string;
 }

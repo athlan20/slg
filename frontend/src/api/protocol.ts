@@ -91,6 +91,26 @@ export const Op = {
   CHAT_REPORT_DETAIL: 71,
   /** 修改账号昵称（v52，AISLG-142）：data.nickname；仅玩家连接；昵称即账号 username，全服唯一（NICKNAME_TAKEN） */
   SET_NICKNAME: 72,
+  /** 查询竞技场（v53，AISLG-145） */
+  GET_ARENA: 73,
+  /** 保存竞技场阵容（v53，AISLG-145）：第一次保存即入榜 */
+  SET_ARENA_LINEUP: 74,
+  /** 发起竞技挑战（v53，AISLG-145）：三局两胜，赢了互换名次 */
+  ARENA_CHALLENGE: 75,
+  /** 查询竞技场战报（v53，AISLG-145） */
+  GET_ARENA_REPORTS: 76,
+  /** 分配自由点数（v54，AISLG-144） */
+  ALLOCATE_HERO_POINTS: 77,
+  /** 洗点（v54，AISLG-144） */
+  RESET_HERO_POINTS: 78,
+  /** 派武将历练（v54，AISLG-144） */
+  TRAIN_HERO: 79,
+  /** 赏赐武将（v54，AISLG-144） */
+  GIFT_HERO: 80,
+  /** 结交在野名将（v54，AISLG-144） */
+  BEFRIEND_HERO: 81,
+  /** 招揽在野名将（v54，AISLG-144） */
+  RECRUIT_FAMOUS_HERO: 82,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -138,6 +158,8 @@ export const Op = {
   PUSH_CHAT_MESSAGE: 2019,
   /** 账号级状态变化推送（v52）：account_renamed=昵称被 SET_NICKNAME 修改；账号全部在线连接收到 */
   PUSH_ACCOUNT_STATE: 2020,
+  /** 竞技场状态变化推送（v53，AISLG-145）：challenged / daily_reward / milestone，账号全部在线连接收到 */
+  PUSH_ARENA_STATE: 2021,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -192,6 +214,15 @@ export type ErrorCode =
   | 'HERO_WOUNDED'
   | 'HERO_ARREARS'
   | 'GUARD_ASSIGN_DENIED'
+  | 'HERO_TRAINING'
+  | 'HERO_POINTS_INSUFFICIENT'
+  | 'HERO_NOTHING_TO_RESET'
+  | 'HERO_DAILY_LIMIT'
+  | 'HERO_NOT_UNLOCKED'
+  | 'HERO_FRIENDSHIP_LIMIT'
+  | 'HERO_FAVOR_INSUFFICIENT'
+  | 'HERO_FAVOR_FULL'
+  | 'FAMOUS_CLAIMED'
   | 'NEWBIE_PROTECTED'
   | 'TARGET_IN_TRUCE'
   | 'SELF_TRUCE_ACTIVE'
@@ -418,6 +449,14 @@ export type {
   HeroCandidateView,
   FamousClaimView,
   HeroStateView,
+  FriendshipView,
+  HeroTrainingView,
+  TrainingTier,
+  AllocateHeroPointsRequestData,
+  TrainHeroRequestData,
+  BefriendHeroRequestData,
+  BefriendHeroResponseData,
+  HeroOnlyResponseData,
   GetHeroesRequestData,
   GetHeroesResponseData,
   RecruitHeroRequestData,
@@ -704,3 +743,16 @@ export type {
   PushChatMessageData,
 } from './protocol-chat';
 export { CHAT_RATE_LIMIT_MS, CHAT_TEXT_MAX_CHARS, CHAT_WORLD_MIN_GOVERNMENT } from './protocol-chat';
+
+export type {
+  ArenaFighterView,
+  ArenaOpponentView,
+  ArenaTopEntryView,
+  ArenaRulesView,
+  ArenaStateView,
+  ArenaRoundView,
+  ArenaMatchView,
+  ArenaChallengeResponseData,
+  GetArenaReportsResponseData,
+  ArenaStatePushData,
+} from './protocol-arena';

@@ -29,6 +29,7 @@ import {
 import type { ScoutIntel } from '../../common/src/protocol-battle';
 import { famousEncounter } from '../../common/src/famous-city';
 import { clearNativeGarrison, loadNativeGarrison, saveNativeGarrison } from '../../common/src/native-garrison';
+import { grantUnlock } from '../../common/src/hero-friendship-db';
 import { addTileArmy, clearTileOccupation, type TileRow } from '../../common/src/world-db';
 import type { NpcCitySnapshot } from '../../common/src/world';
 import { TERRAIN_INFO, wildernessBonusRate, wildernessGatherRate, wildernessLoot } from '../../common/src/world';
@@ -128,6 +129,10 @@ export async function resolveBattleArrival(
       await creditLoot(client, march.from_city_id, loot);
     }
     await clearNativeGarrison(client, tile);
+    // v54（AISLG-144）：打赢在野名将所在野地的原住守军 → 获得该名将的结交资格
+    if (tile.wild_hero) {
+      await grantUnlock(client, march.account_id, tile.wild_hero);
+    }
     await addTileArmy(client, tile.x, tile.y, result.attacker.survivors);
     await client.query(
       `UPDATE world_tiles SET owner_city_id = $3 WHERE x = $1 AND y = $2 AND kind = 'wilderness'`,

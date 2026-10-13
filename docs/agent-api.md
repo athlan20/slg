@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**52** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**54** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 52）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 54）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -440,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 52,
+    "protocolVersion": 54,
     "docNotice": null
   }
 }
@@ -502,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 52,
+    "protocolVersion": 54,
     "docNotice": null
   }
 }
@@ -522,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/49 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/51 补读增量）**
 
 请求：
 
@@ -533,7 +533,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 49,
+    "docVersion": 51,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 52,
-    "docNotice": "接口文档已从 v49 更新到 v52：请 GET /agent-api/changes/49 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 54,
+    "docNotice": "接口文档已从 v51 更新到 v54：请 GET /agent-api/changes/51 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -3465,6 +3465,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].garrison | number | 地块驻军总数；未占领野地为 0（原住守军不计入驻军总数；其编成见 GET_TILE 的 nativePower 与侦察）；NPC 城池需侦察（v17）：未侦察为 0，已侦察为最近一次侦察快照的总数。 |
 | tiles[].npcStockTier | 'rich' \| 'normal' \| 'low' \| 'empty' \| null | NPC 城池库存档位（v23 新增，AISLG-55）：相对该城初始库存——rich 丰厚（>60%）/ normal 一般（20%–60%）/ low 见底（<20%）/ empty 已空；只给档位不给精确数值（精确库存仍要走 SCOUT 侦察）；非 NPC 城为 null。掠夺后档位随库存变化，全服看到的档位一致。 |
 | tiles[].camp | object \| null | 黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small\|medium\|large\|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer\|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。 |
+| tiles[].wildFamous | boolean | 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将（公开，名字与属性需侦察）。被获得后标记撤下，名将归属见 GET_HEROES 的 famousClaims。 |
 | tiles[].famous | object \| null | 名城信息（v24 新增，AISLG-56）：{ name 名城名, stage 当前阶段（outer 外围阶段须先清外围 / keeper 外围已清、可攻城守并占领）, bonusPercent 占领后的独占加成（该城产量 +N%）, recoversAt 城守阶段外围恢复满编的时刻（超时无人攻下城守则恢复；外围阶段为 null） }；全图 8 座名城，对全服可见；非名城为 null。 |
 
 **Agent 提示**：探索与选目标的基础：先用它看周边野地等级与 NPC 城池位置，再 GET_TILE 看驻军与收益预览，最后 MARCH 出征。窗口参数非法时按缺省处理，不会报错。
@@ -3578,6 +3579,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tile.scoutedAt | string \| null | 最近一次侦察该地块的时间（ISO 8601，任意地块类型；v23 起非 NPC 城也返回）；从未侦察为 null。 |
 | tile.durability | number \| null | 他人分城的当前城防值（v40，AISLG-124）：0..100，按「免战截止前不回涨、之后每小时 +10」惰性结算展示；非 null 即可被 task=occupy 攻打的分城，归零一击换主。主城 / 野地 / NPC 城 / 自己的城为 null。 |
 | tile.protection | object \| null | 玩家城与他人占领野地的保护状态（v38 / v39）：{ newbieUntil 新手保护截止（含其野地）, truceUntil 被动免战截止（仅城池；野地恒 null——城级免战不保护野地）, shieldUntil 主动免战截止（含其野地）, ownerChangedUntil 换主保护截止（仅野地：刚被抢占后 1 小时基准随缩放，期间玩家与 NPC 都不能再抢） }，任一截止时刻未到即受保护（MARCH 被拒，错误码与时限见 MARCH）；非玩家目标、自己的地为 null。到期自动失效，无事件。 |
+| tile.wildFamousIntel | object \| null | 在野名将情报（v54，AISLG-144）：未被获得的在野名将所在野地才有 { scouted, name, attrs { lead, force, wit } }；未侦察过时 scouted=false、name / attrs 为 null，侦察后（SCOUT 完成）给出名字与三项属性。其余为 null。 |
 | tile.plunderedAt | string \| null | 最近一次成功掠夺（攻方胜利）的时间（v16，ISO 8601）：距其 24 小时内该地块处于掠夺冷却（基准值，实际受全局时间缩放等比缩短；MARCH task='plunder' 被拒，PLUNDER_COOLDOWN）；从未被掠为 null。 |
 
 **可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
@@ -3626,7 +3628,8 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
       },
       "npc": null,
       "scoutedAt": null,
-      "plunderedAt": null
+      "plunderedAt": null,
+      "wildFamousIntel": null
     }
   }
 }
@@ -4966,8 +4969,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | broadcasts | array | 播报列表（新→旧）：{ id, type, detail, createdAt }。 |
-| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' | 播报类型（后五类为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场，必达、不受每分钟 3 条限频）。 |
-| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）。 |
+| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；以上均必达、不受每分钟 3 条限频）。 |
+| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）。 |
 | broadcasts[].createdAt | string | 播报写入时间（ISO 8601）。 |
 
 **Agent 提示**：播报是全服氛围信息，与你的决策无强制关系；但「某 NPC 城被掠空」意味着那座城不再值得打，「首个占领金矿」意味着金矿红利已被拿走。别把播报当任务清单——玩家对打法的意图直接与玩家沟通确认。
@@ -5602,7 +5605,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-返回账号全部武将（含属性、等级 / 经验、俸禄、欠饷 / 重伤状态、占用关系）、当前（或指定）城酒馆的候选（每城一座酒馆，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限，以及全部 11 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从酒馆所在城扣）。**名将**（三项各 45–65）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级三项属性各 +1（名将 +2），上限 20 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。
+返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（每城一座酒馆，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限、全部 40 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null，在野名将附 wildAt 落位），以及在野名将的结交进度（friendships）与结交资格（unlocks）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从酒馆所在城扣）。**名将**（三项各 45–65）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 3、名将 5，由玩家分到三项属性，v54 起升级不再自动加属性），上限 40 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。
 
 **请求字段**
 
@@ -5620,9 +5623,12 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | famousCap / famousCount | number | 名将上限（固定 3，不占普通将上限）与当前数量。 |
 | heroes | array | 账号全部武将：{ id, name, famous, lead, force, wit, level, exp, expNext 距下一级, salaryPerHour 已随时间缩放, arrears 欠饷, woundedUntil 重伤恢复时刻或 null, guardCityId 正在城守的城或 null, marchingMarchId 正在随行的行军或 null, bonus { atkPercent, defPercent, leadCap }（满编口径）, guardProductionPercent 城守产量加成 }。 |
 | candidates | array | 该城酒馆当前候选：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；酒馆未建为空数组。 |
-| famousClaims | array | 全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt }。 |
+| famousClaims | array | 全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将的落位 { x, y, level } 或 null }。 |
+| friendships | array | 结交进度（v54）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 已被他人招揽（作废）}。 |
+| unlocks | string[] | 结交资格（v54）：打赢过其野地守军、且尚未被他人获得的在野名将名。 |
+| friendshipCap | number | 同时结交上限（v54，固定 2）。 |
 
-**Agent 提示**：配将出征流程：GET_HEROES 挑选 arrears=false 且 woundedUntil 为 null / 已过期、marchingMarchId 与 guardCityId 都为 null 的武将，MARCH / SCOUT 带 heroId 即随队（一支部队至多一名，同一武将同一时间只能在一支部队里，城守不能出征）。经验与等级在 heroes[] 里实时可查（expNext = 距下一级还差多少）。名将归属见 famousClaims——未被获得的名将按 sourceLabel 的条件争取（首占名城 / 老巢首杀 / 贡献前二）。收到 PUSH_HERO_STATE 后重拉本协议对齐。
+**Agent 提示**：培养与结交：加点 / 洗点 / 历练 / 赏赐见 ALLOCATE_HERO_POINTS 等协议；结交与招揽见 BEFRIEND_HERO / RECRUIT_FAMOUS_HERO（先看 unlocks）。配将出征流程：GET_HEROES 挑选 arrears=false 且 woundedUntil 为 null / 已过期、marchingMarchId 与 guardCityId 都为 null 的武将，MARCH / SCOUT 带 heroId 即随队（一支部队至多一名，同一武将同一时间只能在一支部队里，城守不能出征）。经验与等级在 heroes[] 里实时可查（expNext = 距下一级还差多少）。名将归属见 famousClaims——未被获得的名将按 sourceLabel 的条件争取（首占名城 / 老巢首杀 / 贡献前二）。收到 PUSH_HERO_STATE 后重拉本协议对齐。
 
 **示例**
 
@@ -5664,9 +5670,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "level": 3,
         "exp": 240,
         "expNext": 60,
+        "freePoints": 6,
         "salaryPerHour": 60,
         "arrears": false,
         "woundedUntil": null,
+        "training": null,
         "guardCityId": null,
         "marchingMarchId": null,
         "bonus": {
@@ -5674,7 +5682,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "defPercent": 4.5,
           "leadCap": 640
         },
-        "guardProductionPercent": 1.5
+        "guardProductionPercent": 1.5,
+        "dailyLeft": {
+          "gift": 3,
+          "reset": 1
+        }
       }
     ],
     "candidates": [
@@ -5693,7 +5705,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "name": "吕布",
         "sourceLabel": "首占名城「洛阳」",
         "ownerUsername": null,
-        "grantedAt": null
+        "grantedAt": null,
+        "wildAt": null
       },
       "（共 11 名，其余略）"
     ]
@@ -5758,9 +5771,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "level": 3,
       "exp": 240,
       "expNext": 60,
+      "freePoints": 6,
       "salaryPerHour": 60,
       "arrears": false,
       "woundedUntil": null,
+      "training": null,
       "guardCityId": null,
       "marchingMarchId": null,
       "bonus": {
@@ -5768,7 +5783,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "defPercent": 4.5,
         "leadCap": 640
       },
-      "guardProductionPercent": 1.5
+      "guardProductionPercent": 1.5,
+      "dailyLeft": {
+        "gift": 3,
+        "reset": 1
+      }
     }
   }
 }
@@ -5886,9 +5905,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "level": 3,
       "exp": 240,
       "expNext": 60,
+      "freePoints": 6,
       "salaryPerHour": 60,
       "arrears": false,
       "woundedUntil": null,
+      "training": null,
       "guardCityId": null,
       "marchingMarchId": null,
       "bonus": {
@@ -5896,7 +5917,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "defPercent": 4.5,
         "leadCap": 640
       },
-      "guardProductionPercent": 1.5
+      "guardProductionPercent": 1.5,
+      "dailyLeft": {
+        "gift": 3,
+        "reset": 1
+      }
     }
   }
 }
@@ -6728,6 +6753,861 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "error": {
     "code": "AGENT_FORBIDDEN",
     "message": "该操作不允许当前连接的登录类型调用（仅限玩家或仅限 Agent，见协议说明）"
+  }
+}
+```
+
+### op 73 · GET_ARENA — 查询竞技场
+
+`C→S` 请求-响应 · 需登录后发送
+
+（v53，AISLG-145）返回我在竞技场的完整状态：名次、阵容、今日挑战与被挑战次数、可挑战对手、榜单前 100 名与规则常量。进入竞技场时先调用一次；之后以 ARENA_CHALLENGE / SET_ARENA_LINEUP 的响应为准，不必重复查询。第一次访问时系统会补齐 20 个守擂者（占榜首 1–20 名）。玩家与 Agent 同一套规则。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| joined | boolean | 是否已入榜（第一次保存阵容时入榜）。 |
+| rank | number \| null | 当前名次；未入榜为 null。 |
+| bestRank | number \| null | 历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。 |
+| totalEntries | number | 榜上席位总数（含 20 个系统守擂者）。 |
+| lineup | Array<Fighter \| null> | 我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。 |
+| challengesLeft / challengesMax | number | 本竞技日剩余 / 上限挑战次数（上限 5）。 |
+| defendedToday / defendedMax | number | 本竞技日我被挑战的次数 / 上限（上限 10）。 |
+| nextDayAt | string (ISO) | 下一个竞技日开始的时刻（次数重置、每日奖励发放）。 |
+| dailyReward | number | 按当前名次，下一次发放的每日奖励（金币）；未入榜为 0。 |
+| opponents | Opponent[] | 可挑战的对手，按名次从近到远：entryId（ARENA_CHALLENGE 用）、rank、username、npc、lineup（匿名，heroId 恒为 null）、defendedToday。 |
+| top | Array<{rank, username, npc}> | 榜单前 100 名（实时，不挂进现有排行榜）。 |
+| rules | object | 规则常量：slots、dailyChallenges、dailyDefendedMax、maxRankGap、pairCooldownSeconds、dailyRewards、milestoneRewards、armyBase、armyPerLead、armyKinds（标准军队人数 = armyBase + 统率 × armyPerLead）。 |
+
+**示例**
+
+**已入榜**
+
+请求：
+
+```json
+{
+  "op": 73,
+  "seq": 1
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 73,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "joined": true,
+    "rank": 21,
+    "bestRank": 21,
+    "totalEntries": 21,
+    "lineup": [
+      {
+        "heroId": "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+        "name": "关羽",
+        "lead": 88,
+        "force": 96,
+        "wit": 45,
+        "level": 12
+      },
+      null,
+      null
+    ],
+    "challengesLeft": 5,
+    "challengesMax": 5,
+    "defendedToday": 0,
+    "defendedMax": 10,
+    "nextDayAt": "2026-10-12T16:00:00.000Z",
+    "dailyReward": 1000,
+    "opponents": [
+      {
+        "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d",
+        "rank": 11,
+        "username": "守擂·张飞",
+        "npc": true,
+        "lineup": [
+          {
+            "heroId": null,
+            "name": "张飞",
+            "lead": 66,
+            "force": 60,
+            "wit": 57,
+            "level": 22
+          },
+          null,
+          null
+        ],
+        "defendedToday": 0
+      }
+    ],
+    "top": [
+      {
+        "rank": 1,
+        "username": "卧龙先生",
+        "npc": false
+      }
+    ],
+    "rules": {
+      "slots": 3,
+      "dailyChallenges": 5,
+      "dailyDefendedMax": 10,
+      "maxRankGap": 10,
+      "pairCooldownSeconds": 300,
+      "dailyRewards": [
+        {
+          "upTo": 1,
+          "gold": 50000
+        },
+        {
+          "upTo": 10,
+          "gold": 30000
+        },
+        {
+          "upTo": 50,
+          "gold": 15000
+        },
+        {
+          "upTo": 200,
+          "gold": 5000
+        },
+        {
+          "upTo": null,
+          "gold": 1000
+        }
+      ],
+      "milestoneRewards": [
+        {
+          "upTo": 200,
+          "gold": 20000
+        },
+        {
+          "upTo": 50,
+          "gold": 50000
+        },
+        {
+          "upTo": 10,
+          "gold": 100000
+        },
+        {
+          "upTo": 1,
+          "gold": 300000
+        }
+      ],
+      "armyBase": 2000,
+      "armyPerLead": 2,
+      "armyKinds": [
+        "swordsman",
+        "archer"
+      ]
+    }
+  }
+}
+```
+
+### op 74 · SET_ARENA_LINEUP — 保存竞技场阵容
+
+`C→S` 请求-响应 · 需登录后发送
+
+（v53，AISLG-145）保存竞技场阵容：heroIds 为 3 个号位（1/2/3 号位），空位用 null；至少要有 1 名武将，同一武将不能占两个号位，武将必须属于本账号。第一次保存即入榜，排在榜尾（名次 = 当前总人数 + 1 之后的最后一名）。阵容随时可改，改完马上生效：别人挑战你时用的是你保存那一刻的阵容与武将当时的属性。武将重伤、没发俸禄、正在外出都不影响参赛（对战是模拟的）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroIds | Array<string \| null> | 必填。长度 ≤ 3 的数组，元素为武将 id 或 null（空位）；至少一个非 null；不能重复。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| joined | boolean | 是否已入榜（第一次保存阵容时入榜）。 |
+| rank | number \| null | 当前名次；未入榜为 null。 |
+| bestRank | number \| null | 历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。 |
+| totalEntries | number | 榜上席位总数（含 20 个系统守擂者）。 |
+| lineup | Array<Fighter \| null> | 我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。 |
+| challengesLeft / challengesMax | number | 本竞技日剩余 / 上限挑战次数（上限 5）。 |
+| defendedToday / defendedMax | number | 本竞技日我被挑战的次数 / 上限（上限 10）。 |
+| nextDayAt | string (ISO) | 下一个竞技日开始的时刻（次数重置、每日奖励发放）。 |
+| dailyReward | number | 按当前名次，下一次发放的每日奖励（金币）；未入榜为 0。 |
+| opponents | Opponent[] | 可挑战的对手，按名次从近到远：entryId（ARENA_CHALLENGE 用）、rank、username、npc、lineup（匿名，heroId 恒为 null）、defendedToday。 |
+| top | Array<{rank, username, npc}> | 榜单前 100 名（实时，不挂进现有排行榜）。 |
+| rules | object | 规则常量：slots、dailyChallenges、dailyDefendedMax、maxRankGap、pairCooldownSeconds、dailyRewards、milestoneRewards、armyBase、armyPerLead、armyKinds（标准军队人数 = armyBase + 统率 × armyPerLead）。 |
+
+**可能错误**：`HERO_NOT_FOUND`、`INVALID_PARAMS`（处置建议见第 4 节）
+
+**示例**
+
+**第一次保存阵容，入榜**
+
+请求：
+
+```json
+{
+  "op": 74,
+  "seq": 2,
+  "data": {
+    "heroIds": [
+      "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+      null,
+      null
+    ]
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 74,
+  "seq": 2,
+  "ok": true,
+  "data": {
+    "joined": true,
+    "rank": 21,
+    "bestRank": 21,
+    "totalEntries": 21,
+    "lineup": [
+      {
+        "heroId": "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+        "name": "关羽",
+        "lead": 88,
+        "force": 96,
+        "wit": 45,
+        "level": 12
+      },
+      null,
+      null
+    ],
+    "challengesLeft": 5,
+    "challengesMax": 5,
+    "defendedToday": 0,
+    "defendedMax": 10,
+    "nextDayAt": "2026-10-12T16:00:00.000Z",
+    "dailyReward": 1000,
+    "opponents": [
+      {
+        "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d",
+        "rank": 11,
+        "username": "守擂·张飞",
+        "npc": true,
+        "lineup": [
+          {
+            "heroId": null,
+            "name": "张飞",
+            "lead": 66,
+            "force": 60,
+            "wit": 57,
+            "level": 22
+          },
+          null,
+          null
+        ],
+        "defendedToday": 0
+      }
+    ],
+    "top": [
+      {
+        "rank": 1,
+        "username": "卧龙先生",
+        "npc": false
+      }
+    ],
+    "rules": {
+      "slots": 3,
+      "dailyChallenges": 5,
+      "dailyDefendedMax": 10,
+      "maxRankGap": 10,
+      "pairCooldownSeconds": 300,
+      "dailyRewards": [
+        {
+          "upTo": 1,
+          "gold": 50000
+        },
+        {
+          "upTo": 10,
+          "gold": 30000
+        },
+        {
+          "upTo": 50,
+          "gold": 15000
+        },
+        {
+          "upTo": 200,
+          "gold": 5000
+        },
+        {
+          "upTo": null,
+          "gold": 1000
+        }
+      ],
+      "milestoneRewards": [
+        {
+          "upTo": 200,
+          "gold": 20000
+        },
+        {
+          "upTo": 50,
+          "gold": 50000
+        },
+        {
+          "upTo": 10,
+          "gold": 100000
+        },
+        {
+          "upTo": 1,
+          "gold": 300000
+        }
+      ],
+      "armyBase": 2000,
+      "armyPerLead": 2,
+      "armyKinds": [
+        "swordsman",
+        "archer"
+      ]
+    }
+  }
+}
+```
+
+**阵容里有不属于本账号的武将**
+
+请求：
+
+```json
+{
+  "op": 74,
+  "seq": 3,
+  "data": {
+    "heroIds": [
+      "00000000-0000-4000-8000-000000000000",
+      null,
+      null
+    ]
+  }
+}
+```
+
+失败响应（`HERO_NOT_FOUND`）：
+
+```json
+{
+  "op": 74,
+  "seq": 3,
+  "ok": false,
+  "error": {
+    "code": "HERO_NOT_FOUND",
+    "message": "该武将不存在或不属于本账号"
+  }
+}
+```
+
+### op 75 · ARENA_CHALLENGE — 发起竞技挑战
+
+`C→S` 请求-响应 · 需登录后发送
+
+（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；刀盾 / 弓箭各一半），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| entryId | string | 必填。对手席位 id，即 GET_ARENA 的 opponents[].entryId。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| match | Match | 本场战报：role（我是 challenger 还是 defender）、双方名次前后、challengerWon、challengerWins / defenderWins、rounds（实际进行的局，每局含 slot、winner、reason 与交战摘要）、双方阵容快照。 |
+| rank | number | 挑战后我的名次。 |
+| bestRank | number | 挑战后的历史最好名次。 |
+| challengesLeft | number | 本竞技日剩余挑战次数。 |
+| milestoneGold | number | 本次历史最好名次升进新名次档拿到的一次性奖励（金币），没有为 0。入榜时不发。 |
+| milestoneTiers | number[] | 本次升进的名次档（如 [10] 表示首次进入前 10）。 |
+
+**可能错误**：`ARENA_NOT_JOINED`、`ARENA_TARGET_INVALID`、`ARENA_NO_CHALLENGES`、`ARENA_TARGET_BUSY`、`ARENA_PAIR_COOLDOWN`、`INVALID_PARAMS`（处置建议见第 4 节）
+
+**Agent 提示**：挑战前先看 opponents 里的 rank 与 defendedToday；ARENA_NO_CHALLENGES / ARENA_TARGET_BUSY 响应附 nextDayAt 与 retryAfterSeconds，等到那时再试。ARENA_PAIR_COOLDOWN 附 retryAfterSeconds。名次会被别人的挑战改变，遇到 ARENA_TARGET_INVALID 应重拉 GET_ARENA。
+
+**示例**
+
+**挑战成功，互换名次**
+
+请求：
+
+```json
+{
+  "op": 75,
+  "seq": 4,
+  "data": {
+    "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 75,
+  "seq": 4,
+  "ok": true,
+  "data": {
+    "match": {
+      "id": 101,
+      "createdAt": "2026-10-12T08:00:00.000Z",
+      "role": "challenger",
+      "challenger": {
+        "username": "我",
+        "rankBefore": 21,
+        "rankAfter": 11
+      },
+      "defender": {
+        "username": "守擂·张飞",
+        "npc": true,
+        "rankBefore": 11,
+        "rankAfter": 21
+      },
+      "challengerWon": true,
+      "challengerWins": 2,
+      "defenderWins": 1,
+      "rounds": [],
+      "challengerLineup": [],
+      "defenderLineup": []
+    },
+    "rank": 11,
+    "bestRank": 11,
+    "challengesLeft": 4,
+    "milestoneGold": 0,
+    "milestoneTiers": []
+  }
+}
+```
+
+**名次变化后对手已不在范围内**
+
+请求：
+
+```json
+{
+  "op": 75,
+  "seq": 5,
+  "data": {
+    "entryId": "0c9e7d3a-2b1f-4e6a-9d8c-7f5e3a1b2c4d"
+  }
+}
+```
+
+失败响应（`ARENA_TARGET_INVALID`）：
+
+```json
+{
+  "op": 75,
+  "seq": 5,
+  "ok": false,
+  "error": {
+    "code": "ARENA_TARGET_INVALID",
+    "message": "这个对手现在不能挑战（名次已变化：必须比你靠前且差距不超过 10 名），请刷新对手列表"
+  }
+}
+```
+
+### op 76 · GET_ARENA_REPORTS — 查询竞技场战报
+
+`C→S` 请求-响应 · 需登录后发送
+
+（v53，AISLG-145）返回我参与过的竞技战报（我挑战别人的、别人挑战我的），按时间从新到旧。战报保留 7 天，过期自动清理。战报里只有对手武将的名字与属性，不含武将 id。翻页：取最后一条的 id 作为 beforeId 再查，直到 hasMore 为 false。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| limit | number | 可选，1..50，默认 20。 |
+| beforeId | number | 可选。只取 id 小于它的更早战报。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reports | Match[] | 战报列表，每条与 ARENA_CHALLENGE 响应里的 match 结构相同（role 指明我是哪一方）。 |
+| hasMore | boolean | 是否还有更早的战报。 |
+
+**可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
+
+**示例**
+
+**最近一页战报**
+
+请求：
+
+```json
+{
+  "op": 76,
+  "seq": 6,
+  "data": {
+    "limit": 20
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 76,
+  "seq": 6,
+  "ok": true,
+  "data": {
+    "reports": [],
+    "hasMore": false
+  }
+}
+```
+
+### op 77 · ALLOCATE_HERO_POINTS — 分配自由点数（v54，AISLG-144）
+
+`C→S` 请求-响应 · 需登录后发送
+
+把武将的自由点数（heroes[].freePoints）分到统率 lead / 武力 force / 智力 wit，三项各为非负整数，合计至少 1、不超过自由点数。只能对在家的武将操作（HERO_BUSY / HERO_TRAINING 拒绝）。培养（v54，AISLG-144）：升一级获得自由点数（普通将 3、名将 5），由玩家分到统率 / 武力 / 智力，等级上限 40；升级不再自动加属性。洗点花 等级 × 1000 金币，已分配点数全部退回，每个武将每游戏日 1 次。历练派出去 1 / 4 / 12 小时基准（随时间缩放），到点经验 = 基础经验 × 武将等级 ÷ 10（基础 200 / 1000 / 4000），到点自动到账，离线也结算。赏赐每次花 1000 金币 → 100 经验，每个武将每游戏日最多 3 次。加点 / 洗点 / 历练 / 解雇 / 出征 / 任城守都要求武将不在外出、不在城守、不在历练（赏赐不受限）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroId | string | 武将 id。 |
+| lead / force / wit | number | 分给三项的点数（可缺省，缺省为 0）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| hero | object | 分配后的武将视图（结构同 GET_HEROES 的 heroes[] 元素）。 |
+
+**可能错误**：`INVALID_PARAMS`、`HERO_NOT_FOUND`、`HERO_BUSY`、`HERO_TRAINING`、`HERO_POINTS_INSUFFICIENT`（处置建议见第 4 节）
+
+**Agent 提示**：武力 / 智力加成在 67 左右就封顶了（各 20%），多余点数优先给统率（统率 × 20 = 能吃满加成的兵数）。
+
+**示例**
+
+**把 2 点给武力、1 点给统率**
+
+请求：
+
+```json
+{
+  "op": 77,
+  "seq": 30,
+  "data": {
+    "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1",
+    "lead": 1,
+    "force": 2
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 77,
+  "seq": 30,
+  "ok": true,
+  "data": {
+    "hero": {
+      "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+      "freePoints": 0
+    }
+  }
+}
+```
+
+### op 78 · RESET_HERO_POINTS — 洗点（v54，AISLG-144）
+
+`C→S` 请求-响应 · 需登录后发送
+
+把已分配的点数全部退回自由点数，属性还原到武将的初始值。花费 = 武将等级 × 1000 金币（主城扣）；每个武将每游戏日 1 次；没有已分配点数时拒绝（HERO_NOTHING_TO_RESET）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroId | string | 武将 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| hero | object | 洗点后的武将视图（freePoints 已含退回的点数，dailyLeft.reset 已减 1）。 |
+
+**可能错误**：`INVALID_PARAMS`、`HERO_NOT_FOUND`、`HERO_BUSY`、`HERO_TRAINING`、`HERO_NOTHING_TO_RESET`、`HERO_DAILY_LIMIT`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：洗点是按等级收费的，武将越高越贵；先在低等级把点数想清楚再洗。
+
+**示例**
+
+**洗点**
+
+请求：
+
+```json
+{
+  "op": 78,
+  "seq": 31,
+  "data": {
+    "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 78,
+  "seq": 31,
+  "ok": true,
+  "data": {
+    "hero": {
+      "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+      "freePoints": 4
+    }
+  }
+}
+```
+
+### op 79 · TRAIN_HERO — 派武将历练（v54，AISLG-144）
+
+`C→S` 请求-响应 · 需登录后发送
+
+派武将离家历练 1 / 4 / 12 小时基准（tier 1 / 2 / 3，随时间缩放）。到点经验 = 基础经验（200 / 1000 / 4000）× 开始历练时的武将等级 ÷ 10，由 Worker 到点结算（离线也结算），到账后推送 reason=training_done，升级的自由点数照常获得。历练期间武将不能带兵 / 城守 / 解雇 / 加点 / 洗点；赏赐不受限。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroId | string | 武将 id。 |
+| tier | number | 档位 1 / 2 / 3。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| hero | object | 历练中的武将视图（training = { tier, endsAt, exp }）。 |
+
+**可能错误**：`INVALID_PARAMS`、`HERO_NOT_FOUND`、`HERO_BUSY`、`HERO_TRAINING`（处置建议见第 4 节）
+
+**Agent 提示**：历练是把武将变成经验的最省心方式：不花金币，代价是这段时间它不能出战。等级越高，同档位给的经验越多。
+
+**示例**
+
+**派去历练 4 小时**
+
+请求：
+
+```json
+{
+  "op": 79,
+  "seq": 32,
+  "data": {
+    "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1",
+    "tier": 2
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 79,
+  "seq": 32,
+  "ok": true,
+  "data": {
+    "hero": {
+      "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+      "training": {
+        "tier": 2,
+        "endsAt": "2026-10-12T12:00:00.000Z",
+        "exp": 320
+      }
+    }
+  }
+}
+```
+
+### op 80 · GIFT_HERO — 赏赐武将（v54，AISLG-144）
+
+`C→S` 请求-响应 · 需登录后发送
+
+花 1000 金币（主城扣）给武将加 100 经验，每个武将每游戏日最多 3 次；外出 / 城守 / 历练中的武将也能赏赐。经验可能让武将升级并获得自由点数。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroId | string | 武将 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| hero | object | 赏赐后的武将视图（exp / level / freePoints / dailyLeft.gift 已更新）。 |
+
+**可能错误**：`INVALID_PARAMS`、`HERO_NOT_FOUND`、`HERO_DAILY_LIMIT`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：1000 金币换 100 经验，比历练贵，但不占用武将时间；适合临时凑等级。
+
+**示例**
+
+**赏赐一次**
+
+请求：
+
+```json
+{
+  "op": 80,
+  "seq": 33,
+  "data": {
+    "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 80,
+  "seq": 33,
+  "ok": true,
+  "data": {
+    "hero": {
+      "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+      "dailyLeft": {
+        "gift": 2,
+        "reset": 1
+      }
+    }
+  }
+}
+```
+
+### op 81 · BEFRIEND_HERO — 结交在野名将（v54，AISLG-144）
+
+`C→S` 请求-响应 · 需登录后发送
+
+对已获得结交资格（GET_HEROES 的 unlocks 里）的在野名将结交一次：花 500 × 野地等级 金币（主城扣），好感 +10（上限 100）。每个名将每游戏日最多 5 次；同时结交的名将最多 2 名。好感满 100 后不能再结交，改用 RECRUIT_FAMOUS_HERO。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroName | string | 在野名将名（GET_HEROES 的 unlocks / famousClaims）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| friendship | object | 结交后的进度：{ heroName, favor 好感, todayLeft 今日剩余次数, cost 下次花费, lost }。 |
+
+**可能错误**：`INVALID_PARAMS`、`HERO_NOT_UNLOCKED`、`FAMOUS_CLAIMED`、`HERO_FAVOR_FULL`、`HERO_FRIENDSHIP_LIMIT`、`HERO_DAILY_LIMIT`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：先在 GET_WORLD_MAP / GET_TILE 找 wildFamous 标记的野地，派部队打赢守军拿到资格。结交的金币花在主城，每次都要看 cost。
+
+**示例**
+
+**结交一次**
+
+请求：
+
+```json
+{
+  "op": 81,
+  "seq": 34,
+  "data": {
+    "heroName": "关羽"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 81,
+  "seq": 34,
+  "ok": true,
+  "data": {
+    "friendship": {
+      "heroName": "关羽",
+      "favor": 10,
+      "todayLeft": 4,
+      "cost": 1000,
+      "lost": false
+    }
+  }
+}
+```
+
+### op 82 · RECRUIT_FAMOUS_HERO — 招揽在野名将（v54，AISLG-144）
+
+`C→S` 请求-响应 · 需登录后发送
+
+好感满 100 后招揽该在野名将，加入账号为名将（名将上限 3 名，不占普通将上限）。全服唯一：已被他人获得返回 FAMOUS_CLAIMED；成功后全服播报（hero_granted）。名将的三项属性在落位时已固定，侦察看到的就是它。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroName | string | 在野名将名。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| hero | object | 新名将的武将视图。 |
+
+**可能错误**：`INVALID_PARAMS`、`HERO_NOT_UNLOCKED`、`HERO_FAVOR_INSUFFICIENT`、`FAMOUS_CLAIMED`、`HERO_CAP_REACHED`（处置建议见第 4 节）
+
+**Agent 提示**：招揽是全服竞争：好感满的那一刻就去招，慢一步就会被 FAMOUS_CLAIMED。
+
+**示例**
+
+**招揽成功**
+
+请求：
+
+```json
+{
+  "op": 82,
+  "seq": 35,
+  "data": {
+    "heroName": "关羽"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 82,
+  "seq": 35,
+  "ok": true,
+  "data": {
+    "hero": {
+      "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+      "name": "关羽",
+      "famous": true
+    }
   }
 }
 ```
@@ -7671,13 +8551,13 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 
 `S→C` 服务端推送 · 无 `seq`
 
-账号武将发生变化时推给该账号全部在线连接（含 Agent）：招募 / 解雇 / 城守任命、欠饷开始 / 恢复、带队战败重伤、战斗获得经验（含升级）、获得名将。载荷只带变化摘要，收到后重拉 GET_HEROES 对齐。
+账号武将发生变化时推给该账号全部在线连接（含 Agent）：招募 / 解雇 / 城守任命、欠饷开始 / 恢复、带队战败重伤、战斗获得经验（含升级）、获得名将；v54 起还有历练开始 / 结束、加点 / 洗点、赏赐、结交进度变化。载荷只带变化摘要，收到后重拉 GET_HEROES 对齐。
 
 **data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| reason | string | recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted。 |
+| reason | string | recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）。 |
 | heroId | string | 涉及的武将 id（guard_changed 撤任时可能为 null）。 |
 | exp | object | reason=exp_gained 时给出 { gained 本次经验, level, leveledTo 升到几级或 null }。 |
 
@@ -7892,6 +8772,58 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2021 · PUSH_ARENA_STATE — 推送：竞技场状态变化
+
+`S→C` 服务端推送 · 无 `seq`
+
+（v53，AISLG-145）竞技场状态变化时推送给该账号全部在线连接（含 Agent 连接）。reason=challenged：被人挑战（名次可能已变化，defeated 表示我是否被打败，rank 为我挑战后的名次）；daily_reward：每日奖励到账（gold）；milestone：首次进入新名次档拿到一次性奖励（gold、tiers）。推送只带变化摘要，完整状态用 GET_ARENA 查询。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reason | 'challenged' \| 'daily_reward' \| 'milestone' | 触发本次推送的状态变化。 |
+| challenger | string | challenged：挑战方的昵称。 |
+| defeated | boolean | challenged：我是否被打败（true 表示挑战方赢，我的名次已下沉）。 |
+| rank | number | challenged：挑战结束后我的名次；daily_reward：发放时我的名次。 |
+| matchId | number | challenged：本场战报 id，可用 GET_ARENA_REPORTS 查详情。 |
+| gold | number | daily_reward / milestone：到账的金币。 |
+| tiers | number[] | milestone：本次新进入的名次档。 |
+
+**Agent 提示**：收到 challenged 且 defeated 为 true 时，名次已下沉：如需反击，先 GET_ARENA 拿最新 opponents，再决定是否挑战。daily_reward 只表示金币已进主城，无需另行领取。
+
+**示例**
+
+推送（`challenged`）：
+
+```json
+{
+  "op": 2021,
+  "push": true,
+  "data": {
+    "reason": "challenged",
+    "challenger": "卧龙先生",
+    "defeated": true,
+    "rank": 12,
+    "matchId": 101
+  }
+}
+```
+
+推送（`daily_reward`）：
+
+```json
+{
+  "op": 2021,
+  "push": true,
+  "data": {
+    "reason": "daily_reward",
+    "gold": 1000,
+    "rank": 21
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -7943,6 +8875,15 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `HERO_BUSY` | （v36，AISLG-114）武将正在随队出征（含返程），不能出征 / 解雇 / 任命城守。 | 等部队回城（marchingMarchId 变回 null）后再操作。 |
 | `HERO_WOUNDED` | （v36，AISLG-114）武将重伤未愈（带队战败后 2 小时基准，随时间缩放），不能出征。 | 等 woundedUntil 过去，或换其他武将。 |
 | `HERO_ARREARS` | （v36，AISLG-114）武将欠饷中（主城金币不足以支付俸禄），不能出征。 | 给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。 |
+| `HERO_TRAINING` | （v54，AISLG-144）武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）。 | 等历练结束（train_until 过去，经验到账并收到 reason=training_done 推送）后再操作。 |
+| `HERO_POINTS_INSUFFICIENT` | （v54，AISLG-144）分配点数超过自由点数（附 freePoints）。 | 先升级获得点数（每级普通将 3、名将 5），或减少分配数量。 |
+| `HERO_NOTHING_TO_RESET` | （v54，AISLG-144）武将没有已分配的点数（属性等于初始值），洗点无意义。 | 先加点再洗点；无需洗点时不必调用。 |
+| `HERO_DAILY_LIMIT` | （v54，AISLG-144）今日次数已用完（附 limit）：赏赐每武将 3 次、洗点每武将 1 次、结交每名将 5 次，按游戏日（东八区自然日，随时间缩放）重置。 | 等下一个游戏日（data.limit 为上限）再操作。 |
+| `HERO_NOT_UNLOCKED` | （v54，AISLG-144）尚未获得该在野名将的结交资格：需先用部队打赢其所在野地的原住守军（GET_WORLD_MAP 的 wildFamous 标记此地）。 | 派部队去该野地打守军；打赢后武将界面出现该名将的结交入口。 |
+| `HERO_FRIENDSHIP_LIMIT` | （v54，AISLG-144）同时结交的在野名将已达上限 2 名（好感未满且未被他人招揽的才计入）。 | 等其中一名好感满 100 并招揽，或它已被他人获得，腾出名额后再结交。 |
+| `HERO_FAVOR_INSUFFICIENT` | （v54，AISLG-144）好感度未满 100，不能招揽（附 favor）。 | 继续 BEFRIEND_HERO 结交（每次 +10，每日最多 5 次）。 |
+| `HERO_FAVOR_FULL` | （v54，AISLG-144）好感度已满 100，不能再结交。 | 直接 RECRUIT_FAMOUS_HERO 招揽。 |
+| `FAMOUS_CLAIMED` | （v54，AISLG-144）该名将已被他人获得（全服唯一）。 | 换一名在野名将；GET_HEROES 的 famousClaims 可查归属。 |
 | `GUARD_ASSIGN_DENIED` | （v36，AISLG-115）城守不能同时出征；城守只能任命未随行出征的本账号武将。 | 先撤任（ASSIGN_HERO heroId=null）再出征，或换其他武将带队。 |
 | `NEWBIE_PROTECTED` | （v38，AISLG-122；门槛 v42 校准为 8 级）目标玩家处于新手保护期（注册后 3 天或任一城官府升到 8 级，先到为准），不能被侦察 / 攻击（SCOUT 与 MARCH 均返回本码）。data.until / data.retryAfterSeconds 为截止时刻与剩余秒数。 | 等保护期结束后再打（按 retryAfterSeconds 睡满后重发），或换目标。新手玩家主动侦察 / 攻击其他玩家会立即失去保护。 |
 | `TARGET_IN_TRUCE` | （v38，AISLG-122）目标处于免战期：城被攻破 / 被抢后的被动免战（4 小时基准）或目标自己开启的主动免战（12 小时基准），玩家与 NPC 都不能再攻击。data.until / data.retryAfterSeconds 为截止时刻与剩余秒数。 | 按 retryAfterSeconds 睡满后重发，或换目标；在途部队到达时若目标进入免战会扑空返程（事件 outcome=aborted 并附 cause）。 |
@@ -7962,6 +8903,11 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `GITHUB_ALREADY_BOUND` | （v45）绑定 GitHub 时，该 GitHub 账号已绑了别的号，或当前账号已绑了别的 GitHub 账号。 | 用该 GitHub 账号直接登录它已绑定的号，或换一个 GitHub 账号绑定；暂不支持解绑。Agent 不涉及。 |
 | `RATE_LIMITED` | （v43）请求过于频繁：同一 IP 每分钟最多生成 20 张微信二维码（v44 起 Google 登录尝试、v45 起 GitHub 授权发起同样限频，各 20 次/分钟）。 | 等待一分钟后再试；不要连续重试。 |
 | `NICKNAME_TAKEN` | （v52）SET_NICKNAME 的昵称已被其他账号占用：昵称即账号 username，全服唯一。仅玩家连接可用。 | 换一个昵称重试。Agent 无权改名（AGENT_FORBIDDEN），需要时提示玩家本人在网页改。 |
+| `ARENA_NOT_JOINED` | （v53，AISLG-145）竞技场：账号还没入榜（从未保存过阵容），或阵容里一名武将都没有，不能发起挑战。 | 先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容（第一次保存即入榜，排在最后一名），再挑战。 |
+| `ARENA_TARGET_INVALID` | （v53，AISLG-145）竞技场：entryId 对应的席位不存在，或当前名次不在可挑战范围（必须比自己靠前，且差距不超过 maxRankGap 名）。名次会随别人的挑战变化，列表可能已过期。 | 重拉 GET_ARENA 取最新 opponents，再挑一个还在范围内的对手。 |
+| `ARENA_NO_CHALLENGES` | （v53，AISLG-145）竞技场：当前竞技日挑战次数已用完（上限 dailyChallenges）；响应附 nextDayAt（次数重置时刻）与 retryAfterSeconds。 | 等到 nextDayAt 之后再挑战；竞技日长度随全局时间缩放。 |
+| `ARENA_TARGET_BUSY` | （v53，AISLG-145）竞技场：对手当前竞技日被挑战的次数已达上限（dailyDefendedMax，防止被围攻）；响应附 nextDayAt 与 retryAfterSeconds。 | 换一个对手，或等到 nextDayAt 之后。 |
+| `ARENA_PAIR_COOLDOWN` | （v53，AISLG-145）竞技场：刚挑战过同一个对手，冷却未结束（pairCooldownSeconds，随时间缩放）；响应附 retryAfterSeconds。 | 等 retryAfterSeconds 秒后再挑战同一人，或先换别的对手。 |
 | `AGENT_PASSWORD_FORBIDDEN` | （v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。 | 改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。 |
 | `PASSWORD_LOGIN_CLOSED` | （v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。 | 网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
@@ -9275,7 +10221,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 52。
+- 协议版本随对外协议内容的每次变化递增；当前为 54。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

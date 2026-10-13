@@ -4,6 +4,8 @@
 
 import pg from 'pg';
 import { CHAT_SCHEMA_SQL } from './chat-schema';
+import { ARENA_SCHEMA_SQL } from './arena-schema';
+import { HERO_SCHEMA_SQL } from './hero-schema';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -648,7 +650,7 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL + CHAT_SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL);
         return;
       } catch (err) {
         if ((err as { code?: string }).code !== '40P01' || attempt >= 5) {

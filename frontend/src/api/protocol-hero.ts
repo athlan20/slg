@@ -3,6 +3,16 @@
 
 import type { InitiatorRole } from './protocol';
 
+/** 历练档位（v54，AISLG-144）：1 / 2 / 3 = 1 / 4 / 12 小时基准 */
+export type TrainingTier = 1 | 2 | 3;
+
+/** 历练中的武将（v54）：档位 / 结束时刻 / 到点经验 */
+export interface HeroTrainingView {
+  tier: TrainingTier;
+  endsAt: string;
+  exp: number;
+}
+
 /** 一名武将的视图（GET_HEROES / 推送共用） */
 export interface HeroView {
   id: string;
@@ -16,12 +26,16 @@ export interface HeroView {
   exp: number;
   /** 升到下一级还需要的经验（满级为 0） */
   expNext: number;
+  /** 未分配的自由点数（v54） */
+  freePoints: number;
   /** 俸禄（金币 / 小时，已按当前全局时间缩放折算） */
   salaryPerHour: number;
   /** 欠饷中（不能出征；俸禄扣款成功后自动恢复） */
   arrears: boolean;
   /** 重伤恢复时刻（ISO 8601；null = 健康） */
   woundedUntil: string | null;
+  /** 历练中（v54）：null = 不在历练 */
+  training: HeroTrainingView | null;
   /** 正在城守的城（cities.guard_hero_id 指向本武将的城）；null = 未任城守 */
   guardCityId: string | null;
   /** 正在随行的行军 id（marches.status='marching' 且 hero_id 指向本武将）；null = 在家 */
@@ -30,6 +44,21 @@ export interface HeroView {
   bonus: { atkPercent: number; defPercent: number; leadCap: number };
   /** 城守产量加成（百分数，四资源非金；未任城守也按当前智力给出可预期值） */
   guardProductionPercent: number;
+  /** 今日剩余次数（v54）：赏赐 / 洗点 */
+  dailyLeft: { gift: number; reset: number };
+}
+
+/** 在野名将的结交进度（v54） */
+export interface FriendshipView {
+  heroName: string;
+  /** 好感 0..100 */
+  favor: number;
+  /** 今日还能结交的次数 */
+  todayLeft: number;
+  /** 下一次结交的金币花费 */
+  cost: number;
+  /** 已被他人招揽（作废） */
+  lost: boolean;
 }
 
 /** 酒馆候选武将视图 */
@@ -53,6 +82,8 @@ export interface FamousClaimView {
   /** 当前主人用户名；null = 尚未被获得（可争取） */
   ownerUsername: string | null;
   grantedAt: string | null;
+  /** 在野名将的落位野地（坐标与等级）；名城 / 黄巾为 null */
+  wildAt: { x: number; y: number; level: number } | null;
 }
 
 /** GET_HEROES（op 49）请求：可选 cityId（缺省主城），指定看哪座城的酒馆候选 */
@@ -81,9 +112,41 @@ export interface HeroStateView {
   candidates: HeroCandidateView[];
   /** 全部名将的归属（含未获得） */
   famousClaims: FamousClaimView[];
+  /** 结交进度（v54，在野名将） */
+  friendships: FriendshipView[];
+  /** 结交资格：打赢过其野地守军、且尚未被获得的在野名将名（v54） */
+  unlocks: string[];
+  /** 同时结交上限（v54） */
+  friendshipCap: number;
 }
 
 export type GetHeroesResponseData = HeroStateView;
+
+/** ALLOCATE_HERO_POINTS（op 77）请求 / RESET_HERO_POINTS（op 78）/ TRAIN_HERO（op 79）/ GIFT_HERO（op 80）（v54） */
+export interface AllocateHeroPointsRequestData {
+  heroId: string;
+  lead?: number;
+  force?: number;
+  wit?: number;
+}
+
+export interface TrainHeroRequestData {
+  heroId: string;
+  tier: TrainingTier;
+}
+
+/** BEFRIEND_HERO（op 81）/ RECRUIT_FAMOUS_HERO（op 82）请求（v54） */
+export interface BefriendHeroRequestData {
+  heroName: string;
+}
+
+export interface BefriendHeroResponseData {
+  friendship: FriendshipView;
+}
+
+export interface HeroOnlyResponseData {
+  hero: HeroView;
+}
 
 /** RECRUIT_HERO（op 50）请求：从某座城的酒馆候选中招募一名武将 */
 export interface RecruitHeroRequestData {
@@ -129,7 +192,12 @@ export interface HeroStatePushData {
     | 'salary_paid'      // 欠饷恢复（扣款成功）
     | 'wounded'          // 带队战败重伤
     | 'exp_gained'       // 战斗获得经验 / 升级
-    | 'granted';         // 获得名将（全服另有播报）
+    | 'granted'          // 获得名将（全服另有播报）
+    | 'training_started' // 开始历练（v54）
+    | 'training_done'    // 历练结束，经验已到账（v54）
+    | 'points_changed'   // 加点 / 洗点（v54）
+    | 'gifted'           // 赏赐（v54）
+    | 'friendship_changed'; // 结交进度（v54）
   heroId?: string;
   /** exp_gained 时的经验与升级信息 */
   exp?: { gained: number; level: number; leveledTo: number | null };

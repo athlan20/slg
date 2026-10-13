@@ -1,6 +1,7 @@
-// 武将的数据库存取（v36，AISLG-114/115/116）：API（查询 / 招募 / 解雇 / 城守 / 出征校验）
-// 与 Worker（俸禄 / 战斗加成与经验 / 名将授予）共用。酒馆候选按 refreshed_at 惰性刷新
-// （读取时过期才重摇，无后台任务）；名将全服唯一靠 famous_heroes.name 主键 + ON CONFLICT。
+// 武将的数据库存取（v36，AISLG-114/115/116；v54 AISLG-144 加点 / 历练 / 赏赐 / 洗点）：API（查询 /
+// 招募 / 解雇 / 城守 / 出征校验）与 Worker（俸禄 / 战斗加成与经验 / 名将授予 / 历练结算）共用。
+// 酒馆候选按 refreshed_at 惰性刷新（读取时过期才重摇，无后台任务）；名将全服唯一靠
+// famous_heroes.name 主键 + ON CONFLICT。培养相关的每日计数在 hero-growth-db.ts。
 
 import pg from 'pg';
 import { scaledMs, scaledRate } from './time-scale';
@@ -9,7 +10,7 @@ import {
   HERO_LEVEL_MAX,
   expForNextLevel,
   applyHeroExp,
-  attrGainPerLevel,
+  heroPointsPerLevel,
   famousSourceKey,
   famousSourceLabel,
   heroBattleBonus,
@@ -23,18 +24,21 @@ import {
   TAVERN_REFRESH_HOURS,
   FAMOUS_HERO_CAP,
   type FamousHeroDef,
+  type HeroAttrs,
   type HeroBattleBonus,
 } from './hero';
+import { heroDayIndex, GIFT_DAILY_LIMIT, RESET_DAILY_LIMIT, type TrainingTier } from './hero-growth';
 import type {
   FamousClaimView,
   HeroCandidateView,
+  HeroTrainingView,
   HeroView,
 } from './protocol-hero';
 
 type Queryable = pg.Pool | pg.PoolClient;
 type Writer = pg.PoolClient;
 
-/** account_heroes 行 */
+/** account_heroes 行（v54：base_* 为初始属性，洗点还原到它；free_points 为未分配点数；train_* 为历练中） */
 export interface AccountHeroRow {
   id: string;
   account_id: string;
@@ -43,23 +47,49 @@ export interface AccountHeroRow {
   lead: number;
   force: number;
   wit: number;
+  base_lead: number;
+  base_force: number;
+  base_wit: number;
+  free_points: number;
   level: number;
   exp: number;
   arrears: boolean;
   salary_at: Date;
   wounded_until: Date | null;
+  train_until: Date | null;
+  train_tier: number | null;
+  train_exp: number | null;
+  gift_day: string | null;
+  gift_count: number;
+  reset_day: string | null;
+  reset_count: number;
   created_at: Date;
 }
 
 /** 武将的三项属性（规则函数入参形态） */
-export function heroAttrs(row: AccountHeroRow) {
+export function heroAttrs(row: AccountHeroRow): HeroAttrs {
   return { lead: row.lead, force: row.force, wit: row.wit };
 }
 
+/** 初始属性（洗点还原用） */
+export function heroBaseAttrs(row: AccountHeroRow): HeroAttrs {
+  return { lead: row.base_lead, force: row.base_force, wit: row.base_wit };
+}
+
+/** 今日已用次数（跨游戏日自动归零；day 为空表示从未使用） */
+export function usedToday(day: string | null, count: number, today: number): number {
+  return day !== null && Number(day) === today ? count : 0;
+}
+
 /** 行 → 视图（guardCityId / marchingMarchId 由调用方从占用关系查出后传入） */
-export function heroView(row: AccountHeroRow, guardCityId: string | null, marchingMarchId: string | null): HeroView {
+export function heroView(row: AccountHeroRow, guardCityId: string | null, marchingMarchId: string | null, now = new Date()): HeroView {
   const attrs = heroAttrs(row);
   const bonus = heroBattleBonus(attrs);
+  const today = heroDayIndex(now);
+  const training: HeroTrainingView | null =
+    row.train_until && row.train_tier && row.train_exp !== null
+      ? { tier: row.train_tier as TrainingTier, endsAt: row.train_until.toISOString(), exp: row.train_exp }
+      : null;
   return {
     id: row.id,
     name: row.name,
@@ -70,13 +100,19 @@ export function heroView(row: AccountHeroRow, guardCityId: string | null, marchi
     level: row.level,
     exp: row.exp,
     expNext: row.level >= HERO_LEVEL_MAX ? 0 : expForNextLevel(row.level) - row.exp,
+    freePoints: row.free_points,
     salaryPerHour: scaledRate(salaryPerHour(row.level, row.famous)),
     arrears: row.arrears,
     woundedUntil: row.wounded_until ? row.wounded_until.toISOString() : null,
+    training,
     guardCityId,
     marchingMarchId,
     bonus: { atkPercent: bonus.atkPercent, defPercent: bonus.defPercent, leadCap: bonus.leadCap },
     guardProductionPercent: guardProductionPercent(row.wit),
+    dailyLeft: {
+      gift: Math.max(0, GIFT_DAILY_LIMIT - usedToday(row.gift_day, row.gift_count, today)),
+      reset: Math.max(0, RESET_DAILY_LIMIT - usedToday(row.reset_day, row.reset_count, today)),
+    },
   };
 }
 
@@ -181,15 +217,15 @@ function candidateView(row: TavernCandidateRow): HeroCandidateView {
   };
 }
 
-/** 新建武将（招募 / 名将授予共用） */
+/** 新建武将（招募 / 名将授予共用）：初始属性同时记为洗点基准 */
 export async function insertHero(
   client: Writer,
   accountId: string,
   hero: { name: string; famous: boolean; lead: number; force: number; wit: number },
 ): Promise<AccountHeroRow> {
   const ins = await client.query(
-    `INSERT INTO account_heroes (account_id, name, famous, lead, force, wit)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    `INSERT INTO account_heroes (account_id, name, famous, lead, force, wit, base_lead, base_force, base_wit)
+     VALUES ($1, $2, $3, $4, $5, $6, $4, $5, $6) RETURNING *`,
     [accountId, hero.name, hero.famous, hero.lead, hero.force, hero.wit],
   );
   return ins.rows[0] as AccountHeroRow;
@@ -201,13 +237,15 @@ export async function deleteHero(client: Writer, heroId: string): Promise<void> 
 }
 
 /**
- * 授予名将（v36，AISLG-115）：全服唯一——famous_heroes.name 主键 + ON CONFLICT DO NOTHING；
- * 已被他人获得（或本账号名将 ≥ 3 名）返回 null，不产生副作用。成功返回新武将行。
+ * 授予名将（v36，AISLG-115；v54 在野名将带固定属性）：全服唯一——famous_heroes.name 主键 + ON CONFLICT
+ * DO NOTHING；已被他人获得（或本账号名将 ≥ 3 名）返回 null，不产生副作用。成功返回新武将行。
+ * attrs 缺省时随机（名城 / 黄巾）；在野名将传入其落位时固定的属性（侦察看到的就是它）。
  */
 export async function grantFamousHero(
   client: Writer,
   accountId: string,
   def: FamousHeroDef,
+  attrs?: HeroAttrs,
 ): Promise<AccountHeroRow | null> {
   const count = await client.query(
     `SELECT count(*)::int AS n FROM account_heroes WHERE account_id = $1 AND famous`,
@@ -216,8 +254,8 @@ export async function grantFamousHero(
   if ((count.rows[0] as { n: number }).n >= FAMOUS_HERO_CAP) {
     return null;
   }
-  const attrs = rollFamousAttrs(Math.random);
-  const hero = await insertHero(client, accountId, { name: def.name, famous: true, ...attrs });
+  const rolled = attrs ?? rollFamousAttrs(Math.random);
+  const hero = await insertHero(client, accountId, { name: def.name, famous: true, ...rolled });
   const claim = await client.query(
     `INSERT INTO famous_heroes (name, source, hero_id, owner_account_id)
      VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO NOTHING RETURNING name`,
@@ -230,7 +268,7 @@ export async function grantFamousHero(
   return hero;
 }
 
-/** 全部名将的归属视图（未被获得的也列出，ownerUsername 为 null） */
+/** 全部名将的归属视图（未被获得的也列出，ownerUsername 为 null；在野名将附落位坐标） */
 export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]> {
   const res = await q.query(
     `SELECT f.name, f.source, f.granted_at, a.username
@@ -242,13 +280,19 @@ export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]>
       row,
     ]),
   );
+  const wild = await q.query(`SELECT wild_hero, x, y, level FROM world_tiles WHERE wild_hero IS NOT NULL`);
+  const wildAt = new Map(
+    (wild.rows as Array<{ wild_hero: string; x: number; y: number; level: number }>).map((row) => [row.wild_hero, row]),
+  );
   return ALL_FAMOUS_HEROES.map((def) => {
     const claim = owned.get(def.name);
+    const tile = wildAt.get(def.name);
     return {
       name: def.name,
       sourceLabel: famousSourceLabel(def.source),
       ownerUsername: claim?.username ?? null,
       grantedAt: claim ? claim.granted_at.toISOString() : null,
+      wildAt: tile ? { x: tile.x, y: tile.y, level: tile.level } : null,
     };
   });
 }
@@ -296,12 +340,13 @@ export async function grantHeroExp(
   if (result.leveledTo === null) {
     return { level: row.level, leveledTo: null, levelsGained: 0 };
   }
-  const gain = result.levelsGained * attrGainPerLevel(row.famous);
-  await client.query(
-    `UPDATE account_heroes SET level = $2, exp = $3, lead = lead + $4, force = force + $4, wit = wit + $4
-     WHERE id = $1`,
-    [heroId, result.level, result.exp, gain],
-  );
+  const points = result.levelsGained * heroPointsPerLevel(row.famous);
+  await client.query(`UPDATE account_heroes SET level = $2, exp = $3, free_points = free_points + $4 WHERE id = $1`, [
+    heroId,
+    result.level,
+    result.exp,
+    points,
+  ]);
   return { level: result.level, leveledTo: result.leveledTo, levelsGained: result.levelsGained };
 }
 

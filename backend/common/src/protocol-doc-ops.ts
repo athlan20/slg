@@ -95,6 +95,8 @@ import {
 } from './protocol-doc-ops-battle';
 import { PUSH_ATTACK_WARNING, REQUEST_TRUCE } from './protocol-doc-ops-pvp';
 import { CHAT_OP_DOC } from './protocol-doc-ops-chat';
+import { ARENA_OP_DOCS } from './protocol-doc-ops-arena';
+import { HERO_GROWTH_OP_DOCS } from './protocol-doc-ops-hero-growth';
 
 const REQUEST_GET_STATE: RequestOpDoc = {
   kind: 'request',
@@ -460,4 +462,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.PUSH_WX_QR_STATUS]: PUSH_WX_QR_STATUS,
   // 聊天（v51）：条目在 protocol-doc-ops-chat.ts，对外 Agent 文档不收录
   ...CHAT_OP_DOC,
+  // 竞技场（v53，AISLG-145）：条目在 protocol-doc-ops-arena.ts，玩家与 Agent 同一套规则，收录进对外 Agent 文档
+  ...ARENA_OP_DOCS,
+  // 武将培养与在野名将（v54，AISLG-144）：条目在 protocol-doc-ops-hero-growth.ts
+  ...HERO_GROWTH_OP_DOCS,
 };

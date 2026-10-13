@@ -67,6 +67,8 @@ export const SERVER_BROADCAST_TYPES = [
   'hero_granted',
   // v40 AISLG-124 玩家占领玩家分城
   'city_conquered',
+  // v53 AISLG-145 竞技场：有人登上第 1 名
+  'arena_champion',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

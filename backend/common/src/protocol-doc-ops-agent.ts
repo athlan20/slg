@@ -175,8 +175,8 @@ export const REQUEST_GET_SERVER_BROADCASTS: RequestOpDoc = {
   ],
   dataFields: [
     { name: 'broadcasts', type: 'array', desc: '播报列表（新→旧）：{ id, type, detail, createdAt }。' },
-    { name: 'broadcasts[].type', type: "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished'", desc: '播报类型（后五类为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场，必达、不受每分钟 3 条限频）。' },
-    { name: 'broadcasts[].detail', type: 'object', desc: '按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）。' },
+    { name: 'broadcasts[].type', type: "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished' | 'hero_granted' | 'city_conquered' | 'arena_champion'", desc: '播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；以上均必达、不受每分钟 3 条限频）。' },
+    { name: 'broadcasts[].detail', type: 'object', desc: '按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）。' },
     { name: 'broadcasts[].createdAt', type: 'string', desc: '播报写入时间（ISO 8601）。' },
   ],
   errors: [],

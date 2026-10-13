@@ -11,6 +11,7 @@ import {
   type HeroStatePushData,
   type HeroStateView,
   type HeroView,
+  type TrainingTier,
 } from '../api/protocol';
 import { heroErrorText } from '../api/errorText';
 import { getCopy } from '../i18n/bundle';
@@ -38,17 +39,35 @@ export interface HeroSession {
   dismiss: (heroId: string) => Promise<boolean>;
   /** 任命（heroId）/ 撤任（null）当前城城守 */
   assignGuard: (heroId: string | null) => Promise<boolean>;
+  /** 加点（v54）：把自由点数分到统率 / 武力 / 智力 */
+  allocate: (heroId: string, points: { lead?: number; force?: number; wit?: number }) => Promise<boolean>;
+  /** 洗点（v54）：已分配点数退回 */
+  reset: (heroId: string) => Promise<boolean>;
+  /** 历练（v54）：派出去 1 / 4 / 12 小时基准 */
+  train: (heroId: string, tier: TrainingTier) => Promise<boolean>;
+  /** 赏赐（v54）：花金币加经验 */
+  gift: (heroId: string) => Promise<boolean>;
+  /** 结交在野名将（v54） */
+  befriend: (heroName: string) => Promise<boolean>;
+  /** 招揽在野名将（v54，好感满 100） */
+  recruitFamous: (heroName: string) => Promise<boolean>;
   onHeroPush: (data: HeroStatePushData) => void;
   clear: () => void;
 }
 
 /** 出征表单可选武将：未重伤 / 未欠饷 / 不在外 / 非城守（与服务端 checkHeroMarchable 同口径，仅作预判） */
-export function heroUnavailableReason(hero: HeroView, now: number): 'wounded' | 'arrears' | 'busy' | 'guard' | null {
+export function heroUnavailableReason(
+  hero: HeroView,
+  now: number,
+): 'wounded' | 'arrears' | 'busy' | 'guard' | 'training' | null {
   if (hero.woundedUntil && Date.parse(hero.woundedUntil) > now) {
     return 'wounded';
   }
   if (hero.arrears) {
     return 'arrears';
+  }
+  if (hero.training) {
+    return 'training';
   }
   if (hero.marchingMarchId) {
     return 'busy';
@@ -57,6 +76,11 @@ export function heroUnavailableReason(hero: HeroView, now: number): 'wounded' | 
     return 'guard';
   }
   return null;
+}
+
+/** 在家可培养（加点 / 洗点 / 历练）：不在外出、不城守、不历练（与服务端 heroBusyCode 同口径，仅作预判） */
+export function heroAtHome(hero: HeroView): boolean {
+  return !hero.training && !hero.marchingMarchId && !hero.guardCityId;
 }
 
 export function useHeroSession(deps: HeroSessionDeps): HeroSession {
@@ -130,6 +154,16 @@ export function useHeroSession(deps: HeroSessionDeps): HeroSession {
   );
 
   const recruit = useCallback((candidateId: string) => run(Op.RECRUIT_HERO, { candidateId }), [run]);
+  const allocate = useCallback(
+    (heroId: string, points: { lead?: number; force?: number; wit?: number }) =>
+      run(Op.ALLOCATE_HERO_POINTS, { heroId, ...points }),
+    [run],
+  );
+  const reset = useCallback((heroId: string) => run(Op.RESET_HERO_POINTS, { heroId }), [run]);
+  const train = useCallback((heroId: string, tier: TrainingTier) => run(Op.TRAIN_HERO, { heroId, tier }), [run]);
+  const gift = useCallback((heroId: string) => run(Op.GIFT_HERO, { heroId }), [run]);
+  const befriend = useCallback((heroName: string) => run(Op.BEFRIEND_HERO, { heroName }), [run]);
+  const recruitFamous = useCallback((heroName: string) => run(Op.RECRUIT_FAMOUS_HERO, { heroName }), [run]);
   const dismiss = useCallback(
     (heroId: string) => run(Op.DISMISS_HERO, { heroId }, () => setSelectedHeroId((prev) => (prev === heroId ? null : prev))),
     [run],
@@ -166,9 +200,32 @@ export function useHeroSession(deps: HeroSessionDeps): HeroSession {
       recruit,
       dismiss,
       assignGuard,
+      allocate,
+      reset,
+      train,
+      gift,
+      befriend,
+      recruitFamous,
       onHeroPush,
       clear,
     }),
-    [state, error, busy, selectedHeroId, fetchHeroes, recruit, dismiss, assignGuard, onHeroPush, clear],
+    [
+      state,
+      error,
+      busy,
+      selectedHeroId,
+      fetchHeroes,
+      recruit,
+      dismiss,
+      assignGuard,
+      allocate,
+      reset,
+      train,
+      gift,
+      befriend,
+      recruitFamous,
+      onHeroPush,
+      clear,
+    ],
   );
 }

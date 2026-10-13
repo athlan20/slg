@@ -342,6 +342,42 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v36，AISLG-114）武将欠饷中（主城金币不足以支付俸禄），不能出征。',
     action: '给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。',
   },
+  HERO_TRAINING: {
+    desc: '（v54，AISLG-144）武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）。',
+    action: '等历练结束（train_until 过去，经验到账并收到 reason=training_done 推送）后再操作。',
+  },
+  HERO_POINTS_INSUFFICIENT: {
+    desc: '（v54，AISLG-144）分配点数超过自由点数（附 freePoints）。',
+    action: '先升级获得点数（每级普通将 3、名将 5），或减少分配数量。',
+  },
+  HERO_NOTHING_TO_RESET: {
+    desc: '（v54，AISLG-144）武将没有已分配的点数（属性等于初始值），洗点无意义。',
+    action: '先加点再洗点；无需洗点时不必调用。',
+  },
+  HERO_DAILY_LIMIT: {
+    desc: '（v54，AISLG-144）今日次数已用完（附 limit）：赏赐每武将 3 次、洗点每武将 1 次、结交每名将 5 次，按游戏日（东八区自然日，随时间缩放）重置。',
+    action: '等下一个游戏日（data.limit 为上限）再操作。',
+  },
+  HERO_NOT_UNLOCKED: {
+    desc: '（v54，AISLG-144）尚未获得该在野名将的结交资格：需先用部队打赢其所在野地的原住守军（GET_WORLD_MAP 的 wildFamous 标记此地）。',
+    action: '派部队去该野地打守军；打赢后武将界面出现该名将的结交入口。',
+  },
+  HERO_FRIENDSHIP_LIMIT: {
+    desc: '（v54，AISLG-144）同时结交的在野名将已达上限 2 名（好感未满且未被他人招揽的才计入）。',
+    action: '等其中一名好感满 100 并招揽，或它已被他人获得，腾出名额后再结交。',
+  },
+  HERO_FAVOR_INSUFFICIENT: {
+    desc: '（v54，AISLG-144）好感度未满 100，不能招揽（附 favor）。',
+    action: '继续 BEFRIEND_HERO 结交（每次 +10，每日最多 5 次）。',
+  },
+  HERO_FAVOR_FULL: {
+    desc: '（v54，AISLG-144）好感度已满 100，不能再结交。',
+    action: '直接 RECRUIT_FAMOUS_HERO 招揽。',
+  },
+  FAMOUS_CLAIMED: {
+    desc: '（v54，AISLG-144）该名将已被他人获得（全服唯一）。',
+    action: '换一名在野名将；GET_HEROES 的 famousClaims 可查归属。',
+  },
   GUARD_ASSIGN_DENIED: {
     desc: '（v36，AISLG-115）城守不能同时出征；城守只能任命未随行出征的本账号武将。',
     action: '先撤任（ASSIGN_HERO heroId=null）再出征，或换其他武将带队。',
@@ -433,6 +469,26 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
   NICKNAME_TAKEN: {
     desc: '（v52）SET_NICKNAME 的昵称已被其他账号占用：昵称即账号 username，全服唯一。仅玩家连接可用。',
     action: '换一个昵称重试。Agent 无权改名（AGENT_FORBIDDEN），需要时提示玩家本人在网页改。',
+  },
+  ARENA_NOT_JOINED: {
+    desc: '（v53，AISLG-145）竞技场：账号还没入榜（从未保存过阵容），或阵容里一名武将都没有，不能发起挑战。',
+    action: '先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容（第一次保存即入榜，排在最后一名），再挑战。',
+  },
+  ARENA_TARGET_INVALID: {
+    desc: '（v53，AISLG-145）竞技场：entryId 对应的席位不存在，或当前名次不在可挑战范围（必须比自己靠前，且差距不超过 maxRankGap 名）。名次会随别人的挑战变化，列表可能已过期。',
+    action: '重拉 GET_ARENA 取最新 opponents，再挑一个还在范围内的对手。',
+  },
+  ARENA_NO_CHALLENGES: {
+    desc: '（v53，AISLG-145）竞技场：当前竞技日挑战次数已用完（上限 dailyChallenges）；响应附 nextDayAt（次数重置时刻）与 retryAfterSeconds。',
+    action: '等到 nextDayAt 之后再挑战；竞技日长度随全局时间缩放。',
+  },
+  ARENA_TARGET_BUSY: {
+    desc: '（v53，AISLG-145）竞技场：对手当前竞技日被挑战的次数已达上限（dailyDefendedMax，防止被围攻）；响应附 nextDayAt 与 retryAfterSeconds。',
+    action: '换一个对手，或等到 nextDayAt 之后。',
+  },
+  ARENA_PAIR_COOLDOWN: {
+    desc: '（v53，AISLG-145）竞技场：刚挑战过同一个对手，冷却未结束（pairCooldownSeconds，随时间缩放）；响应附 retryAfterSeconds。',
+    action: '等 retryAfterSeconds 秒后再挑战同一人，或先换别的对手。',
   },
   AGENT_PASSWORD_FORBIDDEN: {
     desc: '（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。',

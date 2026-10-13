@@ -377,6 +377,17 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
                 ) : (
                   <>
                     <TerrainIcon terrain={tile.terrain} className="w-[40%]" />
+                    {/* 在野名将标记（v54，AISLG-144）：野地里藏着未被获得的名将，公开可见 */}
+                    {tile.wildFamous ? (
+                      <span
+                        role="世界地图视野-在野名将"
+                        aria-hidden="true"
+                        title={copy.HERO_COPY.wild.mapMark}
+                        className="absolute left-[6%] top-[4%] font-semibold leading-none text-gold text-[clamp(9px,1.6cqw,14px)] drop-shadow-[0_0_4px_var(--gold)]"
+                      >
+                        ★
+                      </span>
+                    ) : null}
                     {/* 等级数字：默认隐藏，悬停 / 选中显示；满级（10 级）金色常显（docs 第 6 节） */}
                     <span
                       role="世界地图视野-等级"

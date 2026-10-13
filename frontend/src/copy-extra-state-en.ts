@@ -133,6 +133,7 @@ export const EXTRA_STATE_EN = {
     winStreak: (actor: string, streak: string) => `${actor}'s army won ${streak} battles in a row within an hour`,
     cityConquered: (actor: string, from: string, cityName: string, pos: string) =>
       `${actor} took over${from ? ` ${from}'s` : " another player's"} branch city "${cityName}" ${pos}`,
+    arenaChampion: (actor: string, previous: string) => `${actor} took first place in the arena, displacing ${previous}`,
     headline: (type: string) => `Server event: ${type}`,
   },
   denial: {

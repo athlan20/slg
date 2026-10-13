@@ -152,6 +152,7 @@ export const EXTRA_STATE = {
     winStreak: (actor: string, streak: string) => `${actor} 的军队一小时内连胜 ${streak} 场`,
     cityConquered: (actor: string, from: string, cityName: string, pos: string) =>
       `${actor} 攻占了${from ? ` ${from} 的` : '他人的'}分城「${cityName}」${pos}`,
+    arenaChampion: (actor: string, previous: string) => `${actor} 在竞技场登上第 1 名，取代了 ${previous}`,
     headline: (type: string) => `全服大事：${type}`,
   },
   /** api/mapping.ts：占领未成功的原因（battle_won 事件 detail.denial） */

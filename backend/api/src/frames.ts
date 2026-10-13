@@ -55,6 +55,15 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   HERO_WOUNDED: '该武将重伤未愈，不能出征',
   HERO_ARREARS: '该武将欠饷中（主城金币不足以支付俸禄），补足金币后自动恢复',
   GUARD_ASSIGN_DENIED: '城守不能同时出征；城守只能任命未随行出征的本账号武将',
+  HERO_TRAINING: '该武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）',
+  HERO_POINTS_INSUFFICIENT: '自由点数不足（附 freePoints），先升级获得更多点数',
+  HERO_NOTHING_TO_RESET: '该武将没有已分配的点数可洗，无需洗点',
+  HERO_DAILY_LIMIT: '今日次数已用完（附 limit），按游戏日（东八区自然日）零点重置',
+  HERO_NOT_UNLOCKED: '尚未获得该在野名将的结交资格（需先打赢其所在野地的原住守军）',
+  HERO_FRIENDSHIP_LIMIT: '同时结交的在野名将已达上限 2 名（好感满 100 或被他人招揽的不计入）',
+  HERO_FAVOR_INSUFFICIENT: '好感度未满 100，不能招揽（附 favor）',
+  HERO_FAVOR_FULL: '好感度已满 100，直接招揽即可，无需再结交',
+  FAMOUS_CLAIMED: '该名将已被他人获得（全服唯一）',
   NEWBIE_PROTECTED: '目标玩家处于新手保护期（注册后 3 天或任一城官府升到 8 级，先到为准），不能被侦察 / 攻击；data.until / retryAfterSeconds 为截止时刻与剩余秒数',
   TARGET_IN_TRUCE: '目标处于免战期（被打后免战或主动免战），玩家与 NPC 都不能再攻击；data.until / retryAfterSeconds 为截止时刻与剩余秒数',
   SELF_TRUCE_ACTIVE: '自己的主动免战生效中，不能出兵攻打玩家（打野地 / NPC 不受影响）；data.until / retryAfterSeconds 为截止时刻与剩余秒数',
@@ -77,6 +86,11 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   CHAT_BLOCKED: '对方已屏蔽你，无法发送私聊',
   CHAT_RATE_LIMITED: '发言太快了，请稍后再发',
   NICKNAME_TAKEN: '这个昵称已经被别人用了，换一个试试',
+  ARENA_NOT_JOINED: '还没进竞技场：先保存一个至少有 1 名武将的阵容',
+  ARENA_TARGET_INVALID: '这个对手现在不能挑战（名次已变化：必须比你靠前且差距不超过 10 名），请刷新对手列表',
+  ARENA_NO_CHALLENGES: '今天的竞技场挑战次数用完了，等下个竞技日再来',
+  ARENA_TARGET_BUSY: '这个对手今天被挑战的次数已达上限，换一个或明天再来',
+  ARENA_PAIR_COOLDOWN: '刚挑战过这位对手，冷却中，稍后再试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除
   INTERNAL: '服务端内部错误',
 };
@@ -132,6 +146,24 @@ export function readIntInRange(
   const value = data?.[key];
   if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
     return fallback;
+  }
+  return value;
+}
+
+/** 分页条数（文档声明「可选，min..max」）：缺省取 fallback；给了但越界或非整数返回 null，由调用方回 INVALID_PARAMS */
+export function readLimitOrNull(
+  data: Record<string, unknown> | undefined,
+  key: string,
+  min: number,
+  max: number,
+  fallback: number,
+): number | null {
+  const value = data?.[key];
+  if (value === undefined) {
+    return fallback;
+  }
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
+    return null;
   }
   return value;
 }

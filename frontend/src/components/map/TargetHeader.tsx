@@ -49,7 +49,7 @@ function iconOf(detail: TileDetailView, mover: 'caravan' | 'bandit' | null, isOw
 
 export function TargetHeader({ world, city, x, y, detail, origin, now, mover, isOwnCity, onClose }: TargetHeaderProps) {
   const copy = useCopy();
-  const { COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY } = copy;
+  const { COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY, HERO_COPY } = copy;
   const { openScoutReport } = useScoutReportModal();
   const [lookup, setLookup] = useState<'idle' | 'loading' | 'missing'>('idle');
 
@@ -156,6 +156,18 @@ export function TargetHeader({ world, city, x, y, detail, origin, now, mover, is
             {detail.famous ? <FamousCityNote famous={detail.famous} /> : null}
             {detail.camp ? <YellowTurbanCampNote camp={detail.camp} now={now} /> : null}
             {detail.nativePower > 0 ? <p className="truncate text-warn">{COPY.worldMap.nativePowerRow(detail.nativePower)}</p> : null}
+            {detail.wildFamousIntel ? (
+              <p role="世界地图详情区-在野名将" className="truncate text-gold">
+                {detail.wildFamousIntel.scouted && detail.wildFamousIntel.name && detail.wildFamousIntel.attrs
+                  ? HERO_COPY.wild.intel(
+                      tName(detail.wildFamousIntel.name),
+                      detail.wildFamousIntel.attrs.lead,
+                      detail.wildFamousIntel.attrs.force,
+                      detail.wildFamousIntel.attrs.wit,
+                    )
+                  : HERO_COPY.wild.intelHidden}
+              </p>
+            ) : null}
             {detail.wilderness ? (
               <p className="truncate text-dim">
                 {COPY.worldMap.wildernessBonusRow(RESOURCE_LABEL[detail.wilderness.resource], detail.wilderness.bonusRate)}

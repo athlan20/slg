@@ -117,7 +117,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .p-growth {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 /* 1024–1279：三栏页变两栏（第三块隐藏，内容在别的页面也能找到）；地图页右栏收窄 */
@@ -129,6 +129,13 @@
   }
   .work > .block.hide-md {
     display: none;
+  }
+  .p-growth {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* 养成页两栏时竞技场横跨第二行，不隐藏（竞技场只在这一页，隐藏就进不去） */
+  .p-growth > .a-arena {
+    grid-column: 1 / -1;
   }
   .p-map {
     grid-template-columns: minmax(0, 1fr) 320px;

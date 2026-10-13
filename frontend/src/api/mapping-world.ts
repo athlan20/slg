@@ -433,6 +433,9 @@ export function serverBroadcastText(view: {
       return HERO_COPY.broadcast.granted(String(view.detail.username ?? EXTRA_STATE.mapping.unknownPlayer), tName(String(view.detail.heroName ?? '')), tHeroSource(String(view.detail.source ?? '')));
     case 'city_conquered':
       return EXTRA_STATE.broadcast.cityConquered(actor, String(view.detail.from ?? ''), tName(String(view.detail.cityName ?? '?')), pos);
+    case 'arena_champion':
+      // v53 AISLG-145：登上第 1 名（previous 为被取代的原第 1 名，可能是守擂者）
+      return EXTRA_STATE.broadcast.arenaChampion(actor, String(view.detail.previous ?? EXTRA_STATE.mapping.unknownPlayer));
     case 'yt_finished':
       return YT_COPY.broadcast.finished(String(view.detail.reason ?? ''), Number(view.detail.clearedCamps ?? 0), Number(view.detail.totalCamps ?? 0), Number(view.detail.scatteredCamps ?? 0));
     default:

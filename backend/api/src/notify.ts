@@ -159,6 +159,15 @@ export class CompletionNotifier {
         });
         return;
       }
+      if (payload.reason === 'arena_state' && payload.accountId && payload.data) {
+        // 竞技场每日奖励到账（v53，AISLG-145）：推给账号全部在线连接（含 Agent）
+        this.registry.broadcast(payload.accountId, {
+          op: Op.PUSH_ARENA_STATE,
+          push: true,
+          data: payload.data as Record<string, unknown>,
+        });
+        return;
+      }
       if (payload.reason === 'build_started' && payload.accountId && payload.buildId) {
         void this.pushActivatedBuild(payload.accountId, payload.buildId);
         return;
