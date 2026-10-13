@@ -8,12 +8,12 @@ Famous heroes retain their existing attributes, growth, salaries, and combat bon
 
 | Specialty | Matching troops | Attack bonus | Damage reduction | Condition |
 | --- | --- | ---: | ---: | --- |
-| Infantry | Militia, pikemen, swordsmen | 8% | 8% | Matching troops only |
-| Ranged | Archers, ballistae | 12% | 0% | Matching troops only |
+| Infantry | Militia, pikemen, swordsmen | 2.5% | 2.5% | Matching troops only |
+| Ranged | Archers, ballistae | 2.5% | 0% | Matching troops only |
 | Cavalry | Light and heavy cavalry | 10% | 4% | Matching troops only |
-| Siege | Ballistae, siege rams | 18% | 8% | Siege battles only |
-| Assault | Combat troops | 6% | 0% | Excludes porters and supply wagons |
-| Defense | Combat troops | 0% | 6% | Excludes porters and supply wagons |
+| Siege | Ballistae, siege rams | 8% | 3% | Siege battles only |
+| Assault | Combat troops | 3% | 0% | Excludes porters and supply wagons |
+| Defense | Combat troops | 0% | 2.5% | Excludes porters and supply wagons |
 
 Specialty percentages add to the hero's existing attack and damage-reduction percentages for matching stacks. World combat uses the existing command-dilution factor. Arena and star tower apply full specialty strength, matching their existing handling of hero bonuses. Siege specialty does not activate in these two field-battle modes.
 
@@ -55,16 +55,22 @@ git diff --check
 
 All checks should exit successfully. The calibration command prints formation matchup rates and specialty effects using fixed seeds. The tests cover famous-hero invariance, immutable recruitment sampling, command dilution, city defense, legacy saves, deterministic replay, client/server preview equality, and real-stock selection limits.
 
-Initial calibration uses equal attributes (lead/force/wit 50), 400 matches per formation pairing, and seeds 10000 through 10399. Rows are the attacking template; percentages are attacker wins:
+Calibration uses equal attributes (lead/force/wit 50), 400 matches per pairing, and seeds 10000 through 10399. Rows are the attacking template; percentages are attacker wins:
 
 | Attack / defense | Balanced | Infantry | Ranged | Cavalry |
 | --- | ---: | ---: | ---: | ---: |
-| Balanced | 50.5% | 63.8% | 35.3% | 47.5% |
-| Infantry | 32.5% | 52.0% | 45.8% | 94.5% |
-| Ranged | 62.8% | 51.8% | 50.2% | 38.8% |
-| Cavalry | 54.0% | 5.3% | 63.5% | 50.2% |
+| Balanced | 50.5% | 48.0% | 53.0% | 48.0% |
+| Infantry | 51.3% | 52.0% | 74.3% | 44.0% |
+| Ranged | 48.0% | 28.0% | 50.2% | 58.5% |
+| Cavalry | 52.5% | 57.0% | 30.3% | 42.3% |
 
-These are first-version parameters, not evidence of balance across every attribute range or army composition. Infantry's strong anti-cavalry matchup is intentional. Later balancing should rerun the matrix and the existing world-combat calibration commands.
+Averaged over both seats, every template is 48-52% against balanced, and the three specialised templates form a cycle: infantry beats ranged (~73%), ranged beats cavalry (~64%), and cavalry beats infantry (~57%). Results are unchanged at lead 0 and lead 100. Troop counters are unchanged; only template shares and budgets were tuned.
+
+The first-version cavalry template (60% light cavalry, 40% pikemen) lost to infantry 94.5% of the time. Light cavalry (speed 110 on a 120-long field) reaches the enemy in the first round while pikemen (speed 20) lag behind, and every unit targets the frontmost enemy stack, so the riders were destroyed alone before their escort arrived. With cavalry speed set to 20 in a test run the same template won 99.3%, while removing the pikeman ×1.2 counter changed nothing. The cavalry template now pairs a 30% cavalry share with archers that fire from range (budget 1.7), and infantry (1.2 → 1.25) and ranged (1.0 → 0.96) are re-centred on balanced.
+
+Second-pass specialty parameters (table above) were cut after the first pass gave a single specialty a 65-77% win rate in an equal-army duel. Each specialty is measured with its matching template against the same army without a specialty, averaged over both seats (seeds 20000-20399): infantry 60.0%, ranged 59.1%, assault 58.9%, defense 59.4%. Cavalry keeps its first-version 10%/4%: the cavalry template has too few riders for this duel to measure it (50.9% at both 10% and 20%), so a larger value would only show up in all-cavalry world armies. Siege applies only in sieges and was scaled by judgment, not measured.
+
+These are not evidence of balance across every attribute range or army composition. Later balancing should rerun the matrix and the existing world-combat calibration commands.
 
 ## Local verification result
 

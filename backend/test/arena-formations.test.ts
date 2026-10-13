@@ -35,7 +35,7 @@ test('all formations produce finite positive integer troops', () => {
   }
 });
 
-test('each formation has a counter at equal hero attributes', () => {
+test('specialised formations have a counter and balanced stays neutral at equal hero attributes', () => {
   const hero = { name: 'Calibration', lead: 50, force: 50, wit: 50, level: 10 };
   for (const formation of FORMATION_KINDS) {
     const rates = FORMATION_KINDS.filter(other => other !== formation).map(other => {
@@ -45,6 +45,10 @@ test('each formation has a counter at equal hero attributes', () => {
       }
       return wins / 160;
     });
+    if (formation === 'balanced') {
+      assert.ok(rates.every(rate => rate > 0.35 && rate < 0.65), 'balanced is the safe choice without a hard counter');
+      continue;
+    }
     assert.ok(rates.some(rate => rate < 0.45), `${formation} needs a meaningful counter`);
     assert.ok(rates.some(rate => rate > 0.55), `${formation} needs a useful matchup`);
   }

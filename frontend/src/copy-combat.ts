@@ -18,7 +18,7 @@ const FORMATION_NAMES: Record<FormationKind, [string, string]> = {
   balanced: ['均衡：刀盾＋弓箭', 'Balanced: swordsmen + archers'],
   infantry: ['步兵：长枪＋刀盾', 'Infantry: pikemen + swordsmen'],
   ranged: ['远程：刀盾＋弓箭', 'Ranged: swordsmen + archers'],
-  cavalry: ['突击：轻骑＋长枪', 'Cavalry: cavalry + pikemen'],
+  cavalry: ['骑兵：轻骑＋弓箭', 'Cavalry: cavalry + archers'],
 };
 
 export function specialtyName(kind: HeroSpecialty): string {
