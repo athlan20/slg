@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**54** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**55** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 54）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 55）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -440,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 54,
+    "protocolVersion": 55,
     "docNotice": null
   }
 }
@@ -502,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 54,
+    "protocolVersion": 55,
     "docNotice": null
   }
 }
@@ -522,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/51 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/52 补读增量）**
 
 请求：
 
@@ -533,7 +533,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 51,
+    "docVersion": 52,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 54,
-    "docNotice": "接口文档已从 v51 更新到 v54：请 GET /agent-api/changes/51 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 55,
+    "docNotice": "接口文档已从 v52 更新到 v55：请 GET /agent-api/changes/52 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -4969,8 +4969,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | broadcasts | array | 播报列表（新→旧）：{ id, type, detail, createdAt }。 |
-| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；以上均必达、不受每分钟 3 条限频）。 |
-| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）。 |
+| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；以上均必达、不受每分钟 3 条限频）。 |
+| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）。 |
 | broadcasts[].createdAt | string | 播报写入时间（ISO 8601）。 |
 
 **Agent 提示**：播报是全服氛围信息，与你的决策无强制关系；但「某 NPC 城被掠空」意味着那座城不再值得打，「首个占领金矿」意味着金矿红利已被拿走。别把播报当任务清单——玩家对打法的意图直接与玩家沟通确认。
@@ -7612,6 +7612,297 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 83 · GET_STAR_TOWER — 查询将星塔
+
+`C→S` 请求-响应 · 需登录后发送
+
+（v55，AISLG-146）返回我的爬塔进度：已通过的最高层 bestFloor（0 = 还没通过任何一层）、下一层 nextFloor（只能从它开始打，不能跳层）、下一层是否 Boss 层、下一层的敌方阵容（匿名）与首通奖励预览、我的阵容（与竞技场共用，保存走 SET_ARENA_LINEUP）、阵容是否可用、账号是否有城。挑战前先调用一次；之后以 STAR_TOWER_CHALLENGE 的响应为准。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| bestFloor | number | 已通过的最高层（0 = 还没通过任何一层）。 |
+| cleared | boolean | 是否已全部通关（bestFloor 等于总层数）。 |
+| nextFloor | number \| null | 下一层，即可挑战的层；全部通关为 null。 |
+| nextBoss | boolean | 下一层是否 Boss 层（每 10 层一个）。 |
+| nextEnemies | Fighter[] | 下一层的敌方阵容（固定 3 名，号位 1/2/3 一一对应，heroId 恒为 null）。name、lead、force、wit、level。 |
+| nextReward | { gold, exp } \| null | 下一层首通奖励预览：gold 进主城，exp 给阵容里每名武将；全部通关为 null。 |
+| lineup | Array<Fighter \| null> | 我的阵容（与竞技场共用），3 个号位；空位为 null。自己的武将带 heroId。 |
+| lineupReady | boolean | 阵容里是否至少有 1 名武将。 |
+| hasCity | boolean | 账号是否有城；没有城不能挑战（首通金币无处入账）。 |
+| rules | object | 规则常量：floors（总层数）、bossEvery（Boss 层间隔）、slots（3）、winRounds（2，三局两胜）。 |
+
+**Agent 提示**：挑战只打 nextFloor，不能指定层。阵容不可用（lineupReady 为 false）或 hasCity 为 false 时先按提示处理，再挑战。
+
+**示例**
+
+**已通过 9 层，下一层是第 10 层 Boss**
+
+请求：
+
+```json
+{
+  "op": 83,
+  "seq": 1
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 83,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "bestFloor": 9,
+    "cleared": false,
+    "nextFloor": 10,
+    "nextBoss": true,
+    "nextEnemies": [
+      {
+        "heroId": null,
+        "name": "徐晃·幻影",
+        "lead": 46,
+        "force": 37,
+        "wit": 37,
+        "level": 13
+      },
+      {
+        "heroId": null,
+        "name": "吕布·幻影",
+        "lead": 37,
+        "force": 46,
+        "wit": 37,
+        "level": 13
+      },
+      {
+        "heroId": null,
+        "name": "马超·幻影",
+        "lead": 37,
+        "force": 37,
+        "wit": 46,
+        "level": 13
+      }
+    ],
+    "nextReward": {
+      "gold": 27000,
+      "exp": 160
+    },
+    "lineup": [
+      {
+        "heroId": "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+        "name": "张辽",
+        "lead": 52,
+        "force": 48,
+        "wit": 30,
+        "level": 14
+      },
+      null,
+      null
+    ],
+    "lineupReady": true,
+    "hasCity": true,
+    "rules": {
+      "floors": 100,
+      "bossEvery": 10,
+      "slots": 3,
+      "winRounds": 2
+    }
+  }
+}
+```
+
+### op 84 · STAR_TOWER_CHALLENGE — 挑战将星塔下一层
+
+`C→S` 请求-响应 · 需登录后发送
+
+（v55，AISLG-146）挑战下一层（无参数）。阵容与敌方按竞技场的三局两胜当场结算，不消耗真实兵力、不改武将状态（重伤、欠饷、外出都不影响）。赢了：第一次通过这一层，发首通奖励（金币进主城，经验给阵容里每名武将，Boss 层翻倍）并推进进度；Boss 层首通全服播报。输了：什么都不扣，可以立刻重打。已通过的层不再发奖励。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| match | Match | 本场战报（结构同 GET_STAR_TOWER_REPORTS 的 reports[]）。 |
+| floor | number | 本次挑战的层。 |
+| won | boolean | 是否通过本层。 |
+| bestFloor | number | 挑战后已通过的最高层。 |
+| reward | { gold, exp } \| null | 本次首通发放的奖励；输了或重打已通过的层为 null。 |
+| levelUps | Array<{ heroId, name, leveledTo }> | 首通后升级的武将；没有为空数组。 |
+
+**可能错误**：`STAR_TOWER_CLEARED`、`STAR_TOWER_NO_CITY`、`STAR_TOWER_NO_LINEUP`（处置建议见第 4 节）
+
+**Agent 提示**：没有 entryId 之类的参数，每次都打下一层。won 为 false 时可直接重打同一层（不扣任何东西）；想加强阵容先 SET_ARENA_LINEUP。STAR_TOWER_NO_LINEUP 时先保存阵容。
+
+**示例**
+
+**通过第 1 层**
+
+请求：
+
+```json
+{
+  "op": 84,
+  "seq": 2
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 84,
+  "seq": 2,
+  "ok": true,
+  "data": {
+    "match": {
+      "id": 41,
+      "createdAt": "2026-10-12T09:00:00.000Z",
+      "floor": 1,
+      "boss": false,
+      "won": true,
+      "challengerWins": 2,
+      "defenderWins": 1,
+      "rounds": [],
+      "lineup": [
+        {
+          "heroId": null,
+          "name": "张辽",
+          "lead": 52,
+          "force": 48,
+          "wit": 30,
+          "level": 14
+        },
+        null,
+        null
+      ],
+      "enemies": [
+        {
+          "heroId": null,
+          "name": "许褚",
+          "lead": 29,
+          "force": 20,
+          "wit": 20,
+          "level": 8
+        },
+        {
+          "heroId": null,
+          "name": "典韦",
+          "lead": 20,
+          "force": 29,
+          "wit": 20,
+          "level": 8
+        },
+        {
+          "heroId": null,
+          "name": "李典",
+          "lead": 20,
+          "force": 20,
+          "wit": 29,
+          "level": 8
+        }
+      ]
+    },
+    "floor": 1,
+    "won": true,
+    "bestFloor": 1,
+    "reward": {
+      "gold": 2500,
+      "exp": 44
+    },
+    "levelUps": []
+  }
+}
+```
+
+**已全部通关**
+
+请求：
+
+```json
+{
+  "op": 84,
+  "seq": 3
+}
+```
+
+失败响应（`STAR_TOWER_CLEARED`）：
+
+```json
+{
+  "op": 84,
+  "seq": 3,
+  "ok": false,
+  "error": {
+    "code": "STAR_TOWER_CLEARED",
+    "message": "将星塔已经全部通关，没有可挑战的层了"
+  }
+}
+```
+
+### op 85 · GET_STAR_TOWER_REPORTS — 查询将星塔战报
+
+`C→S` 请求-响应 · 需登录后发送
+
+（v55，AISLG-146）返回我每次挑战将星塔的战报，按时间从新到旧，每人保留最近 50 条（写入新战报时删掉更旧的）。战报里有我的阵容（匿名）与敌方阵容，以及每一局的结果。翻页：取最后一条的 id 作为 beforeId 再查，直到 hasMore 为 false。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| limit | number | 可选，1..50，默认 20。 |
+| beforeId | number | 可选。只取 id 小于它的更早战报。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reports | Match[] | 战报列表：id、createdAt、floor、boss、won、challengerWins、defenderWins、rounds、lineup（我的，匿名）、enemies（敌方）。 |
+| hasMore | boolean | 是否还有更早的战报。 |
+
+**可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
+
+**Agent 提示**：战报只用来复盘，不影响进度与奖励。要看当前能打哪一层，以 GET_STAR_TOWER 为准。
+
+**示例**
+
+**最近一页战报**
+
+请求：
+
+```json
+{
+  "op": 85,
+  "seq": 4,
+  "data": {
+    "limit": 20
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 85,
+  "seq": 4,
+  "ok": true,
+  "data": {
+    "reports": [],
+    "hasMore": false
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -8908,6 +9199,9 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `ARENA_NO_CHALLENGES` | （v53，AISLG-145）竞技场：当前竞技日挑战次数已用完（上限 dailyChallenges）；响应附 nextDayAt（次数重置时刻）与 retryAfterSeconds。 | 等到 nextDayAt 之后再挑战；竞技日长度随全局时间缩放。 |
 | `ARENA_TARGET_BUSY` | （v53，AISLG-145）竞技场：对手当前竞技日被挑战的次数已达上限（dailyDefendedMax，防止被围攻）；响应附 nextDayAt 与 retryAfterSeconds。 | 换一个对手，或等到 nextDayAt 之后。 |
 | `ARENA_PAIR_COOLDOWN` | （v53，AISLG-145）竞技场：刚挑战过同一个对手，冷却未结束（pairCooldownSeconds，随时间缩放）；响应附 retryAfterSeconds。 | 等 retryAfterSeconds 秒后再挑战同一人，或先换别的对手。 |
+| `STAR_TOWER_CLEARED` | （v55，AISLG-146）将星塔：已全部通关（bestFloor 等于总层数），没有可挑战的层。 | 不用再挑战；想看战报用 GET_STAR_TOWER_REPORTS。 |
+| `STAR_TOWER_NO_CITY` | （v55，AISLG-146）将星塔：账号还没有城，首通金币无处入账，不能挑战。 | 先建城，再挑战。 |
+| `STAR_TOWER_NO_LINEUP` | （v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。 | 先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。 |
 | `AGENT_PASSWORD_FORBIDDEN` | （v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。 | 改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。 |
 | `PASSWORD_LOGIN_CLOSED` | （v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。 | 网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
@@ -10221,7 +10515,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 54。
+- 协议版本随对外协议内容的每次变化递增；当前为 55。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

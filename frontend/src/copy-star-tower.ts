@@ -1,0 +1,58 @@
+// 将星塔文案（v55，AISLG-146；与 copy.ts 分文件以控制单文件行数）。
+
+export const STAR_TOWER_COPY = {
+  tabs: { progress: '进度', lineup: '阵容', reports: '战报' },
+  progress: {
+    title: '将星塔',
+    bestNone: '还没通过任何一层',
+    best: (n: number) => `已通过 ${n} 层`,
+    cleared: '已全部通关',
+    nextFloor: (n: number) => `下一层 第 ${n} 层`,
+    bossTag: 'Boss',
+    enemies: (n: number) => `敌将 ${n} 名`,
+    reward: (gold: number, exp: number) => `首通奖励 ${gold} 金币 · 阵容每名武将 ${exp} 经验`,
+    rules: (floors: number, bossEvery: number) =>
+      `共 ${floors} 层，每 ${bossEvery} 层一个 Boss · 三局两胜 · 输了不扣任何东西，可以立刻重打`,
+    challenge: (n: number) => `挑战第 ${n} 层`,
+    challenging: '挑战中…',
+    clearedNote: '全部通关，没有可挑战的层了。',
+    noLineup: '阵容里还没有武将：在下方排好阵容再来挑战。',
+    noCity: '还没有城池，首通金币无处入账，暂不能挑战。',
+    loading: '加载中…',
+    stats: (lead: number, force: number, wit: number) => `统${lead} 武${force} 智${wit}`,
+    level: (n: number) => `Lv${n}`,
+  },
+  lineup: {
+    title: '阵容',
+    slot: (n: number) => `${n} 号位`,
+    emptySlot: '空位',
+    noHeroes: '还没有武将，先去酒馆招募。',
+    save: '保存阵容',
+    saving: '保存中…',
+    stats: (lead: number, force: number, wit: number) => `统${lead} 武${force} 智${wit}`,
+    joinHint: '选 1–3 名武将排好阵容，保存即入竞技场榜（阵容与竞技场共用）。',
+  },
+  reports: {
+    title: '战报',
+    empty: '还没有挑战过将星塔。',
+    won: '通过',
+    lost: '未过',
+    floor: (n: number) => `第 ${n} 层`,
+    boss: 'Boss',
+    score: (w: number, l: number) => `${w}:${l}`,
+    more: '更早',
+  },
+  session: {
+    challenged: (floor: number, won: boolean) => `将星塔：挑战第 ${floor} 层，${won ? '通过' : '未过'}`,
+    reward: (floor: number, gold: number, exp: number) => `将星塔第 ${floor} 层首通：${gold} 金币，阵容每名武将 ${exp} 经验`,
+    levelUp: (name: string, level: number) => `${name} 升到 ${level} 级`,
+    lineupSaved: '将星塔：阵容已保存（与竞技场共用）',
+    failedFallback: '将星塔请求失败，请稍后再试',
+  },
+  errors: {
+    STAR_TOWER_CLEARED: '将星塔已全部通关，没有可挑战的层了',
+    STAR_TOWER_NO_CITY: '还没有城池，先建城再来挑战',
+    STAR_TOWER_NO_LINEUP: '阵容里还没有武将：先排好阵容再挑战',
+    INVALID_PARAMS: '请求参数不合法',
+  },
+};

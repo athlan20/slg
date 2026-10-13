@@ -41,6 +41,7 @@ import { handleAssignHero, handleDismissHero, handleGetHeroes, handleRecruitHero
 import { routeHeroGrowthOp } from './handlers-hero-ops';
 import { handleTruce } from './handlers-pvp';
 import { handleArenaChallenge, handleGetArena, handleGetArenaReports, handleSetArenaLineup } from './handlers-arena';
+import { handleGetStarTower, handleGetStarTowerReports, handleStarTowerChallenge } from './handlers-star-tower';
 import {
   handleAgentCommentReport,
   handleGetBattleReports,
@@ -260,6 +261,15 @@ async function dispatchOp(
       break;
     case Op.GET_ARENA_REPORTS:
       await handleGetArenaReports(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_STAR_TOWER:
+      await handleGetStarTower(ctx, conn, op, seq);
+      break;
+    case Op.STAR_TOWER_CHALLENGE:
+      await handleStarTowerChallenge(ctx, conn, op, seq);
+      break;
+    case Op.GET_STAR_TOWER_REPORTS:
+      await handleGetStarTowerReports(ctx, conn, op, seq, data);
       break;
     case Op.GET_TECHS:
       await handleGetTechs(ctx, conn, op, seq);

@@ -134,6 +134,7 @@ export const EXTRA_STATE_EN = {
     cityConquered: (actor: string, from: string, cityName: string, pos: string) =>
       `${actor} took over${from ? ` ${from}'s` : " another player's"} branch city "${cityName}" ${pos}`,
     arenaChampion: (actor: string, previous: string) => `${actor} took first place in the arena, displacing ${previous}`,
+    starTowerCleared: (actor: string, floor: number) => `${actor} cleared floor ${floor} of the Star Tower (boss)`,
     headline: (type: string) => `Server event: ${type}`,
   },
   denial: {

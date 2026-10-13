@@ -120,6 +120,11 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* 将星塔页（v55，AISLG-146）：进度 / 阵容 / 战报三栏；1024–1279 两栏，战报横跨第二行 */
+.p-star-tower {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 /* 1024–1279：三栏页变两栏（第三块隐藏，内容在别的页面也能找到）；地图页右栏收窄 */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .p-army,
@@ -135,6 +140,12 @@
   }
   /* 养成页两栏时竞技场横跨第二行，不隐藏（竞技场只在这一页，隐藏就进不去） */
   .p-growth > .a-arena {
+    grid-column: 1 / -1;
+  }
+  .p-star-tower {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .p-star-tower > .a-star-reports {
     grid-column: 1 / -1;
   }
   .p-map {

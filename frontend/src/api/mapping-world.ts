@@ -436,6 +436,9 @@ export function serverBroadcastText(view: {
     case 'arena_champion':
       // v53 AISLG-145：登上第 1 名（previous 为被取代的原第 1 名，可能是守擂者）
       return EXTRA_STATE.broadcast.arenaChampion(actor, String(view.detail.previous ?? EXTRA_STATE.mapping.unknownPlayer));
+    case 'star_tower_cleared':
+      // v55 AISLG-146：将星塔 Boss 层首通（floor 为刚通过的层）
+      return EXTRA_STATE.broadcast.starTowerCleared(actor, Number(view.detail.floor ?? 0));
     case 'yt_finished':
       return YT_COPY.broadcast.finished(String(view.detail.reason ?? ''), Number(view.detail.clearedCamps ?? 0), Number(view.detail.totalCamps ?? 0), Number(view.detail.scatteredCamps ?? 0));
     default:

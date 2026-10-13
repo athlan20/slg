@@ -22,6 +22,7 @@ export const NAV_COPY_EN = {
     city: { label: 'City', icon: 'C' },
     army: { label: 'Army', icon: 'A' },
     growth: { label: 'Growth', icon: 'G' },
+    starTower: { label: 'Star Tower', icon: 'T' },
     intel: { label: 'Intel', icon: 'I' },
     agent: { label: 'Agent', icon: 'AI' },
   },

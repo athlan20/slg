@@ -483,5 +483,11 @@
  * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt。推送 PUSH_HERO_STATE 新增
  * reason。新表 hero_unlocks / hero_friendship；account_heroes 新增 base_* / free_points / train_* /
  * gift_* / reset_*；world_tiles 新增 wild_*。
+ * v55（将星塔，AISLG-146，只加不改）：新增 GET_STAR_TOWER（op 83）、STAR_TOWER_CHALLENGE（op 84，无参数，挑战
+ * 已通过最高层的下一层）、GET_STAR_TOWER_REPORTS（op 85）。单机玩法，玩家与 Agent 同一套规则，对外 Agent 文档收录。
+ * 固定 100 层，每 10 层一个 Boss 层；敌方阵容按层号确定（不入库），对战沿用竞技场的三局两胜；阵容与竞技场共用
+ * （保存走 SET_ARENA_LINEUP，第一次保存即入竞技场榜）。首通发金币（进主城）与武将经验，重打不再发。Boss 层首通
+ * 全服播报 star_tower_cleared（必达）。新增错误码 STAR_TOWER_CLEARED / STAR_TOWER_NO_CITY / STAR_TOWER_NO_LINEUP。
+ * 新表 star_tower_progress / star_tower_matches（每人保留最近 50 条战报）。
  */
-export const PROTOCOL_VERSION = 54;
+export const PROTOCOL_VERSION = 55;
