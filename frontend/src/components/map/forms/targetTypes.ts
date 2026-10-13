@@ -1,6 +1,6 @@
 // 地图页右侧「选中目标」面板里各表单共享的上下文（从 TargetPanel 传下来，避免逐个表单重复传一长串参数）。
 
-import type { CityView, TileDetailView, TroopKind } from '../../../api/protocol';
+import type { BranchInfoView, CityView, TileDetailView, TroopKind } from '../../../api/protocol';
 import type { HeroPickState } from '../../../state/heroContext';
 import type { WorldSession } from '../../../state/worldSession';
 
@@ -15,6 +15,8 @@ export interface TargetCtx {
   detail: TileDetailView | null;
   /** 出发城坐标（AISLG-72）；未分配为 null（不给时长预估） */
   origin: { x: number; y: number } | null;
+  /** 账号分城名额（占领 NPC 城 / 他人分城都要占名额）；未获取为 null */
+  branch: BranchInfoView | null;
   hero: HeroPickState | null;
   now: number;
   troops: TroopInput;

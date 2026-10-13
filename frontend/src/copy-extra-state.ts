@@ -78,6 +78,8 @@ export const EXTRA_STATE = {
       `进攻 ${pos} 获胜，已占领为分城${survivors ? `，幸存 ${survivors} 进城驻守` : ''}`,
     wonNotOccupied: (pos: string, reason: string, survivors: string) =>
       `进攻 ${pos} 获胜但未占领（${reason}），幸存部队返程${survivors ? `（${survivors}）` : ''}`,
+    wonNotOccupiedBranchFull: (pos: string, survivors: string) =>
+      `进攻 ${pos} 获胜，因分城名额已满未能占领，幸存部队返程${survivors ? `（${survivors}）` : ''}`,
     wonLoot: (pos: string, loot: string, survivors: string) =>
       `进攻 ${pos} 获胜：掠得${loot}${survivors ? `，幸存 ${survivors}` : ''}`,
     pvpCityWhere: (pos: string, owner: string) => `${pos}（${owner} 的城）`,
@@ -161,7 +163,7 @@ export const EXTRA_STATE = {
   denial: {
     TERRITORY_LIMIT: '已达官府占领上限',
     GOVERNMENT_TOO_LOW: '主城官府不足 3 级',
-    BRANCH_LIMIT: '分城数量已达上限',
+    BRANCH_LIMIT: '分城名额已满',
     TARGET_LEVEL_TOO_HIGH: '目标城等级高于出发城官府等级',
   } as Record<string, string>,
   /** api/errorText.ts：本地兜底的人读提示（错误码映射仍在 errorText.ts） */

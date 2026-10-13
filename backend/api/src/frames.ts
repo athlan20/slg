@@ -37,7 +37,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   TASK_INVALID_FOR_TARGET: '该任务类型不适用于此目标（NPC 城池本期仅支持掠夺）',
   TERRITORY_LIMIT: '占领野地数已达官府等级上限（占领上限 = 官府等级，升级官府可提高上限）',
   GOVERNMENT_TOO_LOW: '占领 NPC 城需要主城官府达到 3 级',
-  BRANCH_LIMIT: '分城数量已达上限（分城上限 = 主城官府等级 ÷ 2，向下取整；升级主城官府可提高上限）',
+  BRANCH_LIMIT: '分城名额已满（上限 = 主城官府等级 ÷ 2，向下取整，名城也计入；升级主城官府或放弃一座分城可腾出名额）',
   TARGET_LEVEL_TOO_HIGH: '目标 NPC 城等级高于出发城的官府等级（只能占领不高于出发城官府等级的城）',
   OUTER_NOT_CLEARED: '名城外围驻军尚未清空，不能直接攻城守或占领；请先出征清理外围（task=plunder），外围清空后在限时内攻城',
   DISCARD_COOLDOWN: '该分城刚被本账号放弃，冷却未结束前不能再占回（冷却天数 = 放弃时的官府等级）',

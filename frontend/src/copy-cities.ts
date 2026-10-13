@@ -19,6 +19,8 @@ export const CITY_COPY = {
     taskOccupyNpcHint: (minGovernment: number) =>
       `变成分城需：主城官府 ≥ ${minGovernment} 级、分城未满、目标城等级 ≤ 出发城官府等级；不满足时会被拒绝并说明原因`,
     confirmOccupyNpc: '占领为分城',
+    branchQuotaRow: (count: number, limit: number) => `分城名额 现有 ${count} / 上限 ${limit}（名城也占名额）`,
+    branchFullHint: (count: number, limit: number) => `分城名额已满（${count} / ${limit}）：升级主城官府可增加名额，或先放弃一座分城`,
   },
   /** 自有城池间运输（v26 AISLG-79） */
   transport: {
@@ -55,7 +57,7 @@ export const CITY_COPY = {
   },
   errors: {
     governmentTooLow: '占领 NPC 城需要主城官府达到指定等级（见分城名额提示）',
-    branchLimit: '分城数量已达上限（分城上限 = 主城官府等级 ÷ 2，向下取整，升级主城官府可提高）',
+    branchLimit: '分城名额已满（上限 = 主城官府等级 ÷ 2，向下取整，名城也计入；升级主城官府或放弃一座分城可腾出名额）',
     outerNotCleared: '名城外围驻军尚未清空，请先出征清理外围（掠夺），外围清空后限时内可攻城守并占领',
     transportInsufficient: '出发城的资源不足以运送这批货物（已按最新库存刷新）',
     targetLevelTooHigh: '目标 NPC 城等级高于出发城的官府等级，只能占领不高于出发城官府等级的城',

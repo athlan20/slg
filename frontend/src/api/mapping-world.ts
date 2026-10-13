@@ -228,6 +228,10 @@ function baseEventText(view: EventView): string {
             return EXTRA_STATE.event.occupiedBranch(pos, survivors);
           }
           if (view.detail.occupied === false) {
+            // 名额满（到达复核时分城数已达上限）：战报单独写清原因
+            if (view.detail.denial === 'BRANCH_LIMIT') {
+              return EXTRA_STATE.event.wonNotOccupiedBranchFull(pos, survivors);
+            }
             const reason = typeof view.detail.denial === 'string' ? EXTRA_STATE.denial[view.detail.denial] : undefined;
             return EXTRA_STATE.event.wonNotOccupied(pos, reason ?? EXTRA_STATE.denial.TERRITORY_LIMIT, survivors);
           }

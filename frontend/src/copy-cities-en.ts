@@ -26,6 +26,9 @@ export const CITY_COPY_EN = {
       `To make it a Branch City: Main City Government Hall ≥ Lv ${minGovernment}, Branch City slots not full, and ` +
       `the target city's level ≤ the origin city's Government Hall level; unmet requests are rejected with the reason`,
     confirmOccupyNpc: 'Occupy as Branch City',
+    branchQuotaRow: (count: number, limit: number) => `Branch City slots ${count} / limit ${limit} (Famous Cities also take a slot)`,
+    branchFullHint: (count: number, limit: number) =>
+      `Branch City slots full (${count} / ${limit}): upgrade the Main City Government Hall for more slots, or discard a Branch City first`,
   },
   /** 自有城池间运输（v26 AISLG-79） */
   transport: {
@@ -74,7 +77,7 @@ export const CITY_COPY_EN = {
     governmentTooLow:
       'Occupying an NPC city requires the Main City Government Hall at the specified level (see the Branch City quota hint)',
     branchLimit:
-      'Branch City limit reached (cap = Main City Government Hall level ÷ 2, rounded down; upgrade the Main City Government Hall to raise it)',
+      'Branch City slots are full (limit = Main City Government Hall level ÷ 2, rounded down, Famous Cities included; upgrade the Main City Government Hall or discard a Branch City to free a slot)',
     outerNotCleared:
       'The outer-ring garrison of this Famous City is not cleared yet — march out and clear the outer ring first ' +
       '(Plunder); once cleared, you can attack the keeper and occupy within the time limit',

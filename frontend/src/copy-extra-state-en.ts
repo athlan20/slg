@@ -60,6 +60,8 @@ export const EXTRA_STATE_EN = {
       `Seized ${pos} (the wilderness of ${owner}): the tile is now yours${survivors ? `, ${survivors} survivors garrisoning it` : ''}`,
     occupiedBranch: (pos: string, survivors: string) =>
       `Won the battle at ${pos} and occupied it as a branch city${survivors ? `, ${survivors} survivors garrisoned inside` : ''}`,
+    wonNotOccupiedBranchFull: (pos: string, survivors: string) =>
+      `Won the battle at ${pos}, but it was not occupied because the Branch City slots are full; surviving troops are returning${survivors ? ` (${survivors})` : ''}`,
     wonNotOccupied: (pos: string, reason: string, survivors: string) =>
       `Won the battle at ${pos} but did not occupy it (${reason}); surviving troops are returning${survivors ? ` (${survivors})` : ''}`,
     wonLoot: (pos: string, loot: string, survivors: string) =>
@@ -141,7 +143,7 @@ export const EXTRA_STATE_EN = {
   denial: {
     TERRITORY_LIMIT: 'Government occupation limit reached',
     GOVERNMENT_TOO_LOW: 'Main city government below level 3',
-    BRANCH_LIMIT: 'Branch city limit reached',
+    BRANCH_LIMIT: 'Branch City slots are full',
     TARGET_LEVEL_TOO_HIGH: 'Target city level is higher than the origin city government level',
   } as Record<string, string>,
   errorText: {
