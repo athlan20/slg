@@ -25,7 +25,7 @@ import type { BefriendHeroResponseData, RecruitFamousHeroResponseData } from '..
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { loadCityState, lockCitySnapshot } from './views';
+import { lockCitySnapshot, toCityView } from './views';
 
 /** 名字合法性：必须是在野名将名单里的名字（其余一律视为「尚未获得资格」） */
 function wildDef(name: unknown) {
@@ -94,8 +94,8 @@ export async function handleBefriendHero(
     }
     const cost = befriendCost(tile.level);
     if (!snap || snap.resources.gold < cost) {
-      const cityState = await loadCityState(ctx.pool, accountId);
-      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', cityState ? { city: cityState } : undefined);
+      // 同 GIFT_HERO：用本事务已锁住的快照回包，不另开连接读城池（会自锁死）
+      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
     }
     await client.query(`UPDATE cities SET gold = gold - $2 WHERE id = $1`, [snap.cityId, cost]);
     const saved = await client.query(

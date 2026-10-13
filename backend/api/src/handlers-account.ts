@@ -5,6 +5,7 @@ import { EventType, Op, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { INITIAL_BUILDINGS, INITIAL_POPULATION, INITIAL_RESOURCES } from '../../common/src/rules';
 import { newbieUntilFrom } from '../../common/src/protection';
+import { lockArena } from '../../common/src/arena-db';
 import { readString, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
@@ -199,6 +200,15 @@ export async function handleResetAccount(
       // 战报与侦察情报属账号游戏数据（v13）：一并清空
       await client.query(`DELETE FROM battle_reports WHERE account_id = $1`, [accountId]);
       await client.query(`DELETE FROM scout_intel WHERE account_id = $1`, [accountId]);
+      // 竞技场席位（v53，AISLG-150）：删除本账号的榜上席位，其后名次整体前移，榜单保持连续（与 joinArena 的 max+1 口径一致）。
+      // 先拿竞技场锁再碰城池行，与竞技场流程的锁序一致
+      await lockArena(client);
+      const seat = await client.query(`DELETE FROM arena_entries WHERE account_id = $1 RETURNING rank`, [accountId]);
+      if (seat.rowCount) {
+        await client.query(`UPDATE arena_entries SET rank = rank - 1 WHERE rank > $1`, [
+          (seat.rows[0] as { rank: number }).rank,
+        ]);
+      }
       const cityRes = await client.query(
         `SELECT id FROM cities WHERE account_id = $1 ORDER BY created_at FOR UPDATE`,
         [accountId],

@@ -36,7 +36,7 @@ export const HERO_COPY = {
   card: {
     famousTag: '名将',
     level: (level: number, max: number) => `Lv${level}/${max}`,
-    exp: (exp: number, next: number) => (next > 0 ? `经验 ${exp}/${next}` : '已满级'),
+    exp: (exp: number, need: number) => (need > 0 ? `经验 ${exp}/${need}` : '已满级'),
     attrs: (lead: number, force: number, wit: number) => `统率 ${lead} · 武力 ${force} · 智力 ${wit}`,
     bonus: (atk: number, def: number, leadCap: number) =>
       `满编加成：攻击 +${atk}% · 减伤 ${def}%（统率可带 ${leadCap} 兵吃满，超出按比例摊薄）`,

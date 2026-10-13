@@ -50,7 +50,7 @@ import {
 import { loadHero } from '../../common/src/hero-db';
 import { insertServerBroadcast } from '../../common/src/server-broadcast';
 import type { ArenaFighterView } from '../../common/src/protocol-arena';
-import { readIntInRange, readOptionalNonNegativeInt, respondError, respondOk } from './frames';
+import { readLimitOrNull, readOptionalNonNegativeInt, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 
@@ -398,7 +398,11 @@ export async function handleGetArenaReports(
   seq: number | undefined,
   data: Record<string, unknown> | undefined,
 ): Promise<void> {
-  const limit = readIntInRange(data, 'limit', 1, 50, 20);
+  const limit = readLimitOrNull(data, 'limit', 1, 50, 20);
+  if (limit === null) {
+    respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+    return;
+  }
   const beforeId = readOptionalNonNegativeInt(data, 'beforeId') ?? null;
   const out = await loadMatches(ctx.pool, conn.accountId as string, limit, beforeId);
   respondOk(ctx.registry, conn, op, seq, { ...out });

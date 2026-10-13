@@ -81,7 +81,9 @@ export function HeroCard({
   const canAssign = !guardsHere && !hero.marchingMarchId && !hero.training && currentCityId !== null;
   const atHome = heroAtHome(hero);
   const growth = HERO_COPY.growth;
-  const expPercent = hero.expNext > 0 ? Math.min(100, Math.round((hero.exp / hero.expNext) * 100)) : 100;
+  // expNext 是距下一级还差多少，本级总需求 = 已有经验 + 还差的；满级时为 0
+  const expNeed = hero.expNext > 0 ? hero.exp + hero.expNext : 0;
+  const expPercent = expNeed > 0 ? Math.min(100, Math.round((hero.exp / expNeed) * 100)) : 100;
   const detail = [
     HERO_COPY.card.attrs(hero.lead, hero.force, hero.wit),
     HERO_COPY.card.bonus(hero.bonus.atkPercent, hero.bonus.defPercent, hero.bonus.leadCap),
@@ -163,7 +165,7 @@ export function HeroCard({
       </div>
 
       <div className="flex items-center gap-2">
-        <div role="武将面板-经验条" className="flex min-w-0 flex-1 items-center gap-1.5" title={HERO_COPY.card.exp(hero.exp, hero.expNext)}>
+        <div role="武将面板-经验条" className="flex min-w-0 flex-1 items-center gap-1.5" title={HERO_COPY.card.exp(hero.exp, expNeed)}>
           <div className="h-[3px] flex-1 overflow-hidden rounded bg-line-soft">
             <div className="h-full bg-accent" style={{ width: `${expPercent}%` }} />
           </div>

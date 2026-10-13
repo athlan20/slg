@@ -150,6 +150,24 @@ export function readIntInRange(
   return value;
 }
 
+/** 分页条数（文档声明「可选，min..max」）：缺省取 fallback；给了但越界或非整数返回 null，由调用方回 INVALID_PARAMS */
+export function readLimitOrNull(
+  data: Record<string, unknown> | undefined,
+  key: string,
+  min: number,
+  max: number,
+  fallback: number,
+): number | null {
+  const value = data?.[key];
+  if (value === undefined) {
+    return fallback;
+  }
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
+    return null;
+  }
+  return value;
+}
+
 // sinceId / beforeId 的有效下界是 0（0 表示「从头开始」游标），因此这里只拒绝负数。
 export function readOptionalNonNegativeInt(
   data: Record<string, unknown> | undefined,

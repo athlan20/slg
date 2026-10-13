@@ -331,6 +331,11 @@ export async function resolveOccupyArrival(
     return;
   }
 
+  // v54（AISLG-144）：打赢在野名将所在野地的原住守军 → 获得该名将的结交资格（与占领是否超限无关，同掠夺口径）
+  if (target.wild_hero) {
+    await grantUnlock(client, march.account_id, target.wild_hero);
+  }
+
   // 连胜计数（v23 AISLG-60）
   const occupyStreak = await recordWinStreak(client, march.account_id, true, {
     username: naming?.username ?? null,

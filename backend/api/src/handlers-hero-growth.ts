@@ -20,7 +20,7 @@ import type { HeroOnlyResponseData, HeroView } from '../../common/src/protocol-h
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { loadCityState, lockCitySnapshot } from './views';
+import { lockCitySnapshot, toCityView } from './views';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -163,8 +163,8 @@ export async function handleResetHeroPoints(
     }
     const cost = resetCost(hero.level);
     if (!snap || snap.resources.gold < cost) {
-      const cityState = await loadCityState(ctx.pool, accountId);
-      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', cityState ? { city: cityState } : undefined);
+      // 用本事务已锁住的快照回包：另开连接读城池会等本事务持有的城池行锁，自己把自己死锁
+      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
     }
     await client.query(`UPDATE cities SET gold = gold - $2 WHERE id = $1`, [snap.cityId, cost]);
     await bumpDailyCount(client, hero, 'reset');
@@ -252,8 +252,8 @@ export async function handleGiftHero(
       return fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: GIFT_DAILY_LIMIT });
     }
     if (!snap || snap.resources.gold < GIFT_GOLD) {
-      const cityState = await loadCityState(ctx.pool, accountId);
-      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', cityState ? { city: cityState } : undefined);
+      // 用本事务已锁住的快照回包：另开连接读城池会等本事务持有的城池行锁，自己把自己死锁
+      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
     }
     await client.query(`UPDATE cities SET gold = gold - $2 WHERE id = $1`, [snap.cityId, GIFT_GOLD]);
     await bumpDailyCount(client, hero, 'gift');

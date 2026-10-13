@@ -38,7 +38,7 @@ export const HERO_COPY_EN = {
   card: {
     famousTag: 'Famous',
     level: (level: number, max: number) => `Lv${level}/${max}`,
-    exp: (exp: number, next: number) => (next > 0 ? `Exp ${exp}/${next}` : 'Max level'),
+    exp: (exp: number, need: number) => (need > 0 ? `Exp ${exp}/${need}` : 'Max level'),
     attrs: (lead: number, force: number, wit: number) => `Leadership ${lead} · Force ${force} · Intelligence ${wit}`,
     bonus: (atk: number, def: number, leadCap: number) =>
       `Full-formation bonus: Attack +${atk}% · damage taken reduced by ${def}% (troops up to ${leadCap} get the full bonus, beyond that it scales down)`,
