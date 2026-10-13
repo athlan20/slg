@@ -48,6 +48,8 @@ import { EXTRA_STATE } from '../copy-extra-state';
 import { EXTRA_STATE_EN } from '../copy-extra-state-en';
 import { CHAT_COPY } from '../copy-chat';
 import { CHAT_COPY_EN } from '../copy-chat-en';
+import { QUEST_COPY } from '../copy-quest';
+import { QUEST_COPY_EN } from '../copy-quest-en';
 
 /** 中文文案全集（结构基准）：英文 Bundle 必须与之同构 */
 const ZH = {
@@ -91,6 +93,7 @@ const ZH = {
   EXTRA_MAP,
   EXTRA_PANEL,
   CHAT_COPY,
+  QUEST_COPY,
 };
 
 export type Bundle = typeof ZH;
@@ -137,6 +140,7 @@ const EN: Bundle = {
   EXTRA_MAP: EXTRA_MAP_EN,
   EXTRA_PANEL: EXTRA_PANEL_EN,
   CHAT_COPY: CHAT_COPY_EN,
+  QUEST_COPY: QUEST_COPY_EN,
 };
 
 const BUNDLES: Record<Lang, Bundle> = { zh: ZH, en: EN };

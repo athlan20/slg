@@ -1,5 +1,5 @@
 {
-  "version": 55,
+  "version": 56,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 55,
+                "protocolVersion": 56,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 55,
+                "protocolVersion": 56,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/52 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/53 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 52,
+              "docVersion": 53,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 55,
-                "docNotice": "接口文档已从 v52 更新到 v55：请 GET /agent-api/changes/52 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 56,
+                "docNotice": "接口文档已从 v53 更新到 v56：请 GET /agent-api/changes/53 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -8636,6 +8636,2588 @@
         }
       ],
       "agentNote": "战报只用来复盘，不影响进度与奖励。要看当前能打哪一层，以 GET_STAR_TOWER 为准。"
+    },
+    {
+      "op": 86,
+      "kind": "request",
+      "name": "GET_DAILY",
+      "title": "查询日常任务与签到状态",
+      "preAuth": false,
+      "summary": "任务与签到是本地自建分支新增的日常玩法（AISLG-200）：6 条日常任务按「北京日」（Asia/Shanghai）刷新，完成判定读取当日事件（登录恒完成）；签到每天一次、连续签到 7 天一轮循环。奖励发往主城。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "quest",
+          "type": "object",
+          "desc": "任务与签到状态：{ day（今日北京日 YYYY-MM-DD）, daily（6 条任务）, signin（签到状态） }。daily[]：{ id, title, desc, done（今日是否达成）, claimed（是否已领奖）, reward（资源） }；signin：{ streak（连续天数）, total（累计次数）, todaySigned, days[7]（{ day, reward, claimed }） }。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "登录后查询当日任务",
+          "request": {
+            "op": 86,
+            "seq": 1
+          },
+          "responses": [
+            {
+              "op": 86,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "quest": {
+                  "day": "2026-10-13",
+                  "daily": [
+                    {
+                      "id": "login",
+                      "title": "每日登录",
+                      "desc": "今日登录游戏",
+                      "done": true,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 500,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "build",
+                      "title": "大兴土木",
+                      "desc": "完成 1 次建造或升级",
+                      "done": true,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 1500,
+                        "wood": 1500,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "recruit",
+                      "title": "招兵买马",
+                      "desc": "征兵 1 次",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 0,
+                        "food": 2000,
+                        "stone": 0,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "march",
+                      "title": "出征沙场",
+                      "desc": "出征 1 次",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 1500,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 1500
+                      }
+                    },
+                    {
+                      "id": "research",
+                      "title": "潜心钻研",
+                      "desc": "研究科技 1 次",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 1500,
+                        "food": 0,
+                        "stone": 1500,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "occupy",
+                      "title": "开疆拓土",
+                      "desc": "占领 1 块野地",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 1500,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 1500,
+                        "iron": 0
+                      }
+                    }
+                  ],
+                  "signin": {
+                    "streak": 3,
+                    "total": 10,
+                    "todaySigned": false,
+                    "days": [
+                      {
+                        "day": 1,
+                        "reward": {
+                          "gold": 1000,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": true
+                      },
+                      {
+                        "day": 2,
+                        "reward": {
+                          "gold": 0,
+                          "wood": 1500,
+                          "food": 1500,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": true
+                      },
+                      {
+                        "day": 3,
+                        "reward": {
+                          "gold": 2000,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": true
+                      },
+                      {
+                        "day": 4,
+                        "reward": {
+                          "gold": 0,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 2000,
+                          "iron": 2000
+                        },
+                        "claimed": false
+                      },
+                      {
+                        "day": 5,
+                        "reward": {
+                          "gold": 2500,
+                          "wood": 2500,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": false
+                      },
+                      {
+                        "day": 6,
+                        "reward": {
+                          "gold": 0,
+                          "wood": 0,
+                          "food": 3000,
+                          "stone": 3000,
+                          "iron": 0
+                        },
+                        "claimed": false
+                      },
+                      {
+                        "day": 7,
+                        "reward": {
+                          "gold": 8000,
+                          "wood": 5000,
+                          "food": 5000,
+                          "stone": 5000,
+                          "iron": 5000
+                        },
+                        "claimed": false
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "Agent 可查询并代领任务奖励（与玩家同一套规则）。任务 id 与条件在未来版本可能增删，请以本协议响应的 daily 列表为准，不要硬编码。"
+    },
+    {
+      "op": 87,
+      "kind": "request",
+      "name": "CLAIM_DAILY",
+      "title": "领取日常任务奖励",
+      "preAuth": false,
+      "summary": "领取一条当日已完成、未领取的日常任务奖励，资源发往主城。任务不存在 / 未完成 / 今日已领取均返回 INVALID_PARAMS。",
+      "requestFields": [
+        {
+          "name": "taskId",
+          "type": "string",
+          "desc": "必填。任务 id（来自 GET_DAILY 的 daily[].id，如 login / build / recruit / march / research / occupy）。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "quest",
+          "type": "object",
+          "desc": "领取后的任务与签到状态（结构同 GET_DAILY 的 quest）。"
+        },
+        {
+          "name": "granted",
+          "type": "object",
+          "desc": "本次发放的资源（{ gold, wood, food, stone, iron }）。"
+        },
+        {
+          "name": "city",
+          "type": "object",
+          "desc": "发奖后的主城状态（字段同 GET_STATE）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "领取「每日登录」奖励",
+          "request": {
+            "op": 87,
+            "seq": 1,
+            "data": {
+              "taskId": "login"
+            }
+          },
+          "responses": [
+            {
+              "op": 87,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "quest": {
+                  "day": "2026-10-13",
+                  "daily": [
+                    {
+                      "id": "login",
+                      "title": "每日登录",
+                      "desc": "今日登录游戏",
+                      "done": true,
+                      "claimed": true,
+                      "reward": {
+                        "gold": 500,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "build",
+                      "title": "大兴土木",
+                      "desc": "完成 1 次建造或升级",
+                      "done": true,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 1500,
+                        "wood": 1500,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "recruit",
+                      "title": "招兵买马",
+                      "desc": "征兵 1 次",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 0,
+                        "food": 2000,
+                        "stone": 0,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "march",
+                      "title": "出征沙场",
+                      "desc": "出征 1 次",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 1500,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 1500
+                      }
+                    },
+                    {
+                      "id": "research",
+                      "title": "潜心钻研",
+                      "desc": "研究科技 1 次",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 1500,
+                        "food": 0,
+                        "stone": 1500,
+                        "iron": 0
+                      }
+                    },
+                    {
+                      "id": "occupy",
+                      "title": "开疆拓土",
+                      "desc": "占领 1 块野地",
+                      "done": false,
+                      "claimed": false,
+                      "reward": {
+                        "gold": 1500,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 1500,
+                        "iron": 0
+                      }
+                    }
+                  ],
+                  "signin": {
+                    "streak": 3,
+                    "total": 10,
+                    "todaySigned": false,
+                    "days": [
+                      {
+                        "day": 1,
+                        "reward": {
+                          "gold": 1000,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": true
+                      },
+                      {
+                        "day": 2,
+                        "reward": {
+                          "gold": 0,
+                          "wood": 1500,
+                          "food": 1500,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": true
+                      },
+                      {
+                        "day": 3,
+                        "reward": {
+                          "gold": 2000,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": true
+                      },
+                      {
+                        "day": 4,
+                        "reward": {
+                          "gold": 0,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 2000,
+                          "iron": 2000
+                        },
+                        "claimed": false
+                      },
+                      {
+                        "day": 5,
+                        "reward": {
+                          "gold": 2500,
+                          "wood": 2500,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "claimed": false
+                      },
+                      {
+                        "day": 6,
+                        "reward": {
+                          "gold": 0,
+                          "wood": 0,
+                          "food": 3000,
+                          "stone": 3000,
+                          "iron": 0
+                        },
+                        "claimed": false
+                      },
+                      {
+                        "day": 7,
+                        "reward": {
+                          "gold": 8000,
+                          "wood": 5000,
+                          "food": 5000,
+                          "stone": 5000,
+                          "iron": 5000
+                        },
+                        "claimed": false
+                      }
+                    ]
+                  }
+                },
+                "granted": {
+                  "gold": 500,
+                  "wood": 0,
+                  "food": 0,
+                  "stone": 0,
+                  "iron": 0
+                },
+                "city": {
+                  "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "name": "主城",
+                  "level": 1,
+                  "resources": {
+                    "gold": 2000,
+                    "wood": 2000,
+                    "food": 2000,
+                    "stone": 2000,
+                    "iron": 2000
+                  },
+                  "buildings": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "levels": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "costs": {
+                    "farm": {
+                      "build": {
+                        "gold": 100,
+                        "wood": 50,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "lumber_mill": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 40,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "quarry": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "iron_mine": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "house": {
+                      "build": {
+                        "gold": 80,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "government": {
+                      "build": null,
+                      "upgrade": {
+                        "gold": 200,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "buildSeconds": null,
+                      "upgradeSeconds": 1
+                    },
+                    "barracks": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "warehouse": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "wall": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "academy": {
+                      "build": {
+                        "gold": 180,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "parade_ground": {
+                      "build": {
+                        "gold": 160,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 40,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "beacon": {
+                      "build": {
+                        "gold": 140,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "post_station": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 110,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "arrow_tower": {
+                      "build": {
+                        "gold": 220,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 80,
+                        "iron": 60
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "tavern": {
+                      "build": {
+                        "gold": 260,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 40
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    }
+                  },
+                  "farms": 0,
+                  "production": {
+                    "gold": 100,
+                    "food": 100,
+                    "wood": 100,
+                    "stone": 100,
+                    "iron": 100
+                  },
+                  "population": {
+                    "current": 50,
+                    "cap": 50,
+                    "growthPerHour": 0
+                  },
+                  "storage": {
+                    "gold": 1000000,
+                    "food": 10000,
+                    "wood": 10000,
+                    "stone": 10000,
+                    "iron": 10000
+                  },
+                  "army": {
+                    "porter": 0,
+                    "militia": 0,
+                    "scout": 0,
+                    "pikeman": 0,
+                    "swordsman": 0,
+                    "archer": 0,
+                    "cavalry": 0,
+                    "iron_cavalry": 0,
+                    "supply_wagon": 0,
+                    "ballista": 0,
+                    "siege_ram": 0
+                  },
+                  "armyFoodUsePerHour": 0,
+                  "timeScale": 1,
+                  "truceUntil": null,
+                  "newbieUntil": null,
+                  "shieldUntil": null,
+                  "shieldNextAt": null,
+                  "durability": null,
+                  "famousName": null,
+                  "productionBonusPercent": 0,
+                  "starveAt": null,
+                  "mutinyNextAt": null,
+                  "guard": null,
+                  "deploy": {
+                    "count": 0,
+                    "limit": 1
+                  },
+                  "tower": null,
+                  "techs": {
+                    "farming": 0,
+                    "carrying": 0,
+                    "marching": 0,
+                    "storage": 0,
+                    "scouting": 0,
+                    "defense": 0
+                  },
+                  "recruitQueue": [],
+                  "defenseBonus": 0,
+                  "marches": [],
+                  "territory": [],
+                  "queue": [],
+                  "building": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "caption": "任务未完成",
+          "request": {
+            "op": 87,
+            "seq": 2,
+            "data": {
+              "taskId": "march"
+            }
+          },
+          "responses": [
+            {
+              "op": 87,
+              "seq": 2,
+              "ok": false,
+              "error": {
+                "code": "INVALID_PARAMS",
+                "message": "请求参数缺失或格式不正确"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "建议 Agent 在完成对应动作后（建造 / 征兵 / 出征 / 研究 / 占领）顺手领取当日任务奖励。"
+    },
+    {
+      "op": 88,
+      "kind": "request",
+      "name": "GET_SIGNIN",
+      "title": "查询签到状态",
+      "preAuth": false,
+      "summary": "查询签到状态（GET_DAILY 的 quest.signin 子集亦可获取）。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "signin",
+          "type": "object",
+          "desc": "{ streak（连续天数）, total（累计次数）, todaySigned, days[7]（{ day, reward, claimed }） }。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "查询签到状态",
+          "request": {
+            "op": 88,
+            "seq": 1
+          },
+          "responses": [
+            {
+              "op": 88,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "signin": {
+                  "streak": 3,
+                  "total": 10,
+                  "todaySigned": false,
+                  "days": [
+                    {
+                      "day": 1,
+                      "reward": {
+                        "gold": 1000,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": true
+                    },
+                    {
+                      "day": 2,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 1500,
+                        "food": 1500,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": true
+                    },
+                    {
+                      "day": 3,
+                      "reward": {
+                        "gold": 2000,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": true
+                    },
+                    {
+                      "day": 4,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 2000,
+                        "iron": 2000
+                      },
+                      "claimed": false
+                    },
+                    {
+                      "day": 5,
+                      "reward": {
+                        "gold": 2500,
+                        "wood": 2500,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": false
+                    },
+                    {
+                      "day": 6,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 0,
+                        "food": 3000,
+                        "stone": 3000,
+                        "iron": 0
+                      },
+                      "claimed": false
+                    },
+                    {
+                      "day": 7,
+                      "reward": {
+                        "gold": 8000,
+                        "wood": 5000,
+                        "food": 5000,
+                        "stone": 5000,
+                        "iron": 5000
+                      },
+                      "claimed": false
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": 89,
+      "kind": "request",
+      "name": "SIGNIN",
+      "title": "每日签到",
+      "preAuth": false,
+      "summary": "每日签到（每天一次，按北京日）。连续签到，7 天一轮循环，奖励按档位递增，第 7 天最优；断签后连续天数归 1。当日重复签到返回 INVALID_PARAMS。奖励发往主城。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "signin",
+          "type": "object",
+          "desc": "签到后的状态（结构同 GET_SIGNIN）。"
+        },
+        {
+          "name": "tier",
+          "type": "number",
+          "desc": "本次落在 7 天循环中的档位（1..7）。"
+        },
+        {
+          "name": "granted",
+          "type": "object",
+          "desc": "本次发放的资源。"
+        },
+        {
+          "name": "city",
+          "type": "object",
+          "desc": "发奖后的主城状态（字段同 GET_STATE）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "今日首次签到（连续第 4 天）",
+          "request": {
+            "op": 89,
+            "seq": 1
+          },
+          "responses": [
+            {
+              "op": 89,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "signin": {
+                  "streak": 4,
+                  "total": 11,
+                  "todaySigned": true,
+                  "days": [
+                    {
+                      "day": 1,
+                      "reward": {
+                        "gold": 1000,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": true
+                    },
+                    {
+                      "day": 2,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 1500,
+                        "food": 1500,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": true
+                    },
+                    {
+                      "day": 3,
+                      "reward": {
+                        "gold": 2000,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": true
+                    },
+                    {
+                      "day": 4,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 2000,
+                        "iron": 2000
+                      },
+                      "claimed": true
+                    },
+                    {
+                      "day": 5,
+                      "reward": {
+                        "gold": 2500,
+                        "wood": 2500,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "claimed": false
+                    },
+                    {
+                      "day": 6,
+                      "reward": {
+                        "gold": 0,
+                        "wood": 0,
+                        "food": 3000,
+                        "stone": 3000,
+                        "iron": 0
+                      },
+                      "claimed": false
+                    },
+                    {
+                      "day": 7,
+                      "reward": {
+                        "gold": 8000,
+                        "wood": 5000,
+                        "food": 5000,
+                        "stone": 5000,
+                        "iron": 5000
+                      },
+                      "claimed": false
+                    }
+                  ]
+                },
+                "tier": 4,
+                "granted": {
+                  "gold": 0,
+                  "wood": 0,
+                  "food": 0,
+                  "stone": 2000,
+                  "iron": 2000
+                },
+                "city": {
+                  "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "name": "主城",
+                  "level": 1,
+                  "resources": {
+                    "gold": 2000,
+                    "wood": 2000,
+                    "food": 2000,
+                    "stone": 2000,
+                    "iron": 2000
+                  },
+                  "buildings": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "levels": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "costs": {
+                    "farm": {
+                      "build": {
+                        "gold": 100,
+                        "wood": 50,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "lumber_mill": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 40,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "quarry": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "iron_mine": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "house": {
+                      "build": {
+                        "gold": 80,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "government": {
+                      "build": null,
+                      "upgrade": {
+                        "gold": 200,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "buildSeconds": null,
+                      "upgradeSeconds": 1
+                    },
+                    "barracks": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "warehouse": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "wall": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "academy": {
+                      "build": {
+                        "gold": 180,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "parade_ground": {
+                      "build": {
+                        "gold": 160,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 40,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "beacon": {
+                      "build": {
+                        "gold": 140,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "post_station": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 110,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "arrow_tower": {
+                      "build": {
+                        "gold": 220,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 80,
+                        "iron": 60
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "tavern": {
+                      "build": {
+                        "gold": 260,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 40
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    }
+                  },
+                  "farms": 0,
+                  "production": {
+                    "gold": 100,
+                    "food": 100,
+                    "wood": 100,
+                    "stone": 100,
+                    "iron": 100
+                  },
+                  "population": {
+                    "current": 50,
+                    "cap": 50,
+                    "growthPerHour": 0
+                  },
+                  "storage": {
+                    "gold": 1000000,
+                    "food": 10000,
+                    "wood": 10000,
+                    "stone": 10000,
+                    "iron": 10000
+                  },
+                  "army": {
+                    "porter": 0,
+                    "militia": 0,
+                    "scout": 0,
+                    "pikeman": 0,
+                    "swordsman": 0,
+                    "archer": 0,
+                    "cavalry": 0,
+                    "iron_cavalry": 0,
+                    "supply_wagon": 0,
+                    "ballista": 0,
+                    "siege_ram": 0
+                  },
+                  "armyFoodUsePerHour": 0,
+                  "timeScale": 1,
+                  "truceUntil": null,
+                  "newbieUntil": null,
+                  "shieldUntil": null,
+                  "shieldNextAt": null,
+                  "durability": null,
+                  "famousName": null,
+                  "productionBonusPercent": 0,
+                  "starveAt": null,
+                  "mutinyNextAt": null,
+                  "guard": null,
+                  "deploy": {
+                    "count": 0,
+                    "limit": 1
+                  },
+                  "tower": null,
+                  "techs": {
+                    "farming": 0,
+                    "carrying": 0,
+                    "marching": 0,
+                    "storage": 0,
+                    "scouting": 0,
+                    "defense": 0
+                  },
+                  "recruitQueue": [],
+                  "defenseBonus": 0,
+                  "marches": [],
+                  "territory": [],
+                  "queue": [],
+                  "building": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "caption": "今日已签到",
+          "request": {
+            "op": 89,
+            "seq": 2
+          },
+          "responses": [
+            {
+              "op": 89,
+              "seq": 2,
+              "ok": false,
+              "error": {
+                "code": "INVALID_PARAMS",
+                "message": "请求参数缺失或格式不正确"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": 90,
+      "kind": "request",
+      "name": "GET_QUESTS",
+      "title": "查询主线/支线任务与成就",
+      "preAuth": false,
+      "summary": "主线任务链（10 环，顺序解锁与领取）、支线任务（并行）与成就（多条 × 3 档，逐档领取）。进度从 events / 建筑等级 / 科技 / 武将 / 签到等既有数据派生，奖励发往主城。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "main",
+          "type": "object",
+          "desc": "主线：{ currentIndex（已领取环数）, total, steps[] }。steps[]：{ id, title, desc, reward, done, claimed, unlocked（前置环是否已领，未解锁不可领） }。"
+        },
+        {
+          "name": "side",
+          "type": "array",
+          "desc": "支线：{ id, title, desc, reward, done, claimed }。"
+        },
+        {
+          "name": "achievements",
+          "type": "array",
+          "desc": "成就：{ id, title, desc, value（当前值）, tiers[] }；tiers[]：{ tier, threshold, reward, done, claimed }。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "查询任务与成就",
+          "request": {
+            "op": 90,
+            "seq": 1
+          },
+          "responses": [
+            {
+              "op": 90,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "main": {
+                  "currentIndex": 1,
+                  "total": 10,
+                  "steps": [
+                    {
+                      "id": "m1",
+                      "title": "初入乱世",
+                      "desc": "完成 1 次建造或升级",
+                      "reward": {
+                        "gold": 500,
+                        "wood": 0,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "done": true,
+                      "claimed": true,
+                      "unlocked": true
+                    },
+                    {
+                      "id": "m2",
+                      "title": "固本培元",
+                      "desc": "官府升到 3 级",
+                      "reward": {
+                        "gold": 1000,
+                        "wood": 1000,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "done": true,
+                      "claimed": false,
+                      "unlocked": true
+                    },
+                    {
+                      "id": "m3",
+                      "title": "格物致知",
+                      "desc": "研究 1 项科技",
+                      "reward": {
+                        "gold": 1000,
+                        "wood": 1000,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "done": false,
+                      "claimed": false,
+                      "unlocked": false
+                    }
+                  ]
+                },
+                "side": [
+                  {
+                    "id": "s_build",
+                    "title": "大兴土木",
+                    "desc": "累计建造或升级 10 次",
+                    "reward": {
+                      "gold": 2000,
+                      "wood": 2000,
+                      "food": 0,
+                      "stone": 0,
+                      "iron": 0
+                    },
+                    "done": false,
+                    "claimed": false
+                  },
+                  {
+                    "id": "s_tech",
+                    "title": "百家争鸣",
+                    "desc": "研究 5 项科技",
+                    "reward": {
+                      "gold": 2000,
+                      "wood": 2000,
+                      "food": 0,
+                      "stone": 0,
+                      "iron": 0
+                    },
+                    "done": false,
+                    "claimed": false
+                  }
+                ],
+                "achievements": [
+                  {
+                    "id": "a_build",
+                    "title": "建造大师",
+                    "desc": "累计建造 / 升级次数",
+                    "value": 12,
+                    "tiers": [
+                      {
+                        "tier": 1,
+                        "threshold": 10,
+                        "reward": {
+                          "gold": 1000,
+                          "wood": 1000,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": true,
+                        "claimed": false
+                      },
+                      {
+                        "tier": 2,
+                        "threshold": 50,
+                        "reward": {
+                          "gold": 2000,
+                          "wood": 2000,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      },
+                      {
+                        "tier": 3,
+                        "threshold": 200,
+                        "reward": {
+                          "gold": 2000,
+                          "wood": 2000,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "任务 / 成就 id 与条件未来可能调整，请以响应为准，不要硬编码。"
+    },
+    {
+      "op": 91,
+      "kind": "request",
+      "name": "CLAIM_QUEST",
+      "title": "领取任务/成就奖励",
+      "preAuth": false,
+      "summary": "领取已完成、未领取的主线 / 支线 / 成就奖励，资源发往主城。条件未达成 / 前置未完成 / 重复领取均返回 INVALID_PARAMS。",
+      "requestFields": [
+        {
+          "name": "kind",
+          "type": "string",
+          "desc": "必填。main（主线）/ side（支线）/ achv（成就）。"
+        },
+        {
+          "name": "id",
+          "type": "string",
+          "desc": "必填。main/side 用其 id（如 m2 / s_build）；achv 用「成就 id:档位序号」（如 a_build:0，序号从 0 起）。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "quests",
+          "type": "object",
+          "desc": "领取后的任务与成就状态（结构同 GET_QUESTS）。"
+        },
+        {
+          "name": "granted",
+          "type": "object",
+          "desc": "本次发放的资源（{ gold, wood, food, stone, iron }）。"
+        },
+        {
+          "name": "city",
+          "type": "object",
+          "desc": "发奖后的主城状态（字段同 GET_STATE）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "领取主线第 2 环",
+          "request": {
+            "op": 91,
+            "seq": 1,
+            "data": {
+              "kind": "main",
+              "id": "m2"
+            }
+          },
+          "responses": [
+            {
+              "op": 91,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "quests": {
+                  "main": {
+                    "currentIndex": 2,
+                    "total": 10,
+                    "steps": [
+                      {
+                        "id": "m1",
+                        "title": "初入乱世",
+                        "desc": "完成 1 次建造或升级",
+                        "reward": {
+                          "gold": 500,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": true,
+                        "claimed": true,
+                        "unlocked": true
+                      },
+                      {
+                        "id": "m2",
+                        "title": "固本培元",
+                        "desc": "官府升到 3 级",
+                        "reward": {
+                          "gold": 1000,
+                          "wood": 1000,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": true,
+                        "claimed": false,
+                        "unlocked": true
+                      },
+                      {
+                        "id": "m3",
+                        "title": "格物致知",
+                        "desc": "研究 1 项科技",
+                        "reward": {
+                          "gold": 1000,
+                          "wood": 1000,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false,
+                        "unlocked": false
+                      }
+                    ]
+                  },
+                  "side": [
+                    {
+                      "id": "s_build",
+                      "title": "大兴土木",
+                      "desc": "累计建造或升级 10 次",
+                      "reward": {
+                        "gold": 2000,
+                        "wood": 2000,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "done": false,
+                      "claimed": false
+                    },
+                    {
+                      "id": "s_tech",
+                      "title": "百家争鸣",
+                      "desc": "研究 5 项科技",
+                      "reward": {
+                        "gold": 2000,
+                        "wood": 2000,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "done": false,
+                      "claimed": false
+                    }
+                  ],
+                  "achievements": [
+                    {
+                      "id": "a_build",
+                      "title": "建造大师",
+                      "desc": "累计建造 / 升级次数",
+                      "value": 12,
+                      "tiers": [
+                        {
+                          "tier": 1,
+                          "threshold": 10,
+                          "reward": {
+                            "gold": 1000,
+                            "wood": 1000,
+                            "food": 0,
+                            "stone": 0,
+                            "iron": 0
+                          },
+                          "done": true,
+                          "claimed": false
+                        },
+                        {
+                          "tier": 2,
+                          "threshold": 50,
+                          "reward": {
+                            "gold": 2000,
+                            "wood": 2000,
+                            "food": 0,
+                            "stone": 0,
+                            "iron": 0
+                          },
+                          "done": false,
+                          "claimed": false
+                        },
+                        {
+                          "tier": 3,
+                          "threshold": 200,
+                          "reward": {
+                            "gold": 2000,
+                            "wood": 2000,
+                            "food": 0,
+                            "stone": 0,
+                            "iron": 0
+                          },
+                          "done": false,
+                          "claimed": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "granted": {
+                  "gold": 1000,
+                  "wood": 1000,
+                  "food": 0,
+                  "stone": 0,
+                  "iron": 0
+                },
+                "city": {
+                  "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "name": "主城",
+                  "level": 1,
+                  "resources": {
+                    "gold": 2000,
+                    "wood": 2000,
+                    "food": 2000,
+                    "stone": 2000,
+                    "iron": 2000
+                  },
+                  "buildings": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "levels": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "costs": {
+                    "farm": {
+                      "build": {
+                        "gold": 100,
+                        "wood": 50,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "lumber_mill": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 40,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "quarry": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "iron_mine": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "house": {
+                      "build": {
+                        "gold": 80,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "government": {
+                      "build": null,
+                      "upgrade": {
+                        "gold": 200,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "buildSeconds": null,
+                      "upgradeSeconds": 1
+                    },
+                    "barracks": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "warehouse": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "wall": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "academy": {
+                      "build": {
+                        "gold": 180,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "parade_ground": {
+                      "build": {
+                        "gold": 160,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 40,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "beacon": {
+                      "build": {
+                        "gold": 140,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "post_station": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 110,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "arrow_tower": {
+                      "build": {
+                        "gold": 220,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 80,
+                        "iron": 60
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "tavern": {
+                      "build": {
+                        "gold": 260,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 40
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    }
+                  },
+                  "farms": 0,
+                  "production": {
+                    "gold": 100,
+                    "food": 100,
+                    "wood": 100,
+                    "stone": 100,
+                    "iron": 100
+                  },
+                  "population": {
+                    "current": 50,
+                    "cap": 50,
+                    "growthPerHour": 0
+                  },
+                  "storage": {
+                    "gold": 1000000,
+                    "food": 10000,
+                    "wood": 10000,
+                    "stone": 10000,
+                    "iron": 10000
+                  },
+                  "army": {
+                    "porter": 0,
+                    "militia": 0,
+                    "scout": 0,
+                    "pikeman": 0,
+                    "swordsman": 0,
+                    "archer": 0,
+                    "cavalry": 0,
+                    "iron_cavalry": 0,
+                    "supply_wagon": 0,
+                    "ballista": 0,
+                    "siege_ram": 0
+                  },
+                  "armyFoodUsePerHour": 0,
+                  "timeScale": 1,
+                  "truceUntil": null,
+                  "newbieUntil": null,
+                  "shieldUntil": null,
+                  "shieldNextAt": null,
+                  "durability": null,
+                  "famousName": null,
+                  "productionBonusPercent": 0,
+                  "starveAt": null,
+                  "mutinyNextAt": null,
+                  "guard": null,
+                  "deploy": {
+                    "count": 0,
+                    "limit": 1
+                  },
+                  "tower": null,
+                  "techs": {
+                    "farming": 0,
+                    "carrying": 0,
+                    "marching": 0,
+                    "storage": 0,
+                    "scouting": 0,
+                    "defense": 0
+                  },
+                  "recruitQueue": [],
+                  "defenseBonus": 0,
+                  "marches": [],
+                  "territory": [],
+                  "queue": [],
+                  "building": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "caption": "条件未达成 / 前置未完成",
+          "request": {
+            "op": 91,
+            "seq": 2,
+            "data": {
+              "kind": "main",
+              "id": "m3"
+            }
+          },
+          "responses": [
+            {
+              "op": 91,
+              "seq": 2,
+              "ok": false,
+              "error": {
+                "code": "INVALID_PARAMS",
+                "message": "请求参数缺失或格式不正确"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": 92,
+      "kind": "request",
+      "name": "GET_ACTIVITIES",
+      "title": "查询活动状态",
+      "preAuth": false,
+      "summary": "活动：开服冲刺（限时，按活动窗口内的事件达成里程碑，每档一次）与每日活跃（今日完成的日常任务数 + 是否签到 = 活跃点，每档每天一次）。奖励发往主城。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "activities",
+          "type": "array",
+          "desc": "{ id, title, desc, daily（true=每日活跃，false=限时活动）, ongoing（是否在可领期）, endsAt（限时活动截止 ISO，每日活动为 null）, tiers[] }。tiers[]：{ id, title, reward, done, claimed }。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "查询活动",
+          "request": {
+            "op": 92,
+            "seq": 1
+          },
+          "responses": [
+            {
+              "op": 92,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "activities": [
+                  {
+                    "id": "act_launch",
+                    "title": "开服冲刺",
+                    "desc": "开服两周内达成里程碑，领取冲刺奖励",
+                    "daily": false,
+                    "ongoing": true,
+                    "endsAt": "2026-10-27T23:59:59+08:00",
+                    "tiers": [
+                      {
+                        "id": "act_launch:1",
+                        "title": "建造 20 次",
+                        "reward": {
+                          "gold": 2000,
+                          "wood": 2000,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      },
+                      {
+                        "id": "act_launch:2",
+                        "title": "出征 20 次",
+                        "reward": {
+                          "gold": 3000,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 3000,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      }
+                    ]
+                  },
+                  {
+                    "id": "act_daily",
+                    "title": "每日活跃",
+                    "desc": "今日完成日常 / 签到攒活跃点",
+                    "daily": true,
+                    "ongoing": true,
+                    "endsAt": null,
+                    "tiers": [
+                      {
+                        "id": "act_daily:3",
+                        "title": "活跃 3 点",
+                        "reward": {
+                          "gold": 800,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": true,
+                        "claimed": false
+                      },
+                      {
+                        "id": "act_daily:5",
+                        "title": "活跃 5 点",
+                        "reward": {
+                          "gold": 1500,
+                          "wood": 1500,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": 93,
+      "kind": "request",
+      "name": "CLAIM_ACTIVITY",
+      "title": "领取活动奖励",
+      "preAuth": false,
+      "summary": "领取活动某一档奖励（data.id = 阶梯 id，如 act_launch:1 / act_daily:3）。未达成 / 不在活动期 / 重复领取均返回 INVALID_PARAMS。奖励发往主城。",
+      "requestFields": [
+        {
+          "name": "id",
+          "type": "string",
+          "desc": "必填。阶梯 id（来自 GET_ACTIVITIES 的 tiers[].id）。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "activities",
+          "type": "array",
+          "desc": "领取后的活动状态（结构同 GET_ACTIVITIES 的 activities）。"
+        },
+        {
+          "name": "granted",
+          "type": "object",
+          "desc": "本次发放的资源。"
+        },
+        {
+          "name": "city",
+          "type": "object",
+          "desc": "发奖后的主城状态（字段同 GET_STATE）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "领取每日活跃 3 点奖励",
+          "request": {
+            "op": 93,
+            "seq": 1,
+            "data": {
+              "id": "act_daily:3"
+            }
+          },
+          "responses": [
+            {
+              "op": 93,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "activities": [
+                  {
+                    "id": "act_launch",
+                    "title": "开服冲刺",
+                    "desc": "开服两周内达成里程碑，领取冲刺奖励",
+                    "daily": false,
+                    "ongoing": true,
+                    "endsAt": "2026-10-27T23:59:59+08:00",
+                    "tiers": [
+                      {
+                        "id": "act_launch:1",
+                        "title": "建造 20 次",
+                        "reward": {
+                          "gold": 2000,
+                          "wood": 2000,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      },
+                      {
+                        "id": "act_launch:2",
+                        "title": "出征 20 次",
+                        "reward": {
+                          "gold": 3000,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 3000,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      }
+                    ]
+                  },
+                  {
+                    "id": "act_daily",
+                    "title": "每日活跃",
+                    "desc": "今日完成日常 / 签到攒活跃点",
+                    "daily": true,
+                    "ongoing": true,
+                    "endsAt": null,
+                    "tiers": [
+                      {
+                        "id": "act_daily:3",
+                        "title": "活跃 3 点",
+                        "reward": {
+                          "gold": 800,
+                          "wood": 0,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": true,
+                        "claimed": false
+                      },
+                      {
+                        "id": "act_daily:5",
+                        "title": "活跃 5 点",
+                        "reward": {
+                          "gold": 1500,
+                          "wood": 1500,
+                          "food": 0,
+                          "stone": 0,
+                          "iron": 0
+                        },
+                        "done": false,
+                        "claimed": false
+                      }
+                    ]
+                  }
+                ],
+                "granted": {
+                  "gold": 800,
+                  "wood": 0,
+                  "food": 0,
+                  "stone": 0,
+                  "iron": 0
+                },
+                "city": {
+                  "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "name": "主城",
+                  "level": 1,
+                  "resources": {
+                    "gold": 2000,
+                    "wood": 2000,
+                    "food": 2000,
+                    "stone": 2000,
+                    "iron": 2000
+                  },
+                  "buildings": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "levels": {
+                    "farm": 0,
+                    "lumber_mill": 0,
+                    "quarry": 0,
+                    "iron_mine": 0,
+                    "house": 0,
+                    "government": 1,
+                    "barracks": 0,
+                    "warehouse": 0,
+                    "wall": 0,
+                    "academy": 0,
+                    "parade_ground": 0,
+                    "beacon": 0,
+                    "post_station": 0,
+                    "arrow_tower": 0,
+                    "tavern": 0
+                  },
+                  "costs": {
+                    "farm": {
+                      "build": {
+                        "gold": 100,
+                        "wood": 50,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "lumber_mill": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 40,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "quarry": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "iron_mine": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "house": {
+                      "build": {
+                        "gold": 80,
+                        "wood": 60,
+                        "food": 0,
+                        "stone": 0,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "government": {
+                      "build": null,
+                      "upgrade": {
+                        "gold": 200,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "buildSeconds": null,
+                      "upgradeSeconds": 1
+                    },
+                    "barracks": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "warehouse": {
+                      "build": {
+                        "gold": 120,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "wall": {
+                      "build": {
+                        "gold": 200,
+                        "wood": 80,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "academy": {
+                      "build": {
+                        "gold": 180,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 50,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "parade_ground": {
+                      "build": {
+                        "gold": 160,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 40,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "beacon": {
+                      "build": {
+                        "gold": 140,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "post_station": {
+                      "build": {
+                        "gold": 150,
+                        "wood": 110,
+                        "food": 0,
+                        "stone": 30,
+                        "iron": 0
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "arrow_tower": {
+                      "build": {
+                        "gold": 220,
+                        "wood": 100,
+                        "food": 0,
+                        "stone": 80,
+                        "iron": 60
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    },
+                    "tavern": {
+                      "build": {
+                        "gold": 260,
+                        "wood": 120,
+                        "food": 0,
+                        "stone": 60,
+                        "iron": 40
+                      },
+                      "upgrade": null,
+                      "buildSeconds": 1,
+                      "upgradeSeconds": null
+                    }
+                  },
+                  "farms": 0,
+                  "production": {
+                    "gold": 100,
+                    "food": 100,
+                    "wood": 100,
+                    "stone": 100,
+                    "iron": 100
+                  },
+                  "population": {
+                    "current": 50,
+                    "cap": 50,
+                    "growthPerHour": 0
+                  },
+                  "storage": {
+                    "gold": 1000000,
+                    "food": 10000,
+                    "wood": 10000,
+                    "stone": 10000,
+                    "iron": 10000
+                  },
+                  "army": {
+                    "porter": 0,
+                    "militia": 0,
+                    "scout": 0,
+                    "pikeman": 0,
+                    "swordsman": 0,
+                    "archer": 0,
+                    "cavalry": 0,
+                    "iron_cavalry": 0,
+                    "supply_wagon": 0,
+                    "ballista": 0,
+                    "siege_ram": 0
+                  },
+                  "armyFoodUsePerHour": 0,
+                  "timeScale": 1,
+                  "truceUntil": null,
+                  "newbieUntil": null,
+                  "shieldUntil": null,
+                  "shieldNextAt": null,
+                  "durability": null,
+                  "famousName": null,
+                  "productionBonusPercent": 0,
+                  "starveAt": null,
+                  "mutinyNextAt": null,
+                  "guard": null,
+                  "deploy": {
+                    "count": 0,
+                    "limit": 1
+                  },
+                  "tower": null,
+                  "techs": {
+                    "farming": 0,
+                    "carrying": 0,
+                    "marching": 0,
+                    "storage": 0,
+                    "scouting": 0,
+                    "defense": 0
+                  },
+                  "recruitQueue": [],
+                  "defenseBonus": 0,
+                  "marches": [],
+                  "territory": [],
+                  "queue": [],
+                  "building": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "caption": "不在活动期 / 未达成",
+          "request": {
+            "op": 93,
+            "seq": 2,
+            "data": {
+              "id": "act_launch:1"
+            }
+          },
+          "responses": [
+            {
+              "op": 93,
+              "seq": 2,
+              "ok": false,
+              "error": {
+                "code": "INVALID_PARAMS",
+                "message": "请求参数缺失或格式不正确"
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "op": 2000,
