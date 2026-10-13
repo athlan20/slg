@@ -120,6 +120,22 @@ export const Op = {
   CHAT_REPORT_DETAIL: 71,
   /** C→S 修改账号昵称（data.nickname；v52，仅玩家连接；昵称即账号 username，全服唯一，重名返回 NICKNAME_TAKEN） */
   SET_NICKNAME: 72,
+  /** C→S 查询任务与签到状态（v53，AISLG-200：今日日常任务进度 / 领取状态 + 签到状态） */
+  GET_DAILY: 73,
+  /** C→S 领取日常任务奖励（data.taskId；v53，任务已完成且未领取时成功；重复领取/未完成返回 INVALID_PARAMS） */
+  CLAIM_DAILY: 74,
+  /** C→S 查询签到状态（v53，AISLG-200；GET_DAILY 已含签到状态，本协议单独提供） */
+  GET_SIGNIN: 75,
+  /** C→S 每日签到（v53，AISLG-200：每天一次，连续签到 7 天一轮循环；当日重复签到返回 INVALID_PARAMS） */
+  SIGNIN: 76,
+  /** C→S 查询主线 / 支线任务与成就状态（v54，AISLG-200 二期） */
+  GET_QUESTS: 77,
+  /** C→S 领取任务 / 成就奖励（data.kind = main|side|achv，data.id；v54；未完成 / 重复领取返回 INVALID_PARAMS） */
+  CLAIM_QUEST: 78,
+  /** C→S 查询活动状态（v54，AISLG-200 三期：开服冲刺 + 每日活跃） */
+  GET_ACTIVITIES: 79,
+  /** C→S 领取活动奖励（data.id = 阶梯 id；v54；未达成 / 不在活动期 / 重复领取返回 INVALID_PARAMS） */
+  CLAIM_ACTIVITY: 80,
   /** C→S 发起农场建造（兼容入口：等价于 BUILD 且 kind='farm'） */
   BUILD_FARM: 20,
   /** S→C 推送：农场建造状态变化（进入建造 / 完成） */

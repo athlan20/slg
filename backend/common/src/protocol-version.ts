@@ -467,5 +467,14 @@
  * 新错误码 NICKNAME_TAKEN；昵称同时是密码登录键，改名后密码登录用新昵称（第三方与令牌登录绑定
  * 账号 id，不受影响）。新增推送 PUSH_ACCOUNT_STATE（op 2020，reason=account_renamed，账号全部
  * 在线连接收到，含 Agent）与事件 account_renamed（detail={from,to}）。消息结构其余无变化。
+ * v53（任务与签到，AISLG-200，只加不改；本地自建分支新增）：新增 GET_DAILY（op 73）/ CLAIM_DAILY
+ * （op 74）/ GET_SIGNIN（op 75）/ SIGNIN（op 76）——日常任务（6 条、每日北京日刷新，完成判定读
+ * events 当日事件）与每日签到（连续签到 7 天一轮循环）。奖励发往主城（每城资源字段）。新表
+ * quest_claims / signin_state。无新增错误码（任务未完成 / 重复领取复用 INVALID_PARAMS）。
+ * v54（任务与活动二期/三期，AISLG-200，只加不改；本地自建分支新增）：新增 GET_QUESTS（op 77）
+ * / CLAIM_QUEST（op 78）/ GET_ACTIVITIES（op 79）/ CLAIM_ACTIVITY（op 80）——主线任务链（10 环、顺序
+ * 解锁与领取）/ 支线任务（4 条、并行）/ 成就（6 条 × 3 档，逐档领取）/ 活动（开服冲刺限时 + 每日活跃）。
+ * 进度均从 events / city_buildings / account_techs / account_heroes / signin_state 派生，不新增埋点；
+ * 新表 quest_claims_once。无新增错误码（复用 INVALID_PARAMS）。
  */
-export const PROTOCOL_VERSION = 52;
+export const PROTOCOL_VERSION = 54;

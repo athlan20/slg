@@ -91,6 +91,22 @@ export const Op = {
   CHAT_REPORT_DETAIL: 71,
   /** 修改账号昵称（v52，AISLG-142）：data.nickname；仅玩家连接；昵称即账号 username，全服唯一（NICKNAME_TAKEN） */
   SET_NICKNAME: 72,
+  /** 查询日常任务与签到状态（v53，AISLG-200）：data.quest */
+  GET_DAILY: 73,
+  /** 领取日常任务奖励（v53）：data.taskId；任务未完成 / 重复领取返回 INVALID_PARAMS */
+  CLAIM_DAILY: 74,
+  /** 查询签到状态（v53） */
+  GET_SIGNIN: 75,
+  /** 每日签到（v53）：每天一次，连续 7 天一轮循环；当日重复签到返回 INVALID_PARAMS */
+  SIGNIN: 76,
+  /** 查询主线/支线任务与成就（v54，AISLG-200 二期） */
+  GET_QUESTS: 77,
+  /** 领取任务/成就奖励（v54）：data.kind=main|side|achv, data.id */
+  CLAIM_QUEST: 78,
+  /** 查询活动状态（v54，AISLG-200 三期） */
+  GET_ACTIVITIES: 79,
+  /** 领取活动奖励（v54）：data.id = 阶梯 id */
+  CLAIM_ACTIVITY: 80,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -704,3 +720,33 @@ export type {
   PushChatMessageData,
 } from './protocol-chat';
 export { CHAT_RATE_LIMIT_MS, CHAT_TEXT_MAX_CHARS, CHAT_WORLD_MIN_GOVERNMENT } from './protocol-chat';
+
+// 任务与签到（v53，AISLG-200）的载荷类型
+export type {
+  DailyTaskView,
+  SigninDayView,
+  SigninView,
+  QuestStateView,
+  GetDailyResponseData,
+  ClaimDailyRequestData,
+  ClaimDailyResponseData,
+  GetSigninResponseData,
+  SigninResponseData,
+} from './protocol-quest';
+
+// 任务与活动二期/三期（v54，AISLG-200）的载荷类型
+export type {
+  MainStepView,
+  MainQuestView,
+  SideQuestView,
+  AchievementTierView,
+  AchievementView,
+  QuestsView,
+  ActivityTierView,
+  ActivityView,
+  GetQuestsResponseData,
+  ClaimQuestRequestData,
+  ClaimQuestResponseData,
+  GetActivitiesResponseData,
+  ClaimActivityResponseData,
+} from './protocol-quests';
