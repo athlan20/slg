@@ -12,6 +12,7 @@ import { GrowthPage } from '../pages/GrowthPage';
 import { IntelPage } from '../pages/IntelPage';
 import { MapPage } from '../pages/MapPage';
 import { OverviewPage } from '../pages/OverviewPage';
+import { StarTowerPage } from '../pages/StarTowerPage';
 import { AccountDialogs, type AccountDialogMode } from './AccountDialogs';
 import { BottomBar } from './BottomBar';
 import { ChatWindow } from '../chat/ChatWindow';
@@ -74,6 +75,7 @@ export function AppShell() {
         {page === 'city' ? <CityPage /> : null}
         {page === 'army' ? <ArmyPage /> : null}
         {page === 'growth' ? <GrowthPage /> : null}
+        {page === 'starTower' ? <StarTowerPage /> : null}
         {page === 'intel' ? <IntelPage /> : null}
         {page === 'agent' ? <AgentPage /> : null}
       </main>

@@ -19,6 +19,7 @@ export const NAV_COPY = {
     city: { label: '城池', icon: '城' },
     army: { label: '军队', icon: '兵' },
     growth: { label: '养成', icon: '养' },
+    starTower: { label: '将星塔', icon: '塔' },
     intel: { label: '情报', icon: '报' },
     agent: { label: 'Agent', icon: 'A' },
   },

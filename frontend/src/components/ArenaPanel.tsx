@@ -1,11 +1,12 @@
 // 竞技场面板（v53，AISLG-145）：养成页的一个区块。上方是我的名次与今日次数，中间是 3 个号位的阵容编辑，
 // 下方用分段切换「对手 / 榜单 / 战报」，三个列表都用分页（不滚动）。规则与数值见服务端 arena.ts。
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { HeroView } from '../api/protocol-hero';
-import type { ArenaFighterView, ArenaMatchView, ArenaOpponentView, ArenaStateView, ArenaTopEntryView } from '../api/protocol';
+import type { ArenaFighterView, ArenaMatchView, ArenaOpponentView, ArenaTopEntryView } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
 import type { ArenaSession } from '../state/arenaSession';
+import { LineupEditor } from './LineupEditor';
 import { Card } from './ui/Card';
 import { PagedList } from './ui/PagedList';
 
@@ -15,11 +16,6 @@ interface ArenaPanelProps {
   /** 我的武将（阵容下拉的候选） */
   heroes: HeroView[];
   session: ArenaSession;
-}
-
-/** 阵容的 heroId 串：只在服务端阵容真的变了时才重置编辑草稿（推送刷新不冲掉正在编辑的号位） */
-function lineupKeyOf(arena: ArenaStateView | null): string {
-  return arena ? arena.lineup.map((f) => f?.heroId ?? '-').join(',') : '';
 }
 
 /** 冷却按服务端下发的秒数显示：服务端已按时间倍率缩放，倍率高时可能只有几秒，不能四舍五入成 0 分钟 */
@@ -40,18 +36,6 @@ export function ArenaPanel({ heroes, session }: ArenaPanelProps) {
   const { ARENA_COPY } = copy;
   const { arena, reports, reportsHasMore, error, busy, saveLineup, challenge, fetchReports } = session;
   const [tab, setTab] = useState<ArenaTab>('opponents');
-  const [draft, setDraft] = useState<Array<string | null>>([null, null, null]);
-  const lineupKey = lineupKeyOf(arena);
-
-  useEffect(() => {
-    if (arena) {
-      setDraft(arena.lineup.map((f) => f?.heroId ?? null));
-    }
-    // 只依赖阵容的 key：arena 对象每次拉取都会换，直接依赖会冲掉正在编辑的号位
-  }, [lineupKey]);
-
-  const draftFilled = draft.some((id) => id !== null);
-  const dirty = arena !== null && draft.some((id, i) => id !== (arena.lineup[i]?.heroId ?? null));
   const challengesLeft = arena?.challengesLeft ?? 0;
   const rulesLine = arena
     ? ARENA_COPY.panel.rules(arena.rules.maxRankGap, arena.rules.dailyChallenges, cooldownText(arena.rules.pairCooldownSeconds, ARENA_COPY.panel))
@@ -79,54 +63,14 @@ export function ArenaPanel({ heroes, session }: ArenaPanelProps) {
         </div>
       ) : null}
 
-      <div role="养成页-竞技场-阵容" className="flex shrink-0 flex-col gap-1 rounded-[5px] border border-line-soft bg-panel-2 px-2 py-1.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[12.5px] font-semibold">{ARENA_COPY.panel.lineupTitle}</span>
-          {arena && !arena.joined ? <span className="truncate text-[11px] text-warn">{ARENA_COPY.panel.joinHint}</span> : null}
-        </div>
-        {heroes.length === 0 ? (
-          <p className="truncate text-[11.5px] text-warn">{ARENA_COPY.panel.noHeroes}</p>
-        ) : (
-          <div className="grid grid-cols-3 gap-1">
-            {draft.map((id, index) => {
-              const taken = new Set(draft.filter((other, i) => i !== index && other !== null));
-              return (
-                <label key={index} className="flex min-w-0 flex-col gap-0.5 text-[11px] text-faint">
-                  <span className="truncate">{ARENA_COPY.panel.slot(index + 1)}</span>
-                  <select
-                    role={`养成页-竞技场-阵容-${index + 1}号位`}
-                    value={id ?? ''}
-                    disabled={busy}
-                    onChange={(event) => {
-                      const next = event.target.value === '' ? null : event.target.value;
-                      setDraft((prev) => prev.map((old, i) => (i === index ? next : old)));
-                    }}
-                    className="min-w-0 truncate rounded border border-line bg-panel px-1 py-0.5 text-[12px] text-text"
-                  >
-                    <option value="">{ARENA_COPY.panel.emptySlot}</option>
-                    {heroes
-                      .filter((hero) => !taken.has(hero.id))
-                      .map((hero) => (
-                        <option key={hero.id} value={hero.id}>
-                          {`${hero.name} · ${ARENA_COPY.panel.stats(hero.lead, hero.force, hero.wit)}`}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-              );
-            })}
-          </div>
-        )}
-        <button
-          type="button"
-          role="养成页-竞技场-保存阵容"
-          disabled={busy || heroes.length === 0 || !draftFilled || (arena !== null && arena.joined && !dirty)}
-          onClick={() => void saveLineup(draft)}
-          className="btn w-full truncate"
-        >
-          {busy ? ARENA_COPY.panel.saving : ARENA_COPY.panel.save}
-        </button>
-      </div>
+      <LineupEditor
+        role="养成页-竞技场-阵容"
+        heroes={heroes}
+        lineup={arena ? arena.lineup : null}
+        busy={busy}
+        copy={ARENA_COPY.panel}
+        onSave={(heroIds) => void saveLineup(heroIds)}
+      />
 
       {error ? (
         <p role="养成页-竞技场-错误" className="shrink-0 truncate text-[12px] text-warn" title={error}>

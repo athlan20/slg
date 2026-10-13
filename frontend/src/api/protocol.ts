@@ -176,6 +176,12 @@ export const Op = {
   PUSH_ACCOUNT_STATE: 2020,
   /** 竞技场状态变化推送（v53，AISLG-145）：challenged / daily_reward / milestone，账号全部在线连接收到 */
   PUSH_ARENA_STATE: 2021,
+  /** 查询将星塔（v55，AISLG-146） */
+  GET_STAR_TOWER: 83,
+  /** 挑战将星塔下一层（v55，AISLG-146）：无参数，三局两胜，赢了首通发奖励 */
+  STAR_TOWER_CHALLENGE: 84,
+  /** 查询将星塔战报（v55，AISLG-146） */
+  GET_STAR_TOWER_REPORTS: 85,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -801,3 +807,11 @@ export type {
   GetActivitiesResponseData,
   ClaimActivityResponseData,
 } from './protocol-quests';
+export type {
+  StarTowerRewardView,
+  StarTowerRulesView,
+  StarTowerStateView,
+  StarTowerMatchView,
+  StarTowerChallengeResponseData,
+  GetStarTowerReportsResponseData,
+} from './protocol-star-tower';

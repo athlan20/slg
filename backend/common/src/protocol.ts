@@ -156,6 +156,12 @@ export const Op = {
   GET_ACTIVITIES: 92,
   /** C→S 领取活动奖励（data.id = 阶梯 id；v56；未达成 / 不在活动期 / 重复领取返回 INVALID_PARAMS） */
   CLAIM_ACTIVITY: 93,
+  /** C→S 查询将星塔（v55，AISLG-146：已通过的最高层 / 下一层敌方阵容与奖励 / 阵容（与竞技场共用）） */
+  GET_STAR_TOWER: 83,
+  /** C→S 挑战将星塔的下一层（v55，AISLG-146：无参数；三局两胜，赢了首通发奖励并推进进度，输了不扣任何东西） */
+  STAR_TOWER_CHALLENGE: 84,
+  /** C→S 查询将星塔战报（v55，AISLG-146：我每次挑战的战报，每人保留最近 50 条） */
+  GET_STAR_TOWER_REPORTS: 85,
   /** C→S 发起农场建造（兼容入口：等价于 BUILD 且 kind='farm'） */
   BUILD_FARM: 20,
   /** S→C 推送：农场建造状态变化（进入建造 / 完成） */
@@ -385,6 +391,12 @@ export const ErrorCode = {
   ARENA_TARGET_BUSY: 'ARENA_TARGET_BUSY',
   /** 竞技场：刚挑战过同一个对手，冷却中（v53），响应附 retryAfterSeconds */
   ARENA_PAIR_COOLDOWN: 'ARENA_PAIR_COOLDOWN',
+  /** 将星塔：已全部通关，没有可挑战的层（v55，AISLG-146） */
+  STAR_TOWER_CLEARED: 'STAR_TOWER_CLEARED',
+  /** 将星塔：账号还没有城，首通金币无处入账，不能挑战（v55，AISLG-146） */
+  STAR_TOWER_NO_CITY: 'STAR_TOWER_NO_CITY',
+  /** 将星塔：阵容里一名武将都没有，先保存阵容（SET_ARENA_LINEUP）（v55，AISLG-146） */
+  STAR_TOWER_NO_LINEUP: 'STAR_TOWER_NO_LINEUP',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -729,6 +741,17 @@ export type {
   GetArenaReportsResponseData,
   ArenaStatePushData,
 } from './protocol-arena';
+// 将星塔（v55，AISLG-146）的载荷类型在 protocol-star-tower.ts，规则与数值在 star-tower.ts
+export type {
+  StarTowerRewardView,
+  StarTowerRulesView,
+  StarTowerStateView,
+  GetStarTowerResponseData,
+  StarTowerMatchView,
+  StarTowerChallengeResponseData,
+  GetStarTowerReportsRequestData,
+  GetStarTowerReportsResponseData,
+} from './protocol-star-tower';
 
 // 玩家对抗（一）（v38，AISLG-122）的载荷类型在 protocol-pvp.ts，规则与数值在 protection.ts
 export type {

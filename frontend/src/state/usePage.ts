@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-export const PAGE_KEYS = ['overview', 'map', 'city', 'army', 'growth', 'intel', 'agent'] as const;
+export const PAGE_KEYS = ['overview', 'map', 'city', 'army', 'growth', 'starTower', 'intel', 'agent'] as const;
 export type PageKey = (typeof PAGE_KEYS)[number];
 
 const DEFAULT_PAGE: PageKey = 'overview';
