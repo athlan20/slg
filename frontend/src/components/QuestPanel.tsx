@@ -102,14 +102,23 @@ function DailyTab({ session }: { session: QuestSession }) {
         <div role="任务面板-签到格" className="grid grid-cols-7 gap-1">
           {signin.days.map((d) => {
             const rw = rewardText(d.reward, RESOURCE_LABEL);
+            const parts = rw.replace(/\+/g, '').split(' ');
             return (
               <div
                 key={d.day}
                 title={QUEST_COPY.signin.dayTitle(d.day, rw)}
-                className={`flex flex-col items-center rounded border px-0.5 py-0.5 ${d.claimed ? 'border-accent-dim bg-accent-soft' : 'border-line-soft bg-panel'}`}
+                className={`flex min-w-0 flex-col items-center overflow-hidden rounded border px-0.5 py-0.5 ${d.claimed ? 'border-accent-dim bg-accent-soft' : 'border-line-soft bg-panel'}`}
               >
-                <span className="text-[9.5px] text-faint">{QUEST_COPY.signin.day(d.day)}</span>
-                <span className={`truncate text-[10.5px] ${d.claimed ? 'text-accent' : 'text-dim'}`}>{d.claimed ? '✔' : rw}</span>
+                <span className="w-full truncate text-center text-[9px] leading-tight text-faint">{QUEST_COPY.signin.day(d.day)}</span>
+                {d.claimed ? (
+                  <span className="text-[11px] leading-tight text-accent">✔</span>
+                ) : (
+                  parts.map((p, i) => (
+                    <span key={i} className="w-full truncate text-center text-[8.5px] leading-tight text-dim">
+                      {p}
+                    </span>
+                  ))
+                )}
               </div>
             );
           })}
