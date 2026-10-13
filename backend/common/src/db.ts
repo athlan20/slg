@@ -637,6 +637,35 @@ CREATE TABLE IF NOT EXISTS settings (
   value jsonb NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- v56（AISLG-200 任务与签到）：日常任务的领取记录（按「北京日」去重，历史记录不清理也无碍，
+-- 查询恒按 day 过滤）。完成判定读取 events 表当日事件，无需额外埋点。
+CREATE TABLE IF NOT EXISTS quest_claims (
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  quest_id text NOT NULL,
+  day date NOT NULL,
+  claimed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, quest_id, day)
+);
+-- v56：签到状态（每账号一行）。last_day = 最近一次签到日（北京日）；streak = 连续签到天数；
+-- total = 累计签到次数；7 天一轮循环，断签后 streak 归 1。
+CREATE TABLE IF NOT EXISTS signin_state (
+  account_id uuid PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+  last_day date,
+  streak integer NOT NULL DEFAULT 0,
+  total integer NOT NULL DEFAULT 0,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- v56（AISLG-200 任务与活动）：一次性领取记录（主线 / 支线 / 成就 / 开服活动阶梯）。
+-- 与按天去重的 quest_claims 区分：这里 quest_id 全局唯一（每账号一条）。kind 仅作检索用。
+CREATE TABLE IF NOT EXISTS quest_claims_once (
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  quest_id text NOT NULL,
+  kind text NOT NULL,
+  claimed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, quest_id)
+);
 `;
 
 /**

@@ -140,6 +140,22 @@ export const Op = {
   BEFRIEND_HERO: 81,
   /** C→S 招揽在野名将（v54，AISLG-144：data.heroName；好感满 100 才能招揽，全服唯一） */
   RECRUIT_FAMOUS_HERO: 82,
+  /** C→S 查询任务与签到状态（v56，AISLG-200：今日日常任务进度 / 领取状态 + 签到状态） */
+  GET_DAILY: 86,
+  /** C→S 领取日常任务奖励（data.taskId；v56，任务已完成且未领取时成功；重复领取/未完成返回 INVALID_PARAMS） */
+  CLAIM_DAILY: 87,
+  /** C→S 查询签到状态（v56，AISLG-200；GET_DAILY 已含签到状态，本协议单独提供） */
+  GET_SIGNIN: 88,
+  /** C→S 每日签到（v56，AISLG-200：每天一次，连续签到 7 天一轮循环；当日重复签到返回 INVALID_PARAMS） */
+  SIGNIN: 89,
+  /** C→S 查询主线 / 支线任务与成就状态（v56，AISLG-200 二期） */
+  GET_QUESTS: 90,
+  /** C→S 领取任务 / 成就奖励（data.kind = main|side|achv，data.id；v56；未完成 / 重复领取返回 INVALID_PARAMS） */
+  CLAIM_QUEST: 91,
+  /** C→S 查询活动状态（v56，AISLG-200 三期：开服冲刺 + 每日活跃） */
+  GET_ACTIVITIES: 92,
+  /** C→S 领取活动奖励（data.id = 阶梯 id；v56；未达成 / 不在活动期 / 重复领取返回 INVALID_PARAMS） */
+  CLAIM_ACTIVITY: 93,
   /** C→S 发起农场建造（兼容入口：等价于 BUILD 且 kind='farm'） */
   BUILD_FARM: 20,
   /** S→C 推送：农场建造状态变化（进入建造 / 完成） */

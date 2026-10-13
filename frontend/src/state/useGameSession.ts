@@ -57,6 +57,7 @@ import { useWorldSession, type WorldSession } from './worldSession';
 import { useTechSession, type TechSession } from './techSession';
 import { useArenaSession, type ArenaSession } from './arenaSession';
 import { useHeroSession, type HeroSession } from './heroSession';
+import { useQuestSession, type QuestSession } from './questSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useSessionExtras } from './session-extras';
@@ -156,6 +157,8 @@ export interface GameSession {
   arenaSession: ArenaSession;
   /** 武将会话（v36 AISLG-114）：武将 / 酒馆候选 / 招募 / 解雇 / 城守 / 出征带将选择 */
   heroSession: HeroSession;
+  /** 任务与签到会话（v53 AISLG-200）：日常任务 / 签到状态、领奖与签到 */
+  questSession: QuestSession;
   /** 聊天（v51 AISLG-138）：浮窗开合 / 世界与私聊消息 / 未读 / 屏蔽 / 发送 / 分享草稿 */
   chat: ChatState;
   /** 移动目标会话（v28 AISLG-78）：流寇 / 运粮商队列表 */
@@ -347,6 +350,10 @@ export function useGameSession(): GameSession {
   const yellowTurban = useYellowTurban({ clientRef, connected: connection === 'online' });
   const { clear: ytClear, onPush: onYtPush } = yellowTurban;
 
+  // 任务与签到会话切片（v53 AISLG-200）：打开养成页拉取当日任务 / 签到状态，领奖与签到后回带城池资源
+  const questSession = useQuestSession({ clientRef, connected: connection === 'online', setCity });
+  const { clear: questClear } = questSession;
+
   // 会话扩展切片（v23）：离线日报 / 全服播报 / 排行榜——状态与动作拆在 session-extras
   const extras = useSessionExtras(clientRef);
   const chat = useChat({ clientRef, online: connection === 'online', accountId: account?.accountId ?? null });
@@ -512,10 +519,11 @@ export function useGameSession(): GameSession {
       heroClear();
       movingClear();
       ytClear();
+      questClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, resetCityList],
+    [clearTimers, worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, questClear, resetCityList],
   );
 
   const scheduleReconnect = useCallback(() => {
@@ -607,7 +615,8 @@ export function useGameSession(): GameSession {
     heroClear();
     movingClear();
     ytClear();
-  }, [worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, resetNpcWarnings]);
+    questClear();
+  }, [worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, questClear, resetNpcWarnings]);
 
   const login = useCallback(
     async (username: string, password: string) => {
@@ -994,6 +1003,7 @@ export function useGameSession(): GameSession {
         heroClear();
         movingClear();
         ytClear();
+        questClear();
         await syncAll('initial');
         return null;
       }
@@ -1001,7 +1011,7 @@ export function useGameSession(): GameSession {
     } catch (err) {
       return err instanceof Error ? err.message : COPY.errors.reset.fallback;
     }
-  }, [syncAll, worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, resetCityList]);
+  }, [syncAll, worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, questClear, resetCityList]);
 
   /** 加载更早的一页事件（beforeId 游标分页；本地临时事件 id 为负，不作为游标） */
   const loadOlderEvents = useCallback(async () => {
@@ -1089,6 +1099,7 @@ export function useGameSession(): GameSession {
     techSession,
     arenaSession,
     heroSession,
+    questSession,
     chat,
     moving,
     yellowTurban,

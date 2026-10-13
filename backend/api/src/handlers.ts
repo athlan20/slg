@@ -55,6 +55,8 @@ import { handleGoogleBind, handleGoogleLogin, type GoogleService } from './handl
 import { handleGithubAuthStart, handleOauthRedeem, type GithubService } from './handlers-github';
 import { handleGetServerBroadcasts } from './handlers-server';
 import { handleChatOp } from './handlers-chat';
+import { handleClaimDaily, handleGetDaily, handleGetSignin, handleSignin } from './handlers-quest';
+import { handleClaimActivity, handleClaimQuest, handleGetActivities, handleGetQuests } from './handlers-quests';
 import { handleGetLeaderboard } from './handlers-leaderboard';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
 import { loadCityState } from './views';
@@ -387,6 +389,30 @@ async function dispatchOp(
     case Op.CHAT_BLOCK:
     case Op.CHAT_REPORT_DETAIL:
       await handleChatOp(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_DAILY:
+      await handleGetDaily(ctx, conn, op, seq);
+      break;
+    case Op.CLAIM_DAILY:
+      await handleClaimDaily(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_SIGNIN:
+      await handleGetSignin(ctx, conn, op, seq);
+      break;
+    case Op.SIGNIN:
+      await handleSignin(ctx, conn, op, seq);
+      break;
+    case Op.GET_QUESTS:
+      await handleGetQuests(ctx, conn, op, seq);
+      break;
+    case Op.CLAIM_QUEST:
+      await handleClaimQuest(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_ACTIVITIES:
+      await handleGetActivities(ctx, conn, op, seq);
+      break;
+    case Op.CLAIM_ACTIVITY:
+      await handleClaimActivity(ctx, conn, op, seq, data);
       break;
     case Op.BUILD_FARM:
       // 兼容入口（协议 v2 及以前）：等价于 BUILD 且 kind='farm'，忽略请求参数

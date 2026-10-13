@@ -483,5 +483,11 @@
  * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt。推送 PUSH_HERO_STATE 新增
  * reason。新表 hero_unlocks / hero_friendship；account_heroes 新增 base_* / free_points / train_* /
  * gift_* / reset_*；world_tiles 新增 wild_*。
+ * v56（任务与活动，AISLG-200，只加不改）：新增 GET_DAILY（op 86）/ CLAIM_DAILY（op 87）/ GET_SIGNIN
+ * （op 88）/ SIGNIN（op 89）/ GET_QUESTS（op 90）/ CLAIM_QUEST（op 91）/ GET_ACTIVITIES（op 92）/
+ * CLAIM_ACTIVITY（op 93）——日常任务（6 条、每日北京日刷新，完成判定读 events 当日事件）、每日签到
+ * （连续签到 7 天一轮循环）、主线任务链（10 环、顺序解锁与领取）/ 支线（4 条、并行）/ 成就（6 条 × 3 档，
+ * 逐档领取）、活动（开服冲刺限时 + 每日活跃）。进度均从既有数据派生，不新增埋点；奖励发往主城，
+ * 领奖原子去重。新表 quest_claims / signin_state / quest_claims_once。无新增错误码（复用 INVALID_PARAMS）。
  */
-export const PROTOCOL_VERSION = 54;
+export const PROTOCOL_VERSION = 56;
