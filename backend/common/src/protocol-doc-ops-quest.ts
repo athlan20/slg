@@ -91,7 +91,7 @@ export const REQUEST_CLAIM_DAILY: RequestOpDoc = {
     {
       caption: '任务未完成',
       request: { op: Op.CLAIM_DAILY, seq: 2, data: { taskId: 'march' } },
-      responses: [{ op: Op.CLAIM_DAILY, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '任务未完成或今日已领取' } }],
+      responses: [{ op: Op.CLAIM_DAILY, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '请求参数缺失或格式不正确' } }],
     },
   ],
   agentNote: '建议 Agent 在完成对应动作后（建造 / 征兵 / 出征 / 研究 / 占领）顺手领取当日任务奖励。',
@@ -154,7 +154,7 @@ export const REQUEST_SIGNIN: RequestOpDoc = {
     {
       caption: '今日已签到',
       request: { op: Op.SIGNIN, seq: 2 },
-      responses: [{ op: Op.SIGNIN, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '今日已签到' } }],
+      responses: [{ op: Op.SIGNIN, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '请求参数缺失或格式不正确' } }],
     },
   ],
 };

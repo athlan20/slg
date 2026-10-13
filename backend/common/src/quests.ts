@@ -9,7 +9,7 @@
 
 import pg from 'pg';
 import type { Resources } from './protocol';
-import { DAILY_TASKS, grantRewards, QuestError, todayInfo } from './quest';
+import { claimAtomically, DAILY_TASKS, QuestError, todayInfo } from './quest';
 
 export { QuestError };
 
@@ -426,11 +426,13 @@ export async function claimQuest(pool: pg.Pool, accountId: string, kind: string,
   }
 
   if (claimed.has(questId)) throw new QuestError('ALREADY');
-  await pool.query(
+  await claimAtomically(
+    pool,
+    accountId,
+    reward,
     `INSERT INTO quest_claims_once (account_id, quest_id, kind) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
     [accountId, questId, kind],
   );
-  await grantRewards(pool, accountId, reward);
   return { reward };
 }
 
@@ -451,18 +453,23 @@ export async function claimActivity(pool: pg.Pool, accountId: string, id: string
   if (def.daily) {
     const claimedToday = await loadClaimedToday(pool, accountId, today);
     if (claimedToday.has(id)) throw new QuestError('ALREADY');
-    await pool.query(
+    await claimAtomically(
+      pool,
+      accountId,
+      tier.reward,
       `INSERT INTO quest_claims (account_id, quest_id, day) VALUES ($1, $2, $3::date) ON CONFLICT DO NOTHING`,
       [accountId, id, today],
     );
   } else {
     const claimed = await loadClaimedOnce(pool, accountId);
     if (claimed.has(id)) throw new QuestError('ALREADY');
-    await pool.query(
+    await claimAtomically(
+      pool,
+      accountId,
+      tier.reward,
       `INSERT INTO quest_claims_once (account_id, quest_id, kind) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
       [accountId, id, 'act'],
     );
   }
-  await grantRewards(pool, accountId, tier.reward);
   return { reward: tier.reward };
 }

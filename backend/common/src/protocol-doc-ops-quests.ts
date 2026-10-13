@@ -131,7 +131,7 @@ export const REQUEST_CLAIM_QUEST: RequestOpDoc = {
     {
       caption: '条件未达成 / 前置未完成',
       request: { op: Op.CLAIM_QUEST, seq: 2, data: { kind: 'main', id: 'm3' } },
-      responses: [{ op: Op.CLAIM_QUEST, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '任务未完成或今日已领取' } }],
+      responses: [{ op: Op.CLAIM_QUEST, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '请求参数缺失或格式不正确' } }],
     },
   ],
 };
@@ -194,7 +194,7 @@ export const REQUEST_CLAIM_ACTIVITY: RequestOpDoc = {
     {
       caption: '不在活动期 / 未达成',
       request: { op: Op.CLAIM_ACTIVITY, seq: 2, data: { id: 'act_launch:1' } },
-      responses: [{ op: Op.CLAIM_ACTIVITY, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '任务未完成或今日已领取' } }],
+      responses: [{ op: Op.CLAIM_ACTIVITY, seq: 2, ok: false, error: { code: 'INVALID_PARAMS', message: '请求参数缺失或格式不正确' } }],
     },
   ],
 };

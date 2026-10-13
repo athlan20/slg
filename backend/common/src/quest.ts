@@ -86,8 +86,11 @@ export async function todayInfo(pool: pg.Pool): Promise<{ today: string; yesterd
   return res.rows[0] as { today: string; yesterday: string };
 }
 
+/** Pool 与事务内的 PoolClient 都只用到 query */
+type Queryable = Pick<pg.Pool, 'query'>;
+
 /** 把奖励加到主城（账号最早创建的城）。无城或奖励全零时静默返回。 */
-export async function grantRewards(pool: pg.Pool, accountId: string, reward: Resources): Promise<void> {
+export async function grantRewards(pool: Queryable, accountId: string, reward: Resources): Promise<void> {
   const sets: string[] = [];
   const params: unknown[] = [accountId];
   for (const key of RES_KEYS) {
@@ -105,6 +108,37 @@ export async function grantRewards(pool: pg.Pool, accountId: string, reward: Res
      WHERE account_id = $1 AND id = (SELECT id FROM cities WHERE account_id = $1 ORDER BY created_at LIMIT 1)`,
     params,
   );
+}
+
+/**
+ * 原子领奖：同一事务内先插入领取记录、再发奖。记录没插进去（已领过，含并发的另一个请求抢先）
+ * 就回滚并抛 ALREADY，奖励只会发一次。insertSql 必须以 ON CONFLICT DO NOTHING 结尾。
+ */
+export async function claimAtomically(
+  pool: pg.Pool,
+  accountId: string,
+  reward: Resources,
+  insertSql: string,
+  insertParams: unknown[],
+): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const inserted = await client.query(insertSql, insertParams);
+    if (!inserted.rowCount) {
+      await client.query('ROLLBACK');
+      throw new QuestError('ALREADY');
+    }
+    await grantRewards(client, accountId, reward);
+    await client.query('COMMIT');
+  } catch (err) {
+    if (!(err instanceof QuestError)) {
+      await client.query('ROLLBACK').catch(() => undefined);
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 /** 读取任务与签到的完整状态（只读）。 */
@@ -175,40 +209,51 @@ export async function claimDaily(pool: pg.Pool, accountId: string, taskId: strin
   if (!done) {
     throw new QuestError('NOT_DONE');
   }
-  await pool.query(
+  await claimAtomically(
+    pool,
+    accountId,
+    def.reward,
     `INSERT INTO quest_claims (account_id, quest_id, day) VALUES ($1, $2, $3::date) ON CONFLICT DO NOTHING`,
     [accountId, taskId, today],
   );
-  await grantRewards(pool, accountId, def.reward);
   return { reward: def.reward };
 }
 
-/** 每日签到。返回本轮（7 天循环内）的档位与奖励。 */
+/** 每日签到。返回本轮（7 天循环内）的档位与奖励。事务内锁住签到行，并发重复签到只有一个成功。 */
 export async function signin(
   pool: pg.Pool,
   accountId: string,
 ): Promise<{ tier: number; reward: Resources; streak: number }> {
   const { today, yesterday } = await todayInfo(pool);
-  const sres = await pool.query(
-    `SELECT streak, to_char(last_day, 'YYYY-MM-DD') AS last_day FROM signin_state WHERE account_id = $1`,
-    [accountId],
-  );
-  const row = sres.rows[0] as { streak: number; last_day: string | null } | undefined;
-  const lastDay = row?.last_day ?? null;
-  if (lastDay === today) {
-    throw new QuestError('ALREADY');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `INSERT INTO signin_state (account_id, last_day, streak, total) VALUES ($1, NULL, 0, 0) ON CONFLICT DO NOTHING`,
+      [accountId],
+    );
+    const sres = await client.query(
+      `SELECT streak, to_char(last_day, 'YYYY-MM-DD') AS last_day FROM signin_state WHERE account_id = $1 FOR UPDATE`,
+      [accountId],
+    );
+    const row = sres.rows[0] as { streak: number; last_day: string | null };
+    if (row.last_day === today) {
+      throw new QuestError('ALREADY');
+    }
+    const streak = row.last_day === yesterday ? row.streak + 1 : 1;
+    const tier = ((streak - 1) % 7) + 1;
+    const reward = SIGNIN_REWARDS[tier - 1];
+    await client.query(
+      `UPDATE signin_state SET last_day = $2::date, streak = $3, total = total + 1, updated_at = now() WHERE account_id = $1`,
+      [accountId, today, streak],
+    );
+    await grantRewards(client, accountId, reward);
+    await client.query('COMMIT');
+    return { tier, reward, streak };
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
   }
-  const prevStreak = row?.streak ?? 0;
-  const streak = lastDay === yesterday ? prevStreak + 1 : 1;
-  const tier = ((streak - 1) % 7) + 1;
-  const reward = SIGNIN_REWARDS[tier - 1];
-  await pool.query(
-    `INSERT INTO signin_state (account_id, last_day, streak, total, updated_at)
-     VALUES ($1, $2::date, $3, 1, now())
-     ON CONFLICT (account_id)
-     DO UPDATE SET last_day = $2::date, streak = $3, total = signin_state.total + 1, updated_at = now()`,
-    [accountId, today, streak],
-  );
-  await grantRewards(pool, accountId, reward);
-  return { tier, reward, streak };
 }
