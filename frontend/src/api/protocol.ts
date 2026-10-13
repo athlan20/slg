@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 56;
+export const PROTOCOL_VERSION = 57;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -111,6 +111,22 @@ export const Op = {
   BEFRIEND_HERO: 81,
   /** 招揽在野名将（v54，AISLG-144） */
   RECRUIT_FAMOUS_HERO: 82,
+  /** 查询日常任务与签到状态（v56，AISLG-200）：data.quest */
+  GET_DAILY: 86,
+  /** 领取日常任务奖励（v56）：data.taskId；任务未完成 / 重复领取返回 INVALID_PARAMS */
+  CLAIM_DAILY: 87,
+  /** 查询签到状态（v56） */
+  GET_SIGNIN: 88,
+  /** 每日签到（v56）：每天一次，连续 7 天一轮循环；当日重复签到返回 INVALID_PARAMS */
+  SIGNIN: 89,
+  /** 查询主线/支线任务与成就（v56，AISLG-200 二期） */
+  GET_QUESTS: 90,
+  /** 领取任务/成就奖励（v56）：data.kind=main|side|achv, data.id */
+  CLAIM_QUEST: 91,
+  /** 查询活动状态（v56，AISLG-200 三期） */
+  GET_ACTIVITIES: 92,
+  /** 领取活动奖励（v56）：data.id = 阶梯 id */
+  CLAIM_ACTIVITY: 93,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -762,6 +778,35 @@ export type {
   GetArenaReportsResponseData,
   ArenaStatePushData,
 } from './protocol-arena';
+// 任务与签到（v56，AISLG-200）的载荷类型
+export type {
+  DailyTaskView,
+  SigninDayView,
+  SigninView,
+  QuestStateView,
+  GetDailyResponseData,
+  ClaimDailyRequestData,
+  ClaimDailyResponseData,
+  GetSigninResponseData,
+  SigninResponseData,
+} from './protocol-quest';
+
+// 任务与活动（v56，AISLG-200）的载荷类型
+export type {
+  MainStepView,
+  MainQuestView,
+  SideQuestView,
+  AchievementTierView,
+  AchievementView,
+  QuestsView,
+  ActivityTierView,
+  ActivityView,
+  GetQuestsResponseData,
+  ClaimQuestRequestData,
+  ClaimQuestResponseData,
+  GetActivitiesResponseData,
+  ClaimActivityResponseData,
+} from './protocol-quests';
 export type {
   StarTowerRewardView,
   StarTowerRulesView,

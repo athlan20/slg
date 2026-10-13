@@ -1,4 +1,4 @@
-// 后端下发的专有名词英文名对照（AISLG-137）：武将名、名城名、移动目标与名将来源标签。
+// 后端下发的专有名词英文名对照（AISLG-137）：武将名、名城名、移动目标、名将来源标签与任务 / 成就 / 活动文案。
 // 协议不改（协议里就是这些中文字符串），英文界面在前端按码表翻译；zh 下原样返回。
 //
 // 依据 backend/common/src/hero.ts：
@@ -96,6 +96,74 @@ function serverComposedNameEn(text: string): string | null {
   return null;
 }
 
+/**
+ * 任务 / 成就 / 活动的标题与描述（backend/common/src/quest.ts、quests.ts 的静态文案）。
+ * 按整串中文查表；同一句话在多处复用（如「出征 1 次」）时只登记一次。
+ */
+const QUEST_NAME_EN: Record<string, string> = {
+  // 日常任务
+  每日登录: 'Daily Login',
+  今日登录游戏: 'Log in to the game today',
+  大兴土木: 'Construction Boom',
+  '完成 1 次建造或升级': 'Complete 1 build or upgrade',
+  招兵买马: 'Recruit Troops',
+  '征兵 1 次': 'Recruit troops once',
+  '完成 1 次征兵': 'Complete 1 recruitment',
+  出征沙场: 'March to Battle',
+  '出征 1 次': 'March out once',
+  潜心钻研: 'Deep Research',
+  '研究科技 1 次': 'Research 1 tech',
+  开疆拓土: 'Expand Territory',
+  '占领 1 块野地': 'Occupy 1 wilderness tile',
+  // 主线
+  初入乱世: 'Into the Chaos',
+  固本培元: 'Strengthen the Foundation',
+  '官府升到 3 级': 'Upgrade Government to Lv 3',
+  格物致知: 'Seek Knowledge',
+  '研究 1 项科技': 'Research 1 tech',
+  初战告捷: 'First Victory',
+  礼贤下士: 'Seek Worthy Generals',
+  '招募 1 名武将': 'Recruit 1 general',
+  威震一方: 'Terror of the Region',
+  '官府升到 5 级': 'Upgrade Government to Lv 5',
+  深耕细作: 'Diligent Farming',
+  '占领 3 块野地': 'Occupy 3 wilderness tiles',
+  持之以恒: 'Perseverance',
+  '累计签到 3 天': 'Check in 3 days total',
+  // 支线
+  '累计建造或升级 10 次': 'Build or upgrade 10 times total',
+  百家争鸣: 'Hundred Schools of Thought',
+  '研究 5 项科技': 'Research 5 techs',
+  千军万马: 'Ten Thousand Troops',
+  '累计征兵 10 次': 'Recruit troops 10 times total',
+  探路先锋: 'Scouting Vanguard',
+  '累计出征 5 次': 'March out 5 times total',
+  // 成就
+  建造大师: 'Master Builder',
+  '累计建造 / 升级次数': 'Total builds / upgrades',
+  百战之师: 'Veteran Army',
+  累计出征次数: 'Total marches',
+  拓荒者: 'Pioneer',
+  累计占领野地: 'Total wilderness occupied',
+  学者: 'Scholar',
+  研究科技项数: 'Techs researched',
+  将星: 'Star General',
+  拥有武将数: 'Generals owned',
+  签到达人: 'Check-in Champion',
+  累计签到天数: 'Total check-in days',
+  // 活动
+  开服冲刺: 'Launch Sprint',
+  '开服两周内达成里程碑，领取冲刺奖励': 'Reach milestones within two weeks of launch to claim sprint rewards',
+  '建造 20 次': 'Build 20 times',
+  '出征 20 次': 'March out 20 times',
+  '占领 10 块野地': 'Occupy 10 wilderness tiles',
+  每日活跃: 'Daily Activity',
+  '今日完成日常 / 签到攒活跃点（每完成 1 条日常或签到 +1）': 'Earn activity points today by completing dailies and check-ins (+1 each)',
+  '活跃 3 点': '3 activity points',
+  '活跃 5 点': '5 activity points',
+  '活跃 7 点': '7 activity points',
+};
+
 /** 地形名（镜像 backend/common/src/world.ts TERRAIN_INFO.label，与 copy-en.ts 的 TERRAIN_LABEL_EN 一致） */
 const TERRAIN_EN: Record<string, string> = {
   平原: 'Plains',
@@ -125,7 +193,7 @@ function heroSourceEn(source: string): string {
 }
 
 /**
- * 后端名词的界面翻译：武将名 / 名城名 / 移动目标标签按码表翻，未命中原样返回。
+ * 后端名词的界面翻译：武将名 / 名城名 / 移动目标标签 / 任务文案按码表翻，未命中原样返回。
  * 玩家自起的城名等用户内容不在此列（未命中即原文，天然不误伤）。
  */
 export function tName(text: string): string {
@@ -138,6 +206,7 @@ export function tName(text: string): string {
     MOVING_LABEL_EN[text] ??
     YT_LABEL_EN[text] ??
     SERVER_LABEL_EN[text] ??
+    QUEST_NAME_EN[text] ??
     serverComposedNameEn(text) ??
     ytRewardLabelEn(text) ??
     // 两字普通将名：姓 + 名各查拼音池（与后端 rollHeroName 的构词一致）

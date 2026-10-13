@@ -32,7 +32,7 @@ import { BEFRIEND_ACTIVE_CAP } from './hero-wild';
 import { WILD_FAMOUS_RULES_DESC } from './protocol-doc-ops-hero-growth';
 import { SPECIALTY_RULES } from './hero-specialty';
 
-const SPECIALTY_DOC = `v56: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: ${JSON.stringify(SPECIALTY_RULES)}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.`;
+const SPECIALTY_DOC = `v57: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: ${JSON.stringify(SPECIALTY_RULES)}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.`;
 
 const HERO_ID = '5b1f9a2c-0000-4000-8000-0000000000a1';
 const CANDIDATE_ID = '6c2f9a2c-0000-4000-8000-0000000000b2';
@@ -92,7 +92,7 @@ export const REQUEST_GET_HEROES: RequestOpDoc = {
   ],
   dataFields: [
     { name: 'heroes[].specialty', type: 'string | null', desc: SPECIALTY_DOC },
-    { name: 'heroes[].specialtyBonus', type: 'object | null', desc: 'v56: Full-strength specialty percentages { atkPercent, defPercent, siegeOnly }; null for famous and legacy heroes. Apply only to the matching troops listed in specialty rules.' },
+    { name: 'heroes[].specialtyBonus', type: 'object | null', desc: 'v57: Full-strength specialty percentages { atkPercent, defPercent, siegeOnly }; null for famous and legacy heroes. Apply only to the matching troops listed in specialty rules.' },
     { name: 'cityId / tavernLevel', type: 'string / number', desc: '查询城与其酒馆等级（0 = 未建）。' },
     { name: 'maxTavernLevel / normalCap / normalCount', type: 'number', desc: `账号酒馆最高等级；普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1；当前普通将数量。` },
     { name: 'famousCap / famousCount', type: 'number', desc: `名将上限（固定 ${FAMOUS_HERO_CAP}，不占普通将上限）与当前数量。` },

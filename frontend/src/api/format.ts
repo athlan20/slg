@@ -8,6 +8,11 @@ function locale(): string {
   return getLang() === 'zh' ? 'zh-CN' : 'en-US';
 }
 
+/** 日期（按界面语言）：中文 2026/10/27，英文 10/27/2026 */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(locale());
+}
+
 export function formatClock(iso: string): string {
   return new Date(iso).toLocaleTimeString(locale(), { hour12: false });
 }

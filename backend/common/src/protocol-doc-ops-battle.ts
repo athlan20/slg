@@ -183,7 +183,7 @@ export const REQUEST_GET_BATTLE_REPORTS: RequestOpDoc = {
   ],
   dataFields: [
     { name: 'reports', type: 'array', desc: '战报列表（新→旧）。' },
-    { name: 'reports[].attacker.hero.specialty / reports[].defender.hero.specialty', type: 'string | null | undefined', desc: 'v56: Immutable ordinary-hero specialty at combat time; famous heroes have null and historical reports may omit it. specialtyScale records command dilution (0..1). Base atkPercent/defPercent remain the original hero bonuses; specialty bonuses apply per matching troop stack.' },
+    { name: 'reports[].attacker.hero.specialty / reports[].defender.hero.specialty', type: 'string | null | undefined', desc: 'v57: Immutable ordinary-hero specialty at combat time; famous heroes have null and historical reports may omit it. specialtyScale records command dilution (0..1). Base atkPercent/defPercent remain the original hero bonuses; specialty bonuses apply per matching troop stack.' },
     { name: 'reports[].id', type: 'number', desc: '战报自增序号（分页游标）。' },
     { name: 'reports[].x / reports[].y', type: 'number', desc: '战斗发生地块坐标。' },
     { name: 'reports[].kind', type: "'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban'", desc: '战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）。' },

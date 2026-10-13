@@ -29,7 +29,7 @@ Formation previews and world shortcuts consume the authoritative catalog returne
 
 ## Compatibility and schema
 
-Protocol v56 adds `specialty` and `specialtyBonus` to hero views, specialty information to combat snapshots, saved `formations` to arena/tower state, and a formation catalog to their rules.
+Protocol v57 adds `specialty` and `specialtyBonus` to hero views, specialty information to combat snapshots, saved `formations` to arena/tower state, and a formation catalog to their rules.
 
 `SET_ARENA_LINEUP` accepts an optional array of exactly three valid formation identifiers. Existing clients that omit it preserve their saved templates. New entries default to balanced. Historical reports without specialty/template fields display as no specialty and balanced.
 

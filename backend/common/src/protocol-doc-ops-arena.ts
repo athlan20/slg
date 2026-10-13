@@ -8,8 +8,8 @@ import { FORMATION_RULES } from './army-formation';
 import { TROOP_POWER } from './battle';
 
 const ARENA_STATE_DATA_FIELDS = [
-  { name: 'rules.formationRules / rules.troopPower', type: 'object', desc: 'v56: Authoritative template definitions and troop reference-power coefficients. Use them for previews and proportional selection from actual city troops. Map presets cannot generate troops or exceed available stock.' },
-  { name: 'formations', type: 'string[3]', desc: `v56: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: ${JSON.stringify(FORMATION_RULES)}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty.` },
+  { name: 'rules.formationRules / rules.troopPower', type: 'object', desc: 'v57: Authoritative template definitions and troop reference-power coefficients. Use them for previews and proportional selection from actual city troops. Map presets cannot generate troops or exceed available stock.' },
+  { name: 'formations', type: 'string[3]', desc: `v57: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: ${JSON.stringify(FORMATION_RULES)}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty.` },
   { name: 'joined', type: 'boolean', desc: '是否已入榜（第一次保存阵容时入榜）。' },
   { name: 'rank', type: 'number | null', desc: '当前名次；未入榜为 null。' },
   { name: 'bestRank', type: 'number | null', desc: '历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。' },
@@ -100,7 +100,7 @@ export const REQUEST_SET_ARENA_LINEUP: RequestOpDoc = {
     '（v53，AISLG-145）保存竞技场阵容：heroIds 为 3 个号位（1/2/3 号位），空位用 null；至少要有 1 名武将，同一武将不能占两个号位，武将必须属于本账号。第一次保存即入榜，排在榜尾（名次 = 当前总人数 + 1 之后的最后一名）。阵容随时可改，改完马上生效：别人挑战你时用的是你保存那一刻的阵容与武将当时的属性。武将重伤、没发俸禄、正在外出都不影响参赛（对战是模拟的）。',
   requestFields: [
     { name: 'heroIds', type: 'Array<string | null>', desc: '必填。长度 ≤ 3 的数组，元素为武将 id 或 null（空位）；至少一个非 null；不能重复。' },
-    { name: 'formations', type: 'string[3]', desc: 'Optional v56: exactly three entries, each balanced / infantry / ranged / cavalry. Omission preserves saved templates; new entries default to balanced. Templates are shared with star tower. Invalid values return INVALID_PARAMS.' },
+    { name: 'formations', type: 'string[3]', desc: 'Optional v57: exactly three entries, each balanced / infantry / ranged / cavalry. Omission preserves saved templates; new entries default to balanced. Templates are shared with star tower. Invalid values return INVALID_PARAMS.' },
   ],
   dataFields: ARENA_STATE_DATA_FIELDS,
   errors: ['HERO_NOT_FOUND', 'INVALID_PARAMS'],

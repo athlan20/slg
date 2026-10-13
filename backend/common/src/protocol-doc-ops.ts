@@ -98,6 +98,8 @@ import { CHAT_OP_DOC } from './protocol-doc-ops-chat';
 import { ARENA_OP_DOCS } from './protocol-doc-ops-arena';
 import { STAR_TOWER_OP_DOCS } from './protocol-doc-ops-star-tower';
 import { HERO_GROWTH_OP_DOCS } from './protocol-doc-ops-hero-growth';
+import { REQUEST_GET_DAILY, REQUEST_CLAIM_DAILY, REQUEST_GET_SIGNIN, REQUEST_SIGNIN } from './protocol-doc-ops-quest';
+import { REQUEST_GET_QUESTS, REQUEST_CLAIM_QUEST, REQUEST_GET_ACTIVITIES, REQUEST_CLAIM_ACTIVITY } from './protocol-doc-ops-quests';
 
 const REQUEST_GET_STATE: RequestOpDoc = {
   kind: 'request',
@@ -461,6 +463,14 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.PUSH_HERO_STATE]: PUSH_HERO_STATE,
   [Op.PUSH_ATTACK_WARNING]: PUSH_ATTACK_WARNING,
   [Op.PUSH_WX_QR_STATUS]: PUSH_WX_QR_STATUS,
+  [Op.GET_DAILY]: REQUEST_GET_DAILY,
+  [Op.CLAIM_DAILY]: REQUEST_CLAIM_DAILY,
+  [Op.GET_SIGNIN]: REQUEST_GET_SIGNIN,
+  [Op.SIGNIN]: REQUEST_SIGNIN,
+  [Op.GET_QUESTS]: REQUEST_GET_QUESTS,
+  [Op.CLAIM_QUEST]: REQUEST_CLAIM_QUEST,
+  [Op.GET_ACTIVITIES]: REQUEST_GET_ACTIVITIES,
+  [Op.CLAIM_ACTIVITY]: REQUEST_CLAIM_ACTIVITY,
   // 聊天（v51）：条目在 protocol-doc-ops-chat.ts，对外 Agent 文档不收录
   ...CHAT_OP_DOC,
   // 竞技场（v53，AISLG-145）：条目在 protocol-doc-ops-arena.ts，玩家与 Agent 同一套规则，收录进对外 Agent 文档
