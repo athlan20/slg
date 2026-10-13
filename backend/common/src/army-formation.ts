@@ -15,9 +15,10 @@ export function formationCatalog(): FormationCatalog {
 
 export const FORMATION_RULES: Record<FormationKind, { shares: Partial<Record<TroopKind, number>>; budgetFactor: number }> = {
   balanced: { shares: { swordsman: 0.5, archer: 0.5 }, budgetFactor: 1 },
-  infantry: { shares: { pikeman: 0.65, swordsman: 0.35 }, budgetFactor: 1.2 },
-  ranged: { shares: { swordsman: 0.3, archer: 0.7 }, budgetFactor: 1 },
-  cavalry: { shares: { cavalry: 0.6, pikeman: 0.4 }, budgetFactor: 1.8 },
+  infantry: { shares: { pikeman: 0.65, swordsman: 0.35 }, budgetFactor: 1.25 },
+  ranged: { shares: { swordsman: 0.3, archer: 0.7 }, budgetFactor: 0.96 },
+  // Light cavalry outruns slow escorts and fights alone, so cavalry is paired with archers that fire from range.
+  cavalry: { shares: { cavalry: 0.3, archer: 0.7 }, budgetFactor: 1.7 },
 };
 
 /** Missing templates preserve a legacy client's previously saved choices. */

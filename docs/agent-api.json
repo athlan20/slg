@@ -6174,7 +6174,7 @@
         {
           "name": "heroes[].specialty",
           "type": "string | null",
-          "desc": "v56: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {\"infantry\":{\"troops\":[\"militia\",\"pikeman\",\"swordsman\"],\"atkPercent\":8,\"defPercent\":8},\"ranged\":{\"troops\":[\"archer\",\"ballista\"],\"atkPercent\":12,\"defPercent\":0},\"cavalry\":{\"troops\":[\"cavalry\",\"iron_cavalry\"],\"atkPercent\":10,\"defPercent\":4},\"siege\":{\"troops\":[\"ballista\",\"siege_ram\"],\"atkPercent\":18,\"defPercent\":8,\"siegeOnly\":true},\"assault\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":6,\"defPercent\":0},\"defense\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":0,\"defPercent\":6}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists."
+          "desc": "v56: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {\"infantry\":{\"troops\":[\"militia\",\"pikeman\",\"swordsman\"],\"atkPercent\":2.5,\"defPercent\":2.5},\"ranged\":{\"troops\":[\"archer\",\"ballista\"],\"atkPercent\":2.5,\"defPercent\":0},\"cavalry\":{\"troops\":[\"cavalry\",\"iron_cavalry\"],\"atkPercent\":10,\"defPercent\":4},\"siege\":{\"troops\":[\"ballista\",\"siege_ram\"],\"atkPercent\":8,\"defPercent\":3,\"siegeOnly\":true},\"assault\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":3,\"defPercent\":0},\"defense\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":0,\"defPercent\":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists."
         },
         {
           "name": "heroes[].specialtyBonus",
@@ -6256,8 +6256,8 @@
                     "famous": false,
                     "specialty": "infantry",
                     "specialtyBonus": {
-                      "atkPercent": 8,
-                      "defPercent": 8,
+                      "atkPercent": 2.5,
+                      "defPercent": 2.5,
                       "siegeOnly": false
                     },
                     "lead": 32,
@@ -6319,7 +6319,7 @@
       "name": "RECRUIT_HERO",
       "title": "酒馆招募武将（v36，AISLG-114）",
       "preAuth": false,
-      "summary": "从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。v56: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {\"infantry\":{\"troops\":[\"militia\",\"pikeman\",\"swordsman\"],\"atkPercent\":8,\"defPercent\":8},\"ranged\":{\"troops\":[\"archer\",\"ballista\"],\"atkPercent\":12,\"defPercent\":0},\"cavalry\":{\"troops\":[\"cavalry\",\"iron_cavalry\"],\"atkPercent\":10,\"defPercent\":4},\"siege\":{\"troops\":[\"ballista\",\"siege_ram\"],\"atkPercent\":18,\"defPercent\":8,\"siegeOnly\":true},\"assault\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":6,\"defPercent\":0},\"defense\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":0,\"defPercent\":6}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.",
+      "summary": "从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。v56: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {\"infantry\":{\"troops\":[\"militia\",\"pikeman\",\"swordsman\"],\"atkPercent\":2.5,\"defPercent\":2.5},\"ranged\":{\"troops\":[\"archer\",\"ballista\"],\"atkPercent\":2.5,\"defPercent\":0},\"cavalry\":{\"troops\":[\"cavalry\",\"iron_cavalry\"],\"atkPercent\":10,\"defPercent\":4},\"siege\":{\"troops\":[\"ballista\",\"siege_ram\"],\"atkPercent\":8,\"defPercent\":3,\"siegeOnly\":true},\"assault\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":3,\"defPercent\":0},\"defense\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":0,\"defPercent\":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.",
       "requestFields": [
         {
           "name": "candidateId",
@@ -6368,8 +6368,8 @@
                   "famous": false,
                   "specialty": "infantry",
                   "specialtyBonus": {
-                    "atkPercent": 8,
-                    "defPercent": 8,
+                    "atkPercent": 2.5,
+                    "defPercent": 2.5,
                     "siegeOnly": false
                   },
                   "lead": 32,
@@ -6522,8 +6522,8 @@
                   "famous": false,
                   "specialty": "infantry",
                   "specialtyBonus": {
-                    "atkPercent": 8,
-                    "defPercent": 8,
+                    "atkPercent": 2.5,
+                    "defPercent": 2.5,
                     "siegeOnly": false
                   },
                   "lead": 32,
@@ -7388,7 +7388,7 @@
         {
           "name": "formations",
           "type": "string[3]",
-          "desc": "v56: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {\"balanced\":{\"shares\":{\"swordsman\":0.5,\"archer\":0.5},\"budgetFactor\":1},\"infantry\":{\"shares\":{\"pikeman\":0.65,\"swordsman\":0.35},\"budgetFactor\":1.2},\"ranged\":{\"shares\":{\"swordsman\":0.3,\"archer\":0.7},\"budgetFactor\":1},\"cavalry\":{\"shares\":{\"cavalry\":0.6,\"pikeman\":0.4},\"budgetFactor\":1.8}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty."
+          "desc": "v56: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {\"balanced\":{\"shares\":{\"swordsman\":0.5,\"archer\":0.5},\"budgetFactor\":1},\"infantry\":{\"shares\":{\"pikeman\":0.65,\"swordsman\":0.35},\"budgetFactor\":1.25},\"ranged\":{\"shares\":{\"swordsman\":0.3,\"archer\":0.7},\"budgetFactor\":0.96},\"cavalry\":{\"shares\":{\"cavalry\":0.3,\"archer\":0.7},\"budgetFactor\":1.7}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty."
         },
         {
           "name": "joined",
@@ -7534,21 +7534,21 @@
                         "pikeman": 0.65,
                         "swordsman": 0.35
                       },
-                      "budgetFactor": 1.2
+                      "budgetFactor": 1.25
                     },
                     "ranged": {
                       "shares": {
                         "swordsman": 0.3,
                         "archer": 0.7
                       },
-                      "budgetFactor": 1
+                      "budgetFactor": 0.96
                     },
                     "cavalry": {
                       "shares": {
-                        "cavalry": 0.6,
-                        "pikeman": 0.4
+                        "cavalry": 0.3,
+                        "archer": 0.7
                       },
-                      "budgetFactor": 1.8
+                      "budgetFactor": 1.7
                     }
                   },
                   "troopPower": {
@@ -7650,7 +7650,7 @@
         {
           "name": "formations",
           "type": "string[3]",
-          "desc": "v56: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {\"balanced\":{\"shares\":{\"swordsman\":0.5,\"archer\":0.5},\"budgetFactor\":1},\"infantry\":{\"shares\":{\"pikeman\":0.65,\"swordsman\":0.35},\"budgetFactor\":1.2},\"ranged\":{\"shares\":{\"swordsman\":0.3,\"archer\":0.7},\"budgetFactor\":1},\"cavalry\":{\"shares\":{\"cavalry\":0.6,\"pikeman\":0.4},\"budgetFactor\":1.8}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty."
+          "desc": "v56: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {\"balanced\":{\"shares\":{\"swordsman\":0.5,\"archer\":0.5},\"budgetFactor\":1},\"infantry\":{\"shares\":{\"pikeman\":0.65,\"swordsman\":0.35},\"budgetFactor\":1.25},\"ranged\":{\"shares\":{\"swordsman\":0.3,\"archer\":0.7},\"budgetFactor\":0.96},\"cavalry\":{\"shares\":{\"cavalry\":0.3,\"archer\":0.7},\"budgetFactor\":1.7}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty."
         },
         {
           "name": "joined",
@@ -7806,21 +7806,21 @@
                         "pikeman": 0.65,
                         "swordsman": 0.35
                       },
-                      "budgetFactor": 1.2
+                      "budgetFactor": 1.25
                     },
                     "ranged": {
                       "shares": {
                         "swordsman": 0.3,
                         "archer": 0.7
                       },
-                      "budgetFactor": 1
+                      "budgetFactor": 0.96
                     },
                     "cavalry": {
                       "shares": {
-                        "cavalry": 0.6,
-                        "pikeman": 0.4
+                        "cavalry": 0.3,
+                        "archer": 0.7
                       },
-                      "budgetFactor": 1.8
+                      "budgetFactor": 1.7
                     }
                   },
                   "troopPower": {
