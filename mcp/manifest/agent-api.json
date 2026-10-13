@@ -1,5 +1,5 @@
 {
-  "version": 54,
+  "version": 55,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 54,
+                "protocolVersion": 55,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 54,
+                "protocolVersion": 55,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/51 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/52 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 51,
+              "docVersion": 52,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 54,
-                "docNotice": "接口文档已从 v51 更新到 v54：请 GET /agent-api/changes/51 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 55,
+                "docNotice": "接口文档已从 v52 更新到 v55：请 GET /agent-api/changes/52 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -5490,13 +5490,13 @@
         },
         {
           "name": "broadcasts[].type",
-          "type": "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished' | 'hero_granted' | 'city_conquered' | 'arena_champion'",
-          "desc": "播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；以上均必达、不受每分钟 3 条限频）。"
+          "type": "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished' | 'hero_granted' | 'city_conquered' | 'arena_champion' | 'star_tower_cleared'",
+          "desc": "播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；以上均必达、不受每分钟 3 条限频）。"
         },
         {
           "name": "broadcasts[].detail",
           "type": "object",
-          "desc": "按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）。"
+          "desc": "按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）。"
         },
         {
           "name": "broadcasts[].createdAt",
@@ -8305,6 +8305,339 @@
       "agentNote": "招揽是全服竞争：好感满的那一刻就去招，慢一步就会被 FAMOUS_CLAIMED。"
     },
     {
+      "op": 83,
+      "kind": "request",
+      "name": "GET_STAR_TOWER",
+      "title": "查询将星塔",
+      "preAuth": false,
+      "summary": "（v55，AISLG-146）返回我的爬塔进度：已通过的最高层 bestFloor（0 = 还没通过任何一层）、下一层 nextFloor（只能从它开始打，不能跳层）、下一层是否 Boss 层、下一层的敌方阵容（匿名）与首通奖励预览、我的阵容（与竞技场共用，保存走 SET_ARENA_LINEUP）、阵容是否可用、账号是否有城。挑战前先调用一次；之后以 STAR_TOWER_CHALLENGE 的响应为准。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "bestFloor",
+          "type": "number",
+          "desc": "已通过的最高层（0 = 还没通过任何一层）。"
+        },
+        {
+          "name": "cleared",
+          "type": "boolean",
+          "desc": "是否已全部通关（bestFloor 等于总层数）。"
+        },
+        {
+          "name": "nextFloor",
+          "type": "number | null",
+          "desc": "下一层，即可挑战的层；全部通关为 null。"
+        },
+        {
+          "name": "nextBoss",
+          "type": "boolean",
+          "desc": "下一层是否 Boss 层（每 10 层一个）。"
+        },
+        {
+          "name": "nextEnemies",
+          "type": "Fighter[]",
+          "desc": "下一层的敌方阵容（固定 3 名，号位 1/2/3 一一对应，heroId 恒为 null）。name、lead、force、wit、level。"
+        },
+        {
+          "name": "nextReward",
+          "type": "{ gold, exp } | null",
+          "desc": "下一层首通奖励预览：gold 进主城，exp 给阵容里每名武将；全部通关为 null。"
+        },
+        {
+          "name": "lineup",
+          "type": "Array<Fighter | null>",
+          "desc": "我的阵容（与竞技场共用），3 个号位；空位为 null。自己的武将带 heroId。"
+        },
+        {
+          "name": "lineupReady",
+          "type": "boolean",
+          "desc": "阵容里是否至少有 1 名武将。"
+        },
+        {
+          "name": "hasCity",
+          "type": "boolean",
+          "desc": "账号是否有城；没有城不能挑战（首通金币无处入账）。"
+        },
+        {
+          "name": "rules",
+          "type": "object",
+          "desc": "规则常量：floors（总层数）、bossEvery（Boss 层间隔）、slots（3）、winRounds（2，三局两胜）。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "已通过 9 层，下一层是第 10 层 Boss",
+          "request": {
+            "op": 83,
+            "seq": 1
+          },
+          "responses": [
+            {
+              "op": 83,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "bestFloor": 9,
+                "cleared": false,
+                "nextFloor": 10,
+                "nextBoss": true,
+                "nextEnemies": [
+                  {
+                    "heroId": null,
+                    "name": "徐晃·幻影",
+                    "lead": 46,
+                    "force": 37,
+                    "wit": 37,
+                    "level": 13
+                  },
+                  {
+                    "heroId": null,
+                    "name": "吕布·幻影",
+                    "lead": 37,
+                    "force": 46,
+                    "wit": 37,
+                    "level": 13
+                  },
+                  {
+                    "heroId": null,
+                    "name": "马超·幻影",
+                    "lead": 37,
+                    "force": 37,
+                    "wit": 46,
+                    "level": 13
+                  }
+                ],
+                "nextReward": {
+                  "gold": 27000,
+                  "exp": 160
+                },
+                "lineup": [
+                  {
+                    "heroId": "6b1f3c2e-9a0d-4f7e-8b21-3d5c7e9f1a20",
+                    "name": "张辽",
+                    "lead": 52,
+                    "force": 48,
+                    "wit": 30,
+                    "level": 14
+                  },
+                  null,
+                  null
+                ],
+                "lineupReady": true,
+                "hasCity": true,
+                "rules": {
+                  "floors": 100,
+                  "bossEvery": 10,
+                  "slots": 3,
+                  "winRounds": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "挑战只打 nextFloor，不能指定层。阵容不可用（lineupReady 为 false）或 hasCity 为 false 时先按提示处理，再挑战。"
+    },
+    {
+      "op": 84,
+      "kind": "request",
+      "name": "STAR_TOWER_CHALLENGE",
+      "title": "挑战将星塔下一层",
+      "preAuth": false,
+      "summary": "（v55，AISLG-146）挑战下一层（无参数）。阵容与敌方按竞技场的三局两胜当场结算，不消耗真实兵力、不改武将状态（重伤、欠饷、外出都不影响）。赢了：第一次通过这一层，发首通奖励（金币进主城，经验给阵容里每名武将，Boss 层翻倍）并推进进度；Boss 层首通全服播报。输了：什么都不扣，可以立刻重打。已通过的层不再发奖励。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "match",
+          "type": "Match",
+          "desc": "本场战报（结构同 GET_STAR_TOWER_REPORTS 的 reports[]）。"
+        },
+        {
+          "name": "floor",
+          "type": "number",
+          "desc": "本次挑战的层。"
+        },
+        {
+          "name": "won",
+          "type": "boolean",
+          "desc": "是否通过本层。"
+        },
+        {
+          "name": "bestFloor",
+          "type": "number",
+          "desc": "挑战后已通过的最高层。"
+        },
+        {
+          "name": "reward",
+          "type": "{ gold, exp } | null",
+          "desc": "本次首通发放的奖励；输了或重打已通过的层为 null。"
+        },
+        {
+          "name": "levelUps",
+          "type": "Array<{ heroId, name, leveledTo }>",
+          "desc": "首通后升级的武将；没有为空数组。"
+        }
+      ],
+      "errors": [
+        "STAR_TOWER_CLEARED",
+        "STAR_TOWER_NO_CITY",
+        "STAR_TOWER_NO_LINEUP"
+      ],
+      "examples": [
+        {
+          "caption": "通过第 1 层",
+          "request": {
+            "op": 84,
+            "seq": 2
+          },
+          "responses": [
+            {
+              "op": 84,
+              "seq": 2,
+              "ok": true,
+              "data": {
+                "match": {
+                  "id": 41,
+                  "createdAt": "2026-10-12T09:00:00.000Z",
+                  "floor": 1,
+                  "boss": false,
+                  "won": true,
+                  "challengerWins": 2,
+                  "defenderWins": 1,
+                  "rounds": [],
+                  "lineup": [
+                    {
+                      "heroId": null,
+                      "name": "张辽",
+                      "lead": 52,
+                      "force": 48,
+                      "wit": 30,
+                      "level": 14
+                    },
+                    null,
+                    null
+                  ],
+                  "enemies": [
+                    {
+                      "heroId": null,
+                      "name": "许褚",
+                      "lead": 29,
+                      "force": 20,
+                      "wit": 20,
+                      "level": 8
+                    },
+                    {
+                      "heroId": null,
+                      "name": "典韦",
+                      "lead": 20,
+                      "force": 29,
+                      "wit": 20,
+                      "level": 8
+                    },
+                    {
+                      "heroId": null,
+                      "name": "李典",
+                      "lead": 20,
+                      "force": 20,
+                      "wit": 29,
+                      "level": 8
+                    }
+                  ]
+                },
+                "floor": 1,
+                "won": true,
+                "bestFloor": 1,
+                "reward": {
+                  "gold": 2500,
+                  "exp": 44
+                },
+                "levelUps": []
+              }
+            }
+          ]
+        },
+        {
+          "caption": "已全部通关",
+          "request": {
+            "op": 84,
+            "seq": 3
+          },
+          "responses": [
+            {
+              "op": 84,
+              "seq": 3,
+              "ok": false,
+              "error": {
+                "code": "STAR_TOWER_CLEARED",
+                "message": "将星塔已经全部通关，没有可挑战的层了"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "没有 entryId 之类的参数，每次都打下一层。won 为 false 时可直接重打同一层（不扣任何东西）；想加强阵容先 SET_ARENA_LINEUP。STAR_TOWER_NO_LINEUP 时先保存阵容。"
+    },
+    {
+      "op": 85,
+      "kind": "request",
+      "name": "GET_STAR_TOWER_REPORTS",
+      "title": "查询将星塔战报",
+      "preAuth": false,
+      "summary": "（v55，AISLG-146）返回我每次挑战将星塔的战报，按时间从新到旧，每人保留最近 50 条（写入新战报时删掉更旧的）。战报里有我的阵容（匿名）与敌方阵容，以及每一局的结果。翻页：取最后一条的 id 作为 beforeId 再查，直到 hasMore 为 false。",
+      "requestFields": [
+        {
+          "name": "limit",
+          "type": "number",
+          "desc": "可选，1..50，默认 20。"
+        },
+        {
+          "name": "beforeId",
+          "type": "number",
+          "desc": "可选。只取 id 小于它的更早战报。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "reports",
+          "type": "Match[]",
+          "desc": "战报列表：id、createdAt、floor、boss、won、challengerWins、defenderWins、rounds、lineup（我的，匿名）、enemies（敌方）。"
+        },
+        {
+          "name": "hasMore",
+          "type": "boolean",
+          "desc": "是否还有更早的战报。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "最近一页战报",
+          "request": {
+            "op": 85,
+            "seq": 4,
+            "data": {
+              "limit": 20
+            }
+          },
+          "responses": [
+            {
+              "op": 85,
+              "seq": 4,
+              "ok": true,
+              "data": {
+                "reports": [],
+                "hasMore": false
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "战报只用来复盘，不影响进度与奖励。要看当前能打哪一层，以 GET_STAR_TOWER 为准。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -9891,6 +10224,18 @@
     "ARENA_PAIR_COOLDOWN": {
       "desc": "（v53，AISLG-145）竞技场：刚挑战过同一个对手，冷却未结束（pairCooldownSeconds，随时间缩放）；响应附 retryAfterSeconds。",
       "action": "等 retryAfterSeconds 秒后再挑战同一人，或先换别的对手。"
+    },
+    "STAR_TOWER_CLEARED": {
+      "desc": "（v55，AISLG-146）将星塔：已全部通关（bestFloor 等于总层数），没有可挑战的层。",
+      "action": "不用再挑战；想看战报用 GET_STAR_TOWER_REPORTS。"
+    },
+    "STAR_TOWER_NO_CITY": {
+      "desc": "（v55，AISLG-146）将星塔：账号还没有城，首通金币无处入账，不能挑战。",
+      "action": "先建城，再挑战。"
+    },
+    "STAR_TOWER_NO_LINEUP": {
+      "desc": "（v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。",
+      "action": "先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。"
     },
     "AGENT_PASSWORD_FORBIDDEN": {
       "desc": "（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。",

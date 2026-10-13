@@ -490,6 +490,18 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v53，AISLG-145）竞技场：刚挑战过同一个对手，冷却未结束（pairCooldownSeconds，随时间缩放）；响应附 retryAfterSeconds。',
     action: '等 retryAfterSeconds 秒后再挑战同一人，或先换别的对手。',
   },
+  STAR_TOWER_CLEARED: {
+    desc: '（v55，AISLG-146）将星塔：已全部通关（bestFloor 等于总层数），没有可挑战的层。',
+    action: '不用再挑战；想看战报用 GET_STAR_TOWER_REPORTS。',
+  },
+  STAR_TOWER_NO_CITY: {
+    desc: '（v55，AISLG-146）将星塔：账号还没有城，首通金币无处入账，不能挑战。',
+    action: '先建城，再挑战。',
+  },
+  STAR_TOWER_NO_LINEUP: {
+    desc: '（v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。',
+    action: '先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。',
+  },
   AGENT_PASSWORD_FORBIDDEN: {
     desc: '（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。',
     action: '改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。',

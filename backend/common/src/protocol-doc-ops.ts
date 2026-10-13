@@ -96,6 +96,7 @@ import {
 import { PUSH_ATTACK_WARNING, REQUEST_TRUCE } from './protocol-doc-ops-pvp';
 import { CHAT_OP_DOC } from './protocol-doc-ops-chat';
 import { ARENA_OP_DOCS } from './protocol-doc-ops-arena';
+import { STAR_TOWER_OP_DOCS } from './protocol-doc-ops-star-tower';
 import { HERO_GROWTH_OP_DOCS } from './protocol-doc-ops-hero-growth';
 
 const REQUEST_GET_STATE: RequestOpDoc = {
@@ -466,4 +467,6 @@ export const OP_DOC: Record<Op, OpDoc> = {
   ...ARENA_OP_DOCS,
   // 武将培养与在野名将（v54，AISLG-144）：条目在 protocol-doc-ops-hero-growth.ts
   ...HERO_GROWTH_OP_DOCS,
+  // 将星塔（v55，AISLG-146）：条目在 protocol-doc-ops-star-tower.ts，玩家与 Agent 同一套规则，收录进对外 Agent 文档
+  ...STAR_TOWER_OP_DOCS,
 };

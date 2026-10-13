@@ -91,6 +91,9 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   ARENA_NO_CHALLENGES: '今天的竞技场挑战次数用完了，等下个竞技日再来',
   ARENA_TARGET_BUSY: '这个对手今天被挑战的次数已达上限，换一个或明天再来',
   ARENA_PAIR_COOLDOWN: '刚挑战过这位对手，冷却中，稍后再试',
+  STAR_TOWER_CLEARED: '将星塔已经全部通关，没有可挑战的层了',
+  STAR_TOWER_NO_CITY: '还没有城池，先建城再来挑战将星塔',
+  STAR_TOWER_NO_LINEUP: '阵容里还没有武将：先在竞技场阵容里排上至少 1 名武将',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除
   INTERNAL: '服务端内部错误',
 };

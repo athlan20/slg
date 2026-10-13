@@ -56,6 +56,7 @@ import { createTruceAction } from './truceAction';
 import { useWorldSession, type WorldSession } from './worldSession';
 import { useTechSession, type TechSession } from './techSession';
 import { useArenaSession, type ArenaSession } from './arenaSession';
+import { useStarTowerSession, type StarTowerSession } from './starTowerSession';
 import { useHeroSession, type HeroSession } from './heroSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
@@ -154,6 +155,8 @@ export interface GameSession {
   techSession: TechSession;
   /** 竞技场会话（v53 AISLG-145）：名次 / 阵容 / 挑战 / 战报 */
   arenaSession: ArenaSession;
+  /** 将星塔会话（v55 AISLG-146）：进度 / 挑战 / 阵容 / 战报 */
+  starTowerSession: StarTowerSession;
   /** 武将会话（v36 AISLG-114）：武将 / 酒馆候选 / 招募 / 解雇 / 城守 / 出征带将选择 */
   heroSession: HeroSession;
   /** 聊天（v51 AISLG-138）：浮窗开合 / 世界与私聊消息 / 未读 / 屏蔽 / 发送 / 分享草稿 */
@@ -327,7 +330,17 @@ export function useGameSession(): GameSession {
     appendLocalEvent,
     scheduleSync,
   });
-  const { clear: arenaClear, onArenaPush } = arenaSession;
+  const { clear: arenaClear, onArenaPush, fetchArena } = arenaSession;
+
+  // 将星塔会话切片（v55 AISLG-146）：阵容与竞技场共用，保存后通知竞技场重拉
+  const starTowerSession = useStarTowerSession({
+    clientRef,
+    connected: connection === 'online',
+    appendLocalEvent,
+    scheduleSync,
+    onLineupChanged: fetchArena,
+  });
+  const { clear: starTowerClear } = starTowerSession;
 
   // 武将会话切片（v36 AISLG-114）：武将 / 酒馆候选（按当前城）/ 招募解雇 / 城守，推送到达重拉
   const heroSession = useHeroSession({
@@ -509,13 +522,14 @@ export function useGameSession(): GameSession {
       worldClear();
       techClear();
       arenaClear();
+      starTowerClear();
       heroClear();
       movingClear();
       ytClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, resetCityList],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, resetCityList],
   );
 
   const scheduleReconnect = useCallback(() => {
@@ -604,10 +618,11 @@ export function useGameSession(): GameSession {
     worldClear();
     techClear();
     arenaClear();
+    starTowerClear();
     heroClear();
     movingClear();
     ytClear();
-  }, [worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, resetNpcWarnings]);
+  }, [worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, resetNpcWarnings]);
 
   const login = useCallback(
     async (username: string, password: string) => {
@@ -991,6 +1006,7 @@ export function useGameSession(): GameSession {
         worldClear();
         techClear();
         arenaClear();
+        starTowerClear();
         heroClear();
         movingClear();
         ytClear();
@@ -1001,7 +1017,7 @@ export function useGameSession(): GameSession {
     } catch (err) {
       return err instanceof Error ? err.message : COPY.errors.reset.fallback;
     }
-  }, [syncAll, worldClear, techClear, arenaClear, heroClear, movingClear, ytClear, resetCityList]);
+  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, resetCityList]);
 
   /** 加载更早的一页事件（beforeId 游标分页；本地临时事件 id 为负，不作为游标） */
   const loadOlderEvents = useCallback(async () => {
@@ -1088,6 +1104,7 @@ export function useGameSession(): GameSession {
     world,
     techSession,
     arenaSession,
+    starTowerSession,
     heroSession,
     chat,
     moving,
