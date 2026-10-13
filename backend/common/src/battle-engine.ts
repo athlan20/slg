@@ -26,6 +26,14 @@
 
 import { TROOP_KINDS, type ArmyCounts, type TroopKind } from './protocol';
 import { counterMultiplier, ramAdjustedWall } from './troop-counter';
+import { specialtyBonus, type HeroSpecialty } from './hero-specialty';
+
+export interface HeroCombatBonus {
+  atkPercent: number;
+  defPercent: number;
+  specialty?: HeroSpecialty | null;
+  specialtyScale?: number;
+}
 
 // ---- 兵种战斗属性（数值评审定稿，调整需重跑校准并更新评审记录） ----
 
@@ -87,9 +95,9 @@ export interface BattleOptions {
   tower?: { damage: number; range: number } | null;
   /** 攻方武将加成（v36，AISLG-114）：atkPercent 全军攻击 +%（武力 × 0.3% 封顶 20%，统率超编按比例摊薄，
    *  摊薄由调用方按部队规模算好传入）；defPercent 全军受到伤害 −%（智力同口径）。缺省无加成 */
-  attackerHero?: { atkPercent: number; defPercent: number } | null;
+  attackerHero?: HeroCombatBonus | null;
   /** 守方武将加成（v36，AISLG-115：城守）；口径同 attackerHero */
-  defenderHero?: { atkPercent: number; defPercent: number } | null;
+  defenderHero?: HeroCombatBonus | null;
   /** 回合上限（测试用；缺省 MAX_BATTLE_ROUNDS） */
   maxRounds?: number;
   /** 随机源（测试注入固定序列；缺省 Math.random） */
@@ -402,7 +410,10 @@ export function simulateBattle(
         const wallPercent = siege && unit.side === 0 && target.pos === FIELD_LENGTH ? wallNow : 0;
         const hero = unit.side === 0 ? attHero : defHero;
         const foe = unit.side === 0 ? defHero : attHero;
-        const total = attackTotal(unit.stack, target, wallPercent, rng, hero?.atkPercent ?? 0, foe?.defPercent ?? 0);
+        const specialty = specialtyBonus(hero?.specialty, unit.stack.kind, hero?.specialtyScale ?? 1, siege);
+        const resistance = specialtyBonus(foe?.specialty, target.kind, foe?.specialtyScale ?? 1, siege);
+        const total = attackTotal(unit.stack, target, wallPercent, rng,
+          (hero?.atkPercent ?? 0) + specialty.atkPercent, (foe?.defPercent ?? 0) + resistance.defPercent);
         if (total > 0) {
           attacks.push({ att: unit.stack, target, total, byAttacker: unit.side === 0 });
         }

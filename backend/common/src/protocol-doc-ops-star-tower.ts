@@ -16,6 +16,8 @@ export const REQUEST_GET_STAR_TOWER: RequestOpDoc = {
     '（v55，AISLG-146）返回我的爬塔进度：已通过的最高层 bestFloor（0 = 还没通过任何一层）、下一层 nextFloor（只能从它开始打，不能跳层）、下一层是否 Boss 层、下一层的敌方阵容（匿名）与首通奖励预览、我的阵容（与竞技场共用，保存走 SET_ARENA_LINEUP）、阵容是否可用、账号是否有城。挑战前先调用一次；之后以 STAR_TOWER_CHALLENGE 的响应为准。',
   requestFields: [],
   dataFields: [
+    { name: 'formations', type: 'string[3]', desc: 'v56: Saved templates shared with arena. Each fighter snapshot includes formation and specialty. Save templates through SET_ARENA_LINEUP. System enemies retain the balanced template and no specialty.' },
+    { name: 'rules.armyBase / rules.armyPerLead / rules.formationRules / rules.troopPower', type: 'object', desc: 'v56: Same authoritative army-preview parameters and template catalog as arena.' },
     { name: 'bestFloor', type: 'number', desc: '已通过的最高层（0 = 还没通过任何一层）。' },
     { name: 'cleared', type: 'boolean', desc: '是否已全部通关（bestFloor 等于总层数）。' },
     { name: 'nextFloor', type: 'number | null', desc: '下一层，即可挑战的层；全部通关为 null。' },

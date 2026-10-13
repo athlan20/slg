@@ -28,6 +28,7 @@ import {
   type HeroBattleBonus,
 } from './hero';
 import { heroDayIndex, GIFT_DAILY_LIMIT, RESET_DAILY_LIMIT, type TrainingTier } from './hero-growth';
+import { rollHeroSpecialty, SPECIALTY_RULES, type HeroSpecialty } from './hero-specialty';
 import type {
   FamousClaimView,
   HeroCandidateView,
@@ -40,6 +41,7 @@ type Writer = pg.PoolClient;
 
 /** account_heroes 行（v54：base_* 为初始属性，洗点还原到它；free_points 为未分配点数；train_* 为历练中） */
 export interface AccountHeroRow {
+  specialty?: HeroSpecialty | null;
   id: string;
   account_id: string;
   name: string;
@@ -90,10 +92,14 @@ export function heroView(row: AccountHeroRow, guardCityId: string | null, marchi
     row.train_until && row.train_tier && row.train_exp !== null
       ? { tier: row.train_tier as TrainingTier, endsAt: row.train_until.toISOString(), exp: row.train_exp }
       : null;
+  const specialty = row.famous ? null : row.specialty ?? null;
+  const rule = specialty ? SPECIALTY_RULES[specialty] : null;
   return {
     id: row.id,
     name: row.name,
     famous: row.famous,
+    specialty,
+    specialtyBonus: rule ? { atkPercent: rule.atkPercent, defPercent: rule.defPercent, siegeOnly: rule.siegeOnly ?? false } : null,
     lead: row.lead,
     force: row.force,
     wit: row.wit,
@@ -222,11 +228,12 @@ export async function insertHero(
   client: Writer,
   accountId: string,
   hero: { name: string; famous: boolean; lead: number; force: number; wit: number },
+  rng: () => number = Math.random,
 ): Promise<AccountHeroRow> {
   const ins = await client.query(
-    `INSERT INTO account_heroes (account_id, name, famous, lead, force, wit, base_lead, base_force, base_wit)
-     VALUES ($1, $2, $3, $4, $5, $6, $4, $5, $6) RETURNING *`,
-    [accountId, hero.name, hero.famous, hero.lead, hero.force, hero.wit],
+    `INSERT INTO account_heroes (account_id, name, famous, lead, force, wit, base_lead, base_force, base_wit, specialty)
+     VALUES ($1, $2, $3, $4, $5, $6, $4, $5, $6, $7) RETURNING *`,
+    [accountId, hero.name, hero.famous, hero.lead, hero.force, hero.wit, hero.famous ? null : rollHeroSpecialty(rng)],
   );
   return ins.rows[0] as AccountHeroRow;
 }
@@ -319,7 +326,8 @@ export function battleBonusOf(row: AccountHeroRow | null, troopCount: number): H
   if (!row) {
     return null;
   }
-  return heroBattleBonus(heroAttrs(row), troopCount);
+  const bonus = heroBattleBonus(heroAttrs(row), troopCount);
+  return { ...bonus, specialty: row.famous ? null : row.specialty ?? null, specialtyScale: bonus.scale };
 }
 
 /** 战后经验与成长（v36，AISLG-116）：升级时三项属性自动成长（普通将 +1 / 名将 +2 每级） */

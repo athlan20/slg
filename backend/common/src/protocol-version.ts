@@ -490,4 +490,5 @@
  * 全服播报 star_tower_cleared（必达）。新增错误码 STAR_TOWER_CLEARED / STAR_TOWER_NO_CITY / STAR_TOWER_NO_LINEUP。
  * 新表 star_tower_progress / star_tower_matches（每人保留最近 50 条战报）。
  */
-export const PROTOCOL_VERSION = 55;
+// v56 adds immutable ordinary-hero specialties, saved formation templates, and authoritative preview catalogs.
+export const PROTOCOL_VERSION = 56;

@@ -1,5 +1,5 @@
 {
-  "version": 55,
+  "version": 56,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 55,
+                "protocolVersion": 56,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 55,
+                "protocolVersion": 56,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/52 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/53 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 52,
+              "docVersion": 53,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 55,
-                "docNotice": "接口文档已从 v52 更新到 v55：请 GET /agent-api/changes/52 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 56,
+                "docNotice": "接口文档已从 v53 更新到 v56：请 GET /agent-api/changes/53 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -4918,6 +4918,11 @@
           "desc": "战报列表（新→旧）。"
         },
         {
+          "name": "reports[].attacker.hero.specialty / reports[].defender.hero.specialty",
+          "type": "string | null | undefined",
+          "desc": "v56: Immutable ordinary-hero specialty at combat time; famous heroes have null and historical reports may omit it. specialtyScale records command dilution (0..1). Base atkPercent/defPercent remain the original hero bonuses; specialty bonuses apply per matching troop stack."
+        },
+        {
           "name": "reports[].id",
           "type": "number",
           "desc": "战报自增序号（分页游标）。"
@@ -6167,6 +6172,16 @@
       ],
       "dataFields": [
         {
+          "name": "heroes[].specialty",
+          "type": "string | null",
+          "desc": "v56: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {\"infantry\":{\"troops\":[\"militia\",\"pikeman\",\"swordsman\"],\"atkPercent\":8,\"defPercent\":8},\"ranged\":{\"troops\":[\"archer\",\"ballista\"],\"atkPercent\":12,\"defPercent\":0},\"cavalry\":{\"troops\":[\"cavalry\",\"iron_cavalry\"],\"atkPercent\":10,\"defPercent\":4},\"siege\":{\"troops\":[\"ballista\",\"siege_ram\"],\"atkPercent\":18,\"defPercent\":8,\"siegeOnly\":true},\"assault\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":6,\"defPercent\":0},\"defense\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":0,\"defPercent\":6}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists."
+        },
+        {
+          "name": "heroes[].specialtyBonus",
+          "type": "object | null",
+          "desc": "v56: Full-strength specialty percentages { atkPercent, defPercent, siegeOnly }; null for famous and legacy heroes. Apply only to the matching troops listed in specialty rules."
+        },
+        {
           "name": "cityId / tavernLevel",
           "type": "string / number",
           "desc": "查询城与其酒馆等级（0 = 未建）。"
@@ -6239,6 +6254,12 @@
                     "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
                     "name": "赵云长",
                     "famous": false,
+                    "specialty": "infantry",
+                    "specialtyBonus": {
+                      "atkPercent": 8,
+                      "defPercent": 8,
+                      "siegeOnly": false
+                    },
                     "lead": 32,
                     "force": 28,
                     "wit": 15,
@@ -6298,7 +6319,7 @@
       "name": "RECRUIT_HERO",
       "title": "酒馆招募武将（v36，AISLG-114）",
       "preAuth": false,
-      "summary": "从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。",
+      "summary": "从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。v56: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {\"infantry\":{\"troops\":[\"militia\",\"pikeman\",\"swordsman\"],\"atkPercent\":8,\"defPercent\":8},\"ranged\":{\"troops\":[\"archer\",\"ballista\"],\"atkPercent\":12,\"defPercent\":0},\"cavalry\":{\"troops\":[\"cavalry\",\"iron_cavalry\"],\"atkPercent\":10,\"defPercent\":4},\"siege\":{\"troops\":[\"ballista\",\"siege_ram\"],\"atkPercent\":18,\"defPercent\":8,\"siegeOnly\":true},\"assault\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":6,\"defPercent\":0},\"defense\":{\"troops\":[\"militia\",\"scout\",\"pikeman\",\"swordsman\",\"archer\",\"cavalry\",\"iron_cavalry\",\"ballista\",\"siege_ram\"],\"atkPercent\":0,\"defPercent\":6}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.",
       "requestFields": [
         {
           "name": "candidateId",
@@ -6345,6 +6366,12 @@
                   "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
                   "name": "赵云长",
                   "famous": false,
+                  "specialty": "infantry",
+                  "specialtyBonus": {
+                    "atkPercent": 8,
+                    "defPercent": 8,
+                    "siegeOnly": false
+                  },
                   "lead": 32,
                   "force": 28,
                   "wit": 15,
@@ -6493,6 +6520,12 @@
                   "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
                   "name": "赵云长",
                   "famous": false,
+                  "specialty": "infantry",
+                  "specialtyBonus": {
+                    "atkPercent": 8,
+                    "defPercent": 8,
+                    "siegeOnly": false
+                  },
                   "lead": 32,
                   "force": 28,
                   "wit": 15,
@@ -7348,6 +7381,16 @@
       "requestFields": [],
       "dataFields": [
         {
+          "name": "rules.formationRules / rules.troopPower",
+          "type": "object",
+          "desc": "v56: Authoritative template definitions and troop reference-power coefficients. Use them for previews and proportional selection from actual city troops. Map presets cannot generate troops or exceed available stock."
+        },
+        {
+          "name": "formations",
+          "type": "string[3]",
+          "desc": "v56: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {\"balanced\":{\"shares\":{\"swordsman\":0.5,\"archer\":0.5},\"budgetFactor\":1},\"infantry\":{\"shares\":{\"pikeman\":0.65,\"swordsman\":0.35},\"budgetFactor\":1.2},\"ranged\":{\"shares\":{\"swordsman\":0.3,\"archer\":0.7},\"budgetFactor\":1},\"cavalry\":{\"shares\":{\"cavalry\":0.6,\"pikeman\":0.4},\"budgetFactor\":1.8}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty."
+        },
+        {
           "name": "joined",
           "type": "boolean",
           "desc": "是否已入榜（第一次保存阵容时入榜）。"
@@ -7370,7 +7413,7 @@
         {
           "name": "lineup",
           "type": "Array<Fighter | null>",
-          "desc": "我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。"
+          "desc": "我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level、specialty、formation。"
         },
         {
           "name": "challengesLeft / challengesMax",
@@ -7422,6 +7465,11 @@
               "seq": 1,
               "ok": true,
               "data": {
+                "formations": [
+                  "balanced",
+                  "balanced",
+                  "balanced"
+                ],
                 "joined": true,
                 "rank": 21,
                 "bestRank": 21,
@@ -7473,6 +7521,49 @@
                   }
                 ],
                 "rules": {
+                  "formationRules": {
+                    "balanced": {
+                      "shares": {
+                        "swordsman": 0.5,
+                        "archer": 0.5
+                      },
+                      "budgetFactor": 1
+                    },
+                    "infantry": {
+                      "shares": {
+                        "pikeman": 0.65,
+                        "swordsman": 0.35
+                      },
+                      "budgetFactor": 1.2
+                    },
+                    "ranged": {
+                      "shares": {
+                        "swordsman": 0.3,
+                        "archer": 0.7
+                      },
+                      "budgetFactor": 1
+                    },
+                    "cavalry": {
+                      "shares": {
+                        "cavalry": 0.6,
+                        "pikeman": 0.4
+                      },
+                      "budgetFactor": 1.8
+                    }
+                  },
+                  "troopPower": {
+                    "porter": 1,
+                    "militia": 2,
+                    "scout": 2,
+                    "pikeman": 4,
+                    "swordsman": 5,
+                    "archer": 5,
+                    "cavalry": 8,
+                    "iron_cavalry": 14,
+                    "supply_wagon": 1,
+                    "ballista": 8,
+                    "siege_ram": 3
+                  },
                   "slots": 3,
                   "dailyChallenges": 5,
                   "dailyDefendedMax": 10,
@@ -7543,9 +7634,24 @@
           "name": "heroIds",
           "type": "Array<string | null>",
           "desc": "必填。长度 ≤ 3 的数组，元素为武将 id 或 null（空位）；至少一个非 null；不能重复。"
+        },
+        {
+          "name": "formations",
+          "type": "string[3]",
+          "desc": "Optional v56: exactly three entries, each balanced / infantry / ranged / cavalry. Omission preserves saved templates; new entries default to balanced. Templates are shared with star tower. Invalid values return INVALID_PARAMS."
         }
       ],
       "dataFields": [
+        {
+          "name": "rules.formationRules / rules.troopPower",
+          "type": "object",
+          "desc": "v56: Authoritative template definitions and troop reference-power coefficients. Use them for previews and proportional selection from actual city troops. Map presets cannot generate troops or exceed available stock."
+        },
+        {
+          "name": "formations",
+          "type": "string[3]",
+          "desc": "v56: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {\"balanced\":{\"shares\":{\"swordsman\":0.5,\"archer\":0.5},\"budgetFactor\":1},\"infantry\":{\"shares\":{\"pikeman\":0.65,\"swordsman\":0.35},\"budgetFactor\":1.2},\"ranged\":{\"shares\":{\"swordsman\":0.3,\"archer\":0.7},\"budgetFactor\":1},\"cavalry\":{\"shares\":{\"cavalry\":0.6,\"pikeman\":0.4},\"budgetFactor\":1.8}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty."
+        },
         {
           "name": "joined",
           "type": "boolean",
@@ -7569,7 +7675,7 @@
         {
           "name": "lineup",
           "type": "Array<Fighter | null>",
-          "desc": "我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。"
+          "desc": "我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level、specialty、formation。"
         },
         {
           "name": "challengesLeft / challengesMax",
@@ -7631,6 +7737,11 @@
               "seq": 2,
               "ok": true,
               "data": {
+                "formations": [
+                  "balanced",
+                  "balanced",
+                  "balanced"
+                ],
                 "joined": true,
                 "rank": 21,
                 "bestRank": 21,
@@ -7682,6 +7793,49 @@
                   }
                 ],
                 "rules": {
+                  "formationRules": {
+                    "balanced": {
+                      "shares": {
+                        "swordsman": 0.5,
+                        "archer": 0.5
+                      },
+                      "budgetFactor": 1
+                    },
+                    "infantry": {
+                      "shares": {
+                        "pikeman": 0.65,
+                        "swordsman": 0.35
+                      },
+                      "budgetFactor": 1.2
+                    },
+                    "ranged": {
+                      "shares": {
+                        "swordsman": 0.3,
+                        "archer": 0.7
+                      },
+                      "budgetFactor": 1
+                    },
+                    "cavalry": {
+                      "shares": {
+                        "cavalry": 0.6,
+                        "pikeman": 0.4
+                      },
+                      "budgetFactor": 1.8
+                    }
+                  },
+                  "troopPower": {
+                    "porter": 1,
+                    "militia": 2,
+                    "scout": 2,
+                    "pikeman": 4,
+                    "swordsman": 5,
+                    "archer": 5,
+                    "cavalry": 8,
+                    "iron_cavalry": 14,
+                    "supply_wagon": 1,
+                    "ballista": 8,
+                    "siege_ram": 3
+                  },
                   "slots": 3,
                   "dailyChallenges": 5,
                   "dailyDefendedMax": 10,
@@ -7771,7 +7925,7 @@
       "name": "ARENA_CHALLENGE",
       "title": "发起竞技挑战",
       "preAuth": false,
-      "summary": "（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；刀盾 / 弓箭各一半），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。",
+      "summary": "（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；balanced 默认刀盾 / 弓箭各一半，其他号位按 formations 生成），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。",
       "requestFields": [
         {
           "name": "entryId",
@@ -8313,6 +8467,16 @@
       "summary": "（v55，AISLG-146）返回我的爬塔进度：已通过的最高层 bestFloor（0 = 还没通过任何一层）、下一层 nextFloor（只能从它开始打，不能跳层）、下一层是否 Boss 层、下一层的敌方阵容（匿名）与首通奖励预览、我的阵容（与竞技场共用，保存走 SET_ARENA_LINEUP）、阵容是否可用、账号是否有城。挑战前先调用一次；之后以 STAR_TOWER_CHALLENGE 的响应为准。",
       "requestFields": [],
       "dataFields": [
+        {
+          "name": "formations",
+          "type": "string[3]",
+          "desc": "v56: Saved templates shared with arena. Each fighter snapshot includes formation and specialty. Save templates through SET_ARENA_LINEUP. System enemies retain the balanced template and no specialty."
+        },
+        {
+          "name": "rules.armyBase / rules.armyPerLead / rules.formationRules / rules.troopPower",
+          "type": "object",
+          "desc": "v56: Same authoritative army-preview parameters and template catalog as arena."
+        },
         {
           "name": "bestFloor",
           "type": "number",

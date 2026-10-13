@@ -8,6 +8,7 @@ import { tName } from '../i18n/names';
 import { useHeroPick } from '../state/heroContext';
 import { heroUnavailableReason } from '../state/heroSession';
 import { useNow } from '../state/useNow';
+import { specialtyName, specialtyEffect, specialtyBonusText } from '../copy-combat';
 
 interface HeroPickerProps {
   /** 编队总兵数（统率摊薄预览用）；未编队传 0 */
@@ -59,6 +60,13 @@ export function HeroPicker({ troopTotal }: HeroPickerProps) {
       {bonus ? (
         <p role="随队将领加成预览" className="truncate text-[11.5px] text-faint" title={troopTotal > 0 ? HERO_COPY.picker.preview(bonus.atk, bonus.def, bonus.scale) : HERO_COPY.picker.previewIdle}>
           {troopTotal > 0 ? HERO_COPY.picker.preview(bonus.atk, bonus.def, bonus.scale) : HERO_COPY.picker.previewIdle}
+        </p>
+      ) : null}
+      {selected?.specialty ? (
+        <p role="march-hero-specialty" className="line-clamp-2 text-[11px] text-accent" title={specialtyEffect(selected.specialty)}>
+          {specialtyName(selected.specialty)}
+          {selected.specialtyBonus ? ` · ${specialtyBonusText(selected.specialtyBonus, bonus?.scale ?? 1)}` : ''}
+          {' · '}{specialtyEffect(selected.specialty)}
         </p>
       ) : null}
     </div>
