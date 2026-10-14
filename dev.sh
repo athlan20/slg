@@ -151,11 +151,11 @@ has_service() { case " $SERVICES " in *" $1 "*) return 0 ;; esac; return 1; }
 
 case "${1:-start}" in
   stop)
-    echo "== 停止本地服务（$ROOT）=="
+    echo "== 停止本地服务（${ROOT}）=="
     for s in web worker api; do has_service "$s" && stop_one "$s"; done
     ;;
   status)
-    echo "== 本地服务状态（$ROOT，API $API_PORT / 前端 $WEB_PORT）=="
+    echo "== 本地服务状态（${ROOT}，API $API_PORT / 前端 ${WEB_PORT}）=="
     for s in api worker web; do
       has_service "$s" || continue
       pattern="$(pattern_for "$s")"
@@ -172,7 +172,7 @@ case "${1:-start}" in
     for s in web worker api; do has_service "$s" && stop_one "$s"; done
     echo "== 数据库预检 =="
     db_preflight
-    echo "== 启动（API $API_PORT / 前端 $WEB_PORT / 服务：$SERVICES）=="
+    echo "== 启动（API $API_PORT / 前端 $WEB_PORT / 服务：${SERVICES}）=="
     for s in api worker web; do has_service "$s" && start_one "$s"; done
     echo "== 就绪检查 =="
     ok=0
