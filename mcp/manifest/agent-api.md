@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**58** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**59** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 58）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 59）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -440,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 58,
+    "protocolVersion": 59,
     "docNotice": null
   }
 }
@@ -502,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 58,
+    "protocolVersion": 59,
     "docNotice": null
   }
 }
@@ -522,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/55 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/56 补读增量）**
 
 请求：
 
@@ -533,7 +533,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 55,
+    "docVersion": 56,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 58,
-    "docNotice": "接口文档已从 v55 更新到 v58：请 GET /agent-api/changes/55 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 59,
+    "docNotice": "接口文档已从 v56 更新到 v59：请 GET /agent-api/changes/56 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -4450,6 +4450,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | reports | array | 战报列表（新→旧）。 |
+| reports[].attacker.hero.specialty / reports[].defender.hero.specialty | string \| null \| undefined | v59: Immutable ordinary-hero specialty at combat time; famous heroes have null and historical reports may omit it. specialtyScale records command dilution (0..1). Base atkPercent/defPercent remain the original hero bonuses; specialty bonuses apply per matching troop stack. |
 | reports[].id | number | 战报自增序号（分页游标）。 |
 | reports[].x / reports[].y | number | 战斗发生地块坐标。 |
 | reports[].kind | 'wilderness' \| 'npc_city' \| 'npc_raid' \| 'city_raid' \| 'intercept' \| 'yellow_turban' | 战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）。 |
@@ -5618,6 +5619,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
+| heroes[].specialty | string \| null | v59: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {"infantry":{"troops":["militia","pikeman","swordsman"],"atkPercent":2.5,"defPercent":2.5},"ranged":{"troops":["archer","ballista"],"atkPercent":2.5,"defPercent":0},"cavalry":{"troops":["cavalry","iron_cavalry"],"atkPercent":10,"defPercent":4},"siege":{"troops":["ballista","siege_ram"],"atkPercent":8,"defPercent":3,"siegeOnly":true},"assault":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":3,"defPercent":0},"defense":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":0,"defPercent":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists. |
+| heroes[].specialtyBonus | object \| null | v59: Full-strength specialty percentages { atkPercent, defPercent, siegeOnly }; null for famous and legacy heroes. Apply only to the matching troops listed in specialty rules. |
 | cityId / tavernLevel | string / number | 查询城与其酒馆等级（0 = 未建）。 |
 | maxTavernLevel / normalCap / normalCount | number | 账号酒馆最高等级；普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1；当前普通将数量。 |
 | famousCap / famousCount | number | 名将上限（固定 3，不占普通将上限）与当前数量。 |
@@ -5664,6 +5667,12 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
         "name": "赵云长",
         "famous": false,
+        "specialty": "infantry",
+        "specialtyBonus": {
+          "atkPercent": 2.5,
+          "defPercent": 2.5,
+          "siegeOnly": false
+        },
         "lead": 32,
         "force": 28,
         "wit": 15,
@@ -5718,7 +5727,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。
+从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。v59: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {"infantry":{"troops":["militia","pikeman","swordsman"],"atkPercent":2.5,"defPercent":2.5},"ranged":{"troops":["archer","ballista"],"atkPercent":2.5,"defPercent":0},"cavalry":{"troops":["cavalry","iron_cavalry"],"atkPercent":10,"defPercent":4},"siege":{"troops":["ballista","siege_ram"],"atkPercent":8,"defPercent":3,"siegeOnly":true},"assault":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":3,"defPercent":0},"defense":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":0,"defPercent":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.
 
 **请求字段**
 
@@ -5765,6 +5774,12 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
       "name": "赵云长",
       "famous": false,
+      "specialty": "infantry",
+      "specialtyBonus": {
+        "atkPercent": 2.5,
+        "defPercent": 2.5,
+        "siegeOnly": false
+      },
       "lead": 32,
       "force": 28,
       "wit": 15,
@@ -5899,6 +5914,12 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
       "name": "赵云长",
       "famous": false,
+      "specialty": "infantry",
+      "specialtyBonus": {
+        "atkPercent": 2.5,
+        "defPercent": 2.5,
+        "siegeOnly": false
+      },
       "lead": 32,
       "force": 28,
       "wit": 15,
@@ -6771,11 +6792,13 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
+| rules.formationRules / rules.troopPower | object | v59: Authoritative template definitions and troop reference-power coefficients. Use them for previews and proportional selection from actual city troops. Map presets cannot generate troops or exceed available stock. |
+| formations | string[3] | v59: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {"balanced":{"shares":{"swordsman":0.5,"archer":0.5},"budgetFactor":1},"infantry":{"shares":{"pikeman":0.65,"swordsman":0.35},"budgetFactor":1.25},"ranged":{"shares":{"swordsman":0.3,"archer":0.7},"budgetFactor":0.96},"cavalry":{"shares":{"cavalry":0.3,"archer":0.7},"budgetFactor":1.7}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty. |
 | joined | boolean | 是否已入榜（第一次保存阵容时入榜）。 |
 | rank | number \| null | 当前名次；未入榜为 null。 |
 | bestRank | number \| null | 历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。 |
 | totalEntries | number | 榜上席位总数（含 20 个系统守擂者）。 |
-| lineup | Array<Fighter \| null> | 我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。 |
+| lineup | Array<Fighter \| null> | 我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level、specialty、formation。 |
 | challengesLeft / challengesMax | number | 本竞技日剩余 / 上限挑战次数（上限 5）。 |
 | defendedToday / defendedMax | number | 本竞技日我被挑战的次数 / 上限（上限 10）。 |
 | nextDayAt | string (ISO) | 下一个竞技日开始的时刻（次数重置、每日奖励发放）。 |
@@ -6805,6 +6828,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "seq": 1,
   "ok": true,
   "data": {
+    "formations": [
+      "balanced",
+      "balanced",
+      "balanced"
+    ],
     "joined": true,
     "rank": 21,
     "bestRank": 21,
@@ -6856,6 +6884,49 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       }
     ],
     "rules": {
+      "formationRules": {
+        "balanced": {
+          "shares": {
+            "swordsman": 0.5,
+            "archer": 0.5
+          },
+          "budgetFactor": 1
+        },
+        "infantry": {
+          "shares": {
+            "pikeman": 0.65,
+            "swordsman": 0.35
+          },
+          "budgetFactor": 1.25
+        },
+        "ranged": {
+          "shares": {
+            "swordsman": 0.3,
+            "archer": 0.7
+          },
+          "budgetFactor": 0.96
+        },
+        "cavalry": {
+          "shares": {
+            "cavalry": 0.3,
+            "archer": 0.7
+          },
+          "budgetFactor": 1.7
+        }
+      },
+      "troopPower": {
+        "porter": 1,
+        "militia": 2,
+        "scout": 2,
+        "pikeman": 4,
+        "swordsman": 5,
+        "archer": 5,
+        "cavalry": 8,
+        "iron_cavalry": 14,
+        "supply_wagon": 1,
+        "ballista": 8,
+        "siege_ram": 3
+      },
       "slots": 3,
       "dailyChallenges": 5,
       "dailyDefendedMax": 10,
@@ -6923,16 +6994,19 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | heroIds | Array<string \| null> | 必填。长度 ≤ 3 的数组，元素为武将 id 或 null（空位）；至少一个非 null；不能重复。 |
+| formations | string[3] | Optional v59: exactly three entries, each balanced / infantry / ranged / cavalry. Omission preserves saved templates; new entries default to balanced. Templates are shared with star tower. Invalid values return INVALID_PARAMS. |
 
 **响应 data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
+| rules.formationRules / rules.troopPower | object | v59: Authoritative template definitions and troop reference-power coefficients. Use them for previews and proportional selection from actual city troops. Map presets cannot generate troops or exceed available stock. |
+| formations | string[3] | v59: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: {"balanced":{"shares":{"swordsman":0.5,"archer":0.5},"budgetFactor":1},"infantry":{"shares":{"pikeman":0.65,"swordsman":0.35},"budgetFactor":1.25},"ranged":{"shares":{"swordsman":0.3,"archer":0.7},"budgetFactor":0.96},"cavalry":{"shares":{"cavalry":0.3,"archer":0.7},"budgetFactor":1.7}}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty. |
 | joined | boolean | 是否已入榜（第一次保存阵容时入榜）。 |
 | rank | number \| null | 当前名次；未入榜为 null。 |
 | bestRank | number \| null | 历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。 |
 | totalEntries | number | 榜上席位总数（含 20 个系统守擂者）。 |
-| lineup | Array<Fighter \| null> | 我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。 |
+| lineup | Array<Fighter \| null> | 我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level、specialty、formation。 |
 | challengesLeft / challengesMax | number | 本竞技日剩余 / 上限挑战次数（上限 5）。 |
 | defendedToday / defendedMax | number | 本竞技日我被挑战的次数 / 上限（上限 10）。 |
 | nextDayAt | string (ISO) | 下一个竞技日开始的时刻（次数重置、每日奖励发放）。 |
@@ -6971,6 +7045,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "seq": 2,
   "ok": true,
   "data": {
+    "formations": [
+      "balanced",
+      "balanced",
+      "balanced"
+    ],
     "joined": true,
     "rank": 21,
     "bestRank": 21,
@@ -7022,6 +7101,49 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       }
     ],
     "rules": {
+      "formationRules": {
+        "balanced": {
+          "shares": {
+            "swordsman": 0.5,
+            "archer": 0.5
+          },
+          "budgetFactor": 1
+        },
+        "infantry": {
+          "shares": {
+            "pikeman": 0.65,
+            "swordsman": 0.35
+          },
+          "budgetFactor": 1.25
+        },
+        "ranged": {
+          "shares": {
+            "swordsman": 0.3,
+            "archer": 0.7
+          },
+          "budgetFactor": 0.96
+        },
+        "cavalry": {
+          "shares": {
+            "cavalry": 0.3,
+            "archer": 0.7
+          },
+          "budgetFactor": 1.7
+        }
+      },
+      "troopPower": {
+        "porter": 1,
+        "militia": 2,
+        "scout": 2,
+        "pikeman": 4,
+        "swordsman": 5,
+        "archer": 5,
+        "cavalry": 8,
+        "iron_cavalry": 14,
+        "supply_wagon": 1,
+        "ballista": 8,
+        "siege_ram": 3
+      },
       "slots": 3,
       "dailyChallenges": 5,
       "dailyDefendedMax": 10,
@@ -7114,7 +7236,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；刀盾 / 弓箭各一半），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。
+（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；balanced 默认刀盾 / 弓箭各一半，其他号位按 formations 生成），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。
 
 **请求字段**
 
@@ -7626,6 +7748,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
+| formations | string[3] | v59: Saved templates shared with arena. Each fighter snapshot includes formation and specialty. Save templates through SET_ARENA_LINEUP. System enemies retain the balanced template and no specialty. |
+| rules.armyBase / rules.armyPerLead / rules.formationRules / rules.troopPower | object | v59: Same authoritative army-preview parameters and template catalog as arena. |
 | bestFloor | number | 已通过的最高层（0 = 还没通过任何一层）。 |
 | cleared | boolean | 是否已全部通关（bestFloor 等于总层数）。 |
 | nextFloor | number \| null | 下一层，即可挑战的层；全部通关为 null。 |
@@ -13277,7 +13401,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 58。
+- 协议版本随对外协议内容的每次变化递增；当前为 59。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

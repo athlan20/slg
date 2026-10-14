@@ -3,6 +3,7 @@
 
 import type { ArenaRoundReport } from './arena';
 import type { ArenaFighterView } from './protocol-arena';
+import type { FormationKind, FormationCatalog } from './army-formation';
 
 /** 下一层的首通奖励预览 / 实际发放 */
 export interface StarTowerRewardView {
@@ -12,7 +13,9 @@ export interface StarTowerRewardView {
 }
 
 /** 规则常量（对外下发，客户端 / Agent 不必硬编码） */
-export interface StarTowerRulesView {
+export interface StarTowerRulesView extends FormationCatalog {
+  armyBase: number;
+  armyPerLead: number;
   floors: number;
   bossEvery: number;
   slots: number;
@@ -22,6 +25,7 @@ export interface StarTowerRulesView {
 
 /** GET_STAR_TOWER（op 83）响应：我的爬塔进度与下一层 */
 export interface StarTowerStateView {
+  formations: FormationKind[];
   /** 已通过的最高层（0 = 还没通过任何一层） */
   bestFloor: number;
   /** 是否已全部通关（bestFloor === floors） */

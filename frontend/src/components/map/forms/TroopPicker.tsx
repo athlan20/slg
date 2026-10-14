@@ -8,6 +8,10 @@ import { formatDurationText } from '../../../api/mapping';
 import { useCopy } from '../../../i18n/bundle';
 import { HeroPicker } from '../../HeroPicker';
 import type { TroopInput } from './targetTypes';
+import { useGame } from '../../../state/GameContext';
+import { FORMATION_KINDS } from '../../../api/protocol-combat';
+import { availableFormation } from '../../../api/formation-preview';
+import { combatText, formationName } from '../../../copy-combat';
 
 export function troopTotal(value: TroopInput): number {
   return TROOP_KINDS.reduce((sum, kind) => sum + (value[kind] ?? 0), 0);
@@ -32,6 +36,8 @@ interface TroopPickerProps {
 export function TroopPicker({ army, value, onChange, showCarry = false, enemyPower = 0, etaSeconds = null, carryBonusPercent = 0, hideHero = false }: TroopPickerProps) {
   const copy = useCopy();
   const { COPY, TROOP_LABEL } = copy;
+  const { session } = useGame();
+  const formationRules = session.arenaSession.arena?.rules;
   const kinds = TROOP_KINDS.filter((kind) => (army[kind] ?? 0) > 0);
   const total = troopTotal(value);
   const power = TROOP_KINDS.reduce((sum, kind) => sum + (value[kind] ?? 0) * TROOP_POWER[kind], 0);
@@ -85,6 +91,17 @@ export function TroopPicker({ army, value, onChange, showCarry = false, enemyPow
         </span>
       </div>
 
+      {!hideHero && formationRules?.formationRules ? (
+        <div role="march-formation-presets" className="flex flex-wrap gap-1" title={combatText('按比例选择可用部队，剩余兵力留城，可继续手动调整', 'Fits available troops to the template, leaves surplus at home, and allows manual edits')}>
+          {FORMATION_KINDS.map(kind => {
+            const preset = availableFormation(army, kind, formationRules);
+            return <button key={kind} type="button" role={`march-formation-${kind}`} disabled={troopTotal(preset) === 0}
+              onClick={() => onChange(preset)} className="cursor-pointer rounded border border-line px-1.5 text-[11px] text-dim hover:text-accent disabled:opacity-40">
+              {formationName(kind)}
+            </button>;
+          })}
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-x-2.5 gap-y-1">
         {kinds.map((kind) => (
           <label

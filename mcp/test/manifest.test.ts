@@ -8,6 +8,16 @@ import { PROTOCOL_VERSION } from '../../backend/common/src/protocol-version.js';
 
 const manifest = loadManifest();
 
+test('formation templates remain an optional structured parameter on the generated lineup tool', () => {
+  const lineup = toolOps(manifest).find(op => op.name === 'SET_ARENA_LINEUP');
+  assert.ok(lineup);
+  const formations = toolParams(lineup).find(param => param.name === 'formations');
+  assert.ok(formations);
+  assert.equal(formations.required, false);
+  assert.equal(formations.kind, 'any');
+  assert.match(formations.desc, /balanced.*infantry.*ranged.*cavalry/);
+});
+
 test('捆绑清单与后端协议版本一致（忘了 sync:manifest 时此处失败）', () => {
   assert.equal(manifest.version, PROTOCOL_VERSION);
 });

@@ -8,6 +8,8 @@ import type { TroopKind } from './protocol';
 import { simulateBattle, type BattleResult } from './battle-engine';
 import { heroBattleBonus, rollHeroName, type HeroAttrs } from './hero';
 import { getTimeScale } from './time-scale';
+import { formationArmy, type FormationKind } from './army-formation';
+import type { HeroSpecialty } from './hero-specialty';
 
 // ---- 数值（全部占位，上线前按校准结果与经济核对） ----
 
@@ -116,6 +118,8 @@ export function milestoneRewards(prevBest: number, newBest: number): { gold: num
 
 /** 参赛武将的快照（对战只看属性；名字用于战报展示） */
 export interface ArenaFighter {
+  specialty?: HeroSpecialty | null;
+  formation?: FormationKind;
   name: string;
   lead: number;
   force: number;
@@ -180,14 +184,14 @@ export function fightRound(
   defender: ArenaFighter,
   rng: () => number,
 ): { challengerWon: boolean; result: BattleResult } {
-  const armyC = standardArmy(challenger.lead);
-  const armyD = standardArmy(defender.lead);
+  const armyC = formationArmy(standardArmySize(challenger.lead), challenger.formation);
+  const armyD = formationArmy(standardArmySize(defender.lead), defender.formation);
   // 不传兵数：加成按 scale = 1 计算，不摊薄（竞技场专用，PvE 仍走 heroBattleBonus 的摊薄口径）
   const bonusC = heroBattleBonus(attrsOf(challenger));
   const bonusD = heroBattleBonus(attrsOf(defender));
   const result = simulateBattle(armyC, armyD, {
-    attackerHero: { atkPercent: bonusC.atkPercent, defPercent: bonusC.defPercent },
-    defenderHero: { atkPercent: bonusD.atkPercent, defPercent: bonusD.defPercent },
+    attackerHero: { atkPercent: bonusC.atkPercent, defPercent: bonusC.defPercent, specialty: challenger.specialty },
+    defenderHero: { atkPercent: bonusD.atkPercent, defPercent: bonusD.defPercent, specialty: defender.specialty },
     rng,
   });
   return { challengerWon: result.attackerWon, result };

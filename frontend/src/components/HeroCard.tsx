@@ -10,6 +10,7 @@ import { getCopy, useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import { heroAtHome } from '../state/heroSession';
 import { ChatShareButton } from './chat/ChatShareButton';
+import { combatText, specialtyName, specialtyEffect, specialtyBonusText } from '../copy-combat';
 
 const HERO_LEVEL_MAX = 40;
 const TRAIN_TIERS: TrainingTier[] = [1, 2, 3];
@@ -94,7 +95,7 @@ export function HeroCard({
   return (
     <div
       role={`武将面板-武将-${hero.name}`}
-      className={`flex flex-col gap-0.5 rounded-[5px] border bg-panel-2 px-2 py-1 ${hero.famous ? 'border-gold/50' : 'border-line-soft'}`}
+      className={`flex min-w-0 flex-col gap-0.5 rounded-[5px] border bg-panel-2 px-2 py-1 ${hero.famous ? 'border-gold/50' : 'border-line-soft'}`}
     >
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 truncate text-[13px] font-semibold">
@@ -115,6 +116,13 @@ export function HeroCard({
         {detail}
       </p>
 
+      {hero.specialty ? (
+        <p role="hero-specialty" className="line-clamp-2 text-[11px] text-accent" title={specialtyEffect(hero.specialty)}>
+          {specialtyName(hero.specialty)}
+          {hero.specialtyBonus ? ` · ${specialtyBonusText(hero.specialtyBonus)}` : ''}
+          {' · '}{specialtyEffect(hero.specialty)} · {combatText('招募后固定', 'Fixed on recruitment')}
+        </p>
+      ) : null}
       <div role="武将面板-培养" className="flex flex-wrap items-center gap-1 text-[11px]" title={atHome ? undefined : growth.busyHint}>
         {hero.freePoints > 0 ? <span className="mr-0.5 font-mono text-accent">{growth.points(hero.freePoints)}</span> : null}
         {(['lead', 'force', 'wit'] as const).map((attr) => (

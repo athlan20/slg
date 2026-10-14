@@ -2,6 +2,7 @@
 // protocol.ts 原名再导出。数值规则（加成 / 上限 / 俸禄）由服务端权威结算，前端只做展示。
 
 import type { InitiatorRole } from './protocol';
+import type { HeroSpecialty } from './protocol-combat';
 
 /** 历练档位（v54，AISLG-144）：1 / 2 / 3 = 1 / 4 / 12 小时基准 */
 export type TrainingTier = 1 | 2 | 3;
@@ -15,6 +16,8 @@ export interface HeroTrainingView {
 
 /** 一名武将的视图（GET_HEROES / 推送共用） */
 export interface HeroView {
+  specialty: HeroSpecialty | null;
+  specialtyBonus?: { atkPercent: number; defPercent: number; siegeOnly: boolean } | null;
   id: string;
   name: string;
   /** 名将（全服唯一、从 PvE 获得；普通将 false） */
@@ -219,6 +222,8 @@ export interface CityGuardView {
 
 /** 战报一方的随队 / 城守武将（v36 AISLG-114/115；未配将为 null / 缺省） */
 export interface BattleHeroView {
+  specialty?: HeroSpecialty | null;
+  specialtyScale?: number;
   name: string;
   lead: number;
   force: number;

@@ -500,5 +500,6 @@
  * CITY_IN_BATTLE / ARMY_OUTSIDE / WILDERNESS_GARRISONED；PUSH_CITY_STATE 新增 reason=city_discarded；EventType 新增 city_discarded。
  * 新表 city_discards（放弃冷却，按地块）；cities 新增 origin_level（分城来源 NPC 等级）。
  * v58（世界小地图，AISLG-160）：新增 GET_MAP_OVERVIEW（op 95，玩家与 Agent 通用，只读）返回全图城池点位；无新增错误码。
+ * v59（普通将特长与阵型，只加不改）：HeroView 加 specialty / specialtyBonus，竞技场与将星塔加 formations 与阵型目录。
  */
-export const PROTOCOL_VERSION = 58;
+export const PROTOCOL_VERSION = 59;

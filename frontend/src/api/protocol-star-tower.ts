@@ -2,6 +2,7 @@
 // 与 backend/common/src/star-tower.ts；协议调整时以后端生成文档（docs/agent-api.md）为准同步本文件。
 
 import type { ArenaFighterView, ArenaRoundView } from './protocol-arena';
+import type { FormationKind, FormationPreviewRules } from './protocol-combat';
 
 /** 首通奖励：金币进主城，经验给阵容里每名武将 */
 export interface StarTowerRewardView {
@@ -9,7 +10,7 @@ export interface StarTowerRewardView {
   exp: number;
 }
 
-export interface StarTowerRulesView {
+export interface StarTowerRulesView extends FormationPreviewRules {
   floors: number;
   bossEvery: number;
   slots: number;
@@ -18,6 +19,7 @@ export interface StarTowerRulesView {
 
 /** GET_STAR_TOWER（op 83）响应 */
 export interface StarTowerStateView {
+  formations: FormationKind[];
   /** 已通过的最高层（0 = 还没通过任何一层） */
   bestFloor: number;
   cleared: boolean;
