@@ -20,11 +20,13 @@ interface BottomBarProps {
   research: ResearchView | null;
   broadcasts: ServerBroadcastView[];
   onOpenBroadcasts: () => void;
+  /** 点开「公告」类播报：打开对应公告的正文（AISLG-162） */
+  onOpenAnnouncement?: (id: number) => void;
 }
 
-export function BottomBar({ city, research, broadcasts, onOpenBroadcasts }: BottomBarProps) {
+export function BottomBar({ city, research, broadcasts, onOpenBroadcasts, onOpenAnnouncement }: BottomBarProps) {
   const copy = useCopy();
-  const { FOOT_COPY, EXTRA_AUTH } = copy;
+  const { FOOT_COPY, EXTRA_AUTH, ANNOUNCEMENT_COPY } = copy;
   const [open, setOpen] = useState(false);
   const now = useNow(true);
   const items = buildProgressItems(city, research, now).sort((a, b) => (a.leftSec ?? Infinity) - (b.leftSec ?? Infinity));
@@ -81,7 +83,22 @@ export function BottomBar({ city, research, broadcasts, onOpenBroadcasts }: Bott
             renderRow={(item) => (
               <p className="truncate border-b border-line-soft py-1 text-[12.5px] text-dim" title={serverBroadcastText(item)}>
                 <span className="mr-1.5 font-mono text-[11px] text-faint">{formatReportTime(item.createdAt)}</span>
-                {serverBroadcastText(item)}
+                {item.type === 'announcement' && onOpenAnnouncement ? (
+                  <button
+                    type="button"
+                    role="全服播报弹窗-公告"
+                    title={ANNOUNCEMENT_COPY.broadcast.open}
+                    onClick={() => {
+                      setOpen(false);
+                      onOpenAnnouncement(Number(item.detail.announcementId));
+                    }}
+                    className="cursor-pointer text-left text-gold underline-offset-2 hover:underline"
+                  >
+                    {serverBroadcastText(item)}
+                  </button>
+                ) : (
+                  serverBroadcastText(item)
+                )}
               </p>
             )}
           />

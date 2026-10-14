@@ -131,6 +131,9 @@ export const Op = {
   DISCARD_CITY: 94,
   /** 世界小地图总览（v58，AISLG-160）：全图城池点位，玩家与 Agent 通用 */
   GET_MAP_OVERVIEW: 95,
+  GET_ANNOUNCEMENTS: 96,
+  GET_ANNOUNCEMENT: 97,
+  READ_ANNOUNCEMENT: 98,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -180,6 +183,7 @@ export const Op = {
   PUSH_ACCOUNT_STATE: 2020,
   /** 竞技场状态变化推送（v53，AISLG-145）：challenged / daily_reward / milestone，账号全部在线连接收到 */
   PUSH_ARENA_STATE: 2021,
+  PUSH_ANNOUNCEMENT: 2022,
   /** 查询将星塔（v55，AISLG-146） */
   GET_STAR_TOWER: 83,
   /** 挑战将星塔下一层（v55，AISLG-146）：无参数，三局两胜，赢了首通发奖励 */
@@ -195,6 +199,7 @@ export type InitiatorRole = 'player' | 'agent';
 
 export type ErrorCode =
   | 'INVALID_MESSAGE'
+  | 'ANNOUNCEMENT_NOT_FOUND'
   | 'UNKNOWN_OP'
   | 'NOT_LOGGED_IN'
   | 'ALREADY_LOGGED_IN'
@@ -425,6 +430,20 @@ export type {
   PlayerAttackWarningPushData,
 } from './protocol-server';
 export { SERVER_BROADCAST_TYPES } from './protocol-server';
+export { ANNOUNCEMENT_CATEGORIES, ANNOUNCEMENT_LANGS } from './protocol-announcement';
+export type {
+  AnnouncementCategory,
+  AnnouncementDetailView,
+  AnnouncementLang,
+  AnnouncementView,
+  GetAnnouncementRequestData,
+  GetAnnouncementResponseData,
+  GetAnnouncementsRequestData,
+  GetAnnouncementsResponseData,
+  PushAnnouncementData,
+  ReadAnnouncementRequestData,
+  ReadAnnouncementResponseData,
+} from './protocol-announcement';
 
 export type {
   TerrainKind,

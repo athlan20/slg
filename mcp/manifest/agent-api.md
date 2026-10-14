@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**58** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**60** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 58）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 60）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -440,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 58,
+    "protocolVersion": 60,
     "docNotice": null
   }
 }
@@ -502,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 58,
+    "protocolVersion": 60,
     "docNotice": null
   }
 }
@@ -522,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/55 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/57 补读增量）**
 
 请求：
 
@@ -533,7 +533,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 55,
+    "docVersion": 57,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 58,
-    "docNotice": "接口文档已从 v55 更新到 v58：请 GET /agent-api/changes/55 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 60,
+    "docNotice": "接口文档已从 v57 更新到 v60：请 GET /agent-api/changes/57 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -10660,6 +10660,230 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 96 · GET_ANNOUNCEMENTS — 查询公告列表（v60，AISLG-162）
+
+`C→S` 请求-响应 · 需登录后发送
+
+列出本站可见的公告。默认返回生效中的公告：置顶在前，其余按发布时间倒序，最多 limit 条（1..50，缺省 20，不分页）。history=true 改为返回往期（已过结束时间的公告，按发布时间倒序，用 beforeId 取比它更早的一页）。列表不含正文，正文用 GET_ANNOUNCEMENT。unreadCount 为生效中且未读的公告数（红点用，不受 limit 影响）。lang 取 zh（缺省）或 en：英文没填的公告回落到中文。已撤回、未到生效时间、他站定向的公告不出现。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| lang | 'zh' \| 'en' | 标题语言，缺省 zh；en 时没填英文的公告显示中文标题。 |
+| history | boolean | 缺省 false（生效中）；true 返回往期（已过结束时间）。 |
+| limit | number | 1..50，缺省 20。 |
+| beforeId | number | 仅 history=true 时有效：只取 id 小于它的公告（翻页）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| announcements | array | 公告列表（AnnouncementView，见下方示例）：id、category（system 系统 / event 活动）、title、pinned、strongRemind、read、expired、publishedAt、startsAt、endsAt（null 表示不过期）。 |
+| unreadCount | number | 生效中且本账号未读的公告数。 |
+
+**Agent 提示**：新公告到达时服务端推送 PUSH_ANNOUNCEMENT（只带标题与分类，不带正文）；断线期间的用本协议补拉。标题为 30 字以内的短句。需要正文时再调 GET_ANNOUNCEMENT。
+
+**示例**
+
+**生效中的公告（一条置顶的强提醒维护公告，一条未置顶的活动公告）**
+
+请求：
+
+```json
+{
+  "op": 96,
+  "seq": 50,
+  "data": {
+    "lang": "zh"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 96,
+  "seq": 50,
+  "ok": true,
+  "data": {
+    "announcements": [
+      {
+        "id": 12,
+        "category": "system",
+        "title": "周日 22:00 停服维护 30 分钟",
+        "pinned": true,
+        "strongRemind": true,
+        "read": false,
+        "expired": false,
+        "publishedAt": "2026-09-25T08:00:00.000Z",
+        "startsAt": "2026-09-25T08:00:00.000Z",
+        "endsAt": null
+      },
+      {
+        "id": 11,
+        "category": "event",
+        "title": "金秋福利：签到双倍",
+        "pinned": false,
+        "strongRemind": false,
+        "read": true,
+        "expired": false,
+        "publishedAt": "2026-09-25T08:00:00.000Z",
+        "startsAt": "2026-09-25T08:00:00.000Z",
+        "endsAt": null
+      }
+    ],
+    "unreadCount": 1
+  }
+}
+```
+
+### op 97 · GET_ANNOUNCEMENT — 查询公告正文（v60，AISLG-162）
+
+`C→S` 请求-响应 · 需登录后发送
+
+返回一条公告的详情（列表视图 + 正文 body）。正文为受限 Markdown 子集：段落之间以空行分隔，段内换行保留，**加粗**，[文字](https 链接)；图片、HTML 标签与脚本已在服务端去掉，非 http(s) 链接只保留文字。body 按 lang 取对应语言，英文没填时回落到中文。可以读往期公告（expired=true）；已撤回、未生效或他站的公告返回 ANNOUNCEMENT_NOT_FOUND。读取本身不计已读，需要标记时调 READ_ANNOUNCEMENT。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | number | 公告 id（来自 GET_ANNOUNCEMENTS 或 PUSH_ANNOUNCEMENT）。 |
+| lang | 'zh' \| 'en' | 正文语言，缺省 zh。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| announcement | object | 公告详情：列表视图各字段 + body（正文，过滤后不超过 4000 字）。 |
+
+**可能错误**：`ANNOUNCEMENT_NOT_FOUND`（处置建议见第 4 节）
+
+**Agent 提示**：读正文不会改变已读状态；需要标记时再调 READ_ANNOUNCEMENT。运营公告以正文为准，玩家问到规则细节时照原文转述，不要自行补充。
+
+**示例**
+
+**读取一条维护公告的正文**
+
+请求：
+
+```json
+{
+  "op": 97,
+  "seq": 51,
+  "data": {
+    "id": 12
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 97,
+  "seq": 51,
+  "ok": true,
+  "data": {
+    "announcement": {
+      "id": 12,
+      "category": "system",
+      "title": "周日 22:00 停服维护 30 分钟",
+      "pinned": true,
+      "strongRemind": true,
+      "read": false,
+      "expired": false,
+      "publishedAt": "2026-09-25T08:00:00.000Z",
+      "startsAt": "2026-09-25T08:00:00.000Z",
+      "endsAt": null,
+      "body": "本周日 22:00 至 22:30 停服维护，维护期间各城产出与行军暂停。\n\n**请提前把行军回城**，维护结束后正常开放。"
+    }
+  }
+}
+```
+
+**公告已撤回或不存在**
+
+请求：
+
+```json
+{
+  "op": 97,
+  "seq": 52,
+  "data": {
+    "id": 999
+  }
+}
+```
+
+失败响应（`ANNOUNCEMENT_NOT_FOUND`）：
+
+```json
+{
+  "op": 97,
+  "seq": 52,
+  "ok": false,
+  "error": {
+    "code": "ANNOUNCEMENT_NOT_FOUND",
+    "message": "公告不存在、已撤回或尚未生效"
+  }
+}
+```
+
+### op 98 · READ_ANNOUNCEMENT — 标记公告已读（v60，AISLG-162）
+
+`C→S` 请求-响应 · 需登录后发送
+
+把一条公告标记为本账号已读（幂等，重复调用无副作用）。已读后 GET_ANNOUNCEMENTS 的 read 为 true，unreadCount 相应减少。红点与强提醒弹窗都以已读为准。仅能标记本站可见的公告，否则返回 ANNOUNCEMENT_NOT_FOUND。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | number | 公告 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | number | 公告 id。 |
+| unreadCount | number | 标记后生效中且未读的公告数。 |
+
+**可能错误**：`ANNOUNCEMENT_NOT_FOUND`（处置建议见第 4 节）
+
+**Agent 提示**：只在确实读过（或已把内容告知玩家）之后再标记，不要为了清红点而批量标记。
+
+**示例**
+
+**读完维护公告后标记已读**
+
+请求：
+
+```json
+{
+  "op": 98,
+  "seq": 53,
+  "data": {
+    "id": 12
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 98,
+  "seq": 53,
+  "ok": true,
+  "data": {
+    "id": 12,
+    "unreadCount": 0
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -11872,6 +12096,46 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2022 · PUSH_ANNOUNCEMENT — 推送：新公告（v60，AISLG-162）
+
+`S→C` 服务端推送 · 无 `seq`
+
+运营发布一条已生效的公告时，推送给本站全部在线连接（玩家连接与 Agent 连接都收到）。只带标题与分类，不带正文；正文用 GET_ANNOUNCEMENT 读取。定时生效（生效时间在将来）的公告不推送，下次拉取列表时出现。站点定向的公告只推给对应站点。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | number | 公告 id。 |
+| category | 'system' \| 'event' | 分类：系统公告 / 活动公告。 |
+| titleZh | string | 中文标题。 |
+| titleEn | string \| null | 英文标题，没填为 null。 |
+| pinned | boolean | 是否置顶。 |
+| strongRemind | boolean | 是否强提醒（玩家端会弹窗，需点确认才算已读）。 |
+| publishedAt | string | 发布时间（ISO 8601）。 |
+
+**Agent 提示**：收到推送后调 GET_ANNOUNCEMENT 读正文，再决定是否告知玩家；strongRemind 为 true 时玩家端会弹窗，别重复催促。
+
+**示例**
+
+推送（`online=undefined`）：
+
+```json
+{
+  "op": 2022,
+  "push": true,
+  "data": {
+    "id": 12,
+    "category": "system",
+    "titleZh": "周日 22:00 停服维护 30 分钟",
+    "titleEn": null,
+    "pinned": true,
+    "strongRemind": true,
+    "publishedAt": "2026-09-25T08:00:00.000Z"
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -11964,6 +12228,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `STAR_TOWER_CLEARED` | （v55，AISLG-146）将星塔：已全部通关（bestFloor 等于总层数），没有可挑战的层。 | 不用再挑战；想看战报用 GET_STAR_TOWER_REPORTS。 |
 | `STAR_TOWER_NO_CITY` | （v55，AISLG-146）将星塔：账号还没有城，首通金币无处入账，不能挑战。 | 先建城，再挑战。 |
 | `STAR_TOWER_NO_LINEUP` | （v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。 | 先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。 |
+| `ANNOUNCEMENT_NOT_FOUND` | （v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。 | 不要重试同一个 id；重新用 GET_ANNOUNCEMENTS 拉取列表确认当前可见的公告。 |
 | `AGENT_PASSWORD_FORBIDDEN` | （v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。 | 改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。 |
 | `PASSWORD_LOGIN_CLOSED` | （v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。 | 网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
@@ -13277,7 +13542,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 58。
+- 协议版本随对外协议内容的每次变化递增；当前为 60。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

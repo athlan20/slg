@@ -409,7 +409,7 @@ export function serverBroadcastText(view: {
   type: string;
   detail: Record<string, unknown>;
 }): string {
-  const { YT_COPY, HERO_COPY, EXTRA_STATE } = getCopy();
+  const { YT_COPY, HERO_COPY, EXTRA_STATE, ANNOUNCEMENT_COPY } = getCopy();
   const actor =
     typeof view.detail.username === 'string'
       ? view.detail.cityName
@@ -442,6 +442,9 @@ export function serverBroadcastText(view: {
     case 'arena_champion':
       // v53 AISLG-145：登上第 1 名（previous 为被取代的原第 1 名，可能是守擂者）
       return EXTRA_STATE.broadcast.arenaChampion(actor, String(view.detail.previous ?? EXTRA_STATE.mapping.unknownPlayer));
+    case 'announcement':
+      // v60 AISLG-162：运维发布公告时的一句标题（标题取中文原文）
+      return ANNOUNCEMENT_COPY.broadcast.text(String(view.detail.title ?? ''));
     case 'star_tower_cleared':
       // v55 AISLG-146：将星塔 Boss 层首通（floor 为刚通过的层）
       return EXTRA_STATE.broadcast.starTowerCleared(actor, Number(view.detail.floor ?? 0));

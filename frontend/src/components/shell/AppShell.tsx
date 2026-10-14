@@ -59,6 +59,8 @@ export function AppShell() {
         chatOpen={session.chat.open}
         chatUnread={session.chat.unreadTotal}
         onToggleChat={() => session.chat.setOpen(!session.chat.open)}
+        announcementUnread={session.announcements.unreadCount}
+        onOpenAnnouncements={session.announcements.openList}
       />
       <TopBar
         page={page}
@@ -85,6 +87,7 @@ export function AppShell() {
         research={session.techSession.tech?.research ?? null}
         broadcasts={session.broadcasts}
         onOpenBroadcasts={() => void session.fetchServerBroadcasts()}
+        onOpenAnnouncement={session.announcements.openAnnouncement}
       />
       <ChatWindow />
       {dialog ? (

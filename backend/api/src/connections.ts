@@ -148,6 +148,23 @@ export class ConnectionRegistry {
     return sent;
   }
 
+  /**
+   * 按连接过滤的全服推送（v60，AISLG-162：公告按站点定向，只推给 match 为真的连接）。
+   * eventId 与 broadcastAll 一样置 0（站点级推送不占账号事件序号）。
+   */
+  broadcastAllWhere(frame: PushFrame, match: (conn: ConnInfo) => boolean): number {
+    let sent = 0;
+    for (const set of this.byAccount.values()) {
+      for (const conn of set) {
+        if (match(conn)) {
+          this.send(conn, { ...frame, eventId: 0 });
+          sent += 1;
+        }
+      }
+    }
+    return sent;
+  }
+
   closeAll(code: number, reason: string): void {
     for (const set of this.byAccount.values()) {
       for (const conn of set) {

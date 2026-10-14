@@ -34,6 +34,7 @@ import {
   handleRecallGarrison,
 } from './handlers-world';
 import { handleGetMapOverview } from './map-overview';
+import { handleAnnouncementOp } from './handlers-announcement';
 import { readMarchParams } from './march-target';
 import { handleGetMovingTargets } from './handlers-moving';
 import { handleGetYellowTurban } from './handlers-yt';
@@ -177,6 +178,11 @@ async function dispatchOp(
       break;
     case Op.GET_MAP_OVERVIEW:
       await handleGetMapOverview(ctx, conn, op, seq);
+      break;
+    case Op.GET_ANNOUNCEMENTS:
+    case Op.GET_ANNOUNCEMENT:
+    case Op.READ_ANNOUNCEMENT:
+      await handleAnnouncementOp(ctx, conn, op, seq, data);
       break;
     case Op.GET_TILE: {
       const x = data?.x;

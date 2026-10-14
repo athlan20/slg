@@ -99,6 +99,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   STAR_TOWER_CLEARED: '将星塔已经全部通关，没有可挑战的层了',
   STAR_TOWER_NO_CITY: '还没有城池，先建城再来挑战将星塔',
   STAR_TOWER_NO_LINEUP: '阵容里还没有武将：先在竞技场阵容里排上至少 1 名武将',
+  ANNOUNCEMENT_NOT_FOUND: '公告不存在、已撤回或尚未生效',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除
   INTERNAL: '服务端内部错误',
 };

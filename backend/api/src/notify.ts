@@ -87,6 +87,9 @@ export class CompletionNotifier {
         tileReason?: string;
         /** reason='server_broadcast'（v23 AISLG-60）时的播报视图 */
         broadcast?: import('../../common/src/server-broadcast').ServerBroadcastCreated;
+        /** reason='announcement'（v60 AISLG-162）时的公告推送载荷；host 为站点定向（null = 全站） */
+        announcement?: Record<string, unknown>;
+        host?: string | null;
         /** reason='npc_warning'（v23 AISLG-57）时的预警载荷（完整推送 data） */
         data?: Record<string, unknown>;
       } = {};
@@ -102,6 +105,15 @@ export class CompletionNotifier {
           push: true,
           data: { broadcast: payload.broadcast },
         });
+        return;
+      }
+      if (payload.reason === 'announcement' && payload.announcement) {
+        // 新公告（v60 AISLG-162）：本站全部在线连接（玩家与 Agent）；站点定向的只推给对应 Host
+        const host = payload.host ?? null;
+        this.registry.broadcastAllWhere(
+          { op: Op.PUSH_ANNOUNCEMENT, push: true, data: payload.announcement },
+          (conn) => host === null || conn.host === host,
+        );
         return;
       }
       if (payload.reason === 'npc_warning' && payload.accountId && payload.data) {

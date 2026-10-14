@@ -160,6 +160,12 @@ export const Op = {
   DISCARD_CITY: 94,
   /** C→S 查询世界小地图总览（v58，AISLG-160：全图城池点位 [x, y, side]，不含野地；玩家与 Agent 通用） */
   GET_MAP_OVERVIEW: 95,
+  /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
+  GET_ANNOUNCEMENTS: 96,
+  /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
+  GET_ANNOUNCEMENT: 97,
+  /** C→S 标记公告已读（v60，AISLG-162：幂等；玩家与 Agent 通用） */
+  READ_ANNOUNCEMENT: 98,
   /** C→S 查询将星塔（v55，AISLG-146：已通过的最高层 / 下一层敌方阵容与奖励 / 阵容（与竞技场共用）） */
   GET_STAR_TOWER: 83,
   /** C→S 挑战将星塔的下一层（v55，AISLG-146：无参数；三局两胜，赢了首通发奖励并推进进度，输了不扣任何东西） */
@@ -211,6 +217,8 @@ export const Op = {
   PUSH_ACCOUNT_STATE: 2020,
   /** S→C 推送：竞技场状态变化（v53：challenged 被挑战 / daily_reward 每日奖励到账 / milestone 首次进入新名次档；账号全部在线连接收到，含 Agent） */
   PUSH_ARENA_STATE: 2021,
+  /** S→C 推送：新公告（v60，AISLG-162；只带标题与分类；本站全部在线连接收到，含 Agent） */
+  PUSH_ANNOUNCEMENT: 2022,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -411,6 +419,8 @@ export const ErrorCode = {
   STAR_TOWER_NO_CITY: 'STAR_TOWER_NO_CITY',
   /** 将星塔：阵容里一名武将都没有，先保存阵容（SET_ARENA_LINEUP）（v55，AISLG-146） */
   STAR_TOWER_NO_LINEUP: 'STAR_TOWER_NO_LINEUP',
+  /** 公告：不存在、已撤回、未到生效时间或不属于本站（v60，AISLG-162） */
+  ANNOUNCEMENT_NOT_FOUND: 'ANNOUNCEMENT_NOT_FOUND',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -768,6 +778,27 @@ export type {
   GetStarTowerReportsRequestData,
   GetStarTowerReportsResponseData,
 } from './protocol-star-tower';
+
+// 公告（v60，AISLG-162）的载荷类型与常量在 protocol-announcement.ts
+export {
+  ANNOUNCEMENT_BODY_MAX_CHARS,
+  ANNOUNCEMENT_CATEGORIES,
+  ANNOUNCEMENT_LANGS,
+  ANNOUNCEMENT_TITLE_MAX_CHARS,
+} from './protocol-announcement';
+export type {
+  AnnouncementCategory,
+  AnnouncementDetailView,
+  AnnouncementLang,
+  AnnouncementView,
+  GetAnnouncementRequestData,
+  GetAnnouncementResponseData,
+  GetAnnouncementsRequestData,
+  GetAnnouncementsResponseData,
+  PushAnnouncementData,
+  ReadAnnouncementRequestData,
+  ReadAnnouncementResponseData,
+} from './protocol-announcement';
 
 // 玩家对抗（一）（v38，AISLG-122）的载荷类型在 protocol-pvp.ts，规则与数值在 protection.ts
 export type {

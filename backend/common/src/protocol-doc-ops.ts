@@ -99,6 +99,7 @@ import { PUSH_ATTACK_WARNING, REQUEST_TRUCE } from './protocol-doc-ops-pvp';
 import { CHAT_OP_DOC } from './protocol-doc-ops-chat';
 import { ARENA_OP_DOCS } from './protocol-doc-ops-arena';
 import { STAR_TOWER_OP_DOCS } from './protocol-doc-ops-star-tower';
+import { ANNOUNCEMENT_OP_DOCS } from './protocol-doc-ops-announcement';
 import { HERO_GROWTH_OP_DOCS } from './protocol-doc-ops-hero-growth';
 import { REQUEST_GET_DAILY, REQUEST_CLAIM_DAILY, REQUEST_GET_SIGNIN, REQUEST_SIGNIN } from './protocol-doc-ops-quest';
 import { REQUEST_GET_QUESTS, REQUEST_CLAIM_QUEST, REQUEST_GET_ACTIVITIES, REQUEST_CLAIM_ACTIVITY } from './protocol-doc-ops-quests';
@@ -483,4 +484,6 @@ export const OP_DOC: Record<Op, OpDoc> = {
   ...HERO_GROWTH_OP_DOCS,
   // 将星塔（v55，AISLG-146）：条目在 protocol-doc-ops-star-tower.ts，玩家与 Agent 同一套规则，收录进对外 Agent 文档
   ...STAR_TOWER_OP_DOCS,
+  // 公告（v60，AISLG-162）：条目在 protocol-doc-ops-announcement.ts，玩家与 Agent 同一套规则，收录进对外 Agent 文档
+  ...ANNOUNCEMENT_OP_DOCS,
 };

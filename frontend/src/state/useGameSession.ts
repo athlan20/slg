@@ -12,6 +12,7 @@ import {
   type BattleReportCommentPushData,
   type BattleReportView,
   type GetOfflineReportResponseData,
+  type PushAnnouncementData,
   type ServerBroadcastPushData,
   type ServerBroadcastView,
   type LeaderboardKind,
@@ -64,6 +65,7 @@ import { useMapOverview, type MapOverviewSession } from './mapOverview';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useSessionExtras } from './session-extras';
 import { useChat, type ChatState } from './useChat';
+import { useAnnouncements, type AnnouncementSlice } from './announcements';
 import { emitBattleCommentPatched } from './battleReportModal';
 import { useCityList, type CityList } from './useCityList';
 
@@ -169,6 +171,8 @@ export interface GameSession {
   questSession: QuestSession;
   /** 聊天（v51 AISLG-138）：浮窗开合 / 世界与私聊消息 / 未读 / 屏蔽 / 发送 / 分享草稿 */
   chat: ChatState;
+  /** 公告（v60 AISLG-162）：红点、列表 / 往期 / 正文、强提醒弹窗队列 */
+  announcements: AnnouncementSlice;
   /** 移动目标会话（v28 AISLG-78）：流寇 / 运粮商队列表 */
   moving: MovingTargetsSession;
   /** 黄巾之乱会话（v29 AISLG-76）：事件进度 / 营地 / 我的贡献 / 贡献榜 */
@@ -377,6 +381,8 @@ export function useGameSession(): GameSession {
   // 会话扩展切片（v23）：离线日报 / 全服播报 / 排行榜——状态与动作拆在 session-extras
   const extras = useSessionExtras(clientRef);
   const chat = useChat({ clientRef, online: connection === 'online', accountId: account?.accountId ?? null });
+  const announcements = useAnnouncements(clientRef);
+  const { refresh: refreshAnnouncements, onPush: onAnnouncementPush, reset: resetAnnouncements } = announcements;
   const { checkOfflineReportRef, fetchServerBroadcasts, onBroadcastPush, onNpcWarningPush, resetNpcWarnings } = extras;
 
   /** 推送先做乐观更新，再防抖走一轮按需查询对齐权威状态 */
@@ -431,6 +437,10 @@ export function useGameSession(): GameSession {
       } else if (frame.op === Op.PUSH_YELLOW_TURBAN_STATE) {
         // v29（AISLG-76）：黄巾之乱起事 / 进度 / 老巢出现 / 收场（全服广播，与账号状态无关）
         onYtPush();
+        return;
+      } else if (frame.op === Op.PUSH_ANNOUNCEMENT) {
+        // v60（AISLG-162）：新公告——重拉列表与红点；强提醒在切片内弹窗（不记本地事件）
+        onAnnouncementPush(frame.data as unknown as PushAnnouncementData);
         return;
       } else if (frame.op === Op.PUSH_SERVER_BROADCAST) {
         // v23（AISLG-60）：全服播报实时置顶（不触发按需查询，播报与账号状态无关）
@@ -498,7 +508,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush],
+    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onAnnouncementPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {
@@ -538,6 +548,7 @@ export function useGameSession(): GameSession {
       setLoginError(message);
       lastEventIdRef.current = 0;
       resetNpcWarnings();
+      resetAnnouncements();
       worldClear();
       techClear();
       arenaClear();
@@ -593,6 +604,7 @@ export function useGameSession(): GameSession {
       await syncAll('incremental');
       void checkOfflineReportRef.current();
       void fetchServerBroadcasts();
+      void refreshAnnouncements(true);
     } catch {
       scheduleReconnect();
     }
@@ -635,6 +647,7 @@ export function useGameSession(): GameSession {
     setRecruitError(null);
     lastEventIdRef.current = 0;
     resetNpcWarnings();
+    resetAnnouncements();
     worldClear();
     techClear();
     arenaClear();
@@ -643,7 +656,7 @@ export function useGameSession(): GameSession {
     movingClear();
     ytClear();
     questClear();
-  }, [worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, resetNpcWarnings]);
+  }, [worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, resetNpcWarnings, resetAnnouncements]);
 
   const login = useCallback(
     async (username: string, password: string) => {
@@ -668,6 +681,7 @@ export function useGameSession(): GameSession {
         await syncAll('initial');
         void checkOfflineReportRef.current();
         void fetchServerBroadcasts();
+        void refreshAnnouncements(true);
         appendLocalEvent('player', COPY.session.loginSuccess);
       } catch (err) {
         setConnection('idle');
@@ -700,6 +714,7 @@ export function useGameSession(): GameSession {
         await syncAll('initial');
         void checkOfflineReportRef.current();
         void fetchServerBroadcasts();
+        void refreshAnnouncements(true);
         const loginText =
           source === 'wechat'
             ? WECHAT_COPY.session.wechatLoginSuccess(data.username)
@@ -1156,6 +1171,7 @@ export function useGameSession(): GameSession {
     heroSession,
     questSession,
     chat,
+    announcements,
     moving,
     yellowTurban,
     loadOlderEvents,
