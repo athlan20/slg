@@ -23,7 +23,7 @@ interface WorldMinimapProps {
 /** 各归属的绘制参数：颜色取主题变量（缺省用兜底色），边长（像素）。
  *  npc 约万级点位，密集时会连成一片底纹，所以用弱化的灰色，免得把金色的名城淹没（AISLG-163） */
 const DOT_STYLE: Record<MapOverviewSide, { cssVar: string; fallback: string; size: number; alpha: number }> = {
-  npc: { cssVar: '--text-faint', fallback: '#4d5866', size: 1, alpha: 0.6 },
+  npc: { cssVar: '--text-dim', fallback: '#7c8898', size: 1, alpha: 1 },
   enemy: { cssVar: '--warn', fallback: '#e0653a', size: 2, alpha: 1 },
   famous: { cssVar: '--gold', fallback: '#d9a441', size: 4, alpha: 1 },
   own: { cssVar: '--accent', fallback: '#2dd4bf', size: 3, alpha: 1 },
@@ -50,9 +50,10 @@ function drawDots(canvas: HTMLCanvasElement, data: MapOverviewResponseData, dpr:
     const edge = style.size * dpr;
     for (const [x, y, dotSide] of data.cities) {
       if (dotSide === side) {
-        // 点位居中落在格子的像素中心，越界（理论上不会）时画到边缘内
-        const px = Math.min(canvas.width - edge, Math.max(0, x * scale - edge / 2));
-        const py = Math.min(canvas.height - edge, Math.max(0, y * scale - edge / 2));
+        // 点位居中落在格子的像素中心，越界（理论上不会）时画到边缘内；取整到整数像素，
+        // 否则小于一格的小数坐标会被抗锯齿成半透明模糊点（AISLG-163 复测）
+        const px = Math.min(canvas.width - edge, Math.max(0, Math.round(x * scale - edge / 2)));
+        const py = Math.min(canvas.height - edge, Math.max(0, Math.round(y * scale - edge / 2)));
         ctx.fillRect(px, py, edge, edge);
       }
     }
@@ -95,7 +96,7 @@ export function WorldMinimap({ overview, win, onPanTo }: WorldMinimapProps) {
     { key: 'own', label: COPY.worldMap.legendOwnCity, swatch: 'bg-accent' },
     { key: 'enemy', label: COPY.worldMap.legendCity, swatch: 'bg-warn' },
     { key: 'famous', label: MAPUI_COPY.minimapFamous, swatch: 'bg-gold' },
-    { key: 'npc', label: COPY.worldMap.legendNpcCity, swatch: 'bg-faint' },
+    { key: 'npc', label: COPY.worldMap.legendNpcCity, swatch: 'bg-dim' },
   ];
 
   return (
