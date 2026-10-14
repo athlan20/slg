@@ -88,6 +88,48 @@ export const REQUEST_RENAME_CITY: RequestOpDoc = {
     '改名写入事件流（city_renamed），同账号其他在线连接收到 PUSH_CITY_STATE（city_renamed）推送。改名是覆盖式操作，不保留历史名称。',
 };
 
+export const REQUEST_DISCARD_CITY: RequestOpDoc = {
+  kind: 'request',
+  name: 'DISCARD_CITY',
+  title: '放弃分城',
+  preAuth: false,
+  summary:
+    '主动放弃一座分城（v57，AISLG-153）：分城转回 NPC 城池，腾出分城名额；主城不可放弃。城内资源、驻军、建筑与建造 / 征兵 / 研究队列作废（不返还），城守武将解除任命、武将本身保留；名下野地转为无主；地块回到同级 NPC 城池（名城恢复为未攻破的名城）。放弃后本账号冷却 = 放弃时的官府等级 天（按时间缩放，占位），冷却内不能再占回该城（占领时返回 DISCARD_COOLDOWN）。发起前须满足：该城没有部队在外（行军 / 返程 / 运输 / 侦察）、该城与其名下野地没有正在途中的行军、没有未结的 NPC 来袭、名下野地无驻军（先用 RECALL_MARCH 召回）。放弃不可撤销，必须显式携带 confirm=true 防误触。',
+  requestFields: [
+    { name: 'cityId', type: 'string', desc: '必填。要放弃的分城 UUID（GET_STATE 的 cities[].id，且 isMain 为 false）。缺失返回 INVALID_PARAMS；主城返回 DISCARD_MAIN_CITY。' },
+    { name: 'confirm', type: 'boolean', desc: '必填，必须为 true；缺失或不为 true 返回 INVALID_PARAMS。' },
+  ],
+  dataFields: [
+    { name: 'cityId', type: 'string', desc: '被放弃的分城 UUID（该城已从账号名下移除）。' },
+    { name: 'x / y', type: 'number', desc: '原分城地块坐标（已转回 NPC 城池）。' },
+    { name: 'cooldownUntil', type: 'string', desc: 'ISO 8601：冷却截止时刻；之前本账号再占领该 NPC 城返回 DISCARD_COOLDOWN。' },
+  ],
+  errors: ['INVALID_PARAMS', 'DISCARD_MAIN_CITY', 'CITY_IN_BATTLE', 'ARMY_OUTSIDE', 'WILDERNESS_GARRISONED'],
+  examples: [
+    {
+      caption: '放弃分城成功（冷却 3 天：该分城放弃时官府 3 级）',
+      request: { op: Op.DISCARD_CITY, seq: 1, data: { cityId: '0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07', confirm: true } },
+      responses: [
+        {
+          op: Op.DISCARD_CITY,
+          seq: 1,
+          ok: true,
+          data: { cityId: '0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07', x: 13, y: 18, cooldownUntil: '2026-10-16T08:00:00.000Z' },
+        },
+      ],
+    },
+    {
+      caption: '主城不能放弃',
+      request: { op: Op.DISCARD_CITY, seq: 2, data: { cityId: CITY_ID, confirm: true } },
+      responses: [
+        { op: Op.DISCARD_CITY, seq: 2, ok: false, error: { code: 'DISCARD_MAIN_CITY', message: '主城不能放弃，只能放弃分城' } },
+      ],
+    },
+  ],
+  agentNote:
+    '放弃前先 GET_STATE：确认目标 cities[] 中 isMain 为 false，并确认没有在途行军。放弃成功后 GET_STATE 的 cities / branch（count 减一）即时反映；同账号其他在线连接收到 PUSH_CITY_STATE（reason=city_discarded）推送，事件流新增 city_discarded。腾出的名额可以去占其他 NPC 城（但不能占回刚放弃的这一座，直到冷却结束）。',
+};
+
 /** 重置完成后的城池视图示例（即开号初始状态；数值引用 rules.ts / shared 常量） */
 const RESET_CITY = exampleCity();
 
@@ -135,9 +177,9 @@ export const PUSH_CITY_STATE: PushOpDoc = {
   name: 'PUSH_CITY_STATE',
   title: '推送：城池级状态变化',
   summary:
-    '城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。',
+    '城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。',
   dataFields: [
-    { name: 'reason', type: "'city_renamed' | 'account_reset'", desc: '触发本次推送的状态变化。' },
+    { name: 'reason', type: "'city_renamed' | 'account_reset' | 'city_discarded'", desc: '触发本次推送的状态变化。' },
     { name: 'cityId', type: 'string', desc: '城池 UUID。' },
     { name: 'name', type: 'string', desc: 'reason=city_renamed 时的新城池名。' },
   ],

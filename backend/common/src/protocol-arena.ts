@@ -2,9 +2,13 @@
 // 规则与数值见 common/src/arena.ts，数据库存取见 common/src/arena-db.ts。
 
 import type { ArenaRoundReport } from './arena';
+import type { FormationKind, FormationCatalog } from './army-formation';
+import type { HeroSpecialty } from './hero-specialty';
 
 /** 阵容里（或榜上对手阵容里）一名武将的展示快照 */
 export interface ArenaFighterView {
+  specialty?: HeroSpecialty | null;
+  formation?: FormationKind;
   /** 本账号武将 id（仅「我的阵容」给出；对手阵容为 null） */
   heroId: string | null;
   name: string;
@@ -36,7 +40,7 @@ export interface ArenaTopEntryView {
 }
 
 /** 竞技场规则常量（对外下发，客户端 / Agent 不必硬编码） */
-export interface ArenaRulesView {
+export interface ArenaRulesView extends FormationCatalog {
   slots: number;
   dailyChallenges: number;
   dailyDefendedMax: number;
@@ -55,6 +59,7 @@ export interface ArenaRulesView {
 
 /** GET_ARENA（op 73）/ SET_ARENA_LINEUP（op 74）响应：我在竞技场的完整状态 */
 export interface ArenaStateView {
+  formations: FormationKind[];
   /** 是否已入榜（第一次保存阵容时入榜） */
   joined: boolean;
   /** 当前名次；未入榜为 null */
@@ -84,6 +89,8 @@ export type GetArenaResponseData = ArenaStateView;
 
 /** SET_ARENA_LINEUP（op 74）请求：3 个号位的武将 id，空位用 null；至少 1 名，不能重复 */
 export interface SetArenaLineupRequestData {
+  /** Omission preserves saved templates for existing clients. */
+  formations?: FormationKind[];
   heroIds: Array<string | null>;
 }
 

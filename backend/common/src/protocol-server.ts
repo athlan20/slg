@@ -25,6 +25,8 @@ export const SERVER_BROADCAST_TYPES = [
   'arena_champion',
   // v55（AISLG-146）将星塔：Boss 层（每 10 层）首通，全服必达
   'star_tower_cleared',
+  // v60（AISLG-162）公告：运维发布公告时同步播报一句标题，点开跳到公告；运维主动发布，必达（不受每分钟限频）
+  'announcement',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];
@@ -99,7 +101,8 @@ export interface ServerBroadcastView {
    *  yt_boss = { x, y }；yt_boss_first_kill = { username, cityName }；
    *  yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }；
    *  arena_champion = { username, previous }（v53，登上第 1 名，previous 为被取代的原第 1 名）；
-   *  star_tower_cleared = { username, floor }（v55，将星塔 Boss 层首通） */
+   *  star_tower_cleared = { username, floor }（v55，将星塔 Boss 层首通）；
+   *  announcement = { announcementId, title }（v60，公告标题，标题为中文） */
   detail: Record<string, unknown>;
   createdAt: string;
 }

@@ -107,6 +107,8 @@ export function salaryPerHour(level: number, famous: boolean): number {
 
 /** 武将在一场战斗中的实际生效加成（引擎与战报共用同口径） */
 export interface HeroBattleBonus {
+  specialty?: import('./hero-specialty').HeroSpecialty | null;
+  specialtyScale?: number;
   /** 全军攻击加成（百分数，已含统率摊薄与 20% 封顶） */
   atkPercent: number;
   /** 全军受到伤害减免（百分数，已含统率摊薄与 20% 封顶） */

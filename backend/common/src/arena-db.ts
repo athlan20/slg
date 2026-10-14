@@ -15,6 +15,7 @@ import {
 } from './arena';
 import type { AccountHeroRow } from './hero-db';
 import type { ArenaFighterView, ArenaMatchView } from './protocol-arena';
+import type { FormationKind } from './army-formation';
 
 type Queryable = pg.Pool | pg.PoolClient;
 
@@ -27,6 +28,7 @@ export async function lockArena(client: pg.PoolClient): Promise<void> {
 }
 
 export interface ArenaEntryRow {
+  formations?: FormationKind[];
   id: string;
   account_id: string | null;
   rank: number;
@@ -116,24 +118,26 @@ export async function joinArena(
   accountId: string,
   slots: Array<string | null>,
   now: Date,
+  formations?: FormationKind[],
 ): Promise<{ id: string; rank: number }> {
   const maxRes = await client.query(`SELECT COALESCE(max(rank), 0)::int AS m FROM arena_entries`);
   const rank = (maxRes.rows[0] as { m: number }).m + 1;
   // 入榜名次即进档基线（milestone_best）：入榜不发进档奖励，之后历史最好名次跨过档位才发
   const ins = await client.query(
-    `INSERT INTO arena_entries (account_id, rank, best_rank, milestone_best, slot1, slot2, slot3, last_reward_day)
-     VALUES ($1, $2, $2, $2, $3, $4, $5, $6) RETURNING id`,
-    [accountId, rank, slots[0] ?? null, slots[1] ?? null, slots[2] ?? null, arenaDayIndex(now)],
+    `INSERT INTO arena_entries (account_id, rank, best_rank, milestone_best, slot1, slot2, slot3, last_reward_day, formations)
+     VALUES ($1, $2, $2, $2, $3, $4, $5, $6, $7::jsonb) RETURNING id`,
+    [accountId, rank, slots[0] ?? null, slots[1] ?? null, slots[2] ?? null, arenaDayIndex(now), JSON.stringify(formations ?? ['balanced', 'balanced', 'balanced'])],
   );
   return { id: (ins.rows[0] as { id: string }).id, rank };
 }
 
-export async function saveLineup(client: pg.PoolClient, entryId: string, slots: Array<string | null>): Promise<void> {
-  await client.query(`UPDATE arena_entries SET slot1 = $2, slot2 = $3, slot3 = $4 WHERE id = $1`, [
+export async function saveLineup(client: pg.PoolClient, entryId: string, slots: Array<string | null>, formations?: FormationKind[]): Promise<void> {
+  await client.query(`UPDATE arena_entries SET slot1 = $2, slot2 = $3, slot3 = $4, formations = COALESCE($5::jsonb, formations) WHERE id = $1`, [
     entryId,
     slots[0] ?? null,
     slots[1] ?? null,
     slots[2] ?? null,
+    formations === undefined ? null : JSON.stringify(formations),
   ]);
 }
 
@@ -180,18 +184,20 @@ export async function entryLineups(q: Queryable, entries: ArenaEntryRow[]): Prom
         entry.id,
         Array.from({ length: ARENA_SLOTS }, (_, i) => {
           const f = stored[i];
-          return f ? { heroId: null, name: f.name, lead: f.lead, force: f.force, wit: f.wit, level: f.level } : null;
+          return f ? { heroId: null, name: f.name, lead: f.lead, force: f.force, wit: f.wit, level: f.level,
+            specialty: f.specialty ?? null, formation: f.formation ?? 'balanced' } : null;
         }),
       );
       continue;
     }
     out.set(
       entry.id,
-      [entry.slot1, entry.slot2, entry.slot3].map((id) => {
+      [entry.slot1, entry.slot2, entry.slot3].map((id, index) => {
         const row = id ? heroes.get(id) : undefined;
         // 武将必须仍属于该账号（解雇后 slot 已被 ON DELETE SET NULL 清空，这里再守一道）
         return row && row.account_id === entry.account_id
-          ? { heroId: row.id, name: row.name, lead: row.lead, force: row.force, wit: row.wit, level: row.level }
+          ? { heroId: row.id, name: row.name, lead: row.lead, force: row.force, wit: row.wit, level: row.level,
+            specialty: row.famous ? null : row.specialty ?? null, formation: entry.formations?.[index] ?? 'balanced' }
           : null;
       }),
     );

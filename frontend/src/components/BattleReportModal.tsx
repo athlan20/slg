@@ -14,6 +14,7 @@ import { TROOP_LABEL as TROOP_LABEL_ZH } from '../copy';
 import { getCopy, useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import { BattleRoundChart } from './BattleRoundChart';
+import { specialtyName } from '../copy-combat';
 
 interface BattleReportModalProps {
   report: BattleReportView;
@@ -110,6 +111,7 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
           {(attacker ? HERO_COPY.report.attackerHero : HERO_COPY.report.defenderHero)(
             tName(side.hero.name), side.hero.lead, side.hero.force, side.hero.wit, side.hero.atkPercent, side.hero.defPercent,
           )}
+          {side.hero.specialty ? ` · ${specialtyName(side.hero.specialty)} (${Math.round((side.hero.specialtyScale ?? 1) * 100)}%)` : ''}
         </p>
       ) : null}
       {side.units > 0 ? (

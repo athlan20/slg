@@ -21,3 +21,20 @@ export async function loadBranchStanding(q: pg.Pool | pg.PoolClient, accountId: 
   const row = res.rows[0] as { total: number; main_gov: number };
   return { mainGovernment: row.main_gov, branchCount: Math.max(0, row.total - 1) };
 }
+
+/**
+ * 本账号在该地块的放弃冷却是否未结束（v57，AISLG-153）：放弃分城后原账号不能再占回该 NPC 城，
+ * 冷却截止时刻记在 city_discards；时间取数据库 now()，与其它到期判定同口径。
+ */
+export async function loadDiscardCooldownActive(
+  q: pg.Pool | pg.PoolClient,
+  accountId: string,
+  x: number,
+  y: number,
+): Promise<boolean> {
+  const res = await q.query(
+    `SELECT 1 FROM city_discards WHERE x = $1 AND y = $2 AND account_id = $3 AND until > now()`,
+    [x, y, accountId],
+  );
+  return (res.rowCount ?? 0) > 0;
+}

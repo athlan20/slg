@@ -275,12 +275,32 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '先升级主城官府到 3 级；或对该 NPC 城改用 task=plunder 掠夺。',
   },
   BRANCH_LIMIT: {
-    desc: '分城数已达上限（v24：上限 = floor(主城官府等级 ÷ 3)，名城同样计入；发起时初核，Worker 到达时复核——胜利后超限不建分城、幸存部队返程，事件记录 denial=BRANCH_LIMIT）。',
-    action: '升级主城官府（3 / 6 / 9 级各多 1 个名额），或改用 task=plunder 掠夺。',
+    desc: '分城数已达上限（v24 起：上限 = floor(主城官府等级 ÷ 2)，v57 由 ÷3 放宽，名城同样计入；发起时初核，Worker 到达时复核——胜利后超限不建分城、幸存部队返程，事件记录 denial=BRANCH_LIMIT）。',
+    action: '升级主城官府（每升 2 级多 1 个名额），或放弃一座不需要的分城（DISCARD_CITY），或改用 task=plunder 掠夺。',
   },
   TARGET_LEVEL_TOO_HIGH: {
     desc: '目标 NPC 城等级高于出发城的官府等级（v24：只能占领不高于出发城官府等级的城）。',
     action: '升级出发城的官府，或从官府更高的城出征，或先掠夺不占领。',
+  },
+  DISCARD_COOLDOWN: {
+    desc: '本账号刚放弃的分城仍在冷却中，不能再占领该 NPC 城（v57，AISLG-153）：冷却 = 放弃时的官府等级 天（按时间缩放）；MARCH task=occupy 发起时初核，Worker 到达时复核——胜利后冷却未结不建分城、幸存部队返程，事件记录 denial=DISCARD_COOLDOWN。',
+    action: '等冷却结束（冷却截止见 DISCARD_CITY 响应的 cooldownUntil），或改占其他 NPC 城；掠夺不受此限制。',
+  },
+  DISCARD_MAIN_CITY: {
+    desc: '主城不能放弃，DISCARD_CITY 只能放弃分城（v57，AISLG-153）。',
+    action: '如要放弃的是分城，请传该分城的 cityId（GET_STATE 的 cities[]，isMain 为 false）。',
+  },
+  CITY_IN_BATTLE: {
+    desc: '该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭，暂不能放弃（v57，AISLG-153）。',
+    action: '等待这些行军结算或 NPC 来袭结束后再放弃。',
+  },
+  ARMY_OUTSIDE: {
+    desc: '该分城仍有部队在外（行军 / 返程 / 运输 / 侦察），不能放弃（v57，AISLG-153）。',
+    action: '等部队回城或结算后再放弃。',
+  },
+  WILDERNESS_GARRISONED: {
+    desc: '名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。',
+    action: '先用 RECALL_MARCH 召回各块野地的驻军，再放弃。',
   },
   OUTER_NOT_CLEARED: {
     desc: '名城外围驻军尚未清空时对其发起 task=occupy（v24，AISLG-56）：名城分两阶段攻打，先清外围、外围清空后才能攻城守并占领。',
@@ -502,6 +522,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。',
     action: '先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。',
   },
+  ANNOUNCEMENT_NOT_FOUND: {
+    desc: '（v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。',
+    action: '不要重试同一个 id；重新用 GET_ANNOUNCEMENTS 拉取列表确认当前可见的公告。',
+  },
   AGENT_PASSWORD_FORBIDDEN: {
     desc: '（v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。',
     action: '改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。',
@@ -568,7 +592,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '城池（city）',
-    desc: '玩家当前的城池，容纳资源、人口与建筑；玩家可为它改名（RENAME_CITY），城池带等级（level，v24 起 = 该城官府等级，官府升级城池等级跟着升）。允许多座城池：注册创建主城；占领 NPC 城池后该地块成为分城（GET_STATE 的 cities 列出全部城池，v12）。v24（AISLG-58）起分城可独立建造、征兵、出征：城池类协议（GET_STATE / BUILD / UPGRADE / RENAME_CITY / RECRUIT / EXCHANGE / MARCH / SCOUT）带可选 cityId 指定操作哪座城，缺省 = 主城；各城的资源、人口、仓储、建造与征兵队列、驻军与产耗粮单独结算、互不串账。分城名额 = floor(主城官府等级 ÷ 3)，占领 NPC 城需主城官府 ≥ 3（见 MARCH）。',
+    desc: '玩家当前的城池，容纳资源、人口与建筑；玩家可为它改名（RENAME_CITY），城池带等级（level，v24 起 = 该城官府等级，官府升级城池等级跟着升）。允许多座城池：注册创建主城；占领 NPC 城池后该地块成为分城（GET_STATE 的 cities 列出全部城池，v12）。v24（AISLG-58）起分城可独立建造、征兵、出征：城池类协议（GET_STATE / BUILD / UPGRADE / RENAME_CITY / RECRUIT / EXCHANGE / MARCH / SCOUT）带可选 cityId 指定操作哪座城，缺省 = 主城；各城的资源、人口、仓储、建造与征兵队列、驻军与产耗粮单独结算、互不串账。分城名额 = floor(主城官府等级 ÷ 2)，占领 NPC 城需主城官府 ≥ 3（见 MARCH）。',
   },
   {
     term: '世界地图（world）',
@@ -604,7 +628,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: 'NPC 城池（npc_city）',
-    desc: `地图上可掠夺的普通 NPC 城（初始约 ${NPC_CITY_COUNT} 座，等级 1..3，占位）。可掠夺或占领（v24，AISLG-58）：task=plunder 掠夺——战斗 vs 其驻防（守方据墙待敌），胜利按幸存部队负重从持久化库存扣减（v21 起含金币，AISLG-31；库存不再生）；task=occupy 占领变分城——需主城官府 ≥ 3、分城数 < floor(主城官府 ÷ 3)、目标等级 ≤ 出发城官府等级，打赢后接收其建筑与剩余库存、幸存部队进城驻守。NPC 城池是有限存量（一期不做自动补充）；玩家城的占领设计随玩家对抗阶段另行接入。`,
+    desc: `地图上可掠夺的普通 NPC 城（初始约 ${NPC_CITY_COUNT} 座，等级 1..3，占位）。可掠夺或占领（v24，AISLG-58）：task=plunder 掠夺——战斗 vs 其驻防（守方据墙待敌），胜利按幸存部队负重从持久化库存扣减（v21 起含金币，AISLG-31；库存不再生）；task=occupy 占领变分城——需主城官府 ≥ 3、分城数 < floor(主城官府 ÷ 2)、目标等级 ≤ 出发城官府等级，打赢后接收其建筑与剩余库存、幸存部队进城驻守。NPC 城池是有限存量（一期不做自动补充）；玩家城的占领设计随玩家对抗阶段另行接入。`,
   },
   {
     term: '名城（famous city）',

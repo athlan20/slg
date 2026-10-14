@@ -7,7 +7,7 @@ import { useCopy } from '../../i18n/bundle';
 import { Modal } from '../ui/Modal';
 import { AccountSettingsDialog } from '../account/AccountSettingsDialog';
 
-export type AccountDialogMode = 'switch' | 'reset' | 'rename' | 'settings';
+export type AccountDialogMode = 'switch' | 'reset' | 'rename' | 'settings' | 'discard';
 
 interface AccountDialogsProps {
   mode: AccountDialogMode;
@@ -16,9 +16,11 @@ interface AccountDialogsProps {
   onSwitchAccount: () => void;
   onResetAccount: () => Promise<string | null>;
   onRenameCity: (name: string) => Promise<string | null>;
+  /** 放弃当前选中的分城（v57，AISLG-153）；成功返回 null */
+  onDiscardCity: () => Promise<string | null>;
 }
 
-export function AccountDialogs({ mode, cityName, onClose, onSwitchAccount, onResetAccount, onRenameCity }: AccountDialogsProps) {
+export function AccountDialogs({ mode, cityName, onClose, onSwitchAccount, onResetAccount, onRenameCity, onDiscardCity }: AccountDialogsProps) {
   const copy = useCopy();
   const { COPY } = copy;
   if (mode === 'switch') {
@@ -47,10 +49,55 @@ export function AccountDialogs({ mode, cityName, onClose, onSwitchAccount, onRes
   if (mode === 'settings') {
     return <AccountSettingsDialog onClose={onClose} />;
   }
+  if (mode === 'discard') {
+    return <DiscardDialog onClose={onClose} onDiscardCity={onDiscardCity} />;
+  }
   return mode === 'reset' ? (
     <ResetDialog onClose={onClose} onResetAccount={onResetAccount} />
   ) : (
     <RenameDialog cityName={cityName} onClose={onClose} onRenameCity={onRenameCity} />
+  );
+}
+
+/** 放弃分城二次确认（v57，AISLG-153）：不可撤销，宽度 ≤ 400px，role 名沿用中文约定 */
+function DiscardDialog({ onClose, onDiscardCity }: Pick<AccountDialogsProps, 'onClose' | 'onDiscardCity'>) {
+  const copy = useCopy();
+  const { COPY } = copy;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    if (busy) {
+      return;
+    }
+    setBusy(true);
+    const failure = await onDiscardCity();
+    setBusy(false);
+    if (failure === null) {
+      onClose();
+    } else {
+      setError(failure);
+    }
+  }
+
+  return (
+    <Modal role="放弃分城确认框" title={COPY.topbar.discardTitle} size="sm" accent="warn" onClose={onClose}>
+      <p className="text-[13px] text-dim">{COPY.topbar.discardBody}</p>
+      <p className="text-[12px] text-faint">{COPY.topbar.discardPrecheck}</p>
+      {error ? (
+        <p role="放弃分城-错误" className="truncate rounded border border-line-soft bg-panel-2 px-2 py-1.5 text-[12px] text-dim" title={error}>
+          {error}
+        </p>
+      ) : null}
+      <div className="flex justify-end gap-2 pt-1">
+        <button type="button" role="放弃分城-返回按钮" className="btn" onClick={onClose}>
+          {COPY.topbar.discardCancel}
+        </button>
+        <button type="button" role="放弃分城-确认按钮" className="btn px-3" disabled={busy} onClick={() => void submit()}>
+          {busy ? COPY.topbar.discardBusy : COPY.topbar.discardSubmit}
+        </button>
+      </div>
+    </Modal>
   );
 }
 

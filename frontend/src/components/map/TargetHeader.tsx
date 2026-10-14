@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { TROOP_KINDS, type CityView, type TileDetailView } from '../../api/protocol';
+import { TROOP_KINDS, type BranchInfoView, type CityView, type TileDetailView } from '../../api/protocol';
 import { getCopy, useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
 import { useScoutReportModal } from '../../state/scoutReportModal';
@@ -20,6 +20,8 @@ interface TargetHeaderProps {
   y: number;
   detail: TileDetailView | null;
   origin: { x: number; y: number } | null;
+  /** 账号分城名额；占领 NPC 城 / 他人分城时在摘要里显示 */
+  branch: BranchInfoView | null;
   now: number;
   /** 经过此格的移动目标种类（标题图标用）；无为 null */
   mover: 'caravan' | 'bandit' | null;
@@ -47,9 +49,9 @@ function iconOf(detail: TileDetailView, mover: 'caravan' | 'bandit' | null, isOw
   return (TERRAIN_LABEL[detail.terrain] ?? glyphs.wild).slice(0, 1);
 }
 
-export function TargetHeader({ world, city, x, y, detail, origin, now, mover, isOwnCity, onClose }: TargetHeaderProps) {
+export function TargetHeader({ world, city, x, y, detail, origin, branch, now, mover, isOwnCity, onClose }: TargetHeaderProps) {
   const copy = useCopy();
-  const { COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY, HERO_COPY } = copy;
+  const { COPY, CITY_COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY, HERO_COPY } = copy;
   const { openScoutReport } = useScoutReportModal();
   const [lookup, setLookup] = useState<'idle' | 'loading' | 'missing'>('idle');
 
@@ -151,6 +153,11 @@ export function TargetHeader({ world, city, x, y, detail, origin, now, mover, is
             {detail.kind !== 'npc_city' ? (
               <p className="truncate text-dim" title={detail.owner ? `${detail.owner.username} · ${tName(detail.owner.cityName)}` : undefined}>
                 {detail.owner ? COPY.worldMap.ownerRow(`${detail.owner.username} · ${tName(detail.owner.cityName)}`) : COPY.worldMap.ownerNone}
+              </p>
+            ) : null}
+            {branch && !isOwnCity && (detail.kind === 'npc_city' || (detail.kind === 'city' && detail.durability != null)) ? (
+              <p role="世界地图详情区-分城名额" className="truncate text-dim" title={CITY_COPY.worldMap.branchQuotaRow(branch.count, branch.limit)}>
+                {CITY_COPY.worldMap.branchQuotaRow(branch.count, branch.limit)}
               </p>
             ) : null}
             {detail.famous ? <FamousCityNote famous={detail.famous} /> : null}

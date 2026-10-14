@@ -4,13 +4,17 @@
 
 import { Op } from './protocol';
 import type { PushOpDoc, RequestOpDoc } from './protocol-doc';
+import { FORMATION_RULES } from './army-formation';
+import { TROOP_POWER } from './battle';
 
 const ARENA_STATE_DATA_FIELDS = [
+  { name: 'rules.formationRules / rules.troopPower', type: 'object', desc: 'v59: Authoritative template definitions and troop reference-power coefficients. Use them for previews and proportional selection from actual city troops. Map presets cannot generate troops or exceed available stock.' },
+  { name: 'formations', type: 'string[3]', desc: `v59: Saved slot templates: balanced / infantry / ranged / cavalry. Balanced retains the original standard army. Other templates spend (armyBase + lead * armyPerLead) * 5 * budgetFactor reference-power units; each troop count is floor(budget * share / troopPower). Factors are simulation calibration coefficients, not actual recruitment costs. Rules: ${JSON.stringify(FORMATION_RULES)}. Fighter snapshots include formation and specialty; old snapshots default to balanced and no specialty.` },
   { name: 'joined', type: 'boolean', desc: '是否已入榜（第一次保存阵容时入榜）。' },
   { name: 'rank', type: 'number | null', desc: '当前名次；未入榜为 null。' },
   { name: 'bestRank', type: 'number | null', desc: '历史最好名次（进档奖励以它为准：只有它升进新档才发；入榜时不发）；未入榜为 null。' },
   { name: 'totalEntries', type: 'number', desc: '榜上席位总数（含 20 个系统守擂者）。' },
-  { name: 'lineup', type: 'Array<Fighter | null>', desc: '我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level。' },
+  { name: 'lineup', type: 'Array<Fighter | null>', desc: '我的阵容，3 个号位（1/2/3 号位），空位为 null。Fighter 含 heroId（本账号武将 id）、name、lead、force、wit、level、specialty、formation。' },
   { name: 'challengesLeft / challengesMax', type: 'number', desc: '本竞技日剩余 / 上限挑战次数（上限 5）。' },
   { name: 'defendedToday / defendedMax', type: 'number', desc: '本竞技日我被挑战的次数 / 上限（上限 10）。' },
   { name: 'nextDayAt', type: 'string (ISO)', desc: '下一个竞技日开始的时刻（次数重置、每日奖励发放）。' },
@@ -21,6 +25,7 @@ const ARENA_STATE_DATA_FIELDS = [
 ];
 
 const ARENA_STATE_EXAMPLE = {
+  formations: ['balanced', 'balanced', 'balanced'],
   joined: true,
   rank: 21,
   bestRank: 21,
@@ -52,6 +57,8 @@ const ARENA_STATE_EXAMPLE = {
   ],
   top: [{ rank: 1, username: '卧龙先生', npc: false }],
   rules: {
+    formationRules: FORMATION_RULES,
+    troopPower: TROOP_POWER,
     slots: 3,
     dailyChallenges: 5,
     dailyDefendedMax: 10,
@@ -93,6 +100,7 @@ export const REQUEST_SET_ARENA_LINEUP: RequestOpDoc = {
     '（v53，AISLG-145）保存竞技场阵容：heroIds 为 3 个号位（1/2/3 号位），空位用 null；至少要有 1 名武将，同一武将不能占两个号位，武将必须属于本账号。第一次保存即入榜，排在榜尾（名次 = 当前总人数 + 1 之后的最后一名）。阵容随时可改，改完马上生效：别人挑战你时用的是你保存那一刻的阵容与武将当时的属性。武将重伤、没发俸禄、正在外出都不影响参赛（对战是模拟的）。',
   requestFields: [
     { name: 'heroIds', type: 'Array<string | null>', desc: '必填。长度 ≤ 3 的数组，元素为武将 id 或 null（空位）；至少一个非 null；不能重复。' },
+    { name: 'formations', type: 'string[3]', desc: 'Optional v59: exactly three entries, each balanced / infantry / ranged / cavalry. Omission preserves saved templates; new entries default to balanced. Templates are shared with star tower. Invalid values return INVALID_PARAMS.' },
   ],
   dataFields: ARENA_STATE_DATA_FIELDS,
   errors: ['HERO_NOT_FOUND', 'INVALID_PARAMS'],
@@ -120,7 +128,7 @@ export const REQUEST_ARENA_CHALLENGE: RequestOpDoc = {
   title: '发起竞技挑战',
   preAuth: false,
   summary:
-    '（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；刀盾 / 弓箭各一半），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。',
+    '（v53，AISLG-145）挑战一名对手，当场算完。进档奖励：历史最好名次第一次升进前 200 / 前 50 / 前 10 / 第 1 名时各发一次性奖励，入榜时不发。规则：只能挑战名次比我靠前、且差距不超过 10 名的席位；每个竞技日最多 5 次（我发起的次数）；每名玩家每个竞技日最多被挑战 10 次；同一对手连续挑战有 5 分钟冷却（已按时间缩放）。对战为三局两胜：1 号位对 1 号位、2 对 2、3 对 3，先赢两局者胜，决出后不再打余下的局；某方缺人的号位判对方胜（双方都缺判守擂方胜）。对战用系统配的标准军队（人数 = 基础兵数 + 统率 × 每点统率兵数，见 rules.armyBase / armyPerLead；balanced 默认刀盾 / 弓箭各一半，其他号位按 formations 生成），不消耗真实兵力，不改变武将的伤病与状态。挑战方赢了与对手互换名次；输了名次不变，但照样扣一次挑战次数。',
   requestFields: [
     { name: 'entryId', type: 'string', desc: '必填。对手席位 id，即 GET_ARENA 的 opponents[].entryId。' },
   ],

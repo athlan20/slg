@@ -29,6 +29,7 @@ export function TargetPanel() {
   const { TARGET_COPY } = copy;
   const { session, marchOrigin } = useGame();
   const { world, city } = session;
+  const branch = session.cityList.branch;
   const hero = useHeroPick();
   const selected = world.selected;
   const detail = world.detail;
@@ -94,6 +95,7 @@ export function TargetPanel() {
     y,
     detail,
     origin: marchOrigin,
+    branch,
     hero,
     now,
     troops,
@@ -122,6 +124,7 @@ export function TargetPanel() {
           y={y}
           detail={detail}
           origin={marchOrigin}
+          branch={branch}
           now={now}
           mover={candidates[0]?.target.kind ?? null}
           isOwnCity={isOwnCity}

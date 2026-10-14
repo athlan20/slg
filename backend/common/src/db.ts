@@ -7,6 +7,7 @@ import { CHAT_SCHEMA_SQL } from './chat-schema';
 import { ARENA_SCHEMA_SQL } from './arena-schema';
 import { STAR_TOWER_SCHEMA_SQL } from './star-tower-schema';
 import { HERO_SCHEMA_SQL } from './hero-schema';
+import { ANNOUNCEMENT_SCHEMA_SQL } from './announcement-schema';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -381,6 +382,8 @@ CREATE TABLE IF NOT EXISTS world_tiles (
   PRIMARY KEY (x, y)
 );
 CREATE INDEX IF NOT EXISTS idx_world_tiles_owner ON world_tiles (owner_city_id) WHERE owner_city_id IS NOT NULL;
+-- v58（AISLG-160 小地图）：非野地地块的局部索引，小地图总览只扫城池（约万级），不扫全图百万格
+CREATE INDEX IF NOT EXISTS idx_world_tiles_city_kind ON world_tiles (y, x) WHERE kind <> 'wilderness';
 -- v16：最近一次成功掠夺（攻方胜利）的时间；按目标地块统一记录（野地 / NPC 城），
 -- 24 小时冷却判定见 common/src/plunder.ts（inPlunderCooldown）。玩家城的冷却列留待 PvP 阶段
 ALTER TABLE world_tiles ADD COLUMN IF NOT EXISTS plundered_at timestamptz;
@@ -667,6 +670,19 @@ CREATE TABLE IF NOT EXISTS quest_claims_once (
   claimed_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (account_id, quest_id)
 );
+
+-- v57（AISLG-153 放弃分城）：放弃后的占回冷却，按地块记录（放弃的是哪座 NPC 城、谁放弃、冷却到何时）。
+-- until 为绝对时刻（已按时间缩放）；过期行不清理，判定时带 until > now()。
+CREATE TABLE IF NOT EXISTS city_discards (
+  x integer NOT NULL,
+  y integer NOT NULL,
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  until timestamptz NOT NULL,
+  PRIMARY KEY (x, y)
+);
+-- v57：分城的来源 NPC 等级（占领时的地块等级，1..3）。放弃后按它回归同等级 NPC 城；
+-- 历史分城（v57 前占领、此列为 NULL）放弃后按 1 级回归，名城恒为 3 级（登记在 famous_cities）。
+ALTER TABLE cities ADD COLUMN IF NOT EXISTS origin_level integer;
 `;
 
 /**
@@ -680,7 +696,7 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL);
         return;
       } catch (err) {
         if ((err as { code?: string }).code !== '40P01' || attempt >= 5) {

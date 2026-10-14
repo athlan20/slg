@@ -32,12 +32,17 @@ interface SidebarProps {
   onSettings: () => void;
   onSwitchAccount: () => void;
   onReset: () => void;
+  /** 放弃当前选中的分城（v57，AISLG-153）；菜单项只在选中分城时出现 */
+  onDiscardBranch: () => void;
   onExchange: () => void;
   onLeaderboard: () => void;
   /** 手机端底部图标栏的聊天入口（AISLG-138）：点开全屏聊天；角标为私聊未读数 */
   chatOpen: boolean;
   chatUnread: number;
   onToggleChat: () => void;
+  /** 公告入口（v60，AISLG-162）：红点数为生效中未读公告数；点开公告弹窗 */
+  announcementUnread: number;
+  onOpenAnnouncements: () => void;
 }
 
 /** 连接状态灯样式与文字（文字用户可见，按当前语言取文案包，不能放模块常量） */
@@ -55,8 +60,8 @@ function connectionLamp(connection: ConnectionStatus): { lamp: string; label: st
 export function Sidebar(props: SidebarProps) {
   const copy = useCopy();
   const lang = useLang();
-  const { COPY, CITY_COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY } = copy;
-  const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded, chatOpen, chatUnread, onToggleChat } = props;
+  const { COPY, CITY_COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY, ANNOUNCEMENT_COPY } = copy;
+  const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded, chatOpen, chatUnread, onToggleChat, announcementUnread, onOpenAnnouncements } = props;
   const [cityOpen, setCityOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const rootRef = useRef<HTMLElement | null>(null);
@@ -183,6 +188,27 @@ export function Sidebar(props: SidebarProps) {
             </button>
           );
         })}
+        <button
+          type="button"
+          role="导航-公告"
+          title={ANNOUNCEMENT_COPY.launcher.open}
+          aria-label={ANNOUNCEMENT_COPY.launcher.open}
+          onClick={onOpenAnnouncements}
+          className="relative flex min-w-0 cursor-pointer items-center gap-2.5 rounded-[5px] px-2.5 py-2 text-left text-[13px] text-dim hover:text-fg max-xl:justify-center max-xl:px-0 max-lg:flex-1 max-lg:flex-col max-lg:gap-0.5 max-lg:px-0 max-lg:py-1 max-lg:text-[10.5px]"
+        >
+          <b className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded border border-line text-[12px] font-semibold">
+            {ANNOUNCEMENT_COPY.launcher.label.slice(0, 1)}
+          </b>
+          <span className="max-xl:hidden max-lg:inline">{ANNOUNCEMENT_COPY.launcher.label}</span>
+          {announcementUnread > 0 ? (
+            <i
+              role="导航-公告-角标"
+              className="ml-auto min-w-[18px] rounded-full bg-st-error px-1.5 text-center text-[10.5px] not-italic text-bg max-xl:absolute max-xl:right-0.5 max-xl:top-0.5 max-xl:ml-0 max-xl:min-w-[14px] max-xl:px-1 max-xl:text-[9px] max-lg:right-1.5"
+            >
+              {announcementUnread > 99 ? '99+' : announcementUnread}
+            </i>
+          ) : null}
+        </button>
         {/* 手机端（< 1024）底部图标栏的聊天入口；桌面端聊天入口在底栏左侧（收起条） */}
         <button
           type="button"
@@ -248,6 +274,7 @@ export function Sidebar(props: SidebarProps) {
             className="absolute bottom-[calc(100%+4px)] left-0 z-30 flex w-[220px] flex-col rounded-md border border-line bg-panel-2 p-1 shadow-2xl max-lg:bottom-[calc(100%+8px)] max-lg:left-auto max-lg:right-0"
           >
             {cityLoaded ? menuItem('账号菜单-城池改名', NAV_COPY.rename, props.onRename) : null}
+            {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-放弃分城', NAV_COPY.discardBranch, props.onDiscardBranch, 'text-st-error') : null}
             {menuItem('账号菜单-账号设置', NAV_COPY.settings, props.onSettings)}
             {menuItem('账号菜单-切换账号', NAV_COPY.switchAccount, props.onSwitchAccount)}
             {menuItem('账号菜单-重置账号', NAV_COPY.reset, props.onReset, 'text-st-error')}

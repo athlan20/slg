@@ -12,6 +12,7 @@ import {
   type BattleReportCommentPushData,
   type BattleReportView,
   type GetOfflineReportResponseData,
+  type PushAnnouncementData,
   type ServerBroadcastPushData,
   type ServerBroadcastView,
   type LeaderboardKind,
@@ -60,9 +61,11 @@ import { useStarTowerSession, type StarTowerSession } from './starTowerSession';
 import { useHeroSession, type HeroSession } from './heroSession';
 import { useQuestSession, type QuestSession } from './questSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
+import { useMapOverview, type MapOverviewSession } from './mapOverview';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useSessionExtras } from './session-extras';
 import { useChat, type ChatState } from './useChat';
+import { useAnnouncements, type AnnouncementSlice } from './announcements';
 import { emitBattleCommentPatched } from './battleReportModal';
 import { useCityList, type CityList } from './useCityList';
 
@@ -120,6 +123,8 @@ export interface GameSession {
   startTruce: () => Promise<string | null>;
   /** 城池改名；成功返回 null，失败返回人读错误（弹窗内展示） */
   renameCity: (name: string) => Promise<string | null>;
+  /** 放弃分城（v57，AISLG-153）：成功后当前城回到主城 */
+  discardCity: (cityId: string) => Promise<string | null>;
   /** 一键重置账号数据（v9，不可逆）；成功返回 null，失败返回人读错误（弹窗内展示） */
   resetAccount: () => Promise<string | null>;
   /** 离线日报（v23 AISLG-54）：非 null 时弹窗展示（上线自动弹出 / 手动打开） */
@@ -152,6 +157,8 @@ export interface GameSession {
   switchCity: (cityId: string) => Promise<void>;
   /** 世界地图会话（v12）：窗口 / 地块详情 / 出征与召回 */
   world: WorldSession;
+  /** 世界小地图（v58 AISLG-160）：全图城池点位 / 展开状态 */
+  mapOverview: MapOverviewSession;
   /** 科技研究会话（v27 AISLG-77）：科技表 / 进行中研究 / 发起与取消 */
   techSession: TechSession;
   /** 竞技场会话（v53 AISLG-145）：名次 / 阵容 / 挑战 / 战报 */
@@ -164,6 +171,8 @@ export interface GameSession {
   questSession: QuestSession;
   /** 聊天（v51 AISLG-138）：浮窗开合 / 世界与私聊消息 / 未读 / 屏蔽 / 发送 / 分享草稿 */
   chat: ChatState;
+  /** 公告（v60 AISLG-162）：红点、列表 / 往期 / 正文、强提醒弹窗队列 */
+  announcements: AnnouncementSlice;
   /** 移动目标会话（v28 AISLG-78）：流寇 / 运粮商队列表 */
   moving: MovingTargetsSession;
   /** 黄巾之乱会话（v29 AISLG-76）：事件进度 / 营地 / 我的贡献 / 贡献榜 */
@@ -315,6 +324,8 @@ export function useGameSession(): GameSession {
     scheduleSync,
   });
   const { clear: worldClear, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush } = world;
+  // 世界小地图（v58 AISLG-160）：全图城池点位，展开时才拉取
+  const mapOverview = useMapOverview({ clientRef, connected: connection === 'online' });
 
   // 科技研究会话切片（v27 AISLG-77）：科技表 / 研究 / 取消，推送到达时联动
   const techSession = useTechSession({
@@ -370,6 +381,8 @@ export function useGameSession(): GameSession {
   // 会话扩展切片（v23）：离线日报 / 全服播报 / 排行榜——状态与动作拆在 session-extras
   const extras = useSessionExtras(clientRef);
   const chat = useChat({ clientRef, online: connection === 'online', accountId: account?.accountId ?? null });
+  const announcements = useAnnouncements(clientRef);
+  const { refresh: refreshAnnouncements, onPush: onAnnouncementPush, reset: resetAnnouncements } = announcements;
   const { checkOfflineReportRef, fetchServerBroadcasts, onBroadcastPush, onNpcWarningPush, resetNpcWarnings } = extras;
 
   /** 推送先做乐观更新，再防抖走一轮按需查询对齐权威状态 */
@@ -425,6 +438,10 @@ export function useGameSession(): GameSession {
         // v29（AISLG-76）：黄巾之乱起事 / 进度 / 老巢出现 / 收场（全服广播，与账号状态无关）
         onYtPush();
         return;
+      } else if (frame.op === Op.PUSH_ANNOUNCEMENT) {
+        // v60（AISLG-162）：新公告——重拉列表与红点；强提醒在切片内弹窗（不记本地事件）
+        onAnnouncementPush(frame.data as unknown as PushAnnouncementData);
+        return;
       } else if (frame.op === Op.PUSH_SERVER_BROADCAST) {
         // v23（AISLG-60）：全服播报实时置顶（不触发按需查询，播报与账号状态无关）
         const data = frame.data as unknown as ServerBroadcastPushData;
@@ -474,6 +491,11 @@ export function useGameSession(): GameSession {
         const data = frame.data as unknown as CityStatePushData;
         if (data.reason === 'city_renamed') {
           setCity((prev) => (prev && data.name && data.cityId === prev.id ? { ...prev, name: data.name } : prev));
+        } else if (data.reason === 'city_discarded') {
+          // 分城被放弃（可能是本账号另一连接发起）：选中的城可能已不存在，复位为主城并全量刷新
+          resetCityList();
+          void syncAll('initial');
+          return;
         } else if (data.reason === 'account_reset') {
           // 账号被其他连接重置：服务端事件流已清空，本地缓存全部失效，全量重拉
           lastEventIdRef.current = 0;
@@ -486,7 +508,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush],
+    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onAnnouncementPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {
@@ -526,6 +548,7 @@ export function useGameSession(): GameSession {
       setLoginError(message);
       lastEventIdRef.current = 0;
       resetNpcWarnings();
+      resetAnnouncements();
       worldClear();
       techClear();
       arenaClear();
@@ -581,6 +604,7 @@ export function useGameSession(): GameSession {
       await syncAll('incremental');
       void checkOfflineReportRef.current();
       void fetchServerBroadcasts();
+      void refreshAnnouncements(true);
     } catch {
       scheduleReconnect();
     }
@@ -623,6 +647,7 @@ export function useGameSession(): GameSession {
     setRecruitError(null);
     lastEventIdRef.current = 0;
     resetNpcWarnings();
+    resetAnnouncements();
     worldClear();
     techClear();
     arenaClear();
@@ -631,7 +656,7 @@ export function useGameSession(): GameSession {
     movingClear();
     ytClear();
     questClear();
-  }, [worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, resetNpcWarnings]);
+  }, [worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, resetNpcWarnings, resetAnnouncements]);
 
   const login = useCallback(
     async (username: string, password: string) => {
@@ -656,6 +681,7 @@ export function useGameSession(): GameSession {
         await syncAll('initial');
         void checkOfflineReportRef.current();
         void fetchServerBroadcasts();
+        void refreshAnnouncements(true);
         appendLocalEvent('player', COPY.session.loginSuccess);
       } catch (err) {
         setConnection('idle');
@@ -688,6 +714,7 @@ export function useGameSession(): GameSession {
         await syncAll('initial');
         void checkOfflineReportRef.current();
         void fetchServerBroadcasts();
+        void refreshAnnouncements(true);
         const loginText =
           source === 'wechat'
             ? WECHAT_COPY.session.wechatLoginSuccess(data.username)
@@ -991,6 +1018,30 @@ export function useGameSession(): GameSession {
     [scheduleSync],
   );
 
+  /** 放弃分城（v57，AISLG-153，仅玩家连接）：分城已从账号名下移除、地块转回 NPC 城池。发起连接收不到
+   *  PUSH_CITY_STATE，成功后直接复位为主城并全量重拉城池列表与状态 */
+  const discardCity = useCallback(
+    async (cityId: string): Promise<string | null> => {
+      const { COPY } = getCopy();
+      const client = clientRef.current;
+      if (!client?.connected) {
+        return COPY.session.connectFailed;
+      }
+      try {
+        const res = await client.request(Op.DISCARD_CITY, { cityId, confirm: true });
+        if (res.ok) {
+          resetCityList();
+          await syncAll('initial');
+          return null;
+        }
+        return res.error?.message ?? COPY.topbar.discardFallback;
+      } catch (err) {
+        return err instanceof Error ? err.message : COPY.topbar.discardFallback;
+      }
+    },
+    [syncAll, resetCityList],
+  );
+
   /** 一键重置账号数据（v9，仅玩家连接）：响应带回重置后的城池现状；
    *  服务端已清空事件流，本地同步清空并全量重拉（只剩 account_reset 审计事件）；
    *  世界数据（行军 / 领地 / 分城）一并重置，地图与详情清空重新加载 */
@@ -1107,17 +1158,20 @@ export function useGameSession(): GameSession {
     exchangeGold,
     startTruce,
     renameCity,
+    discardCity,
     resetAccount,
     ...extras,
     cityList,
     switchCity,
     world,
+    mapOverview,
     techSession,
     arenaSession,
     starTowerSession,
     heroSession,
     questSession,
     chat,
+    announcements,
     moving,
     yellowTurban,
     loadOlderEvents,

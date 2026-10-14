@@ -19,7 +19,7 @@ test('sanitize：非字符串与空白视为未声明（null，不覆盖已有�
   assert.equal(sanitizeAgentModelInput(123), null);
   assert.equal(sanitizeAgentModelInput('   '), null);
   assert.equal(sanitizeAgentModelInput('  claude-opus-5-5  '), 'claude-opus-5-5');
-  assert.equal(sanitizeAgentModelInput('x'.repeat(80)).length, AGENT_MODEL_MAX_LENGTH);
+  assert.equal(sanitizeAgentModelInput('x'.repeat(80))?.length, AGENT_MODEL_MAX_LENGTH);
 });
 
 test('归类：null / 空串归「未声明」', () => {

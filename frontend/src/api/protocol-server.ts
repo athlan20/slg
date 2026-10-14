@@ -69,6 +69,8 @@ export const SERVER_BROADCAST_TYPES = [
   'city_conquered',
   // v53 AISLG-145 竞技场：有人登上第 1 名
   'arena_champion',
+  // v60 AISLG-162 公告：运维发布时同步播报标题（detail.announcementId / title）
+  'announcement',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

@@ -39,10 +39,12 @@ export function StarTowerPage() {
                 role="将星塔页-阵容-编辑"
                 heroes={session.heroSession.state?.heroes ?? []}
                 lineup={star.tower ? star.tower.lineup : null}
+                formations={star.tower?.formations}
+                rules={star.tower?.rules}
                 busy={star.busy}
                 copy={STAR_TOWER_COPY.lineup}
                 showTitle={false}
-                onSave={(heroIds) => void star.saveLineup(heroIds)}
+                onSave={(heroIds, formations) => void star.saveLineup(heroIds, formations)}
               />
             </Card>
           ),

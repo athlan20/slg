@@ -17,7 +17,7 @@ export type MarchAct = 'plunder' | 'occupy' | 'clear' | 'reinforce' | 'transfer'
 export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
   const copy = useCopy();
   const { COPY, CITY_COPY, DEFENSE_COPY } = copy;
-  const { world, city, x, y, detail, origin, hero, troops, setTroops, busy, run } = ctx;
+  const { world, city, x, y, detail, origin, branch, hero, troops, setTroops, busy, run } = ctx;
   const deployBlocked = useDeployBlockedText(DEFENSE_COPY.deploy.full);
   const total = troopTotal(troops);
   const isNpc = detail?.kind === 'npc_city';
@@ -26,6 +26,8 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
   const enemyBranch = enemyCity && detail?.durability != null;
   const enemyWild = detail?.kind === 'wilderness' && detail.owner !== null && act === 'occupy';
   const withHero = act === 'plunder' || act === 'occupy' || act === 'clear';
+  // 分城名额已满：占领 NPC 城 / 他人分城都要占一个名额，发起前就拦住并说明（上限 0 时是等级不足，交给服务端报官府门槛）
+  const branchFull = act === 'occupy' && (isNpc || enemyBranch) && branch !== null && branch.limit > 0 && branch.count >= branch.limit;
 
   // 行军时长预估（AISLG-72）：驿站（v30 AISLG-83）只在调兵到自己另一座城时再加每级 +10%
   const eta = useMemo(() => {
@@ -97,7 +99,16 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
           hideHero={!withHero}
         />
       </div>
-      <ConfirmButton label={label} busy={busy} disabledReason={deployBlocked ?? (total <= 0 ? COPY.worldMap.troopPickHint : null)} onClick={() => void submit()} />
+      <ConfirmButton
+        label={label}
+        busy={busy}
+        disabledReason={
+          deployBlocked ??
+          (branchFull && branch ? CITY_COPY.worldMap.branchFullHint(branch.count, branch.limit) : null) ??
+          (total <= 0 ? COPY.worldMap.troopPickHint : null)
+        }
+        onClick={() => void submit()}
+      />
     </div>
   );
 }

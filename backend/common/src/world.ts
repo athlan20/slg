@@ -235,7 +235,8 @@ export interface NpcCitySnapshot {
   buildings: Partial<Record<BuildingKind, number>>;
 }
 
-function npcSnapshot(level: number): NpcCitySnapshot {
+/** 普通 NPC 城的初始快照（满编守军、初始库存与建筑）；放弃分城后地块按它回归 */
+export function npcSnapshot(level: number): NpcCitySnapshot {
   const profile = NPC_CITY_PROFILE[level];
   const stock: Resources = { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 };
   for (const key of RESOURCE_KEYS) {

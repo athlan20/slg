@@ -24,3 +24,6 @@ wechat-minigame
 
 # 聊天屏蔽词表（运营数据，只放服务器）
 /backend/config/chat-banned-words.txt
+
+# 本地 GUI 测试截图（不入库）
+/gui-test-screenshots/

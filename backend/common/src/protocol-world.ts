@@ -187,6 +187,19 @@ export interface WorldMapResponseData {
   tiles: TileView[];
 }
 
+/** 小地图城池点位的归属：本方（主城 / 分城）、他方玩家城池、NPC 城池、名城（未被占领的名城） */
+export type MapOverviewSide = 'own' | 'enemy' | 'npc' | 'famous';
+
+/** GET_MAP_OVERVIEW（op 95）响应载荷（v58）：全图城池点位，野地不返回 */
+export interface MapOverviewResponseData {
+  /** 世界边长（世界为 size×size 的方格） */
+  size: number;
+  /** 统计时刻（ISO 8601） */
+  at: string;
+  /** 城池点位 [x, y, side]，按 y 行 x 列排序 */
+  cities: Array<[number, number, MapOverviewSide]>;
+}
+
 /** GET_TILE（op 31）请求载荷 */
 export interface GetTileRequestData {
   x: number;

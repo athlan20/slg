@@ -53,11 +53,14 @@ export function AppShell() {
         onSettings={() => setDialog('settings')}
         onSwitchAccount={() => setDialog('switch')}
         onReset={() => setDialog('reset')}
+        onDiscardBranch={() => setDialog('discard')}
         onExchange={() => setExchangeRequest((n) => n + 1)}
         onLeaderboard={() => openLeaderboard()}
         chatOpen={session.chat.open}
         chatUnread={session.chat.unreadTotal}
         onToggleChat={() => session.chat.setOpen(!session.chat.open)}
+        announcementUnread={session.announcements.unreadCount}
+        onOpenAnnouncements={session.announcements.openList}
       />
       <TopBar
         page={page}
@@ -84,6 +87,7 @@ export function AppShell() {
         research={session.techSession.tech?.research ?? null}
         broadcasts={session.broadcasts}
         onOpenBroadcasts={() => void session.fetchServerBroadcasts()}
+        onOpenAnnouncement={session.announcements.openAnnouncement}
       />
       <ChatWindow />
       {dialog ? (
@@ -94,6 +98,7 @@ export function AppShell() {
           onSwitchAccount={() => void session.logout()}
           onResetAccount={session.resetAccount}
           onRenameCity={session.renameCity}
+          onDiscardCity={() => session.discardCity(city?.id ?? '')}
         />
       ) : null}
     </div>

@@ -8,6 +8,10 @@ export const MAPUI_COPY = {
   layerMine: '领地',
   legendToggle: '图例',
   back: '返回地图',
+  minimapToggle: '小地图',
+  minimapHint: '点击小地图跳转到该位置',
+  minimapFamous: '名城',
+  minimapLoading: '加载中…',
 };
 
 export const TARGET_COPY = {

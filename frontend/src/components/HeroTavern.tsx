@@ -9,6 +9,7 @@ import { useCopy } from '../i18n/bundle';
 import { tHeroSource, tName } from '../i18n/names';
 import { Modal } from './ui/Modal';
 import { PagedList } from './ui/PagedList';
+import { combatText } from '../copy-combat';
 
 interface HeroTavernProps {
   state: HeroStateView;
@@ -44,6 +45,9 @@ export function HeroTavern({ state, city, busy, onRecruit }: HeroTavernProps) {
           </button>
         </span>
       </div>
+      <p role="tavern-specialty-hint" className="text-[11px] text-faint">
+        {combatText('普通将招募成功后随机获得一项固定专长，候选阶段不显示；名将规则不变。', 'Ordinary heroes gain one random, permanent specialty when hired; it is not shown on candidates. Famous heroes retain their existing rules.')}
+      </p>
       {state.tavernLevel <= 0 ? (
         <p role="武将面板-无酒馆提示" className="text-[12px] text-warn">
           {HERO_COPY.panel.noTavern}

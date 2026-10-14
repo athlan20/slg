@@ -19,6 +19,8 @@ const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   // v36（AISLG-114/115）：酒馆候选按城、城守任命按城
   Op.GET_HEROES,
   Op.ASSIGN_HERO,
+  // v57（AISLG-153）：放弃分城必须指定 cityId
+  Op.DISCARD_CITY,
 ]);
 
 let activeCityId: string | null = null;

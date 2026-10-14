@@ -495,5 +495,13 @@
  * （连续签到 7 天一轮循环）、主线任务链（10 环、顺序解锁与领取）/ 支线（4 条、并行）/ 成就（6 条 × 3 档，
  * 逐档领取）、活动（开服冲刺限时 + 每日活跃）。进度均从既有数据派生，不新增埋点；奖励发往主城，
  * 领奖原子去重。新表 quest_claims / signin_state / quest_claims_once。无新增错误码（复用 INVALID_PARAMS）。
+ * v57（分城放宽与放弃分城，AISLG-155 / AISLG-153）：分城上限 floor(主城官府 ÷ 3) 改为 floor(主城官府 ÷ 2)（规则口径变化，名额只增不减）；
+ * 新增 DISCARD_CITY（op 94，玩家与 Agent 通用，cityId 必填、confirm 必须为 true）；新错误码 DISCARD_COOLDOWN / DISCARD_MAIN_CITY /
+ * CITY_IN_BATTLE / ARMY_OUTSIDE / WILDERNESS_GARRISONED；PUSH_CITY_STATE 新增 reason=city_discarded；EventType 新增 city_discarded。
+ * 新表 city_discards（放弃冷却，按地块）；cities 新增 origin_level（分城来源 NPC 等级）。
+ * v58（世界小地图，AISLG-160）：新增 GET_MAP_OVERVIEW（op 95，玩家与 Agent 通用，只读）返回全图城池点位；无新增错误码。
+ * v59（普通将特长与阵型，只加不改）：HeroView 加 specialty / specialtyBonus，竞技场与将星塔加 formations 与阵型目录。
+ * v60（公告，AISLG-162）：新增 GET_ANNOUNCEMENTS（op 96）/ GET_ANNOUNCEMENT（op 97）/ READ_ANNOUNCEMENT（op 98，玩家与 Agent 通用）与推送 PUSH_ANNOUNCEMENT（op 2022，只带标题与分类，本站在线连接收到）；
+ *   服务端过滤正文（受限 Markdown：分段、加粗、https 链接）；生效中 / 往期、置顶、强提醒、站点定向与中英双语。新增错误码 ANNOUNCEMENT_NOT_FOUND；server_broadcasts 新增播报类型 announcement。
  */
-export const PROTOCOL_VERSION = 56;
+export const PROTOCOL_VERSION = 60;

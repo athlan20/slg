@@ -22,6 +22,7 @@
     "calibrate:hero": "tsx scripts/hero-calibration.ts",
     "calibrate:pvp": "tsx scripts/pvp-calibration.ts",
     "calibrate:arena": "tsx scripts/arena-calibration.ts",
+    "calibrate:specialties": "tsx scripts/specialty-calibration.ts",
     "calibrate:plunder": "tsx scripts/plunder-calibration.ts",
     "gen:api-doc": "tsx scripts/gen-agent-api.ts",
     "check:api-doc": "tsx scripts/gen-agent-api.ts --check"

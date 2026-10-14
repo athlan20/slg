@@ -34,7 +34,7 @@ export interface ArenaSession {
   busy: boolean;
   fetchArena: () => Promise<void>;
   /** 保存阵容（heroIds 三个号位，空位 null）；第一次保存即入榜 */
-  saveLineup: (heroIds: Array<string | null>) => Promise<boolean>;
+  saveLineup: (heroIds: Array<string | null>, formations?: import('../api/protocol-combat').FormationKind[]) => Promise<boolean>;
   challenge: (entryId: string) => Promise<boolean>;
   /** 拉战报：older = true 时接在已有列表后面翻页 */
   fetchReports: (older?: boolean) => Promise<void>;
@@ -113,7 +113,7 @@ export function useArenaSession(deps: ArenaSessionDeps): ArenaSession {
   }, [connected, fetchArena, fetchReports]);
 
   const saveLineup = useCallback(
-    async (heroIds: Array<string | null>): Promise<boolean> => {
+    async (heroIds: Array<string | null>, formations?: import('../api/protocol-combat').FormationKind[]): Promise<boolean> => {
       const { ARENA_COPY } = getCopy();
       const client = clientRef.current;
       if (!client?.connected || busy) {
@@ -122,7 +122,7 @@ export function useArenaSession(deps: ArenaSessionDeps): ArenaSession {
       setBusy(true);
       setError(null);
       try {
-        const res = await client.request(Op.SET_ARENA_LINEUP, { heroIds });
+        const res = await client.request(Op.SET_ARENA_LINEUP, { heroIds, formations });
         if (res.ok && res.data) {
           const state = res.data as unknown as ArenaStateView;
           setArena(state);

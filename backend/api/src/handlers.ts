@@ -33,6 +33,8 @@ import {
   handleMarch,
   handleRecallGarrison,
 } from './handlers-world';
+import { handleGetMapOverview } from './map-overview';
+import { handleAnnouncementOp } from './handlers-announcement';
 import { readMarchParams } from './march-target';
 import { handleGetMovingTargets } from './handlers-moving';
 import { handleGetYellowTurban } from './handlers-yt';
@@ -62,6 +64,7 @@ import { handleGetLeaderboard } from './handlers-leaderboard';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
 import { loadCityState } from './views';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
+import { handleDiscardCity } from './handlers-discard';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
 
 export interface HandlerContext {
@@ -172,6 +175,14 @@ async function dispatchOp(
       break;
     case Op.GET_WORLD_MAP:
       await handleGetWorldMap(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_MAP_OVERVIEW:
+      await handleGetMapOverview(ctx, conn, op, seq);
+      break;
+    case Op.GET_ANNOUNCEMENTS:
+    case Op.GET_ANNOUNCEMENT:
+    case Op.READ_ANNOUNCEMENT:
+      await handleAnnouncementOp(ctx, conn, op, seq, data);
       break;
     case Op.GET_TILE: {
       const x = data?.x;
@@ -388,6 +399,9 @@ async function dispatchOp(
       break;
     case Op.RESET_ACCOUNT:
       await handleResetAccount(ctx, conn, op, seq, data);
+      break;
+    case Op.DISCARD_CITY:
+      await handleDiscardCity(ctx, conn, op, seq, data);
       break;
     case Op.SET_NICKNAME:
       await handleSetNickname(ctx, conn, op, seq, data);
