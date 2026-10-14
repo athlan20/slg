@@ -499,5 +499,6 @@
  * 新增 DISCARD_CITY（op 94，玩家与 Agent 通用，cityId 必填、confirm 必须为 true）；新错误码 DISCARD_COOLDOWN / DISCARD_MAIN_CITY /
  * CITY_IN_BATTLE / ARMY_OUTSIDE / WILDERNESS_GARRISONED；PUSH_CITY_STATE 新增 reason=city_discarded；EventType 新增 city_discarded。
  * 新表 city_discards（放弃冷却，按地块）；cities 新增 origin_level（分城来源 NPC 等级）。
+ * v58（世界小地图，AISLG-160）：新增 GET_MAP_OVERVIEW（op 95，玩家与 Agent 通用，只读）返回全图城池点位；无新增错误码。
  */
-export const PROTOCOL_VERSION = 57;
+export const PROTOCOL_VERSION = 58;

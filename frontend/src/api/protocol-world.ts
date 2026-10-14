@@ -312,6 +312,16 @@ export interface WorldMapResponseData {
   tiles: TileView[];
 }
 
+/** 小地图城池点位的归属：本方 / 他方玩家城池 / NPC 城池 / 未被占领的名城 */
+export type MapOverviewSide = 'own' | 'enemy' | 'npc' | 'famous';
+
+/** GET_MAP_OVERVIEW 响应（v58，AISLG-160）：城池点位 [x, y, side]，按 y 行 x 列排序；野地不返回 */
+export interface MapOverviewResponseData {
+  size: number;
+  at: string;
+  cities: Array<[number, number, MapOverviewSide]>;
+}
+
 /** MARCH 请求载荷：troops 至少一种 > 0；task 为 v16 出征任务（缺省 plunder） */
 export interface MarchRequestData {
   x: number;

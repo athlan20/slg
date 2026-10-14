@@ -381,6 +381,8 @@ CREATE TABLE IF NOT EXISTS world_tiles (
   PRIMARY KEY (x, y)
 );
 CREATE INDEX IF NOT EXISTS idx_world_tiles_owner ON world_tiles (owner_city_id) WHERE owner_city_id IS NOT NULL;
+-- v58（AISLG-160 小地图）：非野地地块的局部索引，小地图总览只扫城池（约万级），不扫全图百万格
+CREATE INDEX IF NOT EXISTS idx_world_tiles_city_kind ON world_tiles (y, x) WHERE kind <> 'wilderness';
 -- v16：最近一次成功掠夺（攻方胜利）的时间；按目标地块统一记录（野地 / NPC 城），
 -- 24 小时冷却判定见 common/src/plunder.ts（inPlunderCooldown）。玩家城的冷却列留待 PvP 阶段
 ALTER TABLE world_tiles ADD COLUMN IF NOT EXISTS plundered_at timestamptz;

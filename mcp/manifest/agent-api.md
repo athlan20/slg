@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**57** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**58** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 57）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 58）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -440,7 +440,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 57,
+    "protocolVersion": 58,
     "docNotice": null
   }
 }
@@ -502,7 +502,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 57,
+    "protocolVersion": 58,
     "docNotice": null
   }
 }
@@ -522,7 +522,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/54 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/55 补读增量）**
 
 请求：
 
@@ -533,7 +533,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 54,
+    "docVersion": 55,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +552,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 57,
-    "docNotice": "接口文档已从 v54 更新到 v57：请 GET /agent-api/changes/54 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 58,
+    "docNotice": "接口文档已从 v55 更新到 v58：请 GET /agent-api/changes/55 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -10591,6 +10591,75 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 95 · GET_MAP_OVERVIEW — 查询世界小地图总览（v58）
+
+`C→S` 请求-响应 · 需登录后发送
+
+返回全图的城池点位，供小地图一次看全局（AISLG-160）。无请求参数。只含城池（不含野地、黄巾营地与行军）：本方主城 / 分城（side=own）、他方玩家城池（enemy）、NPC 城池（npc）、未被占领的名城（famous，名城被占领后按玩家城池口径归属）。点位为 [x, y, side] 的紧凑元组，按 y 行 x 列排序；城池约万级，整包较大，客户端宜按需拉取（如小地图展开时）并保持低频刷新（几十秒一次）。归属按请求账号区分本方 / 他方，地图数据全服公开，不做侦察门控。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| size | number | 世界边长（世界为 size×size 方格，当前 1000）。 |
+| at | string | 统计时刻（ISO 8601）。 |
+| cities | array | 城池点位 [x, y, side] 数组；side 取 'own' \| 'enemy' \| 'npc' \| 'famous'。 |
+
+**Agent 提示**：想找城（名城、NPC 城、他人城池）时先用它看全局方位，再用 GET_WORLD_MAP 按窗口取地块详情、GET_TILE 看驻军。它不返回野地，找野地仍用 GET_WORLD_MAP。
+
+**示例**
+
+**全图城池点位（本方主城、一座他方城池、一座 NPC 城池、一座未被占领的名城）**
+
+请求：
+
+```json
+{
+  "op": 95,
+  "seq": 40
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 95,
+  "seq": 40,
+  "ok": true,
+  "data": {
+    "size": 1000,
+    "at": "2026-09-25T08:00:00.000Z",
+    "cities": [
+      [
+        10,
+        14,
+        "own"
+      ],
+      [
+        120,
+        88,
+        "enemy"
+      ],
+      [
+        300,
+        45,
+        "npc"
+      ],
+      [
+        512,
+        640,
+        "famous"
+      ]
+    ]
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -13208,7 +13277,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 57。
+- 协议版本随对外协议内容的每次变化递增；当前为 58。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

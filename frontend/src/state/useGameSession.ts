@@ -60,6 +60,7 @@ import { useStarTowerSession, type StarTowerSession } from './starTowerSession';
 import { useHeroSession, type HeroSession } from './heroSession';
 import { useQuestSession, type QuestSession } from './questSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
+import { useMapOverview, type MapOverviewSession } from './mapOverview';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useSessionExtras } from './session-extras';
 import { useChat, type ChatState } from './useChat';
@@ -154,6 +155,8 @@ export interface GameSession {
   switchCity: (cityId: string) => Promise<void>;
   /** 世界地图会话（v12）：窗口 / 地块详情 / 出征与召回 */
   world: WorldSession;
+  /** 世界小地图（v58 AISLG-160）：全图城池点位 / 展开状态 */
+  mapOverview: MapOverviewSession;
   /** 科技研究会话（v27 AISLG-77）：科技表 / 进行中研究 / 发起与取消 */
   techSession: TechSession;
   /** 竞技场会话（v53 AISLG-145）：名次 / 阵容 / 挑战 / 战报 */
@@ -317,6 +320,8 @@ export function useGameSession(): GameSession {
     scheduleSync,
   });
   const { clear: worldClear, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush } = world;
+  // 世界小地图（v58 AISLG-160）：全图城池点位，展开时才拉取
+  const mapOverview = useMapOverview({ clientRef, connected: connection === 'online' });
 
   // 科技研究会话切片（v27 AISLG-77）：科技表 / 研究 / 取消，推送到达时联动
   const techSession = useTechSession({
@@ -1144,6 +1149,7 @@ export function useGameSession(): GameSession {
     cityList,
     switchCity,
     world,
+    mapOverview,
     techSession,
     arenaSession,
     starTowerSession,

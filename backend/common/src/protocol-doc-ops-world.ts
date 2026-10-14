@@ -159,6 +159,45 @@ export const REQUEST_GET_WORLD_MAP: RequestOpDoc = {
   agentNote: '探索与选目标的基础：先用它看周边野地等级与 NPC 城池位置，再 GET_TILE 看驻军与收益预览，最后 MARCH 出征。窗口参数非法时按缺省处理，不会报错。',
 };
 
+export const REQUEST_GET_MAP_OVERVIEW: RequestOpDoc = {
+  kind: 'request',
+  name: 'GET_MAP_OVERVIEW',
+  title: '查询世界小地图总览（v58）',
+  preAuth: false,
+  summary: `返回全图的城池点位，供小地图一次看全局（AISLG-160）。无请求参数。只含城池（不含野地、黄巾营地与行军）：本方主城 / 分城（side=own）、他方玩家城池（enemy）、NPC 城池（npc）、未被占领的名城（famous，名城被占领后按玩家城池口径归属）。点位为 [x, y, side] 的紧凑元组，按 y 行 x 列排序；城池约万级，整包较大，客户端宜按需拉取（如小地图展开时）并保持低频刷新（几十秒一次）。归属按请求账号区分本方 / 他方，地图数据全服公开，不做侦察门控。`,
+  requestFields: [],
+  dataFields: [
+    { name: 'size', type: 'number', desc: `世界边长（世界为 size×size 方格，当前 ${WORLD_SIZE}）。` },
+    { name: 'at', type: 'string', desc: '统计时刻（ISO 8601）。' },
+    { name: 'cities', type: 'array', desc: "城池点位 [x, y, side] 数组；side 取 'own' | 'enemy' | 'npc' | 'famous'。" },
+  ],
+  errors: [],
+  examples: [
+    {
+      caption: '全图城池点位（本方主城、一座他方城池、一座 NPC 城池、一座未被占领的名城）',
+      request: { op: Op.GET_MAP_OVERVIEW, seq: 40 },
+      responses: [
+        {
+          op: Op.GET_MAP_OVERVIEW,
+          seq: 40,
+          ok: true,
+          data: {
+            size: WORLD_SIZE,
+            at: STARTED_AT,
+            cities: [
+              [10, 14, 'own'],
+              [120, 88, 'enemy'],
+              [300, 45, 'npc'],
+              [512, 640, 'famous'],
+            ],
+          },
+        },
+      ],
+    },
+  ],
+  agentNote: '想找城（名城、NPC 城、他人城池）时先用它看全局方位，再用 GET_WORLD_MAP 按窗口取地块详情、GET_TILE 看驻军。它不返回野地，找野地仍用 GET_WORLD_MAP。',
+};
+
 export const REQUEST_GET_TILE: RequestOpDoc = {
   kind: 'request',
   name: 'GET_TILE',

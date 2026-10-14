@@ -14,6 +14,10 @@ export const MAPUI_COPY_EN = {
   layerMine: 'Territory',
   legendToggle: 'Legend',
   back: 'Back to Map',
+  minimapToggle: 'Minimap',
+  minimapHint: 'Click the minimap to jump there',
+  minimapFamous: 'Famous City',
+  minimapLoading: 'Loading…',
 } satisfies typeof MAPUI_COPY;
 
 export const TARGET_COPY_EN = {

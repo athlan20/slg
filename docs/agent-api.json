@@ -1,5 +1,5 @@
 {
-  "version": 57,
+  "version": 58,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 57,
+                "protocolVersion": 58,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 57,
+                "protocolVersion": 58,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/54 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/55 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 54,
+              "docVersion": 55,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 57,
-                "docNotice": "接口文档已从 v54 更新到 v57：请 GET /agent-api/changes/54 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 58,
+                "docNotice": "接口文档已从 v55 更新到 v58：请 GET /agent-api/changes/55 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -11312,6 +11312,76 @@
         }
       ],
       "agentNote": "放弃前先 GET_STATE：确认目标 cities[] 中 isMain 为 false，并确认没有在途行军。放弃成功后 GET_STATE 的 cities / branch（count 减一）即时反映；同账号其他在线连接收到 PUSH_CITY_STATE（reason=city_discarded）推送，事件流新增 city_discarded。腾出的名额可以去占其他 NPC 城（但不能占回刚放弃的这一座，直到冷却结束）。"
+    },
+    {
+      "op": 95,
+      "kind": "request",
+      "name": "GET_MAP_OVERVIEW",
+      "title": "查询世界小地图总览（v58）",
+      "preAuth": false,
+      "summary": "返回全图的城池点位，供小地图一次看全局（AISLG-160）。无请求参数。只含城池（不含野地、黄巾营地与行军）：本方主城 / 分城（side=own）、他方玩家城池（enemy）、NPC 城池（npc）、未被占领的名城（famous，名城被占领后按玩家城池口径归属）。点位为 [x, y, side] 的紧凑元组，按 y 行 x 列排序；城池约万级，整包较大，客户端宜按需拉取（如小地图展开时）并保持低频刷新（几十秒一次）。归属按请求账号区分本方 / 他方，地图数据全服公开，不做侦察门控。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "size",
+          "type": "number",
+          "desc": "世界边长（世界为 size×size 方格，当前 1000）。"
+        },
+        {
+          "name": "at",
+          "type": "string",
+          "desc": "统计时刻（ISO 8601）。"
+        },
+        {
+          "name": "cities",
+          "type": "array",
+          "desc": "城池点位 [x, y, side] 数组；side 取 'own' | 'enemy' | 'npc' | 'famous'。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "全图城池点位（本方主城、一座他方城池、一座 NPC 城池、一座未被占领的名城）",
+          "request": {
+            "op": 95,
+            "seq": 40
+          },
+          "responses": [
+            {
+              "op": 95,
+              "seq": 40,
+              "ok": true,
+              "data": {
+                "size": 1000,
+                "at": "2026-09-25T08:00:00.000Z",
+                "cities": [
+                  [
+                    10,
+                    14,
+                    "own"
+                  ],
+                  [
+                    120,
+                    88,
+                    "enemy"
+                  ],
+                  [
+                    300,
+                    45,
+                    "npc"
+                  ],
+                  [
+                    512,
+                    640,
+                    "famous"
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "想找城（名城、NPC 城、他人城池）时先用它看全局方位，再用 GET_WORLD_MAP 按窗口取地块详情、GET_TILE 看驻军。它不返回野地，找野地仍用 GET_WORLD_MAP。"
     },
     {
       "op": 2000,

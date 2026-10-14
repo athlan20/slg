@@ -129,6 +129,8 @@ export const Op = {
   CLAIM_ACTIVITY: 93,
   /** C→S 放弃分城（v57，AISLG-153：data.cityId 必填、data.confirm 须为 true；主城不可放弃） */
   DISCARD_CITY: 94,
+  /** 世界小地图总览（v58，AISLG-160）：全图城池点位，玩家与 Agent 通用 */
+  GET_MAP_OVERVIEW: 95,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -440,6 +442,8 @@ export type {
   CityRefView,
   FamousTileView,
   WorldMapResponseData,
+  MapOverviewResponseData,
+  MapOverviewSide,
   MarchRequestData,
   MarchResponseData,
   RecallGarrisonResponseData,

@@ -158,6 +158,8 @@ export const Op = {
   CLAIM_ACTIVITY: 93,
   /** C→S 放弃分城（v57，AISLG-153：data.cityId 必填、data.confirm 必须为 true；主城不能放弃，城内资源与驻军作废，地块转回 NPC 城） */
   DISCARD_CITY: 94,
+  /** C→S 查询世界小地图总览（v58，AISLG-160：全图城池点位 [x, y, side]，不含野地；玩家与 Agent 通用） */
+  GET_MAP_OVERVIEW: 95,
   /** C→S 查询将星塔（v55，AISLG-146：已通过的最高层 / 下一层敌方阵容与奖励 / 阵容（与竞技场共用）） */
   GET_STAR_TOWER: 83,
   /** C→S 挑战将星塔的下一层（v55，AISLG-146：无参数；三局两胜，赢了首通发奖励并推进进度，输了不扣任何东西） */
@@ -633,6 +635,8 @@ export type {
   MarchView,
   WorldMapRequestData,
   WorldMapResponseData,
+  MapOverviewResponseData,
+  MapOverviewSide,
   GetTileRequestData,
   GetTileResponseData,
   MarchRequestData,
