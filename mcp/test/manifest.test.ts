@@ -3,6 +3,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { errorCodeMap, loadManifest, loadManifestMarkdown, toolOps, toolParams } from '../src/manifest.js';
 import { PROTOCOL_VERSION } from '../../backend/common/src/protocol-version.js';
 
@@ -30,6 +33,19 @@ test('清单可解析且含 request/push 两类 op', () => {
 test('文档副本存在且版本号一致', () => {
   const markdown = loadManifestMarkdown();
   assert.ok(markdown.includes(`协议版本：**${manifest.version}**`));
+});
+
+test('捆绑清单与 docs/ 逐字节一致（改了 docs 忘了 sync:manifest 时此处失败，AISLG-155 遗留）', () => {
+  // 只在仓库内有效：npm 发包后 docs/ 不随包分发，此时跳过
+  const docsDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs');
+  if (!existsSync(docsDir)) return;
+  const manifestDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'manifest');
+  for (const file of ['agent-api.json', 'agent-api.md']) {
+    assert.ok(
+      readFileSync(join(manifestDir, file)).equals(readFileSync(join(docsDir, file))),
+      `manifest/${file} 与 docs/${file} 不一致，请在 mcp/ 下跑 npm run sync:manifest`,
+    );
+  }
 });
 
 test('排除规则：登录流程 / 仅网页 / 仅玩家的 op 不生成工具', () => {
