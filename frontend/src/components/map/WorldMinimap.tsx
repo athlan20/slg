@@ -1,6 +1,6 @@
 /** 世界小地图（v58，AISLG-160）：把整张世界缩成一张小图，只画城池点位（本方 / 他方 / NPC / 名城），
  *  野地不画。视野框随主地图的窗口同步移动；点小图任意位置，主地图跳到那里。可收起 / 展开，收起时只剩一个开关。
- *  点位在 canvas 上逐点绘制（城池约万级，不用 DOM 节点）；颜色取主题变量，与图例与地图城池标记同色系。
+ *  点位在 canvas 上逐点绘制（城池约万级，不用 DOM 节点）；颜色取主题变量，名城与主地图金色标记同色，NPC 城弱化为灰色。
  *  数据与展开状态来自 mapOverview 会话切片，这里只负责绘制与换算。
  */
 
@@ -20,11 +20,12 @@ interface WorldMinimapProps {
   onPanTo: (x: number, y: number) => void;
 }
 
-/** 各归属的绘制参数：颜色取主题变量（缺省用兜底色），边长（像素）；npc 半透明以免盖住名城 */
+/** 各归属的绘制参数：颜色取主题变量（缺省用兜底色），边长（像素）。
+ *  npc 约万级点位，密集时会连成一片底纹，所以用弱化的灰色，免得把金色的名城淹没（AISLG-163） */
 const DOT_STYLE: Record<MapOverviewSide, { cssVar: string; fallback: string; size: number; alpha: number }> = {
-  npc: { cssVar: '--gold', fallback: '#d9a441', size: 1, alpha: 0.55 },
+  npc: { cssVar: '--text-faint', fallback: '#4d5866', size: 1, alpha: 0.6 },
   enemy: { cssVar: '--warn', fallback: '#e0653a', size: 2, alpha: 1 },
-  famous: { cssVar: '--gold', fallback: '#d9a441', size: 3, alpha: 1 },
+  famous: { cssVar: '--gold', fallback: '#d9a441', size: 4, alpha: 1 },
   own: { cssVar: '--accent', fallback: '#2dd4bf', size: 3, alpha: 1 },
 };
 /** 绘制顺序：先画底层的 NPC，本方城池最后盖在最上面 */
@@ -94,7 +95,7 @@ export function WorldMinimap({ overview, win, onPanTo }: WorldMinimapProps) {
     { key: 'own', label: COPY.worldMap.legendOwnCity, swatch: 'bg-accent' },
     { key: 'enemy', label: COPY.worldMap.legendCity, swatch: 'bg-warn' },
     { key: 'famous', label: MAPUI_COPY.minimapFamous, swatch: 'bg-gold' },
-    { key: 'npc', label: COPY.worldMap.legendNpcCity, swatch: 'bg-gold/60' },
+    { key: 'npc', label: COPY.worldMap.legendNpcCity, swatch: 'bg-faint' },
   ];
 
   return (
@@ -126,12 +127,12 @@ export function WorldMinimap({ overview, win, onPanTo }: WorldMinimapProps) {
             {data && win && worldSize > 0 ? (
               <div
                 role="世界地图视图-小地图-视野框"
-                className="pointer-events-none absolute border border-fg/80 bg-fg/10"
+                className="pointer-events-none absolute border border-fg bg-fg/10 shadow-[0_0_0_1px_rgba(0,0,0,0.5)]"
                 style={{
                   left: `${(win.x / worldSize) * 100}%`,
                   top: `${(win.y / worldSize) * 100}%`,
-                  width: `max(3px, ${(win.w / worldSize) * 100}%)`,
-                  height: `max(3px, ${(win.h / worldSize) * 100}%)`,
+                  width: `max(10px, ${(win.w / worldSize) * 100}%)`,
+                  height: `max(10px, ${(win.h / worldSize) * 100}%)`,
                 }}
               />
             ) : null}
