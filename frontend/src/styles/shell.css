@@ -65,6 +65,24 @@
 }
 .mobile-tabs {
   display: none;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.mobile-tabs > button {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+.mobile-tabs > button.on {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  background: var(--accent-soft);
 }
 
 /* 总览 = 状态看板（不放地图，地图只在地图页）：军情 · 进行中 / 兵力与人口 · 最近动态 */
@@ -116,8 +134,19 @@
 .p-agent {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+/* 养成页（武将 / 科技 / 竞技场 / 任务）：≥1280 三栏两行，竞技场占右侧整列（阵容 + 榜单 + 战报约 360px，半高装不下）；
+   任务横跨第二行左两列。1024–1279 四块装不进两栏，改成手机式分段（见下），一次一块、整块占满工作区 */
 .p-growth {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.p-growth > .a-arena {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}
+.p-growth > .a-quest {
+  grid-column: 1 / span 2;
+  grid-row: 2;
 }
 
 /* 将星塔页（v55，AISLG-146）：进度 / 阵容 / 战报三栏；1024–1279 两栏，战报横跨第二行 */
@@ -135,12 +164,21 @@
   .work > .block.hide-md {
     display: none;
   }
+  /* 养成页：四块在 800 高的工作区里装不进两栏，改成与手机相同的分段条（一次一块），不隐藏任何一块 */
   .p-growth {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
-  /* 养成页两栏时竞技场横跨第二行，不隐藏（竞技场只在这一页，隐藏就进不去） */
-  .p-growth > .a-arena {
-    grid-column: 1 / -1;
+  .p-growth > .block {
+    display: none;
+    flex: 1;
+  }
+  .p-growth > .block.on {
+    display: flex;
+  }
+  .p-growth > .mobile-tabs {
+    display: flex;
   }
   .p-star-tower {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -177,23 +215,5 @@
   }
   .mobile-tabs {
     display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  .mobile-tabs > button {
-    flex: 1;
-    min-width: 0;
-    padding: 4px 0;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--panel);
-    color: var(--text-dim);
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .mobile-tabs > button.on {
-    color: var(--accent);
-    border-color: var(--accent-dim);
-    background: var(--accent-soft);
   }
 }
