@@ -588,7 +588,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '城池（city）',
-    desc: '玩家当前的城池，容纳资源、人口与建筑；玩家可为它改名（RENAME_CITY），城池带等级（level，v24 起 = 该城官府等级，官府升级城池等级跟着升）。允许多座城池：注册创建主城；占领 NPC 城池后该地块成为分城（GET_STATE 的 cities 列出全部城池，v12）。v24（AISLG-58）起分城可独立建造、征兵、出征：城池类协议（GET_STATE / BUILD / UPGRADE / RENAME_CITY / RECRUIT / EXCHANGE / MARCH / SCOUT）带可选 cityId 指定操作哪座城，缺省 = 主城；各城的资源、人口、仓储、建造与征兵队列、驻军与产耗粮单独结算、互不串账。分城名额 = floor(主城官府等级 ÷ 3)，占领 NPC 城需主城官府 ≥ 3（见 MARCH）。',
+    desc: '玩家当前的城池，容纳资源、人口与建筑；玩家可为它改名（RENAME_CITY），城池带等级（level，v24 起 = 该城官府等级，官府升级城池等级跟着升）。允许多座城池：注册创建主城；占领 NPC 城池后该地块成为分城（GET_STATE 的 cities 列出全部城池，v12）。v24（AISLG-58）起分城可独立建造、征兵、出征：城池类协议（GET_STATE / BUILD / UPGRADE / RENAME_CITY / RECRUIT / EXCHANGE / MARCH / SCOUT）带可选 cityId 指定操作哪座城，缺省 = 主城；各城的资源、人口、仓储、建造与征兵队列、驻军与产耗粮单独结算、互不串账。分城名额 = floor(主城官府等级 ÷ 2)，占领 NPC 城需主城官府 ≥ 3（见 MARCH）。',
   },
   {
     term: '世界地图（world）',
@@ -624,7 +624,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: 'NPC 城池（npc_city）',
-    desc: `地图上可掠夺的普通 NPC 城（初始约 ${NPC_CITY_COUNT} 座，等级 1..3，占位）。可掠夺或占领（v24，AISLG-58）：task=plunder 掠夺——战斗 vs 其驻防（守方据墙待敌），胜利按幸存部队负重从持久化库存扣减（v21 起含金币，AISLG-31；库存不再生）；task=occupy 占领变分城——需主城官府 ≥ 3、分城数 < floor(主城官府 ÷ 3)、目标等级 ≤ 出发城官府等级，打赢后接收其建筑与剩余库存、幸存部队进城驻守。NPC 城池是有限存量（一期不做自动补充）；玩家城的占领设计随玩家对抗阶段另行接入。`,
+    desc: `地图上可掠夺的普通 NPC 城（初始约 ${NPC_CITY_COUNT} 座，等级 1..3，占位）。可掠夺或占领（v24，AISLG-58）：task=plunder 掠夺——战斗 vs 其驻防（守方据墙待敌），胜利按幸存部队负重从持久化库存扣减（v21 起含金币，AISLG-31；库存不再生）；task=occupy 占领变分城——需主城官府 ≥ 3、分城数 < floor(主城官府 ÷ 2)、目标等级 ≤ 出发城官府等级，打赢后接收其建筑与剩余库存、幸存部队进城驻守。NPC 城池是有限存量（一期不做自动补充）；玩家城的占领设计随玩家对抗阶段另行接入。`,
   },
   {
     term: '名城（famous city）',

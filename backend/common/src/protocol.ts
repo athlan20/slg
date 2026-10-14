@@ -284,7 +284,7 @@ export const ErrorCode = {
   TERRITORY_LIMIT: 'TERRITORY_LIMIT',
   /** 占领 NPC 城需要主城官府 ≥ 3 级（v24，AISLG-58） */
   GOVERNMENT_TOO_LOW: 'GOVERNMENT_TOO_LOW',
-  /** 分城数已达上限 = floor(主城官府等级 ÷ 3)（v24，AISLG-58；到达结算同样复核） */
+  /** 分城数已达上限 = floor(主城官府等级 ÷ 2)（v24，AISLG-58；v57 由 ÷3 放宽；到达结算同样复核） */
   BRANCH_LIMIT: 'BRANCH_LIMIT',
   /** 目标 NPC 城等级高于出发城的官府等级（v24，AISLG-58） */
   TARGET_LEVEL_TOO_HIGH: 'TARGET_LEVEL_TOO_HIGH',
