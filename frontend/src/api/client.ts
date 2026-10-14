@@ -37,14 +37,18 @@ function localWsOverride(): string | null {
   }
 }
 
-/** API 连接地址：已知生产站点按上表走 wss；其余环境默认 ws://127.0.0.1:8080/ws
+/** 构建时由 rsbuild 注入的本地后端端口（API_PORT，缺省 8080）；单测等未注入的环境回落 8080 */
+declare const __SLG_API_PORT__: number | undefined;
+const LOCAL_API_PORT = typeof __SLG_API_PORT__ === 'number' ? __SLG_API_PORT__ : 8080;
+
+/** API 连接地址：已知生产站点按上表走 wss；其余环境默认 ws://127.0.0.1:<API_PORT，缺省 8080>/ws
  *  （可被 localStorage `slg.wsUrl` 覆盖）。调整入口在此。 */
 export const WS_URL = ((): string => {
   const mapped = typeof window !== 'undefined' ? PRODUCTION_WS_BY_HOST[window.location.hostname] : undefined;
   if (mapped) {
     return mapped;
   }
-  return (typeof window !== 'undefined' ? localWsOverride() : null) ?? 'ws://127.0.0.1:8080/ws';
+  return (typeof window !== 'undefined' ? localWsOverride() : null) ?? `ws://127.0.0.1:${LOCAL_API_PORT}/ws`;
 })();
 
 /**

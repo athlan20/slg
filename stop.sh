@@ -2,6 +2,7 @@
 # 本地开发一键停止：与 dev.sh 管的三件套（API 8080 / Worker / 前端 8424）对应，
 # 并兜底清掉 e2e（playwright webServer）拉起的另一组实例——前端固定 5175、API 仍占 8080、
 # Worker 无端口靠 cmdline 匹配。判定口径 = cmdline 匹配 ∪ 占用已知端口。
+# 只停本目录的实例；端口用 API_PORT / WEB_PORT 指定（缺省 8080 / 8424，e2e 的 5175 一并兜底）。
 # 用法：
 #   ./stop.sh          停止所有本地开发服务（缺省）
 #   ./stop.sh status   只查看运行状态，不停止
@@ -12,6 +13,9 @@ set -u
 cd "$(dirname "$0")"
 
 SCRIPT_PID=$$
+ROOT="$(pwd -P)"
+API_PORT="${API_PORT:-8080}"
+WEB_PORT="${WEB_PORT:-8424}"
 
 pattern_for() {
   case "$1" in
@@ -23,14 +27,19 @@ pattern_for() {
 
 ports_for() {
   case "$1" in
-    api) echo '8080' ;;
-    web) echo '8424 5175' ;;
+    api) echo "$API_PORT" ;;
+    web) echo "$WEB_PORT 5175" ;;
     *)   echo '' ;;
   esac
 }
 
+# 只保留工作目录在本仓库目录内的进程，不动另一个工作目录（开发/测试）的实例
 pids_for() {
-  pgrep -f "$1" 2>/dev/null | grep -vx "$SCRIPT_PID" | tr '\n' ' ' || true
+  local pid cwd
+  for pid in $(pgrep -f "$1" 2>/dev/null | grep -vx "$SCRIPT_PID"); do
+    cwd="$(lsof -a -d cwd -Fn -p "$pid" 2>/dev/null | sed -n 's/^n//p')"
+    case "$cwd" in "$ROOT"|"$ROOT"/*) printf '%s ' "$pid" ;; esac
+  done
 }
 
 collect_pids() {

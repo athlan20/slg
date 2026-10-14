@@ -4,6 +4,11 @@
 #   ./dev.sh          重启语义：在运行则先停后启，未运行则直接启动（缺省）
 #   ./dev.sh stop     只停止
 #   ./dev.sh status   查看运行状态
+# 开发/测试两套环境并存（各自一个 git 工作目录，见 docs/dev-test-workflow.md）：
+#   API_PORT / WEB_PORT   端口，缺省 8080 / 8424（测试目录用 8081 / 8425）
+#   SERVICES              要管的服务，缺省 "api worker web"
+# 进程只按「所在工作目录 + 本实例端口」识别，不会动到另一个目录的实例。
+# 两套环境共用一个库时，同一时刻只允许一个 Worker 在跑（排行榜、世界 tick 等没有行锁）。
 # 数据库连接来自 backend/.env（远端 PostgreSQL），本脚本不管理数据库；
 # 日志在 dev-logs/（*.log / *.pid 已被 .gitignore 覆盖）。
 
@@ -13,6 +18,11 @@ cd "$(dirname "$0")"
 LOG_DIR="dev-logs"
 mkdir -p "$LOG_DIR"
 SCRIPT_PID=$$
+ROOT="$(pwd -P)"
+API_PORT="${API_PORT:-8080}"
+WEB_PORT="${WEB_PORT:-8424}"
+SERVICES="${SERVICES:-api worker web}"
+export PORT="$API_PORT" API_PORT WEB_PORT
 
 start_cmd_for() {
   case "$1" in
@@ -32,14 +42,19 @@ pattern_for() {
 
 port_for() {
   case "$1" in
-    api) echo 8080 ;;
-    web) echo 8424 ;;
+    api) echo "$API_PORT" ;;
+    web) echo "$WEB_PORT" ;;
     *)   echo '' ;;
   esac
 }
 
+# 只保留工作目录在本仓库目录内的进程（api/worker 在 backend/，web 在 frontend/）
 pids_for() {
-  pgrep -f "$1" 2>/dev/null | grep -vx "$SCRIPT_PID" | tr '\n' ' ' || true
+  local pid cwd
+  for pid in $(pgrep -f "$1" 2>/dev/null | grep -vx "$SCRIPT_PID"); do
+    cwd="$(lsof -a -d cwd -Fn -p "$pid" 2>/dev/null | sed -n 's/^n//p')"
+    case "$cwd" in "$ROOT"|"$ROOT"/*) printf '%s ' "$pid" ;; esac
+  done
 }
 
 stop_one() {
@@ -132,14 +147,17 @@ db_preflight() {
   ' 2>/dev/null)
 }
 
+has_service() { case " $SERVICES " in *" $1 "*) return 0 ;; esac; return 1; }
+
 case "${1:-start}" in
   stop)
-    echo "== 停止本地服务 =="
-    for s in web worker api; do stop_one "$s"; done
+    echo "== 停止本地服务（$ROOT）=="
+    for s in web worker api; do has_service "$s" && stop_one "$s"; done
     ;;
   status)
-    echo "== 本地服务状态 =="
+    echo "== 本地服务状态（$ROOT，API $API_PORT / 前端 $WEB_PORT）=="
     for s in api worker web; do
+      has_service "$s" || continue
       pattern="$(pattern_for "$s")"
       pids="$(pids_for "$pattern")"
       if [ -n "${pids// /}" ]; then
@@ -151,29 +169,28 @@ case "${1:-start}" in
     ;;
   start)
     echo "== 停止已在运行的实例（如有）=="
-    for s in web worker api; do stop_one "$s"; done
+    for s in web worker api; do has_service "$s" && stop_one "$s"; done
     echo "== 数据库预检 =="
     db_preflight
-    echo "== 启动 =="
-    start_one api
-    start_one worker
-    start_one web
+    echo "== 启动（API $API_PORT / 前端 $WEB_PORT / 服务：$SERVICES）=="
+    for s in api worker web; do has_service "$s" && start_one "$s"; done
     echo "== 就绪检查 =="
     ok=0
     # 探活用 localhost：api 只监听 IPv4、rsbuild dev 只监听 IPv6 的 ::1，
     # localhost 让 curl 自行尝试全部解析地址；--noproxy 避免本机代理拦截
-    wait_http api http://localhost:8080/health || ok=1
-    wait_alive worker || ok=1
-    wait_http web http://localhost:8424/ || ok=1
+    has_service api && { wait_http api "http://localhost:$API_PORT/health" || ok=1; }
+    has_service worker && { wait_alive worker || ok=1; }
+    has_service web && { wait_http web "http://localhost:$WEB_PORT/" || ok=1; }
     if [ "$ok" = 0 ]; then
-      echo "== 全部就绪：打开 http://localhost:8424 =="
+      has_service web && echo "== 全部就绪：打开 http://localhost:$WEB_PORT =="
+      has_service web || echo "== 全部就绪 =="
     else
       echo "== 有服务未就绪，详见 dev-logs/*.log =="
       exit 1
     fi
     ;;
   *)
-    echo "用法：./dev.sh [start|stop|status]（缺省 start = 重启语义）"
+    echo "用法：[API_PORT=..] [WEB_PORT=..] [SERVICES=\"api web\"] ./dev.sh [start|stop|status]（缺省 start = 重启语义）"
     exit 1
     ;;
 esac
