@@ -37,6 +37,7 @@ export function heroBattleView(row: AccountHeroRow, troopCount: number): BattleH
   return {
     name: row.name, lead: row.lead, force: row.force, wit: row.wit,
     atkPercent: bonus?.atkPercent ?? 0, defPercent: bonus?.defPercent ?? 0,
+    specialty: bonus?.specialty ?? null, specialtyScale: bonus?.specialtyScale ?? 1,
   };
 }
 
@@ -295,7 +296,7 @@ export async function reinforceTile(
 export interface MarchHeroLoad {
   row: AccountHeroRow;
   report: BattleHeroView;
-  engine: { atkPercent: number; defPercent: number };
+  engine: import('../../common/src/battle-engine').HeroCombatBonus;
 }
 
 /** 战斗前装载随队武将（v36，AISLG-114）：march.hero_id 为空或武将已不存在返回 null */
@@ -316,7 +317,7 @@ export async function loadMarchHeroBonus(
   return {
     row,
     report,
-    engine: bonus ? { atkPercent: bonus.atkPercent, defPercent: bonus.defPercent } : { atkPercent: 0, defPercent: 0 },
+    engine: bonus ?? { atkPercent: 0, defPercent: 0 },
   };
 }
 

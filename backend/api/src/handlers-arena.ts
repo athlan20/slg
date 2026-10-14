@@ -4,6 +4,7 @@
 // 对战在事务里当场算完（纯函数，不碰真实兵力与武将状态）。
 
 import { randomInt } from 'node:crypto';
+import { formationCatalog, readFormations } from '../../common/src/army-formation';
 import pg from 'pg';
 import { Op, type ArenaChallengeResponseData, type ArenaOpponentView, type ArenaRulesView, type ArenaStateView, type ErrorCode } from '../../common/src/protocol';
 import {
@@ -59,6 +60,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** 对外下发的规则常量（数值直引 arena.ts，不在这里另写一份） */
 export function arenaRulesView(): ArenaRulesView {
   return {
+    ...formationCatalog(),
     slots: ARENA_SLOTS,
     dailyChallenges: ARENA_DAILY_CHALLENGES,
     dailyDefendedMax: ARENA_DAILY_DEFENDED_MAX,
@@ -105,6 +107,7 @@ export async function buildArenaState(client: pg.PoolClient, accountId: string, 
   }
   return {
     joined: entry !== null,
+    formations: entry?.formations ?? ['balanced', 'balanced', 'balanced'],
     rank: entry?.rank ?? null,
     bestRank: entry?.best_rank ?? null,
     totalEntries: await countEntries(client),
@@ -202,7 +205,8 @@ export async function handleSetArenaLineup(
   data: Record<string, unknown> | undefined,
 ): Promise<void> {
   const slots = readLineupParams(data);
-  if (!slots) {
+  const formations = readFormations(data?.formations);
+  if (!slots || formations === null) {
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }
@@ -222,10 +226,10 @@ export async function handleSetArenaLineup(
       const now = new Date();
       const entry = await loadEntryByAccount(client, accountId, true);
       if (entry) {
-        await saveLineup(client, entry.id, slots);
+        await saveLineup(client, entry.id, slots, formations);
       } else {
         // 入榜不发进档奖励：入榜名次即基线，之后名次升进新档才发（见 joinArena / settleMilestone）
-        await joinArena(client, accountId, slots, now);
+        await joinArena(client, accountId, slots, now, formations);
       }
       return buildArenaState(client, accountId, now);
     });

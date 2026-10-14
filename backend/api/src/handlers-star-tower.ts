@@ -3,9 +3,10 @@
 // 玩家与 Agent 同一套规则。挑战在事务里当场算完，进度行加 FOR UPDATE 串行化同一账号的挑战。
 
 import { randomInt } from 'node:crypto';
+import { formationCatalog } from '../../common/src/army-formation';
 import pg from 'pg';
 import { Op, type ErrorCode, type GetStarTowerReportsResponseData, type StarTowerChallengeResponseData, type StarTowerStateView } from '../../common/src/protocol';
-import { playArenaMatch, seededRng, type ArenaFighter } from '../../common/src/arena';
+import { ARENA_ARMY_BASE, ARENA_ARMY_PER_LEAD, playArenaMatch, seededRng, type ArenaFighter } from '../../common/src/arena';
 import { creditCapitalGold, entryLineup, loadEntryByAccount } from '../../common/src/arena-db';
 import { grantHeroExp } from '../../common/src/hero-db';
 import {
@@ -53,6 +54,7 @@ export async function buildStarTowerState(client: pg.PoolClient, accountId: stri
   const lineup = entry ? await entryLineup(client, entry) : [...EMPTY_LINEUP];
   return {
     bestFloor,
+    formations: entry?.formations ?? ['balanced', 'balanced', 'balanced'],
     cleared: nextFloor === null,
     nextFloor,
     nextBoss: nextFloor !== null && isStarTowerBossFloor(nextFloor),
@@ -61,7 +63,8 @@ export async function buildStarTowerState(client: pg.PoolClient, accountId: stri
     lineup,
     lineupReady: lineup.some((f) => f !== null),
     hasCity: await hasAnyCity(client, accountId),
-    rules: { floors: STAR_TOWER_FLOORS, bossEvery: STAR_TOWER_BOSS_EVERY, slots: 3, winRounds: 2 },
+    rules: { floors: STAR_TOWER_FLOORS, bossEvery: STAR_TOWER_BOSS_EVERY, slots: 3, winRounds: 2,
+      armyBase: ARENA_ARMY_BASE, armyPerLead: ARENA_ARMY_PER_LEAD, ...formationCatalog() },
   };
 }
 

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS arena_entries (
 
 -- 旧库（先建了表、后加列）补列；新库上面的 CREATE 已包含
 ALTER TABLE arena_entries ADD COLUMN IF NOT EXISTS milestone_best integer;
+ALTER TABLE arena_entries ADD COLUMN IF NOT EXISTS formations jsonb NOT NULL DEFAULT '["balanced","balanced","balanced"]'::jsonb;
 
 -- 每个竞技日的计数：challenges = 我发起的挑战次数，defended = 我被挑战的次数
 CREATE TABLE IF NOT EXISTS arena_daily (

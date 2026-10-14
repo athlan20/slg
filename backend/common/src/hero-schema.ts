@@ -5,6 +5,9 @@
 // hero_unlocks = 结交资格（打赢过该野地原住守军）；hero_friendship = 结交进度（好感 / 当日次数）。
 
 export const HERO_SCHEMA_SQL = `
+-- Specialties are assigned only to newly recruited ordinary heroes.
+ALTER TABLE account_heroes ADD COLUMN IF NOT EXISTS specialty text
+  CHECK (specialty IS NULL OR (NOT famous AND specialty IN ('infantry', 'ranged', 'cavalry', 'siege', 'assault', 'defense')));
 ALTER TABLE account_heroes ADD COLUMN IF NOT EXISTS base_lead integer;
 ALTER TABLE account_heroes ADD COLUMN IF NOT EXISTS base_force integer;
 ALTER TABLE account_heroes ADD COLUMN IF NOT EXISTS base_wit integer;

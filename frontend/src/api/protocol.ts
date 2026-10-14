@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 38;
+export const PROTOCOL_VERSION = 59;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {

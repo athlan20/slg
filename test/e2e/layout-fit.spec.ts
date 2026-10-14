@@ -8,7 +8,7 @@
 // 默认用预建的新账号（内容少）；设置 E2E_FIT_USER=已有账号名 可改用内容密集的账号（密码同 E2E_PASSWORD）复查分页与截断。
 
 import { expect, test, type Page } from '@playwright/test';
-import { loginViaForm, uniqueUsername } from './helpers';
+import { gotoPage, loginViaForm, uniqueUsername } from './helpers';
 
 const FIT_USER = process.env.E2E_FIT_USER;
 
@@ -153,3 +153,89 @@ for (const size of SIZES) {
     await expect(page.locator('[role="排行榜弹窗"]')).toHaveCount(0);
   });
 }
+
+/** 养成页内容密集：建酒馆 → 等建成 → 刷新领任务金币（大兴土木 / 每日登录）→ 招两名最便宜的武将 → 配阵保存（配兵预览与特长行出现） */
+async function makeGrowthDense(page: Page): Promise<void> {
+  await gotoPage(page, '城池');
+  await page.locator('[role="城内视图-建筑-酒"]').click();
+  await page.locator('[role="城池页-建筑详情-建造按钮"]').click();
+  await expect(page.locator('[role="城池页-建筑详情-队列状态"]')).toContainText('在建');
+  // 建造时长取决于后端的倍速：这里等 Worker 结算完（最多 3 分钟）
+  await expect(page.locator('[role="城池页-建筑详情-队列状态"]')).toContainText('不在队列中', { timeout: 180_000 });
+  // 酒馆候选在建成后要刷新页面才会出现
+  await page.reload();
+  await expect(page.locator('[role="顶栏-资源"]')).toBeVisible();
+  await gotoPage(page, '养成');
+  await page.locator('[role="任务面板-签到按钮"]:not([disabled])').first().click().catch(() => undefined);
+  for (let i = 0; i < 6; i += 1) {
+    const claim = page.locator('[role^="任务面板-领取按钮-"]:not([disabled])').first();
+    if ((await claim.count()) === 0) {
+      break;
+    }
+    await claim.click();
+    await page.waitForTimeout(800);
+  }
+  await page.reload();
+  await expect(page.locator('[role="顶栏-资源"]')).toBeVisible();
+  await gotoPage(page, '养成');
+  await expect(page.locator('[role="武将面板-招募按钮"]').first()).toBeVisible({ timeout: 30_000 });
+  for (let i = 0; i < 2; i += 1) {
+    const cheapest = await page.locator('[role="武将面板-招募按钮"]:not([disabled])').evaluateAll((btns) => {
+      let best = -1;
+      let bestCost = Infinity;
+      btns.forEach((btn, idx) => {
+        const cost = Number((btn.textContent ?? '').replace(/[^0-9]/g, ''));
+        if (cost < bestCost) {
+          bestCost = cost;
+          best = idx;
+        }
+      });
+      return best;
+    });
+    if (cheapest < 0) {
+      break;
+    }
+    await page.locator('[role="武将面板-招募按钮"]:not([disabled])').nth(cheapest).click();
+    await page.waitForTimeout(1500);
+  }
+  const heroIds = await page.locator('[role="养成页-竞技场-阵容-1号位"] option').evaluateAll((opts) =>
+    opts.map((o) => (o as HTMLOptionElement).value).filter((v) => v));
+  const formations = ['cavalry', 'infantry', 'ranged'];
+  for (let i = 0; i < Math.min(3, heroIds.length); i += 1) {
+    await page.locator(`[role="养成页-竞技场-阵容-${i + 1}号位"]`).selectOption(heroIds[i]);
+    await page.locator(`[role="养成页-竞技场-阵容-formation-${i + 1}"]`).selectOption(formations[i]);
+  }
+  await page.locator('[role="养成页-竞技场-阵容-保存"]').click();
+  await expect(page.locator('[role="养成页-竞技场-阵容-保存"]')).toBeDisabled();
+}
+
+// 养成页竞技场卡片在 1280×720（三栏，竞技场占右列）与 1100×800（分段条）下装满内容时不被裁：
+// 阵容 + 榜单 / 对手 + 战报列表要完整可见（AISLG-161 配兵预览加长后曾把列表压到 0 高）。
+test('养成页内容密集：竞技场在 1280×720 与 1100×800 下不被裁', async ({ page }) => {
+  test.setTimeout(400_000);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await loginViaForm(page, uniqueUsername('e2e-arena'));
+  await expect(page.locator('[role="顶栏-资源"]')).toBeVisible();
+  await makeGrowthDense(page);
+
+  for (const size of [
+    { width: 1280, height: 720 },
+    { width: 1100, height: 800 },
+  ]) {
+    await page.setViewportSize(size);
+    await gotoPage(page, '养成');
+    // 1024–1279 养成页是分段条，先切到竞技场
+    const seg = page.locator('[role="养成页-分段-竞技场"]');
+    if (await seg.isVisible()) {
+      await seg.click();
+    }
+    await page.waitForTimeout(500);
+    const arena = page.locator('[role="养成页-竞技场"]');
+    await expect(arena).toBeVisible();
+    const clipped = await arena.evaluate((el) => el.scrollHeight - el.clientHeight);
+    expect(clipped, `${size.width}×${size.height} 竞技场内容被裁 ${clipped}px`).toBeLessThanOrEqual(1);
+    const list = page.locator('[role="养成页-竞技场-对手"], [role="养成页-竞技场-榜单"]').first();
+    await expect(list).toBeVisible();
+    expect(await list.evaluate((el) => el.clientHeight), `${size.width}×${size.height} 列表被压到 0 高`).toBeGreaterThan(0);
+  }
+});

@@ -31,6 +31,9 @@ export function isMarchTask(value: unknown): value is MarchTask {
 /** 战报中一方的汇总（攻方 / 守方共用） */
 /** 战报一方的随队 / 城守武将（v36，AISLG-114/115；未配将为 null / 缺省） */
 export interface BattleHeroView {
+  /** Saved at combat time; absent on historical reports. */
+  specialty?: import('./hero-specialty').HeroSpecialty | null;
+  specialtyScale?: number;
   name: string;
   lead: number;
   force: number;

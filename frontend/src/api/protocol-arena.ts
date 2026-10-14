@@ -1,8 +1,12 @@
 // 竞技场协议的类型镜像（v53，AISLG-145）。唯一事实来源是 backend/common/src/protocol-arena.ts
 // 与 backend/common/src/arena.ts；协议调整时以后端生成文档（docs/agent-api.md）为准同步本文件。
 
+import type { HeroSpecialty, FormationKind, FormationCatalog } from './protocol-combat';
+
 /** 阵容里（或榜上对手阵容里）一名武将的展示快照 */
 export interface ArenaFighterView {
+  specialty?: HeroSpecialty | null;
+  formation?: FormationKind;
   /** 本账号武将 id（仅「我的阵容」给出；对手阵容为 null） */
   heroId: string | null;
   name: string;
@@ -31,7 +35,7 @@ export interface ArenaTopEntryView {
   npc: boolean;
 }
 
-export interface ArenaRulesView {
+export interface ArenaRulesView extends FormationCatalog {
   slots: number;
   dailyChallenges: number;
   dailyDefendedMax: number;
@@ -46,6 +50,7 @@ export interface ArenaRulesView {
 
 /** GET_ARENA（op 73）/ SET_ARENA_LINEUP（op 74）响应：我在竞技场的完整状态 */
 export interface ArenaStateView {
+  formations: FormationKind[];
   joined: boolean;
   rank: number | null;
   bestRank: number | null;

@@ -9,6 +9,8 @@ import type { ArenaSession } from '../state/arenaSession';
 import { LineupEditor } from './LineupEditor';
 import { Card } from './ui/Card';
 import { PagedList } from './ui/PagedList';
+import { formationName, specialtyName } from '../copy-combat';
+import { ArenaRoundDetails } from './ArenaRoundDetails';
 
 type ArenaTab = 'opponents' | 'top' | 'reports';
 
@@ -28,7 +30,8 @@ function clockText(iso: string): string {
 }
 
 function namesOf(lineup: Array<ArenaFighterView | null>): string[] {
-  return lineup.filter((f): f is ArenaFighterView => f !== null).map((f) => f.name);
+  return lineup.filter((f): f is ArenaFighterView => f !== null).map((f) =>
+    `${f.name} · ${formationName(f.formation ?? 'balanced')}${f.specialty ? ` · ${specialtyName(f.specialty)}` : ''}`);
 }
 
 export function ArenaPanel({ heroes, session }: ArenaPanelProps) {
@@ -67,9 +70,11 @@ export function ArenaPanel({ heroes, session }: ArenaPanelProps) {
         role="养成页-竞技场-阵容"
         heroes={heroes}
         lineup={arena ? arena.lineup : null}
+        formations={arena?.formations}
+        rules={arena?.rules}
         busy={busy}
         copy={ARENA_COPY.panel}
-        onSave={(heroIds) => void saveLineup(heroIds)}
+        onSave={(heroIds, formations) => void saveLineup(heroIds, formations)}
       />
 
       {error ? (
@@ -159,13 +164,16 @@ export function ArenaPanel({ heroes, session }: ArenaPanelProps) {
             const won = iAmChallenger ? row.challengerWon : !row.challengerWon;
             const label = iAmChallenger ? ARENA_COPY.panel.asChallenger : ARENA_COPY.panel.asDefender;
             return (
-              <div role={`养成页-竞技场-战报-${row.id}`} className="flex min-w-0 items-center gap-1.5 rounded-[5px] border border-line-soft bg-panel-2 px-2 py-1 text-[12px]">
+              <div role={`养成页-竞技场-战报-${row.id}`} className="flex min-w-0 flex-col gap-1 rounded-[5px] border border-line-soft bg-panel-2 px-2 py-1 text-[12px]">
+                <div role="arena-report-overview" className="flex items-center gap-1.5">
                 <span className={`shrink-0 font-semibold ${won ? 'text-ok' : 'text-warn'}`}>{won ? ARENA_COPY.panel.won : ARENA_COPY.panel.lost}</span>
                 <span className="min-w-0 flex-1 truncate" title={`${label} ${opponent}`}>
                   {label} {opponent}
                 </span>
                 <span className="shrink-0 font-mono text-[11px] text-faint">{ARENA_COPY.panel.score(row.challengerWins, row.defenderWins)}</span>
                 <span className="shrink-0 font-mono text-[11px] text-dim">{ARENA_COPY.panel.rankChange(mine.rankBefore, mine.rankAfter)}</span>
+                </div>
+                <ArenaRoundDetails rounds={row.rounds} />
               </div>
             );
           }}

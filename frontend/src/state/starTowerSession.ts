@@ -37,7 +37,7 @@ export interface StarTowerSession {
   /** 拉战报：older = true 时接在已有列表后面翻页 */
   fetchReports: (older?: boolean) => Promise<void>;
   /** 保存阵容（heroIds 三个号位，空位 null）；与竞技场共用，第一次保存即入竞技场榜 */
-  saveLineup: (heroIds: Array<string | null>) => Promise<boolean>;
+  saveLineup: (heroIds: Array<string | null>, formations?: import('../api/protocol-combat').FormationKind[]) => Promise<boolean>;
   /** 挑战下一层 */
   challenge: () => Promise<boolean>;
   clear: () => void;
@@ -114,7 +114,7 @@ export function useStarTowerSession(deps: StarTowerSessionDeps): StarTowerSessio
   }, [connected, fetchTower, fetchReports]);
 
   const saveLineup = useCallback(
-    async (heroIds: Array<string | null>): Promise<boolean> => {
+    async (heroIds: Array<string | null>, formations?: import('../api/protocol-combat').FormationKind[]): Promise<boolean> => {
       const client = clientRef.current;
       if (!client?.connected || busy) {
         return false;
@@ -122,7 +122,7 @@ export function useStarTowerSession(deps: StarTowerSessionDeps): StarTowerSessio
       setBusy(true);
       setError(null);
       try {
-        const res = await client.request(Op.SET_ARENA_LINEUP, { heroIds });
+        const res = await client.request(Op.SET_ARENA_LINEUP, { heroIds, formations });
         if (res.ok) {
           appendLocalEvent('player', getCopy().STAR_TOWER_COPY.session.lineupSaved);
           void fetchTower();

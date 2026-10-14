@@ -4,6 +4,7 @@
 import type { InitiatorRole } from './protocol';
 import type { HeroAttrs } from './hero';
 import type { TrainingTier } from './hero-growth';
+import type { HeroSpecialty } from './hero-specialty';
 
 /** 历练中的武将（v54）：档位 / 结束时刻（ISO 8601）/ 到点获得的经验；未历练为 null */
 export interface HeroTrainingView {
@@ -14,6 +15,9 @@ export interface HeroTrainingView {
 
 /** 一名武将的视图（GET_HEROES / 推送共用） */
 export interface HeroView {
+  /** Random and immutable on ordinary recruitment; famous and legacy heroes have null. */
+  specialty: HeroSpecialty | null;
+  specialtyBonus: { atkPercent: number; defPercent: number; siegeOnly: boolean } | null;
   id: string;
   name: string;
   /** 名将（全服唯一、从 PvE 获得；普通将 false） */
