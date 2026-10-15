@@ -44,6 +44,7 @@ import { scaledMs } from '../../common/src/time-scale';
 import { readCargo } from '../../common/src/transport';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { defenseExtraPercent } from '../../common/src/tech';
+import { famousWallExtraPercent } from '../../common/src/famous-effects';
 import { wallDefensePercent } from '../../common/src/battle';
 import { loadBuildingLevels } from '../../common/src/production';
 
@@ -291,11 +292,12 @@ async function settleScoutArrival(
       garrison[row.troop] = row.count;
     }
     const levels = await loadBuildingLevels(client, tile.owner_city_id);
-    const ownerRes = await client.query(`SELECT account_id FROM cities WHERE id = $1`, [tile.owner_city_id]);
-    const ownerAccountId = (ownerRes.rows[0] as { account_id: string } | undefined)?.account_id;
+    const ownerRes = await client.query(`SELECT account_id, famous_name FROM cities WHERE id = $1`, [tile.owner_city_id]);
+    const ownerCity = ownerRes.rows[0] as { account_id: string; famous_name: string | null } | undefined;
+    // v62（AISLG-166）：守方名城（洛阳）城墙额外减伤与侦察口径一致
     pvpWallPercent = wallDefensePercent(
       levels.wall ?? 0,
-      ownerAccountId ? defenseExtraPercent(await loadTechLevels(client, ownerAccountId)) : 0,
+      (ownerCity ? defenseExtraPercent(await loadTechLevels(client, ownerCity.account_id)) : 0) + famousWallExtraPercent(ownerCity?.famous_name),
     );
   } else {
     garrison = await loadTileArmy(client, tile.x, tile.y);

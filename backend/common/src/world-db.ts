@@ -323,10 +323,11 @@ export async function clearTileOccupation(client: pg.PoolClient, x: number, y: n
   );
 }
 
-/** 某城占领的全部野地（含驻军总数；CityView.territory 与产量加成计算共用） */
+/** 某城占领的全部野地（含驻军总数与所属城的名城标记；CityView.territory 与产量加成计算共用） */
 export async function loadTerritory(q: pg.Pool | pg.PoolClient, cityId: string): Promise<TerritoryRow[]> {
   const res = await q.query(
-    `SELECT wt.x, wt.y, wt.terrain, wt.level, wt.reserve, wt.reserve_at, COALESCE(ta.total, 0)::int AS garrison
+    `SELECT wt.x, wt.y, wt.terrain, wt.level, wt.reserve, wt.reserve_at, COALESCE(ta.total, 0)::int AS garrison,
+            (SELECT c.famous_name FROM cities c WHERE c.id = wt.owner_city_id) AS famous_name
      FROM world_tiles wt
      LEFT JOIN (SELECT x, y, sum(count) AS total FROM tile_army GROUP BY x, y) ta
        ON ta.x = wt.x AND ta.y = wt.y

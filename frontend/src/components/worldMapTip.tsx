@@ -6,6 +6,7 @@ import { getCopy, useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import type { NpcStockTier, TileView } from '../api/protocol';
 import type { CitySide } from './worldMapMarks';
+import { famousEffectText } from './famousEffectText';
 
 /** NPC 城库存档位的文案与色调（v23 AISLG-55）：已空变暗、见底警示、丰厚金色；文案随语言在函数体内取 */
 export function npcTierLabel(tier: NpcStockTier): string {
@@ -78,7 +79,7 @@ interface WorldMapTooltipProps {
 /** 悬浮提示：名称 / 坐标 / 归属 / 驻军 + 操作提示 */
 export function WorldMapTooltip({ tip, clusters }: WorldMapTooltipProps) {
   const copy = useCopy();
-  const { COPY, CITY_COPY, YT_COPY } = copy;
+  const { COPY, CITY_COPY, YT_COPY, RESOURCE_LABEL } = copy;
   const cluster = tip ? clusters?.get(`${tip.tile.x},${tip.tile.y}`) : undefined;
   return (
     <div
@@ -100,6 +101,9 @@ export function WorldMapTooltip({ tip, clusters }: WorldMapTooltipProps) {
             <div role="世界地图视野-名城提示" className="text-gold">
               <div>{tip.tile.famous.stage === 'outer' ? CITY_COPY.famous.stageOuter : CITY_COPY.famous.stageKeeper}</div>
               <div>{CITY_COPY.famous.bonus(tip.tile.famous.bonusPercent)}</div>
+              {tip.tile.famous.effect ? (
+                <div>{CITY_COPY.famous.effectRow(famousEffectText(tip.tile.famous.effect, CITY_COPY.famous.effect, RESOURCE_LABEL))}</div>
+              ) : null}
             </div>
           ) : null}
           {tip.tile.camp ? (

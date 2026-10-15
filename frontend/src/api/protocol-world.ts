@@ -37,6 +37,13 @@ export interface TileOwnerView {
 /** NPC 城池库存档位（v23 AISLG-55；相对该城初始库存，不给精确数值） */
 export type NpcStockTier = 'rich' | 'normal' | 'low' | 'empty';
 
+/** 名城独有效果（v62，AISLG-166）：kind 种类，percent 数值（城墙为额外百分点），resources 仅 territory 有（野地产出的资源） */
+export interface FamousEffectView {
+  kind: 'wall' | 'tower' | 'territory' | 'march' | 'warehouse';
+  percent: number;
+  resources: Array<keyof Resources> | null;
+}
+
 /** 名城标识与当前阶段（v24，AISLG-56） */
 export interface FamousTileView {
   name: string;
@@ -46,6 +53,8 @@ export interface FamousTileView {
   bonusPercent: number;
   /** 城守阶段：外围恢复满编的时刻（ISO 8601）；外围阶段为 null */
   recoversAt: string | null;
+  /** 占领后得到的名城独有效果（v62，AISLG-166） */
+  effect: FamousEffectView | null;
 }
 
 /** 地图窗口内一格的视图 */

@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**61** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**62** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 61）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 62）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -318,6 +318,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -440,7 +441,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 61,
+    "protocolVersion": 62,
     "docNotice": null
   }
 }
@@ -502,7 +503,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 61,
+    "protocolVersion": 62,
     "docNotice": null
   }
 }
@@ -522,7 +523,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/58 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/59 补读增量）**
 
 请求：
 
@@ -533,7 +534,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 58,
+    "docVersion": 59,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -552,8 +553,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 61,
-    "docNotice": "接口文档已从 v58 更新到 v61：请 GET /agent-api/changes/58 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 62,
+    "docNotice": "接口文档已从 v59 更新到 v62：请 GET /agent-api/changes/59 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -700,6 +701,7 @@
 | city.shieldNextAt | string \| null | 下一次可开启主动免战的时刻（v38，AISLG-122；每周一次，ISO 8601）；当前可开启为 null。 |
 | city.durability | number \| null | 分城城防值（v40，AISLG-124）：0..100，被「占领」打赢一击 −35（冲车加成最多再 −15）、归零一击换主；免战结束后每小时回涨 10 至满（免战内不回涨）。主城为 null（永不被占领）。 |
 | city.famousName / city.productionBonusPercent | string \| null / number | 名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。 |
+| city.famousEffect | object \| null | 名城独有效果（v62 新增，AISLG-166）：{ kind, percent, resources }，只有占领者享受、跟着城走（换主人归新主人，放弃 / 被占即失效）。洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。普通城为 null。 |
 | city.guard | object \| null | 城守（v36 新增，AISLG-115）：该城任命的武将 { heroId, name, famous, lead, force, wit, level, bonusPercent }；未任为 null。产量加成（四资源非金，智力 × 0.1% 封顶 5%）已计入 production；守城战另享攻防加成（见 ASSIGN_HERO）。 |
 | city.recruitQueue | array | 征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。 |
 | city.defenseBonus | number | 城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。 |
@@ -1013,6 +1015,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -1328,6 +1331,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -1679,6 +1683,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -3051,6 +3056,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -3467,7 +3473,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].camp | object \| null | 黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small\|medium\|large\|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer\|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。 |
 | tiles[].wildFamous | boolean | 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将（公开，名字与属性需侦察）。被获得后标记撤下，名将归属见 GET_HEROES 的 famousClaims。 |
 | tiles[].reserve | object \| null | 野地储量（v61，AISLG-165）：{ tier 档位 ample 充足 >60% / normal 一般 20%–60% / depleted 枯竭 <20%（所有人可见）, current 当前储量, cap 上限, eta { kind empty 预计采空 / full 预计回满, at } }；current / cap / eta 仅归属方与侦察过该地块的账号可见，其余为 null。储量与上限为基准单位（bonusRate、gatherRate 同口径）；采集与恢复速率随 time_scale 放大，eta 为真实时刻（采空 / 回满随之缩短）。非野地为 null。 |
-| tiles[].famous | object \| null | 名城信息（v24 新增，AISLG-56）：{ name 名城名, stage 当前阶段（outer 外围阶段须先清外围 / keeper 外围已清、可攻城守并占领）, bonusPercent 占领后的独占加成（该城产量 +N%）, recoversAt 城守阶段外围恢复满编的时刻（超时无人攻下城守则恢复；外围阶段为 null） }；全图 8 座名城，对全服可见；非名城为 null。 |
+| tiles[].famous | object \| null | 名城信息（v24 新增，AISLG-56）：{ name 名城名, stage 当前阶段（outer 外围阶段须先清外围 / keeper 外围已清、可攻城守并占领）, bonusPercent 占领后的独占加成（该城产量 +N%）, recoversAt 城守阶段外围恢复满编的时刻（超时无人攻下城守则恢复；外围阶段为 null）, effect 占领后的名城独有效果 { kind wall / tower / territory / march / warehouse, percent, resources 仅 territory 有：野地产出的资源列表，其余为 null }（v62，AISLG-166） }；全图 8 座名城，对全服可见；非名城为 null。 |
 
 **Agent 提示**：探索与选目标的基础：先用它看周边野地等级与 NPC 城池位置，再 GET_TILE 看驻军与收益预览，最后 MARCH 出征。窗口参数非法时按缺省处理，不会报错。
 
@@ -8742,6 +8748,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -9325,6 +9332,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -10008,6 +10016,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -10575,6 +10584,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -12720,6 +12730,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -13300,6 +13311,7 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
       "guard": null,
@@ -13653,7 +13665,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - **战报（battle report）**：每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军 / NPC 袭击主城，v21 新增 city_raid 类别）生成一份战报，账号以攻方或守方身份持有、可查询（GET_BATTLE_REPORTS）并实时推送（PUSH_BATTLE_REPORT）：含双方编成与损失、汇总口径（v21：units 总单位数、totalHp 总血量、avgRange 平均射程；v23：maxRange 单兵射程最大值、rangedUnits 远程单位数——avgRange 是数量加权平均、会被大量近战稀释，判断远程威胁用 maxRange + rangedUnits，AISLG-49；读取时按编成汇总，历史战报同样下发）、总输出 damage、逐回合伤害与损失统计、终局原因与城墙减伤。战损不进入伤兵治疗、俘虏招降或逃兵召回系统（一期确认）——损失即最终减员。
 - **掠夺（plunder）**：MARCH task='plunder'（缺省）的出征任务（v16）。胜利后从目标奖励池按幸存部队负重（Σ 数量 × 单兵 carry，民夫 500 / 斥候·刀盾兵 80 / 轻骑兵 100 / 其余 50–60，占位）装填战利品，金→粮→木→石→铁顺序装满即止（v21 含金，AISLG-31），立即入账出发城（不钳储量上限），幸存部队返程、不改归属。野地奖励池 = 地形资源 750×等级 + 金币 250×等级（v21；金矿为空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。同一目标地块成功掠夺后进入 24 小时冷却（基准，受全局时间缩放；plundered_at；冷却内发起被拒 PLUNDER_COOLDOWN，在途到达仍战斗但资源为零）。玩家主城被 NPC 袭击攻破时按同口径结算（仓库保护 4000×等级、四资源固定均分各 1000×等级，金币不受仓库保护但单次最多抢走存量的 5%（v41，AISLG-125；v38 起玩家互掠为存量的 10%，见 MARCH 玩家对抗段）。
 - **NPC 城池（npc_city）**：地图上可掠夺的普通 NPC 城（初始约 15000 座，等级 1..3，占位）。可掠夺或占领（v24，AISLG-58）：task=plunder 掠夺——战斗 vs 其驻防（守方据墙待敌），胜利按幸存部队负重从持久化库存扣减（v21 起含金币，AISLG-31；库存不再生）；task=occupy 占领变分城——需主城官府 ≥ 3、分城数 < floor(主城官府 ÷ 2)、目标等级 ≤ 出发城官府等级，打赢后接收其建筑与剩余库存、幸存部队进城驻守。NPC 城池是有限存量（一期不做自动补充）；玩家城的占领设计随玩家对抗阶段另行接入。
-- **名城（famous city）**：全图 8 座高亮的 NPC 名城（v24，AISLG-56；官渡 / 许昌 / 洛阳 / 长安 / 成都 / 建业 / 襄阳 / 邺城，从 Lv3 NPC 城原地升格，分散在地图各区域；地块 famous 字段标识名称、阶段与独占加成）。分两阶段攻打：先清外围驻军（外围阶段，对其出征打外围），外围清空后进入城守阶段，限时内（famous.recoversAt，约 6 小时 ÷ 时间缩放）出征攻城守——占领后成为分城（名称为名城名）并带独占加成：该城产量 +20%（只对占领者生效，已计入 city.production）；超时无人攻下城守则外围恢复满编。守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。名城计入分城上限。
+- **名城（famous city）**：全图 8 座高亮的 NPC 名城（v24，AISLG-56；官渡 / 许昌 / 洛阳 / 长安 / 成都 / 建业 / 襄阳 / 邺城，从 Lv3 NPC 城原地升格，分散在地图各区域；地块 famous 字段标识名称、阶段与独占加成）。分两阶段攻打：先清外围驻军（外围阶段，对其出征打外围），外围清空后进入城守阶段，限时内（famous.recoversAt，约 6 小时 ÷ 时间缩放）出征攻城守——占领后成为分城（名称为名城名）并带独占加成：该城产量 +20%（只对占领者生效，已计入 city.production）；另有一项独有效果（v62，AISLG-166，只对占领者生效，跟着城走）：洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。超时无人攻下城守则外围恢复满编。守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。名城计入分城上限。
 - **NPC 袭击（npc raid）**：NPC 会周期性主动攻击玩家的目标（基准每 120 分钟一次，v21 AISLG-28 调参；v19 曾为 30 分钟；实际 ÷ 全局时间缩放）。目标池（v21，AISLG-32 方案 A）：80% 随机挑一块已占领野地，20% 随机挑一座官府 ≥ 2 的玩家主城（官府 Lv1 的新号不在池内，构成开号缓冲）；不攻击分城或行军途中的部队。**袭击编成公式（v21 公开，AISLG-29）**：义兵 10×等级 + 弓箭兵 1×等级，参考战力 25×等级（v21 调参；v19 曾为 义兵 15×等级 + 弓箭兵 2×等级、40×等级）——野地袭击按地块等级推导；主城袭击按**守军战力**推导（v22 AISLG-40 方案 B）：level = clamp(ceil(守军参考战力 ÷ 25), max(1, floor(官府等级 ÷ 2)), 官府等级)——守军归零时袭击降到官府一半强度（不再零守军挨满编），官府升级（经济行为）不再自动放大挨打规模；下限防「清空守军骗低强度」。袭击走多回合战斗结算并生成守方视角战报（野地为 kind='npc_raid'、主城为 kind='city_raid'，主城为守城战：城墙 defenseBonus 减免生效）。野地袭击：驻军全灭则占领失效（wilderness_lost），守住则驻军按战斗折损。主城袭击：守方驻军全灭则 NPC 按被掠城仓库保护掠夺资源（可掠量 = max(0, 存量 − 1000×仓库等级/资源；金币不受仓库保护但单次最多抢走存量的 5%，v41 AISLG-125），按 NPC 幸存部队负重装填（金→粮→木→石→铁），城池归属不变；守住则仅按战斗折损。事件按 npc_raid 记录（target='wilderness' / 'city'，outcome=repelled / garrison_lost，主城被掠含 loot；主城袭击的 level 即上述推导结果）。**主城免战期（v22 AISLG-40 方案 A）**：主城被攻破后 2 × 袭击基准间隔内（随 timeScale 缩放）不再进入袭击目标池，让守城方至少完成一轮重建；每次被攻破重置计时。免战截止随 GET_STATE 的 city.truceUntil 下发，到期自动回池、无事件通知。**防御口径（按 v21 参数批量模拟校准）**：击退 Lv N 袭击并保持净收益为正，建议驻军战力 ≥ 4 × 25 × N（= 100×N），并混编约 1/5 弓箭兵对抗来袭远程——如 Lv1 袭击（25 战力）建议驻军 80 义兵 + 5 弓箭兵（模拟：守住率 100%、场均折损约 3 人，2 小时占领 + 采集收入净 +135 金/轮）；经验值非保证，重防御与高等级地块收益更好。
 - **建筑类型（kind）**：一期九种建筑，每种同城限一座（重复建造返回 BUILDING_EXISTS，成长走 UPGRADE）：farm 农田（产粮）、lumber_mill 伐木场（产木）、quarry 采石场（产石）、iron_mine 铁矿（产铁）、house 民房（人口上限）、government 官府（自动产金，100×等级/小时，v19；v16 起兼野地占领上限）、barracks 军营（征兵）、warehouse 仓库（防掠夺保护，v16 规则落地：4000×等级、四资源固定均分）、wall 城墙（守城加成）；v27 起第十种 academy 书院（科技研究所需，第 N 级科技要求书院 ≥ N 级）。生产建筑持续产出：产量 = 等级 × 每级速率，另受野地加成与农耕科技（v27，四资源每级 +5%）加成，不占用人口。
 - **production（产量）**：城池当前每小时产量，按资源归集（金/粮/木/石/铁）。四种生产资源各有 100/小时的基础产量（无对应建筑也产出）；金币由官府（100×等级/小时，v19）与占领金矿生产（无基础产量）。产量随建筑建成即时生效；资源按流逝时间累积，读取城池（GET_STATE）或扣减资源时会先结算到当前时刻，离线期间照常累积。
@@ -13668,7 +13680,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 61。
+- 协议版本随对外协议内容的每次变化递增；当前为 62。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

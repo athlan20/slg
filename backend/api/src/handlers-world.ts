@@ -48,6 +48,7 @@ import type { ConnInfo } from './connections';
 import { loadTileDetail, loadWorldWindow } from './views-world';
 import { deployCountOf, loadCityState, lockCitySnapshot, marchView, type MarchRow } from './views';
 import { canDeployMore, stationPercent } from '../../common/src/building-effects';
+import { famousMarchPercent } from '../../common/src/famous-effects';
 import { checkHeroMarchable } from './handlers-hero';
 import type { AccountHeroRow } from '../../common/src/hero-db';
 import { cargoOverCapacity } from '../../common/src/transport';
@@ -242,8 +243,10 @@ export async function handleMarch(
     }
     // 行军时长按编队最慢兵种折算（v13：斥候 ×2、轻骑兵 ×1.5，其余基准）
     // v30（AISLG-83）：驿站只加速自己城池之间的调兵 / 运输（出发城驿站等级，每级 +10%）
-    const stationBonus = target.purpose === 'transfer' || target.purpose === 'transport' ? stationPercent(snap.levels.post_station) : 0;
-    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + stationBonus);
+    // v62（AISLG-166）：出发城为许昌时，自己城池之间的调兵 / 运输行军速度另 +20%（与驿站加算）
+    const selfCityMarch = target.purpose === 'transfer' || target.purpose === 'transport';
+    const selfCityBonus = selfCityMarch ? stationPercent(snap.levels.post_station) + famousMarchPercent(snap.famousName) : 0;
+    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + selfCityBonus);
     const arriveMs = dbNow.getTime() + travel * 1000;
     // v35（AISLG-112）：截击「到了先埋伏」——目标路线与时刻表固定，出发即可算出接战时刻 =
     // max(到达时刻, 目标进入选定格相邻范围的时刻)，Worker 按该时刻结算；提前到达的部队

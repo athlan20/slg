@@ -506,5 +506,9 @@
  * v61（野地储量，AISLG-165，只加不改）：每块野地有储量（基准 1500 + 3500 × 等级，±20% 固定哈希，金矿 ×0.4），采集上限 10%/h、恢复 2%/h；
  *   TileView / TerritoryView 新增 reserve（档位对所有人，数值与预计时刻仅归属方与侦察过的账号可见）；采空新增事件 wilderness_depleted 与推送 reason=reserve_depleted；
  *   掠夺与流寇的地形资源受储量约束。无新增协议号与错误码。
+ * v62（名城独有效果，AISLG-166，只加不改）：8 座名城各一项只有占领者享受的效果，跟着城走（cities.famous_name）：
+ *   洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下野地的粮 / 铁石 / 木 / 金产出 +25%（占领加成与采集同口径，不扣储量）、
+ *   许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。TileView.famous 与 CityView 新增 effect / famousEffect
+ *   （{ kind, percent, resources }）。无新增协议号与错误码。
  */
-export const PROTOCOL_VERSION = 61;
+export const PROTOCOL_VERSION = 62;

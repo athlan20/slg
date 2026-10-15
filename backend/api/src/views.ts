@@ -58,6 +58,7 @@ import { FAMOUS_PRODUCTION_BONUS_PERCENT } from '../../common/src/famous-city';
 import { readCargo } from '../../common/src/transport';
 import { projectStarvation } from '../../common/src/starvation';
 import { deployLimit, towerStats } from '../../common/src/building-effects';
+import { famousEffectView, famousTowerPercent, famousWallExtraPercent } from '../../common/src/famous-effects';
 import { defenseExtraPercent, type TechLevels } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { currentCityId } from './city-scope';
@@ -404,17 +405,18 @@ export function toCityView(snap: CitySnapshot): CityView {
         : settleDurability(snap.durability, snap.durabilitySettledAt, snap.truceUntil, new Date()),
     famousName: snap.famousName,
     productionBonusPercent: snap.productionBonusPercent,
+    famousEffect: famousEffectView(snap.famousName),
     guard: snap.guardHero
       ? { heroId: snap.guardHero.id, ...snap.guardHero, bonusPercent: snap.guardProductionPercent }
       : null,
     recruitQueue: snap.recruitQueue.map(recruitView),
-    defenseBonus: wallBasePercent(snap.levels.wall) + defenseExtraPercent(snap.techs),
+    defenseBonus: wallBasePercent(snap.levels.wall) + defenseExtraPercent(snap.techs) + famousWallExtraPercent(snap.famousName),
     techs: { ...snap.techs },
     // v30（AISLG-80）：在外部队 = 行军中（含返程）+ 驻守野地；上限 = 校场等级（未建按 1）
     starveAt: starvation.starveAtMs === null ? null : new Date(starvation.starveAtMs).toISOString(),
     mutinyNextAt: snap.mutinyNextAt ? snap.mutinyNextAt.toISOString() : null,
     deploy: { count: deployCountOf(snap), limit: deployLimit(snap.levels.parade_ground) },
-    tower: towerStats(snap.levels.arrow_tower),
+    tower: towerStats(snap.levels.arrow_tower, famousTowerPercent(snap.famousName)),
     marches: snap.marches.map(marchView),
     territory: snap.territory.map((tile) => {
       const sizes = territoryClusterSizes(snap.territory);

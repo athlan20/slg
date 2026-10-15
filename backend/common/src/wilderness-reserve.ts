@@ -8,6 +8,7 @@
 // 归属边界：归属方名下的野地与城池结算同区间推进；归属变化前的空档只按恢复计算（无人采集）。
 
 import { getTimeScale } from './time-scale';
+import { famousTerritoryMultiplier } from './famous-effects';
 import { clusterBonusMultiplier, TERRAIN_INFO, territoryBonusRates, territoryClusterSizes, wildernessGatherRate, type TerritoryRow } from './world';
 import type { TerrainKind } from './protocol';
 import type { ProducedResource } from './production';
@@ -198,7 +199,7 @@ export function settleTerritoryReserves(tiles: TerritoryRow[], from: Date, to: D
   for (const tile of tiles) {
     const step = advanceTile(tile, from, to, true);
     const resource = TERRAIN_INFO[tile.terrain].resource;
-    const multiplier = clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1);
+    const multiplier = clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1) * famousTerritoryMultiplier(tile.famous_name, resource);
     result.gather[resource] = (result.gather[resource] ?? 0) + step.yielded * multiplier;
     result.updates.push({ x: tile.x, y: tile.y, reserve: step.reserve, reserveAt: to, emptyAt: step.emptyAt });
     if (step.depletedAt) {
@@ -219,7 +220,7 @@ export function territoryDisplayRates(tiles: TerritoryRow[]): Partial<Record<Pro
     const cap = reserveCapOf(tile.x, tile.y, tile.terrain, tile.level);
     const drain = gatherDrainOf(tile.terrain, tile.level, tile.garrison, cap);
     const resource = TERRAIN_INFO[tile.terrain].resource;
-    const multiplier = clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1);
+    const multiplier = clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1) * famousTerritoryMultiplier(tile.famous_name, resource);
     rates[resource] = (rates[resource] ?? 0) + Math.round(effectiveGatherOf(tile.reserve, cap, drain) * multiplier);
   }
   return rates;

@@ -105,13 +105,19 @@ export interface TowerStats {
   range: number;
 }
 
-/** 箭塔数值；未建（0 级）为 null */
-export function towerStats(level: number): TowerStats | null {
+/**
+ * 箭塔数值；未建（0 级）为 null。damagePercent 为名城等加成的伤害百分比（v62，长安 +20%），只放大伤害，射程不变。
+ */
+export function towerStats(level: number, damagePercent = 0): TowerStats | null {
   const lv = Math.max(0, Math.floor(level));
   if (lv === 0) {
     return null;
   }
-  return { damage: TOWER_DAMAGE_PER_LEVEL * lv, range: TOWER_RANGE_BASE + TOWER_RANGE_PER_LEVEL * lv };
+  const base = TOWER_DAMAGE_PER_LEVEL * lv;
+  return {
+    damage: Math.round((base * (100 + Math.max(0, damagePercent))) / 100),
+    range: TOWER_RANGE_BASE + TOWER_RANGE_PER_LEVEL * lv,
+  };
 }
 
 export type { ArmyCounts };

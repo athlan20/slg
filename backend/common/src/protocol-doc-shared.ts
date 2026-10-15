@@ -139,6 +139,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     durability: null,
     famousName: null,
     productionBonusPercent: 0,
+    famousEffect: null,
     starveAt: null,
     mutinyNextAt: null,
     guard: null,

@@ -460,6 +460,7 @@ export type {
   BranchInfoView,
   CityRefView,
   FamousTileView,
+  FamousEffectView,
   WorldMapResponseData,
   MapOverviewResponseData,
   MapOverviewSide,
@@ -530,7 +531,7 @@ export type {
   YellowTurbanPushData,
 } from './protocol-yt';
 import type { TechLevels } from './protocol-tech';
-import type { MarchView, TerritoryView } from './protocol-world';
+import type { FamousEffectView, MarchView, TerritoryView } from './protocol-world';
 
 /**
  * 单兵征募数值（v11，占位）：镜像 backend/common/src/troops.ts 的 TROOP_INFO，
@@ -625,6 +626,8 @@ export interface CityView {
   famousName: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
+  /** 名城独有效果（v62，AISLG-166）：只有占领者享受、跟着城走；普通城为 null */
+  famousEffect: FamousEffectView | null;
   /** 城池等级（v24 起 = 该城官府等级） */
   level: number;
   resources: Resources;

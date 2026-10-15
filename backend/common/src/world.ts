@@ -19,6 +19,7 @@ import {
 import { TROOP_STATS } from './battle';
 import { getTimeScale } from './time-scale';
 import type { ProducedResource } from './production';
+import { famousTerritoryMultiplier } from './famous-effects';
 
 // ---- 世界规模与地形（占位决策） ----
 
@@ -397,6 +398,8 @@ export interface TerritoryRow {
   /** 野地储量（v61，AISLG-165；基准单位，无值 = 满储量）及其落库时刻，见 wilderness-reserve.ts */
   reserve?: number | null;
   reserve_at?: Date | null;
+  /** 所属城池的名城标记（v62，AISLG-166；野地产出的名城加成按它口径计算，缺省视为非名城） */
+  famous_name?: string | null;
 }
 
 // ---- 野地连片加成（v23，AISLG-59） ----
@@ -470,7 +473,8 @@ export function territoryBonusRates(tiles: TerritoryRow[]): Partial<Record<Produ
   for (const tile of tiles) {
     const resource = TERRAIN_INFO[tile.terrain].resource;
     const multiplier = clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1);
-    rates[resource] = (rates[resource] ?? 0) + Math.round(wildernessBonusRate(tile.terrain, tile.level) * multiplier);
+    const famous = famousTerritoryMultiplier(tile.famous_name, resource);
+    rates[resource] = (rates[resource] ?? 0) + Math.round(wildernessBonusRate(tile.terrain, tile.level) * multiplier * famous);
   }
   return rates;
 }

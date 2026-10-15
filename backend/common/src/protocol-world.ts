@@ -3,6 +3,7 @@
 // 本文件只 import protocol.ts / protocol-army.ts 的类型（类型导入在运行时被擦除，不构成加载环）。
 
 import type { InitiatorRole, Resources } from './protocol';
+import type { FamousEffectView } from './famous-effects';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchPurpose, MarchTask } from './protocol-battle';
 import type { YtTileCampView } from './protocol-yt';
@@ -51,6 +52,8 @@ export interface FamousTileView {
   bonusPercent: number;
   /** 城守阶段：外围恢复满编的时刻（ISO 8601，超时无人攻下城守则恢复）；外围阶段为 null */
   recoversAt: string | null;
+  /** 占领后得到的名城独有效果（v62，AISLG-166）：可在名城介绍中查看 */
+  effect: FamousEffectView | null;
 }
 
 /**

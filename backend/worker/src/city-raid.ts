@@ -13,6 +13,8 @@
 
 import { defenseExtraPercent } from '../../common/src/tech';
 import { towerStats } from '../../common/src/building-effects';
+import { loadFamousName } from '../../common/src/famous-effects-db';
+import { famousTowerPercent, famousWallExtraPercent, famousWarehousePercent } from '../../common/src/famous-effects';
 import { loadTechLevels } from '../../common/src/tech-db';
 import pg from 'pg';
 import { DEFAULT_NPC_RAID_INTERVAL_MS } from './world-tick';
@@ -79,7 +81,9 @@ export async function resolveNpcCityRaid(
   }
 
   // v27（AISLG-77）：玩家主城守城再加城防科技的额外减伤（NPC 城墙不吃）
-  const wall = wallDefensePercent(levels.wall ?? 0, defenseExtraPercent(await loadTechLevels(client, target.accountId)));
+  // v62（AISLG-166）：名城（洛阳 / 长安 / 襄阳）的守城加成跟着被攻城走
+  const famousName = await loadFamousName(client, target.cityId);
+  const wall = wallDefensePercent(levels.wall ?? 0, defenseExtraPercent(await loadTechLevels(client, target.accountId)) + famousWallExtraPercent(famousName));
   // v22 AISLG-40 方案 B：袭击强度按守军战力推导（下限官府一半、上限官府等级），
   // 不再用官府建筑等级——升官府（经济行为）不再自动放大挨打规模；
   // v23 两阶段流程下编成在发起时固定，到达不重算（预警期间征兵提高的是守方战力）
@@ -92,7 +96,7 @@ export async function resolveNpcCityRaid(
   const garrisonTotal = Object.values(garrison).reduce((sum, n) => sum + (n ?? 0), 0);
   const guardBonus = battleBonusOf(guard, garrisonTotal);
   const result = resolveBattle(attacker, garrison, {
-    wallDefensePercent: wall, siege: true, tower: towerStats(levels.arrow_tower ?? 0),
+    wallDefensePercent: wall, siege: true, tower: towerStats(levels.arrow_tower ?? 0, famousTowerPercent(famousName)),
     defenderHero: guardBonus,
   });
   const npcPower = armyPower(attacker);
@@ -181,6 +185,7 @@ export async function resolveNpcCityRaid(
       iron: settled.row.iron,
     },
     levels.warehouse ?? 0,
+    famousWarehousePercent(famousName),
   );
   let carry = 0;
   for (const kind of Object.keys(result.attacker.survivors) as TroopKind[]) {

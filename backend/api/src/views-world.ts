@@ -22,6 +22,7 @@ import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { advanceTile, effectiveGatherOf, type TileReserveStep } from '../../common/src/wilderness-reserve';
 import { reserveViewFrom } from './reserve-view';
 import { FAMOUS_PRODUCTION_BONUS_PERCENT, famousRecoversAt, famousStage } from '../../common/src/famous-city';
+import { famousEffectView } from '../../common/src/famous-effects';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
 import {
   TERRAIN_INFO,
@@ -122,6 +123,7 @@ function famousView(row: TileQueryRow): FamousTileView | null {
     stage: famousStage(famous, now),
     bonusPercent: FAMOUS_PRODUCTION_BONUS_PERCENT,
     recoversAt: recoversAt ? recoversAt.toISOString() : null,
+    effect: famousEffectView(famous.name),
   };
 }
 
