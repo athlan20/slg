@@ -429,6 +429,11 @@ const WORLD_MAP = {
   territoryView: '查看',
   /** 连片加成（v23 AISLG-59）：领地列表行标注与地图悬浮提示 */
   territoryCluster: (size: number, percent: number) => `连片 ${size} · +${percent}%`,
+  /** 野地储量（v61 AISLG-165）：档位 / 当前与上限 / 预计采空或回满 */
+  reserveTier: { ample: '充足', normal: '一般', depleted: '枯竭' } as Record<'ample' | 'normal' | 'depleted', string>,
+  reserveRow: (tier: string, current: number | null, cap: number | null) =>
+    current === null || cap === null ? `储量 ${tier}` : `储量 ${tier} ${current}/${cap}`,
+  reserveEta: (kind: 'empty' | 'full', clock: string) => (kind === 'empty' ? `预计 ${clock} 采空` : `预计 ${clock} 回满`),
   clusterTip: (label: string, size: number, percent: number) => `连片 ${size} 块，${label}产量 +${percent}%`,
   /** 战报列表（v13；详情走 battleReport 弹窗，点击行打开） */
   reportsTitle: '战斗战报',

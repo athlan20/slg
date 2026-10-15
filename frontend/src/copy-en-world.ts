@@ -154,6 +154,10 @@ export const WORLD_MAP_EN = {
   territoryGarrison: (count: number) => `Garrison ${count}`,
   territoryView: 'View',
   territoryCluster: (size: number, percent: number) => `Cluster ${size} · +${percent}%`,
+  reserveTier: { ample: 'ample', normal: 'normal', depleted: 'depleted' } as Record<'ample' | 'normal' | 'depleted', string>,
+  reserveRow: (tier: string, current: number | null, cap: number | null) =>
+    current === null || cap === null ? `Reserve ${tier}` : `Reserve ${tier} ${current}/${cap}`,
+  reserveEta: (kind: 'empty' | 'full', clock: string) => (kind === 'empty' ? `Empties ~${clock}` : `Full ~${clock}`),
   clusterTip: (label: string, size: number, percent: number) =>
     `${size} connected tiles, ${label} output +${percent}%`,
   reportsTitle: 'Battle Reports',

@@ -39,6 +39,7 @@ import {
 } from '../../common/src/plunder';
 import { insertServerBroadcast, recordWinStreak } from '../../common/src/server-broadcast';
 import { addTileArmy, type TileRow } from '../../common/src/world-db';
+import { readTileReserve, writeTileReserve } from '../../common/src/wilderness-reserve-db';
 import {
   abortMarchToReturn,
   completeMarchEvent,
@@ -192,6 +193,12 @@ export async function resolvePlunderArrival(
   const now = await dbNow(client);
   const carry = armyCarryCapacity(result.attacker.survivors, carryingPercent(await loadTechLevels(client, march.account_id)));
   const pool = npc ? npcStockPool(npc) : wildernessPlunderPool(target.terrain, target.level);
+  // v61（AISLG-165）：野地的地形资源奖励以该地块当前储量为上限（掠空即止）；金币不受储量约束
+  const reserve = npc ? 0 : ((await readTileReserve(client, target.x, target.y, now)) ?? 0);
+  if (!npc) {
+    const terrainKey = TERRAIN_INFO[target.terrain].resource;
+    pool[terrainKey] = Math.min(pool[terrainKey] ?? 0, reserve);
+  }
   const loot = inPlunderCooldown(target.plundered_at, now)
     ? { gold: 0, food: 0, wood: 0, stone: 0, iron: 0 }
     : loadByCarry(carry, pool);
@@ -229,11 +236,12 @@ export async function resolvePlunderArrival(
       }
     }
   } else {
-    // 冷却：胜利即更新（无论收益是否为 0，占位决策见 plunder.ts）
+    // 冷却：胜利即更新（无论收益是否为 0，占位决策见 plunder.ts）；储量扣减与之同事务
     await client.query(
       `UPDATE world_tiles SET plundered_at = $3 WHERE x = $1 AND y = $2`,
       [target.x, target.y, now],
     );
+    await writeTileReserve(client, target.x, target.y, reserve - loot[TERRAIN_INFO[target.terrain].resource], now);
   }
   await markMarchArrived(client, march.id);
   // 幸存部队返程（掠夺不改归属、不留驻军）；全灭胜（幸存 0）无返程

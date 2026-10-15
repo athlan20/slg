@@ -1,5 +1,5 @@
 {
-  "version": 60,
+  "version": 61,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -621,7 +621,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 60,
+                "protocolVersion": 61,
                 "docNotice": null
               }
             },
@@ -666,7 +666,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 60,
+                "protocolVersion": 61,
                 "docNotice": null
               }
             },
@@ -682,14 +682,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/57 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/58 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 57,
+              "docVersion": 58,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -704,8 +704,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 60,
-                "docNotice": "接口文档已从 v57 更新到 v60：请 GET /agent-api/changes/57 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 61,
+                "docNotice": "接口文档已从 v58 更新到 v61：请 GET /agent-api/changes/58 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
               }
             }
           ]
@@ -965,7 +965,7 @@
         {
           "name": "city.territory",
           "type": "array",
-          "desc": "本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0） }；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。"
+          "desc": "本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。"
         },
         {
           "name": "cities",
@@ -2006,7 +2006,7 @@
         {
           "name": "events[].type",
           "type": "string",
-          "desc": "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）。"
+          "desc": "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）。"
         },
         {
           "name": "events[].initiator",
@@ -3860,6 +3860,11 @@
           "desc": "在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将（公开，名字与属性需侦察）。被获得后标记撤下，名将归属见 GET_HEROES 的 famousClaims。"
         },
         {
+          "name": "tiles[].reserve",
+          "type": "object | null",
+          "desc": "野地储量（v61，AISLG-165）：{ tier 档位 ample 充足 >60% / normal 一般 20%–60% / depleted 枯竭 <20%（所有人可见）, current 当前储量, cap 上限, eta { kind empty 预计采空 / full 预计回满, at } }；current / cap / eta 仅归属方与侦察过该地块的账号可见，其余为 null。储量与上限为基准单位（bonusRate、gatherRate 同口径）；采集与恢复速率随 time_scale 放大，eta 为真实时刻（采空 / 回满随之缩短）。非野地为 null。"
+        },
+        {
           "name": "tiles[].famous",
           "type": "object | null",
           "desc": "名城信息（v24 新增，AISLG-56）：{ name 名城名, stage 当前阶段（outer 外围阶段须先清外围 / keeper 外围已清、可攻城守并占领）, bonusPercent 占领后的独占加成（该城产量 +N%）, recoversAt 城守阶段外围恢复满编的时刻（超时无人攻下城守则恢复；外围阶段为 null） }；全图 8 座名城，对全服可见；非名城为 null。"
@@ -3976,7 +3981,7 @@
         {
           "name": "tile.wilderness",
           "type": "object | null",
-          "desc": "野地收益预览：{ resource 加成资源, bonusRate 占领加成/小时（= 基线 + 等级 × 每级增量，v21 加成保底：森林/草原/金矿 30+70×等级、平原/丘陵/荒漠 25+55×等级、沼泽 20+40×等级、湖泊 40+80×等级）, gatherRate 当前驻军采集/小时 }；非野地为 null。"
+          "desc": "野地收益预览：{ resource 加成资源, bonusRate 占领加成/小时（= 基线 + 等级 × 每级增量，v21 加成保底：森林/草原/金矿 30+70×等级、平原/丘陵/荒漠 25+55×等级、沼泽 20+40×等级、湖泊 40+80×等级）, gatherRate 当前驻军采集/小时（v61 起受储量约束：储量空时只按恢复速度采集）, reserve 野地储量（v61，同 tiles[].reserve）}；非野地为 null。"
         },
         {
           "name": "tile.npc",
@@ -3997,6 +4002,11 @@
           "name": "tile.protection",
           "type": "object | null",
           "desc": "玩家城与他人占领野地的保护状态（v38 / v39）：{ newbieUntil 新手保护截止（含其野地）, truceUntil 被动免战截止（仅城池；野地恒 null——城级免战不保护野地）, shieldUntil 主动免战截止（含其野地）, ownerChangedUntil 换主保护截止（仅野地：刚被抢占后 1 小时基准随缩放，期间玩家与 NPC 都不能再抢） }，任一截止时刻未到即受保护（MARCH 被拒，错误码与时限见 MARCH）；非玩家目标、自己的地为 null。到期自动失效，无事件。"
+        },
+        {
+          "name": "tile.reserve",
+          "type": "object | null",
+          "desc": "野地储量（v61，AISLG-165）：{ tier 档位 ample 充足 >60% / normal 一般 20%–60% / depleted 枯竭 <20%（所有人可见）, current 当前储量, cap 上限, eta { kind empty 预计采空 / full 预计回满, at } }；current / cap / eta 仅归属方与侦察过该地块的账号可见，其余为 null。储量与上限为基准单位（bonusRate、gatherRate 同口径）；采集与恢复速率随 time_scale 放大，eta 为真实时刻（采空 / 回满随之缩短）。非野地为 null。"
         },
         {
           "name": "tile.wildFamousIntel",
@@ -12166,7 +12176,7 @@
       "kind": "push",
       "name": "PUSH_TILE_STATE",
       "title": "推送：地块归属 / 驻军变化（v12）",
-      "summary": "地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军。",
+      "summary": "地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军。",
       "dataFields": [
         {
           "name": "reason",

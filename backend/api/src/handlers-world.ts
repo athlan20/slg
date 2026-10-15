@@ -32,7 +32,6 @@ import {
   clampMapWindow,
   inWorld,
   marchTravelSeconds,
-  territoryRates,
 } from '../../common/src/world';
 import { PLUNDER_COOLDOWN_MS } from '../../common/src/plunder';
 import {
@@ -395,7 +394,7 @@ export async function handleRecallGarrison(
       cityRow,
       levels,
       cityRow.db_now,
-      territoryRates(territory),
+      territory,
       await loadArmyFoodUsePerHour(client, ownerCityId),
     );
 

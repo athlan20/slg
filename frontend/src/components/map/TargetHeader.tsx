@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { formatClock } from '../../api/format';
 import { TROOP_KINDS, type BranchInfoView, type CityView, type TileDetailView } from '../../api/protocol';
 import { getCopy, useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
@@ -179,6 +180,12 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
               <p className="truncate text-dim">
                 {COPY.worldMap.wildernessBonusRow(RESOURCE_LABEL[detail.wilderness.resource], detail.wilderness.bonusRate)}
                 {detail.wilderness.gatherRate > 0 ? ` · ${COPY.worldMap.wildernessGatherRow(RESOURCE_LABEL[detail.wilderness.resource], detail.wilderness.gatherRate)}` : ''}
+              </p>
+            ) : null}
+            {detail.reserve ? (
+              <p role="世界地图详情区-野地储量" className="truncate text-dim">
+                {COPY.worldMap.reserveRow(COPY.worldMap.reserveTier[detail.reserve.tier], detail.reserve.current, detail.reserve.cap)}
+                {detail.reserve.eta ? ` · ${COPY.worldMap.reserveEta(detail.reserve.eta.kind, formatClock(detail.reserve.eta.at))}` : ''}
               </p>
             ) : null}
             {detail.kind === 'npc_city' ? (

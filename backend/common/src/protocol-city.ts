@@ -203,6 +203,8 @@ export const EventType = {
   NEWBIE_PROTECTION_ENDED: 'newbie_protection_ended',
   /** v40：分城易主（AISLG-124；原主人 outcome=lost / 新主人 outcome=gained，detail 含城池、对方、坐标） */
   CITY_CONQUERED: 'city_conquered',
+  /** v61（AISLG-165）：名下野地储量采空（detail = { x, y, terrain, level, at }；驻军仍在时只按恢复速度采集） */
+  WILDERNESS_DEPLETED: 'wilderness_depleted',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;

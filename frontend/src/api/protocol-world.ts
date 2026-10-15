@@ -73,6 +73,16 @@ export interface TileView {
   durability: number | null;
   /** 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将 */
   wildFamous: boolean;
+  /** 野地储量（v61，AISLG-165）：仅野地有值；数值与预计时刻只对归属方与侦察过的账号给出 */
+  reserve: ReserveView | null;
+}
+
+/** 野地储量视图（v61，AISLG-165）：档位对所有人可见，数值与预计时刻仅归属方与侦察过的账号可见 */
+export interface ReserveView {
+  tier: 'ample' | 'normal' | 'depleted';
+  current: number | null;
+  cap: number | null;
+  eta: { kind: 'empty' | 'full'; at: string } | null;
 }
 
 /** 玩家城地块的保护状态（v38，AISLG-122）；三个截止任一未到即受保护 */
@@ -120,8 +130,10 @@ export interface TerritoryView {
   resource: TerrainResource;
   /** 占领加成（/小时） */
   bonusRate: number;
-  /** 驻军采集（/小时） */
+  /** 驻军采集（/小时；v61 起受储量约束） */
   gatherRate: number;
+  /** 野地储量（v61，AISLG-165） */
+  reserve: ReserveView;
   garrison: number;
   /** 所属连片块数（v23 AISLG-59；同地形 4 向相邻；单块为 1） */
   clusterSize: number;

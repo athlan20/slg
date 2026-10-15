@@ -503,5 +503,8 @@
  * v59（普通将特长与阵型，只加不改）：HeroView 加 specialty / specialtyBonus，竞技场与将星塔加 formations 与阵型目录。
  * v60（公告，AISLG-162）：新增 GET_ANNOUNCEMENTS（op 96）/ GET_ANNOUNCEMENT（op 97）/ READ_ANNOUNCEMENT（op 98，玩家与 Agent 通用）与推送 PUSH_ANNOUNCEMENT（op 2022，只带标题与分类，本站在线连接收到）；
  *   服务端过滤正文（受限 Markdown：分段、加粗、https 链接）；生效中 / 往期、置顶、强提醒、站点定向与中英双语。新增错误码 ANNOUNCEMENT_NOT_FOUND；server_broadcasts 新增播报类型 announcement。
+ * v61（野地储量，AISLG-165，只加不改）：每块野地有储量（基准 1500 + 3500 × 等级，±20% 固定哈希，金矿 ×0.4），采集上限 10%/h、恢复 2%/h；
+ *   TileView / TerritoryView 新增 reserve（档位对所有人，数值与预计时刻仅归属方与侦察过的账号可见）；采空新增事件 wilderness_depleted 与推送 reason=reserve_depleted；
+ *   掠夺与流寇的地形资源受储量约束。无新增协议号与错误码。
  */
-export const PROTOCOL_VERSION = 60;
+export const PROTOCOL_VERSION = 61;

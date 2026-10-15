@@ -638,6 +638,7 @@ export type {
   TerrainKind,
   TerrainResource,
   TileKind,
+  ReserveView,
   TileView,
   TileDetailView,
   TileOwnerView,

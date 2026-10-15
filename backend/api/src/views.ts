@@ -40,12 +40,17 @@ import {
   TERRAIN_INFO,
   clusterBonusMultiplier,
   territoryClusterSizes,
-  territoryRates,
   wildernessBonusRate,
-  wildernessGatherRate,
   type TerritoryRow,
 } from '../../common/src/world';
 import { loadTerritory } from '../../common/src/world-db';
+import {
+  advanceTile,
+  applyReserveUpdates,
+  effectiveGatherOf,
+  territoryDisplayRates,
+} from '../../common/src/wilderness-reserve';
+import { reserveViewFrom } from './reserve-view';
 import { getTimeScale } from '../../common/src/time-scale';
 import { selfTruceNextAvailableAt, settleDurability } from '../../common/src/protection';
 import { cityLevelOf } from '../../common/src/branch-city';
@@ -261,9 +266,11 @@ export async function lockCitySnapshot(
     row,
     levels,
     row.db_now,
-    territoryRates(territory),
+    territory,
     armyFoodUsePerHour,
   );
+  // 储量已推进到结算时刻：快照里的地块同步为落库值，视图与结算一致
+  applyReserveUpdates(territory, settled.reserves);
   const queueRes = await client.query(
     `SELECT * FROM builds
      WHERE city_id = $1 AND status IN ('building', 'queued')
@@ -351,7 +358,7 @@ export function toCityView(snap: CitySnapshot): CityView {
   const queue = snap.queue.map(buildView);
   const records = kindRecords(snap.levels);
   const production = productionPerHour(
-    snap.levels, territoryRates(snap.territory), snap.productionBonusPercent, snap.techs, snap.guardProductionPercent,
+    snap.levels, territoryDisplayRates(snap.territory), snap.productionBonusPercent, snap.techs, snap.guardProductionPercent,
   );
   const roundedProduction = {} as Record<ProducedResource, number>;
   for (const key of Object.keys(production) as Array<keyof typeof production>) {
@@ -411,6 +418,7 @@ export function toCityView(snap: CitySnapshot): CityView {
     marches: snap.marches.map(marchView),
     territory: snap.territory.map((tile) => {
       const sizes = territoryClusterSizes(snap.territory);
+      const step = advanceTile(tile, new Date(), new Date(), true);
       return {
         x: tile.x,
         y: tile.y,
@@ -418,10 +426,11 @@ export function toCityView(snap: CitySnapshot): CityView {
         level: tile.level,
         resource: TERRAIN_INFO[tile.terrain].resource,
         bonusRate: wildernessBonusRate(tile.terrain, tile.level),
-        gatherRate: wildernessGatherRate(tile.terrain, tile.level, tile.garrison),
+        gatherRate: Math.round(effectiveGatherOf(step.reserve, step.cap, step.drain)),
         garrison: tile.garrison,
         clusterSize: sizes.get(`${tile.x},${tile.y}`) ?? 1,
         clusterBonusPercent: Math.round((clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1) - 1) * 100),
+        reserve: reserveViewFrom(step, true),
       };
     }),
     queue,

@@ -390,6 +390,12 @@ ALTER TABLE world_tiles ADD COLUMN IF NOT EXISTS plundered_at timestamptz;
 -- v39（AISLG-123 玩家对抗二）：野地换主保护截止——被玩家抢占后 1 小时基准（随缩放）内
 -- 谁都不能再抢这块地（玩家抢占与 NPC 袭击目标池都跳过）；无主化不设保护
 ALTER TABLE world_tiles ADD COLUMN IF NOT EXISTS owner_changed_until timestamptz;
+-- v61（AISLG-165 野地储量）：储量只在 (reserve, reserve_at) 落库，读取 / 结算时惰性推进（见 wilderness-reserve.ts）；
+-- 无值 = 满储量（老地图与新占领的野地无需迁移）。reserve_empty_at 为按当前驻军预计采空的时刻，供 Worker 到点结算。
+ALTER TABLE world_tiles ADD COLUMN IF NOT EXISTS reserve double precision;
+ALTER TABLE world_tiles ADD COLUMN IF NOT EXISTS reserve_at timestamptz;
+ALTER TABLE world_tiles ADD COLUMN IF NOT EXISTS reserve_empty_at timestamptz;
+CREATE INDEX IF NOT EXISTS idx_world_tiles_reserve_empty ON world_tiles (reserve_empty_at) WHERE reserve_empty_at IS NOT NULL;
 
 -- v24（AISLG-48）：未占领野地原住守军的战后存量。无行 = 满编；有行 = 战后幸存守军，
 -- 按每小时恢复基准 25% 惰性回补（读取时按 updated_at 现算，见 common/src/native-garrison.ts）

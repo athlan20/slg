@@ -261,6 +261,9 @@ export interface TileRow {
   npc: NpcCitySnapshot | null;
   /** 最近一次成功掠夺的时间（v16；冷却判定见 plunder.ts）；从未被掠为 null */
   plundered_at: Date | null;
+  /** 野地储量（v61，AISLG-165；基准单位，无值 = 满储量）与落库时刻，推进规则见 wilderness-reserve.ts */
+  reserve?: number | null;
+  reserve_at?: Date | null;
   /** 换主保护截止（v39，AISLG-123）：野地被玩家抢占后的一小段保护期内谁都不能再抢；其余为 null */
   owner_changed_until?: Date | null;
   /** 在野名将落位（v54，AISLG-144）：该野地隐居着此名将；其余为 null */
@@ -323,7 +326,7 @@ export async function clearTileOccupation(client: pg.PoolClient, x: number, y: n
 /** 某城占领的全部野地（含驻军总数；CityView.territory 与产量加成计算共用） */
 export async function loadTerritory(q: pg.Pool | pg.PoolClient, cityId: string): Promise<TerritoryRow[]> {
   const res = await q.query(
-    `SELECT wt.x, wt.y, wt.terrain, wt.level, COALESCE(ta.total, 0)::int AS garrison
+    `SELECT wt.x, wt.y, wt.terrain, wt.level, wt.reserve, wt.reserve_at, COALESCE(ta.total, 0)::int AS garrison
      FROM world_tiles wt
      LEFT JOIN (SELECT x, y, sum(count) AS total FROM tile_army GROUP BY x, y) ta
        ON ta.x = wt.x AND ta.y = wt.y

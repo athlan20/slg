@@ -33,7 +33,7 @@ import {
   type BuildDeniedCode,
 } from '../../common/src/rules';
 import { productionPerHour } from '../../common/src/production';
-import { territoryRates } from '../../common/src/world';
+import { territoryDisplayRates } from '../../common/src/wilderness-reserve';
 import { populationGrowthPerHour } from '../../common/src/rules';
 import { readString, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
@@ -191,7 +191,7 @@ function upgradeChainPlan(kind: BuildingKind, fromLevel: number, toLevel: number
  * 产量随后续建造 / 领地变化而变时，以最新失败响应为准。
  */
 export function insufficientResourcesDetail(cost: Resources, snap: CitySnapshot): { shortfall: Partial<Resources>; retryAfterSeconds: number | null } {
-  const rates = productionPerHour(snap.levels, territoryRates(snap.territory), snap.productionBonusPercent, snap.techs);
+  const rates = productionPerHour(snap.levels, territoryDisplayRates(snap.territory), snap.productionBonusPercent, snap.techs);
   const netRates: Resources = {
     gold: rates.gold,
     wood: rates.wood,
