@@ -4,6 +4,7 @@
 // 所有数值均为占位决策，尚未经过数值评审；调整入口只在本文件与 production.ts。
 
 import { BUILDING_KINDS, RESOURCE_KEYS, type BuildingKind, type KindActionCosts, type Resources } from './protocol';
+import { FAMOUS_THEME_LEVEL_MAX, famousThemeBuildingOf } from './famous-effects';
 import { getTimeScale, scaledRate } from './time-scale';
 
 /** 建筑建成后的经济产出；非生产建筑为 null（军营的征兵、城墙的守城加成属后续玩法） */
@@ -179,6 +180,31 @@ export const BUILD_QUEUE_CAPACITY = 2;
 export const MAX_BUILDING_LEVEL = 20;
 
 /**
+ * 某城某建筑的等级上限（AISLG-167）：占有对应名城（cities.famous_name，效果跟着城走）时，该名城的主题建筑
+ * 可升到 FAMOUS_THEME_LEVEL_MAX（25），其余建筑仍为 MAX_BUILDING_LEVEL（20）。
+ */
+export function buildingLevelMax(kind: BuildingKind, famousName?: string | null): number {
+  return famousThemeBuildingOf(famousName) === kind ? FAMOUS_THEME_LEVEL_MAX : MAX_BUILDING_LEVEL;
+}
+
+/**
+ * 某城某建筑的生效等级（AISLG-167）：库存等级超出该城当前上限时按上限生效。名城失守后，主题建筑库存的 25 级
+ * 按 20 级产出、守城、箭塔、仓库、升级判定；库存不改，重新占领名城即恢复。
+ */
+export function effectiveBuildingLevel(kind: BuildingKind, level: number, famousName?: string | null): number {
+  return Math.min(level, buildingLevelMax(kind, famousName));
+}
+
+/** 某城全部建筑的等级上限（协议 CityView.levelMax 下发，供界面禁用与连升选择） */
+export function buildingLevelMaxes(famousName?: string | null): Record<BuildingKind, number> {
+  const result = {} as Record<BuildingKind, number>;
+  for (const kind of BUILDING_KINDS) {
+    result[kind] = buildingLevelMax(kind, famousName);
+  }
+  return result;
+}
+
+/**
  * 升级倍数（v31，AISLG-85）：第 L → L+1 级的成本与耗时 = 基础值 × 倍数。1~10 级维持线性（倍数 = L，
  * 即升到 10 级为止的前期节奏不变）；10 级以后每级 ×1.3：L ≥ 10 时倍数 = 9 × 1.3^(L − 9)
  * （10→11 = 11.7、14→15 = 33.4、19→20 = 124.1）。Worker 排队激活的 SQL 用同一公式。
@@ -230,12 +256,20 @@ export const WALL_DEFENSE_PER_LEVEL = 5;
 /** 城墙 11~20 级每级改为 +2（v31，AISLG-85）：20 级 = 70%，加满城防科技（+10）= 80%，低于引擎封顶 90% */
 export const WALL_DEFENSE_PER_LEVEL_HIGH = 2;
 export const WALL_HIGH_FROM_LEVEL = 10;
+/**
+ * 城墙 21~25 级每级 +1（AISLG-167，仅名城主题城墙可达）：25 级 = 75%，加满城防科技（+10）= 85%，
+ * 再叠洛阳名城（+5）= 90%，正好落在引擎封顶 90%，不做超出封顶的无效增益。
+ */
+export const WALL_TOP_FROM_LEVEL = 20;
+export const WALL_DEFENSE_PER_LEVEL_TOP = 1;
 
-/** 城墙本体的守城减伤百分数：前 10 级每级 +5，11~20 级每级 +2（不含城防科技） */
+/** 城墙本体的守城减伤百分数：前 10 级每级 +5，11~20 级每级 +2，21~25 级每级 +1（不含城防科技） */
 export function wallBasePercent(wallLevel: number): number {
   const level = Math.max(0, Math.floor(wallLevel));
   const low = Math.min(level, WALL_HIGH_FROM_LEVEL);
-  return low * WALL_DEFENSE_PER_LEVEL + Math.max(0, level - WALL_HIGH_FROM_LEVEL) * WALL_DEFENSE_PER_LEVEL_HIGH;
+  const high = Math.min(Math.max(0, level - WALL_HIGH_FROM_LEVEL), WALL_TOP_FROM_LEVEL - WALL_HIGH_FROM_LEVEL);
+  const top = Math.max(0, level - WALL_TOP_FROM_LEVEL);
+  return low * WALL_DEFENSE_PER_LEVEL + high * WALL_DEFENSE_PER_LEVEL_HIGH + top * WALL_DEFENSE_PER_LEVEL_TOP;
 }
 
 /** 默认建造时长（秒，未加速基准），四种建筑相同；可用环境变量 BUILD_SECONDS 覆盖，便于验证 */
@@ -286,15 +320,16 @@ export function upgradeCost(kind: BuildingKind, currentLevel: number): Resources
  * v25（AISLG-71）另附各动作时长（秒，已按当前 timeScale 折算），null 语义与对应成本字段一致。
  * 只按等级推导，不反映队列状态（队满/在队等阻断由客户端按钮层处理）。
  */
-export function actionCosts(levels: Record<BuildingKind, number>): Record<BuildingKind, KindActionCosts> {
+export function actionCosts(levels: Record<BuildingKind, number>, famousName?: string | null): Record<BuildingKind, KindActionCosts> {
   const result = {} as Record<BuildingKind, KindActionCosts>;
   for (const kind of BUILDING_KINDS) {
     const level = levels[kind] ?? 0;
+    const upgradable = level > 0 && level < buildingLevelMax(kind, famousName);
     result[kind] = {
       build: level === 0 ? { ...BUILDING_INFO[kind].cost } : null,
-      upgrade: level > 0 && level < MAX_BUILDING_LEVEL ? upgradeCost(kind, level) : null,
+      upgrade: upgradable ? upgradeCost(kind, level) : null,
       buildSeconds: level === 0 ? buildSeconds() : null,
-      upgradeSeconds: level > 0 && level < MAX_BUILDING_LEVEL ? upgradeSeconds(level) : null,
+      upgradeSeconds: upgradable ? upgradeSeconds(level) : null,
     };
   }
   return result;
@@ -345,6 +380,7 @@ export function startBuild(
  * 中间每一级合成**一条**队列条目——整链按各级公式价一次性预扣（快照全额）、
  * 占用 1 个队列位、Worker 逐级推进 due_at；level 字段 = 第一个目标等级。
  * toLevel ≤ 当前 +1 视同单级升级（调用方也可以不传）。
+ * maxLevel（AISLG-167）= 该城该建筑的等级上限，缺省 MAX_BUILDING_LEVEL（调用方用 buildingLevelMax 取值）。
  */
 export function startUpgrade(
   kind: BuildingKind,
@@ -354,6 +390,7 @@ export function startUpgrade(
   activeBuilds: number,
   queuedBuilds: number,
   toLevel?: number,
+  maxLevel: number = MAX_BUILDING_LEVEL,
 ): { ok: true; cost: Resources; level: number; toLevel: number | null; mode: 'start' | 'queued' } | { ok: false; code: BuildDeniedCode; cost?: Resources } {
   if (kindInQueue) {
     return { ok: false, code: 'BUILDING_EXISTS' };
@@ -361,11 +398,11 @@ export function startUpgrade(
   if (currentLevel <= 0) {
     return { ok: false, code: 'BUILDING_NOT_BUILT' };
   }
-  if (currentLevel >= MAX_BUILDING_LEVEL) {
+  if (currentLevel >= maxLevel) {
     return { ok: false, code: 'BUILDING_LEVEL_MAX' };
   }
   // 连续升级目标：超过等级上限整单拒绝（文档口径 BUILDING_LEVEL_MAX）；低于当前 +1 折回单级
-  if (toLevel !== undefined && toLevel > MAX_BUILDING_LEVEL) {
+  if (toLevel !== undefined && toLevel > maxLevel) {
     return { ok: false, code: 'BUILDING_LEVEL_MAX' };
   }
   const chainTarget = Math.max(toLevel ?? currentLevel + 1, currentLevel + 1);

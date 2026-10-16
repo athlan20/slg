@@ -24,6 +24,7 @@ import {
   EXCHANGE_INPUT_PER_GOLD,
   applyCost,
   buildSeconds,
+  buildingLevelMax,
   exchangeGoldFor,
   startBuild,
   startUpgrade,
@@ -167,7 +168,8 @@ export async function handleUpgrade(
   await runBuildAction(ctx, conn, op, seq, (snap, counts) => {
     const currentLevel = snap.levels[kind];
     const kindInQueue = snap.queue.some((item) => item.kind === kind);
-    const verdict = startUpgrade(kind, currentLevel, snap.resources, kindInQueue, counts.active, counts.queued, toLevel ?? undefined);
+    const maxLevel = buildingLevelMax(kind, snap.famousName);
+    const verdict = startUpgrade(kind, currentLevel, snap.resources, kindInQueue, counts.active, counts.queued, toLevel ?? undefined, maxLevel);
     if (!verdict.ok) {
       return verdict;
     }

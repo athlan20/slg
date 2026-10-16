@@ -32,6 +32,7 @@ import { guardProductionPercent } from '../../common/src/hero';
 import {
   wallBasePercent,
   actionCosts,
+  buildingLevelMaxes,
   popCap,
   populationGrowthPerHour,
 } from '../../common/src/rules';
@@ -377,7 +378,9 @@ export function toCityView(snap: CitySnapshot): CityView {
     buildings: records.buildings,
     levels: records.levels,
     // v6：下一步动作成本（未建=建造成本，已建未满级=升级成本）
-    costs: actionCosts(snap.levels),
+    costs: actionCosts(snap.levels, snap.famousName),
+    // v63（AISLG-167）：各建筑等级上限；名城主题建筑为 25，其余 20
+    levelMax: buildingLevelMaxes(snap.famousName),
     farms: records.buildings.farm,
     production: roundedProduction,
     population: {

@@ -35,9 +35,9 @@ test('四个新兵种的属性与成本与需求一致', () => {
 test('军营解锁等级：辎重车 3 / 床弩 7 / 冲车 8 / 铁骑兵 11；不够返回 TROOP_NOT_AVAILABLE，按人口扣减', () => {
   const need: Array<[keyof typeof TROOP_INFO, number]> = [['supply_wagon', 3], ['ballista', 7], ['siege_ram', 8], ['iron_cavalry', 11]];
   for (const [troop, level] of need) {
-    const low = startRecruit(troop, 1, RICH, 1000, level - 1, 0, 0);
+    const low = startRecruit(troop, 1, RICH, 1000, level - 1, 0, 0, null);
     assert.ok(!low.ok && low.code === 'TROOP_NOT_AVAILABLE', `${troop} 需要军营 ${level} 级`);
-    const ok = startRecruit(troop, 2, RICH, 1000, level, 0, 0);
+    const ok = startRecruit(troop, 2, RICH, 1000, level, 0, 0, null);
     assert.ok(ok.ok, `${troop} ${level} 级可征`);
     if (ok.ok) {
       assert.equal(ok.population, TROOP_INFO[troop].population * 2, '人口 = 单兵人口 × 数量');
@@ -61,7 +61,7 @@ test('克制倍率表：长枪打骑兵 ×1.2（含铁骑）、刀盾受弓箭 /
   assert.equal(counterMultiplier('swordsman', 'archer'), 1, '克制不对称');
   assert.equal(counterMultiplier('pikeman', 'swordsman'), 1);
   const pike = troopCounterInfo('pikeman');
-  assert.deepEqual(pike.counters, [{ targets: ['cavalry', 'iron_cavalry'], percent: 20 }]);
+  assert.deepEqual(pike.counters, [{ targets: ['cavalry', 'iron_cavalry', 'hubao_cavalry', 'xiliang_cavalry'], percent: 20 }]);
   const sword = troopCounterInfo('swordsman');
   assert.deepEqual(sword.resists, [{ from: ['archer', 'ballista'], percent: -20 }]);
 });

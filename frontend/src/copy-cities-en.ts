@@ -60,6 +60,7 @@ export const CITY_COPY_EN = {
     legend: 'Famous City (fought in two stages; occupying grants an exclusive bonus)',
     stageOuter: 'Outer ring stage: clear the outer-ring garrison first',
     stageKeeper: 'Keeper stage: outer ring cleared — attack the keeper and occupy',
+    eliteRow: (troop: string) => `Famous City exclusive troop: ${troop} (recruitable only in a branch city of this Famous City)`,
     bonus: (percent: number) => `Occupier-exclusive: this city's output +${percent}%`,
     effect: {
       wall: (percent: number) => `City wall damage reduction in sieges +${percent} points`,

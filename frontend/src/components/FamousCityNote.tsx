@@ -1,4 +1,4 @@
-import type { FamousTileView } from '../api/protocol';
+import { FAMOUS_ELITE_TROOP, type FamousTileView } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import { famousEffectText } from './famousEffectText';
@@ -7,14 +7,17 @@ import { famousEffectText } from './famousEffectText';
  *  让玩家打之前就知道值不值，又不撑高右侧详情面板。名城名走 tName。 */
 export function FamousCityNote({ famous }: { famous: FamousTileView }) {
   const copy = useCopy();
-  const { CITY_COPY, RESOURCE_LABEL } = copy;
+  const { CITY_COPY, RESOURCE_LABEL, TROOP_LABEL } = copy;
   const outer = famous.stage === 'outer';
+  const eliteKind = FAMOUS_ELITE_TROOP[famous.name];
+  const eliteLine = eliteKind ? CITY_COPY.famous.eliteRow(TROOP_LABEL[eliteKind].name) : null;
   const effect = famous.effect ? CITY_COPY.famous.effectRow(famousEffectText(famous.effect, CITY_COPY.famous.effect, RESOURCE_LABEL)) : null;
   const full = [
     CITY_COPY.famous.title(tName(famous.name)),
     outer ? CITY_COPY.famous.stageOuter : CITY_COPY.famous.stageKeeper,
     CITY_COPY.famous.bonus(famous.bonusPercent),
     effect,
+    eliteLine,
     famous.recoversAt ? CITY_COPY.famous.recoversAt(new Date(famous.recoversAt).toLocaleTimeString()) : null,
     outer ? CITY_COPY.famous.hintOuter : CITY_COPY.famous.hintKeeper,
   ]
@@ -28,6 +31,11 @@ export function FamousCityNote({ famous }: { famous: FamousTileView }) {
       {effect ? (
         <p role="世界地图详情区-名城效果" title={effect} className="truncate px-2 py-0.5 text-[11.5px] text-gold">
           {effect}
+        </p>
+      ) : null}
+      {eliteLine ? (
+        <p role="世界地图详情区-名城专属兵" title={eliteLine} className="truncate px-2 py-0.5 text-[11.5px] text-gold">
+          {eliteLine}
         </p>
       ) : null}
     </>

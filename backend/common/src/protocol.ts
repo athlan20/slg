@@ -270,6 +270,8 @@ export const ErrorCode = {
   AGENT_FORBIDDEN: 'AGENT_FORBIDDEN',
   /** 该兵种需要更高等级的军营（v11；未建军营同样返回） */
   TROOP_NOT_AVAILABLE: 'TROOP_NOT_AVAILABLE',
+  /** 专属兵种只能在占领对应名城的分城军营征募（v64，AISLG-168）；城池非该名城（含失守后原主人）同样返回 */
+  ELITE_TROOP_LOCKED: 'ELITE_TROOP_LOCKED',
   /** 人口不足以征募该数量（v11） */
   INSUFFICIENT_POPULATION: 'INSUFFICIENT_POPULATION',
   /** 征兵队列已满（1 征募中 + 排队上限，占位数值；v11） */

@@ -246,6 +246,8 @@ export interface CityView {
   levels: BuildingCounts;
   /** 各建筑「下一步动作」成本（v6 新增）：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用 */
   costs: Record<BuildingKind, KindActionCosts>;
+  /** 各建筑的等级上限（v63 新增）：普通为 20；占有对应名城时其主题建筑为 25（见 CityView.famousEffect 与 famousName） */
+  levelMax: Record<BuildingKind, number>;
   /** 兼容字段：已建成的农场数量（= buildings.farm；v2 及以前的客户端使用） */
   farms: number;
   /** 当前小时产量，按资源归集（v3 新增；v7 起含官府产金；离线期间照常累积，读取时结算） */

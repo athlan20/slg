@@ -48,6 +48,7 @@ export const CITY_COPY = {
     legend: '名城（分两阶段攻打，占领独享加成）',
     stageOuter: '外围阶段：先清外围驻军',
     stageKeeper: '城守阶段：外围已清，可攻城守并占领',
+    eliteRow: (troop: string) => `名城专属兵：${troop}（仅占领本城的分城可征）`,
     bonus: (percent: number) => `占领独享：该城产量 +${percent}%`,
     effect: {
       wall: (percent: number) => `守城城墙减伤 +${percent} 个百分点`,

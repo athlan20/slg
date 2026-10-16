@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**62** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**64** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 62）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 64）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -276,6 +276,23 @@
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -307,7 +324,15 @@
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -441,7 +466,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 62,
+    "protocolVersion": 64,
     "docNotice": null
   }
 }
@@ -503,7 +528,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 62,
+    "protocolVersion": 64,
     "docNotice": null
   }
 }
@@ -523,7 +548,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/59 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/61 补读增量）**
 
 请求：
 
@@ -534,7 +559,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 59,
+    "docVersion": 61,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -553,8 +578,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 62,
-    "docNotice": "接口文档已从 v59 更新到 v62：请 GET /agent-api/changes/59 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 64,
+    "docNotice": "接口文档已从 v61 更新到 v64：请 GET /agent-api/changes/61 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
   }
 }
 ```
@@ -687,10 +712,11 @@
 | city.buildings | object | **DEPRECATED（v3 遗留，勿用）**：按类型统计的已建数量，v5 单实例规则下恒为 0 或 1——切勿当作等级，解析城池建筑状态请一律读 city.levels。键集：{ farm, lumber_mill, quarry, iron_mine, house, government, barracks, warehouse, wall, academy, parade_ground, beacon, post_station, arrow_tower }（v7 起九种，v27 起加书院，v30 起再加校场 / 烽火台 / 驿站 / 箭塔共十四种）。 |
 | city.levels | object | 各建筑类型的当前等级（v5 新增）：0 = 未建造；产量、人口上限与仓储上限均按等级推导。 |
 | city.costs | object | 各建筑「下一步动作」成本（v6 新增，v25 起附时长）：{ build, upgrade, buildSeconds, upgradeSeconds }，按类型；未建时 build 为建造成本、upgrade 为 null，已建未满级时 upgrade 为升级成本（= 建造成本 × 当前等级）、build 为 null，满级成本均为 null；buildSeconds / upgradeSeconds（v25，AISLG-71）为对应动作的单级时长（秒，已按当前全局时间缩放折算），null 语义与对应成本字段一致。发起前可用它展示消耗与耗时并预判资源不足。 |
+| city.levelMax | object | 各建筑的等级上限（v63 新增，AISLG-167）：{ 建筑类型: 上限 }，普通建筑 20；占有对应名城（city.famousName）时其主题建筑为 25——洛阳城墙、长安箭塔、官渡农田、成都铁矿、建业伐木场、邺城官府、许昌驿站、襄阳仓库。等级上限随城池走（换主人归新主人，与名城效果同口径）。失守后超出上限的存量等级按当前上限生效（产出、守城减伤、箭塔、仓库、升级判定一律按上限计，levelMax 与 levels 一致；库存不改，重新占领即恢复）。city.costs 的 upgrade 与连升（UPGRADE toLevel）都按此上限判定。 |
 | city.farms | number | **DEPRECATED（v3 遗留，勿用）**：兼容字段，= buildings.farm（0/1 已建标记）；等级请读 city.levels.farm。 |
 | city.production | object | 当前小时产量（v3 新增，v7 起含 gold）：{ gold, food, wood, stone, iron }；四种生产资源各含 100/小时的基础产量（无对应建筑也产出），建筑产量按等级叠加；金币由官府（100×等级/小时，v19）与占领金矿生产（无基础产量）。产量随建筑建成即时生效。 |
 | city.population | object | 人口现状（v7 新增，v8 规则确认，v19 数值修订）：{ current 当前人口, cap 上限（= 50 + 100 × 民房等级 × (民房等级 + 1)，无民房即基线 50）, growthPerHour 每小时增长（基准 = 10 × 民房等级 × (等级 + 1)，无民房为 0；实际 × 全局时间缩放） }；current ≥ cap 时停止增长（新号即 50/50 满编、增速 0，建民房后恢复增长）；征兵将消耗人口。 |
-| city.army | object | 城内驻军（v11 新增）：{ porter, militia, scout, pikeman, swordsman, archer, cavalry, iron_cavalry, supply_wagon, ballista, siege_ram }（后四种为 v33 二期兵种），按兵种统计；征兵完成（recruit_completed）时累加。 |
+| city.army | object | 城内驻军（v11 新增）：{ porter, militia, scout, pikeman, swordsman, archer, cavalry, iron_cavalry, supply_wagon, ballista, siege_ram }（后四种为 v33 二期兵种），按兵种统计；征兵完成（recruit_completed）时累加。v64（AISLG-168）起键集再加 yulin_guard、danyang_soldier、baimao_soldier、huwei_guard、zhuge_crossbow、xiandeng_warrior、hubao_cavalry、xiliang_cavalry 八种名城专属兵（占领对应名城才能征募，失守后已练出的兵留在原主人手里）。 |
 | city.armyFoodUsePerHour | number | 全军小时耗粮（v14 新增，实际值 × 全局时间缩放，与产出同幅）：城内驻军 1 倍 + 行军中/野地驻军 2 倍（单兵耗粮见各兵种 foodUse）。production.food 为毛产量，净粮 = production.food − 本值，可为负；结算把粮食扣到 0 为止、不记负债；**v34（AISLG-107）起断粮不再只是停止增长**：粮食为 0 且净产量为负时，每小时（缩放后）城内驻军每兵种减 10%（见 city.starveAt / city.mutinyNextAt 与 PUSH_STARVATION_STATE）。 |
 | city.starveAt | string \| null | 预计断粮时间（v34，AISLG-107；ISO 8601）：按当前粮食与净产量（粮毛产量 production.food − armyFoodUsePerHour）推算，已断粮 = 当前时刻，净产量不为负（不会断粮）为 null。距断粮不足 1 小时（缩放后）推送一次预警。 |
 | city.mutinyNextAt | string \| null | 下一次断粮哗变时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每个兵种减 10%（向上取整、至少 1 个，在外部队不受影响、不强制召回）；否则 null。 |
@@ -700,7 +726,7 @@
 | city.shieldUntil | string \| null | 主动免战截止（v38，AISLG-122，账号级）：TRUCE 开启后 12 小时基准随缩放；开着时别人打不了你（含 NPC 袭击目标池跳过）、你也不能出兵打玩家（SELF_TRUCE_ACTIVE，打野地 / NPC 不受限）。未开启为 null。 |
 | city.shieldNextAt | string \| null | 下一次可开启主动免战的时刻（v38，AISLG-122；每周一次，ISO 8601）；当前可开启为 null。 |
 | city.durability | number \| null | 分城城防值（v40，AISLG-124）：0..100，被「占领」打赢一击 −35（冲车加成最多再 −15）、归零一击换主；免战结束后每小时回涨 10 至满（免战内不回涨）。主城为 null（永不被占领）。 |
-| city.famousName / city.productionBonusPercent | string \| null / number | 名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。 |
+| city.famousName / city.productionBonusPercent | string \| null / number | 名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。v64（AISLG-168）：占领名城的分城可征募该名城的专属兵（名城 → 兵种对照见 RECRUIT 的 summary），失守即失去征募资格。 |
 | city.famousEffect | object \| null | 名城独有效果（v62 新增，AISLG-166）：{ kind, percent, resources }，只有占领者享受、跟着城走（换主人归新主人，放弃 / 被占即失效）。洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。普通城为 null。 |
 | city.guard | object \| null | 城守（v36 新增，AISLG-115）：该城任命的武将 { heroId, name, famous, lead, force, wit, level, bonusPercent }；未任为 null。产量加成（四资源非金，智力 × 0.1% 封顶 5%）已计入 production；守城战另享攻防加成（见 ASSIGN_HERO）。 |
 | city.recruitQueue | array | 征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。 |
@@ -973,6 +999,23 @@
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -1004,7 +1047,15 @@
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -1289,6 +1340,23 @@
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -1320,7 +1388,15 @@
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -1641,6 +1717,23 @@
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 1,
       "production": {
         "gold": 100,
@@ -1672,7 +1765,15 @@
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -2350,14 +2451,14 @@
 
 `C→S` 请求-响应 · 需登录后发送
 
-把指定类型的建筑升到下一等级（v5 新增；每种建筑同城唯一，成长走升级）。与 BUILD 共用建造队列：无在建时立即开工，有在建时入队（排队上限内），队满返回 QUEUE_FULL。该类型已在队列中（含首次建造进行中、等级仍为 0）返回 BUILDING_EXISTS（在队冲突先于未建成判定）；未建造且不在队列返回 BUILDING_NOT_BUILT；已达等级上限（20 级，v31 AISLG-85 由 10 级开放到 20 级；占位数值）返回 BUILDING_LEVEL_MAX。升级成本 = 建造成本 × 升级倍数，升级时长 = 建造时长 × 升级倍数（均为占位公式；全局时间缩放作用于该总时长，钳 1 秒）：第 L → L+1 级的倍数 1~9 级 = L（线性，即升到 10 级为止的前期成本与耗时不变），L ≥ 10 时 = 9 × 1.3^(L − 9)（10→11 ≈ ×11.7、14→15 ≈ ×33.4、19→20 ≈ ×124.1；10→20 合计约 499 倍基础成本），成本逐项四舍五入；CityView.costs 的 upgrade / upgradeSeconds 与 chain 都按此公式下发。城墙守城减伤前 10 级每级 +5%、11~20 级每级 +2%（20 级 70%），其他按等级线性增长的效果（人口 / 产金 / 占领上限 / 分城上限 / 仓库保护 / 校场 / 烽火台 / 驿站等）本期不改。完成后产量、人口上限或仓储上限按新等级计算。失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷；v22 起资源不足时另附 shortfall 缺口与 retryAfterSeconds，见下方错误说明）。**v22（AISLG-43）连续升级**：可选 `toLevel`（当前等级 +2 .. 20）一次把该建筑升到目标等级——中间每一级合成**一条**队列条目：整链按各级公式价在发起时**一次性预扣**（快照即全额，取消排队条目按快照全额返还）、只占 **1 个**队列位、Worker 到达一级推进一级（build.level 为当前推进中的目标等级、build.toLevel 为整链终点），每级完成各发一条 build_completed 事件；响应另附 chain 数组给出每级 { level, cost, seconds }。边界口径：toLevel > 20 返回 BUILDING_LEVEL_MAX；toLevel ≤ 当前 +1（含低于当前等级的取值）视同单级升级（等效于不带 toLevel，不报错）；发起时整链校验资源，**中间级不会出现资源不足**（资源不足整单回滚、不入队，不存在「只做到某一级」的部分完成）。
+把指定类型的建筑升到下一等级（v5 新增；每种建筑同城唯一，成长走升级）。与 BUILD 共用建造队列：无在建时立即开工，有在建时入队（排队上限内），队满返回 QUEUE_FULL。该类型已在队列中（含首次建造进行中、等级仍为 0）返回 BUILDING_EXISTS（在队冲突先于未建成判定）；未建造且不在队列返回 BUILDING_NOT_BUILT；已达等级上限（普通 20 级，v31 AISLG-85 由 10 级开放到 20 级；v63 AISLG-167 占有对应名城时其主题建筑可到 25 级，见 city.levelMax；占位数值）返回 BUILDING_LEVEL_MAX。升级成本 = 建造成本 × 升级倍数，升级时长 = 建造时长 × 升级倍数（均为占位公式；全局时间缩放作用于该总时长，钳 1 秒）：第 L → L+1 级的倍数 1~9 级 = L（线性，即升到 10 级为止的前期成本与耗时不变），L ≥ 10 时 = 9 × 1.3^(L − 9)（10→11 ≈ ×11.7、14→15 ≈ ×33.4、19→20 ≈ ×124.1；10→20 合计约 499 倍基础成本），成本逐项四舍五入；CityView.costs 的 upgrade / upgradeSeconds 与 chain 都按此公式下发。城墙守城减伤前 10 级每级 +5%、11~20 级每级 +2%（20 级 70%）、21~25 级每级 +1%（v63，仅名城洛阳的主题城墙可达，25 级 75%），其他按等级线性增长的效果（人口 / 产金 / 占领上限 / 分城上限 / 仓库保护 / 校场 / 烽火台 / 驿站等）本期不改。完成后产量、人口上限或仓储上限按新等级计算。失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷；v22 起资源不足时另附 shortfall 缺口与 retryAfterSeconds，见下方错误说明）。**v22（AISLG-43）连续升级**：可选 `toLevel`（当前等级 +2 .. 该城该建筑的等级上限，普通 20、名城主题建筑 25）一次把该建筑升到目标等级——中间每一级合成**一条**队列条目：整链按各级公式价在发起时**一次性预扣**（快照即全额，取消排队条目按快照全额返还）、只占 **1 个**队列位、Worker 到达一级推进一级（build.level 为当前推进中的目标等级、build.toLevel 为整链终点），每级完成各发一条 build_completed 事件；响应另附 chain 数组给出每级 { level, cost, seconds }。边界口径：toLevel 超过该建筑等级上限返回 BUILDING_LEVEL_MAX；toLevel ≤ 当前 +1（含低于当前等级的取值）视同单级升级（等效于不带 toLevel，不报错）；发起时整链校验资源，**中间级不会出现资源不足**（资源不足整单回滚、不入队，不存在「只做到某一级」的部分完成）。
 
 **请求字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | kind | 'farm' \| 'lumber_mill' \| 'quarry' \| 'iron_mine' \| 'house' \| 'government' \| 'barracks' \| 'warehouse' \| 'wall' \| 'academy' \| 'parade_ground' \| 'beacon' \| 'post_station' \| 'arrow_tower' \| 'tavern' | 必填。要升级的建筑类型（九种一期建筑）；缺失或不是已知类型返回 INVALID_PARAMS。 |
-| toLevel | number | 可选（v22，AISLG-43）。连续升级的目标等级（整数，当前等级 +2 .. 10）：中间每一级合成一条队列条目、整链一次性预扣、逐级推进。缺省 = 单级升级（当前 +1）；非整数或 < 3 返回 INVALID_PARAMS；toLevel ≤ 当前 +1 视同单级升级（等效于不带 toLevel）；toLevel > 10 返回 BUILDING_LEVEL_MAX。 |
+| toLevel | number | 可选（v22，AISLG-43）。连续升级的目标等级（整数，当前等级 +2 .. 该建筑等级上限，普通 20、名城主题建筑 25 见 city.levelMax）：中间每一级合成一条队列条目、整链一次性预扣、逐级推进。缺省 = 单级升级（当前 +1）；非整数或 < 3 返回 INVALID_PARAMS；toLevel ≤ 当前 +1 视同单级升级（等效于不带 toLevel）；toLevel 超过等级上限返回 BUILDING_LEVEL_MAX。 |
 | cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
 
 **响应 data 字段**
@@ -3014,6 +3115,23 @@
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -3045,7 +3163,15 @@
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -3208,13 +3334,13 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 
 `C→S` 请求-响应 · 需登录后发送
 
-在当前城池的军营征募士兵（v11）。每种兵有解锁所需的军营等级（未达返回 TROOP_NOT_AVAILABLE）与单兵成本；每次征募 1..100 人，成本 = 单兵成本 × 数量、人口 = 单兵人口 × 数量，**发起时立即扣减资源与人口**（取消排队条目时全额返还）。征兵队列独立于建造队列：无征募中时立即开始（status=recruiting，dueAt 为预计完成时间，时长 = max(1 秒, floor(单兵基准时长 × 数量 ÷ time_scale))——**1 秒下限作用于批次总时长**而非单兵，**结果向下取整到整秒**（v22 修复 AISLG-39，与建造/升级同模型；显式验证环境变量覆盖时不再缩放）），有征募中且排队未满（当前 2 条，占位）时入队，队满返回 RECRUIT_QUEUE_FULL。资源不足返回 INSUFFICIENT_RESOURCES（v22 起附 shortfall 缺口与 retryAfterSeconds——按当前净产量推导，等满后重发必然成功），人口不足返回 INSUFFICIENT_POPULATION（v22 起附 shortfall 与 retryAfterSeconds——按人口增速推导），失败响应附当前城池状态（**data 仅含 city，无 recruit 载荷**——客户端必须先判 ok 再取载荷）。玩家与 Agent 均可发起。当前兵种：民夫（porter，军营 Lv1）：金 50 / 木 30 / 粮 30，8s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 500，耗粮 2/h（基准，实际 × 缩放）；义兵（militia，军营 Lv1）：金 80 / 木 20 / 粮 50，10s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 60，耗粮 3/h（基准，实际 × 缩放）；斥候（scout，军营 Lv2）：金 100 / 木 50 / 粮 80，15s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 80，耗粮 4/h（基准，实际 × 缩放）；长枪兵（pikeman，军营 Lv3）：金 150 / 木 80 / 铁 50 / 粮 100，20s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 60，耗粮 5/h（基准，实际 × 缩放）；刀盾兵（swordsman，军营 Lv4）：金 180 / 木 60 / 铁 80 / 粮 120，25s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 80，耗粮 6/h（基准，实际 × 缩放）；弓箭兵（archer，军营 Lv5）：金 200 / 木 120 / 铁 60 / 粮 100，30s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 50，耗粮 6/h（基准，实际 × 缩放）；轻骑兵（cavalry，军营 Lv6）：金 300 / 木 80 / 铁 100 / 粮 150，40s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 100，耗粮 12/h（基准，实际 × 缩放）；铁骑兵（iron_cavalry，军营 Lv11）：金 600 / 木 100 / 铁 300 / 粮 200，60s/人（基准，实际 ÷ 全局时间缩放），占 3 人口，负重 100，耗粮 30/h（基准，实际 × 缩放）；辎重车（supply_wagon，军营 Lv3）：金 200 / 木 300 / 铁 40 / 粮 60，30s/人（基准，实际 ÷ 全局时间缩放），占 6 人口，负重 5000，耗粮 10/h（基准，实际 × 缩放）；床弩（ballista，军营 Lv7）：金 350 / 木 300 / 铁 120 / 粮 80，45s/人（基准，实际 ÷ 全局时间缩放），占 3 人口，负重 0，耗粮 8/h（基准，实际 × 缩放）；冲车（siege_ram，军营 Lv8）：金 400 / 木 400 / 铁 100 / 粮 80，60s/人（基准，实际 ÷ 全局时间缩放），占 5 人口，负重 0，耗粮 10/h（基准，实际 × 缩放）（均为占位数值）。军队耗粮已接入（v14）：单兵 foodUse 计入城池净产量，城内 1 倍、行军/野地驻军 2 倍（见 GET_STATE 的 armyFoodUsePerHour），断粮仅停止增长；战斗属性随战斗玩法设计。
+在当前城池的军营征募士兵（v11）。每种兵有解锁所需的军营等级（未达返回 TROOP_NOT_AVAILABLE）与单兵成本；专属兵种（v64，AISLG-168）另需城池为对应名城（cities.famous_name），否则返回 ELITE_TROOP_LOCKED；每次征募 1..100 人，成本 = 单兵成本 × 数量、人口 = 单兵人口 × 数量，**发起时立即扣减资源与人口**（取消排队条目时全额返还）。征兵队列独立于建造队列：无征募中时立即开始（status=recruiting，dueAt 为预计完成时间，时长 = max(1 秒, floor(单兵基准时长 × 数量 ÷ time_scale))——**1 秒下限作用于批次总时长**而非单兵，**结果向下取整到整秒**（v22 修复 AISLG-39，与建造/升级同模型；显式验证环境变量覆盖时不再缩放）），有征募中且排队未满（当前 2 条，占位）时入队，队满返回 RECRUIT_QUEUE_FULL。资源不足返回 INSUFFICIENT_RESOURCES（v22 起附 shortfall 缺口与 retryAfterSeconds——按当前净产量推导，等满后重发必然成功），人口不足返回 INSUFFICIENT_POPULATION（v22 起附 shortfall 与 retryAfterSeconds——按人口增速推导），失败响应附当前城池状态（**data 仅含 city，无 recruit 载荷**——客户端必须先判 ok 再取载荷）。玩家与 Agent 均可发起。当前兵种：民夫（porter，军营 Lv1）：金 50 / 木 30 / 粮 30，8s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 500，耗粮 2/h（基准，实际 × 缩放）；义兵（militia，军营 Lv1）：金 80 / 木 20 / 粮 50，10s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 60，耗粮 3/h（基准，实际 × 缩放）；斥候（scout，军营 Lv2）：金 100 / 木 50 / 粮 80，15s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 80，耗粮 4/h（基准，实际 × 缩放）；长枪兵（pikeman，军营 Lv3）：金 150 / 木 80 / 铁 50 / 粮 100，20s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 60，耗粮 5/h（基准，实际 × 缩放）；刀盾兵（swordsman，军营 Lv4）：金 180 / 木 60 / 铁 80 / 粮 120，25s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 80，耗粮 6/h（基准，实际 × 缩放）；弓箭兵（archer，军营 Lv5）：金 200 / 木 120 / 铁 60 / 粮 100，30s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 50，耗粮 6/h（基准，实际 × 缩放）；轻骑兵（cavalry，军营 Lv6）：金 300 / 木 80 / 铁 100 / 粮 150，40s/人（基准，实际 ÷ 全局时间缩放），占 1 人口，负重 100，耗粮 12/h（基准，实际 × 缩放）；铁骑兵（iron_cavalry，军营 Lv11）：金 600 / 木 100 / 铁 300 / 粮 200，60s/人（基准，实际 ÷ 全局时间缩放），占 3 人口，负重 100，耗粮 30/h（基准，实际 × 缩放）；辎重车（supply_wagon，军营 Lv3）：金 200 / 木 300 / 铁 40 / 粮 60，30s/人（基准，实际 ÷ 全局时间缩放），占 6 人口，负重 5000，耗粮 10/h（基准，实际 × 缩放）；床弩（ballista，军营 Lv7）：金 350 / 木 300 / 铁 120 / 粮 80，45s/人（基准，实际 ÷ 全局时间缩放），占 3 人口，负重 0，耗粮 8/h（基准，实际 × 缩放）；冲车（siege_ram，军营 Lv8）：金 400 / 木 400 / 铁 100 / 粮 80，60s/人（基准，实际 ÷ 全局时间缩放），占 5 人口，负重 0，耗粮 10/h（基准，实际 × 缩放）；羽林卫（yulin_guard，军营 Lv7）：金 360 / 木 120 / 铁 160 / 粮 240，38s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 80，耗粮 9/h（基准，实际 × 缩放）；丹阳兵（danyang_soldier，军营 Lv7）：金 360 / 木 120 / 铁 160 / 粮 240，38s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 80，耗粮 9/h（基准，实际 × 缩放）；白毦兵（baimao_soldier，军营 Lv6）：金 300 / 木 160 / 铁 100 / 粮 200，30s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 60，耗粮 8/h（基准，实际 × 缩放）；虎卫军（huwei_guard，军营 Lv6）：金 300 / 木 160 / 铁 100 / 粮 200，30s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 60，耗粮 8/h（基准，实际 × 缩放）；诸葛连弩兵（zhuge_crossbow，军营 Lv8）：金 400 / 木 240 / 铁 120 / 粮 200，45s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 50，耗粮 9/h（基准，实际 × 缩放）；先登死士（xiandeng_warrior，军营 Lv8）：金 400 / 木 240 / 铁 120 / 粮 200，45s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 50，耗粮 9/h（基准，实际 × 缩放）；虎豹骑（hubao_cavalry，军营 Lv9）：金 600 / 木 160 / 铁 200 / 粮 300，60s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 100，耗粮 18/h（基准，实际 × 缩放）；西凉铁骑（xiliang_cavalry，军营 Lv9）：金 600 / 木 160 / 铁 200 / 粮 300，60s/人（基准，实际 ÷ 全局时间缩放），占 2 人口，负重 100，耗粮 18/h（基准，实际 × 缩放）（均为占位数值）。专属兵（v64）：羽林卫（yulin_guard，仅占领洛阳的分城可征，军营 Lv7）；丹阳兵（danyang_soldier，仅占领建业的分城可征，军营 Lv7）；白毦兵（baimao_soldier，仅占领襄阳的分城可征，军营 Lv6）；虎卫军（huwei_guard，仅占领许昌的分城可征，军营 Lv6）；诸葛连弩兵（zhuge_crossbow，仅占领成都的分城可征，军营 Lv8）；先登死士（xiandeng_warrior，仅占领邺城的分城可征，军营 Lv8）；虎豹骑（hubao_cavalry，仅占领官渡的分城可征，军营 Lv9）；西凉铁骑（xiliang_cavalry，仅占领长安的分城可征，军营 Lv9）。军队耗粮已接入（v14）：单兵 foodUse 计入城池净产量，城内 1 倍、行军/野地驻军 2 倍（见 GET_STATE 的 armyFoodUsePerHour），断粮仅停止增长；战斗属性随战斗玩法设计。
 
 **请求字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| troop | 'porter' \| 'militia' \| 'scout' \| 'pikeman' \| 'swordsman' \| 'archer' \| 'cavalry' \| 'iron_cavalry' \| 'supply_wagon' \| 'ballista' \| 'siege_ram' | 必填。兵种（一期七种 + v33 二期四种：铁骑兵 iron_cavalry 军营 11 级 / 辎重车 supply_wagon 军营 3 级 / 床弩 ballista 军营 7 级 / 冲车 siege_ram 军营 8 级）；缺失或不是已知兵种返回 INVALID_PARAMS。 |
+| troop | 'porter' \| 'militia' \| 'scout' \| 'pikeman' \| 'swordsman' \| 'archer' \| 'cavalry' \| 'iron_cavalry' \| 'supply_wagon' \| 'ballista' \| 'siege_ram' \| 'yulin_guard' \| 'danyang_soldier' \| 'baimao_soldier' \| 'huwei_guard' \| 'zhuge_crossbow' \| 'xiandeng_warrior' \| 'hubao_cavalry' \| 'xiliang_cavalry' | 必填。兵种（一期七种 + v33 二期四种：铁骑兵 iron_cavalry 军营 11 级 / 辎重车 supply_wagon 军营 3 级 / 床弩 ballista 军营 7 级 / 冲车 siege_ram 军营 8 级；v64 名城专属八种见 RECRUIT 的 summary）；缺失或不是已知兵种返回 INVALID_PARAMS。 |
 | count | number | 必填。征募数量，1..100 的整数（占位上限）；越界或非整数返回 INVALID_PARAMS。 |
 | cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
 
@@ -3223,7 +3349,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | recruit.id | string | 本次征兵的 UUID（取消时用作 recruitId）。 |
-| recruit.troop | 'porter' \| 'militia' \| 'scout' \| 'pikeman' \| 'swordsman' \| 'archer' \| 'cavalry' \| 'iron_cavalry' \| 'supply_wagon' \| 'ballista' \| 'siege_ram' | 兵种，等于请求的 troop。 |
+| recruit.troop | 'porter' \| 'militia' \| 'scout' \| 'pikeman' \| 'swordsman' \| 'archer' \| 'cavalry' \| 'iron_cavalry' \| 'supply_wagon' \| 'ballista' \| 'siege_ram' \| 'yulin_guard' \| 'danyang_soldier' \| 'baimao_soldier' \| 'huwei_guard' \| 'zhuge_crossbow' \| 'xiandeng_warrior' \| 'hubao_cavalry' \| 'xiliang_cavalry' | 兵种，等于请求的 troop。 |
 | recruit.count | number | 征募数量。 |
 | recruit.status | 'recruiting' \| 'queued' \| 'completed' \| 'cancelled' | 发起时为 recruiting（立即开始）或 queued（排队）；完成推送为 completed；取消后为 cancelled。 |
 | recruit.initiator | 'player' \| 'agent' | 发起原始指令的连接声明的登录类型。 |
@@ -3231,7 +3357,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | recruit.dueAt | string \| null | 预计完成时间 = 开始时间 + max(1 秒, floor(单兵基准时长 × 数量 ÷ time_scale))（v22 修复 AISLG-39：下限作用于批次总时长、向下取整到整秒）；排队中为 null，队首激活时由服务端按当时缩放重算。 |
 | recruit.completedAt | string \| null | 实际完成时间；征募中为 null。 |
 
-**可能错误**：`INVALID_PARAMS`、`TROOP_NOT_AVAILABLE`、`INSUFFICIENT_RESOURCES`、`INSUFFICIENT_POPULATION`、`RECRUIT_QUEUE_FULL`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`TROOP_NOT_AVAILABLE`、`ELITE_TROOP_LOCKED`、`INSUFFICIENT_RESOURCES`、`INSUFFICIENT_POPULATION`、`RECRUIT_QUEUE_FULL`（处置建议见第 4 节）
 
 **Agent 提示**：发起前用 GET_STATE 的 levels.barracks 对照兵种门槛、resources 与 population 预判；失败响应的 data 仅含 city（无 recruit 载荷）。征募中条目能否取消待定，当前只能取消排队条目。同账号其他在线连接会收到 PUSH_RECRUIT_STATE（recruit_started / recruit_queued）推送。
 
@@ -3592,7 +3718,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 
 **可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
 
-**Agent 提示**：出征评估（v18 起改道）：参考战力只作规模粗估，不能用来预测胜负——它完全抹平了射程与速度克制（纯近战打守城远程可能全场 0 输出）。正确路径：① 对照「兵种与战斗属性」评估编队结构（前排承伤 + 远程输出 + 高速反远程，射程与速度见属性表）；② 野地守军编成按等级推导（见术语表「野地」），NPC 城池先 SCOUT 拿驻防快照（含 wallDefensePercent）；③ 战后用战报（GET_BATTLE_REPORTS）的逐回合统计复盘。参考战力数值：民夫 1 / 义兵·斥候 2 / 长枪兵 4 / 刀盾兵·弓箭兵 5 / 轻骑兵 8。
+**Agent 提示**：出征评估（v18 起改道）：参考战力只作规模粗估，不能用来预测胜负——它完全抹平了射程与速度克制（纯近战打守城远程可能全场 0 输出）。正确路径：① 对照「兵种与战斗属性」评估编队结构（前排承伤 + 远程输出 + 高速反远程，射程与速度见属性表）；② 野地守军编成按等级推导（见术语表「野地」），NPC 城池先 SCOUT 拿驻防快照（含 wallDefensePercent）；③ 战后用战报（GET_BATTLE_REPORTS）的逐回合统计复盘。参考战力数值（TROOP_POWER，含二期与 v64 名城专属兵）：民夫 1 / 义兵 2 / 斥候 2 / 长枪兵 4 / 刀盾兵 5 / 弓箭兵 5 / 轻骑兵 8 / 铁骑兵 14 / 辎重车 1 / 床弩 8 / 冲车 3 / 羽林卫 7 / 丹阳兵 7 / 白毦兵 5 / 虎卫军 5 / 诸葛连弩兵 7 / 先登死士 7 / 虎豹骑 10 / 西凉铁骑 10。
 
 **示例**
 
@@ -3758,7 +3884,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "plunder",
       "status": "marching",
@@ -3818,7 +3952,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "occupy",
       "status": "marching",
@@ -3878,7 +4020,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "intercept",
       "status": "marching",
@@ -3942,7 +4092,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "transport",
       "status": "marching",
@@ -4008,7 +4166,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "marches": [],
       "territory": []
@@ -4114,7 +4280,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "return",
       "status": "marching",
@@ -4227,7 +4401,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "scout",
       "status": "marching",
@@ -4399,7 +4581,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "return",
       "status": "marching",
@@ -4523,7 +4713,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "iron_cavalry": 0,
             "supply_wagon": 0,
             "ballista": 0,
-            "siege_ram": 0
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
           },
           "losses": {
             "porter": 0,
@@ -4536,7 +4734,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "iron_cavalry": 0,
             "supply_wagon": 0,
             "ballista": 0,
-            "siege_ram": 0
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
           },
           "survivors": {
             "porter": 0,
@@ -4549,7 +4755,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "iron_cavalry": 0,
             "supply_wagon": 0,
             "ballista": 0,
-            "siege_ram": 0
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
           },
           "damage": 5090
         },
@@ -4566,7 +4780,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "iron_cavalry": 0,
             "supply_wagon": 0,
             "ballista": 0,
-            "siege_ram": 0
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
           },
           "losses": {
             "porter": 0,
@@ -4579,7 +4801,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "iron_cavalry": 0,
             "supply_wagon": 0,
             "ballista": 0,
-            "siege_ram": 0
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
           },
           "survivors": {
             "porter": 0,
@@ -4592,7 +4822,15 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "iron_cavalry": 0,
             "supply_wagon": 0,
             "ballista": 0,
-            "siege_ram": 0
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
           },
           "damage": 2926
         },
@@ -5627,7 +5865,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| heroes[].specialty | string \| null | v59: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {"infantry":{"troops":["militia","pikeman","swordsman"],"atkPercent":2.5,"defPercent":2.5},"ranged":{"troops":["archer","ballista"],"atkPercent":2.5,"defPercent":0},"cavalry":{"troops":["cavalry","iron_cavalry"],"atkPercent":10,"defPercent":4},"siege":{"troops":["ballista","siege_ram"],"atkPercent":8,"defPercent":3,"siegeOnly":true},"assault":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":3,"defPercent":0},"defense":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":0,"defPercent":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists. |
+| heroes[].specialty | string \| null | v59: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {"infantry":{"troops":["militia","pikeman","swordsman","yulin_guard","danyang_soldier","baimao_soldier","huwei_guard"],"atkPercent":2.5,"defPercent":2.5},"ranged":{"troops":["archer","ballista","zhuge_crossbow","xiandeng_warrior"],"atkPercent":2.5,"defPercent":0},"cavalry":{"troops":["cavalry","iron_cavalry","hubao_cavalry","xiliang_cavalry"],"atkPercent":10,"defPercent":4},"siege":{"troops":["ballista","siege_ram"],"atkPercent":8,"defPercent":3,"siegeOnly":true},"assault":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram","yulin_guard","danyang_soldier","baimao_soldier","huwei_guard","zhuge_crossbow","xiandeng_warrior","hubao_cavalry","xiliang_cavalry"],"atkPercent":3,"defPercent":0},"defense":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram","yulin_guard","danyang_soldier","baimao_soldier","huwei_guard","zhuge_crossbow","xiandeng_warrior","hubao_cavalry","xiliang_cavalry"],"atkPercent":0,"defPercent":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists. |
 | heroes[].specialtyBonus | object \| null | v59: Full-strength specialty percentages { atkPercent, defPercent, siegeOnly }; null for famous and legacy heroes. Apply only to the matching troops listed in specialty rules. |
 | cityId / tavernLevel | string / number | 查询城与其酒馆等级（0 = 未建）。 |
 | maxTavernLevel / normalCap / normalCount | number | 账号酒馆最高等级；普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1；当前普通将数量。 |
@@ -5735,7 +5973,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。v59: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {"infantry":{"troops":["militia","pikeman","swordsman"],"atkPercent":2.5,"defPercent":2.5},"ranged":{"troops":["archer","ballista"],"atkPercent":2.5,"defPercent":0},"cavalry":{"troops":["cavalry","iron_cavalry"],"atkPercent":10,"defPercent":4},"siege":{"troops":["ballista","siege_ram"],"atkPercent":8,"defPercent":3,"siegeOnly":true},"assault":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":3,"defPercent":0},"defense":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram"],"atkPercent":0,"defPercent":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.
+从某座城的酒馆候选中招募一名普通将：招募费 = 500 + 三项属性合计 × 20 金币，从**酒馆所在城**扣除。候选被招走即从列表消失（同批其余保留）。v59: New ordinary heroes receive one uniformly random, immutable specialty on successful recruitment. Candidates do not expose it before hiring. Famous and existing heroes have null and retain their original rules. Rules: {"infantry":{"troops":["militia","pikeman","swordsman","yulin_guard","danyang_soldier","baimao_soldier","huwei_guard"],"atkPercent":2.5,"defPercent":2.5},"ranged":{"troops":["archer","ballista","zhuge_crossbow","xiandeng_warrior"],"atkPercent":2.5,"defPercent":0},"cavalry":{"troops":["cavalry","iron_cavalry","hubao_cavalry","xiliang_cavalry"],"atkPercent":10,"defPercent":4},"siege":{"troops":["ballista","siege_ram"],"atkPercent":8,"defPercent":3,"siegeOnly":true},"assault":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram","yulin_guard","danyang_soldier","baimao_soldier","huwei_guard","zhuge_crossbow","xiandeng_warrior","hubao_cavalry","xiliang_cavalry"],"atkPercent":3,"defPercent":0},"defense":{"troops":["militia","scout","pikeman","swordsman","archer","cavalry","iron_cavalry","ballista","siege_ram","yulin_guard","danyang_soldier","baimao_soldier","huwei_guard","zhuge_crossbow","xiandeng_warrior","hubao_cavalry","xiliang_cavalry"],"atkPercent":0,"defPercent":2.5}}. Bonuses apply only to the listed troops, add to the original attack/damage-reduction percentages, and use the same command dilution in world combat. Arena and tower use full specialty bonuses. Siege-only specialties are inactive in arena and tower. No specialty selection or reroll operation exists.
 
 **请求字段**
 
@@ -6933,7 +7171,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 14,
         "supply_wagon": 1,
         "ballista": 8,
-        "siege_ram": 3
+        "siege_ram": 3,
+        "yulin_guard": 7,
+        "danyang_soldier": 7,
+        "baimao_soldier": 5,
+        "huwei_guard": 5,
+        "zhuge_crossbow": 7,
+        "xiandeng_warrior": 7,
+        "hubao_cavalry": 10,
+        "xiliang_cavalry": 10
       },
       "slots": 3,
       "dailyChallenges": 5,
@@ -7150,7 +7396,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 14,
         "supply_wagon": 1,
         "ballista": 8,
-        "siege_ram": 3
+        "siege_ram": 3,
+        "yulin_guard": 7,
+        "danyang_soldier": 7,
+        "baimao_soldier": 5,
+        "huwei_guard": 5,
+        "zhuge_crossbow": 7,
+        "xiandeng_warrior": 7,
+        "hubao_cavalry": 10,
+        "xiliang_cavalry": 10
       },
       "slots": 3,
       "dailyChallenges": 5,
@@ -8706,6 +8960,23 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -8737,7 +9008,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -9290,6 +9569,23 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -9321,7 +9617,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -9974,6 +10278,23 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -10005,7 +10326,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -10542,6 +10871,23 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -10573,7 +10919,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -11372,7 +11726,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "plunder",
       "status": "marching",
@@ -11413,7 +11775,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "purpose": "plunder",
       "status": "arrived",
@@ -11518,7 +11888,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "iron_cavalry": 0,
           "supply_wagon": 0,
           "ballista": 0,
-          "siege_ram": 0
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
         },
         "losses": {
           "porter": 0,
@@ -11531,7 +11909,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "iron_cavalry": 0,
           "supply_wagon": 0,
           "ballista": 0,
-          "siege_ram": 0
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
         },
         "survivors": {
           "porter": 0,
@@ -11544,7 +11930,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "iron_cavalry": 0,
           "supply_wagon": 0,
           "ballista": 0,
-          "siege_ram": 0
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
         },
         "damage": 5090
       },
@@ -11561,7 +11955,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "iron_cavalry": 0,
           "supply_wagon": 0,
           "ballista": 0,
-          "siege_ram": 0
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
         },
         "losses": {
           "porter": 0,
@@ -11574,7 +11976,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "iron_cavalry": 0,
           "supply_wagon": 0,
           "ballista": 0,
-          "siege_ram": 0
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
         },
         "survivors": {
           "porter": 0,
@@ -11587,7 +11997,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "iron_cavalry": 0,
           "supply_wagon": 0,
           "ballista": 0,
-          "siege_ram": 0
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
         },
         "damage": 2926
       },
@@ -12295,6 +12713,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `BUILD_NOT_CANCELLABLE` | 目标建造不存在、不属于本账号或不在排队状态。进行中任务能否取消待设计，当前仅排队条目（status=queued）可取消（v7）。 | 用 GET_STATE 查看 city.queue，只对 status=queued 的条目发起 CANCEL_BUILD。 |
 | `AGENT_FORBIDDEN` | 该协议对连接声明的登录类型有限制：RESET_ACCOUNT 仅玩家连接可调用，AGENT_REPORT_PLAN 仅 Agent 连接可调用。注意：role 是连接自报的标记，本限制拦住诚实声明的对端，不是可独立验证的安全边界。 | 换由对应登录类型的连接发起（RESET_ACCOUNT 找玩家连接，计划上报找 Agent 连接）；不要改用另一身份重连绕过。 |
 | `TROOP_NOT_AVAILABLE` | 该兵种需要更高等级的军营才能征募（v11；未建军营同样返回）。兵种与门槛见 RECRUIT 的字段说明。 | 用 GET_STATE 查看 levels.barracks，先升级军营或改征当前等级可用的兵种。 |
+| `ELITE_TROOP_LOCKED` | 专属兵种（v64，AISLG-168：羽林卫、丹阳兵、白毦兵、虎卫军、诸葛连弩兵、先登死士、虎豹骑、西凉铁骑）只能在占领对应名城的那座分城的军营征募；主城、其他分城、以及已失守名城的原主人均返回此码。 | 先占领对应名城（见 GET_STATE / 名城说明），再到该分城征募；或改征普通兵种。 |
 | `INSUFFICIENT_POPULATION` | 人口不足以征募该数量（v11：人口在征募发起时立即扣减，民房上限与增长决定可征数量）。 | 等待人口增长（增速 = 10 × 民房等级 × (等级+1)/小时，无民房为 0）或建 / 升民房后重试；失败响应附当前城池状态。 |
 | `RECRUIT_QUEUE_FULL` | 征兵队列已满（1 条征募中 + 排队上限，当前为 2 条，占位数值；v11）。征兵队列独立于建造队列。 | 等队首完成后重试，或先取消排队条目腾出位置。 |
 | `RECRUIT_NOT_CANCELLABLE` | 目标征兵不存在、不属于本账号或不在排队状态。征募中条目能否取消待设计，当前仅排队条目可取消（v11）。 | 用 GET_STATE 查看 city.recruitQueue，只对 status=queued 的条目发起 CANCEL_RECRUIT。 |
@@ -12688,6 +13107,23 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 0,
       "production": {
         "gold": 100,
@@ -12719,7 +13155,15 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -13269,6 +13713,23 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
           "upgradeSeconds": null
         }
       },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
       "farms": 1,
       "production": {
         "gold": 100,
@@ -13300,7 +13761,15 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
         "iron_cavalry": 0,
         "supply_wagon": 0,
         "ballista": 0,
-        "siege_ram": 0
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
       "timeScale": 1,
@@ -13595,14 +14064,14 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 
 ## 6. 兵种与战斗属性
 
-11 个兵种的单兵战斗属性（v18 起公开；v33 起含二期的铁骑兵 / 辎重车 / 床弩 / 冲车及克制关系）。相对关系可用于编队搭配与出征评估：射程决定能否攻击到目标（近战 10、弓箭 70——纯近战对守方远程可能全场打不到），战斗速度决定行动先后与接敌快慢。伤害与判定的具体算法不对外公开（机制概览见术语表「战斗」）；战报提供逐回合的双方伤害与损失统计。
+19 个兵种的单兵战斗属性（v18 起公开；v33 起含二期的铁骑兵 / 辎重车 / 床弩 / 冲车及克制关系）。相对关系可用于编队搭配与出征评估：射程决定能否攻击到目标（近战 10、弓箭 70——纯近战对守方远程可能全场打不到），战斗速度决定行动先后与接敌快慢。伤害与判定的具体算法不对外公开（机制概览见术语表「战斗」）；战报提供逐回合的双方伤害与损失统计。
 
 | 兵种 | kind | 生命 | 攻击 | 防御 | 战斗速度 | 射程 | 行军速度系数 | 军营 | 负重 | 人口 | 克制 / 抗性 / 特性 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 民夫 | porter | 250 | 50 | 20 | 12 | 10 | 1 | Lv1 | 500 | 1 | — |
 | 义兵 | militia | 450 | 100 | 50 | 20 | 10 | 1 | Lv1 | 60 | 1 | — |
 | 斥候 | scout | 350 | 80 | 40 | 80 | 10 | 2 | Lv2 | 80 | 1 | — |
-| 长枪兵 | pikeman | 750 | 220 | 180 | 20 | 10 | 1 | Lv3 | 60 | 1 | 克制：轻骑兵 / 铁骑兵 伤害 +20% |
+| 长枪兵 | pikeman | 750 | 220 | 180 | 20 | 10 | 1 | Lv3 | 60 | 1 | 克制：轻骑兵 / 铁骑兵 / 虎豹骑 / 西凉铁骑 伤害 +20% |
 | 刀盾兵 | swordsman | 1000 | 260 | 280 | 16 | 10 | 1 | Lv4 | 80 | 1 | 抗性：受弓箭兵 / 床弩攻击 -20% |
 | 弓箭兵 | archer | 250 | 240 | 60 | 20 | 70 | 1 | Lv5 | 50 | 1 | — |
 | 轻骑兵 | cavalry | 1100 | 380 | 150 | 110 | 10 | 1.5 | Lv6 | 100 | 1 | — |
@@ -13610,6 +14079,14 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 | 辎重车 | supply_wagon | 600 | 0 | 50 | 8 | 10 | 0.7 | Lv3 | 5000 | 6 | — |
 | 床弩 | ballista | 300 | 260 | 40 | 8 | 95 | 0.6 | Lv7 | 0 | 3 | — |
 | 冲车 | siege_ram | 1500 | 60 | 200 | 10 | 10 | 0.6 | Lv8 | 0 | 5 | 破墙：攻城时每占攻方存活总兵数 1% 使守方城墙减伤相对降低 8%（最多 80%） |
+| 羽林卫 | yulin_guard | 2100 | 480 | 585 | 16 | 10 | 1 | Lv7 | 80 | 2 | — |
+| 丹阳兵 | danyang_soldier | 1740 | 595 | 493 | 16 | 10 | 1 | Lv7 | 80 | 2 | — |
+| 白毦兵 | baimao_soldier | 1511 | 443 | 363 | 20 | 10 | 1 | Lv6 | 60 | 2 | 克制：轻骑兵 / 铁骑兵 / 虎豹骑 / 西凉铁骑 伤害 +40% |
+| 虎卫军 | huwei_guard | 1760 | 384 | 384 | 20 | 10 | 1 | Lv6 | 60 | 2 | — |
+| 诸葛连弩兵 | zhuge_crossbow | 262 | 252 | 63 | 20 | 80 | 1 | Lv8 | 50 | 2 | — |
+| 先登死士 | xiandeng_warrior | 488 | 510 | 117 | 20 | 60 | 1 | Lv8 | 50 | 2 | — |
+| 虎豹骑 | hubao_cavalry | 2574 | 889 | 351 | 130 | 10 | 1.8 | Lv9 | 100 | 2 | — |
+| 西凉铁骑 | xiliang_cavalry | 2025 | 675 | 257 | 100 | 10 | 1.5 | Lv9 | 100 | 2 | — |
 
 二期兵种定位（v33）：**铁骑兵**军营 11 级解锁的后期重装主力（贵、高粮耗，受长枪克制）；**辎重车**军营 3 级解锁的纯后勤——负重 5000（民夫的 10 倍）、攻击 0，出征 / 运输计入负重，必须有战斗部队护送；**床弩**军营 7 级解锁、射程 95 的反弓箭器械，脆而慢、需近战掩护，**打不到箭塔**（箭塔是不会被消灭的固定输出）；**冲车**军营 8 级解锁、行军最慢（0.6）、负重 0，只在攻城战削弱城墙减伤——冲车每占攻方存活总兵数 1%，守方城墙减伤相对降低 8%，最多降 80%，每回合按当时存活的冲车重新计算，战报 wallBreak 给出开战时的「原减伤 → 破墙后」（例：70% 墙、冲车占 5% → 42%）；野地、流寇等非攻城战斗中冲车只是肉厚攻低的单位。克制倍率表（长枪兵打骑兵 ×1.2、刀盾兵受弓箭兵 / 床弩 ×0.8）在共享规则里，新兵种统一查表。校准记录见 docs/battle-calibration.md「二期兵种」。
 
@@ -13648,7 +14125,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - **seq**：客户端为每条请求分配的自增整数，响应原样带回，用于把响应与请求配对；推送无 seq。
 - **推送（push）**：服务端主动发给已登录连接的帧（push: true），不属于任何请求的响应。
 - **role（登录类型）**：LOGIN 时由 asAgent 声明并绑定到连接的来源标记（player / agent）。它是登录方自行声明的，不是可独立验证的身份，服务端原则上不据此做差异化访问控制（例外：RESET_ACCOUNT 仅玩家、AGENT_REPORT_PLAN 仅 Agent——基于自报 role 的协议级限制，不是可验证的安全边界）。
-- **兵种（troop）**：一期七种：porter 民夫、militia 义兵、scout 斥候、pikeman 长枪兵、swordsman 刀盾兵、archer 弓箭兵、cavalry 轻骑兵；二期（v33，AISLG-86~90）再加铁骑兵 iron_cavalry（军营 11 级后期重装主力）、辎重车 supply_wagon（军营 3 级，负重 5000 的纯后勤）、床弩 ballista（军营 7 级，射程 95）、冲车 siege_ram（军营 8 级，攻城时削弱城墙减伤）。各有军营等级门槛、单兵成本、时长与小时耗粮（占位数值，见 RECRUIT）；军队耗粮已接入（v14，见 GET_STATE 的 armyFoodUsePerHour）。city.army 按兵种统计城内驻军，征兵完成时累加。
+- **兵种（troop）**：一期七种：porter 民夫、militia 义兵、scout 斥候、pikeman 长枪兵、swordsman 刀盾兵、archer 弓箭兵、cavalry 轻骑兵；二期（v33，AISLG-86~90）再加铁骑兵 iron_cavalry（军营 11 级后期重装主力）、辎重车 supply_wagon（军营 3 级，负重 5000 的纯后勤）、床弩 ballista（军营 7 级，射程 95）、冲车 siege_ram（军营 8 级，攻城时削弱城墙减伤）；v64（AISLG-168）再加 8 种名城专属兵（羽林卫 yulin_guard、丹阳兵 danyang_soldier、白毦兵 baimao_soldier、虎卫军 huwei_guard、诸葛连弩兵 zhuge_crossbow、先登死士 xiandeng_warrior、虎豹骑 hubao_cavalry、西凉铁骑 xiliang_cavalry），只能在占领对应名城的分城征募。各有军营等级门槛、单兵成本、时长与小时耗粮（占位数值，见 RECRUIT）；军队耗粮已接入（v14，见 GET_STATE 的 armyFoodUsePerHour）。city.army 按兵种统计城内驻军，征兵完成时累加。
 - **征兵队列（recruitQueue）**：军营处理征兵：RECRUIT 无征募中时立即开始（status=recruiting，时长 = 单兵时长 × 数量），有征募中且未满时入队（status=queued）；队列 = 1 征募中 + 最多 2 排队（占位）。资源与人口在发起时扣减，取消排队条目全额返还；征募中能否取消待定。队列独立于建造队列。
 - **守城加成（defenseBonus）**：城墙为守城提供的防御加成（占位：前 10 级每级 +5、11~20 级每级 +2——20 级 70，v31 AISLG-85；百分数数值；v27 起另加城防科技每级 +1 个百分点），随 GET_STATE 下发；消费方是守城战斗结算。v30（AISLG-82）起另有**箭塔**：守城战里城墙位上不会被消灭的远程单位，每回合开始对射程内最近的敌方兵堆造成固定伤害（150 × 等级，不走判定链、不吃防御与城墙减伤；射程 45 + 5 × 等级，攻方距城墙位 ≤ 射程才被射），仅守城战（NPC 袭击主城）生效，守军全灭仍判守城失败；战报单独列出箭塔伤害（towerDamage / roundLog[].towerDamage）。数值校准见 docs/battle-calibration.md「箭塔」。
 - **计划（plan）**：Agent 经 AGENT_REPORT_PLAN 上报的两段自报文本：nextAction（下一步动作）与 overallPlan（整体计划）。账号只保留最新快照（后写覆盖，RESET_ACCOUNT 清空），经 GET_AGENT_INFO 的 plan 字段查询、PUSH_AGENT_PLAN 推送。它是托管监控的展示信息，未经验证、不参与游戏逻辑。
@@ -13680,7 +14157,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 62。
+- 协议版本随对外协议内容的每次变化递增；当前为 64。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

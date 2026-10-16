@@ -16,8 +16,13 @@ export interface CounterRule {
   multiplier: number;
 }
 
+/** 骑兵类（长枪 / 白毦克制对象）：v64 起含两种名城专属骑兵 */
+const CAVALRY_KINDS: TroopKind[] = ['cavalry', 'iron_cavalry', 'hubao_cavalry', 'xiliang_cavalry'];
+
 export const COUNTER_RULES: CounterRule[] = [
-  { attackers: ['pikeman'], targets: ['cavalry', 'iron_cavalry'], multiplier: 1.2 },
+  { attackers: ['pikeman'], targets: CAVALRY_KINDS, multiplier: 1.2 },
+  // v64（AISLG-168）：白毦兵（襄阳专属枪兵）对骑兵的克制倍率高于普通长枪
+  { attackers: ['baimao_soldier'], targets: CAVALRY_KINDS, multiplier: 1.4 },
   { attackers: ['archer', 'ballista'], targets: ['swordsman'], multiplier: 0.8 },
 ];
 

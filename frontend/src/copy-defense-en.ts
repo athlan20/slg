@@ -64,5 +64,13 @@ export const DEFENSE_COPY_EN = {
     supply_wagon: 'Pure logistics with load 5000 (10× a Porter): almost no combat power and must be escorted by combat troops; transports / hauls loot back. March speed 0.7.',
     ballista: 'Ranged engine with range 95 that can fire from outside Archer range, countering Archer formations; fragile and slow (march 0.6) and needs melee cover; cannot hit Arrow Towers. Deals −20% damage to Swordsmen.',
     siege_ram: "Slowest march (0.6) and 0 load; only works in siege battles: for every 1% of the attacker's surviving troops, the defender's wall damage reduction drops by a further 8% (up to 80%); in wilderness and other battles it is just a tough, low-attack unit.",
+    yulin_guard: 'Famous City exclusive heavy infantry (Luoyang): about 1.5× a Swordsman’s stats, tougher with higher defense; costs 2× and uses 2 population. Recruitable only in a branch city of Luoyang (Barracks Lv7).',
+    danyang_soldier: 'Famous City exclusive heavy infantry (Jianye): higher attack, slightly more fragile, about 1.45× a Swordsman’s stats. Recruitable only in a branch city of Jianye (Barracks Lv7).',
+    baimao_soldier: 'Famous City exclusive spearmen (Xiangyang): counters cavalry harder — +40% damage against cavalry (Pikemen +20%). Recruitable only in a branch city of Xiangyang (Barracks Lv6).',
+    huwei_guard: 'Famous City exclusive spearmen (Xuchang): high HP, low impact; +20% damage against cavalry. Recruitable only in a branch city of Xuchang (Barracks Lv6).',
+    zhuge_crossbow: 'Famous City exclusive ranged unit (Chengdu): range 80, well beyond the Archer’s 70; stats about 1.05× an Archer’s. Recruitable only in a branch city of Chengdu (Barracks Lv8).',
+    xiandeng_warrior: 'Famous City exclusive ranged unit (Ye): high attack, slightly shorter range (60). Recruitable only in a branch city of Ye (Barracks Lv8).',
+    hubao_cavalry: 'Famous City exclusive cavalry (Guandu): fastest in the army (speed 130, march 1.8), a dedicated anti-ranged unit; countered by Spearmen. Recruitable only in a branch city of Guandu (Barracks Lv9).',
+    xiliang_cavalry: 'Famous City exclusive cavalry (Chang’an): high HP and high attack; countered by Spearmen. Recruitable only in a branch city of Chang’an (Barracks Lv9).',
   } as Record<string, string>,
 } satisfies typeof DEFENSE_COPY;

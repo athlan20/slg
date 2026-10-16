@@ -22,6 +22,15 @@ export const TROOP_KINDS = [
   'supply_wagon',
   'ballista',
   'siege_ram',
+  // v64（AISLG-168）：8 座名城各一种专属精锐兵，只能在占领该名城的分城军营征募（见 famous-effects.ts 的 FAMOUS_ELITE_TROOP）
+  'yulin_guard',
+  'danyang_soldier',
+  'baimao_soldier',
+  'huwei_guard',
+  'zhuge_crossbow',
+  'xiandeng_warrior',
+  'hubao_cavalry',
+  'xiliang_cavalry',
 ] as const;
 
 export type TroopKind = (typeof TROOP_KINDS)[number];

@@ -137,6 +137,8 @@ export function recruitErrorText(
   switch (code) {
     case 'TROOP_NOT_AVAILABLE':
       return COPY.errors.recruit.troopNotAvailable;
+    case 'ELITE_TROOP_LOCKED':
+      return COPY.errors.recruit.eliteTroopLocked;
     case 'INSUFFICIENT_RESOURCES':
       return COPY.errors.recruit.insufficientResources + shortfallSuffix(data);
     case 'INSUFFICIENT_POPULATION':

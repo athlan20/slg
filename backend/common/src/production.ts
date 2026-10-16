@@ -14,7 +14,7 @@
 // 采集已按 extra 参数接入（v12；v61 起占领加成来自 world.ts 的 territoryBonusRates，驻军采集按储量结算，见 wilderness-reserve.ts）。
 
 import pg from 'pg';
-import { BUILDING_INFO, populationGrowthPerHour, popCap } from './rules';
+import { BUILDING_INFO, effectiveBuildingLevel, populationGrowthPerHour, popCap } from './rules';
 import { scaledRate } from './time-scale';
 import { BUILDING_KINDS, type BuildingKind, type Resources, type StorageCaps, type TroopKind } from './protocol';
 import { territoryBonusRates, type TerritoryRow } from './world';
@@ -298,16 +298,19 @@ export async function loadProductionBonusPercent(q: pg.Pool | pg.PoolClient, cit
   return res.rows[0]?.famous_name ? FAMOUS_PRODUCTION_BONUS_PERCENT : 0;
 }
 
-/** 各类型当前等级（v5：权威来源为 city_buildings，由 Worker 在完成时 upsert） */
+/**
+ * 各类型当前等级（v5：权威来源为 city_buildings，由 Worker 在完成时 upsert）。
+ * 返回的是生效等级：库存超出该城当前上限的（名城失守后的主题建筑）按上限计，见 effectiveBuildingLevel（AISLG-167）。
+ */
 export async function loadBuildingLevels(q: pg.Pool | pg.PoolClient, cityId: string): Promise<BuildingLevels> {
   const res = await q.query(
-    `SELECT kind, level FROM city_buildings WHERE city_id = $1`,
+    `SELECT cb.kind, cb.level, c.famous_name FROM city_buildings cb JOIN cities c ON c.id = cb.city_id WHERE cb.city_id = $1`,
     [cityId],
   );
   const levels = emptyBuildingLevels();
-  for (const row of res.rows as Array<{ kind: BuildingKind; level: number }>) {
+  for (const row of res.rows as Array<{ kind: BuildingKind; level: number; famous_name: string | null }>) {
     if ((BUILDING_KINDS as readonly string[]).includes(row.kind)) {
-      levels[row.kind] = row.level;
+      levels[row.kind] = effectiveBuildingLevel(row.kind, row.level, row.famous_name);
     }
   }
   return levels;

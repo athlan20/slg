@@ -49,7 +49,7 @@ export const BUILDING_DESC: Record<BuildingKind, string> = {
   government: '自动产出金币（金），产量 = 等级 × 每级速率，无需配置。',
   barracks: '征募士兵驻守城池（v11）：等级解锁更多兵种；发起时立即扣减资源与人口，队列独立于建造队列（1 征募中 + 2 排队）。',
   warehouse: '按等级提供防掠夺保护（v16）：保护总量 4000 × 等级，粮/木/石/铁固定均分各 1000 × 等级；不改变储量上限。玩家城掠夺随后续阶段接入。',
-  wall: '提供守城防御加成（v11）：前 10 级每级 +5%、11~20 级每级 +2%（占位数值，20 级 70%），随城池状态下发。',
+  wall: '提供守城防御加成（v11）：前 10 级每级 +5%、11~20 级每级 +2%（占位数值，20 级 70%）；占领洛阳后可升到 25 级，21~25 级每级 +1%（25 级 75%），失守后按 20 级生效。随城池状态下发。',
   parade_ground: '限制本城同时在外的部队数（v30）：详见建筑效果行。',
   beacon: '来袭预警更早、敌情更清楚（v30）：详见建筑效果行。',
   post_station: '加快自己城池之间的调兵和运输（v30）：详见建筑效果行。',
@@ -71,6 +71,14 @@ export const TROOP_LABEL: Record<TroopKind, { name: string; short: string }> = {
   supply_wagon: { name: '辎重车', short: '辎' },
   ballista: { name: '床弩', short: '弩' },
   siege_ram: { name: '冲车', short: '冲' },
+  yulin_guard: { name: '羽林卫', short: '羽' },
+  danyang_soldier: { name: '丹阳兵', short: '丹' },
+  baimao_soldier: { name: '白毦兵', short: '白' },
+  huwei_guard: { name: '虎卫军', short: '虎' },
+  zhuge_crossbow: { name: '诸葛连弩兵', short: '诸' },
+  xiandeng_warrior: { name: '先登死士', short: '先' },
+  hubao_cavalry: { name: '虎豹骑', short: '豹' },
+  xiliang_cavalry: { name: '西凉铁骑', short: '凉' },
 };
 
 /** 资源名 */
@@ -290,6 +298,8 @@ const RECRUIT_PANEL = {
   /** 本批入伍后的持续耗粮（v14）：单兵 foodUse × 数量，每小时持续扣减 */
   foodUseLine: (perHour: number) => `此后耗粮 ${perHour}/h`,
   hintNeedBarracks: (level: number) => `需军营 Lv ${level}`,
+  /** 名城专属兵（v64）：行内标签，仅占领对应名城的分城可征 */
+  eliteOnly: (city: string) => `仅${city}分城`,
   hintNoBarracks: '尚未建造军营（城内视图建造后解锁征兵）',
   hintQueueFull: '征兵队列已满（1 征募中 + 2 排队）',
   hintUnlocked: '已解锁',
@@ -747,6 +757,7 @@ const ERRORS = {
   },
   recruit: {
     troopNotAvailable: '该兵种需要更高等级的军营',
+    eliteTroopLocked: '该兵种是名城专属，只能在占领对应名城的分城军营征募',
     insufficientResources: '资源不足以支付本次征募（当前资源见顶栏）',
     insufficientPopulation: '人口不足以征募该数量（人口随时间增长，民房提高上限）',
     queueFull: '征兵队列已满，等队首完成后可再发起',

@@ -131,6 +131,14 @@ export const ARMY_COPY = {
     supply_wagon: '后勤',
     ballista: '器械',
     siege_ram: '攻城',
+    yulin_guard: '名城重步',
+    danyang_soldier: '名城重步',
+    baimao_soldier: '名城枪',
+    huwei_guard: '名城枪',
+    zhuge_crossbow: '名城远程',
+    xiandeng_warrior: '名城远程',
+    hubao_cavalry: '名城骑',
+    xiliang_cavalry: '名城骑',
   } as Record<string, string>,
 };
 

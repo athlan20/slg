@@ -230,6 +230,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '该兵种需要更高等级的军营才能征募（v11；未建军营同样返回）。兵种与门槛见 RECRUIT 的字段说明。',
     action: '用 GET_STATE 查看 levels.barracks，先升级军营或改征当前等级可用的兵种。',
   },
+  ELITE_TROOP_LOCKED: {
+    desc: '专属兵种（v64，AISLG-168：羽林卫、丹阳兵、白毦兵、虎卫军、诸葛连弩兵、先登死士、虎豹骑、西凉铁骑）只能在占领对应名城的那座分城的军营征募；主城、其他分城、以及已失守名城的原主人均返回此码。',
+    action: '先占领对应名城（见 GET_STATE / 名城说明），再到该分城征募；或改征普通兵种。',
+  },
   INSUFFICIENT_POPULATION: {
     desc: '人口不足以征募该数量（v11：人口在征募发起时立即扣减，民房上限与增长决定可征数量）。',
     action: '等待人口增长（增速 = 10 × 民房等级 × (等级+1)/小时，无民房为 0）或建 / 升民房后重试；失败响应附当前城池状态。',
@@ -570,7 +574,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '兵种（troop）',
-    desc: '一期七种：porter 民夫、militia 义兵、scout 斥候、pikeman 长枪兵、swordsman 刀盾兵、archer 弓箭兵、cavalry 轻骑兵；二期（v33，AISLG-86~90）再加铁骑兵 iron_cavalry（军营 11 级后期重装主力）、辎重车 supply_wagon（军营 3 级，负重 5000 的纯后勤）、床弩 ballista（军营 7 级，射程 95）、冲车 siege_ram（军营 8 级，攻城时削弱城墙减伤）。各有军营等级门槛、单兵成本、时长与小时耗粮（占位数值，见 RECRUIT）；军队耗粮已接入（v14，见 GET_STATE 的 armyFoodUsePerHour）。city.army 按兵种统计城内驻军，征兵完成时累加。',
+    desc: '一期七种：porter 民夫、militia 义兵、scout 斥候、pikeman 长枪兵、swordsman 刀盾兵、archer 弓箭兵、cavalry 轻骑兵；二期（v33，AISLG-86~90）再加铁骑兵 iron_cavalry（军营 11 级后期重装主力）、辎重车 supply_wagon（军营 3 级，负重 5000 的纯后勤）、床弩 ballista（军营 7 级，射程 95）、冲车 siege_ram（军营 8 级，攻城时削弱城墙减伤）；v64（AISLG-168）再加 8 种名城专属兵（羽林卫 yulin_guard、丹阳兵 danyang_soldier、白毦兵 baimao_soldier、虎卫军 huwei_guard、诸葛连弩兵 zhuge_crossbow、先登死士 xiandeng_warrior、虎豹骑 hubao_cavalry、西凉铁骑 xiliang_cavalry），只能在占领对应名城的分城征募。各有军营等级门槛、单兵成本、时长与小时耗粮（占位数值，见 RECRUIT）；军队耗粮已接入（v14，见 GET_STATE 的 armyFoodUsePerHour）。city.army 按兵种统计城内驻军，征兵完成时累加。',
   },
   {
     term: '征兵队列（recruitQueue）',

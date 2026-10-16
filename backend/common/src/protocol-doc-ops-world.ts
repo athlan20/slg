@@ -264,7 +264,7 @@ export const REQUEST_GET_TILE: RequestOpDoc = {
       ],
     },
   ],
-  agentNote: `出征评估（v18 起改道）：参考战力只作规模粗估，不能用来预测胜负——它完全抹平了射程与速度克制（纯近战打守城远程可能全场 0 输出）。正确路径：① 对照「兵种与战斗属性」评估编队结构（前排承伤 + 远程输出 + 高速反远程，射程与速度见属性表）；② 野地守军编成按等级推导（见术语表「野地」），NPC 城池先 SCOUT 拿驻防快照（含 wallDefensePercent）；③ 战后用战报（GET_BATTLE_REPORTS）的逐回合统计复盘。参考战力数值：民夫 ${TROOP_POWER.porter} / 义兵·斥候 ${TROOP_POWER.militia} / 长枪兵 ${TROOP_POWER.pikeman} / 刀盾兵·弓箭兵 ${TROOP_POWER.swordsman} / 轻骑兵 ${TROOP_POWER.cavalry}。`,
+  agentNote: `出征评估（v18 起改道）：参考战力只作规模粗估，不能用来预测胜负——它完全抹平了射程与速度克制（纯近战打守城远程可能全场 0 输出）。正确路径：① 对照「兵种与战斗属性」评估编队结构（前排承伤 + 远程输出 + 高速反远程，射程与速度见属性表）；② 野地守军编成按等级推导（见术语表「野地」），NPC 城池先 SCOUT 拿驻防快照（含 wallDefensePercent）；③ 战后用战报（GET_BATTLE_REPORTS）的逐回合统计复盘。参考战力数值（TROOP_POWER，含二期与 v64 名城专属兵）：${TROOP_KINDS.map((kind) => `${TROOP_INFO[kind].label} ${TROOP_POWER[kind]}`).join(' / ')}。`,
 };
 
 export const REQUEST_MARCH: RequestOpDoc = {

@@ -7,6 +7,7 @@
 
 import { RESOURCE_KEYS, TROOP_KINDS, type Resources, type TroopKind } from './protocol';
 import { scaledSeconds } from './time-scale';
+import { famousCityOfEliteTroop } from './famous-effects';
 
 export interface TroopInfo {
   /** 兵种 */
@@ -140,6 +141,88 @@ export const TROOP_INFO: Record<TroopKind, TroopInfo> = {
     foodUse: 10,
     carry: 0,
   },
+  // ---- v64 名城专属兵种（AISLG-168，占位数值）：以对应普通兵为底——成本 ×2、人口 ×2、单兵时长 ×1.5、耗粮 ×1.5、
+  // 军营门槛 +3；属性见 battle-engine.ts 的 TROOP_STATS。只能在占领对应名城的分城军营征募（famousCityOfEliteTroop）。
+  yulin_guard: {
+    troop: 'yulin_guard',
+    label: '羽林卫',
+    cost: { gold: 360, wood: 120, food: 240, stone: 0, iron: 160 },
+    population: 2,
+    unitSeconds: 38,
+    barracksLevel: 7,
+    foodUse: 9,
+    carry: 80,
+  },
+  danyang_soldier: {
+    troop: 'danyang_soldier',
+    label: '丹阳兵',
+    cost: { gold: 360, wood: 120, food: 240, stone: 0, iron: 160 },
+    population: 2,
+    unitSeconds: 38,
+    barracksLevel: 7,
+    foodUse: 9,
+    carry: 80,
+  },
+  baimao_soldier: {
+    troop: 'baimao_soldier',
+    label: '白毦兵',
+    cost: { gold: 300, wood: 160, food: 200, stone: 0, iron: 100 },
+    population: 2,
+    unitSeconds: 30,
+    barracksLevel: 6,
+    foodUse: 8,
+    carry: 60,
+  },
+  huwei_guard: {
+    troop: 'huwei_guard',
+    label: '虎卫军',
+    cost: { gold: 300, wood: 160, food: 200, stone: 0, iron: 100 },
+    population: 2,
+    unitSeconds: 30,
+    barracksLevel: 6,
+    foodUse: 8,
+    carry: 60,
+  },
+  zhuge_crossbow: {
+    troop: 'zhuge_crossbow',
+    label: '诸葛连弩兵',
+    cost: { gold: 400, wood: 240, food: 200, stone: 0, iron: 120 },
+    population: 2,
+    unitSeconds: 45,
+    barracksLevel: 8,
+    foodUse: 9,
+    carry: 50,
+  },
+  xiandeng_warrior: {
+    troop: 'xiandeng_warrior',
+    label: '先登死士',
+    cost: { gold: 400, wood: 240, food: 200, stone: 0, iron: 120 },
+    population: 2,
+    unitSeconds: 45,
+    barracksLevel: 8,
+    foodUse: 9,
+    carry: 50,
+  },
+  hubao_cavalry: {
+    troop: 'hubao_cavalry',
+    label: '虎豹骑',
+    cost: { gold: 600, wood: 160, food: 300, stone: 0, iron: 200 },
+    population: 2,
+    unitSeconds: 60,
+    barracksLevel: 9,
+    foodUse: 18,
+    carry: 100,
+  },
+  xiliang_cavalry: {
+    troop: 'xiliang_cavalry',
+    label: '西凉铁骑',
+    cost: { gold: 600, wood: 160, food: 300, stone: 0, iron: 200 },
+    population: 2,
+    unitSeconds: 60,
+    barracksLevel: 9,
+    foodUse: 18,
+    carry: 100,
+  },
 };
 
 /** 单次征募数量上限（占位决策） */
@@ -203,6 +286,7 @@ export function armyCarryCapacity(counts: Partial<Record<TroopKind, number>>, bo
 
 export type RecruitDeniedCode =
   | 'TROOP_NOT_AVAILABLE'
+  | 'ELITE_TROOP_LOCKED'
   | 'INSUFFICIENT_RESOURCES'
   | 'INSUFFICIENT_POPULATION'
   | 'RECRUIT_QUEUE_FULL';
@@ -222,7 +306,7 @@ export type StartRecruitVerdict =
   | { ok: false; code: RecruitDeniedCode; cost?: Resources; population?: number };
 
 /**
- * 发起征兵前的统一校验：军营等级未达兵种门槛 → TROOP_NOT_AVAILABLE；任一资源不足 →
+ * 发起征兵前的统一校验：专属兵种但城池非对应名城 → ELITE_TROOP_LOCKED（v64）；军营等级未达兵种门槛 → TROOP_NOT_AVAILABLE；任一资源不足 →
  * INSUFFICIENT_RESOURCES；人口不足 → INSUFFICIENT_POPULATION（人口在征募时立即扣除，
  * 排队取消全额返还）；无征募中 → 立即开始；有征募中且排队未满 → 入队；排队已满 →
  * RECRUIT_QUEUE_FULL。
@@ -235,7 +319,13 @@ export function startRecruit(
   barracksLevel: number,
   activeRecruits: number,
   queuedRecruits: number,
+  famousName: string | null,
 ): StartRecruitVerdict {
+  // v64（AISLG-168）：专属兵种只能在占领对应名城的分城征募（名城标记 cities.famous_name，失守即失去资格）
+  const eliteCity = famousCityOfEliteTroop(troop);
+  if (eliteCity && famousName !== eliteCity) {
+    return { ok: false, code: 'ELITE_TROOP_LOCKED' };
+  }
   if (barracksLevel < TROOP_INFO[troop].barracksLevel) {
     return { ok: false, code: 'TROOP_NOT_AVAILABLE' };
   }

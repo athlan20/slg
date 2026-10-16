@@ -9,6 +9,7 @@ import {
   INITIAL_POPULATION,
   INITIAL_RESOURCES,
   actionCosts,
+  buildingLevelMaxes,
   applyCost,
   popCap,
   populationGrowthPerHour,
@@ -58,6 +59,8 @@ export const INITIAL_BUILDINGS_VIEW = { ...EMPTY_BUILDINGS, government: 1 };
 export const INITIAL_PRODUCTION = atBaseTimeScale(() => productionPerHour(INITIAL_LEVELS));
 /** 开号之初的动作成本示例（官府给升级成本，其余给建造成本） */
 export const INITIAL_COSTS = actionCosts(INITIAL_LEVELS);
+/** 开号城池的等级上限（无名城，普通 20） */
+export const INITIAL_LEVEL_MAX = buildingLevelMaxes();
 /** 一座农田建成后的动作成本示例（在开号基础上叠加农田） */
 export const FARM_BUILT_COSTS = actionCosts({ ...INITIAL_LEVELS, farm: 1 });
 /** 农田与伐木场均建成后的动作成本示例 */
@@ -125,6 +128,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     buildings: { ...INITIAL_BUILDINGS_VIEW },
     levels: { ...INITIAL_LEVELS },
     costs: INITIAL_COSTS,
+    levelMax: INITIAL_LEVEL_MAX,
     farms: 0,
     production: { ...INITIAL_PRODUCTION },
     population: INITIAL_POPULATION_VIEW,

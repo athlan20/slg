@@ -68,6 +68,16 @@ export const TROOP_STATS: Record<TroopKind, TroopStats> = {
   supply_wagon: { hp: 600, atk: 0, def: 50, speed: 8, range: 10, marchSpeed: 0.7 },
   ballista: { hp: 300, atk: 260, def: 40, speed: 8, range: 95, marchSpeed: 0.6 },
   siege_ram: { hp: 1500, atk: 60, def: 200, speed: 10, range: 10, marchSpeed: 0.6 },
+  // v64 名城专属兵种（AISLG-168，占位）：步兵 4 种按 f≈1.5（白毦 1.55、虎卫 1.6、丹阳 1.45）；西凉铁骑 f=1.35；
+  // 虎豹骑 f=1.8（速度 130 全军最快，属性补足）；诸葛连弩射程 80、属性 ×1.05（收益主要来自射程 80 > 70：等兵数 100v100 攻方实测胜率约 99%，参考战力不计射程，故 TROOP_POWER 只比弓箭兵高 40%）；先登死士 f=1.5、射程 60 保留
+  yulin_guard: { hp: 2100, atk: 480, def: 585, speed: 16, range: 10, marchSpeed: 1 },
+  danyang_soldier: { hp: 1740, atk: 595, def: 493, speed: 16, range: 10, marchSpeed: 1 },
+  baimao_soldier: { hp: 1511, atk: 443, def: 363, speed: 20, range: 10, marchSpeed: 1 },
+  huwei_guard: { hp: 1760, atk: 384, def: 384, speed: 20, range: 10, marchSpeed: 1 },
+  zhuge_crossbow: { hp: 262, atk: 252, def: 63, speed: 20, range: 80, marchSpeed: 1 },
+  xiandeng_warrior: { hp: 488, atk: 510, def: 117, speed: 20, range: 60, marchSpeed: 1 },
+  hubao_cavalry: { hp: 2574, atk: 889, def: 351, speed: 130, range: 10, marchSpeed: 1.8 },
+  xiliang_cavalry: { hp: 2025, atk: 675, def: 257, speed: 100, range: 10, marchSpeed: 1.5 },
 };
 
 // ---- 引擎参数（数值评审定稿，调整需重跑校准并更新评审记录） ----

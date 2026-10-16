@@ -4,11 +4,12 @@
  */
 
 import { useState } from 'react';
-import { RECRUIT_COUNT_MAX, RECRUIT_QUEUE_CAPACITY, TROOP_INFO, TROOP_KINDS, type CityView, type Resources, type TroopKind } from '../api/protocol';
+import { RECRUIT_COUNT_MAX, RECRUIT_QUEUE_CAPACITY, TROOP_INFO, TROOP_KINDS, famousCityOfEliteTroop, type CityView, type Resources, type TroopKind } from '../api/protocol';
 import { costParts } from '../api/mapping';
 // role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
 import { TROOP_LABEL as TROOP_LABEL_ZH } from '../copy';
 import { useCopy } from '../i18n/bundle';
+import { tName } from '../i18n/names';
 import { activeMarches } from '../state/progressItems';
 import type { ConnectionStatus } from '../state/useGameSession';
 import { useNow } from '../state/useNow';
@@ -41,6 +42,11 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
   }
 
   const info = troop ? TROOP_INFO[troop] : null;
+  /** 名城专属兵（v64）：占领对应名城的分城才能征募；失守即失去资格 */
+  const eliteBlocked = (kind: TroopKind): boolean => {
+    const name = famousCityOfEliteTroop(kind);
+    return name !== undefined && city?.famousName !== name;
+  };
   const validCount = Number.isInteger(count) && count >= 1 && count <= RECRUIT_COUNT_MAX;
   const locked = info !== null && barracks < info.barracksLevel;
   const totalCost: Resources | null = info
@@ -48,7 +54,7 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
     : null;
   const popCost = info ? info.population * count : 0;
   const popShort = city !== null && city.population.current < popCost;
-  const submitDisabled = connection !== 'online' || city === null || troop === null || barracks === 0 || locked || queueFull || !validCount;
+  const submitDisabled = connection !== 'online' || city === null || troop === null || barracks === 0 || locked || (troop !== null && eliteBlocked(troop)) || queueFull || !validCount;
   const hint = city === null ? null : barracks === 0 ? COPY.recruitPanel.hintNoBarracks : queueFull ? COPY.recruitPanel.hintQueueFull : null;
 
   return (
@@ -67,12 +73,14 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
         {TROOP_KINDS.map((kind) => {
           const need = TROOP_INFO[kind].barracksLevel;
           const isLocked = barracks < need;
+          const eliteOff = eliteBlocked(kind);
+          const eliteCity = famousCityOfEliteTroop(kind);
           return (
             <div
               key={kind}
               role={`征兵面板-驻军-${TROOP_LABEL_ZH[kind].short}`}
               title={DEFENSE_COPY.troopNote[kind]}
-              className={`grid max-h-9 min-h-0 flex-1 grid-cols-[minmax(0,1fr)_2.6rem_2.2rem_3.6rem] items-center gap-1.5 rounded px-1.5 text-[12px] even:bg-panel-2 ${isLocked ? 'opacity-45' : ''}`}
+              className={`grid max-h-9 min-h-0 flex-1 grid-cols-[minmax(0,1fr)_2.6rem_2.2rem_3.6rem] items-center gap-1.5 rounded px-1.5 text-[12px] even:bg-panel-2 ${isLocked || eliteOff ? 'opacity-45' : ''}`}
             >
               <span className="truncate">
                 {TROOP_LABEL[kind].name}
@@ -80,9 +88,12 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
               </span>
               <span className={`text-right font-mono tabular-nums ${(city?.army[kind] ?? 0) > 0 ? '' : 'text-faint'}`}>{city?.army[kind] ?? 0}</span>
               <span className="text-right font-mono tabular-nums text-faint">{out[kind] ?? 0}</span>
-              {isLocked ? (
-                <span className="truncate text-right text-[10px] text-faint" title={COPY.recruitPanel.hintNeedBarracks(need)}>
-                  {ARMY_COPY.locked(need)}
+              {isLocked || eliteOff ? (
+                <span
+                  className="truncate text-right text-[10px] text-faint"
+                  title={eliteOff && eliteCity ? COPY.recruitPanel.eliteOnly(tName(eliteCity)) : COPY.recruitPanel.hintNeedBarracks(need)}
+                >
+                  {eliteOff && eliteCity ? COPY.recruitPanel.eliteOnly(tName(eliteCity)) : ARMY_COPY.locked(need)}
                 </span>
               ) : (
                 <input

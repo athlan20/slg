@@ -5,8 +5,61 @@
 
 import type { ProducedResource } from './production';
 import type { FAMOUS_CITY_NAMES } from './famous-city';
+import type { BuildingKind, TroopKind } from './protocol';
 
 type FamousCityName = (typeof FAMOUS_CITY_NAMES)[number];
+
+/** 名城主题建筑的等级上限（AISLG-167）：占有该名城时，对应主题建筑可升到此级，其余建筑仍为 MAX_BUILDING_LEVEL（20） */
+export const FAMOUS_THEME_LEVEL_MAX = 25;
+
+/**
+ * 名城 → 主题建筑（AISLG-167，与 FAMOUS_EFFECTS 对齐）：洛阳城墙、长安箭塔、官渡农田、成都铁矿、建业伐木场、
+ * 邺城官府（一期无金矿，官府是唯一产金建筑）、许昌驿站、襄阳仓库。跟着城走（cities.famous_name），与效果同口径。
+ */
+export const FAMOUS_THEME_BUILDING: Record<FamousCityName, BuildingKind> = {
+  洛阳: 'wall',
+  长安: 'arrow_tower',
+  官渡: 'farm',
+  成都: 'iron_mine',
+  建业: 'lumber_mill',
+  邺城: 'government',
+  许昌: 'post_station',
+  襄阳: 'warehouse',
+};
+
+/**
+ * 名城 → 专属精锐兵（AISLG-168）：每座名城一种，只能在占领该名城的那座分城的军营征募（cities.famous_name 判定，
+ * 跟着城走：失守后原主人不能再练，已练出的兵留在原主人手里）。NPC 名城守军仍用普通兵种。
+ * 兵种的数值与军营门槛在 troops.ts 的 TROOP_INFO（famousCity 字段与本表对齐）。
+ */
+export const FAMOUS_ELITE_TROOP: Record<FamousCityName, TroopKind> = {
+  洛阳: 'yulin_guard',
+  建业: 'danyang_soldier',
+  襄阳: 'baimao_soldier',
+  许昌: 'huwei_guard',
+  成都: 'zhuge_crossbow',
+  邺城: 'xiandeng_warrior',
+  官渡: 'hubao_cavalry',
+  长安: 'xiliang_cavalry',
+};
+
+/** 专属兵种对应的名城（普通兵种为 null） */
+export function famousCityOfEliteTroop(troop: TroopKind): FamousCityName | null {
+  for (const name of Object.keys(FAMOUS_ELITE_TROOP) as FamousCityName[]) {
+    if (FAMOUS_ELITE_TROOP[name] === troop) {
+      return name;
+    }
+  }
+  return null;
+}
+
+/** 名城标记对应的专属兵种；非名城（或名字不在表中）为 null */
+export function eliteTroopOf(name: string | null | undefined): TroopKind | null {
+  if (!name) {
+    return null;
+  }
+  return Object.hasOwn(FAMOUS_ELITE_TROOP, name) ? FAMOUS_ELITE_TROOP[name as FamousCityName] : null;
+}
 
 /** 名城效果种类：城墙（守城战减伤）、箭塔（伤害）、野地产出、行军速度（自城调兵 / 运输）、仓库（防掠夺保护额） */
 export type FamousEffectKind = 'wall' | 'tower' | 'territory' | 'march' | 'warehouse';
@@ -44,6 +97,14 @@ export function famousEffectOf(name: string | null | undefined): FamousEffectDef
     return null;
   }
   return Object.hasOwn(FAMOUS_EFFECTS, name) ? FAMOUS_EFFECTS[name as FamousCityName] : null;
+}
+
+/** 名城的主题建筑（AISLG-167）；非名城（或名字不在表中）为 null */
+export function famousThemeBuildingOf(name: string | null | undefined): BuildingKind | null {
+  if (!name) {
+    return null;
+  }
+  return Object.hasOwn(FAMOUS_THEME_BUILDING, name) ? FAMOUS_THEME_BUILDING[name as FamousCityName] : null;
 }
 
 /** 协议视图口径：与 famousEffectOf 同源，供 TileView / CityView 下发 */

@@ -108,6 +108,8 @@ test('参考战力与编队工具：armyPower / isEmptyArmy / toFullArmyCounts',
   assert.deepEqual(toFullArmyCounts({ militia: 3 }), {
     porter: 0, militia: 3, scout: 0, pikeman: 0, swordsman: 0, archer: 0, cavalry: 0,
     iron_cavalry: 0, supply_wagon: 0, ballista: 0, siege_ram: 0,
+    yulin_guard: 0, danyang_soldier: 0, baimao_soldier: 0, huwei_guard: 0,
+    zhuge_crossbow: 0, xiandeng_warrior: 0, hubao_cavalry: 0, xiliang_cavalry: 0,
   });
 });
 
