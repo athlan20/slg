@@ -5,17 +5,30 @@
 | | 开发目录 | 测试目录 |
 |---|---|---|
 | 路径 | `slg/` | `slg-test/`（`git worktree`，同级目录） |
-| 分支 | `feat/<编号>-<名称>`、`fix/...` | `develop`（只 pull，不改代码） |
+| 分支 | `feat/<编号>-<名称>`、`fix/...` | `test`（只跟随 `develop`，ff-only 合入，不改代码） |
 | API / 前端端口 | 8080 / 8424 | 8081 / 8425 |
 | 启动 | `./dev.sh` | `API_PORT=8081 WEB_PORT=8425 ./dev.sh` |
 
 ## 日常流程
 
 1. 从 `develop` 拉 `feat/<编号>-<名称>`，在开发目录开发、自测。
-2. 自测过了就合入 `develop`，云效单转“测试中”。
-3. 测试目录 `git pull` 后重启，在 8425 上测。
-4. 测出问题回开发目录修，合入 `develop`，测试目录再 pull。
+2. 自测过了就在开发目录合入 `develop`（`git switch develop && git merge feat/xxx`），云效单转“测试中”。
+3. 测试目录同步 `develop`（见下节）后重启，在 8425 上测。
+4. 测出问题回开发目录修，合入 `develop`，测试目录再同步一次。
 5. 测试通过后 `develop` 合入 `main` 上线。
+
+## 同步 develop 到测试目录
+
+测试目录的 `test` 分支只在本地，没有上游，`git pull` 用不了。同步方式是快进合入：
+
+```bash
+cd ../slg-test
+git merge --ff-only develop
+```
+
+- `--ff-only` 失败，说明 `test` 上有 `develop` 没有的提交，先查清楚再处理，不要强制覆盖。
+- 不要在 `test` 上提交代码，测试目录里只做这一个合并动作。
+- 同步后重启测试服务（`API_PORT=8081 WEB_PORT=8425 ./dev.sh`）再测。
 
 ## 注意
 
@@ -25,11 +38,12 @@
 - **共用库的迁移会立刻对两边生效。** 改表结构的需求要向后兼容，或提前通知测试。
 - `dev.sh` / `stop.sh` 只管本目录的进程（按工作目录识别），不会误杀另一个目录的实例。
 - 测试目录的 `backend/.env` 和 `node_modules` 用软链指向开发目录，不要单独维护。
+- 开发目录在 `feat/...` 和 `develop` 之间切分支，会改变正在运行的开发服务读到的代码，切完按需重启（`SERVICES="api web" ./dev.sh`）。
 
 ## 首次搭建测试目录
 
 ```bash
-git worktree add ../slg-test develop
+git worktree add -b test ../slg-test develop
 cd ../slg-test
 ln -s ../../slg/backend/.env backend/.env
 ln -s ../../slg/backend/node_modules backend/node_modules
@@ -38,4 +52,4 @@ ln -s ../slg/node_modules node_modules
 API_PORT=8081 WEB_PORT=8425 ./dev.sh
 ```
 
-`develop` 被测试目录占用后，开发目录不能再 checkout `develop`，从它拉新分支用 `git checkout -b feat/xxx develop` 即可。
+`develop` 在开发目录 `slg/` 上检出，测试目录固定在 `test`，两者不冲突。从 `develop` 拉需求分支用 `git switch -c feat/xxx develop`。
