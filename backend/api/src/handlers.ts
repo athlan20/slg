@@ -61,6 +61,7 @@ import { handleChatOp } from './handlers-chat';
 import { handleClaimDaily, handleGetDaily, handleGetSignin, handleSignin } from './handlers-quest';
 import { handleClaimActivity, handleClaimQuest, handleGetActivities, handleGetQuests } from './handlers-quests';
 import { handleGetLeaderboard } from './handlers-leaderboard';
+import { effectiveLevelSql } from '../../common/src/production';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
 import { loadCityState } from './views';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
@@ -463,7 +464,7 @@ async function handleGetState(
   // v12：附带账号全部城池（主城在前；占领 NPC 城池后出现分城），供客户端定位与展示；
   // v24（AISLG-58）：level = 各城官府等级；branch 给出分城名额与占领门槛
   const citiesRes = await ctx.pool.query(
-    `SELECT c.id, c.name, COALESCE(g.level, 0)::int AS level, c.x, c.y
+    `SELECT c.id, c.name, COALESCE(${effectiveLevelSql('g.level', "'government'", 'c.famous_name')}, 0)::int AS level, c.x, c.y
      FROM cities c LEFT JOIN city_buildings g ON g.city_id = c.id AND g.kind = 'government'
      WHERE c.account_id = $1 ORDER BY c.created_at`,
     [accountId],

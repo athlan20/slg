@@ -15,6 +15,7 @@ import type { NpcCitySnapshot } from '../../common/src/world';
 import type { TileRow } from '../../common/src/world-db';
 import { checkOccupyNpcCity, type OccupyCityDenial } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
+import { loadBuildingLevels } from '../../common/src/production';
 import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';import { parseCargo } from '../../common/src/transport';
 import { loadMovingTarget, rowIndexAt, rowStepMs } from '../../common/src/moving-target-db';
 import { loadCampAt } from '../../common/src/yellow-turban-db';
@@ -284,11 +285,7 @@ export async function resolveMarchTarget(
     // 分城：占领资格与 NPC 城同口径（主城官府 ≥3、分城名额、目标等级 ≤ 出发城官府；
     // 目标等级 = 该城官府等级）。发起时初核，Worker 到达复核（名额没了照打、只降城防值）
     const standing = await loadBranchStanding(client, accountId);
-    const targetGovRes = await client.query(
-      `SELECT COALESCE(g.level, 0)::int AS level FROM city_buildings g WHERE g.city_id = $1 AND g.kind = 'government'`,
-      [city.id],
-    );
-    const targetLevel = targetGovRes.rowCount ? (targetGovRes.rows[0] as { level: number }).level : 0;
+    const targetLevel = (await loadBuildingLevels(client, city.id)).government;
     const denial = checkOccupyNpcCity({
       mainGovernment: standing.mainGovernment,
       fromGovernment: governmentLevel,

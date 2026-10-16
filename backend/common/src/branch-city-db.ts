@@ -2,6 +2,7 @@
 // API（出征发起初核）与 Worker（到达复核）共用同一查询，口径不得各自实现。
 
 import type pg from 'pg';
+import { effectiveLevelSql } from './production';
 
 export interface BranchStanding {
   /** 主城（账号名下创建最早的城）官府等级 */
@@ -13,7 +14,8 @@ export interface BranchStanding {
 export async function loadBranchStanding(q: pg.Pool | pg.PoolClient, accountId: string): Promise<BranchStanding> {
   const res = await q.query(
     `SELECT (SELECT count(*) FROM cities WHERE account_id = $1)::int AS total,
-            COALESCE((SELECT g.level FROM city_buildings g
+            COALESCE((SELECT ${effectiveLevelSql('g.level', "'government'", 'mc.famous_name')} FROM city_buildings g
+                      JOIN cities mc ON mc.id = g.city_id
                       WHERE g.kind = 'government'
                         AND g.city_id = (SELECT id FROM cities WHERE account_id = $1 ORDER BY created_at LIMIT 1)), 0)::int AS main_gov`,
     [accountId],

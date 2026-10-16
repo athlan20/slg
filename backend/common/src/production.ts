@@ -14,7 +14,8 @@
 // 采集已按 extra 参数接入（v12；v61 起占领加成来自 world.ts 的 territoryBonusRates，驻军采集按储量结算，见 wilderness-reserve.ts）。
 
 import pg from 'pg';
-import { BUILDING_INFO, effectiveBuildingLevel, populationGrowthPerHour, popCap } from './rules';
+import { BUILDING_INFO, MAX_BUILDING_LEVEL, effectiveBuildingLevel, populationGrowthPerHour, popCap } from './rules';
+import { FAMOUS_THEME_BUILDING, FAMOUS_THEME_LEVEL_MAX } from './famous-effects';
 import { scaledRate } from './time-scale';
 import { BUILDING_KINDS, type BuildingKind, type Resources, type StorageCaps, type TroopKind } from './protocol';
 import { territoryBonusRates, type TerritoryRow } from './world';
@@ -314,6 +315,19 @@ export async function loadBuildingLevels(q: pg.Pool | pg.PoolClient, cityId: str
     }
   }
   return levels;
+}
+
+/**
+ * SQL 版的生效等级（与 effectiveBuildingLevel 同口径，AISLG-167）：库存等级按该城当前上限封顶。
+ * 直接读 city_buildings 的查询必须经过它，否则名城失守后主题建筑的库存 25 级会被当成 25 级生效。
+ * levelExpr / kindExpr / famousExpr 是调用方 SQL 里的列表达式（famousExpr 为城池的 famous_name）；
+ * 库存为 NULL（无该建筑行）时结果为 NULL，由调用方 COALESCE。
+ */
+export function effectiveLevelSql(levelExpr: string, kindExpr: string, famousExpr: string): string {
+  const themed = Object.entries(FAMOUS_THEME_BUILDING)
+    .map(([name, kind]) => `WHEN ${kindExpr} = '${kind}' AND ${famousExpr} = '${name}' THEN ${FAMOUS_THEME_LEVEL_MAX}`)
+    .join(' ');
+  return `(CASE WHEN ${levelExpr} IS NULL THEN NULL ELSE LEAST(${levelExpr}, CASE ${themed} ELSE ${MAX_BUILDING_LEVEL} END) END)`;
 }
 
 /**

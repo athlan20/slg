@@ -12,7 +12,7 @@ import { EventType, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, cityRaidLevel, npcRaidArmy } from '../../common/src/battle';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
-import { loadBuildingLevels } from '../../common/src/production';
+import { effectiveLevelSql, loadBuildingLevels } from '../../common/src/production';
 import { beaconLeadMultiplier, warningIntel } from '../../common/src/building-effects';
 import { inNewbieProtection, inTruce } from '../../common/src/protection';
 import { npcRaidIntervalMs } from './world-tick';
@@ -110,9 +110,10 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
     // v38（AISLG-122）：新手保护与主动免战中的账号同样不入池（保护是硬规则，NPC 也不打）
     if (Math.random() < NPC_RAID_CITY_SHARE) {
       const cityRes = await client.query(
-        `SELECT c.id, c.account_id, c.x, c.y, g.level AS gov_level
+        `SELECT c.id, c.account_id, c.x, c.y, ${effectiveLevelSql('g.level', "'government'", 'c.famous_name')} AS gov_level
          FROM cities c
-         JOIN city_buildings g ON g.city_id = c.id AND g.kind = 'government' AND g.level >= $1
+         JOIN city_buildings g ON g.city_id = c.id AND g.kind = 'government'
+           AND ${effectiveLevelSql('g.level', "'government'", 'c.famous_name')} >= $1
          JOIN accounts a ON a.id = c.account_id
          JOIN (
            SELECT account_id, MIN(created_at) AS first_created
@@ -220,7 +221,8 @@ export async function createNearbyNpcAttack(
        UNION ALL
        SELECT 'city', c.x, c.y, NULL, 0, c.id, c.account_id, GREATEST(ABS(c.x - $1), ABS(c.y - $2))
        FROM cities c
-       JOIN city_buildings g ON g.city_id = c.id AND g.kind = 'government' AND g.level >= $4
+       JOIN city_buildings g ON g.city_id = c.id AND g.kind = 'government'
+         AND ${effectiveLevelSql('g.level', "'government'", 'c.famous_name')} >= $4
        JOIN accounts a ON a.id = c.account_id
        JOIN (SELECT account_id, MIN(created_at) AS first_created FROM cities GROUP BY account_id) m
          ON m.account_id = c.account_id AND m.first_created = c.created_at

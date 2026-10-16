@@ -10,6 +10,7 @@
 import pg from 'pg';
 import type { Resources } from './protocol';
 import { claimAtomically, DAILY_TASKS, QuestError, todayInfo } from './quest';
+import { effectiveLevelSql } from './production';
 
 export { QuestError };
 
@@ -284,7 +285,8 @@ async function loadCtx(pool: pg.Pool, accountId: string): Promise<{ ctx: QuestCt
   const eventsAll = await loadEventCounts(pool, accountId, null);
   const eventsSince = await loadEventCounts(pool, accountId, ACTIVITY_START);
   const lv = await pool.query(
-    `SELECT cb.kind, cb.level FROM city_buildings cb
+    `SELECT cb.kind, ${effectiveLevelSql('cb.level', 'cb.kind', 'c.famous_name')} AS level FROM city_buildings cb
+     JOIN cities c ON c.id = cb.city_id
      WHERE cb.city_id = (SELECT id FROM cities WHERE account_id = $1 ORDER BY created_at LIMIT 1)`,
     [accountId],
   );

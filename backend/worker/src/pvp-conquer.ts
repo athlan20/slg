@@ -219,11 +219,7 @@ export async function resolvePvpConquestArrival(
   // 到达复核攻方名额（发起后可能经他城占领 / 失守变化）：名额没了照打、只降城防值
   const standing = await loadBranchStanding(client, march.account_id);
   const fromLevels = await loadBuildingLevels(client, march.from_city_id);
-  const targetGovRes = await client.query(
-    `SELECT COALESCE(g.level, 0)::int AS level FROM city_buildings g WHERE g.city_id = $1 AND g.kind = 'government'`,
-    [city.id],
-  );
-  const targetLevel = targetGovRes.rowCount ? (targetGovRes.rows[0] as { level: number }).level : 0;
+  const targetLevel = (await loadBuildingLevels(client, city.id)).government;
   const denial = checkOccupyNpcCity({
     mainGovernment: standing.mainGovernment,
     fromGovernment: fromLevels.government,
