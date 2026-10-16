@@ -3,6 +3,7 @@
 
 import pg from 'pg';
 import { loadBattleReport } from '../../common/src/battle-db';
+import { effectiveLevelSql } from '../../common/src/production';
 import type { BattleReportView } from '../../common/src/protocol-battle';
 import type { ChatCardRequest, ChatCardView } from '../../common/src/protocol-chat';
 import type { TerrainKind, TileKind } from '../../common/src/protocol-world';
@@ -80,7 +81,7 @@ async function heroCard(q: Q, accountId: string, heroId: string): Promise<BuiltC
 
 async function cityCard(q: Q, accountId: string, cityId: string, filter: BannedWordFilter): Promise<BuiltChatCard | null> {
   const res = await q.query(
-    `SELECT c.name, c.x, c.y, a.username, COALESCE(g.level, 0)::int AS level
+    `SELECT c.name, c.x, c.y, a.username, COALESCE(${effectiveLevelSql('g.level', "'government'", 'c.famous_name')}, 0)::int AS level
      FROM cities c
      JOIN accounts a ON a.id = c.account_id
      LEFT JOIN city_buildings g ON g.city_id = c.id AND g.kind = 'government'

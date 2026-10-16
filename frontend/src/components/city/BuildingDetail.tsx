@@ -27,6 +27,8 @@ export function BuildingDetail({ city, kind, connection, onClose, onStartBuild, 
   const [targetLevel, setTargetLevel] = useState<number | null>(null);
   const label = BUILDING_LABEL[kind];
   const level = city.levels[kind] ?? 0;
+  // 等级上限按城按建筑（v63）：占有对应名城时其主题建筑为 25，其余 20
+  const levelMax = city.levelMax?.[kind] ?? BUILDING_LEVEL_MAX;
   const entry = city.queue.find((item) => item.kind === kind);
   const queueFull = city.queue.length >= 1 + BUILD_QUEUE_CAPACITY;
 
@@ -35,19 +37,19 @@ export function BuildingDetail({ city, kind, connection, onClose, onStartBuild, 
   const actionCost = (level > 0 ? upgradeCost : city.costs?.[kind]?.build) ?? null;
   // 单级动作时长（v25 AISLG-71）：服务端已按当前 timeScale 折算；连升整链时长由 chainPlan 本地预估
   const actionSeconds = (level > 0 ? city.costs?.[kind]?.upgradeSeconds : city.costs?.[kind]?.buildSeconds) ?? null;
-  const canChain = level > 0 && level < BUILDING_LEVEL_MAX && entry == null;
-  const selectableTarget = canChain ? Math.min(Math.max(targetLevel ?? level + 1, level + 1), BUILDING_LEVEL_MAX) : level + 1;
+  const canChain = level > 0 && level < levelMax && entry == null;
+  const selectableTarget = canChain ? Math.min(Math.max(targetLevel ?? level + 1, level + 1), levelMax) : level + 1;
   const chain =
     canChain && selectableTarget >= level + 2 && upgradeCost !== null
       ? upgradeChainPreview({ currentLevel: level, toLevel: selectableTarget, nextCost: upgradeCost, timeScale: city.timeScale })
       : null;
   // 展示用消耗：连升时为整链预估总成本，单级 / 建造为服务端下发的下一步成本
   const displayCost: Resources | null = chain ? chain.totalCost : actionCost;
-  const disabled = connection !== 'online' || queueFull || level >= BUILDING_LEVEL_MAX || entry != null;
+  const disabled = connection !== 'online' || queueFull || level >= levelMax || entry != null;
 
   const hint =
-    level >= BUILDING_LEVEL_MAX
-      ? COPY.buildingModal.hintLevelMax(BUILDING_LEVEL_MAX)
+    level >= levelMax
+      ? COPY.buildingModal.hintLevelMax(levelMax)
       : entry
         ? COPY.buildingModal.hintInQueue
         : queueFull
@@ -117,7 +119,7 @@ export function BuildingDetail({ city, kind, connection, onClose, onStartBuild, 
             onChange={(event) => setTargetLevel(Number(event.target.value))}
             className="cursor-pointer rounded border border-line-soft bg-panel-2 px-1.5 py-0.5 text-[12px] text-fg outline-none focus:border-accent-dim"
           >
-            {Array.from({ length: BUILDING_LEVEL_MAX - level }, (_, index) => level + 1 + index).map((lv) => (
+            {Array.from({ length: levelMax - level }, (_, index) => level + 1 + index).map((lv) => (
               <option key={lv} value={lv}>
                 {COPY.buildingModal.targetOption(lv, lv === level + 1)}
               </option>

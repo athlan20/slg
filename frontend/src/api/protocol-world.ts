@@ -37,6 +37,13 @@ export interface TileOwnerView {
 /** NPC 城池库存档位（v23 AISLG-55；相对该城初始库存，不给精确数值） */
 export type NpcStockTier = 'rich' | 'normal' | 'low' | 'empty';
 
+/** 名城独有效果（v62，AISLG-166）：kind 种类，percent 数值（城墙为额外百分点），resources 仅 territory 有（野地产出的资源） */
+export interface FamousEffectView {
+  kind: 'wall' | 'tower' | 'territory' | 'march' | 'warehouse';
+  percent: number;
+  resources: Array<keyof Resources> | null;
+}
+
 /** 名城标识与当前阶段（v24，AISLG-56） */
 export interface FamousTileView {
   name: string;
@@ -46,6 +53,8 @@ export interface FamousTileView {
   bonusPercent: number;
   /** 城守阶段：外围恢复满编的时刻（ISO 8601）；外围阶段为 null */
   recoversAt: string | null;
+  /** 占领后得到的名城独有效果（v62，AISLG-166） */
+  effect: FamousEffectView | null;
 }
 
 /** 地图窗口内一格的视图 */
@@ -73,6 +82,16 @@ export interface TileView {
   durability: number | null;
   /** 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将 */
   wildFamous: boolean;
+  /** 野地储量（v61，AISLG-165）：仅野地有值；数值与预计时刻只对归属方与侦察过的账号给出 */
+  reserve: ReserveView | null;
+}
+
+/** 野地储量视图（v61，AISLG-165）：档位对所有人可见，数值与预计时刻仅归属方与侦察过的账号可见 */
+export interface ReserveView {
+  tier: 'ample' | 'normal' | 'depleted';
+  current: number | null;
+  cap: number | null;
+  eta: { kind: 'empty' | 'full'; at: string } | null;
 }
 
 /** 玩家城地块的保护状态（v38，AISLG-122）；三个截止任一未到即受保护 */
@@ -120,8 +139,10 @@ export interface TerritoryView {
   resource: TerrainResource;
   /** 占领加成（/小时） */
   bonusRate: number;
-  /** 驻军采集（/小时） */
+  /** 驻军采集（/小时；v61 起受储量约束） */
   gatherRate: number;
+  /** 野地储量（v61，AISLG-165） */
+  reserve: ReserveView;
   garrison: number;
   /** 所属连片块数（v23 AISLG-59；同地形 4 向相邻；单块为 1） */
   clusterSize: number;

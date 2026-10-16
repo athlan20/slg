@@ -32,6 +32,7 @@ import {
   type MovingTargetRow,
 } from '../../common/src/moving-target-db';
 import { settleOwnerCity } from './tick-shared';
+import { readTileReserve, writeTileReserve } from '../../common/src/wilderness-reserve-db';
 import { movingNotifyPayload } from './intercept-tick';
 
 /** 刷新 / 过期 / 掠夺检查的最小间隔（毫秒，真实时间） */
@@ -110,10 +111,14 @@ async function plunderAlongRoute(pool: pg.Pool, row: MovingTargetRow, now: numbe
       // settleOwnerCity 返回的是结算前读到的行：存量要在结算落库后重读
       const haveRes = await client.query(`SELECT ${hit.resource} AS have FROM cities WHERE id = $1`, [hit.cityId]);
       const have = Math.max(0, Math.floor((haveRes.rows[0] as { have: number }).have));
-      const amount = Math.min(have, hit.want);
+      // v61（AISLG-165）：流寇劫掠同掠夺口径——地形资源不超过该地块当前储量，并从储量中扣减（城池已结算到此刻）
+      const reserveAt = (await client.query(`SELECT now() AS now`)).rows[0].now as Date;
+      const reserve = (await readTileReserve(client, hit.x, hit.y, reserveAt)) ?? 0;
+      const amount = Math.min(have, hit.want, Math.floor(reserve));
       if (amount <= 0) {
         continue;
       }
+      await writeTileReserve(client, hit.x, hit.y, reserve - amount, reserveAt);
       await client.query(`UPDATE cities SET ${hit.resource} = ${hit.resource} - $2 WHERE id = $1`, [hit.cityId, amount]);
       gained[hit.resource] = (gained[hit.resource] ?? 0) + amount;
       losses.push({ ...hit, amount });

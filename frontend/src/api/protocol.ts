@@ -216,6 +216,7 @@ export type ErrorCode =
   | 'BUILD_NOT_CANCELLABLE'
   | 'AGENT_FORBIDDEN'
   | 'TROOP_NOT_AVAILABLE'
+  | 'ELITE_TROOP_LOCKED'
   | 'INSUFFICIENT_POPULATION'
   | 'RECRUIT_QUEUE_FULL'
   | 'RECRUIT_NOT_CANCELLABLE'
@@ -291,7 +292,7 @@ export interface Resources {
 /** 建造排队上限（不含在建，占位）：镜像 rules.ts 的 BUILD_QUEUE_CAPACITY，仅用于界面禁用；权威判定在服务端（QUEUE_FULL）。 */
 export const BUILD_QUEUE_CAPACITY = 2;
 
-/** 建筑等级上限：镜像 rules.ts 的 MAX_BUILDING_LEVEL，仅用于界面禁用；权威判定在服务端（BUILDING_LEVEL_MAX）。 */
+/** 建筑等级上限（普通建筑）：镜像 rules.ts 的 MAX_BUILDING_LEVEL。界面按建筑取值请用 CityView.levelMax（名城主题建筑为 25）；权威判定在服务端（BUILDING_LEVEL_MAX）。 */
 export const BUILDING_LEVEL_MAX = 20;
 
 /**
@@ -387,6 +388,15 @@ export const TROOP_KINDS = [
   'supply_wagon',
   'ballista',
   'siege_ram',
+  // v64 名城专属八种（AISLG-168）：占领对应名城的分城才能征募
+  'yulin_guard',
+  'danyang_soldier',
+  'baimao_soldier',
+  'huwei_guard',
+  'zhuge_crossbow',
+  'xiandeng_warrior',
+  'hubao_cavalry',
+  'xiliang_cavalry',
 ] as const;
 
 export type TroopKind = (typeof TROOP_KINDS)[number];
@@ -460,6 +470,7 @@ export type {
   BranchInfoView,
   CityRefView,
   FamousTileView,
+  FamousEffectView,
   WorldMapResponseData,
   MapOverviewResponseData,
   MapOverviewSide,
@@ -530,7 +541,7 @@ export type {
   YellowTurbanPushData,
 } from './protocol-yt';
 import type { TechLevels } from './protocol-tech';
-import type { MarchView, TerritoryView } from './protocol-world';
+import type { FamousEffectView, MarchView, TerritoryView } from './protocol-world';
 
 /**
  * 单兵征募数值（v11，占位）：镜像 backend/common/src/troops.ts 的 TROOP_INFO，
@@ -553,7 +564,32 @@ export const TROOP_INFO: Record<
   supply_wagon: { cost: { gold: 200, wood: 300, food: 60, stone: 0, iron: 40 }, population: 6, unitSeconds: 30, barracksLevel: 3, foodUse: 10, carry: 5000 },
   ballista: { cost: { gold: 350, wood: 300, food: 80, stone: 0, iron: 120 }, population: 3, unitSeconds: 45, barracksLevel: 7, foodUse: 8, carry: 0 },
   siege_ram: { cost: { gold: 400, wood: 400, food: 80, stone: 100, iron: 100 }, population: 5, unitSeconds: 60, barracksLevel: 8, foodUse: 10, carry: 0 },
+  yulin_guard: { cost: { gold: 360, wood: 120, food: 240, stone: 0, iron: 160 }, population: 2, unitSeconds: 38, barracksLevel: 7, foodUse: 9, carry: 80 },
+  danyang_soldier: { cost: { gold: 360, wood: 120, food: 240, stone: 0, iron: 160 }, population: 2, unitSeconds: 38, barracksLevel: 7, foodUse: 9, carry: 80 },
+  baimao_soldier: { cost: { gold: 300, wood: 160, food: 200, stone: 0, iron: 100 }, population: 2, unitSeconds: 30, barracksLevel: 6, foodUse: 8, carry: 60 },
+  huwei_guard: { cost: { gold: 300, wood: 160, food: 200, stone: 0, iron: 100 }, population: 2, unitSeconds: 30, barracksLevel: 6, foodUse: 8, carry: 60 },
+  zhuge_crossbow: { cost: { gold: 400, wood: 240, food: 200, stone: 0, iron: 120 }, population: 2, unitSeconds: 45, barracksLevel: 8, foodUse: 9, carry: 50 },
+  xiandeng_warrior: { cost: { gold: 400, wood: 240, food: 200, stone: 0, iron: 120 }, population: 2, unitSeconds: 45, barracksLevel: 8, foodUse: 9, carry: 50 },
+  hubao_cavalry: { cost: { gold: 600, wood: 160, food: 300, stone: 0, iron: 200 }, population: 2, unitSeconds: 60, barracksLevel: 9, foodUse: 18, carry: 100 },
+  xiliang_cavalry: { cost: { gold: 600, wood: 160, food: 300, stone: 0, iron: 200 }, population: 2, unitSeconds: 60, barracksLevel: 9, foodUse: 18, carry: 100 },
 };
+
+/** 名城 → 专属兵种（v64，AISLG-168）：镜像 backend/common/src/famous-effects.ts 的 FAMOUS_ELITE_TROOP */
+export const FAMOUS_ELITE_TROOP: Record<string, TroopKind> = {
+  洛阳: 'yulin_guard',
+  建业: 'danyang_soldier',
+  襄阳: 'baimao_soldier',
+  许昌: 'huwei_guard',
+  成都: 'zhuge_crossbow',
+  邺城: 'xiandeng_warrior',
+  官渡: 'hubao_cavalry',
+  长安: 'xiliang_cavalry',
+};
+
+/** 专属兵对应的名城（普通兵为 undefined）：镜像 famousCityOfEliteTroop */
+export function famousCityOfEliteTroop(troop: TroopKind): string | undefined {
+  return Object.keys(FAMOUS_ELITE_TROOP).find((name) => FAMOUS_ELITE_TROOP[name] === troop);
+}
 
 /** 单次征募数量上限（占位）：镜像 backend/common/src/troops.ts 的 RECRUIT_COUNT_MAX */
 export const RECRUIT_COUNT_MAX = 100;
@@ -584,6 +620,14 @@ export const TROOP_POWER: Record<TroopKind, number> = {
   supply_wagon: 1,
   ballista: 8,
   siege_ram: 3,
+  yulin_guard: 7,
+  danyang_soldier: 7,
+  baimao_soldier: 5,
+  huwei_guard: 5,
+  zhuge_crossbow: 7,
+  xiandeng_warrior: 7,
+  hubao_cavalry: 10,
+  xiliang_cavalry: 10,
 };
 
 /** 征兵排队上限（不含征募中，占位）：镜像 backend/common/src/troops.ts 的 RECRUIT_QUEUE_CAPACITY，
@@ -625,6 +669,8 @@ export interface CityView {
   famousName: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
+  /** 名城独有效果（v62，AISLG-166）：只有占领者享受、跟着城走；普通城为 null */
+  famousEffect: FamousEffectView | null;
   /** 城池等级（v24 起 = 该城官府等级） */
   level: number;
   resources: Resources;
@@ -634,6 +680,8 @@ export interface CityView {
   levels: BuildingCounts;
   /** 各建筑「下一步动作」成本：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用 */
   costs: Record<BuildingKind, KindActionCosts>;
+  /** 各建筑的等级上限（v63）：普通 20；占有对应名城时其主题建筑为 25 */
+  levelMax: Record<BuildingKind, number>;
   /** 兼容字段：已建成的农田数量（= buildings.farm） */
   farms: number;
   production: ProductionRates;

@@ -137,6 +137,14 @@ export const ARMY_COPY_EN = {
     supply_wagon: 'Logistics',
     ballista: 'Siege engine',
     siege_ram: 'Siege',
+    yulin_guard: 'Famous Heavy',
+    danyang_soldier: 'Famous Heavy',
+    baimao_soldier: 'Famous Spear',
+    huwei_guard: 'Famous Spear',
+    zhuge_crossbow: 'Famous Ranged',
+    xiandeng_warrior: 'Famous Ranged',
+    hubao_cavalry: 'Famous Cavalry',
+    xiliang_cavalry: 'Famous Cavalry',
   } as Record<string, string>,
 } satisfies typeof ARMY_COPY;
 

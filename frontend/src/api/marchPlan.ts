@@ -31,6 +31,14 @@ export const TROOP_MARCH_SPEED: Record<TroopKind, number> = {
   supply_wagon: 0.7,
   ballista: 0.6,
   siege_ram: 0.6,
+  yulin_guard: 1,
+  danyang_soldier: 1,
+  baimao_soldier: 1,
+  huwei_guard: 1,
+  zhuge_crossbow: 1,
+  xiandeng_warrior: 1,
+  hubao_cavalry: 1.8,
+  xiliang_cavalry: 1.5,
 };
 
 /** 行军时长预估（秒）：编队最慢兵种决定速度，空编队按基准速度 1；至少按 1 格计 */

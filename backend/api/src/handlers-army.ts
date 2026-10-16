@@ -49,7 +49,7 @@ export async function handleRecruit(
       return;
     }
     const counts = await recruitQueueCounts(client, snap.cityId);
-    const verdict = startRecruit(troop, count, snap.resources, snap.population, snap.levels.barracks, counts.active, counts.queued);
+    const verdict = startRecruit(troop, count, snap.resources, snap.population, snap.levels.barracks, counts.active, counts.queued, snap.famousName);
     if (!verdict.ok) {
       await client.query('ROLLBACK');
       // v22（AISLG-43）：资源 / 人口不足附缺口与 retryAfterSeconds（按当前净产量 / 增速推导）

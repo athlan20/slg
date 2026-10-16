@@ -19,8 +19,8 @@ setTimeScaleCache(1);
 
 const RICH = { gold: 100_000, wood: 100_000, food: 100_000, stone: 100_000, iron: 100_000 };
 
-test('兵种清单覆盖一期七种（旧游戏 1–7 号）+ 二期四种（v33）', () => {
-  assert.deepEqual([...TROOP_KINDS], ['porter', 'militia', 'scout', 'pikeman', 'swordsman', 'archer', 'cavalry', 'iron_cavalry', 'supply_wagon', 'ballista', 'siege_ram']);
+test('兵种清单覆盖一期七种（旧游戏 1–7 号）+ 二期四种（v33）+ 名城专属八种（v64）', () => {
+  assert.deepEqual([...TROOP_KINDS], ['porter', 'militia', 'scout', 'pikeman', 'swordsman', 'archer', 'cavalry', 'iron_cavalry', 'supply_wagon', 'ballista', 'siege_ram', 'yulin_guard', 'danyang_soldier', 'baimao_soldier', 'huwei_guard', 'zhuge_crossbow', 'xiandeng_warrior', 'hubao_cavalry', 'xiliang_cavalry']);
   for (const troop of TROOP_KINDS) {
     assert.ok(TROOP_INFO[troop].label.length > 0, `${troop} 应有中文名`);
     assert.ok(TROOP_INFO[troop].barracksLevel >= 1, `${troop} 解锁军营等级应为正`);
@@ -28,16 +28,16 @@ test('兵种清单覆盖一期七种（旧游戏 1–7 号）+ 二期四种（v3
 });
 
 test('征募校验：军营等级门槛（未建军营同样拒绝）', () => {
-  const verdict = startRecruit('porter', 1, RICH, 100, 0, 0, 0);
+  const verdict = startRecruit('porter', 1, RICH, 100, 0, 0, 0, null);
   assert.ok(!verdict.ok && verdict.code === 'TROOP_NOT_AVAILABLE');
-  const scout = startRecruit('scout', 1, RICH, 100, 1, 0, 0);
+  const scout = startRecruit('scout', 1, RICH, 100, 1, 0, 0, null);
   assert.ok(!scout.ok && scout.code === 'TROOP_NOT_AVAILABLE');
-  const ok = startRecruit('scout', 1, RICH, 100, 2, 0, 0);
+  const ok = startRecruit('scout', 1, RICH, 100, 2, 0, 0, null);
   assert.ok(ok.ok);
 });
 
 test('征募校验：成本与人口按数量放大并正确扣减判定', () => {
-  const verdict = startRecruit('pikeman', 3, RICH, 100, 3, 0, 0);
+  const verdict = startRecruit('pikeman', 3, RICH, 100, 3, 0, 0, null);
   assert.ok(verdict.ok);
   assert.deepEqual(verdict.cost, {
     gold: 150 * 3,
@@ -47,20 +47,20 @@ test('征募校验：成本与人口按数量放大并正确扣减判定', () =>
     iron: 50 * 3,
   });
   assert.equal(verdict.population, 3);
-  const poor = startRecruit('pikeman', 3, { ...RICH, iron: 50 * 3 - 1 }, 100, 3, 0, 0);
+  const poor = startRecruit('pikeman', 3, { ...RICH, iron: 50 * 3 - 1 }, 100, 3, 0, 0, null);
   assert.ok(!poor.ok && poor.code === 'INSUFFICIENT_RESOURCES');
-  const noPeople = startRecruit('pikeman', 3, RICH, 2, 3, 0, 0);
+  const noPeople = startRecruit('pikeman', 3, RICH, 2, 3, 0, 0, null);
   assert.ok(!noPeople.ok && noPeople.code === 'INSUFFICIENT_POPULATION');
 });
 
 test('征募校验：队列容量与立即开始/入队模式', () => {
-  const start = startRecruit('porter', 1, RICH, 100, 1, 0, 0);
+  const start = startRecruit('porter', 1, RICH, 100, 1, 0, 0, null);
   assert.ok(start.ok && start.mode === 'start', '无征募中应立即开始');
   for (let queued = 0; queued < RECRUIT_QUEUE_CAPACITY; queued += 1) {
-    const verdict = startRecruit('porter', 1, RICH, 100, 1, MAX_ACTIVE_RECRUITS, queued);
+    const verdict = startRecruit('porter', 1, RICH, 100, 1, MAX_ACTIVE_RECRUITS, queued, null);
     assert.ok(verdict.ok && verdict.mode === 'queued', `排队 ${queued}/${RECRUIT_QUEUE_CAPACITY} 时应允许入队`);
   }
-  const full = startRecruit('porter', 1, RICH, 100, 1, MAX_ACTIVE_RECRUITS, RECRUIT_QUEUE_CAPACITY);
+  const full = startRecruit('porter', 1, RICH, 100, 1, MAX_ACTIVE_RECRUITS, RECRUIT_QUEUE_CAPACITY, null);
   assert.ok(!full.ok && full.code === 'RECRUIT_QUEUE_FULL');
   assert.ok(RECRUIT_COUNT_MAX >= 1);
 });

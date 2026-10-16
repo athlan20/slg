@@ -182,8 +182,10 @@ export function pvpPlunderPool(
   warehouseLevel: number,
   attackerGovernment: number,
   defenderGovernment: number,
+  /** v62（AISLG-166）：被掠城的名城仓库保护加成（百分比，襄阳 +50%） */
+  protectionPercent = 0,
 ): Record<PlunderableKey, number> {
-  const pool = warehouseProtectedPool(resources, warehouseLevel);
+  const pool = warehouseProtectedPool(resources, warehouseLevel, protectionPercent);
   const factor = pvpLevelFactor(attackerGovernment, defenderGovernment);
   return {
     gold: Math.floor(pool.gold * PVP_GOLD_SHARE * factor),

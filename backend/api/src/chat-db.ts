@@ -4,6 +4,7 @@
 import pg from 'pg';
 import type { ChatCardView } from '../../common/src/protocol-chat';
 import { CHAT_PRIVATE_RETAIN_DAYS, CHAT_WORLD_MAX_MESSAGES, CHAT_WORLD_RETAIN_DAYS } from '../../common/src/protocol-chat';
+import { effectiveLevelSql } from '../../common/src/production';
 
 type Q = pg.Pool | pg.PoolClient;
 
@@ -164,7 +165,7 @@ export async function lockSender(q: Q, accountId: string): Promise<{ id: string;
 /** 主城官府等级（按城池创建顺序取第一座城；没有官府按 0）：世界频道发言门槛依据 */
 export async function mainGovernmentLevel(q: Q, accountId: string): Promise<number> {
   const res = await q.query(
-    `SELECT COALESCE(cb.level, 0)::int AS level
+    `SELECT COALESCE(${effectiveLevelSql('cb.level', "'government'", 'c.famous_name')}, 0)::int AS level
      FROM cities c
      LEFT JOIN city_buildings cb ON cb.city_id = c.id AND cb.kind = 'government'
      WHERE c.account_id = $1

@@ -32,6 +32,7 @@ import { guardProductionPercent } from '../../common/src/hero';
 import {
   wallBasePercent,
   actionCosts,
+  buildingLevelMaxes,
   popCap,
   populationGrowthPerHour,
 } from '../../common/src/rules';
@@ -40,12 +41,17 @@ import {
   TERRAIN_INFO,
   clusterBonusMultiplier,
   territoryClusterSizes,
-  territoryRates,
   wildernessBonusRate,
-  wildernessGatherRate,
   type TerritoryRow,
 } from '../../common/src/world';
 import { loadTerritory } from '../../common/src/world-db';
+import {
+  advanceTile,
+  applyReserveUpdates,
+  effectiveGatherOf,
+  territoryDisplayRates,
+} from '../../common/src/wilderness-reserve';
+import { reserveViewFrom } from './reserve-view';
 import { getTimeScale } from '../../common/src/time-scale';
 import { selfTruceNextAvailableAt, settleDurability } from '../../common/src/protection';
 import { cityLevelOf } from '../../common/src/branch-city';
@@ -53,6 +59,7 @@ import { FAMOUS_PRODUCTION_BONUS_PERCENT } from '../../common/src/famous-city';
 import { readCargo } from '../../common/src/transport';
 import { projectStarvation } from '../../common/src/starvation';
 import { deployLimit, towerStats } from '../../common/src/building-effects';
+import { famousEffectView, famousTowerPercent, famousWallExtraPercent } from '../../common/src/famous-effects';
 import { defenseExtraPercent, type TechLevels } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { currentCityId } from './city-scope';
@@ -261,9 +268,11 @@ export async function lockCitySnapshot(
     row,
     levels,
     row.db_now,
-    territoryRates(territory),
+    territory,
     armyFoodUsePerHour,
   );
+  // 储量已推进到结算时刻：快照里的地块同步为落库值，视图与结算一致
+  applyReserveUpdates(territory, settled.reserves);
   const queueRes = await client.query(
     `SELECT * FROM builds
      WHERE city_id = $1 AND status IN ('building', 'queued')
@@ -351,7 +360,7 @@ export function toCityView(snap: CitySnapshot): CityView {
   const queue = snap.queue.map(buildView);
   const records = kindRecords(snap.levels);
   const production = productionPerHour(
-    snap.levels, territoryRates(snap.territory), snap.productionBonusPercent, snap.techs, snap.guardProductionPercent,
+    snap.levels, territoryDisplayRates(snap.territory), snap.productionBonusPercent, snap.techs, snap.guardProductionPercent,
   );
   const roundedProduction = {} as Record<ProducedResource, number>;
   for (const key of Object.keys(production) as Array<keyof typeof production>) {
@@ -369,7 +378,9 @@ export function toCityView(snap: CitySnapshot): CityView {
     buildings: records.buildings,
     levels: records.levels,
     // v6：下一步动作成本（未建=建造成本，已建未满级=升级成本）
-    costs: actionCosts(snap.levels),
+    costs: actionCosts(snap.levels, snap.famousName),
+    // v63（AISLG-167）：各建筑等级上限；名城主题建筑为 25，其余 20
+    levelMax: buildingLevelMaxes(snap.famousName),
     farms: records.buildings.farm,
     production: roundedProduction,
     population: {
@@ -397,20 +408,22 @@ export function toCityView(snap: CitySnapshot): CityView {
         : settleDurability(snap.durability, snap.durabilitySettledAt, snap.truceUntil, new Date()),
     famousName: snap.famousName,
     productionBonusPercent: snap.productionBonusPercent,
+    famousEffect: famousEffectView(snap.famousName),
     guard: snap.guardHero
       ? { heroId: snap.guardHero.id, ...snap.guardHero, bonusPercent: snap.guardProductionPercent }
       : null,
     recruitQueue: snap.recruitQueue.map(recruitView),
-    defenseBonus: wallBasePercent(snap.levels.wall) + defenseExtraPercent(snap.techs),
+    defenseBonus: wallBasePercent(snap.levels.wall) + defenseExtraPercent(snap.techs) + famousWallExtraPercent(snap.famousName),
     techs: { ...snap.techs },
     // v30（AISLG-80）：在外部队 = 行军中（含返程）+ 驻守野地；上限 = 校场等级（未建按 1）
     starveAt: starvation.starveAtMs === null ? null : new Date(starvation.starveAtMs).toISOString(),
     mutinyNextAt: snap.mutinyNextAt ? snap.mutinyNextAt.toISOString() : null,
     deploy: { count: deployCountOf(snap), limit: deployLimit(snap.levels.parade_ground) },
-    tower: towerStats(snap.levels.arrow_tower),
+    tower: towerStats(snap.levels.arrow_tower, famousTowerPercent(snap.famousName)),
     marches: snap.marches.map(marchView),
     territory: snap.territory.map((tile) => {
       const sizes = territoryClusterSizes(snap.territory);
+      const step = advanceTile(tile, new Date(), new Date(), true);
       return {
         x: tile.x,
         y: tile.y,
@@ -418,10 +431,11 @@ export function toCityView(snap: CitySnapshot): CityView {
         level: tile.level,
         resource: TERRAIN_INFO[tile.terrain].resource,
         bonusRate: wildernessBonusRate(tile.terrain, tile.level),
-        gatherRate: wildernessGatherRate(tile.terrain, tile.level, tile.garrison),
+        gatherRate: Math.round(effectiveGatherOf(step.reserve, step.cap, step.drain)),
         garrison: tile.garrison,
         clusterSize: sizes.get(`${tile.x},${tile.y}`) ?? 1,
         clusterBonusPercent: Math.round((clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1) - 1) * 100),
+        reserve: reserveViewFrom(step, true),
       };
     }),
     queue,

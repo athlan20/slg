@@ -26,6 +26,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   BUILD_NOT_CANCELLABLE: '只能取消排队中的建造任务（在建任务能否取消待设计）',
   AGENT_FORBIDDEN: '该操作不允许当前连接的登录类型调用（仅限玩家或仅限 Agent，见协议说明）',
   TROOP_NOT_AVAILABLE: '该兵种需要更高等级的军营',
+  ELITE_TROOP_LOCKED: '专属兵种只能在占领对应名城的分城军营征募',
   INSUFFICIENT_POPULATION: '人口不足以征募该数量',
   RECRUIT_QUEUE_FULL: '征兵队列已满，请等待队首完成',
   RECRUIT_NOT_CANCELLABLE: '只能取消排队中的征兵任务（征募中能否取消待设计）',

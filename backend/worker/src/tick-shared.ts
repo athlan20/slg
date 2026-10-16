@@ -12,7 +12,7 @@ import { marchingPercent } from '../../common/src/tech';
 import { stationPercent } from '../../common/src/building-effects';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { loadArmyFoodUsePerHour, loadBuildingLevels, settleCityProduction, type CityProductionRow } from '../../common/src/production';
-import { marchTravelSeconds, territoryRates } from '../../common/src/world';
+import { marchTravelSeconds } from '../../common/src/world';
 import { addTileArmy, loadTerritory } from '../../common/src/world-db';
 import type { BattleResult, BattleSideSummary } from '../../common/src/battle';
 import type { BattleHeroView, BattleSideView } from '../../common/src/protocol-battle';
@@ -145,7 +145,7 @@ export async function settleOwnerCity(
     settleTo = nowRes.rows[0].now as Date;
   }
   const anchor = settleTo > row.settled_at ? settleTo : row.settled_at;
-  await settleCityProduction(client, row, levels, anchor, territoryRates(territory), armyFoodUsePerHour);
+  await settleCityProduction(client, row, levels, anchor, territory, armyFoodUsePerHour);
   return { row, account: row.account_id };
 }
 

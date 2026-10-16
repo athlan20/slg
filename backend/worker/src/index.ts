@@ -16,16 +16,17 @@ import { EventType, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { MAX_ACTIVE_BUILDS, buildTimeBasis, completeBuild, upgradeSeconds } from '../../common/src/rules';
 import { MAX_ACTIVE_RECRUITS } from '../../common/src/troops';
-import { territoryRates } from '../../common/src/world';
 import { ensureWorld, loadTerritory } from '../../common/src/world-db';
 import { getTimeScale, refreshTimeScale, timeScaleStale } from '../../common/src/time-scale';
 import { NEWBIE_GOVERNMENT_LEVEL } from '../../common/src/protection';
-import { npcRaidIntervalMs, processDueMarches } from './world-tick';
-import { createNpcAttack, processDueNpcAttacks } from './npc-attack';
+import { processDueMarches } from './world-tick';
+import { processDueNpcAttacks } from './npc-attack';
+import { startNpcRaidTimer } from './npc-raid-timer';
 import { processDueResearch } from './tech-tick';
 import { processMovingTargets } from './moving-tick';
 import { processYellowTurban } from './yt-tick';
 import { processStarvation } from './starvation-tick';
+import { processDueReserves } from './reserve-tick';
 import { processHeroSalaries } from './hero-salary-tick';
 import { processHeroTraining } from './hero-training-tick';
 import { processArenaRewards } from './arena-tick';
@@ -108,7 +109,7 @@ async function processDueBuilds(pool: pg.Pool): Promise<number> {
         // 锚点不倒退：到期到被处理之间的空档里，读取路径可能已按旧速率把
         // settled_at 推过 due_at；该空档不再回头重结（时长 ≤ tick 周期，量级可忽略）
         const target = row.due_at > cityRow.settled_at ? row.due_at : cityRow.settled_at;
-        await settleCityProduction(client, cityRow, levels, target, territoryRates(territory), armyFoodUsePerHour);
+        await settleCityProduction(client, cityRow, levels, target, territory, armyFoodUsePerHour);
       }
       // v22（AISLG-43）连续升级：整链占一个在建位，到一级推进一级（row.level 为
       // 当前推进中的目标等级）；链未走完时保持 building、按新等级重算下一级 due_at，
@@ -264,7 +265,7 @@ async function processDueRecruits(pool: pg.Pool): Promise<number> {
         // v14：新兵入城前的耗粮按旧编成结算（入城在下方 guarded upsert，随后读取自然重算）
         const armyFoodUsePerHour = await loadArmyFoodUsePerHour(client, row.city_id);
         const target = row.due_at > cityRow.settled_at ? row.due_at : cityRow.settled_at;
-        await settleCityProduction(client, cityRow, levels, target, territoryRates(territory), armyFoodUsePerHour);
+        await settleCityProduction(client, cityRow, levels, target, territory, armyFoodUsePerHour);
       }
       const upd = await client.query(
         `UPDATE recruits SET status = 'completed', completed_at = clock_timestamp()
@@ -390,6 +391,12 @@ async function main(): Promise<void> {
       console.error('worker starvation tick failed:', err instanceof Error ? err.message : err);
     }
     try {
+      // v61（AISLG-165）：野地储量到点采空——按预计采空时刻结算归属方城池（采空事件与推送在结算中产生）
+      await processDueReserves(pool);
+    } catch (err) {
+      console.error('worker reserve tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
       // v36（AISLG-114）：武将俸禄——每小时（随缩放）从主城扣，金币不足记欠饷
       await processHeroSalaries(pool);
     } catch (err) {
@@ -449,22 +456,8 @@ async function main(): Promise<void> {
 
   const timer = setInterval(() => void tick(), TICK_MS);
 
-  // NPC 袭击发起：低频随机目标（间隔占位决策，环境变量 NPC_RAID_INTERVAL_MS 可调）。
-  // v23（AISLG-57）起改为两阶段：本定时器只负责「发起」（选目标、固定编成、发预警），
-  // 到达结算由上方 tick 的 processDueNpcAttacks 按预警提前量（间隔的 1/8）执行；
-  // 间隔受全局时间缩放、运行时可变（time_scale 切换），维持「触发后按当前值重设」
-  // 的链式 setTimeout
-  let raidTimer: NodeJS.Timeout | null = null;
-  const scheduleRaid = (): void => {
-    raidTimer = setTimeout(() => {
-      void createNpcAttack(pool)
-        .catch((err) => {
-          console.error('worker npc attack failed:', err instanceof Error ? err.message : err);
-        })
-        .finally(scheduleRaid);
-    }, npcRaidIntervalMs());
-  };
-  scheduleRaid();
+  // NPC 袭击发起定时器（v23 AISLG-57）：见 npc-raid-timer.ts
+  const stopRaidTimer = startNpcRaidTimer(pool);
 
   // 排行榜快照（v23 AISLG-61）：每 10 分钟整榜重算（数值与玩家页面同源，
   // 查询读快照，不做实时全表统计）；启动时先算一次，榜很快可用
@@ -481,9 +474,7 @@ async function main(): Promise<void> {
     clearInterval(leaderboardTimer);
     console.log(`received ${signal}, worker shutting down`);
     clearInterval(timer);
-    if (raidTimer !== null) {
-      clearTimeout(raidTimer);
-    }
+    stopRaidTimer();
     await pool.end();
     process.exit(0);
   };

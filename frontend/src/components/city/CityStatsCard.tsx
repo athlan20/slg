@@ -11,10 +11,11 @@ import { useGame } from '../../state/GameContext';
 import { ChatShareButton } from '../chat/ChatShareButton';
 import { cityShareLabel } from '../chat/chatText';
 import { tName } from '../../i18n/names';
+import { famousEffectText } from '../famousEffectText';
 
 export function CityStatsCard({ city }: { city: CityView | null }) {
   const copy = useCopy();
-  const { CITY_PAGE_COPY, RESOURCE_LABEL, CHAT_COPY } = copy;
+  const { CITY_PAGE_COPY, CITY_COPY, RESOURCE_LABEL, CHAT_COPY } = copy;
   const { session } = useGame();
   const ref = city ? session.cityList.cities.find((item) => item.id === city.id) : undefined;
   const shareable = ref !== undefined && ref.x !== null && ref.y !== null;
@@ -65,6 +66,11 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
         ) : null
       }
     >
+      {city?.famousName && city.famousEffect ? (
+        <p role="城池页-概况-名城效果" className="mb-1.5 truncate rounded border border-gold/50 px-2 py-0.5 text-[11.5px] text-gold">
+          {CITY_COPY.famous.title(tName(city.famousName))} · {CITY_COPY.famous.effectRow(famousEffectText(city.famousEffect, CITY_COPY.famous.effect, RESOURCE_LABEL))}
+        </p>
+      ) : null}
       <PagedList
         role="城池页-概况-列表"
         items={rows}

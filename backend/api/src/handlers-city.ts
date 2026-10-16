@@ -24,6 +24,7 @@ import {
   EXCHANGE_INPUT_PER_GOLD,
   applyCost,
   buildSeconds,
+  buildingLevelMax,
   exchangeGoldFor,
   startBuild,
   startUpgrade,
@@ -33,7 +34,7 @@ import {
   type BuildDeniedCode,
 } from '../../common/src/rules';
 import { productionPerHour } from '../../common/src/production';
-import { territoryRates } from '../../common/src/world';
+import { territoryDisplayRates } from '../../common/src/wilderness-reserve';
 import { populationGrowthPerHour } from '../../common/src/rules';
 import { readString, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
@@ -167,7 +168,8 @@ export async function handleUpgrade(
   await runBuildAction(ctx, conn, op, seq, (snap, counts) => {
     const currentLevel = snap.levels[kind];
     const kindInQueue = snap.queue.some((item) => item.kind === kind);
-    const verdict = startUpgrade(kind, currentLevel, snap.resources, kindInQueue, counts.active, counts.queued, toLevel ?? undefined);
+    const maxLevel = buildingLevelMax(kind, snap.famousName);
+    const verdict = startUpgrade(kind, currentLevel, snap.resources, kindInQueue, counts.active, counts.queued, toLevel ?? undefined, maxLevel);
     if (!verdict.ok) {
       return verdict;
     }
@@ -191,7 +193,7 @@ function upgradeChainPlan(kind: BuildingKind, fromLevel: number, toLevel: number
  * 产量随后续建造 / 领地变化而变时，以最新失败响应为准。
  */
 export function insufficientResourcesDetail(cost: Resources, snap: CitySnapshot): { shortfall: Partial<Resources>; retryAfterSeconds: number | null } {
-  const rates = productionPerHour(snap.levels, territoryRates(snap.territory), snap.productionBonusPercent, snap.techs);
+  const rates = productionPerHour(snap.levels, territoryDisplayRates(snap.territory), snap.productionBonusPercent, snap.techs);
   const netRates: Resources = {
     gold: rates.gold,
     wood: rates.wood,

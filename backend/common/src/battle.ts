@@ -27,6 +27,15 @@ export const TROOP_POWER: Record<TroopKind, number> = {
   supply_wagon: 1,
   ballista: 8,
   siege_ram: 3,
+  // v64 名城专属兵种（AISLG-168，占位，属性倍率调整后未重评参考战力）
+  yulin_guard: 7,
+  danyang_soldier: 7,
+  baimao_soldier: 5,
+  huwei_guard: 5,
+  zhuge_crossbow: 7,
+  xiandeng_warrior: 7,
+  hubao_cavalry: 10,
+  xiliang_cavalry: 10,
 };
 
 /** 编队参考战力 = Σ 数量 × 单兵参考战力（未知兵种按 0 计） */

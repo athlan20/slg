@@ -503,5 +503,17 @@
  * v59（普通将特长与阵型，只加不改）：HeroView 加 specialty / specialtyBonus，竞技场与将星塔加 formations 与阵型目录。
  * v60（公告，AISLG-162）：新增 GET_ANNOUNCEMENTS（op 96）/ GET_ANNOUNCEMENT（op 97）/ READ_ANNOUNCEMENT（op 98，玩家与 Agent 通用）与推送 PUSH_ANNOUNCEMENT（op 2022，只带标题与分类，本站在线连接收到）；
  *   服务端过滤正文（受限 Markdown：分段、加粗、https 链接）；生效中 / 往期、置顶、强提醒、站点定向与中英双语。新增错误码 ANNOUNCEMENT_NOT_FOUND；server_broadcasts 新增播报类型 announcement。
+ * v61（野地储量，AISLG-165，只加不改）：每块野地有储量（基准 1500 + 3500 × 等级，±20% 固定哈希，金矿 ×0.4），采集上限 10%/h、恢复 2%/h；
+ *   TileView / TerritoryView 新增 reserve（档位对所有人，数值与预计时刻仅归属方与侦察过的账号可见）；采空新增事件 wilderness_depleted 与推送 reason=reserve_depleted；
+ *   掠夺与流寇的地形资源受储量约束。无新增协议号与错误码。
+ * v62（名城独有效果，AISLG-166，只加不改）：8 座名城各一项只有占领者享受的效果，跟着城走（cities.famous_name）：
+ *   洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下野地的粮 / 铁石 / 木 / 金产出 +25%（占领加成与采集同口径，不扣储量）、
+ *   许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。TileView.famous 与 CityView 新增 effect / famousEffect
+ *   （{ kind, percent, resources }）。无新增协议号与错误码。
+ * v63（名城主题建筑等级上限，AISLG-167，只加不改）：占有名城时其主题建筑等级上限由 20 提到 25（洛阳城墙、长安箭塔、官渡农田、成都铁矿、建业伐木场、邺城官府、许昌驿站、襄阳仓库）；
+ *   CityView 新增 levelMax（各建筑等级上限）；UPGRADE 的上限与连升 toLevel 上限按该城判定。城墙 21~25 级每级 +1（仅主题城墙可达）。无新增协议号与错误码。
+ * v64（名城专属兵种，AISLG-168，只加不改）：8 座名城各一种专属精锐兵（羽林卫 / 丹阳兵 / 白毦兵 / 虎卫军 / 诸葛连弩兵 / 先登死士 / 虎豹骑 / 西凉铁骑），
+ *   TroopKind / city.army / MARCH.troops 键集新增 8 种；只能在占领对应名城的分城军营征募，否则返回新错误码 ELITE_TROOP_LOCKED（失守后原主人同样拒绝，已练出的兵留在原主人手里）。
+ *   数值为占位（同类普通兵 ×1.3 属性、×2 成本与人口、×1.5 时长与耗粮）。
  */
-export const PROTOCOL_VERSION = 60;
+export const PROTOCOL_VERSION = 64;

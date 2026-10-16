@@ -18,7 +18,6 @@ import {
   generateWorldTiles,
   inWorld,
   marchTravelSeconds,
-  territoryRates,
   type TerritoryRow,
   wildernessBonusRate,
   wildernessGatherRate,
@@ -26,6 +25,7 @@ import {
   type WorldTileSeed,
 } from '../common/src/world';
 import { productionPerHour } from '../common/src/production';
+import { territoryDisplayRates } from '../common/src/wilderness-reserve';
 
 import { setTimeScaleCache } from '../common/src/time-scale';
 
@@ -143,9 +143,9 @@ test('地图窗口与坐标钳制', () => {
   assert.equal(clampMapWindow(2000, 2000, 5, 5).y, WORLD_SIZE - 5);
 });
 
-test('野地加成计入城池产量：territoryRates 按资源归集并叠加到 productionPerHour', () => {
+test('野地加成计入城池产量：territoryDisplayRates 按资源归集并叠加到 productionPerHour', () => {
   // v21：加成 = 基线 + 等级 × 每级增量；森林 Lv3 = 30 + 3×70 = 240 + 采集 3×18×1 = 294 木
-  const rates = territoryRates([
+  const rates = territoryDisplayRates([
     { x: 1, y: 2, terrain: 'forest', level: 3, garrison: 18 },
     { x: 4, y: 5, terrain: 'lake', level: 2, garrison: 0 }, // 粮：40 + 2×80 = 200
     { x: 7, y: 8, terrain: 'gold_mine', level: 2, garrison: 10 }, // 金：30 + 2×70 + 2×10×1 = 190
@@ -178,25 +178,25 @@ test('世界规模与 NPC 城池密度为占位决策：1000×1000、NPC 随面�
 test('连片加成：同地形 4 向相邻成片才加成，3–4 块 +10%、≥5 块 +20%，丢失即重算', () => {
   const forest = (x: number, y: number): TerritoryRow => ({ x, y, terrain: 'forest', level: 3, garrison: 0 });
   // 单块：基线 30 + 3×70 = 240 木，无加成
-  const single = territoryRates([forest(1, 1)]);
+  const single = territoryDisplayRates([forest(1, 1)]);
   assert.equal(single.wood, 240);
   // 两块相邻：仍不足 3 块，无加成（每块各自 240）
-  const pair = territoryRates([forest(1, 1), forest(2, 1)]);
+  const pair = territoryDisplayRates([forest(1, 1), forest(2, 1)]);
   assert.equal(pair.wood, 480);
   // 三块相邻：每块 240 × 1.1 = 264，合计 792
-  const trio = territoryRates([forest(1, 1), forest(2, 1), forest(3, 1)]);
+  const trio = territoryDisplayRates([forest(1, 1), forest(2, 1), forest(3, 1)]);
   assert.equal(trio.wood, 792);
   // 五块相邻：× 1.2 = 288/块，合计 1440
-  const five = territoryRates([forest(1, 1), forest(2, 1), forest(3, 1), forest(1, 2), forest(2, 2)]);
+  const five = territoryDisplayRates([forest(1, 1), forest(2, 1), forest(3, 1), forest(1, 2), forest(2, 2)]);
   assert.equal(five.wood, 1440);
   // 斜角不算相邻：(1,1)-(2,2) 不相连 → 连通块 2 + 1（最大块 2 → 无加成）
-  const diagonal = territoryRates([forest(1, 1), forest(1, 2), forest(3, 3)]);
+  const diagonal = territoryDisplayRates([forest(1, 1), forest(1, 2), forest(3, 3)]);
   assert.equal(diagonal.wood, 480 + 240);
   // 折线连通：(1,1)-(2,1)-(2,2) 经 (2,1) 相连成 3 块（4 向连通不以直线为限）
-  const bent = territoryRates([forest(1, 1), forest(2, 1), forest(2, 2)]);
+  const bent = territoryDisplayRates([forest(1, 1), forest(2, 1), forest(2, 2)]);
   assert.equal(bent.wood, 792);
   // 不同地形不算连片：森林与丘陵相邻互不连片
-  const mixed = territoryRates([
+  const mixed = territoryDisplayRates([
     { x: 1, y: 1, terrain: 'forest', level: 3, garrison: 0 },
     { x: 2, y: 1, terrain: 'hill', level: 3, garrison: 0 },
     { x: 3, y: 1, terrain: 'forest', level: 3, garrison: 0 },

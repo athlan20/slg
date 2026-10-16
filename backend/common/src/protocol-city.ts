@@ -2,6 +2,7 @@
 // 从 protocol.ts 拆出以控制单文件行数；protocol.ts 以 `export type { ... } from` 原名再导出，
 // 既有 import 路径不变。建造与升级的数值规则见 common/src/rules.ts。
 
+import type { FamousEffectView } from './famous-effects';
 import type {
   ArmyCounts,
   BuildingCounts,
@@ -203,6 +204,8 @@ export const EventType = {
   NEWBIE_PROTECTION_ENDED: 'newbie_protection_ended',
   /** v40：分城易主（AISLG-124；原主人 outcome=lost / 新主人 outcome=gained，detail 含城池、对方、坐标） */
   CITY_CONQUERED: 'city_conquered',
+  /** v61（AISLG-165）：名下野地储量采空（detail = { x, y, terrain, level, at }；驻军仍在时只按恢复速度采集） */
+  WILDERNESS_DEPLETED: 'wilderness_depleted',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;
@@ -243,6 +246,8 @@ export interface CityView {
   levels: BuildingCounts;
   /** 各建筑「下一步动作」成本（v6 新增）：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用 */
   costs: Record<BuildingKind, KindActionCosts>;
+  /** 各建筑的等级上限（v63 新增）：普通为 20；占有对应名城时其主题建筑为 25（见 CityView.famousEffect 与 famousName） */
+  levelMax: Record<BuildingKind, number>;
   /** 兼容字段：已建成的农场数量（= buildings.farm；v2 及以前的客户端使用） */
   farms: number;
   /** 当前小时产量，按资源归集（v3 新增；v7 起含官府产金；离线期间照常累积，读取时结算） */
@@ -276,6 +281,8 @@ export interface CityView {
   famousName: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
+  /** 名城独有效果（v62，AISLG-166）：只有占领者享受，效果跟着城走；普通城为 null。守城 / 箭塔 / 仓库 / 行军 / 野地产出的口径见 FamousEffectView */
+  famousEffect: FamousEffectView | null;
   /** 城守（v36，AISLG-115）：该城任命的武将（ASSIGN_HERO 任命 / 撤任）；未任为 null。
    *  产量加成已计入 production（四资源非金，智力 × 0.1% 封顶 5%）；守城战另享攻防加成 */
   guard: {

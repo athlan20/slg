@@ -11,12 +11,16 @@
 // 扣减（确认规则，耗粮扣减不受此限）；仓库不改变储量上限（改为后续战斗玩法的防掠夺保护）。
 // 人口同理懒结算：线性增长至民房提供的上限（征兵消耗属后续协议，当前只增长）。
 // 科技 / 道具加成尚未设计：公式保留全局乘数位（当前恒为 1）；野地占领加成与驻军
-// 采集已按 extra 参数接入（v12，来源 world.ts 的 territoryRates），接入时只改本文件。
+// 采集已按 extra 参数接入（v12；v61 起占领加成来自 world.ts 的 territoryBonusRates，驻军采集按储量结算，见 wilderness-reserve.ts）。
 
 import pg from 'pg';
-import { BUILDING_INFO, populationGrowthPerHour, popCap } from './rules';
+import { BUILDING_INFO, MAX_BUILDING_LEVEL, effectiveBuildingLevel, populationGrowthPerHour, popCap } from './rules';
+import { FAMOUS_THEME_BUILDING, FAMOUS_THEME_LEVEL_MAX } from './famous-effects';
 import { scaledRate } from './time-scale';
 import { BUILDING_KINDS, type BuildingKind, type Resources, type StorageCaps, type TroopKind } from './protocol';
+import { territoryBonusRates, type TerritoryRow } from './world';
+import { settleTerritoryReserves, type TerritorySettle } from './wilderness-reserve';
+import { emitReserveDepletions, persistTileReserves } from './wilderness-reserve-db';
 import { armyFoodUsePerHour } from './troops';
 import { FAMOUS_PRODUCTION_BONUS_PERCENT } from './famous-city';
 import { farmingPercent, storagePercent, type TechLevels } from './tech';
@@ -77,9 +81,17 @@ export function emptyBuildingLevels(): BuildingLevels {
   return levels;
 }
 
+/**
+ * 产量百分数加成（名城独占 / 农耕科技 / 城守；金币不受农耕与城守影响）。productionPerHour 与
+ * 野地储量采集的结算（settleCityProduction）共用，保证展示与结算同口径。
+ */
+export function boostPercentOf(key: ProducedResource, bonusPercent: number, techs?: Partial<TechLevels>, guardPercent = 0): number {
+  return bonusPercent + (key === 'gold' ? 0 : farmingPercent(techs) + guardPercent);
+}
+
 /** 城池的小时产量：基础产量（四资源各 100/h，无建筑也产出）+ Σ 各生产建筑（等级 × 每级速率 × 加成乘数）。
- *  v12 起 extra 为野地占领加成与驻军采集的合计（world.ts 的 territoryRates；科技 / 道具加成仍待设计），
- *  直接按资源叠加，不经过 PRODUCTION_BONUS_MULTIPLIER。
+ *  v12 起 extra 为野地占领加成与驻军采集的合计（基准单位；v61 起采集按储量封顶，见 wilderness-reserve.ts；
+ *  科技 / 道具加成仍待设计），直接按资源叠加，不经过 PRODUCTION_BONUS_MULTIPLIER。
  *  v20 起整体受全局时间缩放 × scale（AISLG-38）：结算与 CityView 下发都经过本函数，
  *  时钟快 scale 倍 = 速率 × scale，经济关系（产出 / 耗粮 / 增长同幅）保持不变。
  *  v24（AISLG-56）：bonusPercent 为该城的独占产量加成（名城分城 +20%），作用于
@@ -114,9 +126,8 @@ export function productionPerHour(
       rates[key] += extra[key] ?? 0;
     }
   }
-  const farming = farmingPercent(techs);
   for (const key of PRODUCED_KEYS) {
-    const percent = bonusPercent + (key === 'gold' ? 0 : farming + guardPercent);
+    const percent = boostPercentOf(key, bonusPercent, techs, guardPercent);
     const boosted = percent > 0 ? Math.round((rates[key] * (100 + percent)) / 100) : rates[key];
     rates[key] = scaledRate(boosted);
   }
@@ -191,13 +202,16 @@ export function accrueProduction(
   caps: Record<ProducedResource, number>,
   current: Resources,
   foodUsePerHour = 0,
+  /** v61（AISLG-165）：区间内已按储量推进得到的采集产出（实际单位，已乘缩放与加成），与速率产出同口径累加 */
+  gather: Partial<Record<ProducedResource, number>> = {},
 ): { gains: Record<ProducedResource, number>; rems: ProductionRemainders } {
   const gains: Record<ProducedResource, number> = { gold: 0, food: 0, wood: 0, stone: 0, iron: 0 };
   const next: ProductionRemainders = { ...rems };
   if (elapsedMs > 0) {
     for (const key of PRODUCED_KEYS) {
+      const gatherMicro = Math.floor((gather[key] ?? 0) * REM_SCALE);
       if (key === 'food' && foodUsePerHour > 0) {
-        const micro = rems.food + Math.floor(((rates.food - foodUsePerHour) * REM_SCALE * elapsedMs) / MS_PER_HOUR);
+        const micro = rems.food + Math.floor(((rates.food - foodUsePerHour) * REM_SCALE * elapsedMs) / MS_PER_HOUR) + gatherMicro;
         const rawGain = Math.floor(micro / REM_SCALE);
         const after = current.food + rawGain;
         if (rawGain > 0 && after > caps.food) {
@@ -213,7 +227,7 @@ export function accrueProduction(
         }
         continue;
       }
-      const micro = rems[key] + Math.floor((rates[key] * REM_SCALE * elapsedMs) / MS_PER_HOUR);
+      const micro = rems[key] + Math.floor((rates[key] * REM_SCALE * elapsedMs) / MS_PER_HOUR) + gatherMicro;
       const rawGain = Math.floor(micro / REM_SCALE);
       if (current[key] + rawGain > caps[key]) {
         // 已达储量上限：只进账剩余空间（可能为 0），余数冻结在原值（不放大也不清零）
@@ -275,6 +289,8 @@ export interface SettledCity {
   rems: ProductionRemainders;
   population: number;
   populationRem: number;
+  /** v61：结算推进后的野地储量（与落库一致；调用方可用 applyReserveUpdates 同步内存中的地块快照） */
+  reserves: TerritorySettle['updates'];
 }
 
 /** 城池的独占产量加成（百分数）：名城分城（cities.famous_name 非空）+20%，其余 0 */
@@ -283,19 +299,35 @@ export async function loadProductionBonusPercent(q: pg.Pool | pg.PoolClient, cit
   return res.rows[0]?.famous_name ? FAMOUS_PRODUCTION_BONUS_PERCENT : 0;
 }
 
-/** 各类型当前等级（v5：权威来源为 city_buildings，由 Worker 在完成时 upsert） */
+/**
+ * 各类型当前等级（v5：权威来源为 city_buildings，由 Worker 在完成时 upsert）。
+ * 返回的是生效等级：库存超出该城当前上限的（名城失守后的主题建筑）按上限计，见 effectiveBuildingLevel（AISLG-167）。
+ */
 export async function loadBuildingLevels(q: pg.Pool | pg.PoolClient, cityId: string): Promise<BuildingLevels> {
   const res = await q.query(
-    `SELECT kind, level FROM city_buildings WHERE city_id = $1`,
+    `SELECT cb.kind, cb.level, c.famous_name FROM city_buildings cb JOIN cities c ON c.id = cb.city_id WHERE cb.city_id = $1`,
     [cityId],
   );
   const levels = emptyBuildingLevels();
-  for (const row of res.rows as Array<{ kind: BuildingKind; level: number }>) {
+  for (const row of res.rows as Array<{ kind: BuildingKind; level: number; famous_name: string | null }>) {
     if ((BUILDING_KINDS as readonly string[]).includes(row.kind)) {
-      levels[row.kind] = row.level;
+      levels[row.kind] = effectiveBuildingLevel(row.kind, row.level, row.famous_name);
     }
   }
   return levels;
+}
+
+/**
+ * SQL 版的生效等级（与 effectiveBuildingLevel 同口径，AISLG-167）：库存等级按该城当前上限封顶。
+ * 直接读 city_buildings 的查询必须经过它，否则名城失守后主题建筑的库存 25 级会被当成 25 级生效。
+ * levelExpr / kindExpr / famousExpr 是调用方 SQL 里的列表达式（famousExpr 为城池的 famous_name）；
+ * 库存为 NULL（无该建筑行）时结果为 NULL，由调用方 COALESCE。
+ */
+export function effectiveLevelSql(levelExpr: string, kindExpr: string, famousExpr: string): string {
+  const themed = Object.entries(FAMOUS_THEME_BUILDING)
+    .map(([name, kind]) => `WHEN ${kindExpr} = '${kind}' AND ${famousExpr} = '${name}' THEN ${FAMOUS_THEME_LEVEL_MAX}`)
+    .join(' ');
+  return `(CASE WHEN ${levelExpr} IS NULL THEN NULL ELSE LEAST(${levelExpr}, CASE ${themed} ELSE ${MAX_BUILDING_LEVEL} END) END)`;
 }
 
 /**
@@ -342,7 +374,7 @@ export async function loadArmyFoodUsePerHour(client: pg.PoolClient, cityId: stri
  * 把城池生产与人口推进到 now 并落库；返回结算后的资源、余数与人口。
  * 必须在调用方事务内、city 行已锁定的前提下使用；now 通常取数据库时钟（与 settled_at 同源），
  * Worker 完工切分时传建筑的到期时刻（due_at，同样由数据库时钟写入）。
- * v12 起 extra 为野地加成产量（占领变化时调用方先按旧 extra 结算到变化时刻再翻转归属，
+ * v12 起 territory 为野地（占领变化时调用方先按旧归属结算到变化时刻再翻转归属，
  * 与建筑完工的产量切分同构）。
  */
 export async function settleCityProduction(
@@ -350,18 +382,31 @@ export async function settleCityProduction(
   city: CityProductionRow,
   levels: BuildingLevels,
   now: Date,
-  extra?: Partial<Record<ProducedResource, number>>,
+  /** v61（AISLG-165）：城池名下的野地（含储量状态）。占领加成按速率结算；驻军采集按储量推进到 now，
+   *  采空时刻在区间内切分（与建筑完工切分同构），并把推进后的储量与采空事件一并落库 */
+  territory: TerritoryRow[] = [],
   foodUsePerHour = 0,
 ): Promise<SettledCity> {
   // v27：账号科技（农耕 / 储存）影响速率与上限；Worker 完成研究时先用旧等级结算再翻转等级
   // v36（AISLG-115）：城守产量加成（四资源非金）——结算与视图同口径（loadCityGuard 单点）
   const techs = await loadTechLevelsByCity(client, city.id);
   const guard = await loadCityGuard(client, city.id);
-  const rates = productionPerHour(
-    levels, extra, await loadProductionBonusPercent(client, city.id), techs,
-    guard ? guardProductionPercent(guard.wit) : 0,
-  );
+  const bonusPercent = await loadProductionBonusPercent(client, city.id);
+  const guardPercent = guard ? guardProductionPercent(guard.wit) : 0;
+  const rates = productionPerHour(levels, territoryBonusRates(territory), bonusPercent, techs, guardPercent);
   const caps = storageCaps(levels, techs);
+  // 储量推进与采集产出：推进时采集速率已含时间缩放（wilderness-reserve.ts），这里只叠加百分数加成
+  const reserves = settleTerritoryReserves(territory, city.settled_at, now);
+  await persistTileReserves(client, reserves.updates);
+  await emitReserveDepletions(client, city.id, reserves);
+  const gather: Partial<Record<ProducedResource, number>> = {};
+  for (const key of PRODUCED_KEYS) {
+    const amount = reserves.gather[key] ?? 0;
+    if (amount > 0) {
+      const percent = boostPercentOf(key, bonusPercent, techs, guardPercent);
+      gather[key] = (amount * (100 + percent)) / 100;
+    }
+  }
   const rems: ProductionRemainders = {
     gold: city.gold_rem,
     food: city.food_rem,
@@ -383,6 +428,7 @@ export async function settleCityProduction(
     caps,
     current,
     foodUsePerHour,
+    gather,
   );
   const resources: Resources = {
     gold: city.gold + gains.gold,
@@ -426,5 +472,6 @@ export async function settleCityProduction(
     rems: nextRems,
     population: population.current,
     populationRem: population.rem,
+    reserves: reserves.updates,
   };
 }

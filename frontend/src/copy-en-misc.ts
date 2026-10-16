@@ -128,6 +128,7 @@ export const ERRORS_EN = {
   },
   recruit: {
     troopNotAvailable: 'This troop type requires a higher-level Barracks',
+    eliteTroopLocked: 'This troop is a Famous City exclusive: it can only be recruited in a branch city of the matching Famous City',
     insufficientResources: 'Not enough resources for this recruitment (current resources in the top bar)',
     insufficientPopulation: 'Not enough population to recruit that many (population grows over time; Houses raise the cap)',
     queueFull: 'Recruit queue is full — wait for the first task to finish before queueing another',

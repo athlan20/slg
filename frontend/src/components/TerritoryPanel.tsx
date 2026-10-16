@@ -1,6 +1,7 @@
 /** 领地卡（军队页右）：本城占领的野地一览——地形 / 等级 / 坐标 / 加成 / 连片标注 / 驻军；
  *  点「定位」在世界地图居中并选中该地块（跳地图页，可就地增援 / 撤回驻军）。数据来自城池状态，占领 / 失守后自动刷新。 */
 
+import { formatClock } from '../api/format';
 import { useCopy } from '../i18n/bundle';
 import { useGame } from '../state/GameContext';
 import { useNav } from '../state/NavContext';
@@ -31,6 +32,10 @@ export function TerritoryPanel() {
               </b>
               <small className="block truncate text-[11px] text-faint">
                 ({tile.x},{tile.y}) · {COPY.worldMap.territoryGarrison(tile.garrison)}
+                <span role="左列-领地储量" className="ml-1.5">
+                  · {COPY.worldMap.reserveRow(COPY.worldMap.reserveTier[tile.reserve.tier], tile.reserve.current, tile.reserve.cap)}
+                  {tile.reserve.eta ? ` · ${COPY.worldMap.reserveEta(tile.reserve.eta.kind, formatClock(tile.reserve.eta.at))}` : ''}
+                </span>
                 {tile.clusterBonusPercent > 0 ? (
                   <span role="左列-领地连片标注" className="ml-1.5 rounded border border-gold-dim px-1 text-gold" title={COPY.worldMap.clusterTip(RESOURCE_LABEL[tile.resource], tile.clusterSize, tile.clusterBonusPercent)}>
                     {COPY.worldMap.territoryCluster(tile.clusterSize, tile.clusterBonusPercent)}

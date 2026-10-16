@@ -3,6 +3,7 @@
 // 本文件只 import protocol.ts / protocol-army.ts 的类型（类型导入在运行时被擦除，不构成加载环）。
 
 import type { InitiatorRole, Resources } from './protocol';
+import type { FamousEffectView } from './famous-effects';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchPurpose, MarchTask } from './protocol-battle';
 import type { YtTileCampView } from './protocol-yt';
@@ -51,6 +52,23 @@ export interface FamousTileView {
   bonusPercent: number;
   /** 城守阶段：外围恢复满编的时刻（ISO 8601，超时无人攻下城守则恢复）；外围阶段为 null */
   recoversAt: string | null;
+  /** 占领后得到的名城独有效果（v62，AISLG-166）：可在名城介绍中查看 */
+  effect: FamousEffectView | null;
+}
+
+/**
+ * 野地储量视图（v61，AISLG-165）：储量、上限与速率均为基准单位（与占领加成、驻军采集同口径）。
+ * 档位对所有人可见；当前储量 / 上限 / 预计时刻只给归属方与侦察过该地块的账号，其余为 null。
+ */
+export interface ReserveView {
+  /** 档位：ample 充足（>60%）/ normal 一般（20%–60%）/ depleted 枯竭（<20%，含已采空） */
+  tier: 'ample' | 'normal' | 'depleted';
+  /** 当前储量（基准单位，向下取整）；无权查看为 null */
+  current: number | null;
+  /** 储量上限（基准单位，四舍五入）；无权查看为 null */
+  cap: number | null;
+  /** 按当前驻军预计采空（kind=empty）或回满（kind=full）的时刻（ISO 8601）；无此类事件或无权查看为 null */
+  eta: { kind: 'empty' | 'full'; at: string } | null;
 }
 
 /** 地图窗口内一格的视图（GET_WORLD_MAP / PUSH_TILE_STATE 共用） */
@@ -80,6 +98,8 @@ export interface TileView {
   durability: number | null;
   /** 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将（公开；名字与属性需侦察）；其余为 false */
   wildFamous: boolean;
+  /** 野地储量（v61，AISLG-165）：仅野地有值（有主或无主），其余地块为 null */
+  reserve: ReserveView | null;
 }
 
 /** 在野名将的地块详情（v54，AISLG-144）：标记公开，名字与属性只对侦察过该地块的账号给出 */
@@ -128,7 +148,7 @@ export interface TerritoryView {
   resource: TerrainResource;
   /** 占领加成（/小时） */
   bonusRate: number;
-  /** 驻军采集（/小时，随驻军规模变化） */
+  /** 驻军采集（/小时，随驻军规模变化；v61 起受储量约束：储量空时只按恢复速度采集） */
   gatherRate: number;
   /** 驻军总数 */
   garrison: number;
@@ -136,6 +156,8 @@ export interface TerritoryView {
   clusterSize: number;
   /** 连片产量加成（百分数：3–4 块 10 / ≥5 块 20；不足 3 块为 0） */
   clusterBonusPercent: number;
+  /** 野地储量（v61，AISLG-165）；本城占领的地块恒有权查看数值 */
+  reserve: ReserveView;
 }
 
 /** 行军视图（推送与查询共用同一结构） */
@@ -254,6 +276,8 @@ export interface TileStatePushData {
   reason:
     | 'wilderness_occupied'
     | 'wilderness_lost'
+    /** v61（AISLG-165）：野地储量采空（归属方视角，推送地块最新视图） */
+    | 'reserve_depleted'
     | 'npc_city_occupied'
     | 'npc_attack_repelled'
     | 'garrison_reinforced'

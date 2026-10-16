@@ -18,7 +18,7 @@ import { loadCityGuard } from '../../common/src/hero-db';
 import { guardProductionPercent } from '../../common/src/hero';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { loadTerritory } from '../../common/src/world-db';
-import { territoryRates } from '../../common/src/world';
+import { territoryDisplayRates } from '../../common/src/wilderness-reserve';
 import {
   applyMutiny,
   mutinyIntervalMs,
@@ -64,7 +64,7 @@ async function evaluateCity(client: pg.PoolClient, cityId: string): Promise<Noti
   const techs = await loadTechLevels(client, city.account_id);
   const guard = await loadCityGuard(client, cityId);
   const rates = productionPerHour(
-    levels, territoryRates(territory), await loadProductionBonusPercent(client, cityId), techs,
+    levels, territoryDisplayRates(territory), await loadProductionBonusPercent(client, cityId), techs,
     guard ? guardProductionPercent(guard.wit) : 0,
   );
   const armyUse = await loadArmyFoodUsePerHour(client, cityId);

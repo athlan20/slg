@@ -19,6 +19,7 @@ import {
 import { TROOP_STATS } from './battle';
 import { getTimeScale } from './time-scale';
 import type { ProducedResource } from './production';
+import { famousTerritoryMultiplier } from './famous-effects';
 
 // ---- 世界规模与地形（占位决策） ----
 
@@ -394,6 +395,11 @@ export interface TerritoryRow {
   level: number;
   /** 驻军总数 */
   garrison: number;
+  /** 野地储量（v61，AISLG-165；基准单位，无值 = 满储量）及其落库时刻，见 wilderness-reserve.ts */
+  reserve?: number | null;
+  reserve_at?: Date | null;
+  /** 所属城池的名城标记（v62，AISLG-166；野地产出的名城加成按它口径计算，缺省视为非名城） */
+  famous_name?: string | null;
 }
 
 // ---- 野地连片加成（v23，AISLG-59） ----
@@ -417,7 +423,7 @@ export function clusterBonusMultiplier(size: number): number {
 
 /**
  * 每块野地所属连通块的大小（键 "x,y"）：同地形 + 上下左右 4 向相邻才算连片。
- * 城池产量加成（territoryRates）与视图（CityView.territory 的连片标注）共用同一计算，
+ * 城池产量加成（territoryBonusRates / 储量采集）与视图（CityView.territory 的连片标注）共用同一计算，
  * 保证两处口径一致；占领 / 失守后按最新领地重算，无需存储。
  */
 export function territoryClusterSizes(tiles: TerritoryRow[]): Map<string, number> {
@@ -458,17 +464,17 @@ export function territoryClusterSizes(tiles: TerritoryRow[]): Map<string, number
   return sizes;
 }
 
-/** 本城野地的合计加成产量（占领加成 + 驻军采集，按资源归集；production 的加成入口）。
- *  v23（AISLG-59）连片加成：同地形 4 向相邻成片时该地形资源产量乘 (1 + 加成)，
- *  逐块取整保持产量为整数；失去任一块按新的连通块重算（本函数即算即得，无状态）。 */
-export function territoryRates(tiles: TerritoryRow[]): Partial<Record<ProducedResource, number>> {
+/** 本城野地的占领加成合计（按资源归集，基准单位；连片加成后逐块取整）。驻军采集不在此处：
+ *  采集受储量约束，见 wilderness-reserve.ts 的 territoryDisplayRates / 结算。
+ *  v23（AISLG-59）连片加成：同地形 4 向相邻成片时该地形资源产量乘 (1 + 加成)；失去任一块按新的连通块重算。 */
+export function territoryBonusRates(tiles: TerritoryRow[]): Partial<Record<ProducedResource, number>> {
   const sizes = territoryClusterSizes(tiles);
   const rates: Partial<Record<ProducedResource, number>> = {};
   for (const tile of tiles) {
     const resource = TERRAIN_INFO[tile.terrain].resource;
-    const base = wildernessBonusRate(tile.terrain, tile.level) + wildernessGatherRate(tile.terrain, tile.level, tile.garrison);
     const multiplier = clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1);
-    rates[resource] = (rates[resource] ?? 0) + Math.round(base * multiplier);
+    const famous = famousTerritoryMultiplier(tile.famous_name, resource);
+    rates[resource] = (rates[resource] ?? 0) + Math.round(wildernessBonusRate(tile.terrain, tile.level) * multiplier * famous);
   }
   return rates;
 }

@@ -33,13 +33,14 @@
 开发和测试各用一个 git 工作目录，端口分开，可以同时进行。完整说明见 `docs/dev-test-workflow.md`。
 
 - 开发目录 `slg/`：在 `feat/<编号>-<名称>` 或 `fix/...` 分支上开发，端口 API 8080 / 前端 8424，用 `./dev.sh` 启动。
-- 测试目录 `slg-test/`（`develop` 的 git worktree，与 `slg/` 同级）：**只 pull，不改代码**，端口 API 8081 / 前端 8425，用 `API_PORT=8081 WEB_PORT=8425 ./dev.sh` 启动。
-- 流程：feat 分支自测通过 → 合入 `develop` → 测试目录 pull 后重启并测试 → 缺陷回开发目录修、再合入 `develop` → 测试通过后 `develop` 合入 `main`。不要直接在 `develop` 上开发。
-- `develop` 被测试目录占用，开发目录不能 checkout 它；拉新分支用 `git checkout -b feat/xxx develop`。
+- 测试目录 `slg-test/`（`test` 分支的 git worktree，与 `slg/` 同级）：**只 `git merge --ff-only develop`，不改代码**，端口 API 8081 / 前端 8425，用 `API_PORT=8081 WEB_PORT=8425 ./dev.sh` 启动。
+- 流程：feat 分支自测通过 → 在开发目录合入 `develop` → 测试目录 `merge --ff-only develop` 后重启并测试 → 缺陷回开发目录修、再合入 `develop` 并同步测试目录 → 测试通过后 `develop` 合入 `main`。不要直接在 `develop` 上开发。
+- `develop` 在开发目录检出，测试目录固定在 `test`，不占用 `develop`；拉需求分支用 `git switch -c feat/xxx develop`。
 - 两个目录共用一个数据库，**同一时刻只能跑一个 Worker**：另一边用 `SERVICES="api web" ./dev.sh` 不起 Worker。需要换边验证 Worker 时，先停掉对方的 Worker。
 - 共用库意味着表结构迁移对两边立即生效：改表结构要向后兼容，或提前告知测试。
 - `dev.sh` / `stop.sh` 只管本目录的进程，不要用 `pkill`、`kill` 按进程名清理，以免误杀另一个目录的实例。
 - 提交和推送仍遵循下文：不自行提交或推送，除非任务明确要求。
+- 如果有云效权限，当开始测试某个需求的时候，把需求改成”测试中“，测试通过，改成”已完成“，测试不通过，改成”未通过“
 
 ## 跨团队协作
 
