@@ -5,6 +5,7 @@
 import type pg from 'pg';
 import { RESET_TABLES } from '../../common/src/season-tables';
 import { insertSeason } from '../../common/src/season-insert';
+import { SCHEMA_LOCK_ID } from '../../common/src/db';
 import { getCurrentSeason, notifySeasonEvent, setMaintenance, type SeasonRow } from '../../common/src/season-db';
 import { seasonLengthDays } from '../../common/src/season-seed';
 import { generateWorldTiles, WORLD_SEED } from '../../common/src/world';
@@ -112,6 +113,8 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
       if (!lock.rows[0].ok) {
         throw new Error('换季：咨询锁在事务内被占用，放弃本次');
       }
+      // 与 ensureSchema 互斥（API 重启时会跑 DDL）：先等它做完再动表，避免拿着表锁与 ALTER TABLE 互等
+      await client.query(`SELECT pg_advisory_xact_lock($1)`, [SCHEMA_LOCK_ID]);
       await enter('archive');
       await archiveSeason(client, old.id, old.name);
       await enter('clear');

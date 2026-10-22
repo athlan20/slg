@@ -12,6 +12,7 @@ import {
   type TroopKind,
 } from './protocol';
 import { currentWorldSeed } from './world-seed';
+import { SCHEMA_LOCK_ID } from './db';
 import {
   WORLD_SIZE,
   generateWorldTiles,
@@ -44,6 +45,9 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
       for (let attempt = 1; ; attempt += 1) {
         await client.query('BEGIN');
         try {
+          // 先取 ensureSchema 的咨询锁（事务级）：对方正在 ALTER TABLE 时本事务等它做完，而不是拿着表锁与它互等。
+          // 锁序固定为 世界锁 → 建表锁；ensureSchema 只取建表锁，不会成环
+          await client.query(`SELECT pg_advisory_xact_lock(${SCHEMA_LOCK_ID})`);
           if (count.rows[0].n > 0) {
             await wipeWorldForRebuild(client);
           }

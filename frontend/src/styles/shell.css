@@ -138,7 +138,7 @@
    任务横跨第二行左两列。1024–1279 四块装不进两栏，改成手机式分段（见下），一次一块、整块占满工作区 */
 .p-growth {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
 }
 .p-growth > .a-arena {
   grid-column: 3;

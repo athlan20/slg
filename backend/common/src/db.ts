@@ -15,7 +15,7 @@ import { seedFirstSeason } from './season-seed';
 export const NOTIFY_CHANNEL = 'slg_build_completed';
 
 /** DDL 引导用的咨询锁 ID（任意固定值，两进程一致即可） */
-const SCHEMA_LOCK_ID = 8721401;
+export const SCHEMA_LOCK_ID = 8721401;
 
 export interface DbConfig {
   host: string;
@@ -709,10 +709,11 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
         await seedFirstSeason(client);
         return;
       } catch (err) {
-        if ((err as { code?: string }).code !== '40P01' || attempt >= 5) {
+        // 对方可能正在跑十几秒的建图事务（世界锁内），退避总长要盖过它：500ms × (1+…+7) ≈ 14s
+        if ((err as { code?: string }).code !== '40P01' || attempt >= 8) {
           throw err;
         }
-        await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
       }
     }
   } finally {
