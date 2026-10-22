@@ -6,6 +6,7 @@
 import type pg from 'pg';
 import { WORLD_SEED } from './world';
 import { DEFAULT_TIME_SCALE } from './time-scale';
+import { insertSeason } from './season-insert';
 
 /** 赛季长度（现实天数）：环境变量 SEASON_LENGTH_DAYS，缺省 28；非正数视为未设置 */
 export function seasonLengthDays(): number {
@@ -54,13 +55,7 @@ export async function seedFirstSeason(client: pg.PoolClient | pg.Pool, now: Date
   }
   const { startAt, endAt } = firstSeasonWindow(now);
   const timeScale = await currentTimeScale(client);
-  const ins = await client.query(
-    `INSERT INTO seasons (name, status, start_at, end_at, seed, time_scale)
-     VALUES ('', 'active', $1, $2, $3, $4) RETURNING id`,
-    [startAt, endAt, WORLD_SEED, timeScale],
-  );
-  const seasonId = Number(ins.rows[0].id);
-  await client.query(`UPDATE seasons SET name = $2 WHERE id = $1`, [seasonId, `第 ${seasonId} 赛季`]);
+  const { id: seasonId } = await insertSeason(client, { startAt, endAt, seed: WORLD_SEED, timeScale });
   await client.query(
     `UPDATE accounts SET season_id = $1
      WHERE season_id IS NULL AND EXISTS (SELECT 1 FROM cities c WHERE c.account_id = accounts.id)`,

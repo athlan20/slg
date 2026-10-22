@@ -24,6 +24,19 @@ export async function loginViaForm(page: Page, username: string): Promise<void> 
   // 顶栏只用状态灯表示在线（绿），文案在 title 上
   await expect(page.locator('[role="顶栏-本人在线状态"]')).toHaveAttribute('title', '本人：在线');
   await expect(page.locator('[role="侧栏-账号"]')).toContainText(username);
+  await dismissStrongRemind(page);
+}
+
+/** 登录后若弹出强提醒公告弹窗（共用库里有强提醒公告时必现），点“知道了”关掉，否则会挡住后续点击 */
+export async function dismissStrongRemind(page: Page): Promise<void> {
+  const ack = page.locator('[role="强提醒公告弹窗-知道了"]');
+  try {
+    await ack.waitFor({ state: 'visible', timeout: 2000 });
+  } catch {
+    return; // 没有强提醒公告
+  }
+  await ack.click();
+  await expect(page.locator('[role="强提醒公告弹窗"]')).toBeHidden();
 }
 
 /** 切到某个页面（导航栏按钮，等价于 #hash）：page = overview / map / city / army / growth / intel / agent */

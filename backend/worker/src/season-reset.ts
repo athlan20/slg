@@ -4,6 +4,7 @@
 // ④ 提交后推送 season_started 与 maintenance_off。③ 任一步失败整体回滚（旧世界原样保留），finally 里清维护态。
 import type pg from 'pg';
 import { RESET_TABLES } from '../../common/src/season-tables';
+import { insertSeason } from '../../common/src/season-insert';
 import { getCurrentSeason, notifySeasonEvent, setMaintenance, type SeasonRow } from '../../common/src/season-db';
 import { seasonLengthDays } from '../../common/src/season-seed';
 import { generateWorldTiles, WORLD_SEED } from '../../common/src/world';
@@ -134,13 +135,7 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
       const endAt = new Date(startAt.getTime() + seasonLengthDays() * 24 * 3600 * 1000);
       await client.query(`UPDATE seasons SET status = 'ended', ended_at = $2 WHERE id = $1`, [old.id, startAt]);
       const timeScale = await takeNextTimeScale(client, old.timeScale);
-      const ins = await client.query(
-        `INSERT INTO seasons (name, status, start_at, end_at, seed, time_scale)
-         VALUES ('', 'active', $1, $2, $3, $4) RETURNING id`,
-        [startAt, endAt, seed, timeScale],
-      );
-      const seasonId = Number(ins.rows[0].id);
-      await client.query(`UPDATE seasons SET name = $2 WHERE id = $1`, [seasonId, `第 ${seasonId} 赛季`]);
+      const { id: seasonId, name: seasonName } = await insertSeason(client, { startAt, endAt, seed, timeScale });
       await client.query(
         `INSERT INTO settings (key, value, updated_at) VALUES ('time_scale', $1::jsonb, now())
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
@@ -150,7 +145,7 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
       await enter('commit');
       return {
         id: seasonId,
-        name: `第 ${seasonId} 赛季`,
+        name: seasonName,
         status: 'active' as const,
         startAt,
         endAt,

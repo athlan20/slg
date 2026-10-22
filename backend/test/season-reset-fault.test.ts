@@ -164,7 +164,8 @@ describe('换季故障注入（需 TEST_DATABASE_URL）', { skip: dbUrl ? false 
     assert.equal(outcome, 'reset');
     const season = await getCurrentSeason(pool);
     assert.ok(season);
-    assert.notEqual(season.id, seasonBefore.id);
+    assert.equal(season.id, seasonBefore.id + 1, '前面失败的多次尝试不能消耗赛季编号');
+    assert.equal(season.name, `第 ${seasonBefore.id + 1} 赛季`);
     assert.notEqual(season.seed, seasonBefore.seed);
     assert.equal(await getMaintenance(pool), null);
     const acc = (await pool.query(`SELECT season_id FROM accounts LIMIT 1`)).rows[0];

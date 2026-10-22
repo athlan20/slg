@@ -119,7 +119,7 @@ export function WorldMinimap({ overview, win, onPanTo }: WorldMinimapProps) {
             style={{ width: MINIMAP_SIZE_PX, height: MINIMAP_SIZE_PX }}
           >
             {data ? (
-              <canvas ref={canvasRef} role="世界地图视图-小地图-城池点" style={{ width: MINIMAP_SIZE_PX, height: MINIMAP_SIZE_PX }} />
+              <canvas ref={canvasRef} role="世界地图视图-小地图-城池点" className="block" style={{ width: MINIMAP_SIZE_PX, height: MINIMAP_SIZE_PX }} />
             ) : (
               <p className="grid h-full place-items-center text-[11px] text-faint">{MAPUI_COPY.minimapLoading}</p>
             )}

@@ -70,6 +70,9 @@ Agent API 文档：`GET /agent-api.md` 与 `GET /agent-api.json`（运行时从�
 | `PORT` / `HOST` | `8080` / `127.0.0.1` | API 监听地址。 |
 | `BUILD_SECONDS` | 基准 `60` | 建筑建造时长，四种建筑相同。默认基准受全局时间缩放 ÷ time_scale（见下节）；显式设置优先于缩放（验证时调小用）。 |
 | `WORKER_TICK_MS` | `1000` | Worker 领取周期。 |
+| `SEASON_1_END` | 起点 + `SEASON_LENGTH_DAYS` | 第 1 季终点（ISO 时间，如 `2026-10-25T04:00:00+08:00`）。**只在首次启动、seasons 表为空时读取一次**；已播种的库用 `npm run season -- set-end <ISO>` 调整。 |
+| `SEASON_1_START` | 首次启动时刻 | 第 1 季起点（ISO），同样只在播种时读取。 |
+| `SEASON_LENGTH_DAYS` | `28` | 之后每季的现实天数。 |
 | `RECRUIT_UNIT_SECONDS` | 不覆盖 | 覆盖全部兵种的单兵征募时长（秒）。默认基准受全局时间缩放 ÷ time_scale；显式设置优先（验证用；API 与 Worker 必须一致，同 BUILD_SECONDS）。 |
 | `MARCH_SECONDS_PER_TILE` | 基准 `15` | 每格行军秒数（v12）。默认基准受全局时间缩放 ÷ time_scale；显式设置优先（验证时调小；API 与 Worker 必须一致）。 |
 | `NPC_RAID_INTERVAL_MS` | 基准 `7200000` | NPC 袭击周期（v21 起 120 分钟基准）。默认基准受全局时间缩放 ÷ time_scale，Worker 每次袭击后按当前值重设；显式设置优先（世界冒烟里临时调小触发）；主城免战时长 = 2× 本基准 ÷ time_scale（v22）。 |
