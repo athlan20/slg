@@ -15,6 +15,7 @@
 import pg from 'pg';
 import { TROOP_KINDS, type TroopKind } from '../../common/src/protocol';
 import { TROOP_POWER } from '../../common/src/battle';
+import { CURRENT_SEASON_ID_SQL } from '../../common/src/season-db';
 import {
   aggregateModelLeaderboard,
   MODEL_LEADERBOARD_ACTIVE_DAYS,
@@ -142,12 +143,14 @@ async function computePlunderRows(client: pg.PoolClient): Promise<LeaderboardRow
     }));
 }
 
-/** 模型榜聚合输入（v50，AISLG-133）：最近 7 天 Agent 上线过的账号，战力取全量战力行 */
+/** 模型榜聚合输入（v50，AISLG-133）：本赛季、最近 7 天 Agent 上线过且有城池的账号，战力取全量战力行（v65 起限本赛季） */
 async function computeModelRows(client: pg.PoolClient, powerRows: readonly LeaderboardRow[]): Promise<ReturnType<typeof aggregateModelLeaderboard>> {
   const res = await client.query(
     `SELECT a.id AS account_id, a.username, a.agent_model
      FROM accounts a
-     WHERE a.agent_last_seen_at > now() - make_interval(days => $1)`,
+     WHERE a.agent_last_seen_at > now() - make_interval(days => $1)
+       AND a.season_id = ${CURRENT_SEASON_ID_SQL}
+       AND EXISTS (SELECT 1 FROM cities c WHERE c.account_id = a.id)`,
     [MODEL_LEADERBOARD_ACTIVE_DAYS],
   );
   const powerByAccount = new Map(powerRows.map((row) => [row.account_id, row.value]));

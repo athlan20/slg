@@ -10,6 +10,7 @@ import { loadBattleReport } from '../../common/src/battle-db';
 import type { ConnectionRegistry } from './connections';
 import { buildView, marchView, recruitView, type BuildRow, type MarchRow, type RecruitRow } from './views';
 import { loadWorldWindow } from './views-world';
+import { handleSeasonNotice } from './notify-season';
 
 /** 兜底轮询周期；第一期望延迟与 DB 压力的折中，未做负载评估 */
 const POLL_FALLBACK_MS = 5000;
@@ -97,6 +98,10 @@ export class CompletionNotifier {
         payload = msg.payload ? JSON.parse(msg.payload) : {};
       } catch {
         // 兼容非 JSON 载荷：按完成通知处理
+      }
+      // 赛季 / 维护态（v65，AISLG-134）：见 notify-season.ts
+      if (handleSeasonNotice(payload as Record<string, unknown>, this.registry, this.pool)) {
+        return;
       }
       if (payload.reason === 'server_broadcast' && payload.broadcast) {
         // 全服播报（v23 AISLG-60）：广而告之所有在线连接

@@ -14,6 +14,7 @@ import type { HandlerContext } from './handlers';
 import { insertEvent } from '../../common/src/events';
 import { docNoticeFor } from '../../common/src/protocol-changelog';
 import { PROTOCOL_VERSION } from '../../common/src/protocol-version';
+import { enterCurrentSeason } from '../../common/src/season-db';
 
 export async function handleLogin(
   ctx: HandlerContext,
@@ -139,6 +140,8 @@ async function completeLogin(
   seq: number | undefined,
   success: LoginSuccess,
 ): Promise<void> {
+  // v65（AISLG-134）：新赛季第一次登录惰性加入（建主城、授新手保护）。在绑定连接之前做：失败则整次登录报错、连接保持未登录
+  const seasonJoin = await enterCurrentSeason(ctx.pool, success.account.id);
   const wasAgentOnline = success.role === 'agent' && ctx.registry.agentConnections(success.account.id).length > 0;
   ctx.registry.bind(conn, success.account.id);
   conn.username = success.account.username;
@@ -160,6 +163,7 @@ async function completeLogin(
     expiresAt: success.expiresAt ? success.expiresAt.toISOString() : null,
     protocolVersion: PROTOCOL_VERSION,
     docNotice: success.role === 'agent' ? docNoticeFor(success.docVersion) : null,
+    season: { id: seasonJoin.season.id, endsAt: seasonJoin.season.endAt.toISOString() },
   });
 }
 

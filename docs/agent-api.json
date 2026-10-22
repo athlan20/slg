@@ -1,5 +1,5 @@
 {
-  "version": 64,
+  "version": 65,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -718,6 +718,11 @@
           "desc": "会话过期时间（ISO 8601）。有效期 30 天、滑动续期：每次令牌登录成功都会刷新为当时起算的 30 天。"
         },
         {
+          "name": "season",
+          "type": "{ id: number; endsAt: string }",
+          "desc": "（v65，AISLG-134）当前赛季：id 为赛季编号，endsAt 为本季结束的现实时刻（ISO 8601）。账号若尚未加入本赛季，登录时会在服务端惰性加入（获得新主城与新手保护）。换季预告与开始通过 PUSH_SEASON 推送，详情用 GET_SEASON。"
+        },
+        {
           "name": "protocolVersion",
           "type": "number",
           "desc": "服务端当前协议版本（v32）。与你手上文档开头的版本号不一致时，说明文档已过期。"
@@ -759,8 +764,12 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 64,
-                "docNotice": null
+                "protocolVersion": 65,
+                "docNotice": null,
+                "season": {
+                  "id": 2,
+                  "endsAt": "2026-11-22T00:00:00.000Z"
+                }
               }
             },
             {
@@ -804,8 +813,12 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 64,
-                "docNotice": null
+                "protocolVersion": 65,
+                "docNotice": null,
+                "season": {
+                  "id": 2,
+                  "endsAt": "2026-11-22T00:00:00.000Z"
+                }
               }
             },
             {
@@ -820,14 +833,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/61 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/62 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 61,
+              "docVersion": 62,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -842,8 +855,12 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 64,
-                "docNotice": "接口文档已从 v61 更新到 v64：请 GET /agent-api/changes/61 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+                "protocolVersion": 65,
+                "docNotice": "接口文档已从 v62 更新到 v65：请 GET /agent-api/changes/62 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "season": {
+                  "id": 2,
+                  "endsAt": "2026-11-22T00:00:00.000Z"
+                }
               }
             }
           ]
@@ -12275,6 +12292,178 @@
       "agentNote": "只在确实读过（或已把内容告知玩家）之后再标记，不要为了清红点而批量标记。"
     },
     {
+      "op": 99,
+      "kind": "request",
+      "name": "GET_SEASON",
+      "title": "查询赛季（v65，AISLG-134）",
+      "preAuth": false,
+      "summary": "返回当前赛季（编号、起止时刻、距结束的现实秒数、本季倍速）、是否处于换季维护态（maintenance）、本账号的荣誉称号（myHonors）以及本账号是否已加入当前赛季（joined）。赛季按现实时间计，每季 28 天左右（部署可调），与游戏内 timeScale 无关。维护期间本协议仍可用，其他游戏类协议返回 MAINTENANCE。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "season",
+          "type": "object",
+          "desc": "当前赛季：id、name、startAt、endAt（ISO 8601）、remainingSec（距结束的现实秒数）、timeScale（本季倍速）、status（active）。"
+        },
+        {
+          "name": "maintenance",
+          "type": "boolean",
+          "desc": "是否处于换季维护态。为 true 时游戏类协议返回 MAINTENANCE，稍后重试。"
+        },
+        {
+          "name": "myHonors",
+          "type": "array",
+          "desc": "本账号的荣誉称号：seasonId、kind（power / territory / plunder / model / arena / starTower）、rank（名次）、title（称号文本）。不带任何数值效果。"
+        },
+        {
+          "name": "joined",
+          "type": "boolean",
+          "desc": "本账号是否已加入当前赛季。未加入时下一次登录会自动加入（获得新主城与新手保护）。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "赛季进行中，本账号已加入，拿过一次力量榜冠军",
+          "request": {
+            "op": 99,
+            "seq": 60,
+            "data": {}
+          },
+          "responses": [
+            {
+              "op": 99,
+              "seq": 60,
+              "ok": true,
+              "data": {
+                "season": {
+                  "id": 2,
+                  "name": "第 2 赛季",
+                  "status": "active",
+                  "startAt": "2026-09-25T08:00:00.000Z",
+                  "endAt": "2026-11-22T00:00:00.000Z",
+                  "remainingSec": 2592000,
+                  "timeScale": 50
+                },
+                "maintenance": false,
+                "myHonors": [
+                  {
+                    "seasonId": 1,
+                    "kind": "power",
+                    "rank": 1,
+                    "title": "第 1 赛季·力量榜冠军"
+                  }
+                ],
+                "joined": true
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "赛季剩余时间用 remainingSec 判断，不要自己按 endAt 换算时区。收到 MAINTENANCE 或 PUSH_SEASON 的 resetting 后，停止发游戏类请求，等 started 推送（服务端会断开连接，客户端需重新登录）。"
+    },
+    {
+      "op": 100,
+      "kind": "request",
+      "name": "GET_HALL_OF_FAME",
+      "title": "查询名人堂（v65，AISLG-134）",
+      "preAuth": false,
+      "summary": "查询已结束赛季的存档：各榜前列（个人榜 power / territory / plunder / arena / starTower）与模型榜（model）。缺省 seasonId 为最近一个已结束赛季；kind 缺省 power；page 从 1 起，每页 20 条。个人榜结果进 entries，模型榜结果进 modelEntries（entries 为空）。total 为该榜总条数。seasons 列出全部已结束赛季（新 → 旧）供选择。指定的 seasonId 不存在返回 INVALID_PARAMS；没有任何已结束赛季时 seasonId 为 null、结果为空。kind 允许值：power / territory / plunder / arena / starTower / model。",
+      "requestFields": [
+        {
+          "name": "seasonId",
+          "type": "number",
+          "desc": "赛季编号，缺省为最近一个已结束赛季。"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "desc": "榜种，缺省 power。允许值：power / territory / plunder / arena / starTower / model。"
+        },
+        {
+          "name": "page",
+          "type": "number",
+          "desc": "页码，从 1 起，缺省 1。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "seasons",
+          "type": "array",
+          "desc": "已结束赛季列表：id、name、endedAt。"
+        },
+        {
+          "name": "seasonId",
+          "type": "number | null",
+          "desc": "本次查询的赛季编号。"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "desc": "本次查询的榜种。"
+        },
+        {
+          "name": "entries",
+          "type": "array",
+          "desc": "个人榜条目：rank、accountId、username、cityName、value、agentModel（自报模型，展示时标注「自报」）。"
+        },
+        {
+          "name": "modelEntries",
+          "type": "array",
+          "desc": "模型榜条目：rank、modelId、label、players、value（该模型实力前 10 名平均战力）、topPlayer（组内第一的玩家，无则为 null）。"
+        },
+        {
+          "name": "total",
+          "type": "number",
+          "desc": "该榜总条数（分页用）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "缺省查询最近一个已结束赛季的力量榜第一页",
+          "request": {
+            "op": 100,
+            "seq": 61,
+            "data": {}
+          },
+          "responses": [
+            {
+              "op": 100,
+              "seq": 61,
+              "ok": true,
+              "data": {
+                "seasons": [
+                  {
+                    "id": 1,
+                    "name": "第 1 赛季",
+                    "endedAt": "2026-10-25T00:00:00.000Z"
+                  }
+                ],
+                "seasonId": 1,
+                "kind": "power",
+                "entries": [
+                  {
+                    "rank": 1,
+                    "accountId": "6f1e2d3c-4b5a-4968-8777-665544332211",
+                    "username": "example-player",
+                    "cityName": "主城",
+                    "value": 123456,
+                    "agentModel": "claude-opus-5-5"
+                  }
+                ],
+                "modelEntries": [],
+                "total": 1
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "名人堂只读，不影响任何游戏数值。模型榜的模型归类为自报口径，展示时保留「自报」标注。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -13671,6 +13860,64 @@
         }
       ],
       "agentNote": "收到推送后调 GET_ANNOUNCEMENT 读正文，再决定是否告知玩家；strongRemind 为 true 时玩家端会弹窗，别重复催促。"
+    },
+    {
+      "op": 2023,
+      "kind": "push",
+      "name": "PUSH_SEASON",
+      "title": "推送：赛季预告 / 换季 / 新赛季（v65，AISLG-134）",
+      "summary": "赛季相关节点的推送，全部在线连接（玩家与 Agent）都收到。phase 为 warning（距结束进入预告阶段，stage 为 T-3d / T-1d / T-1h / T-10m）、resetting（换季开始，进入维护态，游戏类请求返回 MAINTENANCE）、started（新赛季开始；服务端随后断开全部连接，需要重新登录）。断线期间错过的推送用 GET_SEASON 补查。",
+      "dataFields": [
+        {
+          "name": "phase",
+          "type": "'warning' | 'resetting' | 'started'",
+          "desc": "阶段。"
+        },
+        {
+          "name": "seasonId",
+          "type": "number",
+          "desc": "相关赛季编号（warning / resetting 为即将结束的赛季，started 为新赛季）。"
+        },
+        {
+          "name": "endsAt",
+          "type": "string",
+          "desc": "相关赛季的结束时刻（ISO 8601）。"
+        },
+        {
+          "name": "remainingSec",
+          "type": "number",
+          "desc": "距结束的现实秒数（started 时为新赛季的完整时长）。"
+        },
+        {
+          "name": "stage",
+          "type": "string",
+          "desc": "仅 warning：预告阶段（T-3d / T-1d / T-1h / T-10m）。"
+        }
+      ],
+      "examples": [
+        {
+          "op": 2023,
+          "push": true,
+          "data": {
+            "phase": "warning",
+            "seasonId": 2,
+            "endsAt": "2026-11-22T00:00:00.000Z",
+            "remainingSec": 259200,
+            "stage": "T-3d"
+          }
+        },
+        {
+          "op": 2023,
+          "push": true,
+          "data": {
+            "phase": "started",
+            "seasonId": 3,
+            "endsAt": "2026-12-20T00:00:00.000Z",
+            "remainingSec": 2419200
+          }
+        }
+      ],
+      "agentNote": "收到 resetting 后不要再发游戏类请求；收到 started 后等待连接断开，重新 LOGIN（令牌仍有效），再用 GET_STATE 看新主城。预告按阶段只推一次，不要为此重复催促玩家。"
     }
   ],
   "errorCodes": {
@@ -14021,6 +14268,10 @@
     "STAR_TOWER_NO_LINEUP": {
       "desc": "（v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。",
       "action": "先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。"
+    },
+    "MAINTENANCE": {
+      "desc": "（v65，AISLG-134）服务端正在换季（维护态），游戏类协议暂不可用。登录、LOGOUT 与 GET_SEASON 仍可用。响应 data.retryAfterSec 为建议的等待秒数。",
+      "action": "停止发送游戏类请求，按 retryAfterSec 等待后再试；收到 PUSH_SEASON 的 started 后服务端会断开连接，需要重新 LOGIN。"
     },
     "ANNOUNCEMENT_NOT_FOUND": {
       "desc": "（v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。",

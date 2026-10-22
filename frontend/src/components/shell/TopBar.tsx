@@ -6,11 +6,13 @@ import { useRef, useState } from 'react';
 import type { CityView, NpcAttackWarningPushData } from '../../api/protocol';
 import { useCopy } from '../../i18n/bundle';
 import type { ExchangeResource } from '../../state/exchangeAction';
+import type { SeasonInfo } from '../../state/seasonSession';
 import type { PageKey } from '../../state/usePage';
 import { TruceShieldBadge } from '../TruceShieldBadge';
 import { AlertPills } from './AlertPills';
 import { ExchangePopover } from './ExchangePopover';
 import { ResourceStrip } from './ResourceStrip';
+import { SeasonPill } from './SeasonPill';
 
 interface TopBarProps {
   page: PageKey;
@@ -23,12 +25,14 @@ interface TopBarProps {
   exchangeRequest: number;
   /** 开启主动免战（v38 AISLG-122）：成功返回 null，失败返回人读错误 */
   onStartTruce: () => Promise<string | null>;
+  /** 当前赛季（v65 AISLG-134）：常驻赛季胶囊；未登录 / 未取到为 null */
+  season: SeasonInfo | null;
 }
 
 const topBtn =
   'cursor-pointer rounded-[5px] border border-line bg-panel-2 px-2.5 py-1 text-[12px] transition-colors hover:border-accent-dim hover:text-accent';
 
-export function TopBar({ page, city, incoming, onOpenWarning, onOpenLeaderboard, onExchange, exchangeRequest, onStartTruce }: TopBarProps) {
+export function TopBar({ page, city, incoming, onOpenWarning, onOpenLeaderboard, onExchange, exchangeRequest, onStartTruce, season }: TopBarProps) {
   const copy = useCopy();
   const { COPY, NAV_COPY, TOP_COPY } = copy;
   const [exchangeOpen, setExchangeOpen] = useState(false);
@@ -55,6 +59,7 @@ export function TopBar({ page, city, incoming, onOpenWarning, onOpenLeaderboard,
           {TOP_COPY.loading}
         </p>
       )}
+      <SeasonPill info={season} />
       <AlertPills city={city} incoming={incoming} onOpenWarning={onOpenWarning} />
       {city ? (
         <div className="shrink-0 max-lg:hidden">

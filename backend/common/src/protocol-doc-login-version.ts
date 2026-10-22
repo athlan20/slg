@@ -12,6 +12,7 @@ export const LOGIN_DOC_VERSION_REQUEST_FIELD: FieldDoc = {
 };
 
 export const LOGIN_VERSION_DATA_FIELDS: FieldDoc[] = [
+  { name: 'season', type: '{ id: number; endsAt: string }', desc: '（v65，AISLG-134）当前赛季：id 为赛季编号，endsAt 为本季结束的现实时刻（ISO 8601）。账号若尚未加入本赛季，登录时会在服务端惰性加入（获得新主城与新手保护）。换季预告与开始通过 PUSH_SEASON 推送，详情用 GET_SEASON。' },
   { name: 'protocolVersion', type: 'number', desc: '服务端当前协议版本（v32）。与你手上文档开头的版本号不一致时，说明文档已过期。' },
   {
     name: 'docNotice',
@@ -20,8 +21,11 @@ export const LOGIN_VERSION_DATA_FIELDS: FieldDoc[] = [
   },
 ];
 
+/** 登录响应里的赛季字段（示例用，v65） */
+export const LOGIN_SEASON_EXAMPLE = { id: 2, endsAt: '2026-11-22T00:00:00.000Z' };
+
 /** 玩家连接登录响应里的版本字段（示例用） */
-export const LOGIN_VERSION_PLAYER_DATA = { protocolVersion: PROTOCOL_VERSION, docNotice: null };
+export const LOGIN_VERSION_PLAYER_DATA = { protocolVersion: PROTOCOL_VERSION, docNotice: null, season: LOGIN_SEASON_EXAMPLE };
 
 const OUTDATED_EXAMPLE_VERSION = Math.max(1, PROTOCOL_VERSION - 3);
 
@@ -44,6 +48,7 @@ export const LOGIN_AGENT_DOC_EXAMPLE = (ids: {
         expiresAt: null,
         protocolVersion: PROTOCOL_VERSION,
         docNotice: docNoticeFor(OUTDATED_EXAMPLE_VERSION),
+        season: LOGIN_SEASON_EXAMPLE,
       },
     },
   ],

@@ -125,6 +125,8 @@ export interface LoginResultData {
   role: InitiatorRole;
   sessionToken: string;
   expiresAt: string;
+  /** 当前赛季（v65，AISLG-134）：登录时已惰性加入本赛季 */
+  season: { id: number; endsAt: string };
 }
 
 /** AGENT_REPORT_PLAN（op 27）请求载荷：两段都可只更新其一；提供空串表示清除该段 */

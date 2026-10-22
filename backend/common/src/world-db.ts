@@ -11,6 +11,7 @@ import {
   type TileKind,
   type TroopKind,
 } from './protocol';
+import { currentWorldSeed } from './world-seed';
 import {
   WORLD_SIZE,
   generateWorldTiles,
@@ -43,7 +44,8 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
         if (count.rows[0].n > 0) {
           await wipeWorldForRebuild(client);
         }
-        await insertWorldTiles(client, generateWorldTiles());
+        // 种子取当前赛季的（第 1 季为 WORLD_SEED，之后各季为换季时随机生成的种子；重启不换图）
+        await insertWorldTiles(client, generateWorldTiles(await currentWorldSeed(client)));
         await client.query('COMMIT');
       } catch (err) {
         await client.query('ROLLBACK').catch(() => undefined);
@@ -113,7 +115,7 @@ async function wipeWorldForRebuild(client: pg.PoolClient): Promise<void> {
 }
 
 /** 批量写入世界地块：分块多值插入（单语句参数上限 65535，大世界必须分块） */
-async function insertWorldTiles(client: pg.PoolClient, tiles: WorldTileSeed[]): Promise<void> {
+export async function insertWorldTiles(client: pg.PoolClient, tiles: WorldTileSeed[]): Promise<void> {
   const CHUNK = 500;
   for (let start = 0; start < tiles.length; start += CHUNK) {
     const slice = tiles.slice(start, start + CHUNK);

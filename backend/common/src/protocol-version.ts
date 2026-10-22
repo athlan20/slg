@@ -515,5 +515,10 @@
  * v64（名城专属兵种，AISLG-168，只加不改）：8 座名城各一种专属精锐兵（羽林卫 / 丹阳兵 / 白毦兵 / 虎卫军 / 诸葛连弩兵 / 先登死士 / 虎豹骑 / 西凉铁骑），
  *   TroopKind / city.army / MARCH.troops 键集新增 8 种；只能在占领对应名城的分城军营征募，否则返回新错误码 ELITE_TROOP_LOCKED（失守后原主人同样拒绝，已练出的兵留在原主人手里）。
  *   数值为占位（同类普通兵 ×1.3 属性、×2 成本与人口、×1.5 时长与耗粮）。
+ * v65（赛季系统，AISLG-134，只加不改）：新增 GET_SEASON（op 99，维护期间仍可用）查当前赛季 / 维护态 / 我的荣誉 / 是否已加入本赛季，
+ *   GET_HALL_OF_FAME（op 100）查名人堂（某赛季各榜前列与模型榜，分页）；推送 PUSH_SEASON（op 2023，phase = warning 预告 / resetting 换季中 / started 新赛季开始，
+ *   全部在线连接收到，started 后服务端断开全部连接）。换季期间游戏类请求返回新错误码 MAINTENANCE（附 retryAfterSec）。
+ *   三条登录成功响应（密码 / 令牌 / Agent 令牌，第三方登录经 LOGIN 令牌登录）新增 season = { id, endsAt }；
+ *   账号在新赛季第一次登录时惰性加入（自动获得新主城与新手保护）。
  */
-export const PROTOCOL_VERSION = 64;
+export const PROTOCOL_VERSION = 65;

@@ -15,9 +15,9 @@
 
 import { createHash, randomBytes } from 'node:crypto';
 import pg from 'pg';
-import { INITIAL_BUILDINGS, INITIAL_POPULATION, INITIAL_RESOURCES } from '../../common/src/rules';
 import { newbieUntilFrom } from '../../common/src/protection';
-import { claimCityTile } from '../../common/src/world-db';
+import { insertInitialCity } from '../../common/src/main-city';
+import { CURRENT_SEASON_ID_SQL } from '../../common/src/season-db';
 import { generateAgentToken, hashAgentToken } from './agent-token';
 import { verifyPassword } from './password';
 
@@ -61,34 +61,16 @@ export async function insertAccountWithCity(
   client: pg.PoolClient,
   input: { username: string; passwordHash: string | null; signupIp: string | null },
 ): Promise<{ id: string; username: string }> {
+  // AISLG-134：新号直接归入当前赛季（season_id 取 active 赛季；无赛季时为 NULL，登录时惰性补）
   const ins = await client.query(
-    `INSERT INTO accounts (username, password_hash, signup_ip, newbie_until) VALUES ($1, $2, $3::inet, $4)
+    `INSERT INTO accounts (username, password_hash, signup_ip, newbie_until, season_id)
+     VALUES ($1, $2, $3::inet, $4, ${CURRENT_SEASON_ID_SQL})
      RETURNING id, username`,
     [input.username, input.passwordHash, input.signupIp, newbieUntilFrom(new Date())],
   );
   const account = ins.rows[0];
-  // 开号之初（rules.ts 的 INITIAL_* 常量）：初始资源与人口、自带建筑（1 级官府）
-  const city = await client.query(
-    `INSERT INTO cities (account_id, name, gold, wood, food, stone, iron, population)
-     VALUES ($1, '主城', $2, $3, $4, $5, $6, $7) RETURNING id`,
-    [
-      account.id,
-      INITIAL_RESOURCES.gold,
-      INITIAL_RESOURCES.wood,
-      INITIAL_RESOURCES.food,
-      INITIAL_RESOURCES.stone,
-      INITIAL_RESOURCES.iron,
-      INITIAL_POPULATION,
-    ],
-  );
-  for (const [kind, level] of Object.entries(INITIAL_BUILDINGS)) {
-    await client.query(
-      `INSERT INTO city_buildings (city_id, kind, level) VALUES ($1, $2, $3)`,
-      [city.rows[0].id, kind, level],
-    );
-  }
-  // v12：主城在世界中分配地块（出生区中心附近的空闲野地；世界由 API 启动时生成）
-  await claimCityTile(client, city.rows[0].id as string);
+  // 开号之初的主城（初始资源、自带建筑、地块分配）与赛季加入共用 main-city.ts
+  await insertInitialCity(client, account.id as string);
   // v46（AISLG-129）：建号即生成永久 Agent 令牌（所有建号方式共用本函数；老账号惰性补）
   const agentToken = generateAgentToken();
   await client.query(

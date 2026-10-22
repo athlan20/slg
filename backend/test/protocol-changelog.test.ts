@@ -80,8 +80,19 @@ async function tokenLogin(extra: Record<string, unknown>): Promise<ResponseFrame
       if (sql.includes('UPDATE sessions')) {
         return { rowCount: 1, rows: [{ expires_at: new Date('2026-11-01T00:00:00Z') }] };
       }
+      // v65（赛季）：登录时的惰性加入——当前赛季即账号所在赛季，视为已加入（空操作）
+      if (sql.includes('FROM seasons')) {
+        return { rowCount: 1, rows: [{ id: 1, name: '第 1 赛季', status: 'active', start_at: new Date('2026-10-01T00:00:00Z'), end_at: new Date('2026-11-22T00:00:00Z'), seed: 1, time_scale: 50, ended_at: null }] };
+      }
+      if (sql.includes('season_id FROM accounts')) {
+        return { rowCount: 1, rows: [{ season_id: 1 }] };
+      }
       return { rowCount: 1, rows: [{ id: 1 }] };
     },
+    connect: async () => ({
+      query: (sql: string) => pool.query(sql),
+      release: () => undefined,
+    }),
   } as unknown as HandlerContext['pool'];
   await handleMessage({ pool, registry, passwordDisabledHosts: new Set() }, conn, JSON.stringify({ op: Op.LOGIN, seq: 1, data: { token: 't', ...extra } }));
   const frame = sent.find((f) => f.op === Op.LOGIN);
@@ -106,4 +117,5 @@ test('LOGIN 响应带 protocolVersion；docNotice 仅 Agent 连接、按 docVers
   const player = (await tokenLogin({ asAgent: false, docVersion: 1 })).data as Record<string, unknown>;
   assert.equal(player.protocolVersion, PROTOCOL_VERSION);
   assert.equal(player.docNotice, null);
+  assert.deepEqual(player.season, { id: 1, endsAt: '2026-11-22T00:00:00.000Z' }, 'v65：登录响应带当前赛季');
 });

@@ -30,8 +30,8 @@ import { ARENA_COPY } from '../copy-arena';
 import { ARENA_COPY_EN } from '../copy-arena-en';
 import { STAR_TOWER_COPY } from '../copy-star-tower';
 import { STAR_TOWER_COPY_EN } from '../copy-star-tower-en';
-import { FOOT_COPY, MODAL_COPY, NAV_COPY, PAGED_COPY, TOP_COPY } from '../copy-ui';
-import { FOOT_COPY_EN, MODAL_COPY_EN, NAV_COPY_EN, PAGED_COPY_EN, TOP_COPY_EN } from '../copy-ui-en';
+import { FOOT_COPY, HALL_COPY, MODAL_COPY, NAV_COPY, PAGED_COPY, SEASON_COPY, TOP_COPY } from '../copy-ui';
+import { FOOT_COPY_EN, HALL_COPY_EN, MODAL_COPY_EN, NAV_COPY_EN, PAGED_COPY_EN, SEASON_COPY_EN, TOP_COPY_EN } from '../copy-ui-en';
 import { GITHUB_COPY } from '../copy-github';
 import { GITHUB_COPY_EN } from '../copy-github-en';
 import { GOOGLE_COPY } from '../copy-google';
@@ -97,6 +97,8 @@ const ZH = {
   CHAT_COPY,
   QUEST_COPY,
   ANNOUNCEMENT_COPY,
+  SEASON_COPY,
+  HALL_COPY,
 };
 
 export type Bundle = typeof ZH;
@@ -145,6 +147,8 @@ const EN: Bundle = {
   CHAT_COPY: CHAT_COPY_EN,
   QUEST_COPY: QUEST_COPY_EN,
   ANNOUNCEMENT_COPY: ANNOUNCEMENT_COPY_EN,
+  SEASON_COPY: SEASON_COPY_EN,
+  HALL_COPY: HALL_COPY_EN,
 };
 
 const BUNDLES: Record<Lang, Bundle> = { zh: ZH, en: EN };

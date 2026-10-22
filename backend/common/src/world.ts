@@ -313,12 +313,12 @@ export interface WorldTileSeed {
 }
 
 /**
- * 生成整张世界（纯函数、按 WORLD_SEED 可复现）：每格先定地形，再按间距与出生区
+ * 生成整张世界（纯函数、按种子可复现；缺省 WORLD_SEED 即第 1 季的地图，换季时传入新赛季的种子，AISLG-134）：每格先定地形，再按间距与出生区
  * 保护放置 NPC 城池（平原/草原上），其余为带等级的野地。城池地块（kind='city'）
  * 不在生成产物里——玩家主城与分城在注册 / 占领时逐格转换（见 claimCityTile）。
  */
-export function generateWorldTiles(): WorldTileSeed[] {
-  rand = mulberry32(WORLD_SEED);
+export function generateWorldTiles(seed: number = WORLD_SEED): WorldTileSeed[] {
+  rand = mulberry32(seed);
   const terrainPool: TerrainKind[] = [];
   for (const terrain of TERRAIN_KINDS) {
     const weight = TERRAIN_INFO[terrain].weight;
