@@ -4,7 +4,7 @@
  *  数据与展开状态来自 mapOverview 会话切片，这里只负责绘制与换算。
  */
 
-import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useRef, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import type { MapOverviewResponseData, MapOverviewSide, WorldMapResponseData } from '../../api/protocol';
 import { useCopy } from '../../i18n/bundle';
 import type { MapOverviewSession } from '../../state/mapOverview';
@@ -58,6 +58,16 @@ function drawDots(canvas: HTMLCanvasElement, data: MapOverviewResponseData, dpr:
       }
     }
   }
+}
+
+/** 视野框的像素位置：最小 10px，并夹在小地图内（视野贴边时不外溢，否则会撑出画布容器的滚动高度） */
+function viewBoxStyle(win: { x: number; y: number; w: number; h: number }, worldSize: number): CSSProperties {
+  const scale = MINIMAP_SIZE_PX / worldSize;
+  const width = Math.min(MINIMAP_SIZE_PX, Math.max(10, win.w * scale));
+  const height = Math.min(MINIMAP_SIZE_PX, Math.max(10, win.h * scale));
+  const left = Math.min(Math.max(0, win.x * scale), MINIMAP_SIZE_PX - width);
+  const top = Math.min(Math.max(0, win.y * scale), MINIMAP_SIZE_PX - height);
+  return { left, top, width, height };
 }
 
 export function WorldMinimap({ overview, win, onPanTo }: WorldMinimapProps) {
@@ -119,7 +129,7 @@ export function WorldMinimap({ overview, win, onPanTo }: WorldMinimapProps) {
             style={{ width: MINIMAP_SIZE_PX, height: MINIMAP_SIZE_PX }}
           >
             {data ? (
-              <canvas ref={canvasRef} role="世界地图视图-小地图-城池点" style={{ width: MINIMAP_SIZE_PX, height: MINIMAP_SIZE_PX }} />
+              <canvas ref={canvasRef} role="世界地图视图-小地图-城池点" className="block" style={{ width: MINIMAP_SIZE_PX, height: MINIMAP_SIZE_PX }} />
             ) : (
               <p className="grid h-full place-items-center text-[11px] text-faint">{MAPUI_COPY.minimapLoading}</p>
             )}
@@ -127,12 +137,7 @@ export function WorldMinimap({ overview, win, onPanTo }: WorldMinimapProps) {
               <div
                 role="世界地图视图-小地图-视野框"
                 className="pointer-events-none absolute border border-fg bg-fg/10 shadow-[0_0_0_1px_rgba(0,0,0,0.5)]"
-                style={{
-                  left: `${(win.x / worldSize) * 100}%`,
-                  top: `${(win.y / worldSize) * 100}%`,
-                  width: `max(10px, ${(win.w / worldSize) * 100}%)`,
-                  height: `max(10px, ${(win.h / worldSize) * 100}%)`,
-                }}
+                style={viewBoxStyle(win, worldSize)}
               />
             ) : null}
           </div>

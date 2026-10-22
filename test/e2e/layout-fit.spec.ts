@@ -149,6 +149,10 @@ for (const size of SIZES) {
     }
     await expect(page.locator('[role="排行榜弹窗"]')).toBeVisible();
     await expectFit(page, `${size.width}×${size.height} 排行榜弹窗`);
+    // 名人堂页签（v65 AISLG-134）：赛季下拉 + 榜种页签 + 分页列表 / 空态，同样不滚动
+    await page.locator('[role="排行榜弹窗-视图切换-名人堂"]').click();
+    await expect(page.locator('[role="排行榜-名人堂"]')).toBeVisible();
+    await expectFit(page, `${size.width}×${size.height} 排行榜弹窗 名人堂`);
     await page.keyboard.press('Escape');
     await expect(page.locator('[role="排行榜弹窗"]')).toHaveCount(0);
   });

@@ -18,6 +18,7 @@ import { BottomBar } from './BottomBar';
 import { ChatWindow } from '../chat/ChatWindow';
 import { Sidebar, type NavBadges } from './Sidebar';
 import { TopBar } from './TopBar';
+import { SeasonOverlay } from '../season/SeasonOverlay';
 
 export function AppShell() {
   const { session, incoming, openWarning, openLeaderboard } = useGame();
@@ -71,6 +72,7 @@ export function AppShell() {
         onExchange={session.exchangeGold}
         exchangeRequest={exchangeRequest}
         onStartTruce={session.startTruce}
+        season={session.season.info}
       />
       <main role="导航-工作区" className="nav-work">
         {page === 'overview' ? <OverviewPage /> : null}
@@ -90,6 +92,7 @@ export function AppShell() {
         onOpenAnnouncement={session.announcements.openAnnouncement}
       />
       <ChatWindow />
+      <SeasonOverlay season={session.season} />
       {dialog ? (
         <AccountDialogs
           mode={dialog}

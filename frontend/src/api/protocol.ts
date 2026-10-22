@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 59;
+export const PROTOCOL_VERSION = 65;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -78,6 +78,12 @@ export const Op = {
   TRUCE: 53,
   /** 生成微信扫码二维码（v43）：data.purpose = login | bind；login 登录前即可发，bind 需玩家已登录 */
   WX_QR_CREATE: 54,
+  /** 微信小游戏扫码上报（v43）：data.ticket + data.code；登录前即可发，仅供微信小游戏 */
+  WX_SCAN: 55,
+  /** 微信小游戏确认登录 / 绑定（v43）：data.ticket；只接受扫码的那条连接，仅供微信小游戏 */
+  WX_CONFIRM: 56,
+  /** 微信小游戏取消登录 / 绑定（v43）：data.ticket；只接受扫码的那条连接，仅供微信小游戏 */
+  WX_CANCEL: 57,
   /** 查看本账号永久 Agent 令牌（v46）：仅玩家连接，没有时自动补生成 */
   GET_AGENT_TOKEN: 64,
   /** 重置永久 Agent 令牌（v46）：仅玩家连接，旧令牌立即失效、用它在线的连接被断开 */
@@ -131,6 +137,10 @@ export const Op = {
   DISCARD_CITY: 94,
   /** 世界小地图总览（v58，AISLG-160）：全图城池点位，玩家与 Agent 通用 */
   GET_MAP_OVERVIEW: 95,
+  /** 查询赛季（v65，AISLG-134）：当前赛季 / 维护态 / 我的荣誉 / 是否已加入本赛季；维护期间仍可用 */
+  GET_SEASON: 99,
+  /** 查询名人堂（v65，AISLG-134）：某赛季各榜前列与模型榜，分页；缺省最近一个已结束赛季 */
+  GET_HALL_OF_FAME: 100,
   GET_ANNOUNCEMENTS: 96,
   GET_ANNOUNCEMENT: 97,
   READ_ANNOUNCEMENT: 98,
@@ -184,6 +194,8 @@ export const Op = {
   /** 竞技场状态变化推送（v53，AISLG-145）：challenged / daily_reward / milestone，账号全部在线连接收到 */
   PUSH_ARENA_STATE: 2021,
   PUSH_ANNOUNCEMENT: 2022,
+  /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
+  PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
   GET_STAR_TOWER: 83,
   /** 挑战将星塔下一层（v55，AISLG-146）：无参数，三局两胜，赢了首通发奖励 */
@@ -279,7 +291,26 @@ export type ErrorCode =
   | 'CHAT_BLOCKED'
   | 'CHAT_RATE_LIMITED'
   | 'NICKNAME_TAKEN'
+  | 'DISCARD_COOLDOWN'
+  | 'DISCARD_MAIN_CITY'
+  | 'CITY_IN_BATTLE'
+  | 'ARMY_OUTSIDE'
+  | 'WILDERNESS_GARRISONED'
+  | 'ARENA_NOT_JOINED'
+  | 'ARENA_TARGET_INVALID'
+  | 'ARENA_NO_CHALLENGES'
+  | 'ARENA_TARGET_BUSY'
+  | 'ARENA_PAIR_COOLDOWN'
+  | 'STAR_TOWER_CLEARED'
+  | 'STAR_TOWER_NO_CITY'
+  | 'STAR_TOWER_NO_LINEUP'
+  /** 换季维护中（v65）：除 GET_SEASON 与登录相关协议外一律返回，响应附 retryAfterSec（秒） */
+  | 'MAINTENANCE'
   | 'INTERNAL';
+
+// 协议载荷补齐（v65）：请求 / 响应类型、枚举常量与守卫，以及赛季协议（GET_SEASON / GET_HALL_OF_FAME / PUSH_SEASON）
+export * from './protocol-wire';
+export * from './protocol-season';
 
 export interface Resources {
   gold: number;

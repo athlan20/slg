@@ -22,6 +22,8 @@ interface PagedListProps<T> {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  /** 「还有更多」按钮的文字（缺省「更早」，名人堂等非时间流用「更多」） */
+  moreLabel?: string;
   className?: string;
 }
 
@@ -36,6 +38,7 @@ export function PagedList<T>({
   hasMore = false,
   loadingMore = false,
   onLoadMore,
+  moreLabel,
   className = '',
 }: PagedListProps<T>) {
   const copy = useCopy();
@@ -148,7 +151,7 @@ export function PagedList<T>({
             onClick={onLoadMore}
             className="h-5 cursor-pointer rounded border border-line bg-panel-2 px-1.5 text-dim disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {loadingMore ? PAGED_COPY.loading : PAGED_COPY.older}
+            {loadingMore ? PAGED_COPY.loading : (moreLabel ?? PAGED_COPY.older)}
           </button>
         ) : null}
       </div>

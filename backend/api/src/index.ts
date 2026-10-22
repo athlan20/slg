@@ -120,7 +120,13 @@ async function main(): Promise<void> {
 
   // 推送 eventId 起点下限 = 事件表当前最大 id（v21 AISLG-37）：API 重启后 eventId
   // 不回退，客户端「已见最大 eventId」的幂等去重在重启后依然成立
-  const seed = await pool.query('SELECT COALESCE(MAX(id), 0) AS m FROM events');
+  // 换季（AISLG-134）会清空 events 表，因此起点同时取 events 序列的当前值（序列不随 DELETE / TRUNCATE 回退）
+  const seed = await pool.query(
+    `SELECT GREATEST(
+       COALESCE((SELECT MAX(id) FROM events), 0),
+       COALESCE((SELECT last_value FROM pg_sequences WHERE schemaname = current_schema() AND sequencename = 'events_id_seq'), 0)
+     ) AS m`,
+  );
   registry.setEventIdFloor(Number(seed.rows[0].m));
 
   const notifier = new CompletionNotifier(pool, registry);

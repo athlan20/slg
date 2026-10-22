@@ -75,6 +75,7 @@ export const PROTOCOL_CHANGELOG: readonly ProtocolChange[] = [
   { version: 62, summary: '名城独有效果（AISLG-166，只加不改）：8 座名城各一项只有占领者享受的效果，跟着城走——洛阳守城城墙减伤 +5 个百分点，长安箭塔伤害 +20%，官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%（占领加成与采集同口径，不扣储量），许昌自己城池之间的调兵 / 运输行军速度 +20%，襄阳仓库防掠夺保护额 +50%。TileView.famous 与 CityView 新增 effect / famousEffect（{ kind, percent, resources }）。无新增协议号与错误码。' },
   { version: 63, summary: '名城主题建筑等级上限（AISLG-167，只加不改）：占有名城时其主题建筑可升到 25 级，其余建筑仍为 20 级。主题建筑：洛阳城墙、长安箭塔、官渡农田、成都铁矿、建业伐木场、邺城官府（一期无金矿）、许昌驿站、襄阳仓库；跟着城走，与名城效果同口径；失守后超出上限的存量等级按当前上限生效（库存保留，重新占领即恢复）。CityView 新增 levelMax（各建筑等级上限）；UPGRADE 的等级上限与连升 toLevel 上限按该城判定。城墙守城减伤 21~25 级每级 +1（25 级 75%，加满城防科技与洛阳名城恰为 90% 封顶）。无新增协议号与错误码。' },
   { version: 64, summary: '名城专属兵种（AISLG-168，只加不改）：8 座名城各一种专属精锐兵，只能在占领该名城的分城军营征募。新增 8 个 TroopKind（羽林卫 yulin_guard、丹阳兵 danyang_soldier、白毦兵 baimao_soldier、虎卫军 huwei_guard、诸葛连弩兵 zhuge_crossbow、先登死士 xiandeng_warrior、虎豹骑 hubao_cavalry、西凉铁骑 xiliang_cavalry）；新错误码 ELITE_TROOP_LOCKED；城池非对应名城（含失守后原主人）征募返回该码。数值占位。' },
+  { version: 65, summary: '赛季系统（AISLG-134，只加不改）：固定 28 天一季（SEASON_LENGTH_DAYS），换季时地图、城池、军队、武将等世界数据重置，账号、令牌与第三方绑定保留，榜单前列进名人堂。新增 GET_SEASON（op 99，维护期间仍可用）查当前赛季、维护态、我的荣誉与是否已加入本赛季；GET_HALL_OF_FAME（op 100）按赛季、榜种、页查名人堂。推送 PUSH_SEASON（op 2023，phase = warning / resetting / started，全部在线连接收到）。换季期间游戏类请求返回新错误码 MAINTENANCE（附 retryAfterSec）。三条登录成功响应新增 season = { id, endsAt }；账号在新赛季首次登录时惰性加入（获得新主城与新手保护）。'},
 ];
 
 /** 增量变更的 HTTP 路径（与 /agent-api.md 同域名；since 为调用方手上文档的版本号） */

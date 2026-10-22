@@ -160,6 +160,10 @@ export const Op = {
   DISCARD_CITY: 94,
   /** C→S 查询世界小地图总览（v58，AISLG-160：全图城池点位 [x, y, side]，不含野地；玩家与 Agent 通用） */
   GET_MAP_OVERVIEW: 95,
+  /** C→S 查询赛季（v65，AISLG-134：当前赛季 / 维护态 / 我的荣誉 / 是否已加入本赛季；维护期间仍可用） */
+  GET_SEASON: 99,
+  /** C→S 查询名人堂（v65，AISLG-134：某赛季各榜前列与模型榜，分页；缺省最近一个已结束赛季） */
+  GET_HALL_OF_FAME: 100,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -219,6 +223,8 @@ export const Op = {
   PUSH_ARENA_STATE: 2021,
   /** S→C 推送：新公告（v60，AISLG-162；只带标题与分类；本站全部在线连接收到，含 Agent） */
   PUSH_ANNOUNCEMENT: 2022,
+  /** S→C 推送：赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134；全部在线连接收到，含 Agent；started 后服务端断开全部连接） */
+  PUSH_SEASON: 2023,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -423,6 +429,8 @@ export const ErrorCode = {
   STAR_TOWER_NO_LINEUP: 'STAR_TOWER_NO_LINEUP',
   /** 公告：不存在、已撤回、未到生效时间或不属于本站（v60，AISLG-162） */
   ANNOUNCEMENT_NOT_FOUND: 'ANNOUNCEMENT_NOT_FOUND',
+  /** 换季维护中（v65，AISLG-134）：除 GET_SEASON 与登录相关协议外的请求一律返回，响应附 retryAfterSec（秒） */
+  MAINTENANCE: 'MAINTENANCE',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -553,6 +561,8 @@ export interface LoginResponseData {
   protocolVersion: number;
   /** 文档更新提示（v32，仅 Agent 连接；文档已是最新或玩家连接为 null） */
   docNotice: string | null;
+  /** 当前赛季（v65，AISLG-134）：id 与本季结束时刻；登录时已惰性加入本赛季 */
+  season: { id: number; endsAt: string };
 }
 
 export interface GetEventsRequestData {

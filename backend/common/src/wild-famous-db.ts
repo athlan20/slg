@@ -17,36 +17,41 @@ export async function ensureWildFamous(pool: pg.Pool): Promise<number> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(`SELECT pg_advisory_xact_lock(${WILD_FAMOUS_LOCK_ID})`);
-    const placed = await client.query(`SELECT wild_hero FROM world_tiles WHERE wild_hero IS NOT NULL`);
-    const done = new Set((placed.rows as Array<{ wild_hero: string }>).map((row) => row.wild_hero));
-    const missing = WILD_FAMOUS_NAMES.filter((name) => !done.has(name));
-    if (missing.length === 0) {
-      await client.query('COMMIT');
-      return 0;
-    }
-    const spots = await client.query(
-      `SELECT x, y FROM world_tiles
-       WHERE kind = 'wilderness' AND owner_city_id IS NULL AND wild_hero IS NULL AND level >= $1
-       ORDER BY random() LIMIT $2`,
-      [WILD_HERO_MIN_LEVEL, missing.length],
-    );
-    const tiles = spots.rows as Array<{ x: number; y: number }>;
-    for (let i = 0; i < tiles.length; i += 1) {
-      const attrs: HeroAttrs = rollFamousAttrs(Math.random);
-      await client.query(
-        `UPDATE world_tiles SET wild_hero = $3, wild_lead = $4, wild_force = $5, wild_wit = $6 WHERE x = $1 AND y = $2`,
-        [tiles[i].x, tiles[i].y, missing[i], attrs.lead, attrs.force, attrs.wit],
-      );
-    }
+    const count = await placeWildFamousIn(client);
     await client.query('COMMIT');
-    return tiles.length;
+    return count;
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw err;
   } finally {
     client.release();
   }
+}
+
+/** 同 ensureWildFamous，但在调用方的事务内执行（换季重建世界时与地图同一事务，AISLG-134） */
+export async function placeWildFamousIn(client: pg.PoolClient): Promise<number> {
+  await client.query(`SELECT pg_advisory_xact_lock(${WILD_FAMOUS_LOCK_ID})`);
+  const placed = await client.query(`SELECT wild_hero FROM world_tiles WHERE wild_hero IS NOT NULL`);
+  const done = new Set((placed.rows as Array<{ wild_hero: string }>).map((row) => row.wild_hero));
+  const missing = WILD_FAMOUS_NAMES.filter((name) => !done.has(name));
+  if (missing.length === 0) {
+    return 0;
+  }
+  const spots = await client.query(
+    `SELECT x, y FROM world_tiles
+     WHERE kind = 'wilderness' AND owner_city_id IS NULL AND wild_hero IS NULL AND level >= $1
+     ORDER BY random() LIMIT $2`,
+    [WILD_HERO_MIN_LEVEL, missing.length],
+  );
+  const tiles = spots.rows as Array<{ x: number; y: number }>;
+  for (let i = 0; i < tiles.length; i += 1) {
+    const attrs: HeroAttrs = rollFamousAttrs(Math.random);
+    await client.query(
+      `UPDATE world_tiles SET wild_hero = $3, wild_lead = $4, wild_force = $5, wild_wit = $6 WHERE x = $1 AND y = $2`,
+      [tiles[i].x, tiles[i].y, missing[i], attrs.lead, attrs.force, attrs.wit],
+    );
+  }
+  return tiles.length;
 }
 
 /** 在野名将的固定属性（无此名的落位返回 null） */

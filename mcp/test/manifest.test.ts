@@ -21,6 +21,21 @@ test('formation templates remain an optional structured parameter on the generat
   assert.match(formations.desc, /balanced.*infantry.*ranged.*cavalry/);
 });
 
+test('请求字段名都能生成工具入参（「lead / force / wit」这种合并写法会被跳过、参数被丢）', () => {
+  for (const op of toolOps(manifest)) {
+    for (const field of op.requestFields ?? []) {
+      // 「（规则）」等纯文档行以全角括号开头，允许跳过
+      if (field.name.startsWith('（')) {
+        continue;
+      }
+      assert.match(field.name, /^[A-Za-z_][A-Za-z0-9_]*$/, `${op.name} 的字段名「${field.name}」不是合法标识符`);
+    }
+  }
+  const allocate = toolOps(manifest).find((op) => op.name === 'ALLOCATE_HERO_POINTS');
+  assert.ok(allocate);
+  assert.deepEqual(toolParams(allocate).map((param) => param.name), ['heroId', 'lead', 'force', 'wit']);
+});
+
 test('捆绑清单与后端协议版本一致（忘了 sync:manifest 时此处失败）', () => {
   assert.equal(manifest.version, PROTOCOL_VERSION);
 });

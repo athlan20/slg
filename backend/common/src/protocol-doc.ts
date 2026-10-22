@@ -526,6 +526,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。',
     action: '先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。',
   },
+  MAINTENANCE: {
+    desc: '（v65，AISLG-134）服务端正在换季（维护态），游戏类协议暂不可用。登录、LOGOUT 与 GET_SEASON 仍可用。响应 data.retryAfterSec 为建议的等待秒数。',
+    action: '停止发送游戏类请求，按 retryAfterSec 等待后再试；收到 PUSH_SEASON 的 started 后服务端会断开连接，需要重新 LOGIN。',
+  },
   ANNOUNCEMENT_NOT_FOUND: {
     desc: '（v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。',
     action: '不要重试同一个 id；重新用 GET_ANNOUNCEMENTS 拉取列表确认当前可见的公告。',

@@ -6,17 +6,25 @@
 import pg from 'pg';
 import { createNpcAttack } from './npc-attack';
 import { npcRaidIntervalMs } from './world-tick';
+import { isSeasonResetting, trackWorkerJob } from './season-busy';
 
 /** 启动袭击发起的链式定时器；返回停止函数（进程退出时调用） */
 export function startNpcRaidTimer(pool: pg.Pool): () => void {
   let raidTimer: NodeJS.Timeout | null = null;
   const scheduleRaid = (): void => {
     raidTimer = setTimeout(() => {
-      void createNpcAttack(pool)
-        .catch((err) => {
-          console.error('worker npc attack failed:', err instanceof Error ? err.message : err);
-        })
-        .finally(scheduleRaid);
+      // 换季进行中不发起新袭击（世界即将清空），顺延到下一个间隔再看
+      if (isSeasonResetting()) {
+        scheduleRaid();
+        return;
+      }
+      void trackWorkerJob(
+        createNpcAttack(pool)
+          .catch((err) => {
+            console.error('worker npc attack failed:', err instanceof Error ? err.message : err);
+          })
+          .finally(scheduleRaid),
+      );
     }, npcRaidIntervalMs());
   };
   scheduleRaid();

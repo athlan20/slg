@@ -10,6 +10,7 @@ import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import type { QuestSession } from '../state/questSession';
 import { Card } from './ui/Card';
+import { PagedList } from './ui/PagedList';
 
 /** 资源奖励的可读文本，如「金+1500 木+1500」 */
 function rewardText(r: Resources, labels: Record<keyof Resources, string>): string {
@@ -132,9 +133,12 @@ function DailyTab({ session }: { session: QuestSession }) {
         </div>
       </div>
 
-      <div role="任务面板-列表" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-        {daily.map((t) => (
-          <div key={t.id} role={`任务面板-条目-${t.id}`} className="flex items-center gap-2 rounded border border-line-soft bg-panel-2 px-2 py-1">
+      <PagedList
+        role="任务面板-列表"
+        items={daily}
+        keyOf={(t) => t.id}
+        renderRow={(t) => (
+          <div role={`任务面板-条目-${t.id}`} className="flex items-center gap-2 rounded border border-line-soft bg-panel-2 px-2 py-1">
             <div className="min-w-0 flex-1">
               <div className="truncate text-[12.5px]">
                 {tName(t.title)}
@@ -154,8 +158,8 @@ function DailyTab({ session }: { session: QuestSession }) {
               {t.claimed ? QUEST_COPY.panel.claimed : t.done ? QUEST_COPY.panel.claim : QUEST_COPY.panel.undone}
             </button>
           </div>
-        ))}
-      </div>
+        )}
+      />
     </div>
   );
 }

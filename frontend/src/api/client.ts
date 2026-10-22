@@ -83,6 +83,8 @@ export class ApiClient {
   private readonly pushHandlers = new Set<PushHandler>();
   /** 连接被网络或服务端关闭时回调（客户端主动 close 不触发） */
   onClose: ((code: number, reason: string) => void) | null = null;
+  /** 任一请求收到 MAINTENANCE（换季维护，v65）时回调，参数为建议等待秒数（缺省 null） */
+  onMaintenance: ((retryAfterSec: number | null) => void) | null = null;
 
   get connected(): boolean {
     return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
@@ -170,6 +172,10 @@ export class ApiClient {
           window.clearTimeout(pending.timer);
           this.pending.delete(frame.seq);
           pending.resolve(frame);
+        }
+        if (frame.ok === false && frame.error?.code === 'MAINTENANCE') {
+          const sec = Number(frame.data?.retryAfterSec);
+          this.onMaintenance?.(Number.isFinite(sec) && sec > 0 ? sec : null);
         }
       }
     };

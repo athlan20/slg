@@ -11,6 +11,8 @@ import {
   type TileKind,
   type TroopKind,
 } from './protocol';
+import { currentWorldSeed } from './world-seed';
+import { SCHEMA_LOCK_ID } from './db';
 import {
   WORLD_SIZE,
   generateWorldTiles,
@@ -38,16 +40,28 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
     const count = await client.query(`SELECT count(*)::int AS n FROM world_tiles`);
     const expected = WORLD_SIZE * WORLD_SIZE;
     if (count.rows[0].n !== expected) {
-      await client.query('BEGIN');
-      try {
-        if (count.rows[0].n > 0) {
-          await wipeWorldForRebuild(client);
+      // 整段重建在一个事务里，可安全重试：另一进程的 ensureSchema 正在 ALTER TABLE（ACCESS EXCLUSIVE）时，
+      // 本事务的外键检查会与其互等，PostgreSQL 判死锁（40P01）时回滚后短暂退避重试，不能让 API/Worker 因此退出
+      for (let attempt = 1; ; attempt += 1) {
+        await client.query('BEGIN');
+        try {
+          // 先取 ensureSchema 的咨询锁（事务级）：对方正在 ALTER TABLE 时本事务等它做完，而不是拿着表锁与它互等。
+          // 锁序固定为 世界锁 → 建表锁；ensureSchema 只取建表锁，不会成环
+          await client.query(`SELECT pg_advisory_xact_lock(${SCHEMA_LOCK_ID})`);
+          if (count.rows[0].n > 0) {
+            await wipeWorldForRebuild(client);
+          }
+          // 种子取当前赛季的（第 1 季为 WORLD_SEED，之后各季为换季时随机生成的种子；重启不换图）
+          await insertWorldTiles(client, generateWorldTiles(await currentWorldSeed(client)));
+          await client.query('COMMIT');
+          break;
+        } catch (err) {
+          await client.query('ROLLBACK').catch(() => undefined);
+          if ((err as { code?: string }).code !== '40P01' || attempt >= 5) {
+            throw err;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
         }
-        await insertWorldTiles(client, generateWorldTiles());
-        await client.query('COMMIT');
-      } catch (err) {
-        await client.query('ROLLBACK').catch(() => undefined);
-        throw err;
       }
     }
     // 名城升格（v24 AISLG-56）：8 座，幂等；世界重建后登记已清空，会重新挑选
@@ -113,7 +127,7 @@ async function wipeWorldForRebuild(client: pg.PoolClient): Promise<void> {
 }
 
 /** 批量写入世界地块：分块多值插入（单语句参数上限 65535，大世界必须分块） */
-async function insertWorldTiles(client: pg.PoolClient, tiles: WorldTileSeed[]): Promise<void> {
+export async function insertWorldTiles(client: pg.PoolClient, tiles: WorldTileSeed[]): Promise<void> {
   const CHUNK = 500;
   for (let start = 0; start < tiles.length; start += CHUNK) {
     const slice = tiles.slice(start, start + CHUNK);

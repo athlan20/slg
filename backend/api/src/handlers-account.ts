@@ -3,7 +3,8 @@
 // 协议分发见 handlers.ts。
 import { EventType, Op, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
-import { INITIAL_BUILDINGS, INITIAL_POPULATION, INITIAL_RESOURCES } from '../../common/src/rules';
+import { INITIAL_POPULATION, INITIAL_RESOURCES } from '../../common/src/rules';
+import { insertInitialBuildings } from '../../common/src/main-city';
 import { newbieUntilFrom } from '../../common/src/protection';
 import { lockArena } from '../../common/src/arena-db';
 import { readString, respondError, respondOk } from './frames';
@@ -258,13 +259,8 @@ export async function handleResetAccount(
         INITIAL_POPULATION,
       ],
     );
-    for (const [kind, level] of Object.entries(INITIAL_BUILDINGS)) {
-      await client.query(
-        `INSERT INTO city_buildings (city_id, kind, level)
-         SELECT id, $2, $3 FROM cities WHERE account_id = $1`,
-        [accountId, kind, level],
-      );
-    }
+    // 自带建筑与开号之初一致（共用 main-city.ts）；重置后账号只剩主城一座
+    await insertInitialBuildings(client, [firstCityId]);
     await client.query(`DELETE FROM events WHERE account_id = $1`, [accountId]);
     // Agent 自报计划属账号数据的一部分，一并清空（v10）
     await client.query(`DELETE FROM agent_plans WHERE account_id = $1`, [accountId]);

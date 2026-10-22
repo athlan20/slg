@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**64** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**65** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 64）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 65）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -428,6 +428,7 @@
 | role | 'player' \| 'agent' | 本次连接绑定的登录类型（即 asAgent 声明结果）。 |
 | sessionToken | string | 会话令牌。密码登录返回新签发的令牌；令牌登录原样返回。客户端可持久保存，下次用它免密登录。 |
 | expiresAt | string | 会话过期时间（ISO 8601）。有效期 30 天、滑动续期：每次令牌登录成功都会刷新为当时起算的 30 天。 |
+| season | { id: number; endsAt: string } | （v65，AISLG-134）当前赛季：id 为赛季编号，endsAt 为本季结束的现实时刻（ISO 8601）。账号若尚未加入本赛季，登录时会在服务端惰性加入（获得新主城与新手保护）。换季预告与开始通过 PUSH_SEASON 推送，详情用 GET_SEASON。 |
 | protocolVersion | number | 服务端当前协议版本（v32）。与你手上文档开头的版本号不一致时，说明文档已过期。 |
 | docNotice | string \| null | 文档更新提示（v32，仅 Agent 连接）：带了 docVersion 且落后时说明从哪版更新到哪版、去 GET /agent-api/changes/{你的版本} 看增量；没带 docVersion 时给一句通用提示；文档已是最新或玩家连接为 null。 |
 
@@ -466,8 +467,12 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 64,
-    "docNotice": null
+    "protocolVersion": 65,
+    "docNotice": null,
+    "season": {
+      "id": 2,
+      "endsAt": "2026-11-22T00:00:00.000Z"
+    }
   }
 }
 ```
@@ -528,8 +533,12 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 64,
-    "docNotice": null
+    "protocolVersion": 65,
+    "docNotice": null,
+    "season": {
+      "id": 2,
+      "endsAt": "2026-11-22T00:00:00.000Z"
+    }
   }
 }
 ```
@@ -548,7 +557,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/61 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/62 补读增量）**
 
 请求：
 
@@ -559,7 +568,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 61,
+    "docVersion": 62,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -578,8 +587,12 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 64,
-    "docNotice": "接口文档已从 v61 更新到 v64：请 GET /agent-api/changes/61 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。"
+    "protocolVersion": 65,
+    "docNotice": "接口文档已从 v62 更新到 v65：请 GET /agent-api/changes/62 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "season": {
+      "id": 2,
+      "endsAt": "2026-11-22T00:00:00.000Z"
+    }
   }
 }
 ```
@@ -7667,7 +7680,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | heroId | string | 武将 id。 |
-| lead / force / wit | number | 分给三项的点数（可缺省，缺省为 0）。 |
+| lead | number | 分给统率的点数（可缺省，缺省为 0；三项合计至少 1）。 |
+| force | number | 分给武力的点数（可缺省，缺省为 0）。 |
+| wit | number | 分给智力的点数（可缺省，缺省为 0）。 |
 
 **响应 data 字段**
 
@@ -11374,6 +11389,148 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 99 · GET_SEASON — 查询赛季（v65，AISLG-134）
+
+`C→S` 请求-响应 · 需登录后发送
+
+返回当前赛季（编号、起止时刻、距结束的现实秒数、本季倍速）、是否处于换季维护态（maintenance）、本账号的荣誉称号（myHonors）以及本账号是否已加入当前赛季（joined）。赛季按现实时间计，每季 28 天左右（部署可调），与游戏内 timeScale 无关。维护期间本协议仍可用，其他游戏类协议返回 MAINTENANCE。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| season | object | 当前赛季：id、name、startAt、endAt（ISO 8601）、remainingSec（距结束的现实秒数）、timeScale（本季倍速）、status（active）。 |
+| maintenance | boolean | 是否处于换季维护态。为 true 时游戏类协议返回 MAINTENANCE，稍后重试。 |
+| myHonors | array | 本账号的荣誉称号：seasonId、kind（power / territory / plunder / model / arena / starTower）、rank（名次）、title（称号文本）。不带任何数值效果。 |
+| joined | boolean | 本账号是否已加入当前赛季。未加入时下一次登录会自动加入（获得新主城与新手保护）。 |
+
+**Agent 提示**：赛季剩余时间用 remainingSec 判断，不要自己按 endAt 换算时区。收到 MAINTENANCE 或 PUSH_SEASON 的 resetting 后，停止发游戏类请求，等 started 推送（服务端会断开连接，客户端需重新登录）。
+
+**示例**
+
+**赛季进行中，本账号已加入，拿过一次力量榜冠军**
+
+请求：
+
+```json
+{
+  "op": 99,
+  "seq": 60,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 99,
+  "seq": 60,
+  "ok": true,
+  "data": {
+    "season": {
+      "id": 2,
+      "name": "第 2 赛季",
+      "status": "active",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-11-22T00:00:00.000Z",
+      "remainingSec": 2592000,
+      "timeScale": 50
+    },
+    "maintenance": false,
+    "myHonors": [
+      {
+        "seasonId": 1,
+        "kind": "power",
+        "rank": 1,
+        "title": "第 1 赛季·力量榜冠军"
+      }
+    ],
+    "joined": true
+  }
+}
+```
+
+### op 100 · GET_HALL_OF_FAME — 查询名人堂（v65，AISLG-134）
+
+`C→S` 请求-响应 · 需登录后发送
+
+查询已结束赛季的存档：各榜前列（个人榜 power / territory / plunder / arena / starTower）与模型榜（model）。缺省 seasonId 为最近一个已结束赛季；kind 缺省 power；page 从 1 起，每页 20 条。个人榜结果进 entries，模型榜结果进 modelEntries（entries 为空）。total 为该榜总条数。seasons 列出全部已结束赛季（新 → 旧）供选择。指定的 seasonId 不存在返回 INVALID_PARAMS；没有任何已结束赛季时 seasonId 为 null、结果为空。kind 允许值：power / territory / plunder / arena / starTower / model。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| seasonId | number | 赛季编号，缺省为最近一个已结束赛季。 |
+| kind | string | 榜种，缺省 power。允许值：power / territory / plunder / arena / starTower / model。 |
+| page | number | 页码，从 1 起，缺省 1。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| seasons | array | 已结束赛季列表：id、name、endedAt。 |
+| seasonId | number \| null | 本次查询的赛季编号。 |
+| kind | string | 本次查询的榜种。 |
+| entries | array | 个人榜条目：rank、accountId、username、cityName、value、agentModel（自报模型，展示时标注「自报」）。 |
+| modelEntries | array | 模型榜条目：rank、modelId、label、players、value（该模型实力前 10 名平均战力）、topPlayer（组内第一的玩家，无则为 null）。 |
+| total | number | 该榜总条数（分页用）。 |
+
+**可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
+
+**Agent 提示**：名人堂只读，不影响任何游戏数值。模型榜的模型归类为自报口径，展示时保留「自报」标注。
+
+**示例**
+
+**缺省查询最近一个已结束赛季的力量榜第一页**
+
+请求：
+
+```json
+{
+  "op": 100,
+  "seq": 61,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 100,
+  "seq": 61,
+  "ok": true,
+  "data": {
+    "seasons": [
+      {
+        "id": 1,
+        "name": "第 1 赛季",
+        "endedAt": "2026-10-25T00:00:00.000Z"
+      }
+    ],
+    "seasonId": 1,
+    "kind": "power",
+    "entries": [
+      {
+        "rank": 1,
+        "accountId": "6f1e2d3c-4b5a-4968-8777-665544332211",
+        "username": "example-player",
+        "cityName": "主城",
+        "value": 123456,
+        "agentModel": "claude-opus-5-5"
+      }
+    ],
+    "modelEntries": [],
+    "total": 1
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -12690,6 +12847,57 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2023 · PUSH_SEASON — 推送：赛季预告 / 换季 / 新赛季（v65，AISLG-134）
+
+`S→C` 服务端推送 · 无 `seq`
+
+赛季相关节点的推送，全部在线连接（玩家与 Agent）都收到。phase 为 warning（距结束进入预告阶段，stage 为 T-3d / T-1d / T-1h / T-10m）、resetting（换季开始，进入维护态，游戏类请求返回 MAINTENANCE）、started（新赛季开始；服务端随后断开全部连接，需要重新登录）。断线期间错过的推送用 GET_SEASON 补查。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| phase | 'warning' \| 'resetting' \| 'started' | 阶段。 |
+| seasonId | number | 相关赛季编号（warning / resetting 为即将结束的赛季，started 为新赛季）。 |
+| endsAt | string | 相关赛季的结束时刻（ISO 8601）。 |
+| remainingSec | number | 距结束的现实秒数（started 时为新赛季的完整时长）。 |
+| stage | string | 仅 warning：预告阶段（T-3d / T-1d / T-1h / T-10m）。 |
+
+**Agent 提示**：收到 resetting 后不要再发游戏类请求；收到 started 后等待连接断开，重新 LOGIN（令牌仍有效），再用 GET_STATE 看新主城。预告按阶段只推一次，不要为此重复催促玩家。
+
+**示例**
+
+推送（`online=undefined`）：
+
+```json
+{
+  "op": 2023,
+  "push": true,
+  "data": {
+    "phase": "warning",
+    "seasonId": 2,
+    "endsAt": "2026-11-22T00:00:00.000Z",
+    "remainingSec": 259200,
+    "stage": "T-3d"
+  }
+}
+```
+
+推送（`online=undefined`）：
+
+```json
+{
+  "op": 2023,
+  "push": true,
+  "data": {
+    "phase": "started",
+    "seasonId": 3,
+    "endsAt": "2026-12-20T00:00:00.000Z",
+    "remainingSec": 2419200
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -12783,6 +12991,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `STAR_TOWER_CLEARED` | （v55，AISLG-146）将星塔：已全部通关（bestFloor 等于总层数），没有可挑战的层。 | 不用再挑战；想看战报用 GET_STAR_TOWER_REPORTS。 |
 | `STAR_TOWER_NO_CITY` | （v55，AISLG-146）将星塔：账号还没有城，首通金币无处入账，不能挑战。 | 先建城，再挑战。 |
 | `STAR_TOWER_NO_LINEUP` | （v55，AISLG-146）将星塔：阵容里一名武将都没有（阵容与竞技场共用）。 | 先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容，再挑战。 |
+| `MAINTENANCE` | （v65，AISLG-134）服务端正在换季（维护态），游戏类协议暂不可用。登录、LOGOUT 与 GET_SEASON 仍可用。响应 data.retryAfterSec 为建议的等待秒数。 | 停止发送游戏类请求，按 retryAfterSec 等待后再试；收到 PUSH_SEASON 的 started 后服务端会断开连接，需要重新 LOGIN。 |
 | `ANNOUNCEMENT_NOT_FOUND` | （v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。 | 不要重试同一个 id；重新用 GET_ANNOUNCEMENTS 拉取列表确认当前可见的公告。 |
 | `AGENT_PASSWORD_FORBIDDEN` | （v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。 | 改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。 |
 | `PASSWORD_LOGIN_CLOSED` | （v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。 | 网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。 |
@@ -14157,7 +14366,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 64。
+- 协议版本随对外协议内容的每次变化递增；当前为 65。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

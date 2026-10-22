@@ -1,7 +1,7 @@
 // 英文文案孪生（AISLG-137）：copy-ui.ts 的导航外壳与公共件文案，逐成员 satisfies 对应中文对象的类型。
 // 导航外壳与公共件文案（页面标题 / 导航 / 分页 / 弹窗 / 账号菜单 / 底栏等）。
 
-import { FOOT_COPY, MODAL_COPY, NAV_COPY, PAGED_COPY, TOP_COPY } from './copy-ui';
+import { FOOT_COPY, HALL_COPY, MODAL_COPY, NAV_COPY, PAGED_COPY, SEASON_COPY, TOP_COPY } from './copy-ui';
 
 export const PAGED_COPY_EN = {
   total: (n: number) => `${n} in total`,
@@ -78,3 +78,47 @@ export const FOOT_COPY_EN = {
   feedTitle: 'Server Announcements',
   feedClose: 'Close',
 } satisfies typeof FOOT_COPY;
+
+/** Season pill (v65, AISLG-134): "S2 · 18 days left"; ≤3 days switches to the alert style and shows the clock */
+export const SEASON_COPY_EN = {
+  pillLong: (id: number, days: number) => `S${id} · ${days} days left`,
+  pillShort: (id: number, days: number) => `S${id}·${days}d`,
+  urgentLong: (id: number, days: number, clock: string) => (days > 0 ? `S${id} · ${days}d ${clock} left` : `S${id} · ${clock} left`),
+  urgentShort: (id: number, days: number, clock: string) => (days > 0 ? `S${id}·${days}d ${clock}` : `S${id}·${clock}`),
+  ending: (id: number) => `S${id} · Season ending`,
+  pillTitle: (id: number, endsAt: string) => `Season ${id} ends at ${endsAt} (real time)`,
+  maskTitle: 'Season reset in progress, please wait…',
+  maskHint: 'The server is resetting the world (map, cities, armies, heroes). It will be back in a few minutes; accounts, tokens and linked logins are kept.',
+  maskRetry: 'Server under maintenance, checking again shortly',
+  startedToast: 'A new season has started',
+  warning: {
+    title: 'Season ending soon',
+    stage: { 'T-1d': '1 day left', 'T-1h': '1 hour left', 'T-10m': '10 minutes left' } as Record<string, string>,
+    body: (id: number, endsAt: string) =>
+      `Season ${id} ends at ${endsAt}. The server will pause briefly and reset the world (map, cities, armies, heroes). Accounts, tokens and linked logins are kept, and the top of each board goes into the Hall of Fame.`,
+    hint: 'Plan your marches, builds and recruits before the reset',
+    confirm: 'Got it',
+  },
+  honorsLabel: 'My honors',
+  honorsNone: 'No honors yet',
+} satisfies typeof SEASON_COPY;
+
+export const HALL_COPY_EN = {
+  switchLive: 'Live',
+  switchHall: 'Hall of Fame',
+  seasonLabel: 'Season',
+  seasonEnded: (endedAt: string) => `Ended ${endedAt}`,
+  emptyNoSeason: 'Once season 1 ends, the top of each board will be kept here',
+  emptyRows: 'No entries on this board',
+  loading: 'Loading…',
+  loadFailed: 'Hall of Fame failed to load, try again later',
+  more: 'More',
+  kinds: { power: 'Power', territory: 'Territory', plunder: 'Plunder', model: 'Model', arena: 'Arena', starTower: 'Star Tower' } as Record<string, string>,
+  rankColumn: 'Rank',
+  playerColumn: 'Player',
+  modelColumn: 'Model',
+  modelPlayers: (n: number) => `${n} players`,
+  modelValueColumn: 'Avg power',
+  agentModelBadge: 'Self-reported',
+  modelRule: 'Model board: grouped by self-reported model; rank = average power of that model\'s top 10 players. Counts only this season; the archive does not affect the live board.',
+} satisfies typeof HALL_COPY;
