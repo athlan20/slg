@@ -37,7 +37,9 @@ export const REQUEST_ALLOCATE_HERO_POINTS: RequestOpDoc = {
   summary: `把武将的自由点数（heroes[].freePoints）分到统率 lead / 武力 force / 智力 wit，三项各为非负整数，合计至少 1、不超过自由点数。只能对在家的武将操作（HERO_BUSY / HERO_TRAINING 拒绝）。${GROWTH_RULES}`,
   requestFields: [
     { name: 'heroId', type: 'string', desc: '武将 id。' },
-    { name: 'lead / force / wit', type: 'number', desc: '分给三项的点数（可缺省，缺省为 0）。' },
+    { name: 'lead', type: 'number', desc: '分给统率的点数（可缺省，缺省为 0；三项合计至少 1）。' },
+    { name: 'force', type: 'number', desc: '分给武力的点数（可缺省，缺省为 0）。' },
+    { name: 'wit', type: 'number', desc: '分给智力的点数（可缺省，缺省为 0）。' },
   ],
   dataFields: [{ name: 'hero', type: 'object', desc: '分配后的武将视图（结构同 GET_HEROES 的 heroes[] 元素）。' }],
   errors: ['INVALID_PARAMS', 'HERO_NOT_FOUND', 'HERO_BUSY', 'HERO_TRAINING', 'HERO_POINTS_INSUFFICIENT'],
