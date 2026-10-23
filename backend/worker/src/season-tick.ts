@@ -35,7 +35,15 @@ export function seasonResetHalted(): boolean {
   return halted;
 }
 
-export async function processSeasonTick(pool: pg.Pool, nowMs: number = Date.now()): Promise<SeasonTickOutcome> {
+/**
+ * 换季执行走 resetPool（维护池，语句超时放宽：整图重灌是长事务）；其余检查仍走 pool。
+ * 不传则与 pool 相同（测试与单池场景）。
+ */
+export async function processSeasonTick(
+  pool: pg.Pool,
+  nowMs: number = Date.now(),
+  resetPool: pg.Pool = pool,
+): Promise<SeasonTickOutcome> {
   if (isSeasonResetting()) {
     return 'idle';
   }
@@ -48,7 +56,7 @@ export async function processSeasonTick(pool: pg.Pool, nowMs: number = Date.now(
       return 'idle';
     }
     try {
-      const outcome = await runSeasonReset(pool, resetOptions);
+      const outcome = await runSeasonReset(resetPool, resetOptions);
       consecutiveFailures = 0;
       nextAttemptAt = 0;
       if (outcome.status === 'reset') {

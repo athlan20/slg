@@ -67,6 +67,7 @@ Agent API 文档：`GET /agent-api.md` 与 `GET /agent-api.json`（运行时从�
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |
 | `DATABASE_URL` 或 `PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE` | 本机 5432 / `postgres` / `slg` | PostgreSQL 连接。 |
+| `DB_STATEMENT_TIMEOUT_MS` | `30000` | 运行期数据库语句超时（毫秒，AISLG-171）。服务端跑超时即取消语句（连接保持可用）；客户端读超时为它 + 5 秒，兜底链路半死时的挂起，超时后释放池位。仅作用于 API / Worker 的运行期连接池；启动迁移、世界生成与换季走维护池（超时 10 分钟，不随此变量）。须为正整数；运行期语句按查询形态估计在毫秒到秒级（未实测），默认值留出约一个数量级余量。 |
 | `PORT` / `HOST` | `8080` / `127.0.0.1` | API 监听地址。 |
 | `BUILD_SECONDS` | 基准 `60` | 建筑建造时长，四种建筑相同。默认基准受全局时间缩放 ÷ time_scale（见下节）；显式设置优先于缩放（验证时调小用）。 |
 | `WORKER_TICK_MS` | `1000` | Worker 领取周期。 |
@@ -79,6 +80,7 @@ Agent API 文档：`GET /agent-api.md` 与 `GET /agent-api.json`（运行时从�
 | `AUTH_TIMEOUT_MS` | `15000` | 连接建立后未登录的断开时限。 |
 | `CORS_ORIGIN` | 默认白名单 | HTTP 路由跨域来源：未设置 = `https://slg.example.cn` + 本地开发（localhost/127.0.0.1 任意端口）；`*` = 任意来源；逗号分隔 = 精确白名单（`api/src/cors.ts`）。WebSocket `/ws` 不受同源策略约束。 |
 | `LOG_LEVEL` | `info` | API 日志级别。 |
+| `DIAG_LOG` | `1`（开启） | 诊断日志开关（AISLG-173）：设 `0` 整体关闭 `[db-pool]` / `[db-conn]` / `[db-hold]` / `[db-slow]` / `[db-probe]` / `[loop-lag]` / `[oauth-callback]` 等诊断行，并不建探针连接、不挂池观测；原有的连接错误输出保持原样。见「故障排查：怎么捞日志」。 |
 | `WX_APPID` / `WX_APPSECRET` | 不配置 | 微信小游戏凭证（v43 微信扫码登录）。不配置时扫码登录整体关闭，`WX_QR_CREATE` 返回 `WX_UNAVAILABLE`、`/auth/config` 的 `wechatEnabled=false`（登录页隐藏微信分页）；AppSecret 只放 `.env`，不要提交。 |
 | `WX_CODE_ENV` | `release` | 二维码打开的小游戏版本：`release` / `trial` / `develop`；开发阶段用 `develop`，上线前改回 `release`。 |
 | `WX_TICKET_TTL_SECONDS` | `180` | 微信二维码 ticket 有效期（秒）。ticket 只存 API 进程内存，**API 须单进程部署**；多实例需把 ticket 搬进 PostgreSQL、推送改走 `pg_notify`。 |
@@ -195,6 +197,45 @@ npx tsx --env-file=.env scripts/set-time-scale.ts 1
   增速推导）；MARCH 的 PLUNDER_COOLDOWN 附 `retryAfterSeconds`。
 - **集市 EXCHANGE（op 37）**：四资源按 4:1（`rules.ts` 的 `EXCHANGE_INPUT_PER_GOLD`）
   换金币，事件 `resource_exchanged`——满级 / 满仓后的可持续资源出口。
+
+## 故障排查：怎么捞日志
+
+API 与 Worker 的诊断日志（AISLG-173）统一为 `<ISO 时间戳> [前缀] 文本`，每行带固定前缀，按关键字 grep 即可。默认开启；设环境变量 `DIAG_LOG=0` 可整体关闭（不建探针连接、不挂池观测，原有的连接错误输出保持原样）。
+
+### 关键字与含义
+
+| 关键字 | 触发条件 | 含义（主要字段） |
+| --- | --- | --- |
+| `[db-pool]` | 池状态：空闲时每 30 秒一行；有请求排队时每 5 秒一行，直到恢复（`state=recovered` 一行）；拿连接失败（含拿连接超时）时 `connect-failed` 附一次快照 | 池名 `pool=`（`slg-api` / `slg-api-maint` / `slg-worker` / `slg-worker-maint`）；`total` 连接数、`idle` 空闲数、`waiting` 排队数；`holding_over_10s` 仍被占用超过 10 秒的连接数，`top=[pid held sql]` 列出最久的前 3 条 |
+| `[db-conn]` | 池新建连接（`new`，带后端进程号 `pid`）；池移除连接（`removed`，带存活时长 `lived`）；连接上的错误（`error`，带错误码 `code`） | 用来看连接是否频繁重建、是否被对端断开，以及断开的错误码（如 `ECONNRESET`） |
+| `[db-hold]` | 连接借出超过 5 秒才归还 | `ms` 占用时长，`pid`，`sql` 最后一条语句的前 200 字符（只记文本，不记参数）。谁占着连接不放，看这里 |
+| `[db-slow]` | 语句超过 2 秒（`slow`）；语句超时（`statement_timeout`，错误码 57014）；客户端读超时（`read_timeout`，即 `Query read timeout`） | `ms` 耗时，`sql` 语句前 200 字符。超时类单独标出，不论耗时多少 |
+| `[db-probe]` | 独立于连接池的探针连接，每 15 秒执行一次 `SELECT 1`（3 秒超时）。正常每 5 分钟一行 `ok … heartbeat`；`slow` 耗时超过 500ms；`failed` 失败；`recovered` 恢复 | `ms` 耗时；`reason` 错误分类（错误码、`pool_timeout`、`read_timeout` 等）；`consecutive` 连续失败次数；`down_s` 恢复时的中断秒数。判断数据库链路本身是否在抖，看这里 |
+| `[loop-lag]` | 进程的事件循环卡顿超过 500ms（API 与 Worker 都有） | `max_ms` 卡顿时长。出现即说明进程自身被阻塞，与数据库无关 |
+| `[oauth-callback]` | 每次 GitHub 登录回调 | `result=` 结果：`ok` 成功，`unavailable` 不可用，`expired` 过期，`canceled` 用户取消，`already_bound` 已绑定；`reason=` 原因（`github:<kind>` 为换令牌阶段，`db:<分类>` 为数据库阶段）；`exchange_ms` 换令牌耗时，`db_ms` 查库耗时，`total_ms` 总耗时。绝不记授权码、令牌与 state |
+
+此外，连接上的错误原来输出为 `pg pool error (…)` / `pg client error (…)`，开启诊断后改为 `[db-conn] error … scope=pool|client`（同样保留错误信息）。
+
+### 日志量与限流
+
+- 同类日志（慢语句、超时、连接错误、占用、连接新建 / 移除、拿连接失败、事件循环卡顿）按类型限流：同一 key 每 10 秒最多一行；窗口内被合并的条数在下一行以 `合并=N` 附出。风暴时（上千条同类失败）每类每分钟最多约 6 行。
+- 正常运行时的额外量很小：每个池约每 30 秒一行，探针约每 5 分钟一行，仅有排队或慢请求时才明显增加（排队时池状态约每 5 秒一行）。
+- 日志里不出现密码、授权码、令牌、state，也不出现语句参数（SQL 使用占位符传参，只记语句文本，截断到 200 字符）。请求日志中 `/auth/github/callback` 的 `code`、`state` 替换为 `[redacted]`。
+
+### 推荐的捞取命令
+
+下面的占位符需按实际替换：`<日志文件>` 为 API 或 Worker 的输出日志（进程输出被重定向到的文件，或所用进程管理器的日志），`<开始>` / `<结束>` 为 ISO 时间前缀（如 `2026-10-23T08:10` 与 `2026-10-23T08:31`；`<结束>` 取开区间上界）。日志行以 ISO 时间戳开头，直接按字符串比较即可。
+
+```bash
+# 时间窗口内的全部诊断行（API 与 Worker 分别捞）
+awk -v s='<开始>' -v e='<结束>' '$1 >= s && $1 < e' <日志文件> \
+  | grep -E '\[(db-pool|db-conn|db-hold|db-slow|db-probe|loop-lag|oauth-callback)\]'
+
+# 只看某个关键字，例如占用者
+awk -v s='<开始>' -v e='<结束>' '$1 >= s && $1 < e' <日志文件> | grep '\[db-hold\]'
+```
+
+看法提示：池排队（`[db-pool] state=queued`）同时 `[db-hold]` 出现长占用，说明是进程内某条路径占着连接不放，去看 `sql=` 与对应请求；`[db-probe]` 同一时段出现 `failed` / `slow`，说明数据库链路本身不稳；`[db-probe]` 正常而池排队，说明是池内部占满；出现 `[loop-lag]` 则是进程自身卡住。
 
 ## 协议（提案，尚未与前端联合评审）
 

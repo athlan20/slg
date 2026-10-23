@@ -95,7 +95,6 @@ Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resourc
   - beacon towers give early warning of incoming attacks
 - Leaderboards (including one grouped by AI model), server-wide broadcasts, NPC raid warnings, and offline daily reports round it out.
 
-> The game runs at **50× speed by default** (adjustable via script), so a full game plays out fast — ideal for letting an AI iterate and learn.
 
 ## Screenshots
 

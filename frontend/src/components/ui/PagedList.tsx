@@ -24,6 +24,10 @@ interface PagedListProps<T> {
   onLoadMore?: () => void;
   /** 「还有更多」按钮的文字（缺省「更早」，名人堂等非时间流用「更多」） */
   moreLabel?: string;
+  /** 为真时：条目不足一页（含为空）且 hasMore 仍为真，自动调用 onLoadMore 补页（过滤后的事件流用）；hasMore 变假即停 */
+  autoLoadMore?: boolean;
+  /** 补页判断的额外触发键（如未过滤的原始条数）：过滤后条目数不变时，底层数据变了也要重新判断 */
+  autoLoadKey?: number;
   className?: string;
 }
 
@@ -39,6 +43,8 @@ export function PagedList<T>({
   loadingMore = false,
   onLoadMore,
   moreLabel,
+  autoLoadMore = false,
+  autoLoadKey,
   className = '',
 }: PagedListProps<T>) {
   const copy = useCopy();
@@ -95,6 +101,15 @@ export function PagedList<T>({
       setPer(per - 1);
     }
   });
+
+  // 自动补页：条目不足一页（每页条数未量到时按一条算）且还有更早数据，就向服务端要下一页。
+  // 只随条目数 / 每页条数 / hasMore / autoLoadKey 变化触发，加载失败（数据不变）不会反复重试；
+  // 每次成功加载都会改变 autoLoadKey（原始条数），直到放满一页或 hasMore 变假（服务端无更早数据 / 窗口已满）为止
+  useEffect(() => {
+    if (autoLoadMore && hasMore && !loadingMore && onLoadMore && items.length < (per ?? 1)) {
+      onLoadMore();
+    }
+  }, [items.length, per, hasMore, autoLoadKey]);
 
   const size = per ?? 1;
   const pages = Math.max(1, Math.ceil(items.length / size));

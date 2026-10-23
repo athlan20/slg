@@ -14,6 +14,8 @@ interface EventsPanelProps {
   onLoadOlder: () => void;
   /** 只看某类发起者（Agent 页的操作记录）；缺省看全部 */
   actor?: Actor;
+  /** 排除某类发起者（情报页动态不重复显示 Agent 操作，Agent 的战斗 / 侦察条目也在此隐藏，战报仍在情报页战报卡里）；缺省不排除 */
+  excludeActor?: Actor;
   title?: string;
   role?: string;
 }
@@ -26,7 +28,16 @@ function tagClass(actor: SessionEvent['actor']): string {
 
 /** 动态卡（情报页中 / Agent 页中）：事件流，发起者标签「玩家 / Agent / 系统」，战斗类事件带战报入口、侦察类带侦察报告入口。
  *  分页列表（行定高、文本截断，悬停看全文）；翻到最后一页后「更早」按钮向服务端加载更早的历史。 */
-export function EventsPanel({ events, hasMoreEvents, loadingOlder, onLoadOlder, actor, title, role = '事件面板' }: EventsPanelProps) {
+export function EventsPanel({
+  events,
+  hasMoreEvents,
+  loadingOlder,
+  onLoadOlder,
+  actor,
+  excludeActor,
+  title,
+  role = '事件面板',
+}: EventsPanelProps) {
   const copy = useCopy();
   const { COPY, IDENTITY_LABEL, INTEL_COPY } = copy;
   const heading = title ?? INTEL_COPY.eventsTitle;
@@ -34,7 +45,7 @@ export function EventsPanel({ events, hasMoreEvents, loadingOlder, onLoadOlder, 
   const { openScoutReport } = useScoutReportModal();
   // 内部按时间正序存放，渲染时倒转：最新在最上
   const ordered = events
-    .filter((event) => actor === undefined || event.actor === actor)
+    .filter((event) => (actor === undefined || event.actor === actor) && (excludeActor === undefined || event.actor !== excludeActor))
     .slice()
     .reverse();
 
@@ -49,9 +60,12 @@ export function EventsPanel({ events, hasMoreEvents, loadingOlder, onLoadOlder, 
         hasMore={hasMoreEvents}
         loadingMore={loadingOlder}
         onLoadMore={onLoadOlder}
+        // 排除发起者时过滤后可能整页为空：自动补更早的历史（Agent 页保持原行为，不补）
+        autoLoadMore={excludeActor !== undefined}
+        autoLoadKey={events.length}
         empty={
           <p className="py-3 text-center text-[12.5px] text-faint" role="事件面板-空状态">
-            {actor ? INTEL_COPY.agentLogEmpty : COPY.eventsPanel.empty}
+            {actor ? INTEL_COPY.agentLogEmpty : excludeActor !== undefined ? INTEL_COPY.eventsEmptyWithoutAgent : COPY.eventsPanel.empty}
           </p>
         }
         renderRow={(event) => (

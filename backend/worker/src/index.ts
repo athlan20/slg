@@ -29,6 +29,7 @@ import { processArenaRewards } from './arena-tick';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
+import { startDbProbe, startLoopLagMonitor } from '../../common/src/diag-probe';
 
 const TICK_MS = Number(process.env.WORKER_TICK_MS || 1000);
 
@@ -36,12 +37,17 @@ async function main(): Promise<void> {
   const { host, port, database } = readDbConfig();
   console.log(`slg-worker connecting to PostgreSQL ${host}:${port}/${database} ...`);
   const pool = createPool('slg-worker', 2);
-  await ensureSchema(pool);
+  // 启动迁移、世界生成与换季（整图重灌）跑长语句，走维护池（超时放宽）；其余 tick 仍用 pool
+  const maintenancePool = createPool('slg-worker-maint', 2, { maintenance: true });
+  await ensureSchema(maintenancePool);
   // v12：世界生成幂等（与 API 并发由咨询锁串行化），Worker 只依赖已存在的表
-  await ensureWorld(pool);
+  await ensureWorld(maintenancePool);
   // v20：全局时间缩放从 settings 预热（AISLG-38），此后定期刷新（切换无需重启）
   await refreshTimeScale(pool).catch(() => undefined);
   console.log(`slg-worker started, tick=${TICK_MS}ms, time_scale=${getTimeScale()}`);
+  // 诊断（AISLG-173）：数据库链路探针（独立连接，不占池位）与事件循环卡顿监测；DIAG_LOG=0 时整体关闭
+  const stopProbe = startDbProbe('slg-worker');
+  const stopLoopLag = startLoopLagMonitor('slg-worker');
 
   const tick = async (): Promise<void> => {
     // 全局时间缩放缓存过期则后台刷新（失败保旧值，下个 tick 再试）
@@ -50,7 +56,7 @@ async function main(): Promise<void> {
     }
     try {
       // AISLG-134：换季（到点重置 / 预告）。换季在本 tick 内串行执行；换季完成则结束本 tick
-      if ((await processSeasonTick(pool)) === 'reset') {
+      if ((await processSeasonTick(pool, Date.now(), maintenancePool)) === 'reset') {
         return;
       }
     } catch (err) {
@@ -177,6 +183,8 @@ async function main(): Promise<void> {
     clearInterval(leaderboardTimer);
     console.log(`received ${signal}, worker shutting down`);
     clearInterval(timer);
+    stopProbe.stop();
+    stopLoopLag();
     stopRaidTimer();
     await pool.end();
     process.exit(0);

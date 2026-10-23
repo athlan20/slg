@@ -154,6 +154,7 @@ export const INTEL_COPY_EN = {
   agentLogTitle: 'Agent Activity Log',
   agentLogMeta: (n: number) => `${n} entries`,
   agentLogEmpty: 'The Agent has not taken any actions yet',
+  eventsEmptyWithoutAgent: 'No player or system activity yet; Agent actions are on the Agent page',
   noAgentReport: 'The Agent has not left a daily report yet',
   offlineLoading: 'Loading daily report…',
   fullReport: 'View full report',

@@ -26,6 +26,8 @@ import {
   readPasswordDisabledHosts,
 } from './site-config';
 import { registerGithubCallbackRoute } from './github-callback';
+import { requestLogSerializer } from './request-log';
+import { startDbProbe, startLoopLagMonitor } from '../../common/src/diag-probe';
 import { registerAgentApiRoutes } from './agent-api-routes';
 import { registerAuthConfigRoute } from './auth-config-routes';
 import { ConnectionRegistry, type ConnInfo } from './connections';
@@ -58,12 +60,14 @@ async function main(): Promise<void> {
   const { host, port, database } = readDbConfig();
   console.log(`slg-api connecting to PostgreSQL ${host}:${port}/${database} ...`);
   const pool = createPool('slg-api', 8);
-  await ensureSchema(pool);
+  // 启动迁移与世界生成可能跑十几秒的整表语句，走维护池（超时放宽），运行期请求仍走上面的 pool
+  const maintenancePool = createPool('slg-api-maint', 2, { maintenance: true });
+  await ensureSchema(maintenancePool);
   console.log('slg-api database schema ready');
   // v53（AISLG-145）：竞技场系统守擂者启动时补齐（只读路径不再为补种抢锁；幂等，咨询锁串行化）
   await seedArenaNpcs(pool);
   // v12：首次启动生成世界并回填存量城池坐标（幂等；与 Worker 并发由咨询锁串行化）
-  await ensureWorld(pool);
+  await ensureWorld(maintenancePool);
   console.log('slg-api world ready');
   // v51（AISLG-138）：聊天屏蔽词表在启动时读入（配置了 CHAT_BANNED_WORDS_FILE 却读不到则启动失败）
   initBannedWordFilter();
@@ -132,7 +136,11 @@ async function main(): Promise<void> {
   const notifier = new CompletionNotifier(pool, registry);
   await notifier.start();
 
-  const app = fastify({ logger: { level: process.env.LOG_LEVEL || 'info' }, trustProxy: TRUST_PROXY });
+  // 请求日志对 /auth/github/callback 的查询串脱敏（code / state 替换为 [redacted]，见 request-log.ts）
+  const app = fastify({
+    logger: { level: process.env.LOG_LEVEL || 'info', serializers: { req: requestLogSerializer } },
+    trustProxy: TRUST_PROXY,
+  });
   // 跨域：生产站点（slg.example.cn）与 API 网关不同源，HTTP 路由放开跨域读
   // （来源策略见 cors.ts；WebSocket /ws 不受同源策略约束）
   await registerCors(app);
@@ -208,10 +216,15 @@ async function main(): Promise<void> {
 
   await app.listen({ port: PORT, host: HOST });
   app.log.info(`slg-api listening on ${HOST}:${PORT}`);
+  // 诊断（AISLG-173）：数据库链路探针（独立连接，不占池位）与事件循环卡顿监测；DIAG_LOG=0 时整体关闭
+  const stopProbe = startDbProbe('slg-api');
+  const stopLoopLag = startLoopLagMonitor('slg-api');
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`received ${signal}, shutting down`);
     clearInterval(wxSweeper);
+    stopProbe.stop();
+    stopLoopLag();
     await notifier.stop();
     registry.closeAll(1001, 'server shutdown');
     await app.close();

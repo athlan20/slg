@@ -2,8 +2,8 @@
 // 按需查询与服务端推送同步。协议语义见 docs/agent-api.md（协议版本 11）。
 // 网页端固定以玩家（player）身份登录；Agent 由玩家另行用协议接入，不经本界面。
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ApiClient } from '../api/client';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ApiClient, ConnectionError } from '../api/client';
 import {
   Op,
   type AccountStatePushData,
@@ -229,6 +229,8 @@ export function useGameSession(): GameSession {
   // 事件列表的 ref 镜像：翻页游标要在动作回调里读最新值，避免闭包拿到旧渲染快照
   const eventsRef = useRef<SessionEvent[]>([]);
   const loadingOlderRef = useRef(false);
+  // 上一次「加载更早」用的游标：同一游标不重复请求（返回的还是同一页，会让自动补页卡死）；失败 / 重置时清空
+  const olderCursorRef = useRef<number | null>(null);
   const logoutIntentRef = useRef(false);
   const reconnectTimerRef = useRef<number | null>(null);
   const syncTimerRef = useRef<number | null>(null);
@@ -282,6 +284,8 @@ export function useGameSession(): GameSession {
       }
       lastEventIdRef.current = Math.max(lastEventIdRef.current, ...views.map((v) => v.id));
       if (initial) {
+        // 列表整体换成最新一页：之前的「加载更早」游标记录作废，否则可能误拦合法的补页
+        olderCursorRef.current = null;
         // 服务端按 id 倒序返回；界面按时间正序存放，渲染时再倒转
         setEvents(views.slice().reverse().map(toSessionEvent));
       } else {
@@ -561,6 +565,7 @@ export function useGameSession(): GameSession {
       setEventsExhausted(false);
       setEventsLoadingOlder(false);
       loadingOlderRef.current = false;
+      olderCursorRef.current = null;
       setBuildError(null);
       setRecruitError(null);
       setLoginError(message);
@@ -592,6 +597,7 @@ export function useGameSession(): GameSession {
     setEventsExhausted(false);
     setEventsLoadingOlder(false);
     loadingOlderRef.current = false;
+    olderCursorRef.current = null;
     setBuildError(null);
     setRecruitError(null);
     lastEventIdRef.current = 0;
@@ -666,8 +672,10 @@ export function useGameSession(): GameSession {
     reconnectTriggerRef.current = scheduleReconnect;
   });
 
-  // 事件列表镜像：翻页/增量动作在回调里读最新值，避免闭包拿到旧渲染快照
-  useEffect(() => {
+  // 事件列表镜像：翻页/增量动作在回调里读最新值，避免闭包拿到旧渲染快照。
+  // 必须用 useLayoutEffect：子组件（PagedList 的自动补页）的 useEffect 先于父级的 useEffect 执行，
+  // 用 useEffect 会让补页读到上一版列表、用旧游标重复请求同一页；布局 effect 全部先于被动 effect
+  useLayoutEffect(() => {
     eventsRef.current = events;
   }, [events]);
 
@@ -841,7 +849,12 @@ export function useGameSession(): GameSession {
         await tokenLogin(sessionToken, 'github');
       } catch (err) {
         setConnection('idle');
-        setLoginError(err instanceof Error ? err.message : COPY.errors.login.fallback);
+        // 超时 / 连接断开：登录码可能已被服务端用掉，原始报错对玩家没有用，统一提示重新点 GitHub 登录
+        if (err instanceof ConnectionError) {
+          setLoginError(GITHUB_COPY.errors.interrupted);
+        } else {
+          setLoginError(err instanceof Error ? err.message : COPY.errors.login.fallback);
+        }
       } finally {
         setLoginBusy(false);
       }
@@ -1127,18 +1140,31 @@ export function useGameSession(): GameSession {
     if (!client?.connected || !accountRef.current || loadingOlderRef.current || eventsExhausted) {
       return;
     }
+    // 窗口已满（MAX_EVENTS）时，合并进来的更早条目会被上限截掉（截的正是刚拉到的最旧部分），游标不前进；
+    // 直接视为没有更早可看，避免自动补页时反复请求同一段历史
+    if (eventsRef.current.length >= MAX_EVENTS) {
+      setEventsExhausted(true);
+      return;
+    }
     const serverIds = eventsRef.current.map((event) => event.id).filter((id) => id > 0);
     if (serverIds.length === 0) {
       return;
     }
+    const cursor = Math.min(...serverIds);
+    // 同一游标已经请求过（成功后游标必然前移）：再请求只会拿回同一页，直接跳过
+    if (olderCursorRef.current === cursor) {
+      return;
+    }
+    olderCursorRef.current = cursor;
     loadingOlderRef.current = true;
     setEventsLoadingOlder(true);
     try {
       const res = await client.request(Op.GET_EVENTS, {
         limit: EVENTS_PAGE_SIZE,
-        beforeId: Math.min(...serverIds),
+        beforeId: cursor,
       });
       if (!res.ok) {
+        olderCursorRef.current = null;
         return;
       }
       const views = (field<EventView[]>(res.data, 'events') ?? []) as EventView[];
@@ -1157,7 +1183,8 @@ export function useGameSession(): GameSession {
         return next.length > MAX_EVENTS ? next.slice(next.length - MAX_EVENTS) : next;
       });
     } catch {
-      // 网络异常：保持现状，下次滚动到底再试
+      // 网络异常：保持现状，清掉游标记录以便再试
+      olderCursorRef.current = null;
     } finally {
       loadingOlderRef.current = false;
       setEventsLoadingOlder(false);

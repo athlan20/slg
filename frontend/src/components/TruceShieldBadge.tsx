@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { formatDurationText } from '../api/mapping';
 import { useCopy } from '../i18n/bundle';
 import { useNow } from '../state/useNow';
+import { Modal } from './ui/Modal';
 
 interface TruceShieldBadgeProps {
   /** 新手保护截止；非空且未到期时显示徽标 */
@@ -33,6 +34,8 @@ export function TruceShieldBadge({ newbieUntil, shieldUntil, shieldNextAt, onSta
   const nextLeftText = cooling ? formatDurationText((nextDeadline - now) / 1000) : null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** 二次确认框是否打开：开启不可撤销，误触会白白浪费本周额度 */
+  const [confirming, setConfirming] = useState(false);
   const canStart = !shieldActive && !cooling;
   const submit = async () => {
     if (busy || !canStart) {
@@ -41,6 +44,10 @@ export function TruceShieldBadge({ newbieUntil, shieldUntil, shieldNextAt, onSta
     setBusy(true);
     setError(await onStartTruce());
     setBusy(false);
+  };
+  const confirmStart = () => {
+    setConfirming(false);
+    void submit();
   };
   return (
     <span role="顶栏-账号保护区" className="flex items-center gap-1">
@@ -68,11 +75,30 @@ export function TruceShieldBadge({ newbieUntil, shieldUntil, shieldNextAt, onSta
         title={error ?? (nextLeftText !== null ? COPY.topbar.shieldNextHint(nextLeftText) : COPY.topbar.shieldHint)}
         aria-label={COPY.topbar.shieldButton}
         disabled={!canStart || busy}
-        onClick={() => void submit()}
+        onClick={() => setConfirming(true)}
         className="grid h-7 min-w-7 place-items-center rounded border border-gold/50 bg-gold/10 px-1 font-mono text-[12px] text-gold transition-colors hover:border-gold disabled:cursor-not-allowed disabled:opacity-40"
       >
         {busy ? '…' : copy.EXTRA_MAP.truceBadge.glyph}
       </button>
+      {confirming ? (
+        <Modal
+          role="顶栏-开启免战确认"
+          title={COPY.topbar.shieldConfirmTitle}
+          size="sm"
+          accent="gold"
+          onClose={() => setConfirming(false)}
+        >
+          <p className="text-[13px] text-dim">{COPY.topbar.shieldConfirmBody}</p>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" role="顶栏-开启免战确认-取消按钮" className="btn" onClick={() => setConfirming(false)}>
+              {COPY.topbar.shieldConfirmCancel}
+            </button>
+            <button type="button" role="顶栏-开启免战确认-确认按钮" className="btn px-3" onClick={confirmStart}>
+              {COPY.topbar.shieldConfirmSubmit}
+            </button>
+          </div>
+        </Modal>
+      ) : null}
     </span>
   );
 }

@@ -76,6 +76,19 @@ interface PendingRequest {
   timer: number;
 }
 
+/** 连接层失败（区别于服务端返回的业务错误 ok=false）：超时、等待响应时断开、建连失败或连接未建立。
+ *  调用方用 `instanceof ConnectionError` 识别，不要比对中文消息。注意超时 / 断开时服务端可能已处理请求。 */
+export class ConnectionError extends Error {
+  /** timeout：等待响应超时；disconnected：连接断开或未建立；connectFailed：建连失败 */
+  readonly reason: 'timeout' | 'disconnected' | 'connectFailed';
+
+  constructor(message: string, reason: 'timeout' | 'disconnected' | 'connectFailed') {
+    super(message);
+    this.name = 'ConnectionError';
+    this.reason = reason;
+  }
+}
+
 export class ApiClient {
   private socket: WebSocket | null = null;
   private seq = 0;
@@ -114,7 +127,7 @@ export class ApiClient {
         if (this.socket === socket) {
           this.socket = null;
         }
-        reject(new Error(getCopy().EXTRA_STATE.client.connectFailedCode(ev.code)));
+        reject(new ConnectionError(getCopy().EXTRA_STATE.client.connectFailedCode(ev.code), 'connectFailed'));
       };
     });
   }
@@ -123,7 +136,7 @@ export class ApiClient {
   request(op: number, data?: Record<string, unknown>): Promise<ResponseFrame> {
     const socket = this.socket;
     if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return Promise.reject(new Error(getCopy().EXTRA_STATE.client.notConnected));
+      return Promise.reject(new ConnectionError(getCopy().EXTRA_STATE.client.notConnected, 'disconnected'));
     }
     const seq = ++this.seq;
     const payload = withActiveCity(op, data);
@@ -132,7 +145,7 @@ export class ApiClient {
     return new Promise((resolve, reject) => {
       const timer = window.setTimeout(() => {
         this.pending.delete(seq);
-        reject(new Error(getCopy().EXTRA_STATE.client.requestTimeout(op)));
+        reject(new ConnectionError(getCopy().EXTRA_STATE.client.requestTimeout(op), 'timeout'));
       }, REQUEST_TIMEOUT_MS);
       this.pending.set(seq, { resolve, reject, timer });
     });
@@ -184,7 +197,7 @@ export class ApiClient {
         return;
       }
       this.socket = null;
-      this.rejectAllPending(new Error(getCopy().EXTRA_STATE.client.disconnected));
+      this.rejectAllPending(new ConnectionError(getCopy().EXTRA_STATE.client.disconnected, 'disconnected'));
       this.onClose?.(ev.code, ev.reason);
     };
   }
