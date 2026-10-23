@@ -155,6 +155,11 @@ export const TOPBAR_EN = {
   shieldButton: 'Enable Truce Shield',
   shieldButtonBusy: 'Enabling…',
   shieldNextHint: (left: string) => `Truce Shield cooldown · ${left} left (once per week)`,
+  shieldConfirmTitle: 'Enable Truce Shield?',
+  shieldConfirmBody:
+    'Once enabled, no one can attack you for the next 12 hours, and you cannot march against players (wilderness / NPC targets are unaffected). You can enable it only once per week, and it cannot be cancelled once started.',
+  shieldConfirmSubmit: 'Confirm Enable',
+  shieldConfirmCancel: 'Cancel',
   // 仓库快满提醒：≥80% 的资源警示行与悬浮提示（金币不参与，与离线日报同口径）
   storageFullLine: (detail: string) => `⚠ Storage almost full: ${detail}, production beyond the cap will be wasted`,
   storageFullItem: (label: string, percent: number, cap: number) =>

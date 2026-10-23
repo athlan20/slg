@@ -163,6 +163,12 @@ const TOPBAR = {
   shieldButton: '开启免战',
   shieldButtonBusy: '开启中…',
   shieldNextHint: (left: string) => `免战冷却 · 剩 ${left}（每周一次）`,
+  /** 开启主动免战前的确认框（不可撤销，每周只能开一次） */
+  shieldConfirmTitle: '开启免战？',
+  shieldConfirmBody:
+    '开启后 12 小时内别人打不了你，你也不能出兵打玩家（打野地 / NPC 不受影响）。本周只能开一次，开启后无法撤销。',
+  shieldConfirmSubmit: '确认开启',
+  shieldConfirmCancel: '取消',
   /** 仓库快满提醒（AISLG-73）：≥80% 的资源警示行与悬浮提示（金币不参与，与离线日报同口径） */
   storageFullLine: (detail: string) => `⚠ 仓库快满：${detail}，超出上限的产出会作废`,
   storageFullItem: (label: string, percent: number, cap: number) =>
