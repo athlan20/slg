@@ -67,6 +67,7 @@ Agent API 文档：`GET /agent-api.md` 与 `GET /agent-api.json`（运行时从�
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |
 | `DATABASE_URL` 或 `PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE` | 本机 5432 / `postgres` / `slg` | PostgreSQL 连接。 |
+| `DB_STATEMENT_TIMEOUT_MS` | `30000` | 运行期数据库语句超时（毫秒，AISLG-171）。服务端跑超时即取消语句（连接保持可用）；客户端读超时为它 + 5 秒，兜底链路半死时的挂起，超时后释放池位。仅作用于 API / Worker 的运行期连接池；启动迁移、世界生成与换季走维护池（超时 10 分钟，不随此变量）。须为正整数；运行期语句按查询形态估计在毫秒到秒级（未实测），默认值留出约一个数量级余量。 |
 | `PORT` / `HOST` | `8080` / `127.0.0.1` | API 监听地址。 |
 | `BUILD_SECONDS` | 基准 `60` | 建筑建造时长，四种建筑相同。默认基准受全局时间缩放 ÷ time_scale（见下节）；显式设置优先于缩放（验证时调小用）。 |
 | `WORKER_TICK_MS` | `1000` | Worker 领取周期。 |

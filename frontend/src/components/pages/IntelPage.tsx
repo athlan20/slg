@@ -26,6 +26,7 @@ export function IntelPage() {
           tab: INTEL_COPY.eventsTitle,
           node: (
             <EventsPanel
+              excludeActor="agent"
               events={session.events}
               hasMoreEvents={!session.eventsExhausted}
               loadingOlder={session.eventsLoadingOlder}

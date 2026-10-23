@@ -32,6 +32,8 @@ export const GITHUB_COPY = {
   errors: {
     fallback: 'GitHub 登录失败，请重试',
     connect: '无法连接服务，请稍后再试',
+    /** 登录请求超时或连接断开：登录码可能已被服务端用掉，需要重新发起 */
+    interrupted: '登录没有完成，请重新点击 GitHub 登录',
     byCode: {
       GITHUB_UNAVAILABLE: 'GitHub 登录暂不可用，请改用账号密码登录',
       OAUTH_CODE_INVALID: '登录码无效或已过期，请重新发起 GitHub 登录',

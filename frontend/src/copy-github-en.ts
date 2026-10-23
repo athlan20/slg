@@ -34,6 +34,8 @@ export const GITHUB_COPY_EN = {
   errors: {
     fallback: 'GitHub login failed, please retry',
     connect: 'Could not connect to the server, please try again later',
+    /** 登录请求超时或连接断开：登录码可能已被服务端用掉，需要重新发起 */
+    interrupted: 'The login did not finish — please click GitHub login again',
     byCode: {
       GITHUB_UNAVAILABLE: 'GitHub login is unavailable right now — use username and password instead',
       OAUTH_CODE_INVALID: 'The login code is invalid or expired — please start GitHub login again',

@@ -68,30 +68,36 @@ export function registerGithubCallbackRoute(
     }
     const identity = { provider: 'github' as const, subject: user.id, displayName: user.login };
 
-    if (state.purpose === 'bind') {
-      const accountId = state.accountId as string;
-      // 发起后账号可能已被别的连接绑过 / 该 GitHub 可能已绑别的号，唯一约束兜底统一提示
-      const result = await bindOauth(options.ctx.pool, accountId, identity);
-      if (result === 'already_bound') {
-        return void finish({ error: 'already_bound' });
+    // 数据库故障（连接卡死 / 超时 / 池耗尽等）按不可用处理：记日志后 302 回前端，不给裸 500
+    try {
+      if (state.purpose === 'bind') {
+        const accountId = state.accountId as string;
+        // 发起后账号可能已被别的连接绑过 / 该 GitHub 可能已绑别的号，唯一约束兜底统一提示
+        const result = await bindOauth(options.ctx.pool, accountId, identity);
+        if (result === 'already_bound') {
+          return void finish({ error: 'already_bound' });
+        }
+        return void finish({ bind: 'ok' }, entry);
       }
-      return void finish({ bind: 'ok' }, entry);
-    }
 
-    // login：查号或建号，签一次性登录码带回前端（OAUTH_REDEEM 换会话令牌）
-    const existing = await findAccountByOauth(options.ctx.pool, 'github', user.id);
-    if (existing) {
+      // login：查号或建号，签一次性登录码带回前端（OAUTH_REDEEM 换会话令牌）
+      const existing = await findAccountByOauth(options.ctx.pool, 'github', user.id);
+      if (existing) {
+        const oneTimeCode = github.codes.create(
+          { accountId: existing.id, username: existing.username, created: false },
+          github.now(),
+        );
+        return void finish({ code: oneTimeCode }, entry);
+      }
+      const account = await loginWithOauth(options.ctx.pool, identity, request.ip ?? null);
       const oneTimeCode = github.codes.create(
-        { accountId: existing.id, username: existing.username, created: false },
+        { accountId: account.id, username: account.username, created: account.created },
         github.now(),
       );
       return void finish({ code: oneTimeCode }, entry);
+    } catch (err) {
+      console.error('github callback database failed:', err);
+      return void finish({ error: 'unavailable' }, entry);
     }
-    const account = await loginWithOauth(options.ctx.pool, identity, request.ip ?? null);
-    const oneTimeCode = github.codes.create(
-      { accountId: account.id, username: account.username, created: account.created },
-      github.now(),
-    );
-    return void finish({ code: oneTimeCode }, entry);
   });
 }

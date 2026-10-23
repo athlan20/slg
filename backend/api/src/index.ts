@@ -58,12 +58,14 @@ async function main(): Promise<void> {
   const { host, port, database } = readDbConfig();
   console.log(`slg-api connecting to PostgreSQL ${host}:${port}/${database} ...`);
   const pool = createPool('slg-api', 8);
-  await ensureSchema(pool);
+  // 启动迁移与世界生成可能跑十几秒的整表语句，走维护池（超时放宽），运行期请求仍走上面的 pool
+  const maintenancePool = createPool('slg-api-maint', 2, { maintenance: true });
+  await ensureSchema(maintenancePool);
   console.log('slg-api database schema ready');
   // v53（AISLG-145）：竞技场系统守擂者启动时补齐（只读路径不再为补种抢锁；幂等，咨询锁串行化）
   await seedArenaNpcs(pool);
   // v12：首次启动生成世界并回填存量城池坐标（幂等；与 Worker 并发由咨询锁串行化）
-  await ensureWorld(pool);
+  await ensureWorld(maintenancePool);
   console.log('slg-api world ready');
   // v51（AISLG-138）：聊天屏蔽词表在启动时读入（配置了 CHAT_BANNED_WORDS_FILE 却读不到则启动失败）
   initBannedWordFilter();

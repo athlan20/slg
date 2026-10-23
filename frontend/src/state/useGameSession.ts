@@ -3,7 +3,7 @@
 // 网页端固定以玩家（player）身份登录；Agent 由玩家另行用协议接入，不经本界面。
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ApiClient } from '../api/client';
+import { ApiClient, ConnectionError } from '../api/client';
 import {
   Op,
   type AccountStatePushData,
@@ -841,7 +841,12 @@ export function useGameSession(): GameSession {
         await tokenLogin(sessionToken, 'github');
       } catch (err) {
         setConnection('idle');
-        setLoginError(err instanceof Error ? err.message : COPY.errors.login.fallback);
+        // 超时 / 连接断开：登录码可能已被服务端用掉，原始报错对玩家没有用，统一提示重新点 GitHub 登录
+        if (err instanceof ConnectionError) {
+          setLoginError(GITHUB_COPY.errors.interrupted);
+        } else {
+          setLoginError(err instanceof Error ? err.message : COPY.errors.login.fallback);
+        }
       } finally {
         setLoginBusy(false);
       }
@@ -1125,6 +1130,12 @@ export function useGameSession(): GameSession {
   const loadOlderEvents = useCallback(async () => {
     const client = clientRef.current;
     if (!client?.connected || !accountRef.current || loadingOlderRef.current || eventsExhausted) {
+      return;
+    }
+    // 窗口已满（MAX_EVENTS）时，合并进来的更早条目会被上限截掉（截的正是刚拉到的最旧部分），游标不前进；
+    // 直接视为没有更早可看，避免自动补页时反复请求同一段历史
+    if (eventsRef.current.length >= MAX_EVENTS) {
+      setEventsExhausted(true);
       return;
     }
     const serverIds = eventsRef.current.map((event) => event.id).filter((id) => id > 0);

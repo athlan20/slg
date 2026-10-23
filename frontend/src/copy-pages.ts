@@ -148,6 +148,7 @@ export const INTEL_COPY = {
   agentLogTitle: 'Agent 操作记录',
   agentLogMeta: (n: number) => `${n} 条`,
   agentLogEmpty: 'Agent 还没有做过任何操作',
+  eventsEmptyWithoutAgent: '暂无玩家或系统动态；Agent 的操作见 Agent 页',
   noAgentReport: 'Agent 还没有留下日报',
   offlineLoading: '日报加载中…',
   fullReport: '查看完整日报',

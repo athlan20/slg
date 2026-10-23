@@ -36,9 +36,11 @@ async function main(): Promise<void> {
   const { host, port, database } = readDbConfig();
   console.log(`slg-worker connecting to PostgreSQL ${host}:${port}/${database} ...`);
   const pool = createPool('slg-worker', 2);
-  await ensureSchema(pool);
+  // 启动迁移、世界生成与换季（整图重灌）跑长语句，走维护池（超时放宽）；其余 tick 仍用 pool
+  const maintenancePool = createPool('slg-worker-maint', 2, { maintenance: true });
+  await ensureSchema(maintenancePool);
   // v12：世界生成幂等（与 API 并发由咨询锁串行化），Worker 只依赖已存在的表
-  await ensureWorld(pool);
+  await ensureWorld(maintenancePool);
   // v20：全局时间缩放从 settings 预热（AISLG-38），此后定期刷新（切换无需重启）
   await refreshTimeScale(pool).catch(() => undefined);
   console.log(`slg-worker started, tick=${TICK_MS}ms, time_scale=${getTimeScale()}`);
@@ -50,7 +52,7 @@ async function main(): Promise<void> {
     }
     try {
       // AISLG-134：换季（到点重置 / 预告）。换季在本 tick 内串行执行；换季完成则结束本 tick
-      if ((await processSeasonTick(pool)) === 'reset') {
+      if ((await processSeasonTick(pool, Date.now(), maintenancePool)) === 'reset') {
         return;
       }
     } catch (err) {
