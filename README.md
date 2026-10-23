@@ -162,6 +162,8 @@ cp backend/.env.example backend/.env    # 填入 DATABASE_URL
 
 欢迎提 Issue 和 PR。动手之前建议先读一下 [`AGENTS.md`](AGENTS.md)，里面是本项目的协作约定，比如单文件行数上限、协议改动先对齐契约等。
 
-## 许可证
+## 许可与致谢
 
 本项目以 [MIT 许可证](LICENSE) 开源。
+
+项目首发于 [Linux.do 社区](https://linux.do/)。
