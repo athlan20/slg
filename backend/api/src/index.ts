@@ -26,6 +26,8 @@ import {
   readPasswordDisabledHosts,
 } from './site-config';
 import { registerGithubCallbackRoute } from './github-callback';
+import { requestLogSerializer } from './request-log';
+import { startDbProbe, startLoopLagMonitor } from '../../common/src/diag-probe';
 import { registerAgentApiRoutes } from './agent-api-routes';
 import { registerAuthConfigRoute } from './auth-config-routes';
 import { ConnectionRegistry, type ConnInfo } from './connections';
@@ -134,7 +136,11 @@ async function main(): Promise<void> {
   const notifier = new CompletionNotifier(pool, registry);
   await notifier.start();
 
-  const app = fastify({ logger: { level: process.env.LOG_LEVEL || 'info' }, trustProxy: TRUST_PROXY });
+  // 请求日志对 /auth/github/callback 的查询串脱敏（code / state 替换为 [redacted]，见 request-log.ts）
+  const app = fastify({
+    logger: { level: process.env.LOG_LEVEL || 'info', serializers: { req: requestLogSerializer } },
+    trustProxy: TRUST_PROXY,
+  });
   // 跨域：生产站点（slg.example.cn）与 API 网关不同源，HTTP 路由放开跨域读
   // （来源策略见 cors.ts；WebSocket /ws 不受同源策略约束）
   await registerCors(app);
@@ -210,10 +216,15 @@ async function main(): Promise<void> {
 
   await app.listen({ port: PORT, host: HOST });
   app.log.info(`slg-api listening on ${HOST}:${PORT}`);
+  // 诊断（AISLG-173）：数据库链路探针（独立连接，不占池位）与事件循环卡顿监测；DIAG_LOG=0 时整体关闭
+  const stopProbe = startDbProbe('slg-api');
+  const stopLoopLag = startLoopLagMonitor('slg-api');
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`received ${signal}, shutting down`);
     clearInterval(wxSweeper);
+    stopProbe.stop();
+    stopLoopLag();
     await notifier.stop();
     registry.closeAll(1001, 'server shutdown');
     await app.close();

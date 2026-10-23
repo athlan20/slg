@@ -10,6 +10,7 @@ import { HERO_SCHEMA_SQL } from './hero-schema';
 import { ANNOUNCEMENT_SCHEMA_SQL } from './announcement-schema';
 import { SEASON_SCHEMA_SQL } from './season-schema';
 import { seedFirstSeason } from './season-seed';
+import { attachPoolDiagnostics, logConnError } from './db-diag';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -98,17 +99,20 @@ export function createPool(applicationName: string, max = 5, options: PoolOption
   // 空闲连接被网络中断（休眠唤醒、VPN/网络切换）时会触发池级 error；
   // 不挂处理器会让整个进程崩溃。打日志即可：死连接会被池丢弃并重建，
   // 进行中的查询按各自路径处理（Worker 下个 tick 重试、API 响应 INTERNAL）。
+  // 错误输出走 logConnError（带错误码、同类限流；DIAG_LOG=0 时保留原来的 console.error 行）
   pool.on('error', (err) => {
-    console.error(`pg pool error (${applicationName}):`, err instanceof Error ? err.message : err);
+    logConnError(applicationName, 'pool', err);
   });
   // 检出中的连接同样可能因网络瞬断在两条查询之间抛 socket error；pg 对被检出的
   // client 错误不走池级 error，若无监听会以未捕获事件击穿进程（2026-09-27 实测：
   // 远端数据库瞬断导致 Worker 以 EADDRNOTAVAIL 崩溃）。挂监听记日志，死连接由池重建。
   pool.on('connect', (client) => {
     client.on('error', (err) => {
-      console.error(`pg client error (${applicationName}):`, err instanceof Error ? err.message : err);
+      logConnError(applicationName, 'client', err);
     });
   });
+  // AISLG-173 诊断：池状态、连接生命周期、占用者、慢语句（只观测，不改变上面的行为）
+  attachPoolDiagnostics(pool, applicationName);
   return pool;
 }
 

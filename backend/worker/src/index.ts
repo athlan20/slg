@@ -29,6 +29,7 @@ import { processArenaRewards } from './arena-tick';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
+import { startDbProbe, startLoopLagMonitor } from '../../common/src/diag-probe';
 
 const TICK_MS = Number(process.env.WORKER_TICK_MS || 1000);
 
@@ -44,6 +45,9 @@ async function main(): Promise<void> {
   // v20：全局时间缩放从 settings 预热（AISLG-38），此后定期刷新（切换无需重启）
   await refreshTimeScale(pool).catch(() => undefined);
   console.log(`slg-worker started, tick=${TICK_MS}ms, time_scale=${getTimeScale()}`);
+  // 诊断（AISLG-173）：数据库链路探针（独立连接，不占池位）与事件循环卡顿监测；DIAG_LOG=0 时整体关闭
+  const stopProbe = startDbProbe('slg-worker');
+  const stopLoopLag = startLoopLagMonitor('slg-worker');
 
   const tick = async (): Promise<void> => {
     // 全局时间缩放缓存过期则后台刷新（失败保旧值，下个 tick 再试）
@@ -179,6 +183,8 @@ async function main(): Promise<void> {
     clearInterval(leaderboardTimer);
     console.log(`received ${signal}, worker shutting down`);
     clearInterval(timer);
+    stopProbe.stop();
+    stopLoopLag();
     stopRaidTimer();
     await pool.end();
     process.exit(0);
