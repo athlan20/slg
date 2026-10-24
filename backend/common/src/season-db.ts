@@ -148,7 +148,7 @@ export async function queryHallOfFame(
   }
   const [rows, count] = await Promise.all([
     db.query(
-      `SELECT rank, account_id, username, city_name, value, agent_model
+      `SELECT rank, account_id, username, city_name, value, agent_model, alliance_id, alliance_name, member_count
        FROM season_archives WHERE season_id = $1 AND kind = $2 ORDER BY rank LIMIT $3 OFFSET $4`,
       [seasonId, kind, HALL_PAGE_SIZE, offset],
     ),
@@ -161,6 +161,9 @@ export async function queryHallOfFame(
     cityName: row.city_name === null ? null : String(row.city_name),
     value: Number(row.value),
     agentModel: row.agent_model === null ? null : String(row.agent_model),
+    allianceId: row.alliance_id === null ? null : String(row.alliance_id),
+    allianceName: row.alliance_name === null ? null : String(row.alliance_name),
+    memberCount: row.member_count === null ? null : Number(row.member_count),
   }));
   return { entries, modelEntries: [], total: Number(count.rows[0].n) };
 }

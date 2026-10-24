@@ -15,19 +15,23 @@ import { generateSessionToken, hashSessionToken } from '../api/src/auth';
 import { generateAgentToken, hashAgentToken } from '../api/src/agent-token';
 import { setTimeScaleCache } from '../common/src/time-scale';
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 /** 不属于任何现存赛季的编号（账号 season_id 无外键，可以直接写一个旧值） */
 const OLD_SEASON_ID = -7;
 
 describe('赛季惰性加入（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
   let seasonId: number;
   const tag = `season-join-${Date.now()}`;
   const accountIds: string[] = [];
 
   before(async () => {
     setTimeScaleCache(1);
-    pool = new pg.Pool({ connectionString: dbUrl, max: 4 });
+    tmp = await createTempDatabase(dbUrl as string, 'season_join');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 4 });
     await ensureSchema(pool);
     const season = await getCurrentSeason(pool);
     assert.ok(season, '播种后应有进行中的赛季');
@@ -39,6 +43,7 @@ describe('赛季惰性加入（需 TEST_DATABASE_URL）', { skip: dbUrl ? false 
       await pool.query(`DELETE FROM accounts WHERE id = ANY($1::uuid[])`, [accountIds]);
     }
     await pool?.end();
+    await tmp?.drop();
   });
 
   /** 造一个“上一赛季”的老账号：有旧的掠夺台账、免战与最后在线时刻，但没有城池（沉睡号） */

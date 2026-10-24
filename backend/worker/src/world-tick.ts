@@ -33,7 +33,9 @@ import {
   loadCityNaming,
   type MarchRow,
   type TileNotify,
+  abortForAlly,
 } from './tick-shared';
+import { areAllies } from '../../common/src/alliance-db';
 import { buildScoutIntel, resolveBattleArrival } from './battle-tick';
 import { resolveOccupyArrival, resolvePlunderArrival } from './plunder-tick';
 import { resolveCampArrival } from './yt-camp';
@@ -267,6 +269,14 @@ async function settleScoutArrival(
     // 目标地块消失（世界重建等）：按失效返程
     await abortMarchToReturn(client, march, troops, settled, notifies);
     return;
+  }
+  // v67（AISLG-182）：出发后目标才成为盟友（同一联盟）：不侦察，原路返回
+  if (tile.owner_city_id) {
+    const ownerRow = await client.query(`SELECT account_id FROM cities WHERE id = $1`, [tile.owner_city_id]);
+    if (ownerRow.rowCount && (await areAllies(client, march.account_id, (ownerRow.rows[0] as { account_id: string }).account_id))) {
+      await abortForAlly(client, march, troops, settled, notifies);
+      return;
+    }
   }
   // 驻军快照：占领野地 / 分城（kind='city'）取地块驻军；未占领野地取原住守军编成；
   // NPC 城池取驻防快照（随情报固化为当时数值）

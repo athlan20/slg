@@ -277,6 +277,23 @@ export async function abortMarchToReturn(
   notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
 }
 
+/**
+ * 到达时发现目标的主人已与出征者同属一个联盟（v67，AISLG-182：出发后才入盟的漏洞）：不开战，
+ * 部队原路返回，事件 outcome=aborted、cause=ALLY_NOT_ATTACKABLE。掠夺 / 抢野地 / 占分城 / 侦察共用。
+ */
+export async function abortForAlly(
+  client: pg.PoolClient,
+  march: MarchRow,
+  troops: Partial<Record<TroopKind, number>>,
+  settled: { row: { x: number | null; y: number | null } | null },
+  notifies: TileNotify[],
+): Promise<void> {
+  await markMarchArrived(client, march.id);
+  const returning = await createReturnMarch(client, march, troops, settled, march.initiator);
+  await completeMarchEvent(client, march, 'aborted', { troops, returning, cause: 'ALLY_NOT_ATTACKABLE' });
+  notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
+}
+
 /** 增援到达并入驻军、行军结算完成并推送（reinforce 目的与 plunder/occupy 转增援共用） */
 export async function reinforceTile(
   client: pg.PoolClient,

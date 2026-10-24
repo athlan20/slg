@@ -113,7 +113,7 @@ export const HALL_COPY_EN = {
   loading: 'Loading…',
   loadFailed: 'Hall of Fame failed to load, try again later',
   more: 'More',
-  kinds: { power: 'Power', territory: 'Territory', plunder: 'Plunder', model: 'Model', arena: 'Arena', starTower: 'Star Tower' } as Record<string, string>,
+  kinds: { power: 'Power', territory: 'Territory', plunder: 'Plunder', model: 'Model', arena: 'Arena', starTower: 'Star Tower', alliance: 'Alliance' } as Record<string, string>,
   rankColumn: 'Rank',
   playerColumn: 'Player',
   modelColumn: 'Model',

@@ -26,6 +26,9 @@ export function chatErrorText(frame: ResponseFrame): string {
   if (code === 'INVALID_PARAMS') {
     return errors.INVALID_PARAMS;
   }
+  if (code === 'ALLIANCE_NOT_IN') {
+    return errors.ALLIANCE_NOT_IN;
+  }
   if (code === 'AGENT_FORBIDDEN') {
     return errors.AGENT_FORBIDDEN;
   }

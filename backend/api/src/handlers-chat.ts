@@ -1,7 +1,9 @@
 // 聊天协议的分发与读取类处理（v51，AISLG-138）。
 // 仅限玩家连接：Agent 连接调用任一聊天协议都返回 AGENT_FORBIDDEN（读和发都拒绝）。
 // 发送在 handlers-chat-send.ts；这里处理 CHAT_HISTORY / CHAT_CONVERSATIONS / CHAT_READ / CHAT_BLOCK / CHAT_REPORT_DETAIL。
+// 联盟频道（v68，AISLG-183）：只有本联盟成员能读，无联盟返回 ALLIANCE_NOT_IN。
 
+import { getMembership } from '../../common/src/alliance-db';
 import { Op } from '../../common/src/protocol';
 import type { ChatPlayerView } from '../../common/src/protocol-chat';
 import type { ConnInfo } from './connections';
@@ -64,7 +66,7 @@ async function unreadTotalOf(ctx: HandlerContext, accountId: string): Promise<nu
   return rows.reduce((sum, row) => sum + row.n, 0);
 }
 
-/** GET 系列：世界频道或与某玩家的私聊，按时间从旧到新返回一页（limit 缺省 30，最大 50） */
+/** GET 系列：世界频道、联盟频道或与某玩家的私聊，按时间从旧到新返回一页（limit 缺省 30，最大 50） */
 async function handleHistory(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -83,6 +85,12 @@ async function handleHistory(
   let rows: db.ChatMessageRow[];
   if (channel === 'world') {
     rows = await db.worldHistory(ctx.pool, me, beforeId, limit + 1);
+  } else if (channel === 'alliance') {
+    if (!(await getMembership(ctx.pool, me))) {
+      respondError(ctx.registry, conn, op, seq, 'ALLIANCE_NOT_IN');
+      return;
+    }
+    rows = await db.allianceHistory(ctx.pool, me, beforeId, limit + 1);
   } else {
     const peerId = data?.peerId;
     if (!isUuid(peerId) || peerId === me) {
@@ -113,7 +121,7 @@ async function handleConversations(ctx: HandlerContext, conn: ConnInfo, op: numb
     if (!row) {
       return [];
     }
-    const peerName = row.sender_id === peer_id ? row.sender_name : (row.recipient_name ?? '');
+    const peerName = row.sender_id === peer_id ? (row.sender_name ?? '') : (row.recipient_name ?? '');
     return [
       {
         peer: playerView(peer_id, peerName, filter),
@@ -175,7 +183,7 @@ async function handleBlock(
   respondOk(ctx.registry, conn, op, seq, { blocked: list });
 }
 
-/** 打开聊天里的战报卡片：消息须是世界频道或与我相关的私聊；分享者与我互相屏蔽时不可见 */
+/** 打开聊天里的战报卡片：消息须是世界频道、本人所在联盟的联盟频道或与我相关的私聊；分享者与我互相屏蔽时不可见 */
 async function handleReportDetail(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -198,7 +206,12 @@ async function handleReportDetail(
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }
-  if (row.channel === 'world' && (await db.isBlockedBy(ctx.pool, me, row.sender_id))) {
+  if ((row.channel === 'world' || row.channel === 'alliance') && row.sender_id && (await db.isBlockedBy(ctx.pool, me, row.sender_id))) {
+    respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+    return;
+  }
+  // 联盟频道的卡片：只给该联盟里入盟之后的成员看（与历史查询同口径）
+  if (row.channel === 'alliance' && !(await db.canSeeAllianceMessage(ctx.pool, me, messageId as number))) {
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }

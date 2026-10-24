@@ -56,6 +56,8 @@ describe('公告正文过滤', () => {
   });
 });
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 const TITLE_PREFIX = '公告测试';
 const HOST_A = 'slg-announce-a.test';
@@ -64,6 +66,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 describe('公告可见性、已读与发布（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
   let accountId: string;
   let otherAccountId: string;
   const ids: Record<string, number> = {};
@@ -129,7 +132,8 @@ describe('公告可见性、已读与发布（需 TEST_DATABASE_URL）', { skip:
   }
 
   before(async () => {
-    pool = new pg.Pool({ connectionString: dbUrl, max: 4 });
+    tmp = await createTempDatabase(dbUrl as string, 'announcement');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 4 });
     await ensureSchema(pool);
     await cleanFixtures();
     (ctx as { pool: pg.Pool }).pool = pool;
@@ -149,6 +153,7 @@ describe('公告可见性、已读与发布（需 TEST_DATABASE_URL）', { skip:
     await cleanFixtures();
     await pool.query(`DELETE FROM accounts WHERE id = ANY($1::uuid[])`, [[accountId, otherAccountId]]);
     await pool.end();
+    await tmp?.drop();
   });
 
   test('列表：生效中、置顶在前、英文回落中文、过滤掉未生效 / 往期 / 撤回 / 他站', async () => {

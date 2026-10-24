@@ -530,6 +530,66 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v65，AISLG-134）服务端正在换季（维护态），游戏类协议暂不可用。登录、LOGOUT 与 GET_SEASON 仍可用。响应 data.retryAfterSec 为建议的等待秒数。',
     action: '停止发送游戏类请求，按 retryAfterSec 等待后再试；收到 PUSH_SEASON 的 started 后服务端会断开连接，需要重新 LOGIN。',
   },
+  ALLIANCE_NAME_INVALID: {
+    desc: '（v66，AISLG-181）联盟名不合法：长度不在 2–8 字、含空白 / 控制字符或含屏蔽词。',
+    action: '换一个符合规则的名字再试。',
+  },
+  ALLIANCE_NAME_TAKEN: {
+    desc: '（v66，AISLG-181）联盟名已被占用（全服唯一，忽略大小写）。',
+    action: '换一个名字再试。',
+  },
+  ALLIANCE_GOVERNMENT_TOO_LOW: {
+    desc: '（v66，AISLG-181）主城官府等级不够创建联盟（需 ≥ 5 级）；响应附 required / current。',
+    action: '先升级主城官府。',
+  },
+  ALLIANCE_ALREADY_IN: {
+    desc: '（v66，AISLG-181）操作者或目标已经在一个联盟里（一个账号只能在一个联盟）。',
+    action: '先退出当前联盟，或换一个没有联盟的对象。',
+  },
+  ALLIANCE_NOT_IN: {
+    desc: '（v66，AISLG-181）操作者不在任何联盟里。',
+    action: '先创建或加入联盟。',
+  },
+  ALLIANCE_NOT_FOUND: {
+    desc: '（v66，AISLG-181）联盟不存在，或申请 / 邀请 / 目标成员不存在（可能已过期、被撤销或已离盟）。',
+    action: '不要重试同一个 id；GET_ALLIANCE / LIST_ALLIANCES 重新确认当前状态。',
+  },
+  ALLIANCE_COOLDOWN: {
+    desc: '（v66，AISLG-181）退出 / 被踢 / 解散联盟后 24 小时冷却中，不能创建也不能加入联盟；响应附 until 与 retryAfterSeconds。',
+    action: '等冷却结束（GET_ALLIANCE 的 cooldownUntil）再试。',
+  },
+  ALLIANCE_FULL: {
+    desc: '（v66，AISLG-181）联盟成员已满（成员数 + 待处理邀请数 ≥ 上限 30）。',
+    action: '换一个联盟，或等有人离开 / 邀请过期。',
+  },
+  ALLIANCE_FORBIDDEN: {
+    desc: '（v66，AISLG-181）当前联盟职位没有这个权限，或不能对该职位的成员做这个操作（如副盟主踢副盟主、任何人踢盟主）。',
+    action: '换有权限的职位操作，或换一个对象。',
+  },
+  ALLIANCE_ROLE_FULL: {
+    desc: '（v66，AISLG-181）副盟主人数已达上限（2 人）。',
+    action: '先撤销一名副盟主再任命。',
+  },
+  ALLIANCE_LEADER_MUST_TRANSFER: {
+    desc: '（v66，AISLG-181）盟主在盟里还有其他成员时不能直接退出。',
+    action: '先 ALLIANCE_SET_ROLE 转让盟主，或 ALLIANCE_DISBAND 解散联盟。',
+  },
+  ALLIANCE_REQUEST_EXISTS: {
+    desc: '（v66，AISLG-181）已经有一条待处理的入盟申请（同一时间只能有 1 条）。',
+    action: '先 ALLIANCE_APPLY（cancel=true）撤回原申请，再申请别的联盟。',
+  },
+  ALLIANCE_MARK_LIMIT: {
+    desc: '（v69，AISLG-184）本联盟同时有效的地图标记已达上限（20 个，过期的不计）；响应附 limit、until（最早一个标记的到期时刻）与 retryAfterSeconds。',
+    action: '等最早的标记到期（until）或先删除自己的标记，再打新的。',
+  },
+  ALLIANCE_MARK_EXISTS: {
+    desc: '（v69，AISLG-184）同一格子已经有一个有效的联盟标记，同一格子不能重复标记。',
+    action: '换一个格子打标记；要改内容先删除原标记再打。',
+  },
+  ALLY_NOT_ATTACKABLE: {
+    desc: '（v67，AISLG-182）目标城池 / 野地的主人与你在同一个联盟（盟友）：不能掠夺、抢占野地、占领分城，也不能侦察。出发后目标才成为盟友的，部队到达时不开战，原路返回（事件 cause=ALLY_NOT_ATTACKABLE）。',
+    action: '换一个非盟友的目标；盟友的领地不要作为攻击 / 侦察目标。',
+  },
   ANNOUNCEMENT_NOT_FOUND: {
     desc: '（v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。',
     action: '不要重试同一个 id；重新用 GET_ANNOUNCEMENTS 拉取列表确认当前可见的公告。',

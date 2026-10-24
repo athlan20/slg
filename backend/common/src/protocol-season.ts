@@ -1,8 +1,11 @@
 // 赛季协议的载荷类型（v65，AISLG-134）：GET_SEASON（99）、GET_HALL_OF_FAME（100）与推送 PUSH_SEASON（2023）。
 // 规则与存档读写见 season-db.ts；维护态拦截见 api/src/maintenance-gate.ts。
 
-/** 名人堂 / 存档的榜种（GET_HALL_OF_FAME 的 kind；model 走模型榜存档） */
-export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model'] as const;
+/**
+ * 名人堂 / 存档的榜种（GET_HALL_OF_FAME 的 kind；model 走模型榜存档）。
+ * v70（AISLG-185）新增 alliance：换季时联盟榜前三的存档，条目带盟主与联盟信息（见 HallEntryView）
+ */
+export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model', 'alliance'] as const;
 export type HallKind = (typeof HALL_KINDS)[number];
 
 /** 当前赛季视图（GET_SEASON） */
@@ -36,7 +39,11 @@ export interface GetSeasonResponseData {
   joined: boolean;
 }
 
-/** 名人堂个人榜条目（season_archives 的一行，展示口径同 LeaderboardEntryView） */
+/**
+ * 名人堂个人榜条目（season_archives 的一行，展示口径同 LeaderboardEntryView）。
+ * kind=alliance（v70）时：accountId / username 为当时的盟主，value 为联盟势力，
+ * allianceId / allianceName / memberCount 为联盟信息；其余榜这三项为 null。
+ */
 export interface HallEntryView {
   rank: number;
   accountId: string | null;
@@ -44,6 +51,9 @@ export interface HallEntryView {
   cityName: string | null;
   value: number;
   agentModel: string | null;
+  allianceId: string | null;
+  allianceName: string | null;
+  memberCount: number | null;
 }
 
 /** 名人堂模型榜条目（season_archive_models 的一行，口径同 ModelLeaderboardEntryView） */

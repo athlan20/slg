@@ -26,6 +26,7 @@ import { processDueReserves } from './reserve-tick';
 import { processHeroSalaries } from './hero-salary-tick';
 import { processHeroTraining } from './hero-training-tick';
 import { processArenaRewards } from './arena-tick';
+import { processAlliances } from './alliance-tick';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
@@ -107,6 +108,12 @@ async function main(): Promise<void> {
       await processArenaRewards(pool);
     } catch (err) {
       console.error('worker arena reward tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v66（AISLG-181）：联盟——回收过期申请 / 邀请，盟主长期不活跃自动转让
+      await processAlliances(pool);
+    } catch (err) {
+      console.error('worker alliance tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v29（AISLG-76）：黄巾之乱——起事 / 坐大 / 大营发兵 / 到时限收场

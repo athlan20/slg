@@ -1,12 +1,16 @@
-// 聊天协议的载荷类型与常量（v51）：世界频道、私聊、卡片分享与屏蔽。
+// 聊天协议的载荷类型与常量（v51）：世界频道、私聊、卡片分享与屏蔽；v68（AISLG-183）新增联盟频道与系统消息。
 // 仅限玩家连接（Agent 连接调用返回 AGENT_FORBIDDEN；对外文档不收录聊天接口，见 protocol-doc-ops-chat.ts）。
 // 从 protocol.ts 拆出以控制单文件行数；protocol.ts 再导出，前端镜像文件 frontend/src/api/protocol-chat.ts 与之同构。
 
 import type { BattleReportView } from './protocol-battle';
 import type { TerrainKind, TileKind } from './protocol-world';
+import type { AllianceMarkKind } from './protocol-alliance';
 
-/** 频道：world 世界（国内 / 国际站玩家共用一个频道）；private 私聊（一对一） */
-export const CHAT_CHANNELS = ['world', 'private'] as const;
+/**
+ * 频道：world 世界（国内 / 国际站玩家共用一个频道）；private 私聊（一对一）；
+ * alliance 联盟频道（v68）：只有本联盟成员能读写，盟内大事的系统消息也落在这里。
+ */
+export const CHAT_CHANNELS = ['world', 'private', 'alliance'] as const;
 export type ChatChannel = (typeof CHAT_CHANNELS)[number];
 
 /** 卡片类型：coord 地图坐标 / hero 武将 / report 战报 / city 城池 */
@@ -23,6 +27,25 @@ export const CHAT_RATE_LIMIT_MS = 10_000;
 export const CHAT_WORLD_RETAIN_DAYS = 7;
 export const CHAT_WORLD_MAX_MESSAGES = 1000;
 export const CHAT_PRIVATE_RETAIN_DAYS = 30;
+/**
+ * 联盟频道（v68）：保留最近 7 天（与世界频道一致）、每个联盟最多 1000 条（系统消息同样计入）。
+ * 历史只给「入盟之后」的消息，离盟或换盟后旧消息不可见（见 api/src/chat-db.ts 的 allianceHistory）。
+ */
+export const CHAT_ALLIANCE_RETAIN_DAYS = 7;
+export const CHAT_ALLIANCE_MAX_MESSAGES = 1000;
+
+/**
+ * 联盟大事的系统消息种类（v68，AISLG-183）：解散不写系统消息（联盟频道随联盟一起删除）。
+ * 占下名城、成员拿到名将等事件待后续子单接入，届时在这里追加种类。
+ */
+export const CHAT_SYSTEM_KINDS = [
+  'alliance_joined',
+  'alliance_left',
+  'alliance_kicked',
+  'alliance_leader_changed',
+  'alliance_mark_created',
+] as const;
+export type ChatSystemKind = (typeof CHAT_SYSTEM_KINDS)[number];
 
 /** 聊天里出现的玩家（展示用；username 为账号名，已过屏蔽词过滤） */
 export interface ChatPlayerView {
@@ -50,21 +73,41 @@ export type ChatCardView =
     }
   | { kind: 'city'; name: string; ownerName: string; level: number; x: number; y: number };
 
-/** 一条聊天消息（CHAT_HISTORY、CHAT_SEND 响应与 PUSH_CHAT_MESSAGE 共用） */
+/**
+ * 系统消息的内容（v68）：只给事件种类与参数，文案由客户端按种类拼接（后端不写死中文）。
+ * 玩家名是事件发生时的快照（与卡片快照同理）。
+ */
+export type ChatSystemView =
+  /** 有人入盟；founder = true 表示这是建盟（盟主自己入盟） */
+  | { kind: 'alliance_joined'; player: ChatPlayerView; founder: boolean }
+  | { kind: 'alliance_left'; player: ChatPlayerView }
+  | { kind: 'alliance_kicked'; player: ChatPlayerView; by: ChatPlayerView }
+  /** reason：transfer 盟主主动转让；inactive 盟主长期不活跃被自动转让 */
+  | { kind: 'alliance_leader_changed'; from: ChatPlayerView; to: ChatPlayerView; reason: 'transfer' | 'inactive' }
+  /** 有人在地图上打了标记（v69，AISLG-184）：标记的附言不进系统消息，客户端按类型与坐标拼文案 */
+  | { kind: 'alliance_mark_created'; player: ChatPlayerView; markKind: AllianceMarkKind; x: number; y: number };
+
+/**
+ * 一条聊天消息（CHAT_HISTORY、CHAT_SEND 响应与 PUSH_CHAT_MESSAGE 共用）。
+ * type：text 纯文字 / card 卡片 / system 系统消息（v68，没有真人发送人：sender 与 recipient 为 null，内容在 system 里）。
+ */
 export interface ChatMessageView {
   id: number;
   channel: ChatChannel;
-  sender: ChatPlayerView;
-  /** 私聊的对方；世界频道为 null */
+  /** 发送人；系统消息为 null（v68 起可为 null，此前恒有值） */
+  sender: ChatPlayerView | null;
+  /** 私聊的对方；世界频道与联盟频道为 null */
   recipient: ChatPlayerView | null;
-  /** text 纯文字（表情直接写在文字里，不单独成类型）；card 卡片（卡片可附一句文字，放在 text 里） */
-  type: 'text' | 'card';
+  type: 'text' | 'card' | 'system';
+  /** text 纯文字（表情直接写在文字里，不单独成类型）；card 卡片（卡片可附一句文字，放在 text 里）；系统消息为 null */
   text: string | null;
   card: ChatCardView | null;
+  /** 系统消息的内容（v68）；其他类型为 null */
+  system: ChatSystemView | null;
   createdAt: string;
 }
 
-/** CHAT_HISTORY 请求：世界频道不传 peerId；私聊必须传 peerId */
+/** CHAT_HISTORY 请求：世界频道与联盟频道不传 peerId；私聊必须传 peerId；联盟频道无联盟时返回 ALLIANCE_NOT_IN */
 export interface ChatHistoryRequestData {
   channel: ChatChannel;
   peerId?: string;
@@ -74,7 +117,7 @@ export interface ChatHistoryRequestData {
   beforeId?: number;
 }
 
-/** CHAT_HISTORY 响应：messages 按时间从旧到新；hasMore 表示还有更早的消息 */
+/** CHAT_HISTORY 响应：messages 按时间从旧到新（联盟频道只含入盟之后的消息）；hasMore 表示还有更早的消息 */
 export interface ChatHistoryResponseData {
   messages: ChatMessageView[];
   hasMore: boolean;

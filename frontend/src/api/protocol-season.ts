@@ -2,7 +2,7 @@
 // 规则与存档读写见 season-db.ts；维护态拦截见 api/src/maintenance-gate.ts。
 
 /** 名人堂 / 存档的榜种（GET_HALL_OF_FAME 的 kind；model 走模型榜存档） */
-export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model'] as const;
+export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model', 'alliance'] as const;
 export type HallKind = (typeof HALL_KINDS)[number];
 
 /** 当前赛季视图（GET_SEASON） */
@@ -44,6 +44,10 @@ export interface HallEntryView {
   cityName: string | null;
   value: number;
   agentModel: string | null;
+  /** kind=alliance（v70）时为联盟信息（accountId / username 为当时的盟主）；其余榜为 null */
+  allianceId: string | null;
+  allianceName: string | null;
+  memberCount: number | null;
 }
 
 /** 名人堂模型榜条目（season_archive_models 的一行，口径同 ModelLeaderboardEntryView） */

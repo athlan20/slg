@@ -15,6 +15,7 @@ import { insertEvent } from '../../common/src/events';
 import { docNoticeFor } from '../../common/src/protocol-changelog';
 import { PROTOCOL_VERSION } from '../../common/src/protocol-version';
 import { enterCurrentSeason } from '../../common/src/season-db';
+import { touchActive } from '../../common/src/alliance-db';
 
 export async function handleLogin(
   ctx: HandlerContext,
@@ -147,6 +148,10 @@ async function completeLogin(
   conn.username = success.account.username;
   conn.role = success.role;
   conn.sessionId = success.sessionId;
+  if (success.role === 'player') {
+    // v66（AISLG-181）：登录算活跃（联盟盟主不活跃判断）；失败不影响登录
+    touchActive(ctx.pool, [success.account.id]).catch(() => undefined);
+  }
   if (success.role === 'agent') {
     await recordAgentPresence(ctx, success.account.id, EventType.AGENT_CONNECTED);
     recordAgentModelLogin(ctx.pool, success.account.id, success.agentModel);

@@ -19,10 +19,13 @@ describe('任务定义', () => {
   });
 });
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 
 describe('领奖原子性（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
   let accountId: string;
 
   async function gold(): Promise<number> {
@@ -45,7 +48,8 @@ describe('领奖原子性（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '
   }
 
   before(async () => {
-    pool = new pg.Pool({ connectionString: dbUrl, max: 12 });
+    tmp = await createTempDatabase(dbUrl as string, 'quest');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 12 });
     await ensureSchema(pool);
     const acc = await pool.query(
       `INSERT INTO accounts (username, password_hash) VALUES ($1, 'x') RETURNING id`,
@@ -58,6 +62,7 @@ describe('领奖原子性（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '
   after(async () => {
     await pool.query(`DELETE FROM accounts WHERE id = $1`, [accountId]);
     await pool.end();
+    await tmp?.drop();
   });
 
   test('并发领取同一条日常任务，只发一次奖', async () => {

@@ -6,13 +6,18 @@ import type { ChatMessageView } from '../../api/protocol-chat';
 import { useGame } from '../../state/GameContext';
 import { ChatCardBlock } from './ChatCardBlock';
 import { ChatPlayerMenu } from './ChatPlayerMenu';
+import { ChatSystemRow } from './ChatSystemRow';
 import { chatLength, isEmojiOnly } from './chatText';
 
 export function ChatMessageRow({ message }: { message: ChatMessageView }) {
   const { session } = useGame();
   const [menuOpen, setMenuOpen] = useState(false);
+  // 系统消息（v68 联盟大事，AISLG-183）没有发送人：一行居中小字，不挂玩家菜单与屏蔽入口
+  if (!message.sender) {
+    return <ChatSystemRow message={message} />;
+  }
   const mine = message.sender.accountId === session.account?.accountId;
-  const senderBlocked = session.chat.blocked.some((item) => item.accountId === message.sender.accountId);
+  const senderBlocked = session.chat.blocked.some((item) => item.accountId === message.sender?.accountId);
   // 只有 1–3 个表情、没有别的字：显示得大一些，接近以前单独发表情的样子
   const emojiOnly = message.text !== null && chatLength(message.text) <= 3 && isEmojiOnly(message.text);
 

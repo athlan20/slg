@@ -10,10 +10,13 @@ import { ConnectionRegistry, type ConnInfo } from '../api/src/connections';
 import type { HandlerContext } from '../api/src/handlers';
 import { handleGetHallOfFame, handleGetSeason } from '../api/src/handlers-season';
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 
 describe('名人堂与赛季查询（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
   let seasonId: number;
   let accountId: string;
   const tag = `season-hall-${Date.now()}`;
@@ -23,7 +26,8 @@ describe('名人堂与赛季查询（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
   const conn: ConnInfo = { socket, ip: null, host: null, accountId: null, username: null, role: null, sessionId: null, connectedAt: new Date() };
 
   before(async () => {
-    pool = new pg.Pool({ connectionString: dbUrl, max: 4 });
+    tmp = await createTempDatabase(dbUrl as string, 'season_hall');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 4 });
     await ensureSchema(pool);
     // 一个已结束的测试赛季（名称带 tag，清理时按 id 删）：力量榜 25 条、模型榜 3 条
     const ins = await pool.query(
@@ -65,6 +69,7 @@ describe('名人堂与赛季查询（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
     await pool.query(`DELETE FROM seasons WHERE id = $1`, [seasonId]);
     await pool.query(`DELETE FROM accounts WHERE id = $1`, [accountId]);
     await pool.end();
+    await tmp?.drop();
   });
 
   test('个人榜分页：每页 20 条，按名次排序，total 为总条数', async () => {

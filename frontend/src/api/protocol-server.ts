@@ -2,10 +2,11 @@
 // （AISLG-61）。唯一事实来源是 backend/common/src/protocol-server.ts；
 // protocol.ts 原名再导出，既有 import 路径不变。
 
-/** 排行榜类别（v23 AISLG-61；v50 AISLG-133 新增 model 模型榜） */
+import type { AllianceLeaderboardEntryView } from './protocol-alliance';
 import type { TroopKind } from './protocol';
 
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model'] as const;
+/** 排行榜类别（v23 AISLG-61；v50 AISLG-133 新增 model 模型榜；v70 AISLG-185 新增 alliance 联盟榜） */
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 
@@ -46,6 +47,8 @@ export interface GetLeaderboardResponseData {
   me: { rank: number; value: number } | null;
   /** 模型榜条目（仅 kind=model） */
   modelEntries?: ModelLeaderboardEntryView[];
+  /** 联盟榜条目（仅 kind=alliance，v70） */
+  allianceEntries?: AllianceLeaderboardEntryView[];
 }
 
 /** 排行榜弹窗的数据视图（当前榜 + 快照） */

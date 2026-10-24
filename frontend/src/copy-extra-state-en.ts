@@ -81,6 +81,7 @@ export const EXTRA_STATE_EN = {
       TILE_PROTECTED: ' (tile under owner-change protection)',
       NEWBIE_PROTECTED: ' (target under newbie protection)',
       TARGET_IN_TRUCE: ' (target in truce)',
+      ALLY_NOT_ATTACKABLE: ' (target is now an ally)',
     } as Record<string, string>,
     wildOccupied: (pos: string, terrain: string, level: string, bonus: string, gather: string) =>
       `Occupied wilderness ${pos}: ${terrain} Lv${level}${bonus}${gather}`,
@@ -154,6 +155,7 @@ export const EXTRA_STATE_EN = {
     selfTruceActive: 'Your voluntary truce is active: you cannot attack players (wilderness / NPC targets are unaffected)',
     tileProtected:
       'That wilderness just changed hands and is under protection (about 1 hour baseline, scaled by game speed); it cannot be seized yet',
+    allyNotAttackable: 'Allies cannot be attacked: members of the same alliance cannot raid, seize wilderness, occupy cities or scout each other',
     movingTargetGone: 'That moving target is gone (defeated or expired); choose another target',
     shortfall: (parts: string, eta: string) => `, still short ${parts}${eta}`,
     populationShortfall: (missing: number, eta: string) => `, still short ${missing} population${eta}`,

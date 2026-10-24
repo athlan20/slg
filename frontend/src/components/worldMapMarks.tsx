@@ -4,7 +4,7 @@
  *  城池 = 形状区分敌我（本方圆角发光块 / NPC 菱形 / 他方方块），不只靠颜色。
  */
 
-import type { TerrainKind } from '../api/protocol';
+import type { AllianceMarkKind, TerrainKind } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
 
 /** 地形底色（themes.css --t-*，五套皮肤各自配色；金矿 v19 起有独立地形色） */
@@ -55,8 +55,8 @@ export function TerrainIcon({ terrain, className = '' }: { terrain: TerrainKind;
   );
 }
 
-/** 城池归属：本方 / NPC / 他方玩家 */
-export type CitySide = 'own' | 'npc' | 'famous' | 'enemy';
+/** 城池归属：本方 / NPC / 他方玩家 / 盟友（AISLG-182 / F2：盟友单独颜色） */
+export type CitySide = 'own' | 'npc' | 'famous' | 'enemy' | 'ally';
 
 /** 城池标记（尺寸由外层 className 决定，地图里随格子缩放，图例里固定小号）；格内单字随语言取 EXTRA_MAP.tileGlyphs */
 export function CityMark({ side, className = '' }: { side: CitySide; className?: string }) {
@@ -94,9 +94,43 @@ export function CityMark({ side, className = '' }: { side: CitySide; className?:
   return (
     <span
       aria-hidden="true"
-      className={`grid aspect-square place-items-center rounded-[2px] bg-warn font-semibold leading-none text-bg ${className}`}
+      className={`grid aspect-square place-items-center rounded-[2px] font-semibold leading-none text-bg ${
+        side === 'ally' ? 'bg-st-online' : 'bg-warn'
+      } ${className}`}
     >
       {glyphs.city}
+    </span>
+  );
+}
+
+/** 联盟标记的符号与色调（AISLG-184 / F2）：四种类型各一个符号，文字 / emoji 即可，不引入图片 */
+export const ALLIANCE_MARK_SYMBOL: Record<AllianceMarkKind, string> = {
+  rally: '⚑',
+  enemy: '✕',
+  resource: '◆',
+  danger: '!',
+};
+export const ALLIANCE_MARK_TONE: Record<AllianceMarkKind, string> = {
+  rally: 'text-gold',
+  enemy: 'text-st-error',
+  resource: 'text-accent',
+  danger: 'text-warn',
+};
+
+/** 联盟标记的行内符号（图例用，与地块上的徽章同色同符号） */
+export function AllianceMarkGlyph({ kind }: { kind: AllianceMarkKind }) {
+  return <span aria-hidden="true" className={`font-semibold leading-none ${ALLIANCE_MARK_TONE[kind]}`}>{ALLIANCE_MARK_SYMBOL[kind]}</span>;
+}
+
+/** 地块上的联盟标记（格子顶部居中的小圆徽章；悬浮提示里有完整的类型与附言） */
+export function AllianceMarkBadge({ kind }: { kind: AllianceMarkKind }) {
+  return (
+    <span
+      role="世界地图视野-联盟标记"
+      aria-hidden="true"
+      className={`pointer-events-none absolute left-1/2 top-[2%] grid h-[28%] aspect-square -translate-x-1/2 place-items-center rounded-full bg-panel font-semibold leading-none ring-1 ring-current text-[clamp(8px,1.5cqw,13px)] ${ALLIANCE_MARK_TONE[kind]}`}
+    >
+      {ALLIANCE_MARK_SYMBOL[kind]}
     </span>
   );
 }

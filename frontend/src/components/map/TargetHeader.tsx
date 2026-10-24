@@ -52,7 +52,7 @@ function iconOf(detail: TileDetailView, mover: 'caravan' | 'bandit' | null, isOw
 
 export function TargetHeader({ world, city, x, y, detail, origin, branch, now, mover, isOwnCity, onClose }: TargetHeaderProps) {
   const copy = useCopy();
-  const { COPY, CITY_COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY, HERO_COPY } = copy;
+  const { COPY, CITY_COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY, HERO_COPY, ALLIANCE_COPY } = copy;
   const { openScoutReport } = useScoutReportModal();
   const [lookup, setLookup] = useState<'idle' | 'loading' | 'missing'>('idle');
 
@@ -154,6 +154,11 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
             {detail.kind !== 'npc_city' ? (
               <p className="truncate text-dim" title={detail.owner ? `${detail.owner.username} · ${tName(detail.owner.cityName)}` : undefined}>
                 {detail.owner ? COPY.worldMap.ownerRow(`${detail.owner.username} · ${tName(detail.owner.cityName)}`) : COPY.worldMap.ownerNone}
+              </p>
+            ) : null}
+            {detail.owner?.ally ? (
+              <p role="选中详情-盟友" className="truncate font-semibold text-st-online">
+                {ALLIANCE_COPY.ally.tag}
               </p>
             ) : null}
             {branch && !isOwnCity && (detail.kind === 'npc_city' || (detail.kind === 'city' && detail.durability != null)) ? (

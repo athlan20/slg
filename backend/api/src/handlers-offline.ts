@@ -27,7 +27,7 @@ const STORAGE_FULL_PERCENT = 80;
 
 /** 玩家连接全部断开时记录离线时刻（handleConnectionClosed 调用；Agent 连接不算） */
 export async function markPlayerOffline(pool: pg.Pool, accountId: string): Promise<void> {
-  await pool.query(`UPDATE accounts SET last_online_at = now() WHERE id = $1`, [accountId]);
+  await pool.query(`UPDATE accounts SET last_online_at = now(), last_active_at = now() WHERE id = $1`, [accountId]);
 }
 
 /** 读取 Agent 最近一份日报；从未写过返回 null */

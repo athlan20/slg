@@ -75,28 +75,31 @@ export function ChatComposer({ defaultChannel }: { defaultChannel: ChatChannel }
 
   return (
     <div role="聊天-输入区" className="relative flex shrink-0 flex-col gap-1 border-t border-line-soft pt-1.5">
-      <div role="聊天-输入区-频道切换" className="flex min-w-0 items-center gap-1 text-[11px]">
-        <button
-          type="button"
-          role="聊天-输入区-频道-世界"
-          aria-pressed={channel === 'world'}
-          onClick={() => setChannel('world')}
-          className={`shrink-0 cursor-pointer rounded border px-1.5 py-0 ${channel === 'world' ? 'border-accent text-accent' : 'border-line text-dim hover:text-fg'}`}
-        >
-          {CHAT_COPY.composer.channelWorld}
-        </button>
-        {peer ? (
+      {/* 联盟页签只发联盟频道，不给切换（AISLG-183） */}
+      {defaultChannel === 'alliance' ? null : (
+        <div role="聊天-输入区-频道切换" className="flex min-w-0 items-center gap-1 text-[11px]">
           <button
             type="button"
-            role="聊天-输入区-频道-私聊"
-            aria-pressed={channel === 'private'}
-            onClick={() => setChannel('private')}
-            className={`min-w-0 cursor-pointer truncate rounded border px-1.5 py-0 ${channel === 'private' ? 'border-accent text-accent' : 'border-line text-dim hover:text-fg'}`}
+            role="聊天-输入区-频道-世界"
+            aria-pressed={channel === 'world'}
+            onClick={() => setChannel('world')}
+            className={`shrink-0 cursor-pointer rounded border px-1.5 py-0 ${channel === 'world' ? 'border-accent text-accent' : 'border-line text-dim hover:text-fg'}`}
           >
-            {CHAT_COPY.composer.channelPrivate(peer.username)}
+            {CHAT_COPY.composer.channelWorld}
           </button>
-        ) : null}
-      </div>
+          {peer ? (
+            <button
+              type="button"
+              role="聊天-输入区-频道-私聊"
+              aria-pressed={channel === 'private'}
+              onClick={() => setChannel('private')}
+              className={`min-w-0 cursor-pointer truncate rounded border px-1.5 py-0 ${channel === 'private' ? 'border-accent text-accent' : 'border-line text-dim hover:text-fg'}`}
+            >
+              {CHAT_COPY.composer.channelPrivate(peer.username)}
+            </button>
+          ) : null}
+        </div>
+      )}
       {chat.draft ? (
         <div role="聊天-输入区-卡片草稿" className="flex min-w-0 items-center gap-1.5 text-[12px]">
           <span className="shrink-0 text-faint">{CHAT_COPY.composer.draftLabel}</span>

@@ -6,17 +6,21 @@
  *  新增「模型榜」：按自报模型归类分组，排名 = 该模型实力前 10 名的平均战力，
  *  只统计最近 7 天 Agent 上线过的账号，口径说明展示在弹窗底部。
  *  数据经 GET_LEADERBOARD（op 43）按需拉取；入口在顶栏。
+ *  联盟榜（v70，AISLG-185 / F2）：第五个榜页签，顶部「我的联盟」，点一条联盟在弹窗内看它的公告与成员。
  */
 
 import { useState } from 'react';
 import { Modal } from './ui/Modal';
 import { PagedList } from './ui/PagedList';
 import { HallOfFameView } from './HallOfFameView';
+import { AllianceBoardDetail, AllianceBoardList } from './AllianceLeaderboard';
 import { LEADERBOARD_KINDS, type HonorView, type LeaderboardKind, type LeaderboardView } from '../api/protocol';
 import type { HallOfFameSession } from '../state/hallOfFame';
+import type { AllianceSession } from '../state/allianceSession';
 import { formatReportTime } from '../api/mapping';
 // role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
 import { COPY as COPY_ZH } from '../copy';
+import { ALLIANCE_COPY as ALLIANCE_COPY_ZH } from '../copy-alliance';
 import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 
@@ -30,13 +34,15 @@ interface LeaderboardModalProps {
   /** 名人堂会话（v65）与我的荣誉（GET_SEASON） */
   hall: HallOfFameSession;
   honors: HonorView[];
+  /** 联盟切片（联盟榜点开联盟时的公开信息与申请） */
+  alliance: AllianceSession;
 }
 
 type BoardMode = 'live' | 'hall';
 
-export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, honors }: LeaderboardModalProps) {
+export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, honors, alliance }: LeaderboardModalProps) {
   const copy = useCopy();
-  const { COPY, HALL_COPY } = copy;
+  const { COPY, HALL_COPY, ALLIANCE_COPY } = copy;
   const [mode, setMode] = useState<BoardMode>('live');
   // 榜名随语言取用（原为模块级常量表，改在组件内构造）
   const KIND_LABEL: Record<LeaderboardKind, string> = {
@@ -44,11 +50,15 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
     territory: COPY.leaderboard.territory,
     plunder: COPY.leaderboard.plunder,
     model: COPY.leaderboard.model,
+    alliance: ALLIANCE_COPY.board.tab,
   };
   const [tab, setTab] = useState<LeaderboardKind>(view?.kind ?? 'power');
+  // 联盟榜里点开的联盟（公开信息视图）；null = 显示榜单
+  const [allianceOpen, setAllianceOpen] = useState<string | null>(null);
   // 列头与行渲染以已到手的快照为准（切榜后快照未回时维持上一榜展示，与 v23 行为一致）
   const isModelView = (view?.kind ?? 'power') === 'model';
-  const valueColumn = isModelView ? COPY.leaderboard.modelValueColumn : view ? KIND_LABEL[view.kind] : '';
+  const isAllianceView = (view?.kind ?? 'power') === 'alliance';
+  const valueColumn = isModelView ? COPY.leaderboard.modelValueColumn : isAllianceView ? ALLIANCE_COPY.board.powerColumn : view ? KIND_LABEL[view.kind] : '';
 
   return (
     <Modal role="排行榜弹窗" title={COPY.leaderboard.title} accent="gold" fill onClose={onClose}>
@@ -79,9 +89,10 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
             <button
               key={kind}
               type="button"
-              role={`排行榜弹窗-切换-${COPY_ZH.leaderboard[kind]}`}
+              role={`排行榜弹窗-切换-${kind === 'alliance' ? ALLIANCE_COPY_ZH.board.tab : COPY_ZH.leaderboard[kind]}`}
               onClick={() => {
                 setTab(kind);
+                setAllianceOpen(null);
                 onSelectKind(kind);
               }}
               className={`cursor-pointer rounded border px-2.5 py-0.5 text-[13px] transition-colors ${tab === kind ? 'border-accent bg-accent-soft text-accent' : 'border-line text-dim hover:text-fg'}`}
@@ -95,12 +106,19 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
         </div>
 
         <div role="排行榜弹窗-榜单" className="flex min-h-0 flex-1 flex-col">
+          {isAllianceView && allianceOpen !== null ? (
+            <AllianceBoardDetail alliance={alliance} allianceId={allianceOpen} onBack={() => setAllianceOpen(null)} />
+          ) : null}
+          {isAllianceView && allianceOpen !== null ? null : (
           <div className="grid shrink-0 grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-2 px-1 text-[12px] text-faint">
             <span>{COPY.leaderboard.rankColumn}</span>
-            <span>{isModelView ? COPY.leaderboard.modelColumn : COPY.leaderboard.playerColumn}</span>
+            <span>{isModelView ? COPY.leaderboard.modelColumn : isAllianceView ? ALLIANCE_COPY.board.column : COPY.leaderboard.playerColumn}</span>
             <span className="text-right">{valueColumn}</span>
           </div>
-          {isModelView ? (
+          )}
+          {isAllianceView ? (
+            allianceOpen === null && view ? <AllianceBoardList view={view} alliance={alliance} onOpen={setAllianceOpen} /> : null
+          ) : isModelView ? (
             <PagedList
               role="模型榜-列表"
               items={view?.modelEntries ?? []}
@@ -156,6 +174,8 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
         <div role="排行榜弹窗-我的名次" className="flex shrink-0 items-center justify-between gap-2 border-t border-line-soft pt-2">
           {isModelView ? (
             <span role="排行榜弹窗-模型榜口径" className="min-w-0 text-[11px] leading-snug text-faint">{COPY.leaderboard.modelRule}</span>
+          ) : isAllianceView ? (
+            <span className="min-w-0 truncate text-[11.5px] text-faint">{allianceOpen === null ? ALLIANCE_COPY.board.clickHint : ''}</span>
           ) : (
             <span className="truncate text-[13px] text-dim">{view?.me ? COPY.leaderboard.myRank(view.me.rank, view.me.value) : COPY.leaderboard.myRankNone}</span>
           )}

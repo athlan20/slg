@@ -28,11 +28,11 @@ async function call<T>(client: ApiClient, op: number, fallback: string, data?: R
   }
 }
 
-/** 一页消息（世界频道或与某玩家的私聊）：beforeId 缺省取最新一页 */
+/** 一页消息（世界频道、与某玩家的私聊，或联盟频道：peerId 传 null）：beforeId 缺省取最新一页 */
 export function fetchPage(
   client: ApiClient,
   fallback: string,
-  channel: 'world' | 'private',
+  channel: 'world' | 'private' | 'alliance',
   peerId: string | null,
   beforeId?: number,
 ): Promise<ChatResult<ChatHistoryResponseData>> {

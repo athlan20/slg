@@ -37,6 +37,8 @@ import {
   type TileStatePushData,
   type TroopKind,
   type SeasonPushData,
+  type PushAllianceStateData,
+  type PushAllianceMarkData,
 } from '../api/protocol';
 import { buildErrorText, formatClock, loginErrorText, renameErrorText, toSessionEvent } from '../api/mapping';
 import { useAccountSecurity, type AccountSecurity } from './useAccountSecurity';
@@ -70,6 +72,8 @@ import { useAnnouncements, type AnnouncementSlice } from './announcements';
 import { emitBattleCommentPatched } from './battleReportModal';
 import { useCityList, type CityList } from './useCityList';
 import { useSeasonSession, type SeasonSession } from './seasonSession';
+import { useAllianceSession, type AllianceSession } from './allianceSession';
+import { useAllianceMarks, type AllianceMarksSession } from './allianceMarks';
 import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 
 /** 断线自动重连间隔（毫秒） */
@@ -176,6 +180,9 @@ export interface GameSession {
   chat: ChatState;
   /** 公告（v60 AISLG-162）：红点、列表 / 往期 / 正文、强提醒弹窗队列 */
   announcements: AnnouncementSlice;
+  /** 联盟（v66 起，AISLG-186 F1）：我的联盟 / 列表 / 管理操作 / 面板开合与红点 */
+  alliance: AllianceSession;
+  allianceMarks: AllianceMarksSession;
   /** 赛季（v65 AISLG-134）：当前赛季 / 荣誉 / 预告弹窗 / 换季遮罩与新赛季提示 */
   season: SeasonSession;
   /** 名人堂（v65 AISLG-134）：赛季列表 / 榜种 / 分页累积 */
@@ -391,7 +398,19 @@ export function useGameSession(): GameSession {
 
   // 会话扩展切片（v23）：离线日报 / 全服播报 / 排行榜——状态与动作拆在 session-extras
   const extras = useSessionExtras(clientRef);
-  const chat = useChat({ clientRef, online: connection === 'online', accountId: account?.accountId ?? null });
+  // 联盟切片（AISLG-186 F1）：连接建立时拉取我的联盟，PUSH_ALLIANCE_STATE 到达时重拉；登出时清空。
+  // 放在聊天之前：联盟频道要知道我当前的联盟 id
+  const alliance = useAllianceSession(clientRef, connection === 'online');
+  const { clear: allianceClear, onPush: onAlliancePush } = alliance;
+  // 联盟地图标记（AISLG-184 / F2）：随所在联盟加载；PUSH_ALLIANCE_MARK 增量合并；离盟 / 登出清空
+  const allianceMarks = useAllianceMarks(clientRef, connection === 'online', alliance.state?.alliance?.id ?? null);
+  const { clear: allianceMarksClear, onPush: onAllianceMarkPush } = allianceMarks;
+  const chat = useChat({
+    clientRef,
+    online: connection === 'online',
+    accountId: account?.accountId ?? null,
+    allianceId: alliance.state?.alliance?.id ?? null,
+  });
   const announcements = useAnnouncements(clientRef);
   const { refresh: refreshAnnouncements, onPush: onAnnouncementPush, reset: resetAnnouncements } = announcements;
   const { checkOfflineReportRef, fetchServerBroadcasts, onBroadcastPush, onNpcWarningPush, resetNpcWarnings } = extras;
@@ -457,6 +476,14 @@ export function useGameSession(): GameSession {
       } else if (frame.op === Op.PUSH_SEASON) {
         // v65（AISLG-134）：赛季预告 / 换季遮罩 / 新赛季开始（断线重连由连接关闭流程接管）
         onSeasonPush(frame.data as unknown as SeasonPushData);
+        return;
+      } else if (frame.op === Op.PUSH_ALLIANCE_STATE) {
+        // 联盟状态变化（AISLG-186）：面板与红点的数据整体重拉
+        onAlliancePush(frame.data as unknown as PushAllianceStateData);
+        return;
+      } else if (frame.op === Op.PUSH_ALLIANCE_MARK) {
+        // 联盟地图标记变化（AISLG-184）：增量并入标记列表，不触发按需查询
+        onAllianceMarkPush(frame.data as unknown as PushAllianceMarkData);
         return;
       } else if (frame.op === Op.PUSH_ANNOUNCEMENT) {
         // v60（AISLG-162）：新公告——重拉列表与红点；强提醒在切片内弹窗（不记本地事件）
@@ -528,7 +555,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onAnnouncementPush, onSeasonPush],
+    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {
@@ -582,6 +609,8 @@ export function useGameSession(): GameSession {
       questClear();
       seasonClear();
       hallClear();
+      allianceClear();
+      allianceMarksClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
@@ -612,7 +641,9 @@ export function useGameSession(): GameSession {
     ytClear();
     questClear();
     hallClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, hallClear]);
+    allianceClear();
+    allianceMarksClear();
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, hallClear, allianceClear, allianceMarksClear]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1240,6 +1271,8 @@ export function useGameSession(): GameSession {
     questSession,
     chat,
     announcements,
+    alliance,
+    allianceMarks,
     season,
     hallOfFame,
     moving,

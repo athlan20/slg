@@ -57,7 +57,7 @@ export const REQUEST_GET_HALL_OF_FAME: RequestOpDoc = {
   name: 'GET_HALL_OF_FAME',
   title: '查询名人堂（v65，AISLG-134）',
   preAuth: false,
-  summary: `查询已结束赛季的存档：各榜前列（个人榜 power / territory / plunder / arena / starTower）与模型榜（model）。缺省 seasonId 为最近一个已结束赛季；kind 缺省 power；page 从 1 起，每页 20 条。个人榜结果进 entries，模型榜结果进 modelEntries（entries 为空）。total 为该榜总条数。seasons 列出全部已结束赛季（新 → 旧）供选择。指定的 seasonId 不存在返回 INVALID_PARAMS；没有任何已结束赛季时 seasonId 为 null、结果为空。kind 允许值：${HALL_KINDS.join(' / ')}。`,
+  summary: `查询已结束赛季的存档：各榜前列（个人榜 power / territory / plunder / arena / starTower）、模型榜（model）与联盟榜前三（alliance，v70，AISLG-185：换季时联盟势力排名前三，条目的 accountId / username 为当时的盟主，value 为势力，并带 allianceId / allianceName / memberCount）。缺省 seasonId 为最近一个已结束赛季；kind 缺省 power；page 从 1 起，每页 20 条。个人榜结果进 entries，模型榜结果进 modelEntries（entries 为空）。total 为该榜总条数。seasons 列出全部已结束赛季（新 → 旧）供选择。指定的 seasonId 不存在返回 INVALID_PARAMS；没有任何已结束赛季时 seasonId 为 null、结果为空。kind 允许值：${HALL_KINDS.join(' / ')}。`,
   requestFields: [
     { name: 'seasonId', type: 'number', desc: '赛季编号，缺省为最近一个已结束赛季。' },
     { name: 'kind', type: 'string', desc: `榜种，缺省 power。允许值：${HALL_KINDS.join(' / ')}。` },
@@ -67,7 +67,7 @@ export const REQUEST_GET_HALL_OF_FAME: RequestOpDoc = {
     { name: 'seasons', type: 'array', desc: '已结束赛季列表：id、name、endedAt。' },
     { name: 'seasonId', type: 'number | null', desc: '本次查询的赛季编号。' },
     { name: 'kind', type: 'string', desc: '本次查询的榜种。' },
-    { name: 'entries', type: 'array', desc: '个人榜条目：rank、accountId、username、cityName、value、agentModel（自报模型，展示时标注「自报」）。' },
+    { name: 'entries', type: 'array', desc: '个人榜条目：rank、accountId、username、cityName、value、agentModel（自报模型，展示时标注「自报」）、allianceId / allianceName / memberCount（v70：仅 kind=alliance 有值，其余为 null）。' },
     { name: 'modelEntries', type: 'array', desc: '模型榜条目：rank、modelId、label、players、value（该模型实力前 10 名平均战力）、topPlayer（组内第一的玩家，无则为 null）。' },
     { name: 'total', type: 'number', desc: '该榜总条数（分页用）。' },
   ],
@@ -86,7 +86,38 @@ export const REQUEST_GET_HALL_OF_FAME: RequestOpDoc = {
             seasonId: 1,
             kind: 'power',
             entries: [
-              { rank: 1, accountId: '6f1e2d3c-4b5a-4968-8777-665544332211', username: 'example-player', cityName: '主城', value: 123456, agentModel: 'claude-opus-5-5' },
+              { rank: 1, accountId: '6f1e2d3c-4b5a-4968-8777-665544332211', username: 'example-player', cityName: '主城', value: 123456, agentModel: 'claude-opus-5-5', allianceId: null, allianceName: null, memberCount: null },
+            ],
+            modelEntries: [],
+            total: 1,
+          },
+        },
+      ],
+    },
+    {
+      caption: '查询上一赛季的联盟榜前三（v70，AISLG-185）：账号为当时的盟主，value 为势力',
+      request: { op: Op.GET_HALL_OF_FAME, seq: 62, data: { kind: 'alliance' } },
+      responses: [
+        {
+          op: Op.GET_HALL_OF_FAME,
+          seq: 62,
+          ok: true,
+          data: {
+            seasons: [{ id: 1, name: '第 1 赛季', endedAt: '2026-10-25T00:00:00.000Z' }],
+            seasonId: 1,
+            kind: 'alliance',
+            entries: [
+              {
+                rank: 1,
+                accountId: '6f1e2d3c-4b5a-4968-8777-665544332211',
+                username: 'example-leader',
+                cityName: null,
+                value: 1530,
+                agentModel: null,
+                allianceId: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
+                allianceName: '卧龙盟',
+                memberCount: 12,
+              },
             ],
             modelEntries: [],
             total: 1,

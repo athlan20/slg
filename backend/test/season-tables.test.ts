@@ -8,6 +8,8 @@ import pg from 'pg';
 import { ensureSchema } from '../common/src/db';
 import { ARCHIVE_TABLES, KEEP_TABLES, RESET_TABLES } from '../common/src/season-tables';
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 
 test('三类表清单互不重叠（同一张表只能有一个去向）', () => {
@@ -18,13 +20,16 @@ test('三类表清单互不重叠（同一张表只能有一个去向）', () =>
 
 describe('换季表分类与 information_schema 一致（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
 
   after(async () => {
     await pool?.end();
+    await tmp?.drop();
   });
 
   test('数据库中每一张表都已归类，且清单中的每个名字都是真实存在的表', async () => {
-    pool = new pg.Pool({ connectionString: dbUrl, max: 2 });
+    tmp = await createTempDatabase(dbUrl as string, 'season_tables');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 2 });
     await ensureSchema(pool);
     const res = await pool.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables

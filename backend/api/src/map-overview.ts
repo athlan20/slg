@@ -14,6 +14,7 @@ interface OverviewRow {
   kind: string;
   famous: boolean;
   owner_account_id: string | null;
+  owner_is_ally: boolean;
 }
 
 export async function handleGetMapOverview(
@@ -22,15 +23,19 @@ export async function handleGetMapOverview(
   op: number,
   seq: number | undefined,
 ): Promise<void> {
+  const accountId = (conn.accountId as string | null) ?? null;
   // 条件与 world_tiles 的局部索引（idx_world_tiles_city_kind）保持一致，避免扫描百万野地格
   const res = await ctx.pool.query(
-    `SELECT wt.x, wt.y, wt.kind, (wt.npc -> 'famous') IS NOT NULL AS famous, c.account_id AS owner_account_id
+    `SELECT wt.x, wt.y, wt.kind, (wt.npc -> 'famous') IS NOT NULL AS famous, c.account_id AS owner_account_id,
+            (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally
      FROM world_tiles wt
      LEFT JOIN cities c ON c.id = wt.owner_city_id
+     LEFT JOIN alliance_members am_me ON am_me.account_id = $1
+     LEFT JOIN alliance_members am_o ON am_o.account_id = c.account_id
      WHERE wt.kind <> 'wilderness'
      ORDER BY wt.y, wt.x`,
+    [accountId],
   );
-  const accountId = (conn.accountId as string | null) ?? null;
   const cities: Array<[number, number, MapOverviewSide]> = [];
   for (const row of res.rows as OverviewRow[]) {
     const side = overviewSide(row, accountId);
@@ -47,7 +52,11 @@ function overviewSide(row: OverviewRow, accountId: string | null): MapOverviewSi
     if (!row.owner_account_id) {
       return null;
     }
-    return row.owner_account_id === accountId ? 'own' : 'enemy';
+    if (row.owner_account_id === accountId) {
+      return 'own';
+    }
+    // v67（AISLG-182）：盟友（同一联盟）城池单独一类，地图着色用
+    return row.owner_is_ally ? 'ally' : 'enemy';
   }
   if (row.kind === 'npc_city') {
     return row.famous ? 'famous' : 'npc';

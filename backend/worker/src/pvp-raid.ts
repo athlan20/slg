@@ -47,7 +47,9 @@ import {
   settleMarchHero,
   type MarchRow,
   type TileNotify,
+  abortForAlly,
 } from './tick-shared';
+import { areAllies } from '../../common/src/alliance-db';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -91,6 +93,11 @@ export async function resolvePvpPlunderArrival(
   if (!city || city.account_id === march.account_id) {
     // 城已删（重置）或发起后转为本账号分城：目标失效，原路返回
     await abortMarchToReturn(client, march, troops, settled, notifies);
+    return;
+  }
+  // v67（AISLG-182）：出发后目标才成为盟友（同一联盟）：不开战，原路返回
+  if (await areAllies(client, march.account_id, city.account_id)) {
+    await abortForAlly(client, march, troops, settled, notifies);
     return;
   }
   // 锁内复核保护 / 免战（同一城多支部队先后到达：前一支攻破触发免战后，后到的扑空返程）
