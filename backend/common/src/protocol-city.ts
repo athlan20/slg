@@ -39,7 +39,7 @@ export interface BuildStatePushData {
   build: BuildView;
 }
 
-/** CANCEL_BUILD（op 24）请求载荷：取消排队中的建造条目并全额返还其成本（已确认规则） */
+/** CANCEL_BUILD（op 24）请求载荷：取消建造条目（排队中 / 建造中，v71）并返还其成本（已确认规则） */
 export interface CancelBuildRequestData {
   buildId: string;
 }
@@ -200,6 +200,8 @@ export const EventType = {
   PVP_RAID: 'pvp_raid',
   /** v38：主动免战开启（AISLG-122，detail = { until, nextAvailableAt }） */
   TRUCE_STARTED: 'truce_started',
+  /** v71（AISLG-190）：主动免战提前解除（detail = { until（解除前的截止）, cancelledAt }；本周次数不返还） */
+  TRUCE_CANCELLED: 'truce_cancelled',
   /** v38：新手保护提前结束（AISLG-122，detail = { cause = government / aggression, ... }） */
   NEWBIE_PROTECTION_ENDED: 'newbie_protection_ended',
   /** v40：分城易主（AISLG-124；原主人 outcome=lost / 新主人 outcome=gained，detail 含城池、对方、坐标） */

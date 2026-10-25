@@ -1,4 +1,4 @@
-// 主动免战动作（TRUCE，v38 AISLG-122）：每周一次免费、持续 12 小时基准随缩放。
+// 主动免战动作（TRUCE，v38 AISLG-122）：每周一次免费、持续 12 小时基准随缩放；CANCEL_TRUCE（v71，AISLG-190）提前解除。
 // 成功后按需查询对齐 city.shieldUntil / shieldNextAt；失败把人读错误返回给按钮处展示。
 // 与 exchangeAction 同形态拆出以控制 useGameSession 行数。
 
@@ -15,6 +15,7 @@ export interface TruceActionDeps {
 
 export function createTruceAction(deps: TruceActionDeps): {
   startTruce: () => Promise<string | null>;
+  cancelTruce: () => Promise<string | null>;
 } {
   const { clientRef, appendLocalEvent, scheduleSync } = deps;
 
@@ -47,5 +48,32 @@ export function createTruceAction(deps: TruceActionDeps): {
     }
   };
 
-  return { startTruce };
+  /** 提前解除免战（v71）：本周次数不返还；成功返回 null，失败返回人读错误 */
+  const cancelTruce = async (): Promise<string | null> => {
+    const { COPY } = getCopy();
+    const client = clientRef.current;
+    if (!client?.connected) {
+      return COPY.session.connectFailed;
+    }
+    try {
+      const res = await client.request(Op.CANCEL_TRUCE, {});
+      if (res.ok) {
+        appendLocalEvent('player', COPY.truce.cancelledText);
+        scheduleSync();
+        return null;
+      }
+      switch (res.error?.code) {
+        case 'TRUCE_NOT_ACTIVE':
+          return COPY.truce.errNotActive;
+        case 'PASSIVE_TRUCE_NOT_CANCELLABLE':
+          return COPY.truce.errPassive;
+        default:
+          return res.error?.message ?? COPY.truce.cancelFallback;
+      }
+    } catch (err) {
+      return err instanceof Error ? err.message : COPY.truce.cancelFallback;
+    }
+  };
+
+  return { startTruce, cancelTruce };
 }

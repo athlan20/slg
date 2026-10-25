@@ -219,8 +219,12 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '该类型已无法继续升级，转投其他建筑或系统。',
   },
   BUILD_NOT_CANCELLABLE: {
-    desc: '目标建造不存在、不属于本账号或不在排队状态。进行中任务能否取消待设计，当前仅排队条目（status=queued）可取消（v7）。',
-    action: '用 GET_STATE 查看 city.queue，只对 status=queued 的条目发起 CANCEL_BUILD。',
+    desc: '目标建造不存在、不属于本账号，或已完成 / 已取消。排队中与建造中的条目都可取消（v7 起排队可取消，v71 AISLG-190 起建造中也可取消）。',
+    action: '用 GET_STATE 查看 city.queue，只对 status=queued 或 building 的条目发起 CANCEL_BUILD。',
+  },
+  TRAINING_NOT_CANCELLABLE: {
+    desc: '（v71，AISLG-190）没有可取消的历练：武将未在历练中、历练已到点结算（经验已到账），或武将不属于本账号。',
+    action: '用 GET_HEROES 看该武将的 training 是否为 null；为 null 即历练已结束，无需取消。',
   },
   AGENT_FORBIDDEN: {
     desc: '该协议对连接声明的登录类型有限制：RESET_ACCOUNT 仅玩家连接可调用，AGENT_REPORT_PLAN 仅 Agent 连接可调用。注意：role 是连接自报的标记，本限制拦住诚实声明的对端，不是可独立验证的安全边界。',
@@ -243,8 +247,8 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '等队首完成后重试，或先取消排队条目腾出位置。',
   },
   RECRUIT_NOT_CANCELLABLE: {
-    desc: '目标征兵不存在、不属于本账号或不在排队状态。征募中条目能否取消待设计，当前仅排队条目可取消（v11）。',
-    action: '用 GET_STATE 查看 city.recruitQueue，只对 status=queued 的条目发起 CANCEL_RECRUIT。',
+    desc: '目标征兵不存在、不属于本账号，或已完成 / 已取消。排队中与征募中的条目都可取消（v11 起排队可取消，v71 AISLG-190 起征募中也可取消）。',
+    action: '用 GET_STATE 查看 city.recruitQueue，只对 status=queued 或 recruiting 的条目发起 CANCEL_RECRUIT。',
   },
   TARGET_NOT_ATTACKABLE: {
     desc: '出征目标当前不可攻击（v12）：坐标在世界外、玩家城池地块（含自己的城），或已被其他玩家占领的野地。玩家对抗（攻城与争夺野地）随后续阶段开放，当前只能出征无主 / 本账号占领的野地与 NPC 城池。',
@@ -423,8 +427,16 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '无需处理；city.shieldUntil 可查当前免战截止。',
   },
   TRUCE_WEEKLY_USED: {
-    desc: '（v38，AISLG-122）本周的主动免战已用过（每周一次免费，7 天基准随缩放）。data.nextAvailableAt / retryAfterSeconds 为下次可开启时刻与剩余秒数。',
+    desc: '（v38，AISLG-122）本周的主动免战已用过（每周一次免费，7 天基准随缩放）。data.nextAvailableAt / retryAfterSeconds 为下次可开启时刻与剩余秒数。提前解除（CANCEL_TRUCE）不返还本周次数。',
     action: '按 retryAfterSeconds 睡满后重发 TRUCE；city.shieldNextAt 可查下次可开时刻。',
+  },
+  TRUCE_NOT_ACTIVE: {
+    desc: '（v71，AISLG-190）没有生效中的主动免战可解除（未开启、已到期，或已提前解除）。',
+    action: '无需处理；city.shieldUntil 为空即无主动免战。',
+  },
+  PASSIVE_TRUCE_NOT_CANCELLABLE: {
+    desc: '（v71，AISLG-190）城池处于被动免战中（被攻破 / 被抢后 4 小时基准），被动免战不能主动解除；CANCEL_TRUCE 只解除账号级的主动免战。data.until / data.retryAfterSeconds 为被动免战截止时刻与剩余秒数。',
+    action: '等被动免战结束（city.truceUntil）后再行动；期间可开启主动免战（TRUCE）不影响被动免战。',
   },
   TILE_PROTECTED: {
     desc: '（v39，AISLG-123）该野地刚换主人（被玩家抢占），处于保护期（1 小时基准随缩放）：期间玩家与 NPC 都不能再抢。data.until / data.retryAfterSeconds 为截止时刻与剩余秒数。',
@@ -642,7 +654,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '征兵队列（recruitQueue）',
-    desc: '军营处理征兵：RECRUIT 无征募中时立即开始（status=recruiting，时长 = 单兵时长 × 数量），有征募中且未满时入队（status=queued）；队列 = 1 征募中 + 最多 2 排队（占位）。资源与人口在发起时扣减，取消排队条目全额返还；征募中能否取消待定。队列独立于建造队列。',
+    desc: '军营处理征兵：RECRUIT 无征募中时立即开始（status=recruiting，时长 = 单兵时长 × 数量），有征募中且未满时入队（status=queued）；队列 = 1 征募中 + 最多 2 排队（占位）。资源与人口在发起时扣减，取消排队条目全额返还；征募中条目也可取消（v71，全额返还，排队的下一条立即开始）。队列独立于建造队列。',
   },
   {
     term: '守城加成（defenseBonus）',
@@ -728,7 +740,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '建造队列（queue）',
-    desc: 'BUILD / UPGRADE 采用排队制：无在建时立即开工（status=building，dueAt 为预计完成时间）；有在建时进入排队（status=queued，dueAt 为 null），队首完成后由后台自动激活为 building。队列 = 1 条在建 + 最多 2 条排队（占位数值），再发起返回 QUEUE_FULL。排队条目可随时 CANCEL_BUILD 取消并全额返还成本（确认规则）；进行中任务能否取消待定。原游戏的元宝加速第一期未实现。',
+    desc: 'BUILD / UPGRADE 采用排队制：无在建时立即开工（status=building，dueAt 为预计完成时间）；有在建时进入排队（status=queued，dueAt 为 null），队首完成后由后台自动激活为 building。队列 = 1 条在建 + 最多 2 条排队（占位数值），再发起返回 QUEUE_FULL。排队条目与建造中的条目都可随时 CANCEL_BUILD 取消并全额返还成本（确认规则；v71 起建造中也可取消）。原游戏的元宝加速第一期未实现。',
   },
   { term: 'building / queued / completed / cancelled', desc: '建筑条目状态：在建 / 排队 / 已完成 / 已取消（取消仅限排队条目，条目保留为历史，不再出现在 queue 里）。' },
 ];

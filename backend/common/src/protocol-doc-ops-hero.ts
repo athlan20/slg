@@ -205,7 +205,7 @@ export const PUSH_HERO_STATE: PushOpDoc = {
   title: '推送：武将状态变化（v36，AISLG-114/115/116）',
   summary: '账号武将发生变化时推给该账号全部在线连接（含 Agent）：招募 / 解雇 / 城守任命、欠饷开始 / 恢复、带队战败重伤、战斗获得经验（含升级）、获得名将；v54 起还有历练开始 / 结束、加点 / 洗点、赏赐、结交进度变化。载荷只带变化摘要，收到后重拉 GET_HEROES 对齐。',
   dataFields: [
-    { name: 'reason', type: 'string', desc: "recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）。" },
+    { name: 'reason', type: 'string', desc: "recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ training_cancelled（历练被取消、武将回城，不给经验，v71）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）。" },
     { name: 'heroId', type: 'string', desc: '涉及的武将 id（guard_changed 撤任时可能为 null）。' },
     { name: 'exp', type: 'object', desc: 'reason=exp_gained 时给出 { gained 本次经验, level, leveledTo 升到几级或 null }。' },
   ],

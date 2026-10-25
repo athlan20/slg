@@ -14,7 +14,7 @@ Worker 到期结算、跨进程状态通知、按需查询。
 | 事项 | 确认规则 | 实现位置 |
 | --- | --- | --- |
 | 建筑拆除 | 每种建筑同城限一座，不提供拆除。 | `DEMOLISH` 协议与 `building_demolished` 事件已在 v8 移除（v7 未对外发布）。 |
-| 取消建造 | 取消时全额返还已扣资源；是否可取消正在施工的任务待定。 | `CANCEL_BUILD` 仅排队条目，按 `builds.cost` 快照全额返还。 |
+| 取消建造 | 取消时全额返还已扣资源；排队与建造中的条目都可取消（v71）。 | `CANCEL_BUILD` 对 `queued` / `building` 条目，按 `builds.cost` 快照全额返还（连升进行中只退未完成级）。 |
 | 资源储量与仓库 | 粮、木、石、铁各自的上限为 `10000 + 对应资源基础小时产量 × 100`，不加入储存科技；仓库按等级提供防掠夺保护（v16：总量 4000 × 等级、四资源固定均分各 1000 × 等级，可掠量 = max(0, 存量 − 保护额)），玩家城掠夺消费方随玩家对抗阶段接入。 | `production.ts` 的 `storageCaps`；保护规则 `plunder.ts` 的 `warehouseProtectionPerResource`。 |
 | 超限 | 五种资源达到各自上限后停止对应生产；黄金上限固定为 100 万，已有超限存量不直接扣减。 | `accrueProduction` 钳制（含金币）。 |
 | 人口 | 上限 = `50 + 100 × 民房等级 × (等级 + 1)`（无民房即基线 50）；增速 = `10 × 民房等级 × (等级 + 1)`/小时，无民房为 0（v19）。 | `rules.ts` 的 `popCap` 与 `populationGrowthPerHour`。 |
@@ -284,7 +284,7 @@ awk -v s='<开始>' -v e='<结束>' '$1 >= s && $1 < e' <日志文件> | grep '\
   role 的协议级限制，拦住诚实声明的 Agent，不构成可验证的安全边界，见「身份边界」）。事务锁序与 Worker / 取消一致（builds → cities → city_buildings），
   重置后写入一条 `account_reset` 审计事件并推送 `PUSH_CITY_STATE`（account_reset）。
 - **征兵（v11）**：`RECRUIT` 按兵种征募（军营等级解锁、发起时扣资源与人口）、
-  `CANCEL_RECRUIT` 取消排队条目并按快照全额返还（征募中能否取消待定）。征兵队列独立
+  `CANCEL_RECRUIT` 取消排队或征募中的条目并按快照全额返还（v71 起征募中也可取消）。征兵队列独立
   于建造队列（1 征募中 + 2 排队，占位）；Worker 到期把兵力累加进 `city_army` 并做队首
   激活（时长按条目的单兵时长快照 × 数量重算）；完成走独立水位线轮询推送
   `PUSH_RECRUIT_STATE`，激活单条直推（锁序 recruits → cities，与建造一致）。
@@ -359,10 +359,11 @@ awk -v s='<开始>' -v e='<结束>' '$1 >= s && $1 < e' <日志文件> | grep '\
   `agent_plans` 表（展示信息，非游戏状态，不写事件流），`GET_AGENT_INFO` 的 `plan` 字段带出，
   变更经 `PUSH_AGENT_PLAN` 推送账号其他在线连接；`RESET_ACCOUNT` 一并清空。计划是未验证的
   自报信息，只用于托管监控展示，不参与任何游戏逻辑（与 role 同属信任边界）。
-- **取消排队（v7 起，返还规则 2026-09-27 确认）**：`CANCEL_BUILD` 只对 `status='queued'`
-  条目生效（在建条目能否取消待定）。实现上先用条件翻转 `UPDATE builds ... WHERE status='queued'`
-  守卫（锁序 builds → cities，与 Worker 一致，避免死锁），成功后在同一事务内按条目的成本快照
-  （`builds.cost`）全额返还（旧数据无快照按零返还）。取消条目保留为历史（status='cancelled'），
+- **取消排队（v7 起，返还规则 2026-09-27 确认；v71 起在建条目也可取消）**：`CANCEL_BUILD` 对
+  `status IN ('queued','building')` 的条目生效。实现上先用条件翻转 `UPDATE builds ... WHERE status IN ('queued','building')`
+  守卫（锁序 builds → cities，与 Worker 一致，避免死锁；Worker 完成按 `status='building'` 守卫，先翻转者生效），
+  成功后在同一事务内按条目的成本快照（`builds.cost`）全额返还（旧数据无快照按零返还；连升进行中只退
+  当前级起到目标级的成本），并激活该城排队的下一条（`common/src/queue-activate.ts`，与 Worker 共用）。取消条目保留为历史（status='cancelled'），
   不再出现在队列。
 - **建造队列（协议 v4，v5 起建造与升级共用）**：BUILD / UPGRADE 排队制——无在建立即开工（API 写 `due_at`），有在建且未满入队
   （`status='queued'`，`due_at=NULL`），队满返回 `QUEUE_FULL`。Worker 在完成事务内做队首激活：

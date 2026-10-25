@@ -17,7 +17,7 @@ export const Op = {
   BUILD: 21,
   /** 发起建筑升级（升到下一等级，v5，与建造共用队列） */
   UPGRADE: 22,
-  /** 取消建造队列中的排队条目（v7）：全额返还已扣成本；在建条目不可取消（BUILD_NOT_CANCELLABLE） */
+  /** 取消建造队列中的条目（v7 排队可取消，v71 起建造中也可取消）：全额返还已扣成本（连升只退未完成级）；已完成 / 已取消返回 BUILD_NOT_CANCELLABLE */
   CANCEL_BUILD: 24,
   /** 城池改名（v7） */
   RENAME_CITY: 25,
@@ -172,6 +172,10 @@ export const Op = {
   ALLIANCE_MARK_REMOVE: 113,
   /** 查询本联盟的有效地图标记（v69，AISLG-184） */
   GET_ALLIANCE_MARKS: 114,
+  /** 取消进行中的武将历练（v71，AISLG-190）：武将立刻回家，不返还经验 */
+  CANCEL_TRAINING: 115,
+  /** 提前解除主动免战（v71，AISLG-190）：本周免费次数不返还；被动免战不可解除 */
+  CANCEL_TRUCE: 116,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -270,6 +274,7 @@ export type ErrorCode =
   | 'BUILDING_NOT_BUILT'
   | 'BUILDING_LEVEL_MAX'
   | 'BUILD_NOT_CANCELLABLE'
+  | 'TRAINING_NOT_CANCELLABLE'
   | 'AGENT_FORBIDDEN'
   | 'TROOP_NOT_AVAILABLE'
   | 'ELITE_TROOP_LOCKED'
@@ -316,6 +321,8 @@ export type ErrorCode =
   | 'SELF_TRUCE_ACTIVE'
   | 'TRUCE_ALREADY_ACTIVE'
   | 'TRUCE_WEEKLY_USED'
+  | 'TRUCE_NOT_ACTIVE'
+  | 'PASSIVE_TRUCE_NOT_CANCELLABLE'
   | 'TILE_PROTECTED'
   | 'ALLY_NOT_ATTACKABLE'
   | 'ALLIANCE_MARK_LIMIT'
@@ -869,7 +876,7 @@ export interface CityView {
   building: BuildView | null;
 }
 
-/** CANCEL_BUILD（op 24）请求载荷：取消排队中的建造条目并全额返还其成本 */
+/** CANCEL_BUILD（op 24）请求载荷：取消建造条目（排队中 / 建造中）并全额返还其成本 */
 export interface CancelBuildRequestData {
   buildId: string;
 }
@@ -956,7 +963,7 @@ export interface RecruitResponseData {
   recruit: RecruitView;
 }
 
-/** CANCEL_RECRUIT（op 29）请求载荷：仅排队中的条目可取消，全额返还资源与人口 */
+/** CANCEL_RECRUIT（op 29）请求载荷：取消征兵条目（排队中 / 征募中），全额返还资源与人口 */
 export interface CancelRecruitRequestData {
   recruitId: string;
 }

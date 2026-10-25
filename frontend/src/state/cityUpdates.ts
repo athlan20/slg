@@ -27,9 +27,18 @@ export function applyBuildResult(city: CityView, build: BuildView): CityView {
   return withQueue(city, queue);
 }
 
-/** CANCEL_BUILD 成功的直接结果：排队条目退出队列（返还的成本随按需查询对齐） */
+/**
+ * CANCEL_BUILD 成功的直接结果：条目退出队列（返还的成本随按需查询对齐）。取消的是在建条目（v71，AISLG-190）时，
+ * 队首排队项乐观置为 building（激活后的 dueAt 随按需查询对齐），与服务端同事务激活的口径一致。
+ */
 export function applyCancelResult(city: CityView, build: BuildView): CityView {
-  return withQueue(city, city.queue.filter((item) => item.id !== build.id));
+  const rest = city.queue.filter((item) => item.id !== build.id);
+  return withQueue(city, rest.some((item) => item.status === 'building') ? rest : promoteHead(rest));
+}
+
+/** 队首若为排队项，乐观置为 building（激活后的 dueAt 由服务端给出，本地先置 null） */
+function promoteHead(queue: BuildView[]): BuildView[] {
+  return queue.map((item, index) => (index === 0 && item.status === 'queued' ? { ...item, status: 'building' as const, dueAt: null } : item));
 }
 
 /**
@@ -77,9 +86,13 @@ export function applyRecruitResult(city: CityView, recruit: RecruitView): CityVi
   return { ...city, recruitQueue };
 }
 
-/** CANCEL_RECRUIT 成功的直接结果（v11）：排队条目退出队列（返还随按需查询对齐） */
+/** CANCEL_RECRUIT 成功的直接结果（v11）：条目退出队列（返还随按需查询对齐）；取消征募中条目时队首排队项乐观置为 recruiting（v71） */
 export function applyCancelRecruitResult(city: CityView, recruit: RecruitView): CityView {
-  return { ...city, recruitQueue: city.recruitQueue.filter((item) => item.id !== recruit.id) };
+  const rest = city.recruitQueue.filter((item) => item.id !== recruit.id);
+  const promoted = rest.some((item) => item.status === 'recruiting')
+    ? rest
+    : rest.map((item, index) => (index === 0 && item.status === 'queued' ? { ...item, status: 'recruiting' as const, dueAt: null } : item));
+  return { ...city, recruitQueue: promoted };
 }
 
 /**

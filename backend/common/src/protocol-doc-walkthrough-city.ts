@@ -15,7 +15,7 @@ const FARM_UP_DUE_AT = new Date(Date.parse(FARM_UP_STARTED_AT) + DEFAULT_BUILD_S
 export const CITY_MANAGEMENT_STEP: WalkthroughStep =   {
     title: '8. 城池管理（v7）：改名与取消排队',
     explain:
-      '改名立即生效（RENAME_CITY，名称 trim 后 1..24 字符）。升级农田立即开工后，民房进入排队（v4 排队制）；排队条目可随时取消（CANCEL_BUILD），成本按条目快照全额返还（2026-09-27 确认规则），该类型可立即重新发起建造；进行中条目能否取消待定。一期不提供建筑拆除。本连接是唯一在线连接，故没有其他连接的推送帧；有其他在线连接时它们会收到 PUSH_BUILD_STATE（build_cancelled）与 PUSH_CITY_STATE（city_renamed）。',
+      '改名立即生效（RENAME_CITY，名称 trim 后 1..24 字符）。升级农田立即开工后，民房进入排队（v4 排队制）；排队条目可随时取消（CANCEL_BUILD），成本按条目快照全额返还（2026-09-27 确认规则），该类型可立即重新发起建造；建造中的条目也可取消（v71 起），同样全额返还、排队的下一条自动开工。一期不提供建筑拆除。本连接是唯一在线连接，故没有其他连接的推送帧；有其他在线连接时它们会收到 PUSH_BUILD_STATE（build_cancelled）与 PUSH_CITY_STATE（city_renamed）。',
     frames: [
       {
         kind: 'request',

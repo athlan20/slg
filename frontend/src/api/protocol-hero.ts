@@ -198,6 +198,7 @@ export interface HeroStatePushData {
     | 'granted'          // 获得名将（全服另有播报）
     | 'training_started' // 开始历练（v54）
     | 'training_done'    // 历练结束，经验已到账（v54）
+    | 'training_cancelled' // 历练被取消，武将回城、不给经验（v71，AISLG-190）
     | 'points_changed'   // 加点 / 洗点（v54）
     | 'gifted'           // 赏赐（v54）
     | 'friendship_changed'; // 结交进度（v54）

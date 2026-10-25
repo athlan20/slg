@@ -45,6 +45,8 @@ export interface HeroSession {
   reset: (heroId: string) => Promise<boolean>;
   /** 历练（v54）：派出去 1 / 4 / 12 小时基准 */
   train: (heroId: string, tier: TrainingTier) => Promise<boolean>;
+  /** 取消历练（v71，AISLG-190）：武将立刻回家，不返还经验 */
+  cancelTraining: (heroId: string) => Promise<boolean>;
   /** 赏赐（v54）：花金币加经验 */
   gift: (heroId: string) => Promise<boolean>;
   /** 结交在野名将（v54） */
@@ -161,6 +163,7 @@ export function useHeroSession(deps: HeroSessionDeps): HeroSession {
   );
   const reset = useCallback((heroId: string) => run(Op.RESET_HERO_POINTS, { heroId }), [run]);
   const train = useCallback((heroId: string, tier: TrainingTier) => run(Op.TRAIN_HERO, { heroId, tier }), [run]);
+  const cancelTraining = useCallback((heroId: string) => run(Op.CANCEL_TRAINING, { heroId }), [run]);
   const gift = useCallback((heroId: string) => run(Op.GIFT_HERO, { heroId }), [run]);
   const befriend = useCallback((heroName: string) => run(Op.BEFRIEND_HERO, { heroName }), [run]);
   const recruitFamous = useCallback((heroName: string) => run(Op.RECRUIT_FAMOUS_HERO, { heroName }), [run]);
@@ -203,6 +206,7 @@ export function useHeroSession(deps: HeroSessionDeps): HeroSession {
       allocate,
       reset,
       train,
+      cancelTraining,
       gift,
       befriend,
       recruitFamous,
@@ -221,6 +225,7 @@ export function useHeroSession(deps: HeroSessionDeps): HeroSession {
       allocate,
       reset,
       train,
+      cancelTraining,
       gift,
       befriend,
       recruitFamous,

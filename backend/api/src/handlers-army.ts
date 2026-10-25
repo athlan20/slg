@@ -1,7 +1,8 @@
 // 征兵协议的处理逻辑：RECRUIT / CANCEL_RECRUIT（v11）。协议分发见 handlers.ts。
 // 与建造共用的事务形态：城池行锁内懒结算生产与人口后按最新状态校验（玩家 / Agent
 // 同时提交按先后生效）；取消排队先用条件翻转守卫 recruits 行（锁序 recruits → cities，
-// 与 Worker 一致），成功后按快照全额返还资源与人口。征募中条目能否取消待定（同建造）。
+// 与 Worker 一致），成功后按快照全额返还资源与人口。征募中条目也可取消（v71，AISLG-190）：
+// 同事务激活该城排队的下一条，与 Worker 到点完成按 status='recruiting' 守卫并发。
 
 import pg from 'pg';
 import { Op, EventType, RESOURCE_KEYS, isTroopKind, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
@@ -12,6 +13,7 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { loadCityState, lockCitySnapshot, recruitView, type CitySnapshot, type RecruitRow } from './views';
 import { insufficientPopulationDetail, insufficientResourcesDetail } from './handlers-city';
+import { activateQueuedRecruits } from '../../common/src/queue-activate';
 
 /** 征兵失败响应附当前城池状态（含本次读取触发的结算），客户端据此自行刷新 */
 async function respondRecruitDenied(
@@ -111,7 +113,7 @@ export async function handleRecruit(
   }
 }
 
-/** 取消排队中的征兵条目（v11：仅 queued 可取消；按快照全额返还资源与人口） */
+/** 取消征兵条目（v11 仅排队可取消；v71 AISLG-190 起征募中也可取消）：条件翻转守卫 recruits 行，按快照全额返还资源与人口，排队的下一条立即开工 */
 export async function handleCancelRecruit(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -127,7 +129,7 @@ export async function handleCancelRecruit(
     // 条件翻转即守卫（锁序 recruits → cities，与 Worker 一致）
     const upd = await client.query(
       `UPDATE recruits SET status = 'cancelled', due_at = NULL, completed_at = NULL
-       WHERE id = $1 AND account_id = $2 AND status = 'queued'
+       WHERE id = $1 AND account_id = $2 AND status IN ('queued', 'recruiting')
        RETURNING *`,
       [recruitId, accountId],
     );
@@ -164,6 +166,18 @@ export async function handleCancelRecruit(
       initiator: role,
       detail: { troop: recruit.troop, count: recruit.count, refund: recruit.cost ?? {}, population: Math.max(0, recruit.population) },
     });
+    // 让出的征募位立即由该城排队的下一条接上（与 Worker 同一激活写法；无排队时无操作）
+    const activated = await activateQueuedRecruits<RecruitRow & { cost: Record<string, unknown> | null; population: number }>(client, snap.cityId);
+    for (const row of activated) {
+      await insertEvent(client, {
+        accountId,
+        cityId: snap.cityId,
+        buildId: row.id,
+        type: EventType.RECRUIT_STARTED,
+        initiator: row.initiator as InitiatorRole,
+        detail: { troop: row.troop, count: row.count, cost: row.cost ?? {}, population: row.population, fromQueue: true },
+      });
+    }
     await client.query('COMMIT');
 
     const view = recruitView(recruit);
@@ -173,6 +187,13 @@ export async function handleCancelRecruit(
       { op: Op.PUSH_RECRUIT_STATE, push: true, data: { reason: 'recruit_cancelled', recruit: view } },
       conn,
     );
+    for (const row of activated) {
+      ctx.registry.broadcast(accountId, {
+        op: Op.PUSH_RECRUIT_STATE,
+        push: true,
+        data: { reason: 'recruit_started', recruit: recruitView(row) },
+      });
+    }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw err;

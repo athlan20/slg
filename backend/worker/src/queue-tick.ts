@@ -6,10 +6,9 @@ import type pg from 'pg';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { EventType, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
-import { MAX_ACTIVE_BUILDS, buildTimeBasis, completeBuild, upgradeSeconds } from '../../common/src/rules';
-import { MAX_ACTIVE_RECRUITS } from '../../common/src/troops';
+import { completeBuild, upgradeSeconds } from '../../common/src/rules';
 import { loadTerritory } from '../../common/src/world-db';
-import { getTimeScale } from '../../common/src/time-scale';
+import { activateQueuedBuilds, activateQueuedRecruits } from '../../common/src/queue-activate';
 import { NEWBIE_GOVERNMENT_LEVEL } from '../../common/src/protection';
 import {
   loadArmyFoodUsePerHour,
@@ -149,34 +148,12 @@ export async function processDueBuilds(pool: pg.Pool): Promise<number> {
       }
     }
 
-    // 队列激活：完成让出在建位后（也兜底覆盖异常遗留的空位），把各城最早的排队建造
-    // 转入在建并重算时间；每城最多激活到 MAX_ACTIVE_BUILDS 条。
-    // 时长按条目区分：建造（level=1）用建造时长，升级（level>1）= 建造时长 × 当前等级；
-    // 全局缩放与 1 秒下限作用于总时长（与 rules.upgradeSeconds 同口径，AISLG-38 复核修复）。
+    // 队列激活：完成让出在建位后（也兜底覆盖异常遗留的空位），把各城最早的排队建造转入在建
+    // （共用写法见 common/src/queue-activate.ts，API 取消在建条目时同样调用）。
     const activated: BuildRow[] = [];
     if (done.length > 0) {
-      const buildBasis = buildTimeBasis();
-      const act = await client.query(
-        `UPDATE builds b SET status = 'building',
-            started_at = clock_timestamp(),
-            due_at = clock_timestamp() + make_interval(secs => GREATEST(1, FLOOR(
-              $1::float8 * (CASE
-                WHEN b.level <= 10 THEN (CASE WHEN b.level > 1 THEN b.level - 1 ELSE 1 END)
-                ELSE 9 * power(1.3::float8, b.level - 10) END) / $3::float8)))
-         WHERE b.id IN (
-           SELECT id FROM (
-             SELECT q.id, row_number() OVER (PARTITION BY q.city_id ORDER BY q.started_at, q.id) AS rn
-             FROM builds q
-             WHERE q.status = 'queued'
-               AND NOT EXISTS (
-                 SELECT 1 FROM builds a WHERE a.city_id = q.city_id AND a.status = 'building'
-               )
-           ) ranked WHERE ranked.rn <= $2
-         )
-         RETURNING *`,
-        [buildBasis.seconds, MAX_ACTIVE_BUILDS, buildBasis.scale],
-      );
-      for (const row of act.rows as BuildRow[]) {
+      const act = await activateQueuedBuilds<BuildRow>(client, null);
+      for (const row of act) {
         await insertEvent(client, {
           accountId: row.account_id,
           cityId: row.city_id,
@@ -272,30 +249,11 @@ export async function processDueRecruits(pool: pg.Pool): Promise<number> {
       }
     }
 
-    // 队首激活：把各城最早的排队征兵转入征募中，时长按条目的单兵时长快照 × 数量重算
+    // 队首激活：把各城最早的排队征兵转入征募中（共用写法见 common/src/queue-activate.ts）
     const activated: RecruitRow[] = [];
     if (done.length > 0) {
-      // v22（AISLG-39）：征募时长 = max(1, 基准单兵 × 数量 ÷ time_scale)——下限作用于
-      // 总时长（unit_seconds 快照为未缩放基准）；显式 RECRUIT_UNIT_SECONDS 覆盖时不缩放
-      const recruitScale = Number.isFinite(Number(process.env.RECRUIT_UNIT_SECONDS)) ? 1 : getTimeScale();
-      const act = await client.query(
-        `UPDATE recruits r SET status = 'recruiting',
-            started_at = clock_timestamp(),
-            due_at = clock_timestamp() + make_interval(secs => GREATEST(1, FLOOR(r.unit_seconds * r.count / $1::float8)))
-         WHERE r.id IN (
-           SELECT id FROM (
-             SELECT q.id, row_number() OVER (PARTITION BY q.city_id ORDER BY q.started_at, q.id) AS rn
-             FROM recruits q
-             WHERE q.status = 'queued'
-               AND NOT EXISTS (
-                 SELECT 1 FROM recruits a WHERE a.city_id = q.city_id AND a.status = 'recruiting'
-               )
-           ) ranked WHERE ranked.rn <= $2
-         )
-         RETURNING *`,
-        [recruitScale, MAX_ACTIVE_RECRUITS],
-      );
-      for (const row of act.rows as RecruitRow[]) {
+      const act = await activateQueuedRecruits<RecruitRow>(client, null);
+      for (const row of act) {
         await insertEvent(client, {
           accountId: row.account_id,
           cityId: row.city_id,

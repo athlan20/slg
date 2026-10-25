@@ -4,7 +4,7 @@
 import { Op } from '../../common/src/protocol';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { handleAllocateHeroPoints, handleGiftHero, handleResetHeroPoints, handleTrainHero } from './handlers-hero-growth';
+import { handleAllocateHeroPoints, handleCancelTraining, handleGiftHero, handleResetHeroPoints, handleTrainHero } from './handlers-hero-growth';
 import { handleBefriendHero, handleRecruitFamousHero } from './handlers-hero-friendship';
 
 export async function routeHeroGrowthOp(
@@ -21,6 +21,8 @@ export async function routeHeroGrowthOp(
       return handleResetHeroPoints(ctx, conn, op, seq, data);
     case Op.TRAIN_HERO:
       return handleTrainHero(ctx, conn, op, seq, data);
+    case Op.CANCEL_TRAINING:
+      return handleCancelTraining(ctx, conn, op, seq, data);
     case Op.GIFT_HERO:
       return handleGiftHero(ctx, conn, op, seq, data);
     case Op.BEFRIEND_HERO:

@@ -118,16 +118,18 @@ export interface GameSession {
   startBuild: (kind: BuildingKind) => Promise<void>;
   /** 按建筑类型发起升级：缺省升到下一等级；toLevel（当前+2..10，v22）连续升到目标等级 */
   startUpgrade: (kind: BuildingKind, toLevel?: number) => Promise<void>;
-  /** 取消排队中的建造条目（全额返还成本；在建条目不可取消） */
+  /** 取消建造条目（排队中 / 建造中，全额返还成本） */
   cancelBuild: (buildId: string) => Promise<void>;
   /** 发起征兵（v11）：军营等级解锁兵种，发起时扣减资源与人口 */
   startRecruit: (troop: TroopKind, count: number) => Promise<void>;
-  /** 取消排队中的征兵条目（v11，全额返还资源与人口；征募中条目不可取消） */
+  /** 取消征兵条目（v11 排队可取消，v71 起征募中也可取消；全额返还资源与人口） */
   cancelRecruit: (recruitId: string) => Promise<void>;
   /** 集市兑换（v22，AISLG-67 前端入口）：基础资源按 4:1 换金币；成功返回 null，失败返回人读错误 */
   exchangeGold: (resource: ExchangeResource, amount: number) => Promise<string | null>;
   /** 开启主动免战（v38 AISLG-122）：每周一次免费、12 小时；成功返回 null，失败返回人读错误 */
   startTruce: () => Promise<string | null>;
+  /** 提前解除主动免战（v71，AISLG-190）：本周次数不返还；成功返回 null，失败返回人读错误 */
+  cancelTruce: () => Promise<string | null>;
   /** 城池改名；成功返回 null，失败返回人读错误（弹窗内展示） */
   renameCity: (name: string) => Promise<string | null>;
   /** 放弃分城（v57，AISLG-153）：成功后当前城回到主城 */
@@ -1073,7 +1075,7 @@ export function useGameSession(): GameSession {
   );
 
   // 主动免战（v38 AISLG-122）：成功后 shield 随防抖按需查询对齐
-  const { startTruce } = useMemo(
+  const { startTruce, cancelTruce } = useMemo(
     () => createTruceAction({ clientRef, appendLocalEvent, scheduleSync }),
     [appendLocalEvent, scheduleSync],
   );
@@ -1256,6 +1258,7 @@ export function useGameSession(): GameSession {
     cancelRecruit,
     exchangeGold,
     startTruce,
+    cancelTruce,
     renameCity,
     discardCity,
     resetAccount,

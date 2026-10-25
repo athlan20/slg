@@ -43,7 +43,7 @@ import { handleGetYellowTurban } from './handlers-yt';
 import { handleCancelResearch, handleGetTechs, handleResearchTech } from './handlers-tech';
 import { handleAssignHero, handleDismissHero, handleGetHeroes, handleRecruitHero } from './handlers-hero';
 import { routeHeroGrowthOp } from './handlers-hero-ops';
-import { handleTruce } from './handlers-pvp';
+import { handleCancelTruce, handleTruce } from './handlers-pvp';
 import { handleArenaChallenge, handleGetArena, handleGetArenaReports, handleSetArenaLineup } from './handlers-arena';
 import { handleGetStarTower, handleGetStarTowerReports, handleStarTowerChallenge } from './handlers-star-tower';
 import {
@@ -286,6 +286,7 @@ async function dispatchOp(
     case Op.ALLOCATE_HERO_POINTS:
     case Op.RESET_HERO_POINTS:
     case Op.TRAIN_HERO:
+    case Op.CANCEL_TRAINING:
     case Op.GIFT_HERO:
     case Op.BEFRIEND_HERO:
     case Op.RECRUIT_FAMOUS_HERO:
@@ -293,6 +294,9 @@ async function dispatchOp(
       break;
     case Op.TRUCE:
       await handleTruce(ctx, conn, op, seq);
+      break;
+    case Op.CANCEL_TRUCE:
+      await handleCancelTruce(ctx, conn, op, seq);
       break;
     case Op.GET_ARENA:
       await handleGetArena(ctx, conn, op, seq);

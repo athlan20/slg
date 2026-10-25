@@ -95,7 +95,7 @@ import {
   REQUEST_RECALL_MARCH,
   REQUEST_SCOUT,
 } from './protocol-doc-ops-battle';
-import { PUSH_ATTACK_WARNING, REQUEST_TRUCE } from './protocol-doc-ops-pvp';
+import { PUSH_ATTACK_WARNING, PVP_OP_DOCS } from './protocol-doc-ops-pvp';
 import { CHAT_OP_DOC } from './protocol-doc-ops-chat';
 import { ARENA_OP_DOCS } from './protocol-doc-ops-arena';
 import { STAR_TOWER_OP_DOCS } from './protocol-doc-ops-star-tower';
@@ -251,7 +251,7 @@ const REQUEST_GET_EVENTS: RequestOpDoc = {
     {
       name: 'events[].type',
       type: 'string',
-      desc: "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）。",
+      desc: "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）。",
     },
     { name: 'events[].initiator', type: "'player' | 'agent' | null", desc: '发起事件的连接声明的登录类型。' },
     { name: 'events[].cityId', type: 'string | null', desc: '关联城池 id，无关联时为 null。' },
@@ -440,7 +440,7 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.RECRUIT_HERO]: withCityId(REQUEST_RECRUIT_HERO),
   [Op.DISMISS_HERO]: withCityId(REQUEST_DISMISS_HERO),
   [Op.ASSIGN_HERO]: withCityId(REQUEST_ASSIGN_HERO),
-  [Op.TRUCE]: REQUEST_TRUCE,
+  ...PVP_OP_DOCS,
   [Op.WX_QR_CREATE]: REQUEST_WX_QR_CREATE,
   [Op.WX_SCAN]: REQUEST_WX_SCAN,
   [Op.WX_CONFIRM]: REQUEST_WX_CONFIRM,

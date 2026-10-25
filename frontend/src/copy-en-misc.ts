@@ -115,7 +115,7 @@ export const ERRORS_EN = {
     buildingExists: 'A building of this type already exists or is under construction/upgrade — you cannot start another one',
     buildingNotBuilt: 'This building type is not built yet — build it first, then upgrade',
     buildingLevelMax: 'The building has reached its level cap and cannot be upgraded further',
-    buildNotCancellable: 'Only queued build tasks can be cancelled',
+    buildNotCancellable: 'Build task not found, not yours, or already completed / cancelled',
     invalidParams: 'Invalid building type',
     fallback: 'Failed to start the build',
   },
@@ -132,7 +132,7 @@ export const ERRORS_EN = {
     insufficientResources: 'Not enough resources for this recruitment (current resources in the top bar)',
     insufficientPopulation: 'Not enough population to recruit that many (population grows over time; Houses raise the cap)',
     queueFull: 'Recruit queue is full — wait for the first task to finish before queueing another',
-    notCancellable: 'Only queued recruit tasks can be cancelled',
+    notCancellable: 'Recruit task not found, not yours, or already completed / cancelled',
     invalidParams: 'Invalid recruit parameters (unknown troop type or out-of-range count)',
     fallback: 'Failed to start recruitment',
   },
@@ -235,4 +235,8 @@ export const TRUCE_COPY_EN = {
     return `This week's Truce Shield has been used (once per week) — you can enable it again in about ${hours} hours`;
   },
   errFallback: 'Failed to enable Truce Shield, please try again later',
+  cancelledText: 'Truce Shield ended early (this week’s use is not refunded)',
+  errNotActive: 'No active Truce Shield to end',
+  errPassive: 'Your city is under passive protection (after being conquered or raided) and the shield cannot be ended early',
+  cancelFallback: 'Failed to end the Truce Shield early, please try again later',
 } satisfies typeof COPY['truce'];

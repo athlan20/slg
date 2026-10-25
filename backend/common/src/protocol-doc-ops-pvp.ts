@@ -1,6 +1,7 @@
 // 玩家对抗（一）（v38，AISLG-122）的协议文档：TRUCE 主动免战与 PUSH_ATTACK_WARNING
 // 玩家来袭预警。规则与数值见 common/src/protection.ts。
 
+import { Op } from './protocol';
 import type { PushOpDoc, RequestOpDoc } from './protocol-doc';
 
 export const REQUEST_TRUCE: RequestOpDoc = {
@@ -46,7 +47,32 @@ export const REQUEST_TRUCE: RequestOpDoc = {
     },
   ],
   agentNote:
-    '免战适合「要下线睡觉 / 资源涨满怕被抢」的时间窗：开启后 12 小时（基准）内别人打不了你。注意开启后你也不能出兵打玩家（打野地 / NPC 不受限）；每周只有一次，规划好使用时机（city.shieldNextAt 可查下次可用时刻）。',
+    '免战适合「要下线睡觉 / 资源涨满怕被抢」的时间窗：开启后 12 小时（基准）内别人打不了你。注意开启后你也不能出兵打玩家（打野地 / NPC 不受限）；每周只有一次，规划好使用时机（city.shieldNextAt 可查下次可用时刻）。开错了可用 CANCEL_TRUCE 提前解除，但本周次数不返还。',
+};
+
+export const REQUEST_CANCEL_TRUCE: RequestOpDoc = {
+  kind: 'request',
+  name: 'CANCEL_TRUCE',
+  title: '提前解除主动免战（v71，AISLG-190）',
+  preAuth: false,
+  summary:
+    '提前解除生效中的账号级主动免战（TRUCE 开启的那段）：解除后立即恢复可被攻击，也可出兵攻打玩家（SELF_TRUCE_ACTIVE 不再拦你）。本周免费次数不返还，下一次可开启时刻（nextAvailableAt）不变。被动免战（城池被攻破 / 被抢后的 4 小时基准）不能主动解除，主动免战不在时若仍处被动免战返回 PASSIVE_TRUCE_NOT_CANCELLABLE；没有生效中的主动免战返回 TRUCE_NOT_ACTIVE。无参数。',
+  requestFields: [],
+  dataFields: [
+    { name: 'shieldUntil', type: 'null', desc: '解除后主动免战截止为 null。' },
+    { name: 'nextAvailableAt', type: 'string | null', desc: '下一次可开启时刻（ISO 8601；未变，本周次数仍视为已用）。' },
+  ],
+  errors: ['TRUCE_NOT_ACTIVE', 'PASSIVE_TRUCE_NOT_CANCELLABLE'],
+  examples: [
+    {
+      request: { op: 116, seq: 43 },
+      responses: [
+        { op: 116, seq: 43, ok: true, data: { shieldUntil: null, nextAvailableAt: '2026-10-10T00:00:00.000Z' } },
+      ],
+    },
+  ],
+  agentNote:
+    '主动免战解除后本周次数就用掉了，不要为了「先开着、等要出兵再关」去开关：解除只是应急（比如开错了、想马上反击）。解除后别人的在途部队到达时也不再扑空。',
 };
 
 export const PUSH_ATTACK_WARNING: PushOpDoc = {
@@ -109,4 +135,10 @@ export const PUSH_ATTACK_WARNING: PushOpDoc = {
   ],
   agentNote:
     '收到预警先看 target 与 armyMax：城池目标比该城守军——守得住就原地不动（守城战有城墙 / 箭塔 / 城守加成），守不住就在 arriveAt 前把资源用掉（建造 / 征兵 / 研究锁定资源）、必要时从其他城调兵增援（MARCH 到自己的城 = 调兵），被攻破后该城进入 4 小时（基准）免战；野地目标（v39）看地块驻军——来得及就向该地块增援（MARCH 打自己的地块 = 增援，不战斗并入驻军），守不住可考虑主动召回（RECALL_GARRISON 弃守保兵，袭击 / 抢占随之作废）。',
+};
+
+/** 供 protocol-doc-ops.ts 注册：主动免战的两个协议号（v71 起另加 CANCEL_TRUCE） */
+export const PVP_OP_DOCS = {
+  [Op.TRUCE]: REQUEST_TRUCE,
+  [Op.CANCEL_TRUCE]: REQUEST_CANCEL_TRUCE,
 };

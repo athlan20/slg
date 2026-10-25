@@ -4,7 +4,7 @@
 // - 建造 / 升级 / 改名在事务内加城池行锁、懒结算生产后按最新状态重新校验
 //   （玩家 / Agent 同时提交按先后生效）；
 // - 取消排队先用条件翻转守卫 builds 行（锁序与 Worker 相同：builds → cities，避免死锁），
-//   再在城池行锁内按成本快照全额返还（2026-09-27 确认规则；在建条目能否取消待定）。
+//   再在城池行锁内按成本快照全额返还（2026-09-27 确认规则；v71 起在建条目也可取消，连升只退未完成级）。
 //   一期不提供建筑拆除（范围文档「明确不上线」）。
 
 import pg from 'pg';
@@ -40,6 +40,7 @@ import { readString, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { buildView, loadCityState, lockCitySnapshot, type BuildRow, type CitySnapshot } from './views';
+import { activateQueuedBuilds } from '../../common/src/queue-activate';
 
 /**
  * 建造 / 升级的共用事务路径：同一事务内行锁、生产结算、校验决策、入队/开工、
@@ -321,7 +322,21 @@ function refundOf(row: { cost?: Record<string, unknown> | null }): Resources {
   return refund;
 }
 
-/** 取消排队条目（v7：仅 status=queued 可取消；成本按快照全额返还，占位规则） */
+/** 取消返还额（AISLG-190）：单级 / 建造 = 成本快照全额；连升（to_level）只返还未完成的级——
+ *  row.level 为当前推进中的级，它起到 to_level 的各级成本才退（已完成的级保留等级、不退）。
+ *  排队中的连升 row.level = 起始级，结果即整链快照，与快照一致。 */
+function cancelRefundOf(row: BuildRow & { cost: Record<string, unknown> | null }): Resources {
+  if (row.to_level === null || row.to_level === undefined) {
+    return refundOf(row);
+  }
+  return upgradeChainCost(row.kind as BuildingKind, row.level - 1, row.to_level);
+}
+
+/**
+ * 取消建造条目（v7 仅排队可取消；v71 AISLG-190 起在建条目也可取消）：条件翻转守卫 builds 行
+ * （status 为 queued / building 才生效，Worker 到点完成按 status='building' 守卫，先翻转者生效），
+ * 再在城池行锁内返还（见 cancelRefundOf）；建筑等级不变，同事务激活该城排队的下一条并推送 build_started。
+ */
 export async function handleCancelBuild(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -338,7 +353,7 @@ export async function handleCancelBuild(
     // 先锁 builds 再锁 cities（下方快照），与 Worker 的锁序一致，不构成死锁环
     const upd = await client.query(
       `UPDATE builds SET status = 'cancelled', due_at = NULL, completed_at = NULL
-       WHERE id = $1 AND account_id = $2 AND status = 'queued'
+       WHERE id = $1 AND account_id = $2 AND status IN ('queued', 'building')
        RETURNING *`,
       [buildId, accountId],
     );
@@ -357,7 +372,7 @@ export async function handleCancelBuild(
       return;
     }
     // 返还不受仓储上限钳制（上限只作用于产出增量；占位规则）
-    const refund = refundOf(build);
+    const refund = cancelRefundOf(build);
     const refunded: Resources = { ...snap.resources };
     for (const key of RESOURCE_KEYS) {
       refunded[key] += refund[key];
@@ -374,6 +389,18 @@ export async function handleCancelBuild(
       initiator: role,
       detail: { kind: build.kind, level: build.level, refund },
     });
+    // 让出的在建位立即由该城排队的下一条接上（与 Worker 同一激活写法；无排队时无操作）
+    const activated = await activateQueuedBuilds<BuildRow & { cost: Record<string, unknown> | null }>(client, snap.cityId);
+    for (const row of activated) {
+      await insertEvent(client, {
+        accountId,
+        cityId: snap.cityId,
+        buildId: row.id,
+        type: EventType.BUILD_STARTED,
+        initiator: row.initiator as InitiatorRole,
+        detail: { kind: row.kind, cost: row.cost ?? {}, level: row.level, ...(row.to_level ? { toLevel: row.to_level } : {}), fromQueue: true },
+      });
+    }
     await client.query('COMMIT');
 
     const view = buildView(build);
@@ -383,6 +410,13 @@ export async function handleCancelBuild(
       { op: Op.PUSH_BUILD_STATE, push: true, data: { reason: 'build_cancelled', build: view } },
       conn,
     );
+    for (const row of activated) {
+      ctx.registry.broadcast(accountId, {
+        op: Op.PUSH_BUILD_STATE,
+        push: true,
+        data: { reason: 'build_started', build: buildView(row) },
+      });
+    }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw err;

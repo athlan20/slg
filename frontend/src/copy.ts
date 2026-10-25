@@ -169,6 +169,12 @@ const TOPBAR = {
     '开启后 12 小时内别人打不了你，你也不能出兵打玩家（打野地 / NPC 不受影响）。本周只能开一次，开启后无法撤销。',
   shieldConfirmSubmit: '确认开启',
   shieldConfirmCancel: '取消',
+  /** 提前解除主动免战（v71，AISLG-190）：按钮、确认框（取消键复用 shieldConfirmCancel） */
+  cancelShieldButton: '提前解除',
+  cancelShieldHint: '提前解除主动免战：解除后立即可被攻击、也可出兵；本周免费次数不返还',
+  cancelShieldConfirmTitle: '提前解除免战？',
+  cancelShieldConfirmBody: '解除后别人立即可以攻击你，你也能出兵打玩家；本周的免费次数不返还，本周不能再开。',
+  cancelShieldConfirmSubmit: '确认解除',
   /** 仓库快满提醒（AISLG-73）：≥80% 的资源警示行与悬浮提示（金币不参与，与离线日报同口径） */
   storageFullLine: (detail: string) => `⚠ 仓库快满：${detail}，超出上限的产出会作废`,
   storageFullItem: (label: string, percent: number, cap: number) =>
@@ -221,9 +227,9 @@ const BUILD_QUEUE = {
   waitingSettle: STATUS.waitingSettle,
   activating: STATUS.activating,
   remainingSeconds: STATUS.remainingSeconds,
-  /** 取消排队条目（全额返还成本；在建条目不可取消） */
+  /** 取消条目（排队中 / 建造中，全额返还成本；v71 AISLG-190 起在建也可取消） */
   cancel: '取消',
-  cancelTitle: '取消该排队条目，全额返还成本',
+  cancelTitle: '取消该条目，全额返还成本',
 };
 
 const CITY_MAP = {
@@ -290,9 +296,9 @@ const RECRUIT_PANEL = {
   waitingSettle: STATUS.waitingSettle,
   activating: STATUS.activating,
   remainingSeconds: STATUS.remainingSeconds,
-  /** 取消排队条目（全额返还资源与人口；征募中不可取消） */
+  /** 取消条目（排队中 / 征募中，全额返还资源与人口；v71 AISLG-190 起征募中也可取消） */
   cancel: '取消',
-  cancelTitle: '取消该排队条目，全额返还资源与人口',
+  cancelTitle: '取消该条目，全额返还资源与人口',
   formTitle: '发起征兵',
   troopLabel: '兵种',
   countLabel: '数量',
@@ -750,7 +756,7 @@ const ERRORS = {
     buildingExists: '该类型建筑已存在或正在建造/升级中，不可重复发起',
     buildingNotBuilt: '该类型尚未建造，请先建造再升级',
     buildingLevelMax: '建筑已达等级上限，无法继续升级',
-    buildNotCancellable: '只能取消排队中的建造任务',
+    buildNotCancellable: '建造任务不存在、不属于本账号或已完成 / 已取消',
     invalidParams: '建筑类型不合法',
     fallback: '发起建造失败',
   },
@@ -767,7 +773,7 @@ const ERRORS = {
     insufficientResources: '资源不足以支付本次征募（当前资源见顶栏）',
     insufficientPopulation: '人口不足以征募该数量（人口随时间增长，民房提高上限）',
     queueFull: '征兵队列已满，等队首完成后可再发起',
-    notCancellable: '只能取消排队中的征兵任务',
+    notCancellable: '征兵任务不存在、不属于本账号或已完成 / 已取消',
     invalidParams: '征兵参数不合法（兵种未知或数量越界）',
     fallback: '发起征兵失败',
   },
@@ -867,6 +873,10 @@ const TRUCE_COPY = {
     return `本周的免战已用过（每周一次），约 ${hours} 小时后再开`;
   },
   errFallback: '开启免战失败，请稍后重试',
+  cancelledText: '主动免战已提前解除（本周次数不返还）',
+  errNotActive: '没有生效中的主动免战，无需解除',
+  errPassive: '城池处于被动免战中（被攻破 / 被抢后的保护），不能主动解除',
+  cancelFallback: '提前解除免战失败，请稍后重试',
 };
 
 export const COPY = {
