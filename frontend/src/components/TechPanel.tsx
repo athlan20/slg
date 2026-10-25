@@ -1,6 +1,7 @@
-/** 科技卡（养成页右，v27 AISLG-77）：书院等级、六项科技（两列 3 行卡片：等级 / 当前效果 / 下一级成本·耗时·书院门槛 / 研究或取消）、
+/** 科技卡（养成页右，v27 AISLG-77）：书院等级、六项科技（两列卡片：科技名 + 「？」 / 等级 / 研究或取消）、
  *  进行中的研究（进度条 + 倒计时 + 取消）。科技账号共享、同一时间只研究一项；
- *  按钮禁用条件用 city 数据预判（书院 / 资源 / 已有研究），权威判定在服务端。卡片行文本都截断，悬停看全文。
+ *  「？」悬停或点按弹浮窗，分行看当前效果、科技作用、下一级成本·耗时·书院门槛（AISLG-188，卡内不再挤放说明文字）。
+ *  按钮禁用条件用 city 数据预判（书院 / 资源 / 已有研究），权威判定在服务端。
  */
 
 import { type CityView, type TechEntryView } from '../api/protocol';
@@ -10,6 +11,7 @@ import { useCopy } from '../i18n/bundle';
 import type { TechSession } from '../state/techSession';
 import { useNow } from '../state/useNow';
 import { Card } from './ui/Card';
+import { HelpTip } from './ui/HelpTip';
 
 interface TechPanelProps {
   city: CityView | null;
@@ -34,29 +36,50 @@ function TechCard({ entry, city, researchBusy, researching, onResearch }: { entr
             ? TECH_COPY.panel.insufficient
             : null;
   const effect = entry.kind === 'scouting' ? TECH_COPY.panel.scoutDetail(entry.level) : TECH_COPY.panel.currentEffect(entry.currentPercent);
-  const nextLine = next
-    ? TECH_COPY.panel.nextLine(next.level, parts.map((part) => `${part.label} ${part.value}`).join(' / '), formatDurationText(next.seconds))
-    : TECH_COPY.panel.maxed;
   // 科技名以文案包为准（entry.label 是服务端下发的中文），role 保留服务端原词便于定位
   const label = TECH_COPY.names[entry.kind];
+  const costText = parts.map((part) => `${part.label} ${part.value}`).join(' / ');
   return (
     <div
       role={`科技面板-条目-${entry.label}`}
       className={`flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden rounded-[5px] border px-2 py-1 ${researching ? 'border-accent-dim bg-accent-soft' : 'border-line-soft bg-panel-2'}`}
     >
-      <div className="flex items-baseline justify-between gap-1">
-        <span className="min-w-0 truncate text-[13px] font-semibold">{label}</span>
+      <div className="flex items-center justify-between gap-1">
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="min-w-0 truncate text-[13px] font-semibold">{label}</span>
+          <HelpTip
+            triggerRole="科技面板-说明图标"
+            popRole="科技面板-说明浮窗"
+            ariaLabel={TECH_COPY.panel.helpAria(label)}
+          >
+            <p role="科技面板-当前效果">
+              <span className="text-faint">{TECH_COPY.panel.rowEffect}</span>
+              {effect}
+            </p>
+            <p role="科技面板-科技作用">
+              <span className="text-faint">{TECH_COPY.panel.rowTech}</span>
+              {TECH_COPY.effectText[entry.kind] ?? entry.effect}
+            </p>
+            {next ? (
+              <p role="科技面板-下一级" className="text-dim">
+                <span className="text-faint">{TECH_COPY.panel.rowNext(next.level)}</span>
+                <span className={lacking ? 'text-warn' : undefined}>{costText}</span>
+                {` · ${TECH_COPY.panel.duration(formatDurationText(next.seconds))}`}
+              </p>
+            ) : (
+              <p role="科技面板-下一级" className="text-dim">
+                {TECH_COPY.panel.maxed}
+              </p>
+            )}
+            {next && !academyOk ? (
+              <p role="科技面板-书院门槛" className="text-warn">
+                {TECH_COPY.panel.needAcademy(next.academyRequired)}
+              </p>
+            ) : null}
+          </HelpTip>
+        </span>
         <span className="shrink-0 font-mono text-[11.5px] text-accent">{TECH_COPY.panel.levelTag(entry.level, entry.maxLevel)}</span>
       </div>
-      <p role="科技面板-当前效果" className="truncate font-mono text-[11.5px] text-dim" title={`${effect}\n${entry.effect}`}>
-        {effect}
-      </p>
-      <p className="truncate text-[11px] text-faint" title={TECH_COPY.effectText[entry.kind] ?? entry.effect}>
-        {TECH_COPY.effectText[entry.kind] ?? entry.effect}
-      </p>
-      <p role="科技面板-下一级" className={`truncate text-[11px] ${lacking ? 'text-warn' : 'text-dim'}`} title={nextLine}>
-        {nextLine}
-      </p>
       <div className="mt-auto">
         {next ? (
           <button

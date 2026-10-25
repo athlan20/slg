@@ -9,8 +9,13 @@ export const TECH_COPY = {
     noAcademy: '建造书院后才能研究科技（第 N 级科技要求书院 ≥ N 级）。科技账号共享，所有城都生效',
     sharedHint: '科技账号共享，所有城都生效；同一时间只研究一项',
     levelTag: (level: number, max: number) => `Lv${level}/${max}`,
-    currentEffect: (percent: number) => (percent > 0 ? `当前 +${percent}%` : '尚未生效'),
-    nextLine: (level: number, cost: string, seconds: string) => `下一级 Lv${level}：${cost} · 耗时 ${seconds}`,
+    /** 「？」浮窗的说明（AISLG-188）：当前效果 / 科技作用 / 下一级（成本·耗时·书院门槛） */
+    helpAria: (label: string) => `${label}说明`,
+    rowEffect: '当前效果：',
+    rowTech: '科技作用：',
+    rowNext: (level: number) => `下一级 Lv${level}：`,
+    duration: (seconds: string) => `耗时 ${seconds}`,
+    currentEffect: (percent: number) => (percent > 0 ? `+${percent}%` : '尚未生效'),
     maxed: '已满级',
     needAcademy: (required: number) => `需书院 Lv${required}`,
     research: '研究',
@@ -21,8 +26,7 @@ export const TECH_COPY = {
     inProgressDisabled: '已有进行中的研究',
     insufficient: '资源不足',
     // 返回值显式放宽为 string：三元直返字面量会被推断成字面量联合，英文孪生将无法 satisfies
-    scoutDetail: (level: number): string =>
-      level >= 6 ? '当前：精确数量' : level >= 3 ? '当前：兵种明细（数量为近似）' : '当前：只看总兵力约数',
+    scoutDetail: (level: number): string => (level >= 6 ? '精确数量' : level >= 3 ? '兵种明细（数量为近似）' : '只看总兵力约数'),
   },
   /** 侦察科技决定情报详细度（侦察报告 / 地块详情） */
   scout: {
