@@ -10,7 +10,6 @@ import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import type { QuestSession } from '../state/questSession';
 import { Card } from './ui/Card';
-import { PagedList } from './ui/PagedList';
 
 /** 资源奖励的可读文本，如「金+1500 木+1500」 */
 function rewardText(r: Resources, labels: Record<keyof Resources, string>): string {
@@ -89,9 +88,10 @@ function DailyTab({ session }: { session: QuestSession }) {
     return <p className="text-[12px] text-faint">{QUEST_COPY.panel.loading}</p>;
   }
   const { signin, daily } = quest;
+  // 签到块与日常列表整块滚动（AISLG-189）：签到块高度固定，不走 PagedList 分页，否则行高测量会被它挤压
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1.5">
-      <div role="任务面板-签到" className="flex shrink-0 flex-col gap-1 rounded border border-line-soft bg-panel-2 px-2 py-1.5">
+    <div role="任务面板-日常滚动区" className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
+      <div role="任务面板-签到" className="flex flex-col gap-1 rounded border border-line-soft bg-panel-2 px-2 py-1.5">
         <div className="flex items-baseline gap-2">
           <span className="text-[12.5px] font-semibold">{QUEST_COPY.signin.title}</span>
           <span role="任务面板-连续签到" className="text-[11px] text-faint">
@@ -133,12 +133,9 @@ function DailyTab({ session }: { session: QuestSession }) {
         </div>
       </div>
 
-      <PagedList
-        role="任务面板-列表"
-        items={daily}
-        keyOf={(t) => t.id}
-        renderRow={(t) => (
-          <div role={`任务面板-条目-${t.id}`} className="flex items-center gap-2 rounded border border-line-soft bg-panel-2 px-2 py-1">
+      <div role="任务面板-列表" className="flex flex-col gap-1">
+        {daily.map((t) => (
+          <div key={t.id} role={`任务面板-条目-${t.id}`} className="flex items-center gap-2 rounded border border-line-soft bg-panel-2 px-2 py-1">
             <div className="min-w-0 flex-1">
               <div className="truncate text-[12.5px]">
                 {tName(t.title)}
@@ -158,8 +155,8 @@ function DailyTab({ session }: { session: QuestSession }) {
               {t.claimed ? QUEST_COPY.panel.claimed : t.done ? QUEST_COPY.panel.claim : QUEST_COPY.panel.undone}
             </button>
           </div>
-        )}
-      />
+        ))}
+      </div>
     </div>
   );
 }

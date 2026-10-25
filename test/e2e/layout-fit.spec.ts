@@ -53,7 +53,9 @@ async function scanLayout(page: Page): Promise<Violation[]> {
         continue;
       }
       const overflows = el.scrollHeight > el.clientHeight + 1;
-      if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && overflows) {
+      // 任务卡「日常」页签整块滚动是有意例外（AISLG-189，docs/frontend-nav-layout.md 第 2 节第 1 条）
+      const allowedScroll = el.getAttribute('role') === '任务面板-日常滚动区';
+      if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && overflows && !allowedScroll) {
         out.push({ kind: '出现竖向滚动条', role: roleOf(el), detail: `scrollHeight ${el.scrollHeight} > clientHeight ${el.clientHeight}` });
         continue;
       }
