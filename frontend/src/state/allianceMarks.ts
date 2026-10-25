@@ -43,7 +43,12 @@ export interface AllianceMarksSession {
   clear: () => void;
 }
 
-export function useAllianceMarks(clientRef: RefObject<ApiClient | null>, connected: boolean, allianceId: string | null): AllianceMarksSession {
+export function useAllianceMarks(
+  clientRef: RefObject<ApiClient | null>,
+  connected: boolean,
+  allianceId: string | null,
+  myRole: string | null = null,
+): AllianceMarksSession {
   const [marks, setMarks] = useState<AllianceMarkView[]>([]);
   const [canRemoveAny, setCanRemoveAny] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -162,7 +167,7 @@ export function useAllianceMarks(clientRef: RefObject<ApiClient | null>, connect
     setLoadFailed(false);
   }, []);
 
-  // 所在联盟变化 / 连接建立（含断线重连）：有联盟就拉一次，没有就清空
+  // 所在联盟变化 / 连接建立（含断线重连）/ 我的职位变化（被任命或撤销副盟主，canRemoveAny 随职位变）：有联盟就拉一次，没有就清空
   useEffect(() => {
     if (!allianceId) {
       clear();
@@ -171,7 +176,7 @@ export function useAllianceMarks(clientRef: RefObject<ApiClient | null>, connect
     if (connected) {
       void refresh();
     }
-  }, [allianceId, connected, refresh, clear]);
+  }, [allianceId, connected, myRole, refresh, clear]);
 
   return { marks, canRemoveAny, loaded, loading, loadFailed, busy, refresh, add, remove, onPush, clear };
 }

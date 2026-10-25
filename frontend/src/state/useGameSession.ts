@@ -403,7 +403,7 @@ export function useGameSession(): GameSession {
   const alliance = useAllianceSession(clientRef, connection === 'online');
   const { clear: allianceClear, onPush: onAlliancePush } = alliance;
   // 联盟地图标记（AISLG-184 / F2）：随所在联盟加载；PUSH_ALLIANCE_MARK 增量合并；离盟 / 登出清空
-  const allianceMarks = useAllianceMarks(clientRef, connection === 'online', alliance.state?.alliance?.id ?? null);
+  const allianceMarks = useAllianceMarks(clientRef, connection === 'online', alliance.state?.alliance?.id ?? null, alliance.state?.myRole ?? null);
   const { clear: allianceMarksClear, onPush: onAllianceMarkPush } = allianceMarks;
   const chat = useChat({
     clientRef,
