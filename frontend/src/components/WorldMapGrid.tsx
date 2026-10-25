@@ -8,13 +8,13 @@
  */
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import type { TileView, WorldMapResponseData } from '../api/protocol';
+import type { AllianceMarkView, TileView, WorldMapResponseData } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import { useMapZoomGestures, type ZoomHandler } from '../state/useMapZoomGestures';
 import { zoomStep } from '../state/mapZoom';
 import { WorldTileBadges } from './WorldTileBadges';
-import { CityMark, TERRAIN_CLASS, TerrainIcon, levelTone } from './worldMapMarks';
+import { AllianceMarkBadge, CityMark, TERRAIN_CLASS, TerrainIcon, levelTone } from './worldMapMarks';
 import { NPC_TIER_CLASS, WorldMapTooltip, citySide, npcTierLabel, tileAria, type TileTip } from './worldMapTip';
 
 interface WorldMapGridProps {
@@ -39,6 +39,8 @@ interface WorldMapGridProps {
   zoomSize: number;
   /** 图层开关：黄巾营地徽章 / 我的领地描边（流寇·商队由调用方控制 movingMarks） */
   layers?: { yt: boolean; mine: boolean };
+  /** 本盟地图标记（AISLG-184 / F2）：键 "x,y" → 标记（已过期的不传） */
+  marks?: Map<string, AllianceMarkView>;
 }
 
 /** 拖曳会话（v23 AISLG-64；AISLG-102 重写为「理想原点」模型）：pointerdown 建立、move 换算理想原点、up 结束 */
@@ -73,7 +75,7 @@ const ARROW_DELTA: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
 };
 
-export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanTo, panStep, territoryClusters, movingMarks, onZoom, zoomSize, layers }: WorldMapGridProps) {
+export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanTo, panStep, territoryClusters, movingMarks, onZoom, zoomSize, layers, marks }: WorldMapGridProps) {
   const copy = useCopy();
   const { TILE_KIND_LABEL } = copy;
   const showYt = layers?.yt ?? true;
@@ -228,6 +230,7 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
     setTip({
       tile,
       isOwn,
+      mark: marks?.get(`${tile.x},${tile.y}`) ?? null,
       style: {
         ...(rightHalf
           ? { right: viewport.clientWidth - el.offsetLeft + gap }
@@ -312,16 +315,21 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
             const isSelected = selected !== null && selected.x === x && selected.y === y;
             const isCity = tile.kind !== 'wilderness';
             const occupied = tile.kind === 'wilderness' && tile.owner !== null;
+            // 盟友（AISLG-182 / F2）：同一联盟的地块单独描边、角旗与城名着色，不随「我的领地」图层开关隐藏
+            const ally = !isOwn && tile.owner?.ally === true;
+            const mark = marks?.get(`${x},${y}`);
             // 连片领地（v23 AISLG-59）：本账号有连片加成的野地统一描金边
             const cluster = showMine ? territoryClusters?.get(`${x},${y}`) : undefined;
             // 占领 / 本方城池：内描边 + 角旗；本方强调色、他方警示色（「我的领地」图层关闭时不描本方）
             const ownership = cluster
               ? 'ring-2 ring-inset ring-gold'
-              : (occupied || (tile.kind === 'city' && isOwn)) && (showMine || !isOwn)
-                ? isOwn
-                  ? 'ring-2 ring-inset ring-accent/80'
-                  : 'ring-2 ring-inset ring-warn/70'
-                : '';
+              : ally
+                ? 'ring-2 ring-inset ring-st-online/80'
+                : (occupied || (tile.kind === 'city' && isOwn)) && (showMine || !isOwn)
+                  ? isOwn
+                    ? 'ring-2 ring-inset ring-accent/80'
+                    : 'ring-2 ring-inset ring-warn/70'
+                  : '';
             return (
               <button
                 key={`${x}-${y}`}
@@ -368,7 +376,7 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
                     <span
                       role="世界地图视野-城名"
                       className={`absolute inset-x-0.5 bottom-[4%] truncate @max-lg:hidden text-center text-[clamp(8px,1.25cqw,12px)] leading-tight ${
-                        tile.kind === 'npc_city' ? 'text-gold' : isOwn ? 'font-semibold text-accent' : 'text-warn'
+                        tile.kind === 'npc_city' ? 'text-gold' : isOwn ? 'font-semibold text-accent' : ally ? 'font-semibold text-st-online' : 'text-warn'
                       }`}
                     >
                       {tile.kind === 'npc_city' ? (tile.famous ? tName(tile.famous.name) : `NPC Lv${tile.level}`) : (tile.owner ? tName(tile.owner.cityName) : TILE_KIND_LABEL.city)}
@@ -400,12 +408,13 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
                   </>
                 )}
                 <WorldTileBadges tile={tile} mark={movingMarks?.get(`${x},${y}`)} hideCamp={!showYt} />
+                {mark ? <AllianceMarkBadge kind={mark.kind} /> : null}
                 {occupied ? (
                   <span
                     role="世界地图视野-占领角旗"
                     aria-hidden="true"
                     className={`absolute left-0 top-0 h-[22%] w-[22%] [clip-path:polygon(0_0,100%_0,0_100%)] ${
-                      isOwn ? 'bg-accent' : 'bg-warn'
+                      isOwn ? 'bg-accent' : ally ? 'bg-st-online' : 'bg-warn'
                     }`}
                   />
                 ) : null}

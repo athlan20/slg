@@ -100,7 +100,7 @@ export const REQUEST_SCOUT: RequestOpDoc = {
   dataFields: [
     { name: 'march', type: 'object', desc: '侦察行军视图（purpose=scout；字段与 MARCH 响应相同）。' },
   ],
-  errors: ['INVALID_PARAMS', 'DEPLOY_LIMIT', 'INSUFFICIENT_TROOPS', 'NEWBIE_PROTECTED'],
+  errors: ['INVALID_PARAMS', 'DEPLOY_LIMIT', 'INSUFFICIENT_TROOPS', 'NEWBIE_PROTECTED', 'ALLY_NOT_ATTACKABLE'],
   examples: [
     {
       caption: `侦察 NPC 城池 (30,6)（3 斥候，约 ${SCOUT_TRAVEL_SECONDS}s 后到达）`,

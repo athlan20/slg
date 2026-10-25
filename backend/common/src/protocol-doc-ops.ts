@@ -100,6 +100,8 @@ import { CHAT_OP_DOC } from './protocol-doc-ops-chat';
 import { ARENA_OP_DOCS } from './protocol-doc-ops-arena';
 import { STAR_TOWER_OP_DOCS } from './protocol-doc-ops-star-tower';
 import { ANNOUNCEMENT_OP_DOCS } from './protocol-doc-ops-announcement';
+import { ALLIANCE_OP_DOCS } from './protocol-doc-ops-alliance';
+import { ALLIANCE_MARK_OP_DOCS } from './protocol-doc-ops-alliance-mark';
 import { SEASON_OP_DOCS } from './protocol-doc-ops-season';
 import { HERO_GROWTH_OP_DOCS } from './protocol-doc-ops-hero-growth';
 import { REQUEST_GET_DAILY, REQUEST_CLAIM_DAILY, REQUEST_GET_SIGNIN, REQUEST_SIGNIN } from './protocol-doc-ops-quest';
@@ -491,4 +493,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   ...ANNOUNCEMENT_OP_DOCS,
   // 赛季（v65，AISLG-134）：条目在 protocol-doc-ops-season.ts，玩家与 Agent 同一套规则，收录进对外 Agent 文档
   ...SEASON_OP_DOCS,
+  // 联盟（v66，AISLG-181）：条目在 protocol-doc-ops-alliance.ts；创建与管理类仅限玩家，对外 Agent 文档不收录（见 ALLIANCE_AGENT_HIDDEN_OPS）
+  ...ALLIANCE_OP_DOCS,
+  // 联盟地图标记（v69，AISLG-184）：条目在 protocol-doc-ops-alliance-mark.ts；玩家与 Agent 通用，收录进对外 Agent 文档
+  ...ALLIANCE_MARK_OP_DOCS,
 };

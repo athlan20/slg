@@ -105,7 +105,7 @@ async function main(): Promise<void> {
   const aliceMsg = messageOf(await sendWorld(alice, '  大家好  '));
   check(aliceMsg.channel === 'world' && aliceMsg.type === 'text', '消息为世界频道文字');
   check(aliceMsg.text === '大家好' && aliceMsg.recipient === null, '文字已去首尾空白，世界频道无收件人');
-  check(aliceMsg.sender.accountId === alice.id && aliceMsg.sender.username === alice.username, '发送人为本账号');
+  check(aliceMsg.sender?.accountId === alice.id && aliceMsg.sender?.username === alice.username, '发送人为本账号');
 
   step('屏蔽词在服务端替换成等长的 *（示例词表：示例屏蔽词）');
   const bob = await newPlayer('bob', 3);

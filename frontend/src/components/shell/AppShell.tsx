@@ -62,6 +62,8 @@ export function AppShell() {
         onToggleChat={() => session.chat.setOpen(!session.chat.open)}
         announcementUnread={session.announcements.unreadCount}
         onOpenAnnouncements={session.announcements.openList}
+        allianceBadge={session.alliance.badge}
+        onOpenAlliance={session.alliance.openPanel}
       />
       <TopBar
         page={page}
@@ -90,6 +92,8 @@ export function AppShell() {
         broadcasts={session.broadcasts}
         onOpenBroadcasts={() => void session.fetchServerBroadcasts()}
         onOpenAnnouncement={session.announcements.openAnnouncement}
+        allianceBadge={session.alliance.badge}
+        onOpenAlliance={session.alliance.openPanel}
       />
       <ChatWindow />
       <SeasonOverlay season={session.season} />

@@ -18,6 +18,7 @@ const KIND_ROLE_ZH: Record<HallKind, string> = {
   model: '模型',
   arena: '竞技场',
   starTower: '将星塔',
+  alliance: '联盟',
 };
 
 const ROW_GRID = 'grid grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-2';
@@ -28,8 +29,9 @@ interface HallOfFameViewProps {
 }
 
 export function HallOfFameView({ hall, honors }: HallOfFameViewProps) {
-  const { HALL_COPY: COPY, SEASON_COPY, PAGED_COPY } = useCopy();
+  const { HALL_COPY: COPY, SEASON_COPY, PAGED_COPY, ALLIANCE_COPY } = useCopy();
   const isModel = hall.kind === 'model';
+  const isAlliance = hall.kind === 'alliance';
   const kindLabel = (kind: HallKind): string => COPY.kinds[kind] ?? kind;
   const valueColumn = isModel ? COPY.modelValueColumn : kindLabel(hall.kind);
   const noSeasons = hall.loaded && !hall.loading && !hall.error && hall.seasons.length === 0;
@@ -90,7 +92,7 @@ export function HallOfFameView({ hall, honors }: HallOfFameViewProps) {
         <div className="flex min-h-0 flex-1 flex-col">
           <div className={`${ROW_GRID} shrink-0 px-1 text-[12px] text-faint`}>
             <span>{COPY.rankColumn}</span>
-            <span>{isModel ? COPY.modelColumn : COPY.playerColumn}</span>
+            <span>{isModel ? COPY.modelColumn : isAlliance ? ALLIANCE_COPY.board.column : COPY.playerColumn}</span>
             <span className="text-right">{valueColumn}</span>
           </div>
           {isModel ? (
@@ -129,7 +131,19 @@ export function HallOfFameView({ hall, honors }: HallOfFameViewProps) {
               loadingMore={hall.loading}
               onLoadMore={hall.loadMore}
               empty={<p className="py-6 text-center text-[13px] text-faint">{hall.loading ? PAGED_COPY.loading : COPY.emptyRows}</p>}
-              renderRow={(entry) => (
+              renderRow={(entry) =>
+                isAlliance ? (
+                  // 联盟榜存档（v70，AISLG-185）：名字是联盟，盟主与成员数随行带出
+                  <div role="排行榜-名人堂-条目" className={`${ROW_GRID} border-t border-line-soft px-1 py-1 text-[13px] text-dim`}>
+                    <span className="font-mono">{entry.rank}</span>
+                    <span className="min-w-0 truncate">
+                      <span className="text-fg">{entry.allianceName ?? entry.username}</span>
+                      <span className="ml-1.5 text-faint">{ALLIANCE_COPY.detail.leader(entry.username)}</span>
+                      {entry.memberCount !== null ? <span className="ml-1.5 text-faint">{ALLIANCE_COPY.board.members(entry.memberCount)}</span> : null}
+                    </span>
+                    <span className="font-mono">{entry.value}</span>
+                  </div>
+                ) : (
                 <div role="排行榜-名人堂-条目" className={`${ROW_GRID} border-t border-line-soft px-1 py-1 text-[13px] text-dim`}>
                   <span className="font-mono">{entry.rank}</span>
                   <span className="min-w-0 truncate">

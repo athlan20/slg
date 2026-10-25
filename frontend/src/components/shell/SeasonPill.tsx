@@ -8,7 +8,9 @@ import type { SeasonInfo } from '../../state/seasonSession';
 import { useNow } from '../../state/useNow';
 
 const URGENT_MS = 3 * 86_400_000;
-const pill = 'inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[11.5px] tabular-nums';
+// 固定宽度（含 px-2 与边框）：按各状态最宽文案加余量取值，文案变化时胶囊宽度不变，避免顶栏抖动
+// 宽屏最宽：zh「S12 · 剩 3 天 23:59:59」约 121px；窄屏最宽：「S12 · Season ending」约 111px
+const pill = 'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[11.5px] tabular-nums w-[146px] max-xl:w-[136px]';
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');

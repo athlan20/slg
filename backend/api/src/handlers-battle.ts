@@ -21,6 +21,8 @@ import type { ConnInfo } from './connections';
 import { deployCountOf, loadCityState, lockCitySnapshot, marchView, type MarchRow } from './views';
 import { canDeployMore } from '../../common/src/building-effects';
 import { checkHeroMarchable } from './handlers-hero';
+import { areAllies } from '../../common/src/alliance-db';
+import { isAllyOfCity } from './march-target';
 
 /** 战报点评正文的长度上限（v23 AISLG-53；占位值随需求「已定」标注可调） */
 const BATTLE_COMMENT_MAX = 200;
@@ -125,6 +127,12 @@ export async function handleScout(
         respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
         return;
       }
+      // v67（AISLG-182）：盟友（同一联盟）的城池不能侦察
+      if (owner && (await areAllies(client, accountId, owner.account_id))) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'ALLY_NOT_ATTACKABLE');
+        return;
+      }
       if (owner) {
         const nowRes = await client.query(`SELECT now() AS now`);
         const dbNow = nowRes.rows[0].now as Date;
@@ -139,6 +147,12 @@ export async function handleScout(
         }
         pvpTarget = { accountId: owner.account_id, username: owner.username };
       }
+    }
+    // v67（AISLG-182）：盟友占领的野地同样不能侦察
+    if (tile && tile.kind === 'wilderness' && tile.owner_city_id && (await isAllyOfCity(client, accountId, tile.owner_city_id))) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'ALLY_NOT_ATTACKABLE');
+      return;
     }
     // 扣减城内斥候（与出征同一规则：发起时立即扣减）
     await client.query(

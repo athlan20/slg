@@ -5,7 +5,14 @@
 // 文案按界面语言取用（AISLG-137）：每个函数体内经 getCopy() 取当前语言包并沿用原名
 // 解构——严禁在模块顶层取用（语言切换后会过期）。
 
-import type { ErrorCode, Resources } from './protocol';
+import {
+  ALLIANCE_CREATE_COST_GOLD,
+  ALLIANCE_CREATE_MIN_GOVERNMENT,
+  ALLIANCE_MARK_MAX,
+  ALLIANCE_MAX_VICES,
+  type ErrorCode,
+  type Resources,
+} from './protocol';
 import { getCopy } from '../i18n/bundle';
 import { formatDurationText } from './format';
 
@@ -228,6 +235,8 @@ export function marchErrorText(code: ErrorCode | undefined, message: string | un
       return EXTRA_STATE.errorText.selfTruceActive;
     case 'TILE_PROTECTED':
       return EXTRA_STATE.errorText.tileProtected;
+    case 'ALLY_NOT_ATTACKABLE':
+      return EXTRA_STATE.errorText.allyNotAttackable;
     case 'DEPLOY_LIMIT':
       return DEFENSE_COPY.deploy.hint;
     case 'TERRITORY_LIMIT':
@@ -274,4 +283,74 @@ export function googleErrorText(code: ErrorCode | undefined, message: string | u
 export function githubErrorText(code: ErrorCode | undefined, message: string | undefined): string {
   const { GITHUB_COPY } = getCopy();
   return (code ? GITHUB_COPY.errors.byCode[code] : undefined) ?? message ?? GITHUB_COPY.errors.fallback;
+}
+
+/**
+ * 联盟操作失败的人读提示（AISLG-186）：冷却类按服务端下发的 retryAfterSeconds（缺省时由 until 推算）拼剩余时长；
+ * scene 为邀请 / 申请时，个别错误码（如 ALLIANCE_NOT_FOUND 在邀请里指昵称对不上）用场景文案覆盖。
+ */
+/**
+ * 联盟地图标记操作失败的人读提示（AISLG-184 / F2）：满员时按服务端下发的 retryAfterSeconds 拼出最早一个到期的剩余时长；
+ * 其余码直接用本地文案，未知码退回服务端 message。
+ */
+export function allianceMarkErrorText(code: ErrorCode | undefined, message: string | undefined, data?: Record<string, unknown>): string {
+  const { ALLIANCE_COPY } = getCopy();
+  const { markErrors } = ALLIANCE_COPY;
+  switch (code) {
+    case 'ALLIANCE_MARK_LIMIT': {
+      const retry = typeof data?.retryAfterSeconds === 'number' ? data.retryAfterSeconds : 0;
+      return markErrors.ALLIANCE_MARK_LIMIT(ALLIANCE_MARK_MAX, formatDurationText(retry));
+    }
+    case 'ALLIANCE_MARK_EXISTS':
+    case 'ALLIANCE_NOT_IN':
+    case 'ALLIANCE_NOT_FOUND':
+    case 'ALLIANCE_FORBIDDEN':
+    case 'AGENT_FORBIDDEN':
+    case 'INVALID_PARAMS':
+      return markErrors[code];
+    default:
+      return message ?? markErrors.fallback;
+  }
+}
+
+export function allianceErrorText(
+  code: ErrorCode | undefined,
+  message: string | undefined,
+  data?: Record<string, unknown>,
+  scene?: 'invite' | 'apply',
+): string {
+  const { ALLIANCE_COPY } = getCopy();
+  const { errors, sceneErrors } = ALLIANCE_COPY;
+  const sceneMap = scene ? (sceneErrors[scene] as Record<string, string>) : undefined;
+  if (code && sceneMap && code in sceneMap) {
+    return sceneMap[code];
+  }
+  switch (code) {
+    case 'ALLIANCE_GOVERNMENT_TOO_LOW':
+      return errors.ALLIANCE_GOVERNMENT_TOO_LOW(ALLIANCE_CREATE_MIN_GOVERNMENT);
+    case 'ALLIANCE_COOLDOWN': {
+      const retry = typeof data?.retryAfterSeconds === 'number' ? data.retryAfterSeconds : null;
+      const until = typeof data?.until === 'string' ? Date.parse(data.until) : NaN;
+      const seconds = retry ?? (Number.isNaN(until) ? 0 : Math.ceil((until - Date.now()) / 1000));
+      return errors.ALLIANCE_COOLDOWN(formatDurationText(seconds));
+    }
+    case 'ALLIANCE_ROLE_FULL':
+      return errors.ALLIANCE_ROLE_FULL(ALLIANCE_MAX_VICES);
+    case 'INSUFFICIENT_RESOURCES':
+      return errors.INSUFFICIENT_RESOURCES(ALLIANCE_CREATE_COST_GOLD.toLocaleString());
+    case 'ALLIANCE_NAME_INVALID':
+    case 'ALLIANCE_NAME_TAKEN':
+    case 'ALLIANCE_ALREADY_IN':
+    case 'ALLIANCE_NOT_IN':
+    case 'ALLIANCE_NOT_FOUND':
+    case 'ALLIANCE_FULL':
+    case 'ALLIANCE_FORBIDDEN':
+    case 'ALLIANCE_LEADER_MUST_TRANSFER':
+    case 'ALLIANCE_REQUEST_EXISTS':
+    case 'AGENT_FORBIDDEN':
+    case 'INVALID_PARAMS':
+      return errors[code];
+    default:
+      return message ?? errors.fallback;
+  }
 }

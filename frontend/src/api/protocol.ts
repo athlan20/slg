@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 65;
+export const PROTOCOL_VERSION = 70;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -144,6 +144,34 @@ export const Op = {
   GET_ANNOUNCEMENTS: 96,
   GET_ANNOUNCEMENT: 97,
   READ_ANNOUNCEMENT: 98,
+  /** 创建联盟（v66，AISLG-181）：data.name；官府 ≥ 5 级、扣 10 万金币；仅玩家连接 */
+  CREATE_ALLIANCE: 101,
+  /** 查询联盟（v66）：缺省 = 我的联盟（含我的申请 / 邀请，盟主 / 副盟主另带待审批申请）；给 allianceId = 公开信息 */
+  GET_ALLIANCE: 102,
+  /** 联盟列表（v66）：按成员数降序分页 */
+  LIST_ALLIANCES: 103,
+  /** 申请加入联盟 / 撤回申请（v66，仅玩家连接） */
+  ALLIANCE_APPLY: 104,
+  /** 邀请玩家入盟 / 撤回邀请（v66，盟主或副盟主；仅玩家连接） */
+  ALLIANCE_INVITE: 105,
+  /** 答复申请或邀请（v66；仅玩家连接） */
+  ALLIANCE_RESPOND: 106,
+  /** 退出联盟（v66；盟主有其他成员时须先转让；仅玩家连接） */
+  ALLIANCE_LEAVE: 107,
+  /** 解散联盟（v66；仅盟主） */
+  ALLIANCE_DISBAND: 108,
+  /** 踢出成员（v66；立即生效；副盟主只能踢普通成员） */
+  ALLIANCE_KICK: 109,
+  /** 任免副盟主 / 转让盟主（v66；仅盟主） */
+  ALLIANCE_SET_ROLE: 110,
+  /** 修改联盟公告（v66；盟主或副盟主） */
+  ALLIANCE_SET_NOTICE: 111,
+  /** 放置联盟地图标记（v69，AISLG-184）：data.x / y / kind，可选 text；同联盟同格不可重复、最多 20 个；玩家与 Agent 通用 */
+  ALLIANCE_MARK_ADD: 112,
+  /** 删除联盟地图标记（v69，AISLG-184）：data.id；成员只能删自己的，盟主 / 副盟主可删任何人的（仅玩家连接） */
+  ALLIANCE_MARK_REMOVE: 113,
+  /** 查询本联盟的有效地图标记（v69，AISLG-184） */
+  GET_ALLIANCE_MARKS: 114,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -194,6 +222,10 @@ export const Op = {
   /** 竞技场状态变化推送（v53，AISLG-145）：challenged / daily_reward / milestone，账号全部在线连接收到 */
   PUSH_ARENA_STATE: 2021,
   PUSH_ANNOUNCEMENT: 2022,
+  /** 联盟状态变化推送（v66，AISLG-181）：reason = joined / left / kicked / role_changed / disbanded / notice / request_received / request_resolved / invited；收到后重新 GET_ALLIANCE */
+  PUSH_ALLIANCE_STATE: 2024,
+  /** 联盟地图标记变化推送（v69，AISLG-184）：reason = added / removed */
+  PUSH_ALLIANCE_MARK: 2025,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
@@ -212,6 +244,18 @@ export type InitiatorRole = 'player' | 'agent';
 export type ErrorCode =
   | 'INVALID_MESSAGE'
   | 'ANNOUNCEMENT_NOT_FOUND'
+  | 'ALLIANCE_NAME_INVALID'
+  | 'ALLIANCE_NAME_TAKEN'
+  | 'ALLIANCE_GOVERNMENT_TOO_LOW'
+  | 'ALLIANCE_ALREADY_IN'
+  | 'ALLIANCE_NOT_IN'
+  | 'ALLIANCE_NOT_FOUND'
+  | 'ALLIANCE_COOLDOWN'
+  | 'ALLIANCE_FULL'
+  | 'ALLIANCE_FORBIDDEN'
+  | 'ALLIANCE_ROLE_FULL'
+  | 'ALLIANCE_LEADER_MUST_TRANSFER'
+  | 'ALLIANCE_REQUEST_EXISTS'
   | 'UNKNOWN_OP'
   | 'NOT_LOGGED_IN'
   | 'ALREADY_LOGGED_IN'
@@ -273,6 +317,9 @@ export type ErrorCode =
   | 'TRUCE_ALREADY_ACTIVE'
   | 'TRUCE_WEEKLY_USED'
   | 'TILE_PROTECTED'
+  | 'ALLY_NOT_ATTACKABLE'
+  | 'ALLIANCE_MARK_LIMIT'
+  | 'ALLIANCE_MARK_EXISTS'
   | 'WX_TICKET_INVALID'
   | 'WX_CODE_INVALID'
   | 'WX_ALREADY_BOUND'
@@ -485,6 +532,65 @@ export type {
   ReadAnnouncementRequestData,
   ReadAnnouncementResponseData,
 } from './protocol-announcement';
+
+export {
+  ALLIANCE_COOLDOWN_MS,
+  ALLIANCE_CREATE_COST_GOLD,
+  ALLIANCE_CREATE_MIN_GOVERNMENT,
+  ALLIANCE_INVITE_TTL_MS,
+  ALLIANCE_LEADER_INACTIVE_MS,
+  ALLIANCE_LIST_PAGE_SIZE,
+  ALLIANCE_MAX_MEMBERS,
+  ALLIANCE_MAX_VICES,
+  ALLIANCE_NAME_MAX_CHARS,
+  ALLIANCE_NAME_MIN_CHARS,
+  ALLIANCE_NOTICE_MAX_CHARS,
+  ALLIANCE_POWER_FAMOUS_WEIGHT,
+  ALLIANCE_POWER_GOVERNMENT_WEIGHT,
+  ALLIANCE_POWER_TERRITORY_WEIGHT,
+  ALLIANCE_RANK_MIN_MEMBERS,
+  ALLIANCE_MARK_KINDS,
+  ALLIANCE_MARK_MAX,
+  ALLIANCE_MARK_PUSH_REASONS,
+  ALLIANCE_MARK_TEXT_MAX_CHARS,
+  ALLIANCE_MARK_TTL_MS,
+  ALLIANCE_PUSH_REASONS,
+  ALLIANCE_REQUEST_TTL_MS,
+  ALLIANCE_ROLES,
+} from './protocol-alliance';
+export type {
+  AllianceApplyRequestData,
+  AllianceBriefView,
+  AllianceDetailView,
+  AllianceLeaderboardEntryView,
+  AllianceInviteRequestData,
+  AllianceKickRequestData,
+  AllianceMemberView,
+  AlliancePlayerView,
+  AlliancePushReason,
+  AllianceReceivedInviteView,
+  AllianceRequestView,
+  AllianceRespondRequestData,
+  AllianceRole,
+  AllianceSentInviteView,
+  AllianceSetNoticeRequestData,
+  AllianceSetRoleRequestData,
+  CreateAllianceRequestData,
+  GetAllianceRequestData,
+  GetAllianceResponseData,
+  ListAlliancesRequestData,
+  ListAlliancesResponseData,
+  PushAllianceStateData,
+  AllianceMarkAddRequestData,
+  AllianceMarkAddResponseData,
+  AllianceMarkKind,
+  AllianceMarkPushReason,
+  AllianceMarkRemoveRequestData,
+  AllianceMarkRemoveResponseData,
+  AllianceMarkView,
+  GetAllianceMarksResponseData,
+  PushAllianceMarkData,
+} from './protocol-alliance';
 
 export type {
   TerrainKind,

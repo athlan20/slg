@@ -2,29 +2,36 @@
 // 查询按「真实时间」的保留期过滤（世界 7 天、私聊 30 天），与清理任务互补：清理按节流周期执行，查询时即刻生效。
 
 import pg from 'pg';
-import type { ChatCardView } from '../../common/src/protocol-chat';
-import { CHAT_PRIVATE_RETAIN_DAYS, CHAT_WORLD_MAX_MESSAGES, CHAT_WORLD_RETAIN_DAYS } from '../../common/src/protocol-chat';
+import type { ChatCardView, ChatSystemView } from '../../common/src/protocol-chat';
+import {
+  CHAT_ALLIANCE_MAX_MESSAGES,
+  CHAT_ALLIANCE_RETAIN_DAYS,
+  CHAT_PRIVATE_RETAIN_DAYS,
+  CHAT_WORLD_MAX_MESSAGES,
+  CHAT_WORLD_RETAIN_DAYS,
+} from '../../common/src/protocol-chat';
 import { effectiveLevelSql } from '../../common/src/production';
 
 type Q = pg.Pool | pg.PoolClient;
 
-/** 消息行（已联表取出双方账号名）；id 为 bigint，pg 默认以字符串返回 */
+/** 消息行（已联表取出双方账号名）；id 为 bigint，pg 默认以字符串返回；系统消息没有发送人（sender_* 为 null） */
 export interface ChatMessageRow {
   id: string | number;
   channel: string;
-  sender_id: string;
-  sender_name: string;
+  sender_id: string | null;
+  sender_name: string | null;
   recipient_id: string | null;
   recipient_name: string | null;
   text: string | null;
   card: ChatCardView | null;
+  system_event: ChatSystemView | null;
   created_at: Date;
 }
 
 const MESSAGE_SELECT = `SELECT m.id, m.channel, m.sender_id, s.username AS sender_name,
-       m.recipient_id, r.username AS recipient_name, m.text, m.card, m.created_at
+       m.recipient_id, r.username AS recipient_name, m.text, m.card, m.system_event, m.created_at
   FROM chat_messages m
-  JOIN accounts s ON s.id = m.sender_id
+  LEFT JOIN accounts s ON s.id = m.sender_id
   LEFT JOIN accounts r ON r.id = m.recipient_id`;
 
 /** 世界频道历史（新→旧）：排除查看者屏蔽的发言人，只取保留期内的消息 */
@@ -61,6 +68,47 @@ export async function privateHistory(
     [viewerId, peerId, beforeId ?? null, CHAT_PRIVATE_RETAIN_DAYS, limit],
   );
   return res.rows;
+}
+
+/**
+ * 联盟频道历史（新→旧）：只取查看者「入盟之后」的消息（join 的 joined_at 之后，离盟再入盟也看不到前一段），
+ * 排除查看者屏蔽的发言人；系统消息没有发言人，不受屏蔽影响。调用方须已确认查看者在盟内。
+ */
+export async function allianceHistory(
+  q: Q,
+  viewerId: string,
+  beforeId: number | undefined,
+  limit: number,
+): Promise<ChatMessageRow[]> {
+  const res = await q.query<ChatMessageRow>(
+    `${MESSAGE_SELECT}
+     JOIN alliance_members me ON me.account_id = $1 AND me.alliance_id = m.alliance_id AND m.created_at >= me.joined_at
+     WHERE m.channel = 'alliance'
+       AND m.created_at > now() - make_interval(days => $3)
+       AND ($2::bigint IS NULL OR m.id < $2::bigint)
+       AND NOT EXISTS (SELECT 1 FROM chat_blocks b WHERE b.account_id = $1 AND b.blocked_id = m.sender_id)
+     ORDER BY m.id DESC
+     LIMIT $4`,
+    [viewerId, beforeId ?? null, CHAT_ALLIANCE_RETAIN_DAYS, limit],
+  );
+  return res.rows;
+}
+
+/** 联盟当前成员的账号 id（推送用） */
+export async function allianceMemberIds(q: Q, allianceId: string): Promise<string[]> {
+  const res = await q.query(`SELECT account_id FROM alliance_members WHERE alliance_id = $1`, [allianceId]);
+  return (res.rows as Array<{ account_id: string }>).map((row) => row.account_id);
+}
+
+/** 查看者能否看见这条联盟消息：须是该消息所属联盟的成员，且消息发生在其入盟之后（与 allianceHistory 同口径） */
+export async function canSeeAllianceMessage(q: Q, viewerId: string, messageId: number): Promise<boolean> {
+  const res = await q.query(
+    `SELECT 1 FROM chat_messages m
+     JOIN alliance_members me ON me.account_id = $1 AND me.alliance_id = m.alliance_id AND m.created_at >= me.joined_at
+     WHERE m.id = $2 AND m.channel = 'alliance'`,
+    [viewerId, messageId],
+  );
+  return (res.rowCount ?? 0) > 0;
 }
 
 /** 私聊会话：每个对方的最后一条消息 id，最多 50 个，按最近倒序 */
@@ -189,6 +237,8 @@ export interface NewChatMessage {
   channel: string;
   senderId: string;
   recipientId: string | null;
+  /** 联盟频道的归属联盟（channel = 'alliance' 时必填） */
+  allianceId: string | null;
   text: string | null;
   card: ChatCardView | null;
   /** 战报卡片的分享快照（仅 report 卡片；列表查询不读它） */
@@ -197,13 +247,14 @@ export interface NewChatMessage {
 
 export async function insertChatMessage(q: Q, msg: NewChatMessage): Promise<{ id: number; createdAt: Date }> {
   const res = await q.query(
-    `INSERT INTO chat_messages (channel, sender_id, recipient_id, text, card, report_detail)
-     VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
+    `INSERT INTO chat_messages (channel, sender_id, recipient_id, alliance_id, text, card, report_detail)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb)
      RETURNING id, created_at`,
     [
       msg.channel,
       msg.senderId,
       msg.recipientId,
+      msg.allianceId,
       msg.text,
       msg.card === null ? null : JSON.stringify(msg.card),
       msg.reportDetail === null ? null : JSON.stringify(msg.reportDetail),
@@ -213,20 +264,28 @@ export async function insertChatMessage(q: Q, msg: NewChatMessage): Promise<{ id
   return { id: Number(row.id), createdAt: row.created_at };
 }
 
-/** 读战报卡片的分享快照：只回 channel / 收发双方 / 卡片与快照，由调用方判断可见性 */
+/** 读战报卡片的分享快照：只回 channel / 收发双方 / 联盟 / 卡片与快照，由调用方判断可见性 */
 export async function loadCardMessage(
   q: Q,
   messageId: number,
-): Promise<{ channel: string; sender_id: string; recipient_id: string | null; card: ChatCardView | null; report_detail: unknown | null } | null> {
+): Promise<{
+  channel: string;
+  sender_id: string | null;
+  recipient_id: string | null;
+  alliance_id: string | null;
+  card: ChatCardView | null;
+  report_detail: unknown | null;
+} | null> {
   const res = await q.query(
-    `SELECT channel, sender_id, recipient_id, card, report_detail FROM chat_messages WHERE id = $1`,
+    `SELECT channel, sender_id, recipient_id, alliance_id, card, report_detail FROM chat_messages WHERE id = $1`,
     [messageId],
   );
   return res.rowCount ? (res.rows[0] as never) : null;
 }
 
 /**
- * 清理过期与超量的消息：世界频道超过 7 天的删除、只保留最近 1000 条；私聊超过 30 天的删除。
+ * 清理过期与超量的消息：世界频道超过 7 天的删除、只保留最近 1000 条；私聊超过 30 天的删除；
+ * 联盟频道超过 7 天的删除、每个联盟只保留最近 1000 条（系统消息同计）。
  * 由发送路径按节流周期调用（不阻塞发言），不影响查询的即时过滤。
  */
 export async function pruneChatMessages(q: Q): Promise<void> {
@@ -243,5 +302,18 @@ export async function pruneChatMessages(q: Q): Promise<void> {
   await q.query(
     `DELETE FROM chat_messages WHERE channel = 'private' AND created_at < now() - make_interval(days => $1)`,
     [CHAT_PRIVATE_RETAIN_DAYS],
+  );
+  await q.query(
+    `DELETE FROM chat_messages WHERE channel = 'alliance' AND created_at < now() - make_interval(days => $1)`,
+    [CHAT_ALLIANCE_RETAIN_DAYS],
+  );
+  await q.query(
+    `DELETE FROM chat_messages m
+     WHERE m.channel = 'alliance'
+       AND m.id < COALESCE(
+         (SELECT x.id FROM chat_messages x WHERE x.channel = 'alliance' AND x.alliance_id = m.alliance_id
+          ORDER BY x.id DESC OFFSET $1 LIMIT 1),
+         0)`,
+    [CHAT_ALLIANCE_MAX_MESSAGES - 1],
   );
 }

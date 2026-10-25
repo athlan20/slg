@@ -4,14 +4,15 @@
 
 import { useCopy } from '../i18n/bundle';
 import { TERRAIN_KINDS } from '../api/protocol';
-import { CityMark, TERRAIN_CLASS, TerrainIcon } from './worldMapMarks';
+import { ALLIANCE_MARK_KINDS } from '../api/protocol';
+import { AllianceMarkGlyph, CityMark, TERRAIN_CLASS, TerrainIcon } from './worldMapMarks';
 
 const itemCls = 'flex items-center gap-1 whitespace-nowrap text-[10.5px] text-dim';
 const swatchCls = 'grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border border-line-soft';
 
 export function WorldMapLegend() {
   const copy = useCopy();
-  const { COPY, TERRAIN_LABEL, CITY_COPY } = copy;
+  const { COPY, TERRAIN_LABEL, CITY_COPY, ALLIANCE_COPY } = copy;
   return (
     <div role="世界地图图例" className="flex flex-col gap-1">
       <ul role="世界地图图例-地形" aria-label={COPY.worldMap.legendTerrain} className="flex flex-wrap gap-x-2.5 gap-y-1">
@@ -57,6 +58,21 @@ export function WorldMapLegend() {
           <span className="font-mono text-[10px] font-semibold text-gold">10</span>
           {COPY.worldMap.legendLevel}
         </li>
+        <li className={itemCls}>
+          <span className={`${swatchCls} relative overflow-hidden bg-t-plain ring-2 ring-inset ring-st-online/80`}>
+            <span className="absolute left-0 top-0 h-1.5 w-1.5 bg-st-online [clip-path:polygon(0_0,100%_0,0_100%)]" />
+          </span>
+          {ALLIANCE_COPY.ally.legend}
+        </li>
+      </ul>
+      {/* 联盟标记（AISLG-184 / F2）：四种符号，与地块上的徽章一致 */}
+      <ul role="世界地图图例-联盟标记" aria-label={ALLIANCE_COPY.marks.legend} className="flex flex-wrap gap-x-2.5 gap-y-1">
+        {ALLIANCE_MARK_KINDS.map((kind) => (
+          <li key={kind} className={itemCls}>
+            <AllianceMarkGlyph kind={kind} />
+            {ALLIANCE_COPY.marks.kindLabel[kind]}
+          </li>
+        ))}
       </ul>
     </div>
   );

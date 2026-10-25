@@ -21,6 +21,7 @@ import { loadMovingTarget, rowIndexAt, rowStepMs } from '../../common/src/moving
 import { loadCampAt } from '../../common/src/yellow-turban-db';
 import { reachWindowOf, routeIndexOfCell } from '../../common/src/moving-target';
 import { activeAt, inNewbieProtection } from '../../common/src/protection';
+import { areAllies } from '../../common/src/alliance-db';
 
 /** MARCH 请求参数校验（分发层用）：坐标为整数、troops 为已知兵种的非负整数且不全为 0；
  *  task（v16）可选，缺省 'plunder'，非法值拒绝。
@@ -106,7 +107,8 @@ export interface MarchTargetVerdict {
     | 'MOVING_TARGET_GONE'
     | 'TARGET_NOT_ATTACKABLE' | 'INVALID_PARAMS' | 'TASK_INVALID_FOR_TARGET' | 'PLUNDER_COOLDOWN' | 'TERRITORY_LIMIT'
     | OccupyCityDenial | 'OUTER_NOT_CLEARED'
-    | 'NEWBIE_PROTECTED' | 'TARGET_IN_TRUCE' | 'SELF_TRUCE_ACTIVE' | 'TILE_PROTECTED';
+    | 'NEWBIE_PROTECTED' | 'TARGET_IN_TRUCE' | 'SELF_TRUCE_ACTIVE' | 'TILE_PROTECTED'
+    | 'ALLY_NOT_ATTACKABLE';
   targetCityId?: string;
   /** v38（AISLG-122）：NEWBIE_PROTECTED / TARGET_IN_TRUCE / SELF_TRUCE_ACTIVE 的截止时刻，
    *  handleMarch 据此回传 until 与 retryAfterSeconds */
@@ -194,6 +196,10 @@ export async function resolveMarchTarget(
     if (own.rowCount) {
       return { purpose: 'reinforce' };
     }
+    // v67（AISLG-182）：盟友（同一联盟）的野地不能抢占 / 掠夺
+    if (await isAllyOfCity(client, accountId, tile.owner_city_id)) {
+      return { purpose: null, reason: 'ALLY_NOT_ATTACKABLE' };
+    }
     // v39（AISLG-123 玩家对抗二）：他人占领的野地——开放 task='occupy' 抢占（野地战，
     // 打掉对方驻军后地块易主）；地里没有存货可抢，缺省掠夺任务返回 TASK_INVALID_FOR_TARGET
     if (task !== 'occupy') {
@@ -272,6 +278,10 @@ export async function resolveMarchTarget(
     }
     return { purpose: 'transfer', targetCityId: city.id };
   }
+  // v67（AISLG-182）：盟友（同一联盟）的城池不能掠夺 / 占领（运输与调兵走上面的分支，不受影响）
+  if (await areAllies(client, accountId, city.account_id)) {
+    return { purpose: null, reason: 'ALLY_NOT_ATTACKABLE' };
+  }
   // 他人城池（v38 AISLG-122 开放掠夺；v40 AISLG-124 分城开放「占领」）
   if (task === 'occupy') {
     // 主城永远不能被占领（只能被掠夺）
@@ -304,6 +314,15 @@ export async function resolveMarchTarget(
     purpose: task === 'occupy' ? 'occupy' : 'plunder',
     pvp: { kind: 'city', targetCityId: city.id, targetAccountId: city.account_id },
   };
+}
+
+/** 目标城（占领野地的城）的主人是否与请求账号同一联盟（v67，AISLG-182）；城不存在返回 false */
+export async function isAllyOfCity(client: pg.PoolClient, accountId: string, cityId: string): Promise<boolean> {
+  const res = await client.query(`SELECT account_id FROM cities WHERE id = $1`, [cityId]);
+  if (!res.rowCount) {
+    return false;
+  }
+  return areAllies(client, accountId, (res.rows[0] as { account_id: string }).account_id);
 }
 
 /** 目标方（city 行含守方账号的保护列）与进攻方账号的保护 / 免战判定（v38，AISLG-122）；

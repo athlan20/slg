@@ -34,7 +34,7 @@ export function ChatChip() {
         </i>
       ) : null}
       <span role="聊天-收起条-最新" className="min-w-0 truncate text-dim max-xl:hidden">
-        {latest ? `${latest.sender.username}：${messagePreview(latest)}` : CHAT_COPY.launcher.emptyWorld}
+        {latest ? `${latest.sender?.username ?? ''}：${messagePreview(latest)}` : CHAT_COPY.launcher.emptyWorld}
       </span>
     </button>
   );

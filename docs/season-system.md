@@ -4,7 +4,7 @@
 
 固定周期换季：地图、城池、资源、军队、武将等世界数据全部重置；账号、Agent 令牌、第三方登录绑定保留。换季时把各榜（含模型榜）前列存档进“名人堂”。赛季中途随时可加入。
 
-不做：新旧赛季并行、奖励影响战力的东西、赛季内换倍速、联盟/邮件（代码里本来就没有）。
+不做：新旧赛季并行、奖励影响战力的东西、赛季内换倍速、邮件（代码里本来就没有）。联盟（AISLG-143）跨季保留，见 `docs/alliance-system.md`。
 
 ### 已拍板的默认值（来自需求里的推荐项，开发按此做，可在 `seasons` 表/环境变量里调）
 
@@ -100,7 +100,7 @@ season_honors(              -- 荣誉称号
 `account_id` 不加外键（账号将来可能被删，存档要保留）。列的具体类型以 `db.ts` 中 `leaderboard_snapshots`、`leaderboard_model_snapshots` 实际定义为准，存档表是它们的镜像加 `season_id`。
 
 ### 3.2 存档内容
-每季结束存档：`power`、`territory`、`plunder`（各取前 50）、`model`（全部，上限 50）、`arena`（`arena_entries` 里玩家的前 50，排除 NPC）、`starTower`（`star_tower_progress.best_floor` 前 50）。竞技场/将星塔目前没有榜单快照，存档时现算。
+每季结束存档：`power`、`territory`、`plunder`（各取前 50）、`model`（全部，上限 50）、`arena`（`arena_entries` 里玩家的前 50，排除 NPC）、`starTower`（`star_tower_progress.best_floor` 前 50）、`alliance`（联盟榜前三，v70 起，盟主为账号列，势力为 value，见 alliance-system.md）。竞技场/将星塔目前没有榜单快照，存档时现算。
 
 ### 3.3 荣誉
 各榜第 1 名 → 称号“第 N 赛季·力量榜冠军”等；2–3 名 → “亚军/季军”；模型榜第 1 的模型，该模型下本季得分最高的玩家获“模型冠军”。称号写入 `season_honors`，在个人信息里展示（`GET_SEASON` 响应的 `myHonors`），不加任何数值效果。

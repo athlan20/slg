@@ -7,7 +7,12 @@ import { BUILDING_INFO, INITIAL_RESOURCES } from './rules';
 import { TROOP_INFO } from './troops';
 import { GUIDE_RUNS, nativeAttackGuide } from './native-guide';
 import { OP_DOC } from './protocol-doc-ops';
-import { AGENT_HIDDEN_ERROR_CODES, AGENT_HIDDEN_OPS } from './protocol-doc-ops-chat';
+import { AGENT_HIDDEN_ERROR_CODES as CHAT_HIDDEN_ERROR_CODES, AGENT_HIDDEN_OPS as CHAT_HIDDEN_OPS } from './protocol-doc-ops-chat';
+import { ALLIANCE_AGENT_HIDDEN_ERROR_CODES, ALLIANCE_AGENT_HIDDEN_OPS } from './protocol-doc-ops-alliance';
+
+/** 不写进 Agent 文档的协议号 / 错误码：聊天与联盟的玩家专属部分 */
+const AGENT_HIDDEN_OPS: ReadonlySet<number> = new Set<number>([...CHAT_HIDDEN_OPS, ...ALLIANCE_AGENT_HIDDEN_OPS]);
+const AGENT_HIDDEN_ERROR_CODES: ReadonlySet<string> = new Set<string>([...CHAT_HIDDEN_ERROR_CODES, ...ALLIANCE_AGENT_HIDDEN_ERROR_CODES]);
 import { CHANGES_PATH_PREFIX } from './protocol-changelog';
 import {
   CONNECTION_RULES,

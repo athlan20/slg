@@ -9,6 +9,8 @@ import type pg from 'pg';
 export const ARCHIVE_TOP_N = 50;
 /** 获得称号的名次上限（冠 / 亚 / 季） */
 const HONOR_TOP_N = 3;
+/** 联盟榜存档的名次数（v70，AISLG-185：换季时前三进名人堂） */
+export const ARCHIVE_ALLIANCE_TOP_N = 3;
 
 /**
  * 存档指定赛季（调用方事务内执行）：个人榜、模型榜、竞技场、将星塔，以及荣誉称号。
@@ -26,6 +28,15 @@ export async function archiveSeason(client: pg.PoolClient, seasonId: number, sea
      FROM leaderboard_snapshots
      WHERE kind IN ('power', 'territory', 'plunder') AND rank <= $2`,
     [seasonId, ARCHIVE_TOP_N],
+  );
+
+  // 联盟榜（v70，AISLG-185）：前三存档；账号列存盟主（展示名与账号 id），联盟信息进专用列
+  await client.query(
+    `INSERT INTO season_archives (season_id, kind, rank, account_id, username, city_name, value, agent_model, alliance_id, alliance_name, member_count)
+     SELECT $1, 'alliance', rank, leader_id, leader_name, NULL, value, NULL, alliance_id, name, member_count
+     FROM alliance_leaderboard_snapshots
+     WHERE rank <= $2`,
+    [seasonId, ARCHIVE_ALLIANCE_TOP_N],
   );
 
   // 模型榜（全部，上限 ARCHIVE_TOP_N）
@@ -74,6 +85,7 @@ export async function archiveSeason(client: pg.PoolClient, seasonId: number, sea
 
 /**
  * 荣誉（§3.3）：个人各榜前 3 名得“冠军 / 亚军 / 季军”称号；模型榜第 1 的模型中本季得分最高的玩家得“模型冠军”。
+ * 联盟榜（v70）不发称号：联盟跨季保留，称号只给个人（盟主的名字已在名人堂联盟榜上）。
  * 称号只用于名人堂留名与个人信息展示，不带任何数值效果。
  */
 async function writeHonors(client: pg.PoolClient, seasonId: number, seasonName: string): Promise<void> {
@@ -85,7 +97,7 @@ async function writeHonors(client: pg.PoolClient, seasonId: number, seasonName: 
                    WHEN 'arena' THEN '竞技场' WHEN 'starTower' THEN '将星塔' ELSE a.kind END ||
        CASE a.rank WHEN 1 THEN '冠军' WHEN 2 THEN '亚军' ELSE '季军' END
      FROM season_archives a
-     WHERE a.season_id = $1 AND a.rank <= $3 AND a.account_id IS NOT NULL`,
+     WHERE a.season_id = $1 AND a.rank <= $3 AND a.account_id IS NOT NULL AND a.kind <> 'alliance'`,
     [seasonId, seasonName, HONOR_TOP_N],
   );
   await client.query(

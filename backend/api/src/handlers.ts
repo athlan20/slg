@@ -35,6 +35,8 @@ import {
 } from './handlers-world';
 import { handleGetMapOverview } from './map-overview';
 import { handleAnnouncementOp } from './handlers-announcement';
+import { handleAllianceOp } from './handlers-alliance';
+import { handleAllianceMarkOp } from './handlers-alliance-mark';
 import { readMarchParams } from './march-target';
 import { handleGetMovingTargets } from './handlers-moving';
 import { handleGetYellowTurban } from './handlers-yt';
@@ -194,6 +196,24 @@ async function dispatchOp(
     case Op.GET_ANNOUNCEMENT:
     case Op.READ_ANNOUNCEMENT:
       await handleAnnouncementOp(ctx, conn, op, seq, data);
+      break;
+    case Op.CREATE_ALLIANCE:
+    case Op.GET_ALLIANCE:
+    case Op.LIST_ALLIANCES:
+    case Op.ALLIANCE_APPLY:
+    case Op.ALLIANCE_INVITE:
+    case Op.ALLIANCE_RESPOND:
+    case Op.ALLIANCE_LEAVE:
+    case Op.ALLIANCE_DISBAND:
+    case Op.ALLIANCE_KICK:
+    case Op.ALLIANCE_SET_ROLE:
+    case Op.ALLIANCE_SET_NOTICE:
+      await handleAllianceOp(ctx, conn, op, seq, data);
+      break;
+    case Op.ALLIANCE_MARK_ADD:
+    case Op.ALLIANCE_MARK_REMOVE:
+    case Op.GET_ALLIANCE_MARKS:
+      await handleAllianceMarkOp(ctx, conn, op, seq, data);
       break;
     case Op.GET_TILE: {
       const x = data?.x;

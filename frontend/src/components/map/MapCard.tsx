@@ -55,6 +55,7 @@ export function MapCard({ role }: MapCardProps) {
         onOpenYellowTurban={openYellowTurban}
         onSelect={world.selectTile}
         overview={session.mapOverview}
+        allianceMarks={session.allianceMarks.marks}
       />
     </Card>
   );

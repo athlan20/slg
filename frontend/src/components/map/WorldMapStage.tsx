@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { movingIndexAt, type CityView, type MovingTargetView, type YellowTurbanState } from '../../api/protocol';
+import { movingIndexAt, type AllianceMarkView, type CityView, type MovingTargetView, type YellowTurbanState } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
 import { useCopy } from '../../i18n/bundle';
 import type { MapLayers } from '../../state/NavContext';
@@ -33,9 +33,11 @@ interface WorldMapStageProps {
   onSelect: (x: number, y: number) => void;
   /** 世界小地图（v58 AISLG-160）：全图城池点位与展开状态 */
   overview: MapOverviewSession;
+  /** 本盟地图标记（AISLG-184 / F2）：服务端已过滤过期项，这里再按本地时钟去掉已到期的 */
+  allianceMarks: AllianceMarkView[];
 }
 
-export function WorldMapStage({ world, movingTargets, city, accountId, layers, yellowTurban, onOpenYellowTurban, onSelect, overview }: WorldMapStageProps) {
+export function WorldMapStage({ world, movingTargets, city, accountId, layers, yellowTurban, onOpenYellowTurban, onSelect, overview, allianceMarks }: WorldMapStageProps) {
   const copy = useCopy();
   const { COPY, RESOURCE_LABEL, MAPUI_COPY, YT_COPY } = copy;
   const boxRef = useRef<HTMLDivElement | null>(null);
@@ -70,7 +72,16 @@ export function WorldMapStage({ world, movingTargets, city, accountId, layers, y
     };
   }, [resizeWindow, viewSize, win === null]);
 
-  const now = useNow(movingTargets.length > 0);
+  const now = useNow(movingTargets.length > 0 || allianceMarks.length > 0);
+  const markMap = useMemo(() => {
+    const map = new Map<string, AllianceMarkView>();
+    for (const mark of allianceMarks) {
+      if (Date.parse(mark.expiresAt) > now) {
+        map.set(`${mark.x},${mark.y}`, mark);
+      }
+    }
+    return map;
+  }, [allianceMarks, now]);
   const movingMarks = useMemo(() => {
     const marks = new Map<string, { kind: MovingTargetView['kind']; label: string; level: number; current: boolean }>();
     if (!layers.moving) {
@@ -125,6 +136,7 @@ export function WorldMapStage({ world, movingTargets, city, accountId, layers, y
             onZoom={world.zoomTo}
             zoomSize={viewSize}
             layers={layers}
+            marks={markMap}
           />
         </div>
       ) : (

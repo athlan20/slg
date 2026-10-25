@@ -52,6 +52,8 @@ import { QUEST_COPY } from '../copy-quest';
 import { QUEST_COPY_EN } from '../copy-quest-en';
 import { ANNOUNCEMENT_COPY } from '../copy-announcement';
 import { ANNOUNCEMENT_COPY_EN } from '../copy-announcement-en';
+import { ALLIANCE_COPY } from '../copy-alliance';
+import { ALLIANCE_COPY_EN } from '../copy-alliance-en';
 
 /** 中文文案全集（结构基准）：英文 Bundle 必须与之同构 */
 const ZH = {
@@ -97,6 +99,7 @@ const ZH = {
   CHAT_COPY,
   QUEST_COPY,
   ANNOUNCEMENT_COPY,
+  ALLIANCE_COPY,
   SEASON_COPY,
   HALL_COPY,
 };
@@ -147,6 +150,7 @@ const EN: Bundle = {
   CHAT_COPY: CHAT_COPY_EN,
   QUEST_COPY: QUEST_COPY_EN,
   ANNOUNCEMENT_COPY: ANNOUNCEMENT_COPY_EN,
+  ALLIANCE_COPY: ALLIANCE_COPY_EN,
   SEASON_COPY: SEASON_COPY_EN,
   HALL_COPY: HALL_COPY_EN,
 };

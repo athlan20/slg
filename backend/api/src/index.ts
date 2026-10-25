@@ -18,6 +18,7 @@ import { readGoogleConfig } from './google';
 import { createGithubService, sweepGithubOauth } from './handlers-github';
 import { createGithubClient } from './github';
 import { initBannedWordFilter } from './chat-words';
+import { startActiveHeartbeat } from './active-heartbeat';
 import {
   githubSiteFor,
   hostFromHeaders,
@@ -95,6 +96,8 @@ async function main(): Promise<void> {
     sweepWxTickets(ctx);
     sweepGithubOauth(ctx.github);
   }, 5_000);
+  // v66（AISLG-181）：玩家在线心跳，刷新 last_active_at（联盟盟主不活跃判断）
+  const activeHeartbeat = startActiveHeartbeat(ctx);
 
   // Google 一键登录（v44）：没配 GOOGLE_CLIENT_ID 时整体关闭，GOOGLE_LOGIN 返回 GOOGLE_UNAVAILABLE
   const googleConfig = readGoogleConfig();
@@ -223,6 +226,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`received ${signal}, shutting down`);
     clearInterval(wxSweeper);
+    clearInterval(activeHeartbeat);
     stopProbe.stop();
     stopLoopLag();
     await notifier.stop();

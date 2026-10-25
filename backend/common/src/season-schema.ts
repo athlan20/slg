@@ -29,6 +29,12 @@ CREATE TABLE IF NOT EXISTS season_archives (
   PRIMARY KEY (season_id, kind, rank)
 );
 
+-- v70（AISLG-185）：联盟榜存档（kind = alliance）的联盟信息列；account_id / username 存当时的盟主，
+-- value 为联盟势力。个人榜这三列为 NULL。ADD COLUMN IF NOT EXISTS 让老库幂等补列，已有存档行不受影响。
+ALTER TABLE season_archives ADD COLUMN IF NOT EXISTS alliance_id uuid;
+ALTER TABLE season_archives ADD COLUMN IF NOT EXISTS alliance_name text;
+ALTER TABLE season_archives ADD COLUMN IF NOT EXISTS member_count integer;
+
 -- 模型榜存档（每季每个模型一行，列同 leaderboard_model_snapshots）
 CREATE TABLE IF NOT EXISTS season_archive_models (
   season_id integer NOT NULL,

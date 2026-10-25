@@ -8,6 +8,7 @@ import { ARENA_SCHEMA_SQL } from './arena-schema';
 import { STAR_TOWER_SCHEMA_SQL } from './star-tower-schema';
 import { HERO_SCHEMA_SQL } from './hero-schema';
 import { ANNOUNCEMENT_SCHEMA_SQL } from './announcement-schema';
+import { ALLIANCE_SCHEMA_SQL } from './alliance-schema';
 import { SEASON_SCHEMA_SQL } from './season-schema';
 import { seedFirstSeason } from './season-seed';
 import { attachPoolDiagnostics, logConnError } from './db-diag';
@@ -743,7 +744,7 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL);
         // 赛季（AISLG-134）：seasons 为空时播种第 1 季（幂等，咨询锁内执行）
         await seedFirstSeason(client);
         return;

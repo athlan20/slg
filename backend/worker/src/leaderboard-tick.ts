@@ -11,10 +11,13 @@
 // 且进了战力统计的账号，按自报模型归类（common/src/agent-models.ts）取各组实力
 // 前 10 名平均分，聚合结果写 leaderboard_model_snapshots；玩家三榜快照行带 agent_model
 // 原文（API 原样下发）。
+// v70（AISLG-185）：联盟榜按联盟势力（alliance-db 的 computeAlliancePowers）排名，写
+// alliance_leaderboard_snapshots，与玩家榜同一事务、同一时刻；成员不足 5 人不上榜。
 
 import pg from 'pg';
-import { TROOP_KINDS, type TroopKind } from '../../common/src/protocol';
+import { ALLIANCE_RANK_MIN_MEMBERS, TROOP_KINDS, type TroopKind } from '../../common/src/protocol';
 import { TROOP_POWER } from '../../common/src/battle';
+import { computeAlliancePowers } from '../../common/src/alliance-db';
 import { CURRENT_SEASON_ID_SQL } from '../../common/src/season-db';
 import {
   aggregateModelLeaderboard,
@@ -124,6 +127,32 @@ async function computeTerritoryRows(client: pg.PoolClient): Promise<LeaderboardR
     }));
 }
 
+/** 联盟榜行（v70，AISLG-185）：成员数 ≥ ALLIANCE_RANK_MIN_MEMBERS 的联盟，value = 势力 */
+interface AllianceRankRow {
+  alliance_id: string;
+  name: string;
+  leader_id: string;
+  leader_name: string;
+  member_count: number;
+  value: number;
+}
+
+/** 联盟榜：成员不足 ALLIANCE_RANK_MIN_MEMBERS 的不上榜；势力与 GET_ALLIANCE 同一公式（computeAlliancePowers） */
+async function computeAllianceRows(client: pg.PoolClient): Promise<AllianceRankRow[]> {
+  const res = await client.query(
+    `SELECT al.id AS alliance_id, al.name, al.leader_id, la.username AS leader_name, count(m.account_id)::int AS member_count
+     FROM alliances al
+     JOIN accounts la ON la.id = al.leader_id
+     JOIN alliance_members m ON m.alliance_id = al.id
+     GROUP BY al.id, al.name, al.leader_id, la.username
+     HAVING count(m.account_id) >= $1`,
+    [ALLIANCE_RANK_MIN_MEMBERS],
+  );
+  const candidates = res.rows as Array<Omit<AllianceRankRow, 'value'>>;
+  const powers = await computeAlliancePowers(client, candidates.map((row) => row.alliance_id));
+  return candidates.map((row) => ({ ...row, value: powers.get(row.alliance_id)?.power ?? 0 }));
+}
+
 /** 累计掠夺量榜：accounts.plunder_total（四资源合计；掠夺入账时累加） */
 async function computePlunderRows(client: pg.PoolClient): Promise<LeaderboardRow[]> {
   const res = await client.query(
@@ -187,6 +216,20 @@ export async function refreshLeaderboards(pool: pg.Pool): Promise<void> {
           [kind, i + 1, row.account_id, row.username, row.city_name, row.value, row.agent_model, computedAt],
         );
       }
+    }
+    // 联盟榜（v70，AISLG-185）：势力降序，同势力按联盟名（全服唯一）再按 id，保证次序稳定
+    const allianceRanked = (await computeAllianceRows(client))
+      .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name) || a.alliance_id.localeCompare(b.alliance_id))
+      .slice(0, LEADERBOARD_SIZE);
+    await client.query(`DELETE FROM alliance_leaderboard_snapshots`);
+    for (let i = 0; i < allianceRanked.length; i += 1) {
+      const row = allianceRanked[i];
+      await client.query(
+        `INSERT INTO alliance_leaderboard_snapshots
+           (rank, alliance_id, name, leader_id, leader_name, member_count, value, computed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [i + 1, row.alliance_id, row.name, row.leader_id, row.leader_name, row.member_count, row.value, computedAt],
+      );
     }
     // 模型榜（v50，AISLG-133）：聚合用战力全量行（不只前 LEADERBOARD_SIZE 名，名单
     // 靠后的模型也能上榜）；「未声明」「其他」同样成组

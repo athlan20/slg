@@ -13,12 +13,27 @@ export const CHAT_COPY_EN = {
   },
   tabs: {
     world: 'World',
+    alliance: 'Alliance',
     system: 'Server news',
     private: 'Private',
   },
   system: {
     empty: 'No announcements yet',
     readonly: 'Server news is read-only, pushed by the server',
+  },
+  alliance: {
+    empty: 'Nobody in the alliance has said anything yet — say hi',
+    noAlliance: 'Join an alliance and this becomes a channel only your alliance members can see',
+    openPanel: 'Open alliance panel',
+  },
+  systemLine: {
+    founded: (name: string) => `${name} founded the alliance`,
+    joined: (name: string) => `${name} joined the alliance`,
+    left: (name: string) => `${name} left the alliance`,
+    kicked: (name: string, by: string) => `${name} was removed from the alliance by ${by}`,
+    leaderTransfer: (from: string, to: string) => `${from} handed the leadership to ${to}`,
+    leaderInactive: (from: string, to: string) => `Leader ${from} has been inactive for too long; leadership passed to ${to}`,
+    markCreated: (name: string, kind: string, x: number, y: number) => `${name} placed a ${kind} marker at (${x},${y})`,
   },
   world: {
     empty: 'Nobody has said anything in World yet — say hi',
@@ -112,6 +127,7 @@ export const CHAT_COPY_EN = {
     CHAT_GOVERNMENT_TOO_LOW: (level: number) => `Your main city's Government must be level ${level} to talk in World`,
     CHAT_MUTED: (until: string) => `Your account is muted until ${until}`,
     CHAT_BLOCKED: 'This player has blocked you; you cannot send private messages',
+    ALLIANCE_NOT_IN: 'You are not in an alliance, so you cannot use the alliance channel',
     CHAT_RATE_LIMITED: (seconds: number) => `Slow down — try again in ${seconds} seconds`,
     INVALID_PARAMS: 'That message is not allowed — check it and try again',
     AGENT_FORBIDDEN: 'Chat is only available to the player',

@@ -2,6 +2,8 @@
 // （AISLG-61）。从 protocol.ts 拆出以控制单文件行数；protocol.ts 原名再导出，
 // 既有 import 路径不变。
 
+import type { AllianceLeaderboardEntryView } from './protocol-alliance';
+
 /**
  * 全服播报类型（v23，AISLG-60）：NPC 城被掠空 / 首个占领金矿 / 主城被 NPC 攻破 /
  * 1 小时内连胜 5 场（此后每再累计 5 场再播）。detail 的字段见各类型文档。
@@ -41,8 +43,9 @@ export function isServerBroadcastType(value: unknown): value is ServerBroadcastT
  * 记在账号上——玩家与 Agent 打出的成绩算同一账号）。
  * v50（AISLG-133）新增 model 模型榜：按 Agent 自报模型归类聚合（未声明 / 其他也是组），
  * 只统计最近 7 天 Agent 上线过的账号，排名 = 该模型实力前 10 名的平均战力。
+ * v70（AISLG-185）新增 alliance 联盟榜：按联盟势力排名（成员不足 5 人不上榜），条目见 allianceEntries。
  */
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model'] as const;
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 
@@ -82,12 +85,14 @@ export interface GetLeaderboardResponseData {
   kind: LeaderboardKind;
   /** 快照计算时间（ISO 8601；Worker 每 10 分钟重算一次，页面展示用） */
   updatedAt: string;
-  /** 前 50 名（玩家三榜）；kind=model 为空数组 */
+  /** 前 50 名（玩家三榜）；kind=model / alliance 为空数组 */
   entries: LeaderboardEntryView[];
-  /** 我的名次与数值；快照里没有本账号（新号未上榜）为 null；kind=model 恒为 null */
+  /** 我的名次与数值；快照里没有本账号（新号未上榜）为 null；kind=model 恒为 null；kind=alliance 为我所在联盟的名次与势力（未上榜为 null） */
   me: { rank: number; value: number } | null;
   /** 模型榜条目（仅 kind=model 返回），按 rank 升序 */
   modelEntries?: ModelLeaderboardEntryView[];
+  /** 联盟榜条目（仅 kind=alliance 返回，v70），前 50 名，按 rank 升序 */
+  allianceEntries?: AllianceLeaderboardEntryView[];
 }
 
 /** 全服播报视图（GET_SERVER_BROADCASTS / PUSH_SERVER_BROADCAST 共用） */

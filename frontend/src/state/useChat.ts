@@ -8,6 +8,7 @@ import type { ApiClient } from '../api/client';
 import { Op } from '../api/protocol';
 import type {
   ChatCardRequest,
+  ChatChannel,
   ChatConversationView,
   ChatMessageView,
   ChatPlayerView,
@@ -16,8 +17,10 @@ import type {
 import type { BattleReportView } from '../api/protocol-world';
 import { getCopy } from '../i18n/bundle';
 import * as api from './chatApi';
+import { appendMessage, KEEP, prependPage } from './chatList';
+import { useAllianceChat } from './chatAlliance';
 
-export type ChatTab = 'world' | 'system' | 'private';
+export type ChatTab = 'world' | 'alliance' | 'system' | 'private';
 
 /** 卡片草稿：分享入口放进输入框的卡片（label 为发送前预览，由调用方按当前语言拼好） */
 export interface ChatDraft {
@@ -28,7 +31,7 @@ export interface ChatDraft {
 export type ChatSendResult = { ok: true } | { ok: false; message: string };
 
 export interface ChatSendInput {
-  channel: 'world' | 'private';
+  channel: ChatChannel;
   text?: string;
   card?: ChatCardRequest;
 }
@@ -48,6 +51,13 @@ export interface ChatState {
   worldHasMore: boolean;
   worldLoading: boolean;
   loadOlderWorld: () => Promise<void>;
+  /** 联盟频道消息（从旧到新，含系统消息）与翻页；没有联盟时为空 */
+  alliance: ChatMessageView[];
+  allianceHasMore: boolean;
+  allianceLoading: boolean;
+  loadOlderAlliance: () => Promise<void>;
+  /** 我是否在联盟里（联盟页签的提示与输入区据此切换） */
+  inAlliance: boolean;
   /** 当前私聊对象的消息（从旧到新）与翻页 */
   thread: ChatMessageView[];
   threadHasMore: boolean;
@@ -74,11 +84,9 @@ export interface ChatState {
   error: string | null;
 }
 
-/** 内存里每个列表最多保留的条数（超出从最旧端丢弃；翻页可再取回） */
-const KEEP = 200;
 const OPEN_KEY = 'slg.chat.open';
 const TAB_KEY = 'slg.chat.tab';
-const TABS: readonly ChatTab[] = ['world', 'system', 'private'];
+const TABS: readonly ChatTab[] = ['world', 'alliance', 'system', 'private'];
 
 function readStored(key: string): string | null {
   try {
@@ -96,28 +104,15 @@ function writeStored(key: string, value: string): void {
   }
 }
 
-/** 追加一条（按 id 去重，超出 KEEP 时从最旧端截掉） */
-function appendMessage(list: ChatMessageView[], message: ChatMessageView): ChatMessageView[] {
-  if (list.some((item) => item.id === message.id)) {
-    return list;
-  }
-  return [...list, message].slice(-KEEP);
-}
-
-/** 更早一页接到列表前面（按 id 去重，保持从旧到新） */
-function prependPage(list: ChatMessageView[], page: ChatMessageView[]): ChatMessageView[] {
-  const known = new Set(list.map((item) => item.id));
-  const fresh = page.filter((item) => !known.has(item.id));
-  return [...fresh, ...list].slice(-KEEP * 2);
-}
-
 export function useChat(deps: {
   clientRef: RefObject<ApiClient | null>;
   /** 连接已登录在线（reconnecting / 未登录时为 false，聊天入口置灰） */
   online: boolean;
   accountId: string | null;
+  /** 我所在的联盟 id（null = 没有联盟）：联盟频道据此拉取 / 清空 */
+  allianceId: string | null;
 }): ChatState {
-  const { clientRef, online, accountId } = deps;
+  const { clientRef, online, accountId, allianceId } = deps;
   const [open, setOpenState] = useState<boolean>(() => readStored(OPEN_KEY) === '1');
   const [tab, setTabState] = useState<ChatTab>(() => {
     const stored = readStored(TAB_KEY);
@@ -135,6 +130,9 @@ export function useChat(deps: {
   const [blocked, setBlockedList] = useState<ChatPlayerView[]>([]);
   const [draft, setDraft] = useState<ChatDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 联盟频道切片（AISLG-183）：拉取 / 翻页 / 增量并入都在 chatAlliance.ts，错误提示共用本窗口的错误行
+  const allianceChat = useAllianceChat({ clientRef, online, allianceId, accountId, onError: setError });
+  const { append: appendAlliance, reload: reloadAlliance } = allianceChat;
 
   // 推送回调读取的是最新状态（回调注册一次，不随每次渲染重绑）
   const live = useRef({ open, tab, peer, accountId });
@@ -298,6 +296,9 @@ export function useChat(deps: {
     if (tab === 'world') {
       void loadWorld();
     }
+    if (tab === 'alliance') {
+      void reloadAlliance();
+    }
   }, [open, tab]);
 
   /** PUSH_CHAT_MESSAGE 到达：世界频道直接并入；私聊若正在看这位对方就并入线程并已读，否则只刷新会话与角标 */
@@ -307,22 +308,27 @@ export function useChat(deps: {
         setWorld((prev) => appendMessage(prev, message));
         return;
       }
+      if (message.channel === 'alliance') {
+        // 联盟频道只推给本盟在线成员；系统消息没有发送人，也走这里
+        appendAlliance(message);
+        return;
+      }
       const me = live.current.accountId;
-      const peerId = message.sender.accountId === me ? message.recipient?.accountId : message.sender.accountId;
+      const peerId = message.sender?.accountId === me ? message.recipient?.accountId : message.sender?.accountId;
       if (!peerId) {
         return;
       }
       const viewing = live.current.open && live.current.tab === 'private' && live.current.peer?.accountId === peerId;
       if (viewing) {
         setThread((prev) => appendMessage(prev, message));
-        if (message.sender.accountId !== me) {
+        if (message.sender?.accountId !== me) {
           void markRead(peerId);
         }
       } else {
         void refreshConversations();
       }
     },
-    [markRead, refreshConversations],
+    [markRead, refreshConversations, appendAlliance],
   );
 
   useEffect(() => {
@@ -382,13 +388,15 @@ export function useChat(deps: {
       const message = result.data.message;
       if (message.channel === 'world') {
         setWorld((prev) => appendMessage(prev, message));
+      } else if (message.channel === 'alliance') {
+        appendAlliance(message);
       } else {
         setThread((prev) => appendMessage(prev, message));
       }
       setError(null);
       return { ok: true };
     },
-    [client],
+    [client, appendAlliance],
   );
 
   const setBlocked = useCallback(
@@ -435,6 +443,11 @@ export function useChat(deps: {
     worldHasMore,
     worldLoading,
     loadOlderWorld,
+    alliance: allianceChat.messages,
+    allianceHasMore: allianceChat.hasMore,
+    allianceLoading: allianceChat.loading,
+    loadOlderAlliance: allianceChat.loadOlder,
+    inAlliance: allianceId !== null,
     thread,
     threadHasMore,
     threadLoading,

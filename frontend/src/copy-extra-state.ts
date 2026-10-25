@@ -98,6 +98,7 @@ export const EXTRA_STATE = {
       TILE_PROTECTED: '（地块换主保护中）',
       NEWBIE_PROTECTED: '（对方新手保护中）',
       TARGET_IN_TRUCE: '（对方免战中）',
+      ALLY_NOT_ATTACKABLE: '（对方已是盟友）',
     } as Record<string, string>,
     wildOccupied: (pos: string, terrain: string, level: string, bonus: string, gather: string) =>
       `占领野地 ${pos}：${terrain} Lv${level}${bonus}${gather}`,
@@ -173,6 +174,7 @@ export const EXTRA_STATE = {
     targetInTruce: '对方处于免战期（被打后免战或主动免战），期间不能再被攻击',
     selfTruceActive: '你的主动免战生效中，不能出兵攻打玩家（打野地 / NPC 不受影响）',
     tileProtected: '该野地刚换主人，处于保护期（约 1 小时基准随倍速缩短），期间不能再抢',
+    allyNotAttackable: '盟友不可攻击：同一联盟的成员之间不能掠夺、抢野地、占领分城或侦察',
     movingTargetGone: '该移动目标已消失（被击败或过时），请重新选择目标',
     /** 资源缺口后缀：parts 为「粮 200 / 石 50」样式清单，eta 为既有的攒够预估片段 */
     shortfall: (parts: string, eta: string) => `，还缺 ${parts}${eta}`,

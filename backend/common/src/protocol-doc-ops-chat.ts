@@ -1,4 +1,4 @@
-// 聊天协议（v51，AISLG-138）的协议条目。聊天仅限玩家连接，对外 Agent 文档不收录这些协议：
+// 聊天协议（v51，AISLG-138；v68 起含联盟频道与系统消息，AISLG-183）的协议条目。聊天仅限玩家连接，对外 Agent 文档不收录这些协议：
 // protocol-doc-render.ts 按 AGENT_HIDDEN_OPS / AGENT_HIDDEN_ERROR_CODES 过滤。这里仍写全条目，
 // 保证 OP_DOC 与协议号一一对应（类型检查与单元测试会校验），维护者查阅与前端对接用。
 
@@ -20,6 +20,19 @@ const CHAT_MESSAGE_SAMPLE = {
   createdAt: '2026-10-09T10:00:00.000Z',
 } as const;
 
+/** 系统消息示例（联盟频道：有人入盟）；没有发送人，内容在 system 里 */
+const CHAT_SYSTEM_SAMPLE = {
+  id: 103,
+  channel: 'alliance',
+  sender: null,
+  recipient: null,
+  type: 'system',
+  text: null,
+  card: null,
+  system: { kind: 'alliance_joined', player: { accountId: ACCOUNT_ID, username: 'example-player' }, founder: false },
+  createdAt: '2026-10-09T10:02:00.000Z',
+} as const;
+
 /** 卡片消息示例（地图坐标） */
 const CHAT_CARD_SAMPLE = {
   id: 102,
@@ -37,10 +50,10 @@ export const REQUEST_CHAT_HISTORY: RequestOpDoc = {
   name: 'CHAT_HISTORY',
   title: '查询聊天消息（v51，AISLG-138）',
   preAuth: false,
-  summary: `${PLAYER_ONLY}查询世界频道（不传 peerId）或与某玩家的私聊消息，按时间从旧到新返回一页。世界频道只保留最近 7 天、最多 1000 条；私聊保留 30 天。已屏蔽的玩家不出现在世界频道结果里。翻页：取 messages 的第一条 id 作为 beforeId 再查，直到 hasMore 为 false。`,
+  summary: `${PLAYER_ONLY}查询世界频道（不传 peerId）、联盟频道（不传 peerId）或与某玩家的私聊消息，按时间从旧到新返回一页。世界频道只保留最近 7 天、最多 1000 条；私聊保留 30 天；联盟频道保留 7 天、每个联盟最多 1000 条，且只返回本人入盟之后的消息（离盟再入盟，之前的消息不再可见）。已屏蔽的玩家不出现在世界与联盟频道结果里；系统消息不受屏蔽影响。没有联盟时查联盟频道返回 ALLIANCE_NOT_IN。翻页：取 messages 的第一条 id 作为 beforeId 再查，直到 hasMore 为 false。`,
   requestFields: [
-    { name: 'channel', type: "'world' | 'private'", desc: '必填。频道。' },
-    { name: 'peerId', type: 'string', desc: '私聊必填：对方账号 id（UUID）。世界频道不传。' },
+    { name: 'channel', type: "'world' | 'private' | 'alliance'", desc: '必填。频道。alliance 为本人所在联盟的频道（仅成员）。' },
+    { name: 'peerId', type: 'string', desc: '私聊必填：对方账号 id（UUID）。世界与联盟频道不传。' },
     { name: 'limit', type: 'number', desc: '可选。1..50，缺省 30。' },
     { name: 'beforeId', type: 'number', desc: '可选。只返回 id 小于它的消息（翻页游标）。' },
   ],
@@ -48,7 +61,7 @@ export const REQUEST_CHAT_HISTORY: RequestOpDoc = {
     { name: 'messages', type: 'array', desc: '消息列表（从旧到新），每项为消息视图（见 PUSH_CHAT_MESSAGE）。' },
     { name: 'hasMore', type: 'boolean', desc: '是否还有更早的消息。' },
   ],
-  errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN'],
+  errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN', 'ALLIANCE_NOT_IN'],
   examples: [
     {
       request: { op: Op.CHAT_HISTORY, seq: 30, data: { channel: 'world', limit: 30 } },
@@ -62,9 +75,9 @@ export const REQUEST_CHAT_SEND: RequestOpDoc = {
   name: 'CHAT_SEND',
   title: '发送聊天消息（v51，AISLG-138）',
   preAuth: false,
-  summary: `${PLAYER_ONLY}发送文字或卡片。text 与 card 至少给一个；card 可附一句 text。表情直接写在文字里，不单独成类型。文字去首尾空白后不超过 100 字（按字形计，一个表情算 1 个字）；屏蔽词在服务端整段替换成 *（匹配前忽略空格、标点与表情）。卡片只传 id 或坐标，快照由服务端生成：coord 需在地图范围内；hero / report / city 的 id 必须属于本账号。世界频道需主城官府 ≥ 3 级；私聊不设等级门槛，对方屏蔽了你则失败。同一频道每 10 秒一条。账号被禁言时全部发送失败。`,
+  summary: `${PLAYER_ONLY}发送文字或卡片。text 与 card 至少给一个；card 可附一句 text。表情直接写在文字里，不单独成类型。文字去首尾空白后不超过 100 字（按字形计，一个表情算 1 个字）；屏蔽词在服务端整段替换成 *（匹配前忽略空格、标点与表情）。卡片只传 id 或坐标，快照由服务端生成：coord 需在地图范围内；hero / report / city 的 id 必须属于本账号。世界频道需主城官府 ≥ 3 级；私聊不设等级门槛，对方屏蔽了你则失败；联盟频道只有本联盟成员能发，没有官府门槛，无联盟返回 ALLIANCE_NOT_IN。同一频道每 10 秒一条。账号被禁言时全部发送失败。`,
   requestFields: [
-    { name: 'channel', type: "'world' | 'private'", desc: '必填。频道。' },
+    { name: 'channel', type: "'world' | 'private' | 'alliance'", desc: '必填。频道。' },
     { name: 'peerId', type: 'string', desc: '私聊必填：对方账号 id（不能是自己）。' },
     { name: 'text', type: 'string', desc: '可选。文字（表情直接写在里面，如「今晚打洛阳🔥」）。去首尾空白后不超过 100 字，一个表情算 1 个字。' },
     { name: 'card', type: 'object', desc: '可选。卡片：{ kind: "coord", x, y } | { kind: "hero", heroId } | { kind: "report", reportId } | { kind: "city", cityId }。' },
@@ -72,7 +85,7 @@ export const REQUEST_CHAT_SEND: RequestOpDoc = {
   dataFields: [
     { name: 'message', type: 'object', desc: '发出的消息视图（见 PUSH_CHAT_MESSAGE）。' },
   ],
-  errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN', 'CHAT_MUTED', 'CHAT_GOVERNMENT_TOO_LOW', 'CHAT_BLOCKED', 'CHAT_RATE_LIMITED'],
+  errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN', 'CHAT_MUTED', 'CHAT_GOVERNMENT_TOO_LOW', 'CHAT_BLOCKED', 'CHAT_RATE_LIMITED', 'ALLIANCE_NOT_IN'],
   examples: [
     {
       caption: '世界频道发文字',
@@ -124,7 +137,7 @@ export const REQUEST_CHAT_READ: RequestOpDoc = {
   name: 'CHAT_READ',
   title: '标记私聊已读（v51，AISLG-138）',
   preAuth: false,
-  summary: `${PLAYER_ONLY}把与对方的私聊标记为已读（截止到调用时刻已收到的消息）。`,
+  summary: `${PLAYER_ONLY}把与对方的私聊标记为已读（截止到调用时刻已收到的消息）。联盟频道没有未读计数，不适用。`,
   requestFields: [{ name: 'peerId', type: 'string', desc: '必填。对方账号 id。' }],
   dataFields: [{ name: 'unreadTotal', type: 'number', desc: '标记后的私聊未读总数。' }],
   errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN'],
@@ -168,7 +181,7 @@ export const REQUEST_CHAT_REPORT_DETAIL: RequestOpDoc = {
   name: 'CHAT_REPORT_DETAIL',
   title: '打开聊天里的战报卡片（v51，AISLG-138）',
   preAuth: false,
-  summary: `${PLAYER_ONLY}返回一条战报卡片的详情快照（分享那一刻的战报，不含 Agent 点评）。消息须是世界频道，或与我相关的私聊；分享者屏蔽了我（或我屏蔽了分享者）时返回 INVALID_PARAMS。`,
+  summary: `${PLAYER_ONLY}返回一条战报卡片的详情快照（分享那一刻的战报，不含 Agent 点评）。消息须是世界频道、本人所在联盟的联盟频道（且消息发生在入盟之后），或与我相关的私聊；分享者屏蔽了我（或我屏蔽了分享者）时返回 INVALID_PARAMS。`,
   requestFields: [{ name: 'messageId', type: 'number', desc: '必填。卡片消息的 id。' }],
   dataFields: [{ name: 'report', type: 'object', desc: '战报快照，字段同 GET_BATTLE_REPORTS 的 reports[]（不含 comment）。' }],
   errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN'],
@@ -191,11 +204,14 @@ export const PUSH_CHAT_MESSAGE: PushOpDoc = {
   kind: 'push',
   name: 'PUSH_CHAT_MESSAGE',
   title: '推送：聊天新消息（v51，AISLG-138）',
-  summary: '有新消息时推送给玩家连接（Agent 连接不收）。世界频道推给所有在线玩家，但不推给屏蔽了发言人的玩家；私聊推给对方的在线玩家连接，并推给发送人自己的其他在线连接。发送人本连接的结果经 CHAT_SEND 直接返回，不重复推送。',
+  summary: '有新消息时推送给玩家连接（Agent 连接不收）。世界频道推给所有在线玩家，但不推给屏蔽了发言人的玩家；私聊推给对方的在线玩家连接，并推给发送人自己的其他在线连接；联盟频道（含系统消息）只推给本联盟的在线成员，同样不推给屏蔽了发言人的成员。发送人本连接的结果经 CHAT_SEND 直接返回，不重复推送。系统消息（v68）由联盟大事产生，sender 与 recipient 为 null，内容在 system 里，系统消息不受屏蔽影响。',
   dataFields: [
-    { name: 'message', type: 'object', desc: '消息视图：{ id, channel, sender, recipient, type, text, card, createdAt }。type 为 text / card；card 为卡片快照（kind 为 coord / hero / report / city）。' },
+    { name: 'message', type: 'object', desc: '消息视图：{ id, channel, sender, recipient, type, text, card, system, createdAt }。type 为 text / card / system；sender 在系统消息里为 null；card 为卡片快照（kind 为 coord / hero / report / city）；system 为系统消息内容（kind 为 alliance_joined / alliance_left / alliance_kicked / alliance_leader_changed / alliance_mark_created，附对应玩家与参数，文案由客户端拼接）。' },
   ],
-  examples: [{ op: Op.PUSH_CHAT_MESSAGE, push: true, data: { message: CHAT_MESSAGE_SAMPLE } }],
+  examples: [
+    { op: Op.PUSH_CHAT_MESSAGE, push: true, data: { message: CHAT_MESSAGE_SAMPLE } },
+    { op: Op.PUSH_CHAT_MESSAGE, push: true, data: { message: CHAT_SYSTEM_SAMPLE } },
+  ],
 };
 
 /** 聊天协议号 → 文档条目（并入 OP_DOC） */

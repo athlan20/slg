@@ -15,10 +15,13 @@ import type { HandlerContext } from '../api/src/handlers';
 import { runWithCity } from '../api/src/city-scope';
 import { handleDiscardCity } from '../api/src/handlers-discard';
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 
 describe('放弃分城（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
   let accountId: string;
   let mainId: string;
   // 分城 B：官府 2 级、来源 Lv2 NPC 城，地块 (500,500)，名下野地 (501,500)
@@ -59,7 +62,8 @@ describe('放弃分城（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未
 
   before(async () => {
     setTimeScaleCache(1);
-    pool = new pg.Pool({ connectionString: dbUrl, max: 4 });
+    tmp = await createTempDatabase(dbUrl as string, 'discard');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 4 });
     await ensureSchema(pool);
     await cleanFixtures();
     (ctx as { pool: pg.Pool }).pool = pool;
@@ -107,6 +111,7 @@ describe('放弃分城（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未
       await cleanFixtures();
     }
     await pool.end();
+    await tmp?.drop();
   });
 
   test('主城不能放弃；缺 confirm 或缺 cityId 返回 INVALID_PARAMS', async () => {

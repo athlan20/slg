@@ -22,11 +22,14 @@ interface BottomBarProps {
   onOpenBroadcasts: () => void;
   /** 点开「公告」类播报：打开对应公告的正文（AISLG-162） */
   onOpenAnnouncement?: (id: number) => void;
+  /** 联盟入口（AISLG-186）：红点数与点开联盟面板 */
+  allianceBadge: number;
+  onOpenAlliance: () => void;
 }
 
-export function BottomBar({ city, research, broadcasts, onOpenBroadcasts, onOpenAnnouncement }: BottomBarProps) {
+export function BottomBar({ city, research, broadcasts, onOpenBroadcasts, onOpenAnnouncement, allianceBadge, onOpenAlliance }: BottomBarProps) {
   const copy = useCopy();
-  const { FOOT_COPY, EXTRA_AUTH, ANNOUNCEMENT_COPY } = copy;
+  const { FOOT_COPY, EXTRA_AUTH, ANNOUNCEMENT_COPY, ALLIANCE_COPY } = copy;
   const [open, setOpen] = useState(false);
   const now = useNow(true);
   const items = buildProgressItems(city, research, now).sort((a, b) => (a.leftSec ?? Infinity) - (b.leftSec ?? Infinity));
@@ -38,6 +41,23 @@ export function BottomBar({ city, research, broadcasts, onOpenBroadcasts, onOpen
       className="nav-foot flex min-w-0 items-center gap-2.5 rounded-panel border border-line bg-panel px-2.5 text-[11.5px] max-lg:hidden"
     >
       <ChatChip />
+      <button
+        type="button"
+        role="导航-底栏-联盟"
+        title={ALLIANCE_COPY.launcher.open}
+        onClick={onOpenAlliance}
+        className="relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded border border-line bg-panel-2 px-2 py-0.5 text-dim hover:border-accent-dim hover:text-fg"
+      >
+        <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded border border-line text-[11px] font-semibold text-accent">
+          {ALLIANCE_COPY.launcher.label.slice(0, 1)}
+        </span>
+        <span className="max-xl:hidden">{ALLIANCE_COPY.launcher.label}</span>
+        {allianceBadge > 0 ? (
+          <i role="导航-底栏-联盟-角标" className="min-w-[16px] rounded-full bg-st-error px-1 text-center text-[10px] not-italic text-bg">
+            {allianceBadge > 99 ? '99+' : allianceBadge}
+          </i>
+        ) : null}
+      </button>
       <span className="shrink-0 text-faint">{FOOT_COPY.running}</span>
       <div role="导航-单行时间线" className="flex min-w-0 flex-1 gap-1.5 overflow-hidden">
         {items.length === 0 ? (

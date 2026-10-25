@@ -1,7 +1,11 @@
 // CHAT_SEND（v51，AISLG-138）：发送文字（表情直接写在文字里）或卡片。
-// 顺序：参数 → 事务内锁住发送人账号 → 禁言 → 世界频道官府门槛 / 私聊对象与屏蔽 → 同频道限频 → 卡片快照 →
-// 屏蔽词替换 → 落库。提交后才回包并推送（推送失败不影响发送结果）。仅限玩家连接（由 handlers-chat.ts 把关）。
+// 顺序：参数 → 事务内锁住发送人账号 → 禁言 → 世界频道官府门槛 / 私聊对象与屏蔽 / 联盟频道成员资格 → 同频道限频 →
+// 卡片快照 → 屏蔽词替换 → 落库。提交后才回包并推送（推送失败不影响发送结果）。仅限玩家连接（由 handlers-chat.ts 把关）。
+// 联盟频道（v68，AISLG-183）：只有本联盟成员能发，没有官府等级门槛；锁顺序同联盟管理（账号行 → 联盟行），
+// 与踢人、退出的并发因此串行，被踢的人不会把消息落进原联盟。
 
+import type pg from 'pg';
+import { getMembership, lockAlliance } from '../../common/src/alliance-db';
 import { Op, type ErrorCode } from '../../common/src/protocol';
 import {
   CHAT_RATE_LIMIT_MS,
@@ -14,7 +18,7 @@ import {
 import type { PushFrame } from '../../common/src/protocol';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
-import type { ConnInfo } from './connections';
+import type { ConnInfo, ConnectionRegistry } from './connections';
 import * as db from './chat-db';
 import { buildChatCard } from './chat-cards';
 import { bannedWordFilter, type BannedWordFilter } from './chat-words';
@@ -33,7 +37,7 @@ interface SendRequest {
 }
 
 type SendOutcome =
-  | { ok: true; message: ChatMessageView; recipientId: string | null }
+  | { ok: true; message: ChatMessageView; recipientId: string | null; allianceId: string | null }
   | { ok: false; code: ErrorCode; data?: Record<string, unknown> };
 
 /** 解析并做形状校验：文字去首尾空白后超过 100 字（按字形计）即非法；文字为空时只有卡片消息才合法 */
@@ -93,10 +97,23 @@ async function sendInTransaction(
 
     let recipientId: string | null = null;
     let recipientName: string | null = null;
+    let allianceId: string | null = null;
     if (req.channel === 'world') {
       if ((await db.mainGovernmentLevel(client, accountId)) < CHAT_WORLD_MIN_GOVERNMENT) {
         return reject('CHAT_GOVERNMENT_TOO_LOW');
       }
+    } else if (req.channel === 'alliance') {
+      const membership = await getMembership(client, accountId);
+      if (!membership) {
+        return reject('ALLIANCE_NOT_IN');
+      }
+      // 锁住联盟行后重新确认成员资格：踢人只锁联盟行，不锁被踢者的账号行
+      await lockAlliance(client, membership.allianceId);
+      const current = await getMembership(client, accountId);
+      if (!current || current.allianceId !== membership.allianceId) {
+        return reject('ALLIANCE_NOT_IN');
+      }
+      allianceId = current.allianceId;
     } else {
       if (!isUuid(req.peerId) || req.peerId === accountId) {
         return reject('INVALID_PARAMS');
@@ -134,6 +151,7 @@ async function sendInTransaction(
       channel: req.channel,
       senderId: accountId,
       recipientId,
+      allianceId,
       text,
       card,
       reportDetail,
@@ -149,11 +167,12 @@ async function sendInTransaction(
         recipient_name: recipientName,
         text,
         card,
+        system_event: null,
         created_at: inserted.createdAt,
       },
       filter,
     );
-    return { ok: true, message, recipientId };
+    return { ok: true, message, recipientId, allianceId };
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw err;
@@ -162,14 +181,48 @@ async function sendInTransaction(
   }
 }
 
-/** 推送新消息：私聊推给对方与发送人的其他玩家连接；世界频道推给全部在线玩家，跳过屏蔽了发言人的账号 */
+/**
+ * 推送联盟频道的一条消息：只推给本联盟在线的玩家连接（Agent 不收）；跳过屏蔽了发言人的成员。
+ * senderId 为 null（系统消息）时不做屏蔽过滤。except 只用于发送人本连接（它已经拿到了 CHAT_SEND 的直接结果）。
+ */
+async function deliverToAlliance(
+  pool: pg.Pool,
+  registry: ConnectionRegistry,
+  allianceId: string,
+  message: ChatMessageView,
+  senderId: string | null,
+  except?: ConnInfo,
+): Promise<void> {
+  const frame: PushFrame = { op: Op.PUSH_CHAT_MESSAGE, push: true, data: { message } };
+  const [members, blockers] = await Promise.all([
+    db.allianceMemberIds(pool, allianceId),
+    senderId ? db.blockersOf(pool, senderId) : Promise.resolve(new Set<string>()),
+  ]);
+  const online = new Set(registry.onlineAccountIds());
+  for (const target of members) {
+    if (!online.has(target) || blockers.has(target)) {
+      continue;
+    }
+    registry.broadcastToPlayers(target, frame, target === senderId ? except : undefined);
+  }
+}
+
+/**
+ * 推送新消息：私聊推给对方与发送人的其他玩家连接；世界频道推给全部在线玩家，跳过屏蔽了发言人的账号；
+ * 联盟频道只推给本联盟在线成员。
+ */
 async function deliverChatMessage(
   ctx: HandlerContext,
   conn: ConnInfo,
   accountId: string,
   message: ChatMessageView,
   recipientId: string | null,
+  allianceId: string | null,
 ): Promise<void> {
+  if (message.channel === 'alliance' && allianceId) {
+    await deliverToAlliance(ctx.pool, ctx.registry, allianceId, message, accountId, conn);
+    return;
+  }
   const frame: PushFrame = { op: Op.PUSH_CHAT_MESSAGE, push: true, data: { message } };
   if (message.channel === 'private' && recipientId) {
     ctx.registry.broadcastToPlayers(recipientId, frame);
@@ -183,6 +236,23 @@ async function deliverChatMessage(
     }
     ctx.registry.broadcastToPlayers(target, frame, target === accountId ? conn : undefined);
   }
+}
+
+/**
+ * 联盟大事的系统消息落库后，由 API 的 NOTIFY 监听调用（reason = alliance_chat）：按消息编号取回视图再推给本联盟在线成员。
+ * 系统消息没有发送人，不做屏蔽过滤；消息已不存在（如联盟已解散）时静默跳过。
+ */
+export async function pushAllianceMessage(
+  pool: pg.Pool,
+  registry: ConnectionRegistry,
+  allianceId: string,
+  messageId: number,
+): Promise<void> {
+  const [row] = await db.messagesByIds(pool, [messageId]);
+  if (!row || row.channel !== 'alliance') {
+    return;
+  }
+  await deliverToAlliance(pool, registry, allianceId, chatMessageView(row, bannedWordFilter()), row.sender_id);
 }
 
 function maybePrune(ctx: HandlerContext): void {
@@ -213,7 +283,7 @@ export async function handleChatSend(
     return;
   }
   respondOk(ctx.registry, conn, op, seq, { message: outcome.message });
-  deliverChatMessage(ctx, conn, accountId, outcome.message, outcome.recipientId).catch((err) =>
+  deliverChatMessage(ctx, conn, accountId, outcome.message, outcome.recipientId, outcome.allianceId).catch((err) =>
     console.error('chat push failed:', err),
   );
   maybePrune(ctx);

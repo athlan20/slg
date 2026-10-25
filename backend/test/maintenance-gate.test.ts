@@ -16,10 +16,13 @@ import {
 } from '../api/src/maintenance-gate';
 import { setTimeScaleCache } from '../common/src/time-scale';
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 
 describe('换季维护态拦截（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
   let accountId: string;
   const tag = `maint-${Date.now()}`;
   const sent: ResponseFrame[] = [];
@@ -41,7 +44,8 @@ describe('换季维护态拦截（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
 
   before(async () => {
     setTimeScaleCache(1);
-    pool = new pg.Pool({ connectionString: dbUrl, max: 4 });
+    tmp = await createTempDatabase(dbUrl as string, 'maint_gate');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 4 });
     await ensureSchema(pool);
     await setMaintenance(pool, null);
     invalidateMaintenanceCache();
@@ -58,6 +62,7 @@ describe('换季维护态拦截（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
     invalidateMaintenanceCache();
     await pool.query(`DELETE FROM accounts WHERE id = $1`, [accountId]);
     await pool.end();
+    await tmp?.drop();
   });
 
   test('维护中：游戏类协议返回 MAINTENANCE 并附 retryAfterSec', async () => {

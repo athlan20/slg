@@ -36,4 +36,12 @@ CREATE TABLE IF NOT EXISTS chat_reads (
 
 -- 运营禁言（v51）：禁言截止时刻；null 或已过期 = 可以发言（脚本 scripts/chat-mute.ts 设置）
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS chat_muted_until timestamptz;
+
+-- 联盟频道（v68，AISLG-183）：channel = 'alliance' 的消息归属到 alliance_id（不复用 recipient_id）；
+-- 联盟解散时消息一并删除。依赖 alliances 表，故 db.ts 的 ensureSchema 先建联盟表再执行本段。
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS alliance_id uuid REFERENCES alliances(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_chat_messages_alliance ON chat_messages (alliance_id, id DESC);
+-- 系统消息没有真人发送人：sender_id 放宽为可空（已有的表在此幂等放宽）；内容快照写在 system_event（ChatSystemView）
+ALTER TABLE chat_messages ALTER COLUMN sender_id DROP NOT NULL;
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS system_event jsonb;
 `;

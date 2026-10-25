@@ -1,5 +1,5 @@
-// 聊天浮窗的三个页签内容（AISLG-138）：世界频道（最新在下、可翻更早）、系统播报（只读，复用全服播报数据）、
-// 私聊线程（顶部可返回会话列表）。
+// 聊天浮窗的页签内容（AISLG-138）：世界频道（最新在下、可翻更早）、联盟频道（AISLG-183，没有联盟时是引导）、
+// 系统播报（只读，复用全服播报数据）、私聊线程（顶部可返回会话列表）。
 
 import { formatReportTime } from '../../api/format';
 import { serverBroadcastText } from '../../api/mapping';
@@ -23,6 +23,40 @@ export function ChatWorldPane() {
       hasMore={chat.worldHasMore}
       loading={chat.worldLoading}
       onLoadOlder={() => void chat.loadOlderWorld()}
+    />
+  );
+}
+
+export function ChatAlliancePane() {
+  const { CHAT_COPY } = useCopy();
+  const { session } = useGame();
+  const { chat, alliance } = session;
+  if (!chat.inAlliance) {
+    // 没有联盟：页签不隐藏（让玩家知道有这个频道），给一句说明和去联盟面板的入口
+    return (
+      <div role="聊天浮窗-联盟-未加入" className="flex flex-1 flex-col items-center justify-center gap-2 px-2 text-center">
+        <p className="text-[12.5px] leading-relaxed text-faint">{CHAT_COPY.alliance.noAlliance}</p>
+        <button
+          type="button"
+          role="聊天浮窗-联盟-去联盟面板"
+          onClick={() => alliance.openPanel()}
+          className="btn px-2.5 py-0.5 text-[12px]"
+        >
+          {CHAT_COPY.alliance.openPanel}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <ChatMessageList
+      role="聊天浮窗-联盟消息"
+      items={chat.alliance}
+      keyOf={(item) => item.id}
+      renderRow={(item) => <ChatMessageRow message={item} />}
+      empty={<p className="py-6 text-center text-[12px] leading-relaxed text-faint">{CHAT_COPY.alliance.empty}</p>}
+      hasMore={chat.allianceHasMore}
+      loading={chat.allianceLoading}
+      onLoadOlder={() => void chat.loadOlderAlliance()}
     />
   );
 }

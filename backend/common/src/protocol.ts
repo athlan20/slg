@@ -164,6 +164,34 @@ export const Op = {
   GET_SEASON: 99,
   /** C→S 查询名人堂（v65，AISLG-134：某赛季各榜前列与模型榜，分页；缺省最近一个已结束赛季） */
   GET_HALL_OF_FAME: 100,
+  /** C→S 创建联盟（v66，AISLG-181：data.name；官府 ≥ 5 级、扣 10 万金币；仅玩家连接） */
+  CREATE_ALLIANCE: 101,
+  /** C→S 查询联盟（v66，AISLG-181：缺省 = 我的联盟，含我的申请 / 邀请与（盟主 / 副盟主可见的）待审批申请；给 allianceId = 公开信息；玩家与 Agent 通用） */
+  GET_ALLIANCE: 102,
+  /** C→S 联盟列表（v66，AISLG-181：按成员数降序分页，申请入盟时选择用；玩家与 Agent 通用） */
+  LIST_ALLIANCES: 103,
+  /** C→S 申请加入联盟 / 撤回申请（v66，AISLG-181：仅玩家连接） */
+  ALLIANCE_APPLY: 104,
+  /** C→S 邀请玩家入盟 / 撤回邀请（v66，AISLG-181：盟主或副盟主；仅玩家连接） */
+  ALLIANCE_INVITE: 105,
+  /** C→S 答复申请或邀请（v66，AISLG-181：盟主 / 副盟主审批申请，或被邀请人接受 / 拒绝邀请；仅玩家连接） */
+  ALLIANCE_RESPOND: 106,
+  /** C→S 退出联盟（v66，AISLG-181：盟主在盟里还有别人时须先转让；只剩盟主一人时等于解散；仅玩家连接） */
+  ALLIANCE_LEAVE: 107,
+  /** C→S 解散联盟（v66，AISLG-181：仅盟主；仅玩家连接） */
+  ALLIANCE_DISBAND: 108,
+  /** C→S 踢出成员（v66，AISLG-181：立即生效；副盟主只能踢普通成员；仅玩家连接） */
+  ALLIANCE_KICK: 109,
+  /** C→S 任免副盟主 / 转让盟主（v66，AISLG-181：仅盟主；仅玩家连接） */
+  ALLIANCE_SET_ROLE: 110,
+  /** C→S 修改联盟公告（v66，AISLG-181：盟主或副盟主；仅玩家连接） */
+  ALLIANCE_SET_NOTICE: 111,
+  /** C→S 放置联盟地图标记（v69，AISLG-184：data.x / y / kind（rally 集结 / enemy 敌人 / resource 资源 / danger 危险）、可选 text；同联盟同格不可重复、最多 20 个，满了返回 ALLIANCE_MARK_LIMIT；玩家与 Agent 通用） */
+  ALLIANCE_MARK_ADD: 112,
+  /** C→S 删除联盟地图标记（v69，AISLG-184：data.id；成员只能删自己打的，盟主 / 副盟主可删任何人的（仅玩家连接）；玩家与 Agent 通用） */
+  ALLIANCE_MARK_REMOVE: 113,
+  /** C→S 查询本联盟的有效地图标记（v69，AISLG-184：玩家与 Agent 通用；没有联盟返回 ALLIANCE_NOT_IN） */
+  GET_ALLIANCE_MARKS: 114,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -225,6 +253,10 @@ export const Op = {
   PUSH_ANNOUNCEMENT: 2022,
   /** S→C 推送：赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134；全部在线连接收到，含 Agent；started 后服务端断开全部连接） */
   PUSH_SEASON: 2023,
+  /** S→C 推送：联盟状态变化（v66，AISLG-181；reason = joined / left / kicked / role_changed / disbanded / notice / request_received / request_resolved / invited；只推给相关账号，收到后重新 GET_ALLIANCE） */
+  PUSH_ALLIANCE_STATE: 2024,
+  /** S→C 推送：联盟地图标记变化（v69，AISLG-184；reason = added 新增 / removed 删除；只推给本联盟在线成员，含 Agent 连接） */
+  PUSH_ALLIANCE_MARK: 2025,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -431,6 +463,36 @@ export const ErrorCode = {
   ANNOUNCEMENT_NOT_FOUND: 'ANNOUNCEMENT_NOT_FOUND',
   /** 换季维护中（v65，AISLG-134）：除 GET_SEASON 与登录相关协议外的请求一律返回，响应附 retryAfterSec（秒） */
   MAINTENANCE: 'MAINTENANCE',
+  /** 联盟：联盟名不合法（长度不在 2–8 字、含屏蔽词或有首尾空白）（v66，AISLG-181） */
+  ALLIANCE_NAME_INVALID: 'ALLIANCE_NAME_INVALID',
+  /** 联盟：联盟名已被占用（v66，AISLG-181；全服唯一，忽略大小写） */
+  ALLIANCE_NAME_TAKEN: 'ALLIANCE_NAME_TAKEN',
+  /** 联盟：主城官府等级不够创建联盟（v66，AISLG-181；需 ≥ 5 级），响应附 required / current */
+  ALLIANCE_GOVERNMENT_TOO_LOW: 'ALLIANCE_GOVERNMENT_TOO_LOW',
+  /** 联盟：已经在一个联盟里（v66，AISLG-181） */
+  ALLIANCE_ALREADY_IN: 'ALLIANCE_ALREADY_IN',
+  /** 联盟：你不在任何联盟里（v66，AISLG-181） */
+  ALLIANCE_NOT_IN: 'ALLIANCE_NOT_IN',
+  /** 联盟：联盟不存在，或申请 / 邀请 / 目标成员不存在（v66，AISLG-181） */
+  ALLIANCE_NOT_FOUND: 'ALLIANCE_NOT_FOUND',
+  /** 联盟：退出 / 被踢 / 解散后的冷却中，不能创建也不能加入（v66，AISLG-181），响应附 until 与 retryAfterSeconds */
+  ALLIANCE_COOLDOWN: 'ALLIANCE_COOLDOWN',
+  /** 联盟：成员已满（成员数 + 待处理邀请数 ≥ 上限）（v66，AISLG-181） */
+  ALLIANCE_FULL: 'ALLIANCE_FULL',
+  /** 联盟：当前职位没有这个权限，或目标职位不允许被你操作（v66，AISLG-181） */
+  ALLIANCE_FORBIDDEN: 'ALLIANCE_FORBIDDEN',
+  /** 联盟：副盟主人数已达上限（v66，AISLG-181） */
+  ALLIANCE_ROLE_FULL: 'ALLIANCE_ROLE_FULL',
+  /** 联盟：盟主在盟里还有其他成员时不能直接退出，请先转让盟主或解散（v66，AISLG-181） */
+  ALLIANCE_LEADER_MUST_TRANSFER: 'ALLIANCE_LEADER_MUST_TRANSFER',
+  /** 联盟：已经有一条待处理的申请，先撤回再申请别的联盟（v66，AISLG-181） */
+  ALLIANCE_REQUEST_EXISTS: 'ALLIANCE_REQUEST_EXISTS',
+  /** 联盟：目标是盟友（同一联盟成员）的城池 / 野地，不能攻击、抢占、占领或侦察（v67，AISLG-182）；运输、增援、调兵不受限 */
+  ALLY_NOT_ATTACKABLE: 'ALLY_NOT_ATTACKABLE',
+  /** 联盟：标记已满（同一联盟同时最多 20 个有效标记），响应附 limit、until（最早一个标记的到期时刻）与 retryAfterSeconds（v69，AISLG-184） */
+  ALLIANCE_MARK_LIMIT: 'ALLIANCE_MARK_LIMIT',
+  /** 联盟：同一格子已经有一个有效标记，不能重复标记（v69，AISLG-184） */
+  ALLIANCE_MARK_EXISTS: 'ALLIANCE_MARK_EXISTS',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -791,6 +853,66 @@ export type {
   GetStarTowerReportsRequestData,
   GetStarTowerReportsResponseData,
 } from './protocol-star-tower';
+
+// 联盟（v66，AISLG-181）的常量与载荷类型在 protocol-alliance.ts
+export {
+  ALLIANCE_COOLDOWN_MS,
+  ALLIANCE_CREATE_COST_GOLD,
+  ALLIANCE_CREATE_MIN_GOVERNMENT,
+  ALLIANCE_INVITE_TTL_MS,
+  ALLIANCE_LEADER_INACTIVE_MS,
+  ALLIANCE_LIST_PAGE_SIZE,
+  ALLIANCE_POWER_FAMOUS_WEIGHT,
+  ALLIANCE_POWER_GOVERNMENT_WEIGHT,
+  ALLIANCE_POWER_TERRITORY_WEIGHT,
+  ALLIANCE_RANK_MIN_MEMBERS,
+  ALLIANCE_MAX_MEMBERS,
+  ALLIANCE_MAX_VICES,
+  ALLIANCE_NAME_MAX_CHARS,
+  ALLIANCE_NAME_MIN_CHARS,
+  ALLIANCE_NOTICE_MAX_CHARS,
+  ALLIANCE_MARK_KINDS,
+  ALLIANCE_MARK_MAX,
+  ALLIANCE_MARK_PUSH_REASONS,
+  ALLIANCE_MARK_TEXT_MAX_CHARS,
+  ALLIANCE_MARK_TTL_MS,
+  ALLIANCE_PUSH_REASONS,
+  ALLIANCE_REQUEST_TTL_MS,
+  ALLIANCE_ROLES,
+} from './protocol-alliance';
+export type {
+  AllianceApplyRequestData,
+  AllianceBriefView,
+  AllianceDetailView,
+  AllianceLeaderboardEntryView,
+  AllianceInviteRequestData,
+  AllianceKickRequestData,
+  AllianceMemberView,
+  AlliancePlayerView,
+  AlliancePushReason,
+  AllianceReceivedInviteView,
+  AllianceRequestView,
+  AllianceRespondRequestData,
+  AllianceRole,
+  AllianceSentInviteView,
+  AllianceSetNoticeRequestData,
+  AllianceSetRoleRequestData,
+  CreateAllianceRequestData,
+  GetAllianceRequestData,
+  GetAllianceResponseData,
+  ListAlliancesRequestData,
+  ListAlliancesResponseData,
+  PushAllianceStateData,
+  AllianceMarkAddRequestData,
+  AllianceMarkAddResponseData,
+  AllianceMarkKind,
+  AllianceMarkPushReason,
+  AllianceMarkRemoveRequestData,
+  AllianceMarkRemoveResponseData,
+  AllianceMarkView,
+  GetAllianceMarksResponseData,
+  PushAllianceMarkData,
+} from './protocol-alliance';
 
 // 公告（v60，AISLG-162）的载荷类型与常量在 protocol-announcement.ts
 export {

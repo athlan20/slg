@@ -12,12 +12,28 @@ export const CHAT_COPY = {
   },
   tabs: {
     world: '世界',
+    alliance: '联盟',
     system: '系统播报',
     private: '私聊',
   },
   system: {
     empty: '暂无播报',
     readonly: '系统播报只读，由服务器推送',
+  },
+  alliance: {
+    empty: '本联盟还没有消息，来打个招呼吧',
+    noAlliance: '加入联盟后，这里是只有盟内成员能看到的频道',
+    openPanel: '去联盟面板',
+  },
+  // 联盟系统消息的展示句（AISLG-183，文案由前端拼；标记种类名见 ALLIANCE_COPY.marks.kindLabel）
+  systemLine: {
+    founded: (name: string) => `${name} 创建了联盟`,
+    joined: (name: string) => `${name} 加入了联盟`,
+    left: (name: string) => `${name} 离开了联盟`,
+    kicked: (name: string, by: string) => `${name} 被 ${by} 移出联盟`,
+    leaderTransfer: (from: string, to: string) => `${from} 把盟主转给了 ${to}`,
+    leaderInactive: (from: string, to: string) => `盟主 ${from} 长时间未上线，盟主转给了 ${to}`,
+    markCreated: (name: string, kind: string, x: number, y: number) => `${name} 在 (${x},${y}) 打了${kind}标记`,
   },
   world: {
     empty: '世界频道还没有消息，来打个招呼吧',
@@ -112,6 +128,7 @@ export const CHAT_COPY = {
     CHAT_MUTED: (until: string) => `账号已被禁言，解禁时间 ${until}`,
     CHAT_BLOCKED: '对方已屏蔽你，无法发送私聊',
     CHAT_RATE_LIMITED: (seconds: number) => `发言太快了，${seconds} 秒后再发`,
+    ALLIANCE_NOT_IN: '你还不在任何联盟里，无法使用联盟频道',
     INVALID_PARAMS: '内容不符合要求，请检查后再发',
     AGENT_FORBIDDEN: '聊天只能由玩家本人使用',
     NOT_LOGGED_IN: '请先登录',

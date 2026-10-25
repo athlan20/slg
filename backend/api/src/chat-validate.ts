@@ -1,6 +1,7 @@
 // 聊天请求参数的校验（v51，AISLG-138）：只做形状与范围判断，归属与业务规则在处理器里查库确认。
 
 import {
+  CHAT_CHANNELS,
   CHAT_TEXT_MAX_CHARS,
   type ChatCardRequest,
   type ChatChannel,
@@ -13,7 +14,7 @@ export function isUuid(value: unknown): value is string {
 }
 
 export function readChannel(value: unknown): ChatChannel | null {
-  return value === 'world' || value === 'private' ? value : null;
+  return (CHAT_CHANNELS as readonly unknown[]).includes(value) ? (value as ChatChannel) : null;
 }
 
 /** 字数：按字形（grapheme）计，表情（含肤色、ZWJ 组合）各算 1 个字 */

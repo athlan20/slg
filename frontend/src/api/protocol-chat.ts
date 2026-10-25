@@ -1,9 +1,10 @@
-// 聊天协议（v51，AISLG-138）的前端镜像：与 backend/common/src/protocol-chat.ts 同构，手工同步
+// 聊天协议（v51，AISLG-138；v68 起含联盟频道与系统消息，AISLG-183）的前端镜像：与 backend/common/src/protocol-chat.ts 同构，手工同步
 // （协议调整时以后端为准）。仅限玩家连接；Agent 连接不可用。
 
+import type { AllianceMarkKind } from './protocol-alliance';
 import type { BattleReportView, TerrainKind, TileKind } from './protocol-world';
 
-export type ChatChannel = 'world' | 'private';
+export type ChatChannel = 'world' | 'private' | 'alliance';
 export type ChatCardKind = 'coord' | 'hero' | 'report' | 'city';
 
 /** 单条文字上限（字符数，去首尾空白后） */
@@ -32,14 +33,25 @@ export type ChatCardView =
     }
   | { kind: 'city'; name: string; ownerName: string; level: number; x: number; y: number };
 
+/** 系统消息内容（v68；v69 新增 alliance_mark_created）：种类 + 参数，文案由客户端拼接 */
+export type ChatSystemView =
+  | { kind: 'alliance_joined'; player: ChatPlayerView; founder: boolean }
+  | { kind: 'alliance_left'; player: ChatPlayerView }
+  | { kind: 'alliance_kicked'; player: ChatPlayerView; by: ChatPlayerView }
+  | { kind: 'alliance_leader_changed'; from: ChatPlayerView; to: ChatPlayerView; reason: 'transfer' | 'inactive' }
+  | { kind: 'alliance_mark_created'; player: ChatPlayerView; markKind: AllianceMarkKind; x: number; y: number };
+
 export interface ChatMessageView {
   id: number;
   channel: ChatChannel;
-  sender: ChatPlayerView;
+  /** 系统消息为 null */
+  sender: ChatPlayerView | null;
   recipient: ChatPlayerView | null;
-  type: 'text' | 'card';
+  type: 'text' | 'card' | 'system';
   text: string | null;
   card: ChatCardView | null;
+  /** 系统消息的内容；其他类型为 null */
+  system: ChatSystemView | null;
   createdAt: string;
 }
 

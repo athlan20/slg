@@ -520,5 +520,24 @@
  *   全部在线连接收到，started 后服务端断开全部连接）。换季期间游戏类请求返回新错误码 MAINTENANCE（附 retryAfterSec）。
  *   三条登录成功响应（密码 / 令牌 / Agent 令牌，第三方登录经 LOGIN 令牌登录）新增 season = { id, endsAt }；
  *   账号在新赛季第一次登录时惰性加入（自动获得新主城与新手保护）。
+ * v66（联盟 · 建盟与成员管理，AISLG-181 / AISLG-143，只加不改）：新增 CREATE_ALLIANCE（op 101）/ ALLIANCE_APPLY（104）/ ALLIANCE_INVITE（105）/ ALLIANCE_RESPOND（106）/
+ *   ALLIANCE_LEAVE（107）/ ALLIANCE_DISBAND（108）/ ALLIANCE_KICK（109）/ ALLIANCE_SET_ROLE（110）/ ALLIANCE_SET_NOTICE（111），仅玩家连接（Agent 一律 AGENT_FORBIDDEN）；
+ *   查询类 GET_ALLIANCE（102）/ LIST_ALLIANCES（103）玩家与 Agent 通用；推送 PUSH_ALLIANCE_STATE（op 2024）。新增错误码 ALLIANCE_*（12 个）。
+ *   新表 alliances / alliance_members / alliance_requests / alliance_invites；accounts 新增 last_active_at / alliance_cooldown_until。
+ * v67（联盟 · 盟友互不攻击，AISLG-182 / AISLG-143，只加不改）：同一联盟的成员之间 MARCH 掠夺城池 / 抢占野地 / 占领分城、SCOUT 侦察都返回新错误码 ALLY_NOT_ATTACKABLE（运输、增援、调兵不受限）；
+ *   出发后目标才成为盟友的，Worker 到达结算不开战、原路返回（事件 outcome=aborted、cause=ALLY_NOT_ATTACKABLE）；TileView.owner 新增 ally，GET_MAP_OVERVIEW 的 side 新增 'ally'。
+ * v68（联盟 · 联盟频道与系统消息，AISLG-183 / AISLG-143，只加不改）：CHAT_HISTORY / CHAT_SEND 的 channel 新增 'alliance'（联盟频道，仅本联盟成员，无官府门槛；
+ *   无联盟返回 ALLIANCE_NOT_IN；历史只给入盟之后的消息；屏蔽与限频规则同世界频道）。消息视图 type 新增 'system'（盟内大事的系统消息：入盟 / 退出 / 被踢 / 盟主变更，
+ *   内容为 system 字段的 { kind, ...参数 }，文案由客户端拼接）；系统消息没有发送人，sender 由恒有值变为可为 null，新增字段 system。
+ *   解散联盟不写系统消息（联盟频道随联盟删除）。占下名城、成员拿到名将两类事件留待后续子单。无新增协议号与错误码。
+ * v69（联盟 · 地图标记，AISLG-184 / AISLG-143，只加不改）：新增 ALLIANCE_MARK_ADD（op 112，玩家与 Agent 通用）在地图格子上打标记（集结 / 敌人 / 资源 / 危险，可附 20 字内的一句话，过屏蔽词即拒绝）、
+ *   ALLIANCE_MARK_REMOVE（113，成员只能删自己打的，盟主 / 副盟主可删任何人的；Agent 连接只能删自己打的）、GET_ALLIANCE_MARKS（114，查本联盟有效标记）与推送 PUSH_ALLIANCE_MARK（op 2025，reason = added / removed）。
+ *   同一联盟最多 20 个有效标记（满了返回新错误码 ALLIANCE_MARK_LIMIT，附最早一个的到期时刻），同一格子不能重复（ALLIANCE_MARK_EXISTS）；每个标记保留 24 小时。
+ *   创建标记时联盟频道写一条系统消息（system.kind = alliance_mark_created）。新表 alliance_marks（换季清空）。
+ * v70（联盟榜与联盟信息，AISLG-185 / AISLG-143，只加不改）：GET_LEADERBOARD 的 kind 新增 alliance（联盟榜，条目经 allianceEntries 下发：rank / allianceId / name / leader / memberCount / value）；
+ *   联盟势力 = 全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和 × 1（权重为占位常量 ALLIANCE_POWER_*）；成员不足 5 人不上榜（ALLIANCE_RANK_MIN_MEMBERS）。
+ *   榜单走 Worker 定期快照（alliance_leaderboard_snapshots，换季清空）。GET_ALLIANCE 的 alliance 详情新增 power（势力，现算）与 rank（榜单名次，取最近快照，未上榜为 null）。
+ *   GET_HALL_OF_FAME 的 kind 新增 alliance：换季时联盟榜前三进名人堂，条目 accountId / username 为当时的盟主，value 为势力，并带 allianceId / allianceName / memberCount（个人榜这三项为 null）。
+ *   无新增协议号与错误码。
  */
-export const PROTOCOL_VERSION = 65;
+export const PROTOCOL_VERSION = 70;

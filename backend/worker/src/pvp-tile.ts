@@ -37,7 +37,9 @@ import {
   settleMarchHero,
   type MarchRow,
   type TileNotify,
+  abortForAlly,
 } from './tick-shared';
+import { areAllies } from '../../common/src/alliance-db';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -109,6 +111,11 @@ export async function resolvePvpOccupyArrival(
   if (!owner) {
     // 占领行已删（守方重置等）：地块实际已无主
     await abortCause(client, march, troops, settled, notifies, 'target_gone', null);
+    return;
+  }
+  // v67（AISLG-182）：出发后目标才成为盟友（同一联盟）：不开战，原路返回
+  if (await areAllies(client, march.account_id, owner.account_id)) {
+    await abortForAlly(client, march, troops, settled, notifies);
     return;
   }
   const capturedAt = activeAt(tile.owner_changed_until ?? null, now);

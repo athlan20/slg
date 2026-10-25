@@ -10,6 +10,8 @@ import type { ConnectionRegistry, ConnInfo } from '../api/src/connections';
 import type { HandlerContext } from '../api/src/handlers';
 import { handleGetMapOverview } from '../api/src/map-overview';
 
+import { createTempDatabase, type TempDatabase } from './season-test-db';
+
 const dbUrl = process.env.TEST_DATABASE_URL;
 
 // 固定坐标：测试库可能残留，开始与结束都清一遍
@@ -23,6 +25,7 @@ const P = {
 
 describe('世界小地图总览（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置 TEST_DATABASE_URL' }, () => {
   let pool: pg.Pool;
+  let tmp: TempDatabase | undefined;
   let accountId: string;
   let otherAccountId: string;
   const ownerAccounts: string[] = [];
@@ -57,7 +60,8 @@ describe('世界小地图总览（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
 
   before(async () => {
     setTimeScaleCache(1);
-    pool = new pg.Pool({ connectionString: dbUrl, max: 4 });
+    tmp = await createTempDatabase(dbUrl as string, 'map_overview');
+    pool = new pg.Pool({ connectionString: tmp.url, max: 4 });
     await ensureSchema(pool);
     await cleanFixtures();
     (ctx as { pool: pg.Pool }).pool = pool;
@@ -103,6 +107,7 @@ describe('世界小地图总览（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
       await cleanFixtures();
     }
     await pool.end();
+    await tmp?.drop();
   });
 
   test('按归属区分本方 / 他方 / NPC / 名城，野地不返回', async () => {
