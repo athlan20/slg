@@ -46,6 +46,12 @@
   }
 }
 
+/* 细滚动条：区块内整块滚动的容器用（如任务卡「日常」页签，AISLG-189） */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
 /* ---------- 页面网格：work = 当前页的固定网格；block = 一个区块（卡片）的外壳 ---------- */
 .work {
   flex: 1;

@@ -74,6 +74,7 @@ export function AppShell() {
         onExchange={session.exchangeGold}
         exchangeRequest={exchangeRequest}
         onStartTruce={session.startTruce}
+        onCancelTruce={session.cancelTruce}
         season={session.season.info}
       />
       <main role="导航-工作区" className="nav-work">

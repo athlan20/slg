@@ -1,5 +1,5 @@
 {
-  "version": 70,
+  "version": 71,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -764,7 +764,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 70,
+                "protocolVersion": 71,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -813,7 +813,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 70,
+                "protocolVersion": 71,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -833,14 +833,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/67 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/68 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 67,
+              "docVersion": 68,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -855,8 +855,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 70,
-                "docNotice": "接口文档已从 v67 更新到 v70：请 GET /agent-api/changes/67 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 71,
+                "docNotice": "接口文档已从 v68 更新到 v71：请 GET /agent-api/changes/68 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -2249,7 +2249,7 @@
         {
           "name": "events[].type",
           "type": "string",
-          "desc": "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）。"
+          "desc": "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）。"
         },
         {
           "name": "events[].initiator",
@@ -3101,14 +3101,14 @@
       "op": 24,
       "kind": "request",
       "name": "CANCEL_BUILD",
-      "title": "取消排队中的建造条目",
+      "title": "取消建造条目（排队中 / 建造中）",
       "preAuth": false,
-      "summary": "取消建造队列中 status=queued 的条目：该条目退出队列（status 变为 cancelled，保留为历史，不再出现在 city.queue），发起时扣减的成本按条目上的成本快照全额返还（2026-09-27 确认规则）。进行中（building）条目能否取消待定，当前返回 BUILD_NOT_CANCELLABLE。",
+      "summary": "取消建造队列中 status=queued（排队中）或 status=building（建造中）的条目：该条目退出队列（status 变为 cancelled，保留为历史，不再出现在 city.queue），发起时扣减的成本按条目上的成本快照全额返还（2026-09-27 确认规则，全额返还）。建造中取消时建筑等级不变（升级中取消则保持当前等级），该城排队的下一条立即开工（同一事务激活，推送 build_started）。连续升级（toLevel）进行中取消：已完成的级保留等级、不退，只返还未完成级的成本。已完成 / 已取消的条目返回 BUILD_NOT_CANCELLABLE。",
       "requestFields": [
         {
           "name": "buildId",
           "type": "string",
-          "desc": "必填。要取消的建造条目 UUID（GET_STATE 的 city.queue 中排队条目的 id）；缺失返回 INVALID_PARAMS。"
+          "desc": "必填。要取消的建造条目 UUID（GET_STATE 的 city.queue 中 queued / building 条目的 id）；缺失返回 INVALID_PARAMS。"
         }
       ],
       "dataFields": [
@@ -3155,7 +3155,7 @@
           ]
         },
         {
-          "caption": "取消在建条目被拒（附当前状态）",
+          "caption": "取消已完成的条目被拒（附当前城池状态）",
           "request": {
             "op": 24,
             "seq": 2,
@@ -3170,13 +3170,13 @@
               "ok": false,
               "error": {
                 "code": "BUILD_NOT_CANCELLABLE",
-                "message": "只能取消排队中的建造任务（在建任务能否取消待设计）"
+                "message": "建造任务不存在、不属于本账号或已完成 / 已取消，无法取消"
               }
             }
           ]
         }
       ],
-      "agentNote": "先 GET_STATE 拿 city.queue 中排队条目的 id 再取消。取消后该类型可以立即重新发起 BUILD。同账号其他在线连接会收到 PUSH_BUILD_STATE（build_cancelled）推送。"
+      "agentNote": "先 GET_STATE 拿 city.queue 中条目的 id 再取消（排队中与建造中都可取消）。取消后该类型可以立即重新发起 BUILD；建造中取消的成本全额回来，别忘了它排队的下一条已自动开工。同账号其他在线连接会收到 PUSH_BUILD_STATE（build_cancelled，以及下一条的 build_started）推送。"
     },
     {
       "op": 25,
@@ -3958,20 +3958,20 @@
           ]
         }
       ],
-      "agentNote": "发起前用 GET_STATE 的 levels.barracks 对照兵种门槛、resources 与 population 预判；失败响应的 data 仅含 city（无 recruit 载荷）。征募中条目能否取消待定，当前只能取消排队条目。同账号其他在线连接会收到 PUSH_RECRUIT_STATE（recruit_started / recruit_queued）推送。"
+      "agentNote": "发起前用 GET_STATE 的 levels.barracks 对照兵种门槛、resources 与 population 预判；失败响应的 data 仅含 city（无 recruit 载荷）。征募中条目也可取消（CANCEL_RECRUIT，全额返还）。同账号其他在线连接会收到 PUSH_RECRUIT_STATE（recruit_started / recruit_queued）推送。"
     },
     {
       "op": 29,
       "kind": "request",
       "name": "CANCEL_RECRUIT",
-      "title": "取消排队中的征兵条目",
+      "title": "取消征兵条目（排队中 / 征募中）",
       "preAuth": false,
-      "summary": "取消征兵队列中 status=queued 的条目：该条目退出队列（status 变为 cancelled，保留为历史），发起时扣减的资源与人口按条目快照全额返还（人口立即回到城池、恢复增长）。征募中（recruiting）条目能否取消待定，当前返回 RECRUIT_NOT_CANCELLABLE。",
+      "summary": "取消征兵队列中 status=queued（排队中）或 status=recruiting（征募中）的条目：该条目退出队列（status 变为 cancelled，保留为历史），发起时扣减的资源与人口按条目快照全额返还（人口立即回到城池、恢复增长）。征募中取消后已经过去的征募时间作废，该城排队的下一条立即开始征募（同一事务激活，推送 recruit_started）。已完成 / 已取消的条目返回 RECRUIT_NOT_CANCELLABLE。",
       "requestFields": [
         {
           "name": "recruitId",
           "type": "string",
-          "desc": "必填。要取消的征兵条目 UUID（GET_STATE 的 city.recruitQueue 中排队条目的 id）；缺失返回 INVALID_PARAMS。"
+          "desc": "必填。要取消的征兵条目 UUID（GET_STATE 的 city.recruitQueue 中 queued / recruiting 条目的 id）；缺失返回 INVALID_PARAMS。"
         }
       ],
       "dataFields": [
@@ -4016,7 +4016,7 @@
           ]
         },
         {
-          "caption": "取消征募中条目被拒",
+          "caption": "取消已完成的条目被拒",
           "request": {
             "op": 29,
             "seq": 2,
@@ -4031,13 +4031,13 @@
               "ok": false,
               "error": {
                 "code": "RECRUIT_NOT_CANCELLABLE",
-                "message": "只能取消排队中的征兵任务（征募中能否取消待设计）"
+                "message": "征兵任务不存在、不属于本账号或已完成 / 已取消，无法取消"
               }
             }
           ]
         }
       ],
-      "agentNote": "先 GET_STATE 拿 city.recruitQueue 中排队条目的 id 再取消。同账号其他在线连接收到 PUSH_RECRUIT_STATE（recruit_cancelled）推送。"
+      "agentNote": "先 GET_STATE 拿 city.recruitQueue 中条目的 id 再取消（排队中与征募中都可取消）。同账号其他在线连接收到 PUSH_RECRUIT_STATE（recruit_cancelled，以及下一条的 recruit_started）推送。"
     },
     {
       "op": 30,
@@ -7072,7 +7072,7 @@
           ]
         }
       ],
-      "agentNote": "免战适合「要下线睡觉 / 资源涨满怕被抢」的时间窗：开启后 12 小时（基准）内别人打不了你。注意开启后你也不能出兵打玩家（打野地 / NPC 不受限）；每周只有一次，规划好使用时机（city.shieldNextAt 可查下次可用时刻）。"
+      "agentNote": "免战适合「要下线睡觉 / 资源涨满怕被抢」的时间窗：开启后 12 小时（基准）内别人打不了你。注意开启后你也不能出兵打玩家（打野地 / NPC 不受限）；每周只有一次，规划好使用时机（city.shieldNextAt 可查下次可用时刻）。开错了可用 CANCEL_TRUCE 提前解除，但本周次数不返还。"
     },
     {
       "op": 54,
@@ -12949,11 +12949,109 @@
       ]
     },
     {
+      "op": 115,
+      "kind": "request",
+      "name": "CANCEL_TRAINING",
+      "title": "取消武将历练（v71，AISLG-190）",
+      "preAuth": false,
+      "summary": "取消进行中的历练：武将立刻回家（回到城内，可以带兵、任城守、加点、洗点等），不给经验，已过去的历练时间作废；历练本就不花金币，无返还。取消后可立即再次派去历练（TRAIN_HERO，无次数限制）。历练到点结算与取消并发时先生效者为准：经验已到账（或已到点）后再取消返回 TRAINING_NOT_CANCELLABLE。推送 PUSH_HERO_STATE reason=training_cancelled 给同账号其他在线连接。",
+      "requestFields": [
+        {
+          "name": "heroId",
+          "type": "string",
+          "desc": "武将 id。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "hero",
+          "type": "object",
+          "desc": "取消后的武将视图（training 为 null，已回到城内）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_FOUND",
+        "TRAINING_NOT_CANCELLABLE"
+      ],
+      "examples": [
+        {
+          "caption": "叫回历练中的武将",
+          "request": {
+            "op": 115,
+            "seq": 33,
+            "data": {
+              "heroId": "5b1f9a2c-0000-4000-8000-0000000000a1"
+            }
+          },
+          "responses": [
+            {
+              "op": 115,
+              "seq": 33,
+              "ok": true,
+              "data": {
+                "hero": {
+                  "id": "5b1f9a2c-0000-4000-8000-0000000000a1",
+                  "training": null
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "取消历练不给经验，只在急用武将时用（比如守城、出征）。想拿满经验就等到点结算。"
+    },
+    {
+      "op": 116,
+      "kind": "request",
+      "name": "CANCEL_TRUCE",
+      "title": "提前解除主动免战（v71，AISLG-190）",
+      "preAuth": false,
+      "summary": "提前解除生效中的账号级主动免战（TRUCE 开启的那段）：解除后立即恢复可被攻击，也可出兵攻打玩家（SELF_TRUCE_ACTIVE 不再拦你）。本周免费次数不返还，下一次可开启时刻（nextAvailableAt）不变。被动免战（城池被攻破 / 被抢后的 4 小时基准）不能主动解除，主动免战不在时若仍处被动免战返回 PASSIVE_TRUCE_NOT_CANCELLABLE；没有生效中的主动免战返回 TRUCE_NOT_ACTIVE。无参数。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "shieldUntil",
+          "type": "null",
+          "desc": "解除后主动免战截止为 null。"
+        },
+        {
+          "name": "nextAvailableAt",
+          "type": "string | null",
+          "desc": "下一次可开启时刻（ISO 8601；未变，本周次数仍视为已用）。"
+        }
+      ],
+      "errors": [
+        "TRUCE_NOT_ACTIVE",
+        "PASSIVE_TRUCE_NOT_CANCELLABLE"
+      ],
+      "examples": [
+        {
+          "request": {
+            "op": 116,
+            "seq": 43
+          },
+          "responses": [
+            {
+              "op": 116,
+              "seq": 43,
+              "ok": true,
+              "data": {
+                "shieldUntil": null,
+                "nextAvailableAt": "2026-10-10T00:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "主动免战解除后本周次数就用掉了，不要为了「先开着、等要出兵再关」去开关：解除只是应急（比如开错了、想马上反击）。解除后别人的在途部队到达时也不再扑空。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
       "title": "推送：建筑建造状态变化",
-      "summary": "建造状态变化时推送给该账号所有在线连接（发起连接除外——它已从 BUILD / UPGRADE / CANCEL_BUILD 的直接响应拿到结果）：build_started=立即开工或队首被后台激活、build_queued=进入排队（v4）、build_completed=完成（由 Worker 结算后经 API 发出）、build_cancelled=排队条目被取消（v7）。建成后的产量、人口上限或仓储上限变化不逐条推送，客户端用 GET_STATE 或本地按 city.production / city.population / city.storage 推算。",
+      "summary": "建造状态变化时推送给该账号所有在线连接（发起连接除外——它已从 BUILD / UPGRADE / CANCEL_BUILD 的直接响应拿到结果）：build_started=立即开工或队首被后台激活、build_queued=进入排队（v4）、build_completed=完成（由 Worker 结算后经 API 发出）、build_cancelled=条目被取消（v7 排队；v71 起也含建造中）。建成后的产量、人口上限或仓储上限变化不逐条推送，客户端用 GET_STATE 或本地按 city.production / city.population / city.storage 推算。",
       "dataFields": [
         {
           "name": "reason",
@@ -13185,7 +13283,7 @@
       "kind": "push",
       "name": "PUSH_RECRUIT_STATE",
       "title": "推送：征兵状态变化（v11）",
-      "summary": "征兵状态变化时推送给该账号所有在线连接（发起连接除外）：recruit_started=立即开始或队首被后台激活、recruit_queued=进入排队、recruit_completed=完成（兵力累加进城内驻军）、recruit_cancelled=排队条目被取消。完成后的驻军数量变化不逐条推送，用 GET_STATE 对齐或按 city.army 本地累加。",
+      "summary": "征兵状态变化时推送给该账号所有在线连接（发起连接除外）：recruit_started=立即开始或队首被后台激活（含取消在征条目后的下一条）、recruit_queued=进入排队、recruit_completed=完成（兵力累加进城内驻军）、recruit_cancelled=条目被取消（排队或征募中）。完成后的驻军数量变化不逐条推送，用 GET_STATE 对齐或按 city.army 本地累加。",
       "dataFields": [
         {
           "name": "reason",
@@ -13977,7 +14075,7 @@
         {
           "name": "reason",
           "type": "string",
-          "desc": "recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）。"
+          "desc": "recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ training_cancelled（历练被取消、武将回城，不给经验，v71）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）。"
         },
         {
           "name": "heroId",
@@ -14554,8 +14652,12 @@
       "action": "该类型已无法继续升级，转投其他建筑或系统。"
     },
     "BUILD_NOT_CANCELLABLE": {
-      "desc": "目标建造不存在、不属于本账号或不在排队状态。进行中任务能否取消待设计，当前仅排队条目（status=queued）可取消（v7）。",
-      "action": "用 GET_STATE 查看 city.queue，只对 status=queued 的条目发起 CANCEL_BUILD。"
+      "desc": "目标建造不存在、不属于本账号，或已完成 / 已取消。排队中与建造中的条目都可取消（v7 起排队可取消，v71 AISLG-190 起建造中也可取消）。",
+      "action": "用 GET_STATE 查看 city.queue，只对 status=queued 或 building 的条目发起 CANCEL_BUILD。"
+    },
+    "TRAINING_NOT_CANCELLABLE": {
+      "desc": "（v71，AISLG-190）没有可取消的历练：武将未在历练中、历练已到点结算（经验已到账），或武将不属于本账号。",
+      "action": "用 GET_HEROES 看该武将的 training 是否为 null；为 null 即历练已结束，无需取消。"
     },
     "AGENT_FORBIDDEN": {
       "desc": "该协议对连接声明的登录类型有限制：RESET_ACCOUNT 仅玩家连接可调用，AGENT_REPORT_PLAN 仅 Agent 连接可调用。注意：role 是连接自报的标记，本限制拦住诚实声明的对端，不是可独立验证的安全边界。",
@@ -14578,8 +14680,8 @@
       "action": "等队首完成后重试，或先取消排队条目腾出位置。"
     },
     "RECRUIT_NOT_CANCELLABLE": {
-      "desc": "目标征兵不存在、不属于本账号或不在排队状态。征募中条目能否取消待设计，当前仅排队条目可取消（v11）。",
-      "action": "用 GET_STATE 查看 city.recruitQueue，只对 status=queued 的条目发起 CANCEL_RECRUIT。"
+      "desc": "目标征兵不存在、不属于本账号，或已完成 / 已取消。排队中与征募中的条目都可取消（v11 起排队可取消，v71 AISLG-190 起征募中也可取消）。",
+      "action": "用 GET_STATE 查看 city.recruitQueue，只对 status=queued 或 recruiting 的条目发起 CANCEL_RECRUIT。"
     },
     "TARGET_NOT_ATTACKABLE": {
       "desc": "出征目标当前不可攻击（v12）：坐标在世界外、玩家城池地块（含自己的城），或已被其他玩家占领的野地。玩家对抗（攻城与争夺野地）随后续阶段开放，当前只能出征无主 / 本账号占领的野地与 NPC 城池。",
@@ -14758,8 +14860,16 @@
       "action": "无需处理；city.shieldUntil 可查当前免战截止。"
     },
     "TRUCE_WEEKLY_USED": {
-      "desc": "（v38，AISLG-122）本周的主动免战已用过（每周一次免费，7 天基准随缩放）。data.nextAvailableAt / retryAfterSeconds 为下次可开启时刻与剩余秒数。",
+      "desc": "（v38，AISLG-122）本周的主动免战已用过（每周一次免费，7 天基准随缩放）。data.nextAvailableAt / retryAfterSeconds 为下次可开启时刻与剩余秒数。提前解除（CANCEL_TRUCE）不返还本周次数。",
       "action": "按 retryAfterSeconds 睡满后重发 TRUCE；city.shieldNextAt 可查下次可开时刻。"
+    },
+    "TRUCE_NOT_ACTIVE": {
+      "desc": "（v71，AISLG-190）没有生效中的主动免战可解除（未开启、已到期，或已提前解除）。",
+      "action": "无需处理；city.shieldUntil 为空即无主动免战。"
+    },
+    "PASSIVE_TRUCE_NOT_CANCELLABLE": {
+      "desc": "（v71，AISLG-190）城池处于被动免战中（被攻破 / 被抢后 4 小时基准），被动免战不能主动解除；CANCEL_TRUCE 只解除账号级的主动免战。data.until / data.retryAfterSeconds 为被动免战截止时刻与剩余秒数。",
+      "action": "等被动免战结束（city.truceUntil）后再行动；期间可开启主动免战（TRUCE）不影响被动免战。"
     },
     "TILE_PROTECTED": {
       "desc": "（v39，AISLG-123）该野地刚换主人（被玩家抢占），处于保护期（1 小时基准随缩放）：期间玩家与 NPC 都不能再抢。data.until / data.retryAfterSeconds 为截止时刻与剩余秒数。",
@@ -14905,7 +15015,7 @@
     },
     {
       "term": "征兵队列（recruitQueue）",
-      "desc": "军营处理征兵：RECRUIT 无征募中时立即开始（status=recruiting，时长 = 单兵时长 × 数量），有征募中且未满时入队（status=queued）；队列 = 1 征募中 + 最多 2 排队（占位）。资源与人口在发起时扣减，取消排队条目全额返还；征募中能否取消待定。队列独立于建造队列。"
+      "desc": "军营处理征兵：RECRUIT 无征募中时立即开始（status=recruiting，时长 = 单兵时长 × 数量），有征募中且未满时入队（status=queued）；队列 = 1 征募中 + 最多 2 排队（占位）。资源与人口在发起时扣减，取消排队条目全额返还；征募中条目也可取消（v71，全额返还，排队的下一条立即开始）。队列独立于建造队列。"
     },
     {
       "term": "守城加成（defenseBonus）",
@@ -14997,7 +15107,7 @@
     },
     {
       "term": "建造队列（queue）",
-      "desc": "BUILD / UPGRADE 采用排队制：无在建时立即开工（status=building，dueAt 为预计完成时间）；有在建时进入排队（status=queued，dueAt 为 null），队首完成后由后台自动激活为 building。队列 = 1 条在建 + 最多 2 条排队（占位数值），再发起返回 QUEUE_FULL。排队条目可随时 CANCEL_BUILD 取消并全额返还成本（确认规则）；进行中任务能否取消待定。原游戏的元宝加速第一期未实现。"
+      "desc": "BUILD / UPGRADE 采用排队制：无在建时立即开工（status=building，dueAt 为预计完成时间）；有在建时进入排队（status=queued，dueAt 为 null），队首完成后由后台自动激活为 building。队列 = 1 条在建 + 最多 2 条排队（占位数值），再发起返回 QUEUE_FULL。排队条目与建造中的条目都可随时 CANCEL_BUILD 取消并全额返还成本（确认规则；v71 起建造中也可取消）。原游戏的元宝加速第一期未实现。"
     },
     {
       "term": "building / queued / completed / cancelled",
@@ -16110,7 +16220,7 @@
     },
     {
       "title": "8. 城池管理（v7）：改名与取消排队",
-      "explain": "改名立即生效（RENAME_CITY，名称 trim 后 1..24 字符）。升级农田立即开工后，民房进入排队（v4 排队制）；排队条目可随时取消（CANCEL_BUILD），成本按条目快照全额返还（2026-09-27 确认规则），该类型可立即重新发起建造；进行中条目能否取消待定。一期不提供建筑拆除。本连接是唯一在线连接，故没有其他连接的推送帧；有其他在线连接时它们会收到 PUSH_BUILD_STATE（build_cancelled）与 PUSH_CITY_STATE（city_renamed）。",
+      "explain": "改名立即生效（RENAME_CITY，名称 trim 后 1..24 字符）。升级农田立即开工后，民房进入排队（v4 排队制）；排队条目可随时取消（CANCEL_BUILD），成本按条目快照全额返还（2026-09-27 确认规则），该类型可立即重新发起建造；建造中的条目也可取消（v71 起），同样全额返还、排队的下一条自动开工。一期不提供建筑拆除。本连接是唯一在线连接，故没有其他连接的推送帧；有其他在线连接时它们会收到 PUSH_BUILD_STATE（build_cancelled）与 PUSH_CITY_STATE（city_renamed）。",
       "frames": [
         {
           "kind": "request",

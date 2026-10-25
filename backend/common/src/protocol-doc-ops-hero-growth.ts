@@ -101,6 +101,26 @@ export const REQUEST_TRAIN_HERO: RequestOpDoc = {
   agentNote: '历练是把武将变成经验的最省心方式：不花金币，代价是这段时间它不能出战。等级越高，同档位给的经验越多。',
 };
 
+export const REQUEST_CANCEL_TRAINING: RequestOpDoc = {
+  kind: 'request',
+  name: 'CANCEL_TRAINING',
+  title: '取消武将历练（v71，AISLG-190）',
+  preAuth: false,
+  summary:
+    '取消进行中的历练：武将立刻回家（回到城内，可以带兵、任城守、加点、洗点等），不给经验，已过去的历练时间作废；历练本就不花金币，无返还。取消后可立即再次派去历练（TRAIN_HERO，无次数限制）。历练到点结算与取消并发时先生效者为准：经验已到账（或已到点）后再取消返回 TRAINING_NOT_CANCELLABLE。推送 PUSH_HERO_STATE reason=training_cancelled 给同账号其他在线连接。',
+  requestFields: [{ name: 'heroId', type: 'string', desc: '武将 id。' }],
+  dataFields: [{ name: 'hero', type: 'object', desc: '取消后的武将视图（training 为 null，已回到城内）。' }],
+  errors: ['INVALID_PARAMS', 'HERO_NOT_FOUND', 'TRAINING_NOT_CANCELLABLE'],
+  examples: [
+    {
+      caption: '叫回历练中的武将',
+      request: { op: Op.CANCEL_TRAINING, seq: 33, data: { heroId: HERO_ID } },
+      responses: [{ op: Op.CANCEL_TRAINING, seq: 33, ok: true, data: { hero: { id: HERO_ID, training: null } } }],
+    },
+  ],
+  agentNote: '取消历练不给经验，只在急用武将时用（比如守城、出征）。想拿满经验就等到点结算。',
+};
+
 export const REQUEST_GIFT_HERO: RequestOpDoc = {
   kind: 'request',
   name: 'GIFT_HERO',
@@ -167,11 +187,12 @@ export const REQUEST_RECRUIT_FAMOUS_HERO: RequestOpDoc = {
   agentNote: '招揽是全服竞争：好感满的那一刻就去招，慢一步就会被 FAMOUS_CLAIMED。',
 };
 
-/** 供 protocol-doc-ops.ts 注册：六个新协议号的文档 */
+/** 供 protocol-doc-ops.ts 注册：六个新协议号的文档（v71 起另加取消历练 CANCEL_TRAINING） */
 export const HERO_GROWTH_OP_DOCS = {
   [Op.ALLOCATE_HERO_POINTS]: REQUEST_ALLOCATE_HERO_POINTS,
   [Op.RESET_HERO_POINTS]: REQUEST_RESET_HERO_POINTS,
   [Op.TRAIN_HERO]: REQUEST_TRAIN_HERO,
+  [Op.CANCEL_TRAINING]: REQUEST_CANCEL_TRAINING,
   [Op.GIFT_HERO]: REQUEST_GIFT_HERO,
   [Op.BEFRIEND_HERO]: REQUEST_BEFRIEND_HERO,
   [Op.RECRUIT_FAMOUS_HERO]: REQUEST_RECRUIT_FAMOUS_HERO,

@@ -96,18 +96,18 @@ export const REQUEST_RECRUIT: RequestOpDoc = {
     },
   ],
   agentNote:
-    '发起前用 GET_STATE 的 levels.barracks 对照兵种门槛、resources 与 population 预判；失败响应的 data 仅含 city（无 recruit 载荷）。征募中条目能否取消待定，当前只能取消排队条目。同账号其他在线连接会收到 PUSH_RECRUIT_STATE（recruit_started / recruit_queued）推送。',
+    '发起前用 GET_STATE 的 levels.barracks 对照兵种门槛、resources 与 population 预判；失败响应的 data 仅含 city（无 recruit 载荷）。征募中条目也可取消（CANCEL_RECRUIT，全额返还）。同账号其他在线连接会收到 PUSH_RECRUIT_STATE（recruit_started / recruit_queued）推送。',
 };
 
 export const REQUEST_CANCEL_RECRUIT: RequestOpDoc = {
   kind: 'request',
   name: 'CANCEL_RECRUIT',
-  title: '取消排队中的征兵条目',
+  title: '取消征兵条目（排队中 / 征募中）',
   preAuth: false,
   summary:
-    '取消征兵队列中 status=queued 的条目：该条目退出队列（status 变为 cancelled，保留为历史），发起时扣减的资源与人口按条目快照全额返还（人口立即回到城池、恢复增长）。征募中（recruiting）条目能否取消待定，当前返回 RECRUIT_NOT_CANCELLABLE。',
+    '取消征兵队列中 status=queued（排队中）或 status=recruiting（征募中）的条目：该条目退出队列（status 变为 cancelled，保留为历史），发起时扣减的资源与人口按条目快照全额返还（人口立即回到城池、恢复增长）。征募中取消后已经过去的征募时间作废，该城排队的下一条立即开始征募（同一事务激活，推送 recruit_started）。已完成 / 已取消的条目返回 RECRUIT_NOT_CANCELLABLE。',
   requestFields: [
-    { name: 'recruitId', type: 'string', desc: '必填。要取消的征兵条目 UUID（GET_STATE 的 city.recruitQueue 中排队条目的 id）；缺失返回 INVALID_PARAMS。' },
+    { name: 'recruitId', type: 'string', desc: '必填。要取消的征兵条目 UUID（GET_STATE 的 city.recruitQueue 中 queued / recruiting 条目的 id）；缺失返回 INVALID_PARAMS。' },
   ],
   dataFields: [
     { name: 'recruit', type: 'object', desc: '征兵视图，结构与 RECRUIT 响应相同；status 为 cancelled。' },
@@ -120,14 +120,14 @@ export const REQUEST_CANCEL_RECRUIT: RequestOpDoc = {
       responses: [{ op: Op.CANCEL_RECRUIT, seq: 1, ok: true, data: { recruit: { ...QUEUED_RECRUIT_VIEW, status: 'cancelled' } } }],
     },
     {
-      caption: '取消征募中条目被拒',
+      caption: '取消已完成的条目被拒',
       request: { op: Op.CANCEL_RECRUIT, seq: 2, data: { recruitId: RECRUIT_VIEW.id } },
       responses: [
-        { op: Op.CANCEL_RECRUIT, seq: 2, ok: false, error: { code: 'RECRUIT_NOT_CANCELLABLE', message: '只能取消排队中的征兵任务（征募中能否取消待设计）' } },
+        { op: Op.CANCEL_RECRUIT, seq: 2, ok: false, error: { code: 'RECRUIT_NOT_CANCELLABLE', message: '征兵任务不存在、不属于本账号或已完成 / 已取消，无法取消' } },
       ],
     },
   ],
-  agentNote: '先 GET_STATE 拿 city.recruitQueue 中排队条目的 id 再取消。同账号其他在线连接收到 PUSH_RECRUIT_STATE（recruit_cancelled）推送。',
+  agentNote: '先 GET_STATE 拿 city.recruitQueue 中条目的 id 再取消（排队中与征募中都可取消）。同账号其他在线连接收到 PUSH_RECRUIT_STATE（recruit_cancelled，以及下一条的 recruit_started）推送。',
 };
 
 export const PUSH_RECRUIT_STATE: PushOpDoc = {
@@ -135,7 +135,7 @@ export const PUSH_RECRUIT_STATE: PushOpDoc = {
   name: 'PUSH_RECRUIT_STATE',
   title: '推送：征兵状态变化（v11）',
   summary:
-    '征兵状态变化时推送给该账号所有在线连接（发起连接除外）：recruit_started=立即开始或队首被后台激活、recruit_queued=进入排队、recruit_completed=完成（兵力累加进城内驻军）、recruit_cancelled=排队条目被取消。完成后的驻军数量变化不逐条推送，用 GET_STATE 对齐或按 city.army 本地累加。',
+    '征兵状态变化时推送给该账号所有在线连接（发起连接除外）：recruit_started=立即开始或队首被后台激活（含取消在征条目后的下一条）、recruit_queued=进入排队、recruit_completed=完成（兵力累加进城内驻军）、recruit_cancelled=条目被取消（排队或征募中）。完成后的驻军数量变化不逐条推送，用 GET_STATE 对齐或按 city.army 本地累加。',
   dataFields: [
     { name: 'reason', type: "'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'", desc: '触发本次推送的状态变化。' },
     { name: 'recruit', type: 'object', desc: '征兵视图，字段与 RECRUIT 响应的 recruit 相同；完成时 status 为 completed 且 completedAt 非空。' },

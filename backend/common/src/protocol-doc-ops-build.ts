@@ -222,7 +222,7 @@ export const PUSH_BUILD_STATE: PushOpDoc = {
   name: 'PUSH_BUILD_STATE',
   title: '推送：建筑建造状态变化',
   summary:
-    '建造状态变化时推送给该账号所有在线连接（发起连接除外——它已从 BUILD / UPGRADE / CANCEL_BUILD 的直接响应拿到结果）：build_started=立即开工或队首被后台激活、build_queued=进入排队（v4）、build_completed=完成（由 Worker 结算后经 API 发出）、build_cancelled=排队条目被取消（v7）。建成后的产量、人口上限或仓储上限变化不逐条推送，客户端用 GET_STATE 或本地按 city.production / city.population / city.storage 推算。',
+    '建造状态变化时推送给该账号所有在线连接（发起连接除外——它已从 BUILD / UPGRADE / CANCEL_BUILD 的直接响应拿到结果）：build_started=立即开工或队首被后台激活、build_queued=进入排队（v4）、build_completed=完成（由 Worker 结算后经 API 发出）、build_cancelled=条目被取消（v7 排队；v71 起也含建造中）。建成后的产量、人口上限或仓储上限变化不逐条推送，客户端用 GET_STATE 或本地按 city.production / city.population / city.storage 推算。',
   dataFields: [
     { name: 'reason', type: "'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'", desc: '触发本次推送的状态变化。' },
     { name: 'build', type: 'object', desc: '建造视图，字段与 BUILD 响应的 build 相同；完成时 status 为 completed 且 completedAt 非空，排队时 status 为 queued 且 dueAt 为 null，取消时 status 为 cancelled。' },

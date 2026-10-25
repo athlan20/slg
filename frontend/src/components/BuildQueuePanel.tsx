@@ -9,7 +9,7 @@ import { Card } from './ui/Card';
 interface BuildQueuePanelProps {
   city: CityView | null;
   buildError: string | null;
-  /** 取消排队条目（CANCEL_BUILD：全额返还成本；仅排队中的条目可取消） */
+  /** 取消条目（CANCEL_BUILD：排队中 / 建造中都可取消，全额返还成本） */
   onCancelBuild: (buildId: string) => void;
 }
 
@@ -68,18 +68,16 @@ export function BuildQueuePanel({ city, buildError, onCancelBuild }: BuildQueueP
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   <span className={`tag ${item.initiator === 'player' ? 'actor-player' : ''}`}>{IDENTITY_LABEL[item.initiator]}</span>
-                  {active ? null : (
-                    <button
-                      type="button"
-                      role={`建造队列面板-取消-${BUILDING_LABEL_ZH[item.kind].short}`}
-                      title={COPY.buildQueue.cancelTitle}
-                      aria-label={`${COPY.buildQueue.cancel}${label.name}`}
-                      className="grid h-4 w-4 place-items-center rounded border border-line-soft bg-panel text-[11px] leading-none text-faint transition-colors hover:border-accent-dim hover:text-accent"
-                      onClick={() => onCancelBuild(item.id)}
-                    >
-                      ✕
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    role={`建造队列面板-取消-${BUILDING_LABEL_ZH[item.kind].short}`}
+                    title={COPY.buildQueue.cancelTitle}
+                    aria-label={`${COPY.buildQueue.cancel}${label.name}`}
+                    className="grid h-4 w-4 place-items-center rounded border border-line-soft bg-panel text-[11px] leading-none text-faint transition-colors hover:border-accent-dim hover:text-accent"
+                    onClick={() => onCancelBuild(item.id)}
+                  >
+                    ✕
+                  </button>
                 </span>
               </div>
               <div className="flex items-center gap-2">

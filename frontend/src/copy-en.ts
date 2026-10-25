@@ -160,6 +160,12 @@ export const TOPBAR_EN = {
     'Once enabled, no one can attack you for the next 12 hours, and you cannot march against players (wilderness / NPC targets are unaffected). You can enable it only once per week, and it cannot be cancelled once started.',
   shieldConfirmSubmit: 'Confirm Enable',
   shieldConfirmCancel: 'Cancel',
+  // Ending the Truce Shield early (v71, AISLG-190): button and confirm dialog (cancel key reuses shieldConfirmCancel)
+  cancelShieldButton: 'End Early',
+  cancelShieldHint: 'End the Truce Shield early: you can be attacked and march again right away; this week’s free use is not refunded',
+  cancelShieldConfirmTitle: 'End Truce Shield early?',
+  cancelShieldConfirmBody: 'Others can attack you again right away, and you can march against players. This week’s free use is not refunded, and you cannot enable it again this week.',
+  cancelShieldConfirmSubmit: 'Confirm End',
   // 仓库快满提醒：≥80% 的资源警示行与悬浮提示（金币不参与，与离线日报同口径）
   storageFullLine: (detail: string) => `⚠ Storage almost full: ${detail}, production beyond the cap will be wasted`,
   storageFullItem: (label: string, percent: number, cap: number) =>
@@ -214,9 +220,9 @@ export const BUILD_QUEUE_EN = {
   waitingSettle: STATUS_EN.waitingSettle,
   activating: STATUS_EN.activating,
   remainingSeconds: STATUS_EN.remainingSeconds,
-  // 取消排队条目（全额返还成本；在建条目不可取消）
+  // 取消条目（排队中 / 建造中，全额返还成本）
   cancel: 'Cancel',
-  cancelTitle: 'Cancel this queued item — the cost is fully refunded',
+  cancelTitle: 'Cancel this item — the cost is fully refunded',
 } satisfies typeof COPY['buildQueue'];
 
 export const CITY_MAP_EN = {
@@ -283,9 +289,9 @@ export const RECRUIT_PANEL_EN = {
   waitingSettle: STATUS_EN.waitingSettle,
   activating: STATUS_EN.activating,
   remainingSeconds: STATUS_EN.remainingSeconds,
-  // 取消排队条目（全额返还资源与人口；征募中不可取消）
+  // 取消条目（排队中 / 征募中，全额返还资源与人口）
   cancel: 'Cancel',
-  cancelTitle: 'Cancel this queued item — resources and population fully refunded',
+  cancelTitle: 'Cancel this item — resources and population fully refunded',
   formTitle: 'Start Recruitment',
   troopLabel: 'Troop Type',
   countLabel: 'Count',

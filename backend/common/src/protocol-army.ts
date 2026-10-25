@@ -72,7 +72,7 @@ export interface RecruitResponseData {
   recruit: RecruitView;
 }
 
-/** CANCEL_RECRUIT（op 29）请求载荷：取消排队中的征兵条目并全额返还（资源与人口） */
+/** CANCEL_RECRUIT（op 29）请求载荷：取消征兵条目（排队中 / 征募中，v71）并全额返还（资源与人口） */
 export interface CancelRecruitRequestData {
   recruitId: string;
 }
@@ -83,7 +83,7 @@ export interface CancelRecruitResponseData {
 
 /** PUSH_RECRUIT_STATE（op 2004）推送载荷 */
 export interface RecruitStatePushData {
-  /** recruit_started=立即开始或队首被后台激活；recruit_queued=进入排队；recruit_completed=完成（兵力入城）；recruit_cancelled=排队条目被取消 */
+  /** recruit_started=立即开始或队首被后台激活；recruit_queued=进入排队；recruit_completed=完成（兵力入城）；recruit_cancelled=条目被取消（排队或征募中） */
   reason: 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled';
   recruit: RecruitView;
 }

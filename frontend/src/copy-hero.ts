@@ -122,6 +122,8 @@ export const HERO_COPY = {
     giftHint: (left: number) => `花 1000 金币得 100 经验，今日还能赏赐 ${left} 次`,
     resetHint: (left: number) => `已分配的点数全部退回，花等级 × 1000 金币，今日还能洗点 ${left} 次`,
     busyHint: '外出、城守或历练中，暂不能加点 / 历练 / 洗点',
+    cancelTraining: '取消历练（不返还经验）',
+    cancelTrainingHint: '武将立刻回家，不返还经验（已过去的历练时间作废）',
   },
   wild: {
     mapMark: '此处有在野名将，打赢守军即可结交',
@@ -147,6 +149,7 @@ export const HERO_COPY = {
       HERO_CANDIDATE_GONE: '这名候选已不在酒馆（已招走或已刷新），请看最新候选',
       HERO_CAP_REACHED: '普通将已达上限，解雇一名或升级酒馆后再招募',
       HERO_NOT_FOUND: '没有找到这名武将',
+      TRAINING_NOT_CANCELLABLE: '没有可取消的历练（武将未在历练中，或已到点结算）',
       HERO_BUSY: '该武将正随另一支部队出征',
       HERO_WOUNDED: '该武将重伤中，伤愈前不能出征',
       HERO_ARREARS: '该武将欠饷，补足金币后才能出征',

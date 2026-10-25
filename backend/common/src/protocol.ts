@@ -24,7 +24,7 @@ export const Op = {
   BUILD: 21,
   /** C→S 发起建筑升级（data.kind 指定建筑类型，升到下一等级；v5，与建造共用队列） */
   UPGRADE: 22,
-  /** C→S 取消建造队列中的排队条目（data.buildId；v7，全额返还已扣成本；在建可否取消待定） */
+  /** C→S 取消建造队列中的条目（data.buildId；v7 排队可取消，v71 起建造中也可取消；全额返还已扣成本，连升只退未完成级） */
   CANCEL_BUILD: 24,
   /** C→S 城池改名（data.name；v7） */
   RENAME_CITY: 25,
@@ -192,6 +192,10 @@ export const Op = {
   ALLIANCE_MARK_REMOVE: 113,
   /** C→S 查询本联盟的有效地图标记（v69，AISLG-184：玩家与 Agent 通用；没有联盟返回 ALLIANCE_NOT_IN） */
   GET_ALLIANCE_MARKS: 114,
+  /** C→S 取消进行中的武将历练（v71，AISLG-190：data.heroId；武将立刻回家，不给经验，不返还任何东西） */
+  CANCEL_TRAINING: 115,
+  /** C→S 提前解除主动免战（v71，AISLG-190：无参数；解除后立即可被攻击、可出兵，本周免费次数不返还；被动免战不可解除） */
+  CANCEL_TRUCE: 116,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -302,7 +306,7 @@ export const ErrorCode = {
   BUILDING_NOT_BUILT: 'BUILDING_NOT_BUILT',
   /** 建筑已达等级上限（v5） */
   BUILDING_LEVEL_MAX: 'BUILDING_LEVEL_MAX',
-  /** 目标建造不存在、不属于本账号或不在排队状态（v7：仅排队条目可取消，在建可否取消待定） */
+  /** 目标建造不存在、不属于本账号或已完成 / 已取消（v7 仅排队可取消；v71 AISLG-190 起在建条目也可取消） */
   BUILD_NOT_CANCELLABLE: 'BUILD_NOT_CANCELLABLE',
   /** 协议对连接声明的登录类型有限制（基于自报 role，非安全边界）：RESET_ACCOUNT 仅玩家、AGENT_REPORT_PLAN 仅 Agent（v9/v10） */
   AGENT_FORBIDDEN: 'AGENT_FORBIDDEN',
@@ -314,7 +318,7 @@ export const ErrorCode = {
   INSUFFICIENT_POPULATION: 'INSUFFICIENT_POPULATION',
   /** 征兵队列已满（1 征募中 + 排队上限，占位数值；v11） */
   RECRUIT_QUEUE_FULL: 'RECRUIT_QUEUE_FULL',
-  /** 目标征兵不存在、不属于本账号或不在排队状态（v11：仅排队条目可取消，征募中能否取消待定） */
+  /** 目标征兵不存在、不属于本账号或已完成 / 已取消（v11 仅排队可取消；v71 AISLG-190 起征募中条目也可取消） */
   RECRUIT_NOT_CANCELLABLE: 'RECRUIT_NOT_CANCELLABLE',
   /** 出征目标不可攻击（v12：地图外 / 玩家城池 / 他人占领的地块——玩家对抗随后续阶段开放） */
   TARGET_NOT_ATTACKABLE: 'TARGET_NOT_ATTACKABLE',
@@ -380,6 +384,8 @@ export const ErrorCode = {
   GUARD_ASSIGN_DENIED: 'GUARD_ASSIGN_DENIED',
   /** 武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（v54，AISLG-144） */
   HERO_TRAINING: 'HERO_TRAINING',
+  /** 没有可取消的历练：武将未在历练中，或历练已到点结算，或武将不属于本账号（v71，AISLG-190） */
+  TRAINING_NOT_CANCELLABLE: 'TRAINING_NOT_CANCELLABLE',
   /** 自由点数不足以分配（v54，AISLG-144；附 freePoints） */
   HERO_POINTS_INSUFFICIENT: 'HERO_POINTS_INSUFFICIENT',
   /** 武将没有可洗回的点数（已分配为 0，v54，AISLG-144） */
@@ -407,6 +413,10 @@ export const ErrorCode = {
   TRUCE_ALREADY_ACTIVE: 'TRUCE_ALREADY_ACTIVE',
   /** 本周主动免战已用过（v38，AISLG-122；每周一次），响应附 nextAvailableAt 与 retryAfterSeconds */
   TRUCE_WEEKLY_USED: 'TRUCE_WEEKLY_USED',
+  /** 没有生效中的主动免战可解除（v71，AISLG-190） */
+  TRUCE_NOT_ACTIVE: 'TRUCE_NOT_ACTIVE',
+  /** 城池处于被动免战（被攻破 / 被抢后 4 小时）中，不能主动解除（v71，AISLG-190；响应附 until 与 retryAfterSeconds） */
+  PASSIVE_TRUCE_NOT_CANCELLABLE: 'PASSIVE_TRUCE_NOT_CANCELLABLE',
   /** 该野地刚换主人，处于保护期（v39，AISLG-123：被抢占后 1 小时基准随缩放，期间玩家与 NPC 都不能再抢），
    *  响应附 until 与 retryAfterSeconds */
   TILE_PROTECTED: 'TILE_PROTECTED',

@@ -1,7 +1,7 @@
 // 武将培养的处理逻辑（v54，AISLG-144）：ALLOCATE_HERO_POINTS（加点）/ RESET_HERO_POINTS（洗点）/
-// TRAIN_HERO（历练）/ GIFT_HERO（赏赐）。规则见 common/src/hero-growth.ts，占用判定与每日计数见
-// hero-growth-db.ts。锁序与 RECRUIT_HERO 一致：先主城行（花金币的操作），再武将行。
-// 历练只登记结束时刻，到点经验由 Worker 的 hero-training-tick 结算。
+// TRAIN_HERO（历练）/ GIFT_HERO（赏赐）/ CANCEL_TRAINING（取消历练，v71 AISLG-190）。规则见
+// common/src/hero-growth.ts，占用判定与每日计数见 hero-growth-db.ts。锁序与 RECRUIT_HERO 一致：先主城行
+//（花金币的操作），再武将行。历练只登记结束时刻，到点经验由 Worker 的 hero-training-tick 结算。
 
 import pg from 'pg';
 import { Op, type ErrorCode, type InitiatorRole } from '../../common/src/protocol';
@@ -59,7 +59,7 @@ function finish(
   seq: number | undefined,
   accountId: string,
   view: HeroView,
-  reason: 'points_changed' | 'training_started' | 'gifted',
+  reason: 'points_changed' | 'training_started' | 'training_cancelled' | 'gifted',
   role: InitiatorRole,
 ): void {
   const body: HeroOnlyResponseData = { hero: view };
@@ -262,6 +262,52 @@ export async function handleGiftHero(
     const view = await viewAfter(client, accountId, res.rows[0] as AccountHeroRow);
     await client.query('COMMIT');
     finish(ctx, conn, op, seq, accountId, view, 'gifted', role);
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * CANCEL_TRAINING（v71，AISLG-190）：取消进行中的历练——武将立刻回家，不给经验（已过去的时间作废，历练本就不花金币）。
+ * 与到点结算并发：武将行锁（lockOwnHero）串行化，条件 UPDATE 要求 train_until 仍在未来，
+ * Worker 的 settleTraining 先提交则这里报 TRAINING_NOT_CANCELLABLE（经验已到账），反之先取消则 Worker 不再结算。
+ */
+export async function handleCancelTraining(
+  ctx: HandlerContext,
+  conn: ConnInfo,
+  op: number,
+  seq: number | undefined,
+  data: Record<string, unknown> | undefined,
+): Promise<void> {
+  const heroId = data?.heroId;
+  if (typeof heroId !== 'string' || !UUID_RE.test(heroId)) {
+    respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+    return;
+  }
+  const accountId = conn.accountId as string;
+  const role = conn.role as InitiatorRole;
+  const client = await ctx.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const hero = await lockOwnHero(client, accountId, heroId);
+    if (!hero) {
+      return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+    }
+    const upd = await client.query(
+      `UPDATE account_heroes SET train_until = NULL, train_tier = NULL, train_exp = NULL
+       WHERE id = $1 AND account_id = $2 AND train_until > now()
+       RETURNING *`,
+      [hero.id, accountId],
+    );
+    if (!upd.rowCount) {
+      return fail(ctx, conn, client, op, seq, 'TRAINING_NOT_CANCELLABLE');
+    }
+    const view = await viewAfter(client, accountId, upd.rows[0] as AccountHeroRow);
+    await client.query('COMMIT');
+    finish(ctx, conn, op, seq, accountId, view, 'training_cancelled', role);
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw err;

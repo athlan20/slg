@@ -22,12 +22,12 @@ import {
 export const REQUEST_CANCEL_BUILD: RequestOpDoc = {
   kind: 'request',
   name: 'CANCEL_BUILD',
-  title: '取消排队中的建造条目',
+  title: '取消建造条目（排队中 / 建造中）',
   preAuth: false,
   summary:
-    '取消建造队列中 status=queued 的条目：该条目退出队列（status 变为 cancelled，保留为历史，不再出现在 city.queue），发起时扣减的成本按条目上的成本快照全额返还（2026-09-27 确认规则）。进行中（building）条目能否取消待定，当前返回 BUILD_NOT_CANCELLABLE。',
+    '取消建造队列中 status=queued（排队中）或 status=building（建造中）的条目：该条目退出队列（status 变为 cancelled，保留为历史，不再出现在 city.queue），发起时扣减的成本按条目上的成本快照全额返还（2026-09-27 确认规则，全额返还）。建造中取消时建筑等级不变（升级中取消则保持当前等级），该城排队的下一条立即开工（同一事务激活，推送 build_started）。连续升级（toLevel）进行中取消：已完成的级保留等级、不退，只返还未完成级的成本。已完成 / 已取消的条目返回 BUILD_NOT_CANCELLABLE。',
   requestFields: [
-    { name: 'buildId', type: 'string', desc: '必填。要取消的建造条目 UUID（GET_STATE 的 city.queue 中排队条目的 id）；缺失返回 INVALID_PARAMS。' },
+    { name: 'buildId', type: 'string', desc: '必填。要取消的建造条目 UUID（GET_STATE 的 city.queue 中 queued / building 条目的 id）；缺失返回 INVALID_PARAMS。' },
   ],
   dataFields: [
     { name: 'build', type: 'object', desc: '建造视图，结构与 BUILD 响应相同；status 为 cancelled。' },
@@ -40,20 +40,20 @@ export const REQUEST_CANCEL_BUILD: RequestOpDoc = {
       responses: [{ op: Op.CANCEL_BUILD, seq: 1, ok: true, data: { build: CANCELLED_BUILD_VIEW } }],
     },
     {
-      caption: '取消在建条目被拒（附当前状态）',
+      caption: '取消已完成的条目被拒（附当前城池状态）',
       request: { op: Op.CANCEL_BUILD, seq: 2, data: { buildId: '7c9e6679-7425-40de-944b-e07fc1f90ae7' } },
       responses: [
         {
           op: Op.CANCEL_BUILD,
           seq: 2,
           ok: false,
-          error: { code: 'BUILD_NOT_CANCELLABLE', message: '只能取消排队中的建造任务（在建任务能否取消待设计）' },
+          error: { code: 'BUILD_NOT_CANCELLABLE', message: '建造任务不存在、不属于本账号或已完成 / 已取消，无法取消' },
         },
       ],
     },
   ],
   agentNote:
-    '先 GET_STATE 拿 city.queue 中排队条目的 id 再取消。取消后该类型可以立即重新发起 BUILD。同账号其他在线连接会收到 PUSH_BUILD_STATE（build_cancelled）推送。',
+    '先 GET_STATE 拿 city.queue 中条目的 id 再取消（排队中与建造中都可取消）。取消后该类型可以立即重新发起 BUILD；建造中取消的成本全额回来，别忘了它排队的下一条已自动开工。同账号其他在线连接会收到 PUSH_BUILD_STATE（build_cancelled，以及下一条的 build_started）推送。',
 };
 
 export const REQUEST_RENAME_CITY: RequestOpDoc = {

@@ -539,5 +539,11 @@
  *   榜单走 Worker 定期快照（alliance_leaderboard_snapshots，换季清空）。GET_ALLIANCE 的 alliance 详情新增 power（势力，现算）与 rank（榜单名次，取最近快照，未上榜为 null）。
  *   GET_HALL_OF_FAME 的 kind 新增 alliance：换季时联盟榜前三进名人堂，条目 accountId / username 为当时的盟主，value 为势力，并带 allianceId / allianceName / memberCount（个人榜这三项为 null）。
  *   无新增协议号与错误码。
+ * v71（进行中的取消，AISLG-190，只加不改）：CANCEL_BUILD（op 24）与 CANCEL_RECRUIT（op 29）放宽为进行中条目也可取消——建造 building / 征募 recruiting 条目取消后
+ *   成本 / 资源与人口按快照全额返还（建造连升进行中：已完成的级保留、只返还未完成级的成本），建筑等级不变，排队的下一条立即开工（同事务激活，推送 build_started / recruit_started）；
+ *   与 Worker 到点完成按条件守卫并发，先翻转状态者生效。RECRUIT_NOT_CANCELLABLE / BUILD_NOT_CANCELLABLE 保留，用于已完成 / 已取消 / 不属于本账号。
+ *   新增 CANCEL_TRAINING（op 115）取消历练：武将立刻回家、不给经验，推送 PUSH_HERO_STATE reason=training_cancelled；无历练中的武将返回新错误码 TRAINING_NOT_CANCELLABLE。
+ *   新增 CANCEL_TRUCE（op 116）提前解除主动免战：立即可被攻击、可出兵，本周免费次数不返还（事件 truce_cancelled）；无生效中的主动免战返回 TRUCE_NOT_ACTIVE；
+ *   城池处于被动免战（被攻破后 4 小时）且无主动免战时返回 PASSIVE_TRUCE_NOT_CANCELLABLE（被动免战不可主动解除）。
  */
-export const PROTOCOL_VERSION = 70;
+export const PROTOCOL_VERSION = 71;

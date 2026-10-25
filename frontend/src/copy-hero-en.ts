@@ -124,6 +124,8 @@ export const HERO_COPY_EN = {
     giftHint: (left: number) => `1000 gold for 100 exp — ${left} gifts left today`,
     resetHint: (left: number) => `All assigned points return to the pool for level × 1000 gold — ${left} resets left today`,
     busyHint: 'Marching, on guard or training — points and training are unavailable',
+    cancelTraining: 'Cancel training (no exp refund)',
+    cancelTrainingHint: 'The hero returns home at once; no exp is granted (time already trained is forfeited)',
   },
   wild: {
     mapMark: 'A wild famous hero hides here — beat the garrison to befriend them',
@@ -149,6 +151,7 @@ export const HERO_COPY_EN = {
       HERO_CANDIDATE_GONE: 'This candidate is no longer in the Tavern (already recruited or the list refreshed) — check the latest candidates',
       HERO_CAP_REACHED: 'Regular hero cap reached — dismiss one or upgrade the Tavern, then recruit again',
       HERO_NOT_FOUND: 'This hero was not found',
+      TRAINING_NOT_CANCELLABLE: 'Nothing to cancel (the hero is not training, or training already finished)',
       HERO_BUSY: 'This hero is marching with another army',
       HERO_WOUNDED: 'This hero is wounded and cannot march out until recovered',
       HERO_ARREARS: 'This hero is in salary arrears — pay the owed gold before marching out',

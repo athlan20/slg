@@ -11,8 +11,12 @@ export const TECH_COPY_EN = {
     noAcademy: 'Tech can only be researched after the Academy is built (level-N tech requires an Academy at level N or higher). Tech is shared account-wide and applies to all cities',
     sharedHint: 'Tech is shared account-wide and applies to all cities; only one research at a time',
     levelTag: (level: number, max: number) => `Lv${level}/${max}`,
-    currentEffect: (percent: number) => (percent > 0 ? `Currently +${percent}%` : 'Not in effect'),
-    nextLine: (level: number, cost: string, seconds: string) => `Next Lv${level}: ${cost} · takes ${seconds}`,
+    helpAria: (label: string) => `${label} details`,
+    rowEffect: 'Current effect: ',
+    rowTech: 'Tech effect: ',
+    rowNext: (level: number) => `Next Lv${level}: `,
+    duration: (seconds: string) => `takes ${seconds}`,
+    currentEffect: (percent: number) => (percent > 0 ? `+${percent}%` : 'Not in effect'),
     maxed: 'Maxed',
     needAcademy: (required: number) => `Needs Academy Lv${required}`,
     research: 'Research',
@@ -22,8 +26,7 @@ export const TECH_COPY_EN = {
     cancelBusy: 'Cancelling…',
     inProgressDisabled: 'A research is already in progress',
     insufficient: 'Not enough resources',
-    scoutDetail: (level: number) =>
-      level >= 6 ? 'Current: exact counts' : level >= 3 ? 'Current: troop-type detail (counts are approximate)' : 'Current: rough total troop count only',
+    scoutDetail: (level: number) => (level >= 6 ? 'Exact counts' : level >= 3 ? 'Troop-type detail (counts are approximate)' : 'Rough total troop count only'),
   },
   /** 侦察科技决定情报详细度（侦察报告 / 地块详情） */
   scout: {

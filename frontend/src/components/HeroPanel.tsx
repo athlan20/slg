@@ -71,6 +71,7 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
                 onShare={() => chat.shareDraft({ card: { kind: 'hero', heroId: hero.id }, label: heroShareLabel(tName(hero.name), hero.level) })}
                 onAllocate={(attr) => void session.allocate(hero.id, { [attr]: 1 })}
                 onTrain={(tier) => void session.train(hero.id, tier)}
+                onCancelTrain={() => void session.cancelTraining(hero.id)}
                 onGift={() => void session.gift(hero.id)}
                 onReset={() => void session.reset(hero.id)}
               />

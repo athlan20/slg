@@ -32,6 +32,8 @@ interface HeroCardProps {
   /** 加点 / 历练 / 赏赐 / 洗点（v54，AISLG-144） */
   onAllocate: (attr: 'lead' | 'force' | 'wit') => void;
   onTrain: (tier: TrainingTier) => void;
+  /** 取消历练（v71，AISLG-190）：仅历练中显示按钮，武将立刻回家、不返还经验 */
+  onCancelTrain: () => void;
   onGift: () => void;
   onReset: () => void;
 }
@@ -71,6 +73,7 @@ export function HeroCard({
   onShare,
   onAllocate,
   onTrain,
+  onCancelTrain,
   onGift,
   onReset,
 }: HeroCardProps) {
@@ -179,6 +182,18 @@ export function HeroCard({
           </div>
         </div>
         <div role="武将面板-操作" className="flex shrink-0 items-center gap-1">
+          {hero.training ? (
+            <button
+              type="button"
+              role="武将面板-取消历练按钮"
+              disabled={busy}
+              title={growth.cancelTrainingHint}
+              onClick={onCancelTrain}
+              className={`${smallBtn} border-warn text-warn disabled:border-line disabled:text-faint`}
+            >
+              {growth.cancelTraining}
+            </button>
+          ) : null}
           {onShare ? <ChatShareButton role="武将面板-分享按钮" label={CHAT_COPY.share.hero} onClick={onShare} /> : null}
           {guardsHere ? (
             <button type="button" role="武将面板-撤任城守按钮" disabled={busy} onClick={onRemoveGuard} className={`${smallBtn} border-line text-dim hover:text-fg`}>

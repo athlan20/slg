@@ -176,18 +176,16 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
                   <span className={`font-mono text-[11px] ${active ? 'text-accent' : 'text-faint'}`}>
                     {active ? (item.dueAt ? (remaining > 0 ? COPY.recruitPanel.remainingSeconds(remaining) : COPY.recruitPanel.waitingSettle) : COPY.recruitPanel.activating) : COPY.recruitPanel.waitingStart}
                   </span>
-                  {active ? null : (
-                    <button
-                      type="button"
-                      role={`征兵面板-取消-${TROOP_LABEL_ZH[item.troop].short}`}
-                      title={COPY.recruitPanel.cancelTitle}
-                      aria-label={`${COPY.recruitPanel.cancel}${label.name}`}
-                      className="grid h-4 w-4 place-items-center rounded border border-line-soft bg-panel text-[11px] leading-none text-faint hover:border-accent-dim hover:text-accent"
-                      onClick={() => onCancelRecruit(item.id)}
-                    >
-                      ✕
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    role={`征兵面板-取消-${TROOP_LABEL_ZH[item.troop].short}`}
+                    title={COPY.recruitPanel.cancelTitle}
+                    aria-label={`${COPY.recruitPanel.cancel}${label.name}`}
+                    className="grid h-4 w-4 place-items-center rounded border border-line-soft bg-panel text-[11px] leading-none text-faint hover:border-accent-dim hover:text-accent"
+                    onClick={() => onCancelRecruit(item.id)}
+                  >
+                    ✕
+                  </button>
                 </span>
               </div>
               {active ? (
