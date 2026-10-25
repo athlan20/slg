@@ -1,11 +1,15 @@
-// 聊天消息列表（AISLG-138）：最新的消息在最下面；按面板可用高度算每页条数，不出现竖向滚动条。
-// 做法同 ui/PagedList（先量一行的真实高度，再定每页条数，渲染后仍溢出就少放一条），区别是页码从最新端数起：
-// 第 1 页就是最新的一批；翻到最旧一页后，「更早」向服务端取一页（hasMore）接到前面。
+// 聊天消息列表（AISLG-138）：最新的消息在最下面；按面板可用高度分页，不出现竖向滚动条。
+// 聊天行高差别很大（表情、卡片、多行文字），所以不按固定条数分页，而是按每行的真实高度装页（AISLG-187：
+// 原先「量一行定条数、溢出就少放一条」只减不增，遇到一条高行后每页会一直只剩一两条）：
+// 渲染过的行把高度记进缓存，没渲染过的按已知行高的中位数估算，从最新一条往前装满一页再开下一页；
+// 页码从最新端数起：第 1 页就是最新的一批；翻到最旧一页后，「更早」向服务端取一页（hasMore）接到前面。
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useCopy } from '../../i18n/bundle';
 
 const GAP = 6;
+/** 还没量过行高时，先渲染最新这么多条取样（只在首帧绘制前的布局阶段出现，量完立即按真实高度装页） */
+const SAMPLE = 20;
 
 interface ChatMessageListProps<T> {
   /** 列表的 role 名（翻页器自动命名为「{role}-分页器」） */
@@ -20,67 +24,112 @@ interface ChatMessageListProps<T> {
   onLoadOlder: () => void;
 }
 
+/** 从最新端往前装页：返回每页的 [start, end)（下标 0 = 最新一页），每页至少一条 */
+export function chatPages(heights: number[], avail: number, gap: number): Array<[number, number]> {
+  const pages: Array<[number, number]> = [];
+  let end = heights.length;
+  while (end > 0) {
+    let start = end - 1;
+    let used = heights[start] as number;
+    while (start > 0 && used + gap + (heights[start - 1] as number) <= avail) {
+      start -= 1;
+      used += gap + (heights[start] as number);
+    }
+    pages.push([start, end]);
+    end = start;
+  }
+  return pages;
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] as number;
+}
+
 export function ChatMessageList<T>({ role, items, keyOf, renderRow, empty, hasMore, loading, onLoadOlder }: ChatMessageListProps<T>) {
   const { CHAT_COPY } = useCopy();
   const listRef = useRef<HTMLDivElement | null>(null);
-  /** 每页条数；null = 尚未测量（此时只渲染最新一条量行高） */
-  const [per, setPer] = useState<number | null>(null);
+  /** 行高缓存（key → 像素）；列表宽度变化时清空（换行方式变了） */
+  const heightsRef = useRef(new Map<string | number, number>());
+  /** 列表区可用高度；0 = 尚未测量（此时只渲染最新的取样行） */
+  const [avail, setAvail] = useState(0);
+  /** 行高缓存有变化就 +1，触发重新装页 */
+  const [, setTick] = useState(0);
   /** 从最新一页往前翻了几页（0 = 最新） */
   const [back, setBack] = useState(0);
   const count = items.length;
 
-  // 列表区高度变化 → 重新测量
+  // 列表区尺寸：高度决定一页装多少，宽度变了行高全部作废
   useLayoutEffect(() => {
     const el = listRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') {
+    if (!el) {
       return undefined;
     }
-    let last = el.clientHeight;
+    setAvail(el.clientHeight);
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    let lastWidth = el.clientWidth;
     const observer = new ResizeObserver(() => {
-      if (Math.abs(el.clientHeight - last) >= 1) {
-        last = el.clientHeight;
-        setPer(null);
+      if (Math.abs(el.clientWidth - lastWidth) >= 1) {
+        lastWidth = el.clientWidth;
+        heightsRef.current.clear();
+        setTick((tick) => tick + 1);
       }
+      setAvail(el.clientHeight);
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
-  // 测量态：最新一条的真实行高 → 每页条数
-  useLayoutEffect(() => {
-    const el = listRef.current;
-    if (per !== null || !el || count === 0) {
-      return;
-    }
-    const first = el.firstElementChild as HTMLElement | null;
-    const rowHeight = first ? first.getBoundingClientRect().height : 0;
-    setPer(rowHeight > 0 ? Math.max(1, Math.floor((el.clientHeight + GAP) / (rowHeight + GAP))) : 1);
-  });
-
-  // 渲染后仍溢出（行高不一）：每次少放一条，直到放下
-  useLayoutEffect(() => {
-    const el = listRef.current;
-    if (per === null || per <= 1 || !el) {
-      return;
-    }
-    if (el.scrollHeight > el.clientHeight + 1) {
-      setPer(per - 1);
-    }
-  });
-
-  const size = per ?? 1;
-  const pages = Math.max(1, Math.ceil(count / size));
-  const maxBack = pages - 1;
+  const heights = heightsRef.current;
+  const fallback = median([...heights.values()]);
+  // 还没量到任何行（或列表区高度未知）：先渲染最新的取样行，量完再装页
+  const pages =
+    avail > 0 && count > 0 && heights.size > 0
+      ? chatPages(
+          items.map((item) => heights.get(keyOf(item)) ?? fallback),
+          avail,
+          GAP,
+        )
+      : [[Math.max(0, count - SAMPLE), count] as [number, number]];
+  const maxBack = pages.length - 1;
   const current = Math.min(back, maxBack);
   useEffect(() => {
     if (back !== current) {
       setBack(current);
     }
   }, [back, current]);
-  const end = count - current * size;
-  const start = Math.max(0, end - size);
+  const [start, end] = pages[current] as [number, number];
   const visible = items.slice(start, end);
   const atOldest = current >= maxBack;
+
+  // 量出这一页各行的真实高度写进缓存；有变化就按新高度重新装页（行高与在哪一页无关，几轮内收敛）
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!el || count === 0) {
+      return;
+    }
+    let changed = false;
+    Array.from(el.children).forEach((child, index) => {
+      const item = visible[index];
+      if (item === undefined) {
+        return;
+      }
+      const key = keyOf(item);
+      const height = child.getBoundingClientRect().height;
+      if (height > 0 && Math.abs((heights.get(key) ?? -1) - height) >= 0.5) {
+        heights.set(key, height);
+        changed = true;
+      }
+    });
+    if (changed) {
+      setTick((tick) => tick + 1);
+    }
+  });
 
   return (
     <div role={role} className="flex min-h-0 flex-1 flex-col gap-1">
@@ -107,7 +156,7 @@ export function ChatMessageList<T>({ role, items, keyOf, renderRow, empty, hasMo
             {loading ? CHAT_COPY.list.loading : CHAT_COPY.list.older}
           </button>
         ) : null}
-        {pages > 1 ? (
+        {pages.length > 1 ? (
           <>
             <button
               type="button"
@@ -119,7 +168,7 @@ export function ChatMessageList<T>({ role, items, keyOf, renderRow, empty, hasMo
               ‹
             </button>
             <span className="font-mono tabular-nums">
-              {pages - current} / {pages}
+              {pages.length - current} / {pages.length}
             </span>
             <button
               type="button"
