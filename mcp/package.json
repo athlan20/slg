@@ -1,6 +1,6 @@
 {
   "name": "slg-mcp",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "《SLG · 让你的 AI 替你征战三国》的 MCP 服务：装进 Claude Desktop / Cursor / Claude Code，AI 就能直接查城池、建造、征兵、出征、看战报。",
   "license": "MIT",
   "type": "module",
