@@ -26,7 +26,6 @@ export const NAV_COPY_EN = {
     intel: { label: 'Intel', icon: 'I' },
     agent: { label: 'Agent', icon: 'AI' },
   },
-  cityMenuTitle: 'Switch City',
   cityLoading: 'Loading…',
   cityMain: 'Main City',
   cityBranch: 'Branch City',

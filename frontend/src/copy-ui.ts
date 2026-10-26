@@ -23,7 +23,6 @@ export const NAV_COPY = {
     intel: { label: '情报', icon: '报' },
     agent: { label: 'Agent', icon: 'A' },
   },
-  cityMenuTitle: '切换城池',
   cityLoading: '加载中…',
   cityMain: '主城',
   cityBranch: '分城',

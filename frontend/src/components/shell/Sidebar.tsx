@@ -1,6 +1,6 @@
 /** 侧栏（docs/frontend-nav-layout.md 第 3 节）：顶部城池切换（下拉，列出全部城池）、七个导航项（图标 + 名字 + 角标）、
  *  底部账号按钮（带本人连接状态灯；菜单：城池改名 / 切换账号 / 重置账号 / 皮肤四选一）。
- *  1024–1279 收成 60px 图标栏；< 1024 变底部图标栏（城池切换与集市 / 榜收进账号菜单）。
+ *  1024–1279 收成 60px 图标栏；< 1024 变底部图标栏（集市 / 榜收进账号菜单；城池切换在手机顶栏胶囊，AISLG-191）。
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -13,6 +13,7 @@ import type { CityList } from '../../state/useCityList';
 import { PAGE_KEYS, type PageKey } from '../../state/usePage';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { ThemeSwitcher } from '../ThemeSwitcher';
+import { CityMenu } from './CityMenu';
 
 /** 各导航项的角标：count = 数字；hot = 红色（总览的 NPC 来袭） */
 export type NavBadges = Partial<Record<PageKey, { count: number; hot?: boolean }>>;
@@ -63,7 +64,7 @@ function connectionLamp(connection: ConnectionStatus): { lamp: string; label: st
 export function Sidebar(props: SidebarProps) {
   const copy = useCopy();
   const lang = useLang();
-  const { COPY, CITY_COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY, ANNOUNCEMENT_COPY, ALLIANCE_COPY } = copy;
+  const { COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY, ANNOUNCEMENT_COPY, ALLIANCE_COPY } = copy;
   const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded, chatOpen, chatUnread, onToggleChat, announcementUnread, onOpenAnnouncements, allianceBadge, onOpenAlliance } = props;
   const [cityOpen, setCityOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -150,7 +151,7 @@ export function Sidebar(props: SidebarProps) {
         <span className="text-faint max-xl:hidden">▾</span>
       </button>
       {cityOpen ? (
-        <CityMenu cityList={cityList} onChoose={chooseCity} className="left-1 top-[52px] max-lg:hidden" />
+        <CityMenu cityList={cityList} onChoose={chooseCity} className="absolute left-1 top-[52px] z-30 max-lg:hidden" />
       ) : null}
 
       <nav role="导航-菜单" className="flex min-h-0 flex-1 flex-col gap-0.5 max-lg:flex-row max-lg:justify-around">
@@ -305,25 +306,6 @@ export function Sidebar(props: SidebarProps) {
             <div className="hidden max-lg:block">
               {menuItem('账号菜单-集市', NAV_COPY.exchangeMobile, props.onExchange)}
               {menuItem('账号菜单-排行榜', NAV_COPY.leaderboardMobile, props.onLeaderboard)}
-              {cities.length > 1 ? (
-                <>
-                  <p className="px-2.5 pt-1.5 text-[11px] text-faint">{NAV_COPY.cityMenuTitle}</p>
-                  {cities.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="账号菜单-城池"
-                      onClick={() => chooseCity(item.id)}
-                      className={`flex w-full cursor-pointer items-baseline justify-between gap-2 rounded px-2.5 py-1 text-left text-[12.5px] hover:bg-accent-soft ${
-                        item.id === activeCityId ? 'text-accent' : ''
-                      }`}
-                    >
-                      <span className="truncate">{tName(item.name)}</span>
-                      <span className="shrink-0 font-mono text-[11px] text-faint">{CITY_COPY.switcher.levelTag(item.level)}</span>
-                    </button>
-                  ))}
-                </>
-              ) : null}
             </div>
             <div className="border-t border-line-soft">
               <LanguageSwitcher />
@@ -335,48 +317,5 @@ export function Sidebar(props: SidebarProps) {
         ) : null}
       </div>
     </aside>
-  );
-}
-
-/** 城池下拉：全部城池（名字 / 等级 / 主城·分城 / 坐标），当前城打勾，底部给分城名额 */
-function CityMenu({ cityList, onChoose, className }: { cityList: CityList; onChoose: (cityId: string) => void; className: string }) {
-  const copy = useCopy();
-  const { CITY_COPY, NAV_COPY } = copy;
-  const { cities, activeCityId, branch } = cityList;
-  return (
-    <div
-      role="导航-城池下拉"
-      className={`absolute z-30 flex min-w-[200px] max-w-[320px] flex-col rounded-md border border-line bg-panel-2 p-1 shadow-2xl ${className}`}
-    >
-      {cities.map((item) => {
-        const active = item.id === activeCityId;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="城池下拉-城池"
-            title={CITY_COPY.switcher.tabTitle(tName(item.name), item.level, item.x, item.y)}
-            onClick={() => onChoose(item.id)}
-            className={`flex cursor-pointer items-baseline justify-between gap-3 rounded px-2.5 py-1.5 text-left text-[12.5px] hover:bg-accent-soft ${
-              active ? 'text-accent' : ''
-            }`}
-          >
-            <span className="min-w-0 truncate">
-              {active ? '✓ ' : ''}
-              {tName(item.name)}{' '}
-              <small className="text-faint">
-                {CITY_COPY.switcher.levelTag(item.level)} · {item.isMain ? NAV_COPY.cityMain : NAV_COPY.cityBranch}
-              </small>
-            </span>
-            <span className="shrink-0 font-mono text-[11px] text-faint">{item.x !== null && item.y !== null ? `${item.x},${item.y}` : ''}</span>
-          </button>
-        );
-      })}
-      {branch ? (
-        <p role="城池下拉-分城名额" title={CITY_COPY.switcher.branchLocked(branch.minGovernment)} className="border-t border-line-soft px-2.5 pt-1 text-[11px] text-faint">
-          {CITY_COPY.switcher.branchQuota(branch.count, branch.limit)}
-        </p>
-      ) : null}
-    </div>
   );
 }
