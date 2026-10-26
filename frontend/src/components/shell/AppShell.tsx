@@ -26,6 +26,7 @@ export function AppShell() {
   const [dialog, setDialog] = useState<AccountDialogMode | null>(null);
   const [exchangeRequest, setExchangeRequest] = useState(0);
   const city = session.city;
+  const onSelectCity = (cityId: string) => void session.switchCity(cityId);
 
   // 导航角标（docs 第 4 节）：总览 = NPC 来袭数（红）；城池 = 建造队列条数；军队 = 在外行军数；
   // 养成 = 进行中的研究数；情报 = 进入情报页后新到的战报数；Agent 无
@@ -46,7 +47,7 @@ export function AppShell() {
         badges={badges}
         cityList={session.cityList}
         switching={city === null}
-        onSelectCity={(cityId) => void session.switchCity(cityId)}
+        onSelectCity={onSelectCity}
         account={session.account?.username ?? null}
         connection={session.connection}
         cityLoaded={city !== null}
@@ -76,6 +77,9 @@ export function AppShell() {
         onStartTruce={session.startTruce}
         onCancelTruce={session.cancelTruce}
         season={session.season.info}
+        cityList={session.cityList}
+        onSelectCity={onSelectCity}
+        switching={city === null}
       />
       <main role="导航-工作区" className="nav-work">
         {page === 'overview' ? <OverviewPage /> : null}
