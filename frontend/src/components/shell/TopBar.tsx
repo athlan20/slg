@@ -10,6 +10,7 @@ import { tName } from '../../i18n/names';
 import type { ExchangeResource } from '../../state/exchangeAction';
 import type { SeasonInfo } from '../../state/seasonSession';
 import type { CityList } from '../../state/useCityList';
+import { useNav } from '../../state/NavContext';
 import type { PageKey } from '../../state/usePage';
 import { TruceShieldBadge } from '../TruceShieldBadge';
 import { AlertPills } from './AlertPills';
@@ -25,8 +26,6 @@ interface TopBarProps {
   onOpenWarning: () => void;
   onOpenLeaderboard: () => void;
   onExchange: (resource: ExchangeResource, amount: number) => Promise<string | null>;
-  /** 手机上集市入口在账号菜单里：外部（账号菜单）请求打开浮层的计数，变化即打开 */
-  exchangeRequest: number;
   /** 开启主动免战（v38 AISLG-122）：成功返回 null，失败返回人读错误 */
   onStartTruce: () => Promise<string | null>;
   onCancelTruce: () => Promise<string | null>;
@@ -53,7 +52,6 @@ export function TopBar({
   onOpenWarning,
   onOpenLeaderboard,
   onExchange,
-  exchangeRequest,
   onStartTruce,
   onCancelTruce,
   season,
@@ -63,12 +61,15 @@ export function TopBar({
 }: TopBarProps) {
   const copy = useCopy();
   const { COPY, NAV_COPY, TOP_COPY } = copy;
+  const { exchangeAsk } = useNav();
   const [exchangeOpen, setExchangeOpen] = useState(false);
-  const [lastRequest, setLastRequest] = useState(exchangeRequest);
+  const [lastAskId, setLastAskId] = useState(exchangeAsk.id);
+  const [neededGold, setNeededGold] = useState<number | undefined>();
   const anchorRef = useRef<HTMLButtonElement | null>(null);
-  // 账号菜单里点「集市」：计数变化 → 打开浮层（居中，因为锚点按钮在手机上隐藏）
-  if (exchangeRequest !== lastRequest) {
-    setLastRequest(exchangeRequest);
+  // 侧栏账号菜单 / 资源缺口浮层请求打开集市：id 变化 → 打开（手机上锚点隐藏时居中）
+  if (exchangeAsk.id !== lastAskId) {
+    setLastAskId(exchangeAsk.id);
+    setNeededGold(exchangeAsk.neededGold);
     setExchangeOpen(true);
   }
 
@@ -112,7 +113,10 @@ export function TopBar({
           title={COPY.exchange.open}
           aria-label={COPY.exchange.open}
           disabled={city === null}
-          onClick={() => setExchangeOpen((open) => !open)}
+          onClick={() => {
+            setNeededGold(undefined);
+            setExchangeOpen((open) => !open);
+          }}
           className={`${topBtn} disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {TOP_COPY.exchange}
@@ -129,7 +133,13 @@ export function TopBar({
         </button>
       </div>
       {exchangeOpen && city ? (
-        <ExchangePopover resources={city.resources} anchorRef={anchorRef} onExchange={onExchange} onClose={() => setExchangeOpen(false)} />
+        <ExchangePopover
+          resources={city.resources}
+          anchorRef={anchorRef}
+          neededGold={neededGold}
+          onExchange={onExchange}
+          onClose={() => setExchangeOpen(false)}
+        />
       ) : null}
     </header>
   );

@@ -22,9 +22,8 @@ import { SeasonOverlay } from '../season/SeasonOverlay';
 
 export function AppShell() {
   const { session, incoming, openWarning, openLeaderboard } = useGame();
-  const { page, go, seenReportId } = useNav();
+  const { page, go, seenReportId, requestExchange } = useNav();
   const [dialog, setDialog] = useState<AccountDialogMode | null>(null);
-  const [exchangeRequest, setExchangeRequest] = useState(0);
   const city = session.city;
   const onSelectCity = (cityId: string) => void session.switchCity(cityId);
 
@@ -56,7 +55,7 @@ export function AppShell() {
         onSwitchAccount={() => setDialog('switch')}
         onReset={() => setDialog('reset')}
         onDiscardBranch={() => setDialog('discard')}
-        onExchange={() => setExchangeRequest((n) => n + 1)}
+        onExchange={() => requestExchange()}
         onLeaderboard={() => openLeaderboard()}
         chatOpen={session.chat.open}
         chatUnread={session.chat.unreadTotal}
@@ -73,7 +72,6 @@ export function AppShell() {
         onOpenWarning={openWarning}
         onOpenLeaderboard={() => openLeaderboard()}
         onExchange={session.exchangeGold}
-        exchangeRequest={exchangeRequest}
         onStartTruce={session.startTruce}
         onCancelTruce={session.cancelTruce}
         season={session.season.info}

@@ -10,19 +10,36 @@ import type { ExchangeResource } from '../../state/exchangeAction';
 
 const EXCHANGE_RESOURCES: ExchangeResource[] = ['food', 'wood', 'stone', 'iron'];
 
+/** 按缺口预填：优先能一次换齐的资源，否则取存量最多的，数量向下收到汇率整倍数 */
+function pickPrefill(resources: Resources, neededGold: number | undefined): { resource: ExchangeResource; amountInput: string } {
+  if (!neededGold || neededGold <= 0) {
+    return { resource: 'food', amountInput: '' };
+  }
+  const need = neededGold * EXCHANGE_INPUT_PER_GOLD;
+  const covering = EXCHANGE_RESOURCES.filter((key) => resources[key] >= need);
+  const pool = covering.length > 0 ? covering : EXCHANGE_RESOURCES;
+  const resource = pool.reduce((best, key) => (resources[key] > resources[best] ? key : best));
+  const usable = Math.min(resources[resource], need);
+  const rounded = usable - (usable % EXCHANGE_INPUT_PER_GOLD);
+  return { resource, amountInput: rounded > 0 ? String(rounded) : '' };
+}
+
 interface ExchangePopoverProps {
   resources: Resources;
   anchorRef: RefObject<HTMLElement | null>;
+  /** 资源缺口浮层带入的还缺金数：预填兑换数量，并在标题下提示 */
+  neededGold?: number;
   /** 发起兑换：成功返回 null（关闭浮层），失败返回人读错误 */
   onExchange: (resource: ExchangeResource, amount: number) => Promise<string | null>;
   onClose: () => void;
 }
 
-export function ExchangePopover({ resources, anchorRef, onExchange, onClose }: ExchangePopoverProps) {
+export function ExchangePopover({ resources, anchorRef, neededGold, onExchange, onClose }: ExchangePopoverProps) {
   const copy = useCopy();
-  const { COPY, RESOURCE_LABEL } = copy;
-  const [resource, setResource] = useState<ExchangeResource>('food');
-  const [amountInput, setAmountInput] = useState('');
+  const { COPY, RESOURCE_LABEL, SHORTFALL_COPY } = copy;
+  const initial = pickPrefill(resources, neededGold);
+  const [resource, setResource] = useState<ExchangeResource>(initial.resource);
+  const [amountInput, setAmountInput] = useState(initial.amountInput);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +107,11 @@ export function ExchangePopover({ resources, anchorRef, onExchange, onClose }: E
           </button>
         </div>
         <p className="text-[11.5px] leading-snug text-faint">{COPY.exchange.subtitle}</p>
+        {neededGold && neededGold > 0 ? (
+          <p role="集市兑换浮层-缺口提示" className="font-mono text-[11.5px] text-accent">
+            {SHORTFALL_COPY.exchange.prefill(neededGold)}
+          </p>
+        ) : null}
 
         <div role="集市兑换浮层-资源选择" className="flex gap-1.5">
           {EXCHANGE_RESOURCES.map((key) => (

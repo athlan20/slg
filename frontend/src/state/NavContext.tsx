@@ -13,6 +13,12 @@ export interface MapLayers {
   mine: boolean;
 }
 
+/** 外部请求打开集市（侧栏账号菜单 / 资源缺口浮层）：id 变化即打开，neededGold 用于按缺口预填 */
+export interface ExchangeAsk {
+  id: number;
+  neededGold?: number;
+}
+
 export interface NavState {
   page: PageKey;
   go: (page: PageKey) => void;
@@ -24,6 +30,10 @@ export interface NavState {
   /** 情报页已看到的最大战报 id（本地记忆，角标 = 比它新的战报数） */
   seenReportId: number;
   markReportsSeen: (maxId: number) => void;
+  /** 最近一次打开集市的请求（顶栏监听 id 变化） */
+  exchangeAsk: ExchangeAsk;
+  /** 打开集市；缺口浮层可带 neededGold，按还缺的金预填兑换数量 */
+  requestExchange: (neededGold?: number) => void;
 }
 
 const NavContext = createContext<NavState | null>(null);
@@ -45,6 +55,10 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [building, setBuilding] = useState<BuildingKind | null>(null);
   const [layers, setLayers] = useState<MapLayers>({ moving: true, yt: true, mine: true });
   const [seenReportId, setSeen] = useState<number>(readSeen);
+  const [exchangeAsk, setExchangeAsk] = useState<ExchangeAsk>({ id: 0 });
+  const requestExchange = useCallback((neededGold?: number) => {
+    setExchangeAsk((prev) => ({ id: prev.id + 1, neededGold }));
+  }, []);
 
   const toggleLayer = useCallback((key: keyof MapLayers) => setLayers((prev) => ({ ...prev, [key]: !prev[key] })), []);
   const markReportsSeen = useCallback((maxId: number) => {
@@ -71,8 +85,10 @@ export function NavProvider({ children }: { children: ReactNode }) {
       toggleLayer,
       seenReportId,
       markReportsSeen,
+      exchangeAsk,
+      requestExchange,
     }),
-    [page, go, building, layers, toggleLayer, seenReportId, markReportsSeen],
+    [page, go, building, layers, toggleLayer, seenReportId, markReportsSeen, exchangeAsk, requestExchange],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
