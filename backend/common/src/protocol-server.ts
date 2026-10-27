@@ -36,6 +36,8 @@ export const SERVER_BROADCAST_TYPES = [
   'battlefield_finished',
   // v76（AISLG-197）爵位：升到大夫及以上，必达（不受每分钟限频）
   'nobility_promoted',
+  // v77（AISLG-195）联盟外交：结成友盟 / 宣布敌对，必达（不受每分钟限频）
+  'alliance_diplomacy',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

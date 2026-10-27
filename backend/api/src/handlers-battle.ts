@@ -21,7 +21,7 @@ import type { ConnInfo } from './connections';
 import { deployCountOf, loadCityState, lockCitySnapshot, marchView, type MarchRow } from './views';
 import { canDeployMore } from '../../common/src/building-effects';
 import { checkHeroMarchable } from './handlers-hero';
-import { areAllies } from '../../common/src/alliance-db';
+import { cannotAttack } from '../../common/src/alliance-db';
 import { isAllyOfCity } from './march-target';
 
 /** 战报点评正文的长度上限（v23 AISLG-53；占位值随需求「已定」标注可调） */
@@ -128,7 +128,7 @@ export async function handleScout(
         return;
       }
       // v67（AISLG-182）：盟友（同一联盟）的城池不能侦察
-      if (owner && (await areAllies(client, accountId, owner.account_id))) {
+      if (owner && (await cannotAttack(client, accountId, owner.account_id))) {
         await client.query('ROLLBACK');
         respondError(ctx.registry, conn, op, seq, 'ALLY_NOT_ATTACKABLE');
         return;

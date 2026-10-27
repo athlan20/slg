@@ -706,6 +706,22 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。',
     action: '用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。',
   },
+  DIPLOMACY_LIMIT: {
+    desc: '（v77，AISLG-195）友盟 / 敌对数量已达上限（每联盟最多 2 个友盟、5 个敌对），响应附 limit。',
+    action: '先解除一个现有关系，再结新友盟 / 宣布新敌对。',
+  },
+  DIPLOMACY_COOLDOWN: {
+    desc: '（v77，AISLG-195）刚解除友好，72 小时内同一对联盟不能再次结好；响应附 refriendAfter / retryAfterSeconds。',
+    action: '等到 refriendAfter 之后再发邀请 / 同意邀请。',
+  },
+  DIPLOMACY_EXISTS: {
+    desc: '（v77，AISLG-195）与目标联盟已经是友盟 / 敌对，或已有待处理邀请。',
+    action: '用 GET_ALLIANCE_DIPLOMACY 查当前关系与邀请，避免重复操作。',
+  },
+  DIPLOMACY_INVITE_NOT_FOUND: {
+    desc: '（v77，AISLG-195）友好邀请不存在、已过期（48 小时）或已处理。',
+    action: '重新发起邀请；过期邀请不会出现在 GET_ALLIANCE_DIPLOMACY 里。',
+  },
   NOBILITY_TOO_LOW: {
     desc: '（v76，AISLG-197）爵位不足：占领名城需要「大夫」（爵位序号 3）及以上；响应附 required / current。攻打外围与掠夺不受限。',
     action: '先在世界地图战斗里累计声望升到大夫（2000 声望）再来占领名城。',

@@ -135,6 +135,8 @@ export interface NpcAttackWarningPushData {
   level: number;
   /** 进攻方（v38 AISLG-122 玩家来袭预警，op 2017 归一化进本形态时携带；NPC 预警无） */
   attacker?: { username: string; cityId: string; cityName: string };
+  /** v77（AISLG-195）：进攻方联盟与你敌对时给出 */
+  hostileAlliance?: { id: string; name: string } | null;
   armyMin: number;
   armyMax: number;
   /** 敌情详细度（v31 AISLG-81，由被袭击城烽火台等级决定）：缺省视为 range */

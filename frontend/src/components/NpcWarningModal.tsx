@@ -19,7 +19,7 @@ interface NpcWarningModalProps {
 
 export function NpcWarningModal({ warning, onDismiss, onReinforce }: NpcWarningModalProps) {
   const copy = useCopy();
-  const { COPY, DEFENSE_COPY, EXTRA_PANEL, TERRAIN_LABEL, WARN_COPY } = copy;
+  const { COPY, ALLIANCE_COPY, DEFENSE_COPY, EXTRA_PANEL, TERRAIN_LABEL, WARN_COPY } = copy;
   // 到达倒计时本地推进；到点后战斗由服务端结算，战报推送随后到达
   const now = useNow(true);
   const secondsLeft = Math.max(0, Math.ceil((Date.parse(warning.arriveAt) - now) / 1000));
@@ -37,6 +37,11 @@ export function NpcWarningModal({ warning, onDismiss, onReinforce }: NpcWarningM
           <p role="NPC来袭预警弹窗-进攻方">
             {COPY.npcWarning.attackerLabel}
             {COPY.npcWarning.attackerRow(warning.attacker.username, tName(warning.attacker.cityName))}
+          </p>
+        ) : null}
+        {warning.hostileAlliance ? (
+          <p role="NPC来袭预警弹窗-敌对联盟" className="text-st-error">
+            {ALLIANCE_COPY.diplomacy.hostileWarning(warning.hostileAlliance.name)}
           </p>
         ) : null}
         <p>

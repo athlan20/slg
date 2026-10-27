@@ -316,7 +316,8 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
             const isCity = tile.kind !== 'wilderness';
             const occupied = tile.kind === 'wilderness' && tile.owner !== null;
             // 盟友（AISLG-182 / F2）：同一联盟的地块单独描边、角旗与城名着色，不随「我的领地」图层开关隐藏
-            const ally = !isOwn && tile.owner?.ally === true;
+            const ally = !isOwn && (tile.owner?.relation === 'ally' || tile.owner?.relation === 'friendly');
+            const hostile = !isOwn && tile.owner?.relation === 'hostile';
             const mark = marks?.get(`${x},${y}`);
             // 连片领地（v23 AISLG-59）：本账号有连片加成的野地统一描金边
             const cluster = showMine ? territoryClusters?.get(`${x},${y}`) : undefined;
@@ -376,7 +377,7 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
                     <span
                       role="世界地图视野-城名"
                       className={`absolute inset-x-0.5 bottom-[4%] truncate @max-lg:hidden text-center text-[clamp(8px,1.25cqw,12px)] leading-tight ${
-                        tile.kind === 'npc_city' ? 'text-gold' : isOwn ? 'font-semibold text-accent' : ally ? 'font-semibold text-st-online' : 'text-warn'
+                        tile.kind === 'npc_city' ? 'text-gold' : isOwn ? 'font-semibold text-accent' : ally ? 'font-semibold text-st-online' : hostile ? 'font-semibold text-st-error' : 'text-warn'
                       }`}
                     >
                       {tile.kind === 'npc_city' ? (tile.famous ? tName(tile.famous.name) : `NPC Lv${tile.level}`) : (tile.owner ? tName(tile.owner.cityName) : TILE_KIND_LABEL.city)}
@@ -414,7 +415,7 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
                     role="世界地图视野-占领角旗"
                     aria-hidden="true"
                     className={`absolute left-0 top-0 h-[22%] w-[22%] [clip-path:polygon(0_0,100%_0,0_100%)] ${
-                      isOwn ? 'bg-accent' : ally ? 'bg-st-online' : 'bg-warn'
+                      isOwn ? 'bg-accent' : ally ? 'bg-st-online' : hostile ? 'bg-st-error' : 'bg-warn'
                     }`}
                   />
                 ) : null}

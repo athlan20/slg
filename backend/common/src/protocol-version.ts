@@ -584,5 +584,13 @@
  *   GET_LEADERBOARD 新增 kind=nobility，个人榜条目带 nobility / nobilityName；BattleReportDetail 新增 prestigeGained。
  *   新增错误码 NOBILITY_TOO_LOW / NOBILITY_SALARY_CLAIMED / NOBILITY_SALARY_NONE；accounts 新增 prestige / nobility，
  *   新表 nobility_claims（换季清空）；换季时声望与爵位清零，爵位榜与其他个人榜一起进入名人堂。
+ * v77（联盟外交，AISLG-195，只加不改）：联盟之间新增中立 / 友好 / 敌对三种关系（默认中立）。友好由一方邀请、另一方同意
+ *   （48 小时过期）；友盟成员互不攻击（与盟友同口径，返回 ALLY_NOT_ATTACKABLE）并可互相协防；解除友好后 24 小时内仍不能
+ *   互相攻击、72 小时内不能再次结好。敌对单方面宣布，只在地图上标红并在来袭预警标「敌对联盟」，不改变战斗规则。
+ *   每个联盟最多 2 个友盟、5 个敌对。新增 ALLIANCE_DIPLOMACY_INVITE（128）/ RESPOND（129）/ END（130）/ HOSTILE（131）与
+ *   GET_ALLIANCE_DIPLOMACY（132，玩家与 Agent 通用；管理类仅玩家盟主 / 副盟主）。TileView.owner 新增 relation
+ *   （self / ally / friendly / hostile / neutral），GET_MAP_OVERVIEW 的 side 新增 friendly / hostile，PUSH_ATTACK_WARNING
+ *   新增 hostileAlliance；GET_ALLIANCE 的联盟详情新增 friends / hostiles。新增错误码 DIPLOMACY_LIMIT / COOLDOWN /
+ *   EXISTS / INVITE_NOT_FOUND；新表 alliance_relations（跨季保留）与 alliance_friend_invites（换季清空）。
  */
-export const PROTOCOL_VERSION = 76;
+export const PROTOCOL_VERSION = 77;

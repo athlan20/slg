@@ -28,6 +28,8 @@ const DOT_STYLE: Record<DrawnSide, { cssVar: string; fallback: string; size: num
   enemy: { cssVar: '--warn', fallback: '#e0653a', size: 2 },
   famous: { cssVar: '--gold', fallback: '#d9a441', size: 4 },
   own: { cssVar: '--accent', fallback: '#2dd4bf', size: 3 },
+  friendly: { cssVar: '--ok', fallback: '#4ade80', size: 3 },
+  hostile: { cssVar: '--st-error', fallback: '#ef4444', size: 3 },
   // 盟友（v67，AISLG-182）：绿色，比他方大一点便于一眼认出
   ally: { cssVar: '--st-online', fallback: '#34d399', size: 3 },
 };

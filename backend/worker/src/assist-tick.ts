@@ -6,7 +6,7 @@
 import pg from 'pg';
 import { EventType, type TroopKind, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
-import { areAllies } from '../../common/src/alliance-db';
+import { canAssist } from '../../common/src/alliance-db';
 import { assistCap } from '../../common/src/city-assist';
 import { countAssistsAtCity, hasAssistAtCity, insertAssist } from '../../common/src/city-assist-db';
 import { abortForAlly, completeMarchEvent, createReturnMarch, markMarchArrived, type MarchRow, type TileNotify } from './tick-shared';
@@ -43,7 +43,7 @@ export async function settleAssistArrival(
     return;
   }
   // v67 同口径：出发后才退盟 / 目标换盟的，到达不开打也不入驻
-  if (!(await areAllies(client, march.account_id, host.account_id))) {
+  if (!(await canAssist(client, march.account_id, host.account_id))) {
     await abortForAlly(client, march, troops, settled, notifies, 'ASSIST_NOT_ALLY');
     return;
   }

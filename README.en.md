@@ -88,6 +88,7 @@ Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resourc
 ### 🔥 Server-wide events & player vs player
 - **Yellow Turban Rebellion**: a recurring server-wide PvE event — rebel camps spawn across the map and everyone piles in to clear them.
 - **Script Battlefield · Guandu**: signup opens Tuesday 20:00, battle starts Wednesday 20:00 and ends Thursday 20:00 (Beijing time). Pick Yuan Shao or Cao Cao, bring one army into a separate 30×30 map, fight over 9 strongholds, earn merit for the battlefield shop, and get rewards based on camp victory and personal rank.
+- **Alliance diplomacy**: form friendly alliances (no attacks between members, mutual reinforcement, max 2) or unilaterally mark an alliance hostile (red on the map, max 5); ending a friendship blocks attacks for 24h and re-friending for 72h.
 - **Ally assist**: station troops in an ally's city to fight alongside their garrison (losses split by pre-battle strength); recall them anytime, and the host can send them home.
 - **PvP**: plunder other players' cities, seize their wilderness, capture their branch cities (capitals can never fall).
 - PvP runs on hard rules, so it never becomes a sleep-loss game:

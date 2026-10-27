@@ -8,6 +8,11 @@ import type { ChatPlayerView, ChatSystemView } from './protocol-chat';
 import { nobilityName } from './nobility';
 import {
   ALLIANCE_COOLDOWN_MS,
+  ALLIANCE_MAX_FRIENDS,
+  ALLIANCE_MAX_HOSTILES,
+  type AllianceDiplomacyEntryView,
+  type AllianceFriendInviteView,
+  type GetAllianceDiplomacyResponseData,
   ALLIANCE_MAX_MEMBERS,
   ALLIANCE_LIST_PAGE_SIZE,
   ALLIANCE_POWER_FAMOUS_WEIGHT,
@@ -53,6 +58,132 @@ export async function areAllies(q: Q, accountA: string, accountB: string): Promi
   return (res.rowCount ?? 0) > 0;
 }
 
+export interface AllianceRelationRow {
+  aId: string;
+  bId: string;
+  relation: 'friendly' | 'hostile' | 'neutral';
+  establishedAt: Date;
+  noAttackUntil: Date | null;
+  refriendAfter: Date | null;
+}
+
+/** 两个联盟的当前关系（按 a_id < b_id 规范化后查；没有关系行返回 null） */
+export async function allianceRelationBetween(
+  q: Q,
+  allianceA: string,
+  allianceB: string,
+): Promise<AllianceRelationRow | null> {
+  if (allianceA === allianceB) {
+    return null;
+  }
+  const a = allianceA < allianceB ? allianceA : allianceB;
+  const b = allianceA < allianceB ? allianceB : allianceA;
+  const res = await q.query(
+    `SELECT a_id, b_id, relation, established_at, no_attack_until, refriend_after
+     FROM alliance_relations WHERE a_id = $1 AND b_id = $2`,
+    [a, b],
+  );
+  if (!res.rowCount) {
+    return null;
+  }
+  const row = res.rows[0] as {
+    a_id: string; b_id: string; relation: string; established_at: Date;
+    no_attack_until: Date | null; refriend_after: Date | null;
+  };
+  return {
+    aId: row.a_id,
+    bId: row.b_id,
+    relation: row.relation === 'friendly' || row.relation === 'hostile' ? row.relation : 'neutral',
+    establishedAt: row.established_at,
+    noAttackUntil: row.no_attack_until,
+    refriendAfter: row.refriend_after,
+  };
+}
+
+/**
+ * 两个账号之间是否禁止攻击（v77，AISLG-195）：
+ * - 同一联盟 = 盟友；
+ * - 两个联盟是友盟；
+ * - 刚解除友好、24 小时不可攻击的冷却期（relation=neutral + no_attack_until 未到）。
+ * 敌对只是标记，不改变战斗与收益规则。
+ */
+export async function cannotAttack(q: Q, accountA: string, accountB: string): Promise<boolean> {
+  if (accountA === accountB) {
+    return false;
+  }
+  const memberships = await q.query(
+    `SELECT account_id, alliance_id FROM alliance_members WHERE account_id = ANY($1::uuid[])`,
+    [[accountA, accountB]],
+  );
+  const byAccount = new Map(
+    (memberships.rows as Array<{ account_id: string; alliance_id: string }>).map((row) => [row.account_id, row.alliance_id]),
+  );
+  const allianceA = byAccount.get(accountA) ?? null;
+  const allianceB = byAccount.get(accountB) ?? null;
+  if (!allianceA || !allianceB) {
+    return false;
+  }
+  if (allianceA === allianceB) {
+    return true;
+  }
+  const relation = await allianceRelationBetween(q, allianceA, allianceB);
+  if (!relation) {
+    return false;
+  }
+  // 解除友好后的 24 小时冷却对 friendly / hostile 都生效（从友好直接宣布敌对也保留冷却）
+  if (relation.noAttackUntil !== null && relation.noAttackUntil.getTime() > Date.now()) {
+    return true;
+  }
+  return relation.relation === 'friendly';
+}
+
+/** 是否可以互相协防（v77）：同一联盟或友盟；解除友好后的冷却期不算友盟 */
+export async function canAssist(q: Q, accountA: string, accountB: string): Promise<boolean> {
+  if (accountA === accountB) {
+    return false;
+  }
+  const res = await q.query(
+    `SELECT a.alliance_id AS a_alliance, b.alliance_id AS b_alliance
+     FROM alliance_members a JOIN alliance_members b ON b.account_id = $2
+     WHERE a.account_id = $1`,
+    [accountA, accountB],
+  );
+  if (!res.rowCount) {
+    return false;
+  }
+  const row = res.rows[0] as { a_alliance: string; b_alliance: string };
+  if (row.a_alliance === row.b_alliance) {
+    return true;
+  }
+  const relation = await allianceRelationBetween(q, row.a_alliance, row.b_alliance);
+  return relation?.relation === 'friendly';
+}
+
+/** 进攻方联盟是否与防守方联盟敌对（PUSH_ATTACK_WARNING 的 hostileAlliance） */
+export async function hostileAllianceFor(
+  q: Q,
+  attackerAccount: string,
+  defenderAccount: string,
+): Promise<{ id: string; name: string } | null> {
+  const res = await q.query(
+    `SELECT me.alliance_id, other.alliance_id AS other_alliance_id, al.name
+     FROM alliance_members me
+     JOIN alliance_members other ON other.account_id = $2
+     JOIN alliances al ON al.id = me.alliance_id
+     WHERE me.account_id = $1`,
+    [attackerAccount, defenderAccount],
+  );
+  if (!res.rowCount) {
+    return null;
+  }
+  const row = res.rows[0] as { alliance_id: string; other_alliance_id: string; name: string };
+  if (row.alliance_id === row.other_alliance_id) {
+    return null;
+  }
+  const relation = await allianceRelationBetween(q, row.alliance_id, row.other_alliance_id);
+  return relation?.relation === 'hostile' ? { id: row.alliance_id, name: row.name } : null;
+}
+
 /** 锁住联盟行；联盟不存在返回 false */
 export async function lockAlliance(client: pg.PoolClient, allianceId: string): Promise<boolean> {
   const res = await client.query(`SELECT 1 FROM alliances WHERE id = $1 FOR UPDATE`, [allianceId]);
@@ -80,6 +211,7 @@ export async function purgeExpired(q: Q): Promise<void> {
   await q.query(`DELETE FROM alliance_requests WHERE expires_at <= now()`);
   await q.query(`DELETE FROM alliance_invites WHERE expires_at <= now()`);
   await q.query(`DELETE FROM alliance_marks WHERE expires_at <= now()`);
+  await q.query(`DELETE FROM alliance_friend_invites WHERE expires_at <= now()`);
 }
 
 /** 占用名额数 = 成员数 + 未过期的待处理邀请数 */
@@ -286,7 +418,16 @@ export async function loadDetail(q: Q, allianceId: string, onlineIds: ReadonlySe
     lastActiveAt: row.last_active_at ? row.last_active_at.toISOString() : null,
     online: onlineIds.has(row.account_id),
   }));
-  return { ...brief, notice: (noticeRes.rows[0] as { notice: string }).notice, members, power, rank };
+  const diplomacy = await loadDiplomacy(q, allianceId);
+  return {
+    ...brief,
+    notice: (noticeRes.rows[0] as { notice: string }).notice,
+    members,
+    power,
+    rank,
+    friends: diplomacy.friends,
+    hostiles: diplomacy.hostiles,
+  };
 }
 
 /** 把成员加入联盟（调用方已校验名额、冷却、不在别的联盟里）；同时清掉他的申请与全部邀请 */
@@ -331,7 +472,91 @@ export async function disbandAlliance(client: pg.PoolClient, allianceId: string)
  * 并在事务内 pg_notify，提交后 API 把这条消息推给本联盟的在线玩家（Worker 调用时同样走这条路，无需它自己有连接）。
  * 解散不写消息：联盟频道随联盟一起被外键级联删除。玩家名在这里取快照，文案由客户端按种类拼接。
  */
-export type AllianceEventKind = 'joined' | 'left' | 'kicked' | 'leader_changed' | 'disbanded' | 'mark_created';
+export type AllianceEventKind =
+  | 'joined'
+  | 'left'
+  | 'kicked'
+  | 'leader_changed'
+  | 'disbanded'
+  | 'mark_created'
+  | 'diplomacy_friendly'
+  | 'diplomacy_hostile'
+  | 'diplomacy_neutral';
+/**
+ * 本联盟的外交全貌（友盟 / 敌对 / 邀请；v77，AISLG-195）。
+ * 友盟 / 敌对上限之外不返回，调用方以 limits 展示。
+ */
+export async function loadDiplomacy(q: Q, allianceId: string): Promise<GetAllianceDiplomacyResponseData> {
+  const relations = await q.query(
+    `SELECT a_id, b_id, relation, established_at, no_attack_until, refriend_after
+     FROM alliance_relations WHERE a_id = $1 OR b_id = $1`,
+    [allianceId],
+  );
+  const friends: AllianceDiplomacyEntryView[] = [];
+  const hostiles: AllianceDiplomacyEntryView[] = [];
+  for (const row of relations.rows as Array<{
+    a_id: string; b_id: string; relation: string; established_at: Date;
+    no_attack_until: Date | null; refriend_after: Date | null;
+  }>) {
+    if (row.relation !== 'friendly' && row.relation !== 'hostile') {
+      continue;
+    }
+    const otherId = row.a_id === allianceId ? row.b_id : row.a_id;
+    const brief = await loadBrief(q, otherId);
+    if (!brief) {
+      continue;
+    }
+    const entry: AllianceDiplomacyEntryView = {
+      alliance: brief,
+      relation: row.relation,
+      since: row.established_at.toISOString(),
+      noAttackUntil: row.no_attack_until ? row.no_attack_until.toISOString() : null,
+      refriendAfter: row.refriend_after ? row.refriend_after.toISOString() : null,
+    };
+    (row.relation === 'friendly' ? friends : hostiles).push(entry);
+  }
+  const sent = await q.query(
+    `SELECT i.id, i.from_alliance_id, i.to_alliance_id, i.inviter_id, i.created_at, i.expires_at, a.username AS inviter_name
+     FROM alliance_friend_invites i JOIN accounts a ON a.id = i.inviter_id
+     WHERE i.from_alliance_id = $1 AND i.expires_at > now()`,
+    [allianceId],
+  );
+  const received = await q.query(
+    `SELECT i.id, i.from_alliance_id, i.to_alliance_id, i.inviter_id, i.created_at, i.expires_at, a.username AS inviter_name
+     FROM alliance_friend_invites i JOIN accounts a ON a.id = i.inviter_id
+     WHERE i.to_alliance_id = $1 AND i.expires_at > now()`,
+    [allianceId],
+  );
+  const invites: AllianceFriendInviteView[] = [];
+  for (const row of sent.rows as Array<{ id: string | number; from_alliance_id: string; to_alliance_id: string; inviter_id: string; inviter_name: string; created_at: Date; expires_at: Date }>) {
+    const brief = await loadBrief(q, row.to_alliance_id);
+    if (brief) {
+      invites.push({
+        id: String(row.id), alliance: brief,
+        inviter: { accountId: row.inviter_id, username: row.inviter_name },
+        direction: 'sent', createdAt: row.created_at.toISOString(), expiresAt: row.expires_at.toISOString(),
+      });
+    }
+  }
+  for (const row of received.rows as Array<{ id: string | number; from_alliance_id: string; to_alliance_id: string; inviter_id: string; inviter_name: string; created_at: Date; expires_at: Date }>) {
+    const brief = await loadBrief(q, row.from_alliance_id);
+    if (brief) {
+      invites.push({
+        id: String(row.id), alliance: brief,
+        inviter: { accountId: row.inviter_id, username: row.inviter_name },
+        direction: 'received', createdAt: row.created_at.toISOString(), expiresAt: row.expires_at.toISOString(),
+      });
+    }
+  }
+  return {
+    allianceId,
+    friends,
+    hostiles,
+    invites,
+    limits: { friends: ALLIANCE_MAX_FRIENDS, hostiles: ALLIANCE_MAX_HOSTILES },
+  };
+}
+
 export async function recordAllianceEvent(
   q: Q,
   allianceId: string,
@@ -359,6 +584,12 @@ export async function recordAllianceEvent(
     system = { kind: 'alliance_left', player: player(detail.accountId) };
   } else if (kind === 'kicked') {
     system = { kind: 'alliance_kicked', player: player(detail.accountId), by: player(detail.by) };
+  } else if (kind === 'diplomacy_friendly') {
+    system = { kind: 'alliance_diplomacy_friendly', player: player(detail.accountId), otherAllianceName: String(detail.otherAllianceName ?? '') };
+  } else if (kind === 'diplomacy_hostile') {
+    system = { kind: 'alliance_diplomacy_hostile', player: player(detail.accountId), otherAllianceName: String(detail.otherAllianceName ?? '') };
+  } else if (kind === 'diplomacy_neutral') {
+    system = { kind: 'alliance_diplomacy_neutral', player: player(detail.accountId), otherAllianceName: String(detail.otherAllianceName ?? '') };
   } else if (kind === 'mark_created') {
     system = {
       kind: 'alliance_mark_created',

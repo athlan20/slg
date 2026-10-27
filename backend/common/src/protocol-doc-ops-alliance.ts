@@ -106,7 +106,7 @@ export const REQUEST_GET_ALLIANCE: RequestOpDoc = {
     `过期（${HOURS(ALLIANCE_REQUEST_TTL_MS)} 小时）的申请与邀请不会返回。${RULES}`,
   requestFields: [{ name: 'allianceId', type: 'string', desc: '可选。联盟 id（UUID）；缺省查看我的联盟。' }],
   dataFields: [
-    { name: 'alliance', type: 'object | null', desc: `联盟详情 { id, name, leader{accountId,username}, memberCount, maxMembers, createdAt, notice, members[], power 联盟势力（v70，现算：全体成员占领的野地数 × ${ALLIANCE_POWER_TERRITORY_WEIGHT} + 名城数 × ${ALLIANCE_POWER_FAMOUS_WEIGHT} + 成员主城官府等级之和 × ${ALLIANCE_POWER_GOVERNMENT_WEIGHT}）, rank 联盟榜名次（v70：取最近一次榜单快照；成员不足 ${ALLIANCE_RANK_MIN_MEMBERS} 人或未上榜为 null） }；没有联盟为 null。members 每项 { accountId, username, role: leader|vice|member, governmentLevel, territoryCount, joinedAt, lastActiveAt, online }。` },
+    { name: 'alliance', type: 'object | null', desc: `联盟详情 { id, name, leader{accountId,username}, memberCount, maxMembers, createdAt, notice, members[], power 联盟势力（v70，现算：全体成员占领的野地数 × ${ALLIANCE_POWER_TERRITORY_WEIGHT} + 名城数 × ${ALLIANCE_POWER_FAMOUS_WEIGHT} + 成员主城官府等级之和 × ${ALLIANCE_POWER_GOVERNMENT_WEIGHT}）, rank 联盟榜名次（v70：取最近一次榜单快照；成员不足 ${ALLIANCE_RANK_MIN_MEMBERS} 人或未上榜为 null）, friends 友盟名单（v77：数组，元素同 GET_ALLIANCE_DIPLOMACY 的 friends）, hostiles 敌对名单（v77） }；没有联盟为 null。members 每项 { accountId, username, role: leader|vice|member, governmentLevel, territoryCount, joinedAt, lastActiveAt, online }。` },
     { name: 'myRole', type: "'leader' | 'vice' | 'member' | null", desc: '我在该联盟的职位；没有联盟或查看别人的联盟为 null。' },
     { name: 'cooldownUntil', type: 'string | null', desc: '冷却截止（ISO 8601）；不在冷却中为 null。冷却中不能创建也不能加入联盟。' },
     { name: 'myRequest', type: 'object | null', desc: '我发出的待处理申请 { alliance（联盟概要）, createdAt, expiresAt }；同一时间只有 1 条。' },

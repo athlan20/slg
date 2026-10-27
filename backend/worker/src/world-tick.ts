@@ -35,7 +35,7 @@ import {
   type TileNotify,
   abortForAlly,
 } from './tick-shared';
-import { areAllies } from '../../common/src/alliance-db';
+import { cannotAttack } from '../../common/src/alliance-db';
 import { buildScoutIntel, resolveBattleArrival } from './battle-tick';
 import { settleAssistArrival } from './assist-tick';
 import { resolveOccupyArrival, resolvePlunderArrival } from './plunder-tick';
@@ -279,7 +279,7 @@ async function settleScoutArrival(
   // v67（AISLG-182）：出发后目标才成为盟友（同一联盟）：不侦察，原路返回
   if (tile.owner_city_id) {
     const ownerRow = await client.query(`SELECT account_id FROM cities WHERE id = $1`, [tile.owner_city_id]);
-    if (ownerRow.rowCount && (await areAllies(client, march.account_id, (ownerRow.rows[0] as { account_id: string }).account_id))) {
+    if (ownerRow.rowCount && (await cannotAttack(client, march.account_id, (ownerRow.rows[0] as { account_id: string }).account_id))) {
       await abortForAlly(client, march, troops, settled, notifies);
       return;
     }

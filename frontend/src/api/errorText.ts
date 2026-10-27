@@ -336,6 +336,10 @@ export function allianceErrorText(
     }
     case 'ALLIANCE_ROLE_FULL':
       return errors.ALLIANCE_ROLE_FULL(ALLIANCE_MAX_VICES);
+    case 'DIPLOMACY_COOLDOWN': {
+      const retry = typeof data?.retryAfterSeconds === 'number' ? data.retryAfterSeconds : 0;
+      return retry > 0 ? `${errors.DIPLOMACY_COOLDOWN}（${formatDurationText(retry)}）` : errors.DIPLOMACY_COOLDOWN;
+    }
     case 'INSUFFICIENT_RESOURCES':
       return errors.INSUFFICIENT_RESOURCES(ALLIANCE_CREATE_COST_GOLD.toLocaleString());
     case 'ALLIANCE_NAME_INVALID':

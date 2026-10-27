@@ -38,6 +38,7 @@ import {
 } from './handlers-battlefield';
 import { handleBuyBattlefieldItem } from './handlers-battlefield-shop';
 import { handleClaimNobilitySalary, handleGetNobility } from './handlers-nobility';
+import { handleAllianceDiplomacyOp } from './handlers-alliance-diplomacy';
 import {
   handleGetTile,
   handleGetWorldMap,
@@ -427,6 +428,13 @@ async function dispatchOp(
       break;
     case Op.BUY_BATTLEFIELD_ITEM:
       await handleBuyBattlefieldItem(ctx, conn, op, seq, data);
+      break;
+    case Op.ALLIANCE_DIPLOMACY_INVITE:
+    case Op.ALLIANCE_DIPLOMACY_RESPOND:
+    case Op.ALLIANCE_DIPLOMACY_END:
+    case Op.ALLIANCE_DIPLOMACY_HOSTILE:
+    case Op.GET_ALLIANCE_DIPLOMACY:
+      await handleAllianceDiplomacyOp(ctx, conn, op, seq, data);
       break;
     case Op.GET_NOBILITY:
       await handleGetNobility(ctx, conn, op, seq);
