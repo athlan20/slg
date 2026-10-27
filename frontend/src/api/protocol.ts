@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 70;
+export const PROTOCOL_VERSION = 75;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -179,6 +179,18 @@ export const Op = {
   CRAFT_DEFENSE: 117,
   CANCEL_DEFENSE_CRAFT: 118,
   DISMISS_ASSIST: 119,
+  /** 查询剧本战场（v75，AISLG-198）：当前 / 最近一场官渡、据点、我的队伍与军功、军功榜、商店 */
+  GET_BATTLEFIELD: 120,
+  /** 报名剧本战场（v75）：data.camp = yuan | cao */
+  SIGNUP_BATTLEFIELD: 121,
+  /** 带部队入场（v75）：data.troops；开战前，按人口最多 3000 */
+  ENTER_BATTLEFIELD: 122,
+  /** 拆分战场队伍（v75）：data.squadId + troops；每人最多 3 队 */
+  SPLIT_BATTLEFIELD_SQUAD: 123,
+  /** 战场内行军 / 攻打据点（v75）：data.squadId + strongholdId 或 x / y */
+  MARCH_BATTLEFIELD_SQUAD: 124,
+  /** 战场商店兑换（v75）：data.item（+ hero_exp 时的 heroId） */
+  BUY_BATTLEFIELD_ITEM: 125,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -234,6 +246,8 @@ export const Op = {
   /** 联盟地图标记变化推送（v69，AISLG-184）：reason = added / removed */
   PUSH_ALLIANCE_MARK: 2025,
   PUSH_DEFENSE_STATE: 2026,
+  /** 剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198）：全部在线连接收到 */
+  PUSH_BATTLEFIELD_STATE: 2027,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
@@ -1080,3 +1094,23 @@ export type {
   StarTowerChallengeResponseData,
   GetStarTowerReportsResponseData,
 } from './protocol-star-tower';
+
+// 剧本战场（v75，AISLG-198）的载荷类型
+export type {
+  BattlefieldCamp,
+  BattlefieldSquadStatus,
+  BattlefieldStrongholdKind,
+  BattlefieldSquadView,
+  BattlefieldStrongholdView,
+  BattlefieldCampView,
+  BattlefieldEventView,
+  BattlefieldMeritEntryView,
+  BattlefieldMeView,
+  BattlefieldShopItem,
+  BattlefieldShopItemView,
+  BattlefieldRewardTierView,
+  GetBattlefieldResponseData,
+  BattlefieldPushData,
+  EnterBattlefieldRequestData,
+  BuyBattlefieldItemResponseData,
+} from './protocol-battlefield';

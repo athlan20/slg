@@ -221,8 +221,16 @@ export const EventType = {
   DEFENSE_CRAFT_CANCELLED: 'defense_craft_cancelled',
   /** v74（AISLG-194）：协防部队入驻盟友城（detail = { assistId, hostCityId, hostCityName, hostUsername, troops }） */
   ASSIST_ARRIVED: 'assist_arrived',
-  /** v74：协防部队离开盟友城返程（detail = { assistId, hostCityId, cause, troops, returning }；cause = recall / expel / ally_left / city_conquered） */
+  /** v74：协防部队离开盟友城返程（detail = { assistId, hostCityId, cause, troops, returning }；cause = recall / expel / ally_left / city_discarded / wiped；wiped 时 troops 为空、returning 为 null，没有返程行军） */
   ASSIST_RETURNED: 'assist_returned',
+  /** v75（AISLG-198）：报名剧本战场（detail = { eventId, camp }） */
+  BATTLEFIELD_SIGNED_UP: 'battlefield_signed_up',
+  /** v75：带部队入场（detail = { eventId, camp, troops, population }） */
+  BATTLEFIELD_ENTERED: 'battlefield_entered',
+  /** v75：战场结算奖励入账（detail = { eventId, camp, outcome, merit, rank, reward }） */
+  BATTLEFIELD_REWARD: 'battlefield_reward',
+  /** v75：战场商店兑换（detail = { eventId, item, cost, reward }） */
+  BATTLEFIELD_SHOP: 'battlefield_shop',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;

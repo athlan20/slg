@@ -202,6 +202,18 @@ export const Op = {
   CANCEL_DEFENSE_CRAFT: 118,
   /** C→S 召回 / 遣返协防部队（v74，AISLG-194：data.assistId；派出方随时召回，城主可遣返任意一支） */
   DISMISS_ASSIST: 119,
+  /** C→S 查询剧本战场（v75，AISLG-198：当前 / 最近一场官渡、据点、我的队伍与军功、军功榜、商店） */
+  GET_BATTLEFIELD: 120,
+  /** C→S 报名剧本战场（v75：data.camp = yuan | cao；主城官府 ≥ 5，阵营人数失衡时人多一方暂停） */
+  SIGNUP_BATTLEFIELD: 121,
+  /** C→S 带部队入场（v75：data.troops；开战前，按人口最多 3000，从主城扣兵，每人一次） */
+  ENTER_BATTLEFIELD: 122,
+  /** C→S 拆队（v75：data.squadId + data.troops；每人最多 3 队） */
+  SPLIT_BATTLEFIELD_SQUAD: 123,
+  /** C→S 战场内行军 / 攻打据点（v75：data.squadId + 目标坐标或 strongholdId；每格 60 秒现实时间） */
+  MARCH_BATTLEFIELD_SQUAD: 124,
+  /** C→S 战场商店兑换（v75：data.item（+ hero_exp 时的 data.heroId）；军功跨场累积、每场限购） */
+  BUY_BATTLEFIELD_ITEM: 125,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -269,6 +281,8 @@ export const Op = {
   PUSH_ALLIANCE_MARK: 2025,
   /** S→C 推送：城防器械打造状态变化（v73，AISLG-193；reason = craft_started / craft_queued / craft_completed / craft_cancelled） */
   PUSH_DEFENSE_STATE: 2026,
+  /** S→C 推送：剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198；全部在线连接收到） */
+  PUSH_BATTLEFIELD_STATE: 2027,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -525,6 +539,38 @@ export const ErrorCode = {
   ASSIST_LIMIT: 'ASSIST_LIMIT',
   /** 协防：协防部队不存在、已返回，或不属于你（v74，AISLG-194） */
   ASSIST_NOT_FOUND: 'ASSIST_NOT_FOUND',
+  /** 剧本战场：主城官府等级不足报名门槛（v75，AISLG-198；需 ≥ 5 级，附 required / current） */
+  BATTLEFIELD_GOVERNMENT_TOO_LOW: 'BATTLEFIELD_GOVERNMENT_TOO_LOW',
+  /** 剧本战场：当前不在报名期（未开始 / 已开战）（v75，AISLG-198） */
+  BATTLEFIELD_SIGNUP_CLOSED: 'BATTLEFIELD_SIGNUP_CLOSED',
+  /** 剧本战场：本场已经报过名（v75） */
+  BATTLEFIELD_ALREADY_JOINED: 'BATTLEFIELD_ALREADY_JOINED',
+  /** 剧本战场：没有报名，不能入场 / 操作队伍（v75） */
+  BATTLEFIELD_NOT_JOINED: 'BATTLEFIELD_NOT_JOINED',
+  /** 剧本战场：该阵营报名人数已达另一方 1.5 倍且多出 5 人以上，暂停报名（v75，附 limit / count） */
+  BATTLEFIELD_CAMP_FULL: 'BATTLEFIELD_CAMP_FULL',
+  /** 剧本战场：已开战，不能再入场（v75） */
+  BATTLEFIELD_ENTRY_CLOSED: 'BATTLEFIELD_ENTRY_CLOSED',
+  /** 剧本战场：本场已经入过场（v75） */
+  BATTLEFIELD_ALREADY_ENTERED: 'BATTLEFIELD_ALREADY_ENTERED',
+  /** 剧本战场：带入部队人口超过 3000（v75，附 limit / current） */
+  BATTLEFIELD_POPULATION_LIMIT: 'BATTLEFIELD_POPULATION_LIMIT',
+  /** 剧本战场：每人最多 3 支队伍（v75） */
+  BATTLEFIELD_SQUAD_LIMIT: 'BATTLEFIELD_SQUAD_LIMIT',
+  /** 剧本战场：队伍不存在、已阵亡或不属于你（v75） */
+  BATTLEFIELD_SQUAD_NOT_FOUND: 'BATTLEFIELD_SQUAD_NOT_FOUND',
+  /** 剧本战场：队伍正在行军，等到达后再下命令（v75） */
+  BATTLEFIELD_SQUAD_BUSY: 'BATTLEFIELD_SQUAD_BUSY',
+  /** 剧本战场：目标不可达（河只能从 3 处渡口过，或坐标越界）（v75） */
+  BATTLEFIELD_UNREACHABLE: 'BATTLEFIELD_UNREACHABLE',
+  /** 剧本战场：战场不在进行中（v75） */
+  BATTLEFIELD_NOT_ACTIVE: 'BATTLEFIELD_NOT_ACTIVE',
+  /** 剧本战场：本场该商品已达到限购（v75，附 limit） */
+  BATTLEFIELD_SHOP_LIMIT: 'BATTLEFIELD_SHOP_LIMIT',
+  /** 剧本战场：战场军功余额不足（v75，附 cost / balance） */
+  BATTLEFIELD_MERIT_INSUFFICIENT: 'BATTLEFIELD_MERIT_INSUFFICIENT',
+  /** 剧本战场：目标坐标与据点 id 都没给或对不上（v75） */
+  BATTLEFIELD_TARGET_INVALID: 'BATTLEFIELD_TARGET_INVALID',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -1009,6 +1055,40 @@ export type { DefenseKind, DefenseStock } from './city-defense';
 // 盟友协防（v74，AISLG-194）的载荷类型在 protocol-assist.ts，规则在 city-assist.ts
 export type { AssistView, AssistOutView, DismissAssistRequestData, DismissAssistResponseData } from './protocol-assist';
 export { ASSIST_MAX_PER_CITY, assistCap } from './city-assist';
+
+// 剧本战场（v75，AISLG-198）的载荷类型在 protocol-battlefield.ts，规则与数值在 battlefield.ts
+export type {
+  BattlefieldCamp,
+  BattlefieldStatus,
+  BattlefieldStrongholdKind,
+  BattlefieldSquadStatus,
+  BattlefieldSquadView,
+  BattlefieldStrongholdView,
+  BattlefieldCampView,
+  BattlefieldEventView,
+  BattlefieldMeritEntryView,
+  BattlefieldMeView,
+  BattlefieldShopItem,
+  BattlefieldShopItemView,
+  BattlefieldRewardTierView,
+  GetBattlefieldResponseData,
+  SignupBattlefieldRequestData,
+  EnterBattlefieldRequestData,
+  SplitBattlefieldSquadRequestData,
+  MarchBattlefieldSquadRequestData,
+  BuyBattlefieldItemRequestData,
+  BuyBattlefieldItemResponseData,
+  BattlefieldPushData,
+} from './protocol-battlefield';
+export {
+  BATTLEFIELD_CAMPS,
+  isBattlefieldCamp,
+  BATTLEFIELD_STATUSES,
+  BATTLEFIELD_STRONGHOLD_KINDS,
+  BATTLEFIELD_SHOP_ITEMS,
+  isBattlefieldShopItem,
+  BATTLEFIELD_SQUAD_STATUSES,
+} from './protocol-battlefield';
 
 // 城池 / 事件 / 建造 / 生产的视图类型（v7..v12 既有形态）同样拆在 protocol-city.ts
 export type {

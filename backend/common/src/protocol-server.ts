@@ -29,6 +29,11 @@ export const SERVER_BROADCAST_TYPES = [
   'star_tower_cleared',
   // v60（AISLG-162）公告：运维发布公告时同步播报一句标题，点开跳到公告；运维主动发布，必达（不受每分钟限频）
   'announcement',
+  // v75（AISLG-198）剧本战场：报名 / 开战 / 据点易手 / 收场，必达（不受每分钟限频）
+  'battlefield_signup',
+  'battlefield_started',
+  'battlefield_stronghold',
+  'battlefield_finished',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

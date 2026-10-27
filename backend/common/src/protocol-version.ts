@@ -566,7 +566,15 @@
  *   战后伤亡按同兵种开战数量比例拆分（余数归城主），协防方各收到一份带 assistLosses 的战报；协防方也收到来袭预警。
  *   新增 DISMISS_ASSIST（op 119，派出方召回 / 城主遣返，生成返程行军）；CityView 新增 assistIn / assistOut / assistCap，
  *   TileDetailView 新增 assists（自己的城与盟友的城可见）；PUSH_CITY_STATE 新增 reason=assist_changed。
- *   退盟 / 被踢 / 解散与分城易主时相关协防部队自动遣返；新增错误码 ASSIST_NOT_ALLY / ASSIST_LIMIT / ASSIST_NOT_FOUND；
+ *   退盟 / 被踢 / 解散与城主放弃分城时相关协防部队自动遣返，分城被占领时协防部队随城覆灭（assist_returned cause=wiped）；新增错误码 ASSIST_NOT_ALLY / ASSIST_LIMIT / ASSIST_NOT_FOUND；
  *   新表 city_assist（换季清空），事件 assist_arrived / assist_returned。
+ * v75（剧本战场·官渡，AISLG-198，只加不改）：新增 GET_BATTLEFIELD（op 120）查询当前 / 最近一场官渡、9 个据点、
+ *   我的队伍与军功、军功榜前 10、战场商店；SIGNUP_BATTLEFIELD（121，选袁绍军 / 曹操军，主城官府 ≥ 5，
+ *   一方超过另一方 1.5 倍且多 5 人时暂停报名）、ENTER_BATTLEFIELD（122，开战前带一支部队入场，按人口最多 3000、
+ *   从主城扣兵）、SPLIT_BATTLEFIELD_SQUAD（123，每人最多 3 队）、MARCH_BATTLEFIELD_SQUAD（124，战场内行军 / 攻打据点，
+ *   每格 60 秒现实时间、不受全局缩放）与 BUY_BATTLEFIELD_ITEM（125，军功换资源包 / 武将经验 / 兵）。
+ *   日程按北京时间现实时间：每周二 20:00 报名、周三 20:00 开战、周四 20:00 结束；30×30 独立地图，中间一条河只有 3 处渡口；
+ *   军功 = 歼灭敌军参考战力 1:1（首占据点额外 200），结束按胜负与个人名次发奖；乌巢让敌方部队耗粮翻倍、人少补偿、
+ *   守军随报名人数加厚。新增 PUSH_BATTLEFIELD_STATE（op 2027）与错误码 BATTLEFIELD_*；新表 battlefield_*（换季清空）。
  */
-export const PROTOCOL_VERSION = 74;
+export const PROTOCOL_VERSION = 75;

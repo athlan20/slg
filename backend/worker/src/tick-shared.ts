@@ -23,7 +23,7 @@ import { battleBonusOf, grantHeroExp, loadHero, woundHero, type AccountHeroRow }
 import { insertBattleReport, withSideStats, type BattleReportDetail } from '../../common/src/battle-db';
 
 /** 战报类别（BattleReportView.kind 取值；v21 新增 city_raid = NPC 袭击玩家主城；v38 新增 pvp_raid = 玩家攻打玩家城；v39 新增 pvp_wilderness = 玩家抢占玩家野地） */
-export type BattleReportKind = 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest';
+export type BattleReportKind = 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
 
 /** BattleSideSummary（引擎产出）→ 战报侧视图（battle-tick / plunder-tick / city-raid 共用；
  *  units / totalHp / avgRange 由 withSideStats 派生） */

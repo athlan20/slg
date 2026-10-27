@@ -29,12 +29,15 @@ function totalOf(army: ArmyCounts): number {
 
 /** 战斗类别的界面名称（战报弹窗标题与聊天里的战报卡片共用） */
 export function battleKindTitle(kind: BattleReportView['kind']): string {
-  const { COPY, MOVING_COPY, YT_COPY } = getCopy();
+  const { COPY, MOVING_COPY, YT_COPY, BATTLEFIELD_COPY } = getCopy();
   if (kind === 'intercept') {
     return MOVING_COPY.report.kind;
   }
   if (kind === 'yellow_turban') {
     return YT_COPY.report.kind;
+  }
+  if (kind === 'battlefield') {
+    return BATTLEFIELD_COPY.reportKind;
   }
   if (kind === 'wilderness') {
     return COPY.battleReport.kindWilderness;

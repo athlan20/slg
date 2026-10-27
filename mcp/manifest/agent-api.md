@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**74** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**75** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 74）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 75）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -491,7 +491,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 74,
+    "protocolVersion": 75,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -557,7 +557,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 74,
+    "protocolVersion": 75,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -581,7 +581,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/71 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/72 补读增量）**
 
 请求：
 
@@ -592,7 +592,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 71,
+    "docVersion": 72,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -611,8 +611,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 74,
-    "docNotice": "接口文档已从 v71 更新到 v74：请 GET /agent-api/changes/71 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 75,
+    "docNotice": "接口文档已从 v72 更新到 v75：请 GET /agent-api/changes/72 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -4789,7 +4789,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | reports[].attacker.hero.specialty / reports[].defender.hero.specialty | string \| null \| undefined | v59: Immutable ordinary-hero specialty at combat time; famous heroes have null and historical reports may omit it. specialtyScale records command dilution (0..1). Base atkPercent/defPercent remain the original hero bonuses; specialty bonuses apply per matching troop stack. |
 | reports[].id | number | 战报自增序号（分页游标）。 |
 | reports[].x / reports[].y | number | 战斗发生地块坐标。 |
-| reports[].kind | 'wilderness' \| 'npc_city' \| 'npc_raid' \| 'city_raid' \| 'intercept' \| 'yellow_turban' | 战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）。 |
+| reports[].kind | 'wilderness' \| 'npc_city' \| 'npc_raid' \| 'city_raid' \| 'intercept' \| 'yellow_turban' \| 'battlefield' | 战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）/ 剧本战场据点（v75，AISLG-198，battlefield）。 |
 | reports[].towerDamage | number \| undefined | 箭塔造成的总伤害（v30，AISLG-82）：仅守城战且守方有箭塔时 > 0（已含在 defender.damage 内）；无箭塔 / 历史战报为 undefined。逐回合见 roundLog[].towerDamage。 |
 | reports[].contact | 'missed' \| 'gone' \| undefined | 仅 kind=intercept 的未接战结果（v28）：missed 扑空（到达时目标已走远）/ gone 目标消失（已被击败或过时）；此时 endReason=no_contact、rounds=0、双方无损失。接战的截击与其他战报无此字段。 |
 | reports[].role | 'attacker' \| 'defender' | 本账号在该场战斗中的角色。 |
@@ -5354,8 +5354,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | broadcasts | array | 播报列表（新→旧）：{ id, type, detail, createdAt }。 |
-| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；以上均必达、不受每分钟 3 条限频）。 |
-| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）。 |
+| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；以上均必达、不受每分钟 3 条限频）。 |
+| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }。 |
 | broadcasts[].createdAt | string | 播报写入时间（ISO 8601）。 |
 
 **Agent 提示**：播报是全服氛围信息，与你的决策无强制关系；但「某 NPC 城被掠空」意味着那座城不再值得打，「首个占领金矿」意味着金矿红利已被拿走。别把播报当任务清单——玩家对打法的意图直接与玩家沟通确认。
@@ -12530,6 +12530,826 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 120 · GET_BATTLEFIELD — 查询剧本战场（官渡之战，v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+周期性的阵营对阵营活动，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）；报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+
+**Agent 提示**：先看 event.status：signup 期只能报名 / 入场，active 才能行军与攻打。行军目标用 strongholds 的 id（MARCH_BATTLEFIELD_SQUAD 会按据点坐标走最短路径）；河只有 3 处渡口，先取渡口再渡河。攻打前用 garrisonPower 与自己的队伍战力对比，大营是守城战（城墙 + 箭塔），没有把握先打渡口 / 普通据点。军功来自歼灭敌军（打 NPC 也算），首占据点 +200；乌巢（granary_wuchao）价值 30 分/小时并让敌方耗粮翻倍，适合偷袭。结束奖励自动入账，军功可立刻在战场商店换资源 / 武将经验 / 兵。
+
+**示例**
+
+**战场进行中：我在袁绍军，一支队伍正在去延津渡口**
+
+请求：
+
+```json
+{
+  "op": 120,
+  "seq": 30,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 120,
+  "seq": 30,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "nextSignupAt": "2026-10-02T08:00:00.000Z",
+    "strongholds": [
+      {
+        "id": "ford_yanjin",
+        "name": "延津渡口",
+        "kind": "ford",
+        "x": 15,
+        "y": 15,
+        "ownerCamp": "cao",
+        "pointsPerHour": 10,
+        "garrison": {
+          "porter": 0,
+          "militia": 120,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 40,
+          "archer": 60,
+          "cavalry": 15,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "garrisonPower": 710,
+        "wallLevel": 0,
+        "towerLevel": 0,
+        "firstCaptureAvailable": false,
+        "capturedAt": "2026-09-25T08:00:00.000Z"
+      },
+      "（其余 8 个据点同结构）"
+    ],
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    },
+    "top": [
+      {
+        "rank": 1,
+        "accountId": "…",
+        "username": "bob",
+        "camp": "cao",
+        "merit": 2200
+      },
+      {
+        "rank": 2,
+        "accountId": "…",
+        "username": "carol",
+        "camp": "yuan",
+        "merit": 1500
+      },
+      {
+        "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+        "username": "alice",
+        "camp": "yuan",
+        "merit": 1240,
+        "rank": 3,
+        "entered": true,
+        "squads": [
+          {
+            "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+            "x": 14,
+            "y": 15,
+            "status": "marching",
+            "troops": {
+              "porter": 0,
+              "militia": 300,
+              "scout": 0,
+              "pikeman": 0,
+              "swordsman": 200,
+              "archer": 150,
+              "cavalry": 50,
+              "iron_cavalry": 0,
+              "supply_wagon": 0,
+              "ballista": 0,
+              "siege_ram": 0,
+              "yulin_guard": 0,
+              "danyang_soldier": 0,
+              "baimao_soldier": 0,
+              "huwei_guard": 0,
+              "zhuge_crossbow": 0,
+              "xiandeng_warrior": 0,
+              "hubao_cavalry": 0,
+              "xiliang_cavalry": 0
+            },
+            "targetX": 15,
+            "targetY": 15,
+            "targetStrongholdId": "ford_yanjin",
+            "arriveAt": "2026-09-25T08:01:00.000Z",
+            "originX": 13,
+            "originY": 15,
+            "strongholdId": null
+          }
+        ],
+        "cumulativeMerit": 3600
+      }
+    ],
+    "shop": {
+      "cumulativeMerit": 3600,
+      "items": [
+        {
+          "item": "resources",
+          "label": "资源包",
+          "cost": 200,
+          "limit": 5,
+          "bought": 0,
+          "reward": {
+            "resources": {
+              "gold": 0,
+              "wood": 10000,
+              "food": 10000,
+              "stone": 10000,
+              "iron": 10000
+            }
+          }
+        },
+        {
+          "item": "hero_exp",
+          "label": "武将经验",
+          "cost": 300,
+          "limit": 3,
+          "bought": 0,
+          "reward": {
+            "heroExp": 5000
+          }
+        },
+        {
+          "item": "swordsman",
+          "label": "刀盾兵",
+          "cost": 600,
+          "limit": 2,
+          "bought": 0,
+          "reward": {
+            "troop": "swordsman",
+            "count": 100
+          }
+        },
+        {
+          "item": "cavalry",
+          "label": "轻骑兵",
+          "cost": 600,
+          "limit": 2,
+          "bought": 0,
+          "reward": {
+            "troop": "cavalry",
+            "count": 50
+          }
+        }
+      ]
+    },
+    "rewards": {
+      "winner": {
+        "label": "胜方每人",
+        "gold": 3000,
+        "resourcesEach": 15000
+      },
+      "loser": {
+        "label": "败方每人",
+        "gold": 1000,
+        "resourcesEach": 5000
+      },
+      "rankTiers": [
+        {
+          "label": "个人军功第 1 名",
+          "maxRank": 1,
+          "gold": 6000,
+          "resourcesEach": 30000
+        },
+        {
+          "label": "第 2–3 名",
+          "maxRank": 3,
+          "gold": 4000,
+          "resourcesEach": 20000
+        },
+        {
+          "label": "第 4–10 名",
+          "maxRank": 10,
+          "gold": 2500,
+          "resourcesEach": 12000
+        }
+      ]
+    }
+  }
+}
+```
+
+### op 121 · SIGNUP_BATTLEFIELD — 报名剧本战场（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+在报名期（北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放））选阵营报名：主城官府 ≥ 5 级；同一场只能报一次，阵营选定后不能改。一方报名人数超过另一方 1.5 倍且多出 5 人以上时，人多的一方暂停报名（返回 BATTLEFIELD_CAMP_FULL，附 count / otherCount / limit）。报名只占阵营人数，不带兵；带兵用 ENTER_BATTLEFIELD（开战前）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| camp | 'yuan' \| 'cao' | 必填。袁绍军 yuan / 曹操军 cao。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_SIGNUP_CLOSED`、`BATTLEFIELD_ALREADY_JOINED`、`BATTLEFIELD_GOVERNMENT_TOO_LOW`、`BATTLEFIELD_CAMP_FULL`（处置建议见第 4 节）
+
+**Agent 提示**：报名前先 GET_BATTLEFIELD 看双方 signups，选人少的一方通常能吃到人少补偿；报名后记得在开战前 ENTER_BATTLEFIELD 带兵入场，否则开战后无法入场。
+
+**示例**
+
+**报名袁绍军**
+
+请求：
+
+```json
+{
+  "op": 121,
+  "seq": 31,
+  "data": {
+    "camp": "yuan"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 121,
+  "seq": 31,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 0,
+      "rank": null,
+      "entered": false,
+      "squads": [],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 122 · ENTER_BATTLEFIELD — 带部队入场（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+报名后、开战前，从主城带一支部队进入战场：按人口计最多 3000（铁骑兵 3、辎重车 6……），部队从主城驻军扣除，战场结束后幸存部队回到主城。每人每场只能入场一次，开战后不能追加兵力。入场后队伍出现在自己大营旁，可用 SPLIT_BATTLEFIELD_SQUAD 拆成最多 3 队。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| troops | object | 必填。按兵种数量（非负整数，至少 1 个单位）：{ militia, swordsman, archer, cavalry, ... }，键集同 MARCH.troops；按人口合计 ≤ 3000。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_JOINED`、`BATTLEFIELD_ENTRY_CLOSED`、`BATTLEFIELD_ALREADY_ENTERED`、`BATTLEFIELD_POPULATION_LIMIT`、`INSUFFICIENT_TROOPS`（处置建议见第 4 节）
+
+**Agent 提示**：入场前用 GET_STATE 的 city.army 确认兵够，并算清人口（铁骑兵 3 / 辎重车 6 / 床弩 3 / 冲车 5）。全部兵力一次性带入即可，开战后无法追加；拆队是战术选择，不影响入场上限。
+
+**示例**
+
+**带 700 单位入场**
+
+请求：
+
+```json
+{
+  "op": 122,
+  "seq": 32,
+  "data": {
+    "troops": {
+      "militia": 300,
+      "swordsman": 200,
+      "archer": 150,
+      "cavalry": 50
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 122,
+  "seq": 32,
+  "ok": true,
+  "data": {
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "idle",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": null,
+          "targetY": null,
+          "targetStrongholdId": null,
+          "arriveAt": null,
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 123 · SPLIT_BATTLEFIELD_SQUAD — 拆分战场队伍（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+从一支队伍里分出一支新队伍（位置相同、状态待命），每人最多 3 队；行军中不能拆。新队伍与原队伍都必须至少剩 1 个单位。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| squadId | string | 必填。要拆分的队伍 id（GET_BATTLEFIELD 的 me.squads）。 |
+| troops | object | 必填。从原队伍分出的兵种数量，不能超过原队伍现有数量。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_SQUAD_NOT_FOUND`、`BATTLEFIELD_SQUAD_BUSY`、`BATTLEFIELD_SQUAD_LIMIT`、`INSUFFICIENT_TROOPS`（处置建议见第 4 节）
+
+**Agent 提示**：拆队适合「主力攻据点 + 骑兵绕后抢乌巢 / 渡口」这类分兵。行军中不能拆，先等到达。
+
+**示例**
+
+**从主力里分出 100 骑兵当机动队**
+
+请求：
+
+```json
+{
+  "op": 123,
+  "seq": 33,
+  "data": {
+    "squadId": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    "troops": {
+      "cavalry": 100
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 123,
+  "seq": 33,
+  "ok": true,
+  "data": {
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        },
+        {
+          "id": "…",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 100,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 124 · MARCH_BATTLEFIELD_SQUAD — 战场内行军 / 攻打据点（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+给一支待命 / 据守中的队伍下令：目标给 strongholdId（自动取据点坐标）或 x / y；每格 60 秒现实时间，河只能从 3 处渡口（y=5/15/25）通过。到达友方据点 = 入驻据守（合并守军）；到达敌方 / 中立据点 = 自动开战（大营按守城战），胜方幸存部队留守、据点易手。行军中不能再次下令。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| squadId | string | 必填。队伍 id。 |
+| strongholdId | string | 可选（与 x / y 二选一）。目标据点 id；同时给 x / y 时必须与据点坐标一致，否则 BATTLEFIELD_TARGET_INVALID。 |
+| x | number | 可选。目标横坐标（0..29）；只在没有 strongholdId 时使用，且必须与 y 同时给。 |
+| y | number | 可选。目标纵坐标（0..29）；只在没有 strongholdId 时使用。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SQUAD_NOT_FOUND`、`BATTLEFIELD_SQUAD_BUSY`、`BATTLEFIELD_UNREACHABLE`、`BATTLEFIELD_TARGET_INVALID`（处置建议见第 4 节）
+
+**Agent 提示**：到达结算与战报由服务端在 Worker 里完成，客户端轮询 / 收 PUSH_BATTLEFIELD_STATE 后重查即可。攻打前对比 garrisonPower 与自己的队伍战力；没有把握先打渡口（10 分/小时）或普通据点。战败的幸存部队会退回出发位置。
+
+**示例**
+
+**从 (14,15) 攻打延津渡口**
+
+请求：
+
+```json
+{
+  "op": 124,
+  "seq": 34,
+  "data": {
+    "squadId": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    "strongholdId": "ford_yanjin"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 124,
+  "seq": 34,
+  "ok": true,
+  "data": {
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 125 · BUY_BATTLEFIELD_ITEM — 战场商店兑换（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| item | 'resources' \| 'hero_exp' \| 'swordsman' \| 'cavalry' | 必填。商品。 |
+| heroId | string | item=hero_exp 时必填：经验给这个武将（必须属于本账号）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| item | string | 商品。 |
+| cost | number | 本次扣掉的军功。 |
+| cumulativeMerit | number | 兑换后的军功余额。 |
+| bought | number | 本场该商品累计已买数量（含本次）。 |
+| reward | object | 到账内容：{ resources? } / { heroExp, level, leveledTo } / { troop, count }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SHOP_LIMIT`、`BATTLEFIELD_MERIT_INSUFFICIENT`、`HERO_NOT_FOUND`（处置建议见第 4 节）
+
+**Agent 提示**：打得多不如换得准：资源包适合补建造缺口，武将经验给主力将，刀盾 / 轻骑直接补战损。注意每场限购，军功余额跨场保留但换季清零。
+
+**示例**
+
+**换一包资源**
+
+请求：
+
+```json
+{
+  "op": 125,
+  "seq": 35,
+  "data": {
+    "item": "resources"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 125,
+  "seq": 35,
+  "ok": true,
+  "data": {
+    "item": "resources",
+    "cost": 200,
+    "cumulativeMerit": 3400,
+    "bought": 1,
+    "reward": {
+      "resources": {
+        "gold": 0,
+        "wood": 10000,
+        "food": 10000,
+        "stone": 10000,
+        "iron": 10000
+      }
+    }
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -14031,6 +14851,65 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2027 · PUSH_BATTLEFIELD_STATE — 推送：剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198）
+
+`S→C` 服务端推送 · 无 `seq`
+
+报名开始、开战、据点易手（含大营被攻破）、战场收场时推给全部在线连接；载荷里的 event 与 GET_BATTLEFIELD 的 event 同结构。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reason | 'signup' \| 'started' \| 'stronghold' \| 'finished' | 报名 / 开战 / 据点易手 / 收场。 |
+| event | object | 战场视图（结构同 GET_BATTLEFIELD 的 event）。 |
+| strongholdId | string | reason=stronghold 时易手的据点 id。 |
+
+**Agent 提示**：推送只带事件摘要与据点 id，收到后重查 GET_BATTLEFIELD 拿完整据点守军、自己的队伍与军功。漏收时定时重查即可。
+
+**示例**
+
+推送（`stronghold`）：
+
+```json
+{
+  "op": 2027,
+  "push": true,
+  "data": {
+    "reason": "stronghold",
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "strongholdId": "ford_yanjin"
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -14142,6 +15021,22 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `ASSIST_NOT_ALLY` | （v74，AISLG-194）协防目标不是盟友的城池：MARCH task=assist 只能派往同一联盟成员的城（自己的城请用 transfer 调兵）。 | 确认目标城的主人与你同属一个联盟；不是盟友就换目标，或先拉对方入盟。 |
 | `ASSIST_LIMIT` | （v74，AISLG-194）协防名额已满：每座城最多接收 5 支协防部队（在途部队也计入），同一账号对同一座城最多 1 支。到达时复核不通过，部队原路返回（事件 cause=ASSIST_LIMIT）。 | 换一座盟友城协防，或等该城已有部队召回 / 遣返后再派；同一座城不要重复派第二支。 |
 | `ASSIST_NOT_FOUND` | （v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 易主自动遣返），或不属于你（只有派出方与城主能召回 / 遣返）。 | 重新 GET_STATE / GET_TILE 拿最新的 assistIn / assistOut 列表后再操作。 |
+| `BATTLEFIELD_GOVERNMENT_TOO_LOW` | （v75，AISLG-198）报名剧本战场要求主城官府 ≥ 5 级；响应附 required / current。 | 先升级主城官府到 5 级；分城官府不计。 |
+| `BATTLEFIELD_SIGNUP_CLOSED` | （v75，AISLG-198）当前不在剧本战场的报名期（北京时间每周二 20:00 至周三 20:00）。 | 用 GET_BATTLEFIELD 的 nextSignupAt 等下一场报名；报名开始后 SERVER 会全服播报。 |
+| `BATTLEFIELD_ALREADY_JOINED` | （v75，AISLG-198）本场已经报过名（阵营选定后不能改）。 | 直接 GET_BATTLEFIELD 查自己的阵营与队伍，或等开战后入场。 |
+| `BATTLEFIELD_NOT_JOINED` | （v75，AISLG-198）没有报名本场战场，不能入场或操作队伍。 | 先在报名期 SIGNUP_BATTLEFIELD 选阵营。 |
+| `BATTLEFIELD_CAMP_FULL` | （v75，AISLG-198）该阵营报名人数超过另一方 1.5 倍且多出 5 人以上，暂停报名；响应附 count / otherCount / limit。 | 改选另一方；或等双方人数接近后再报名。 |
+| `BATTLEFIELD_ENTRY_CLOSED` | （v75，AISLG-198）战场已经开战，不能再带部队入场（报名期结束即锁死入场）。 | 本场只能在已入场的队伍里拆队 / 行军；下一场报名时再入场。 |
+| `BATTLEFIELD_ALREADY_ENTERED` | （v75，AISLG-198）本场已经带过部队入场（每人每场只能入场一次，开战后也不能追加）。 | 用 SPLIT_BATTLEFIELD_SQUAD 拆分已有队伍，或等下一场。 |
+| `BATTLEFIELD_POPULATION_LIMIT` | （v75，AISLG-198）带入部队的人口超过 3000；响应附 limit / current。 | 减少铁骑兵等高人口兵种的数量，或只带主力兵种。 |
+| `BATTLEFIELD_SQUAD_LIMIT` | （v75，AISLG-198）每人最多 3 支队伍。 | 把要拆出的兵力并回现有队伍，或等有队伍阵亡后再拆。 |
+| `BATTLEFIELD_SQUAD_NOT_FOUND` | （v75，AISLG-198）队伍不存在、已阵亡，或不属于本账号。 | 重新 GET_BATTLEFIELD 拿最新队伍列表。 |
+| `BATTLEFIELD_SQUAD_BUSY` | （v75，AISLG-198）队伍正在行军，不能再次下令。 | 等 arriveAt 到达后再下令。 |
+| `BATTLEFIELD_UNREACHABLE` | （v75，AISLG-198）目标不可达：30×30 地图中间的河只有 3 处渡口（y = 5 / 15 / 25）能过，或坐标越界。 | 先走到渡口再渡河，或改选同侧目标。 |
+| `BATTLEFIELD_NOT_ACTIVE` | （v75，AISLG-198）剧本战场不在进行中（报名期或已结束）。 | 报名期只做报名 / 入场；行军与攻打在开战后才能做。 |
+| `BATTLEFIELD_SHOP_LIMIT` | （v75，AISLG-198）本场该商品已达到限购数量。 | 换其他商品，或等下一场额度重置（军功余额跨场保留）。 |
+| `BATTLEFIELD_MERIT_INSUFFICIENT` | （v75，AISLG-198）战场军功余额不足；响应附 cost / balance。 | 继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。 |
+| `BATTLEFIELD_TARGET_INVALID` | （v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。 | 用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -15561,7 +16456,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 74。
+- 协议版本随对外协议内容的每次变化递增；当前为 75。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

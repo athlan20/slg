@@ -78,6 +78,13 @@ export const RESET_TABLES: readonly string[] = [
   'alliance_marks',
   // 联盟榜快照（v70，AISLG-185）：与 leaderboard_snapshots 同理，换季清空（换季前已存档前三）
   'alliance_leaderboard_snapshots',
+  // 剧本战场（v75，AISLG-198）：战场、报名 / 队伍 / 据点 / 军功与商店额度都随赛季清空
+  'battlefield_events',
+  'battlefield_participants',
+  'battlefield_squads',
+  'battlefield_strongholds',
+  'battlefield_merit',
+  'battlefield_purchases',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

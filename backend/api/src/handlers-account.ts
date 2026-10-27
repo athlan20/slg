@@ -270,6 +270,10 @@ export async function handleResetAccount(
     );
     // 自带建筑与开号之初一致（共用 main-city.ts）；重置后账号只剩主城一座
     await insertInitialBuildings(client, [firstCityId]);
+    // 剧本战场（v75，AISLG-198）：报名 / 队伍 / 军功余额随账号数据一起清空
+    await client.query(`DELETE FROM battlefield_squads WHERE account_id = $1`, [accountId]);
+    await client.query(`DELETE FROM battlefield_participants WHERE account_id = $1`, [accountId]);
+    await client.query(`DELETE FROM battlefield_merit WHERE account_id = $1`, [accountId]);
     await client.query(`DELETE FROM events WHERE account_id = $1`, [accountId]);
     // Agent 自报计划属账号数据的一部分，一并清空（v10）
     await client.query(`DELETE FROM agent_plans WHERE account_id = $1`, [accountId]);

@@ -53,7 +53,9 @@ import { QUEST_COPY_EN } from '../copy-quest-en';
 import { ANNOUNCEMENT_COPY } from '../copy-announcement';
 import { ANNOUNCEMENT_COPY_EN } from '../copy-announcement-en';
 import { ALLIANCE_COPY } from '../copy-alliance';
+import { BATTLEFIELD_COPY } from '../copy-battlefield';
 import { ALLIANCE_COPY_EN } from '../copy-alliance-en';
+import { BATTLEFIELD_COPY_EN } from '../copy-battlefield-en';
 
 /** 中文文案全集（结构基准）：英文 Bundle 必须与之同构 */
 const ZH = {
@@ -100,6 +102,7 @@ const ZH = {
   QUEST_COPY,
   ANNOUNCEMENT_COPY,
   ALLIANCE_COPY,
+  BATTLEFIELD_COPY,
   SEASON_COPY,
   HALL_COPY,
 };
@@ -151,6 +154,7 @@ const EN: Bundle = {
   QUEST_COPY: QUEST_COPY_EN,
   ANNOUNCEMENT_COPY: ANNOUNCEMENT_COPY_EN,
   ALLIANCE_COPY: ALLIANCE_COPY_EN,
+  BATTLEFIELD_COPY: BATTLEFIELD_COPY_EN,
   SEASON_COPY: SEASON_COPY_EN,
   HALL_COPY: HALL_COPY_EN,
 };
