@@ -9,6 +9,8 @@ import { upgradeChainPreview } from '../../api/chainPlan';
 import { buildingEffectText, costParts, formatDurationText } from '../../api/mapping';
 import { useCopy } from '../../i18n/bundle';
 import type { ConnectionStatus } from '../../state/useGameSession';
+import type { DefenseKind } from '../../api/protocol';
+import { DefenseCraftPanel } from './DefenseCraftPanel';
 
 interface BuildingDetailProps {
   city: CityView;
@@ -18,9 +20,23 @@ interface BuildingDetailProps {
   onStartBuild: (kind: BuildingKind) => void;
   /** toLevel（当前+2..MAX）为连续升级目标（v22，AISLG-68）；缺省升到下一等级 */
   onStartUpgrade: (kind: BuildingKind, toLevel?: number) => void;
+  /** 城防器械（v73，AISLG-193）：仅城墙详情使用 */
+  defenseError?: string | null;
+  onCraftDefense?: (kind: DefenseKind, count: number) => void;
+  onCancelDefenseCraft?: (craftId: string) => void;
 }
 
-export function BuildingDetail({ city, kind, connection, onClose, onStartBuild, onStartUpgrade }: BuildingDetailProps) {
+export function BuildingDetail({
+  city,
+  kind,
+  connection,
+  onClose,
+  onStartBuild,
+  onStartUpgrade,
+  defenseError = null,
+  onCraftDefense,
+  onCancelDefenseCraft,
+}: BuildingDetailProps) {
   const copy = useCopy();
   const { BUILDING_DESC, BUILDING_LABEL, COPY, buildActionText } = copy;
   // 连升目标等级（AISLG-68）：null = 单级（当前+1）；换建筑时由父级 key 复位
@@ -133,6 +149,16 @@ export function BuildingDetail({ city, kind, connection, onClose, onStartBuild, 
         {entry ? (entry.status === 'building' ? COPY.buildingModal.queueActive : COPY.buildingModal.queueQueued) : COPY.buildingModal.queueNotIn}
         {entry ? `（${buildActionText(entry.level)}）` : ''}
       </p>
+
+      {kind === 'wall' && level > 0 && onCraftDefense && onCancelDefenseCraft ? (
+        <DefenseCraftPanel
+          city={city}
+          connection={connection}
+          error={defenseError}
+          onCraft={onCraftDefense}
+          onCancel={onCancelDefenseCraft}
+        />
+      ) : null}
 
       <div role="城池页-建筑详情-操作" className="flex items-center justify-between gap-2">
         <span className="line-clamp-2 min-w-0 flex-1 text-[11.5px] text-faint" title={hint}>

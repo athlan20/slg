@@ -152,6 +152,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     tower: null,
     techs: emptyTechLevels(),
     recruitQueue: [],
+    defenses: { cap: 0, stock: { trap: 0, chevaux: 0, rolling_log: 0, boulder: 0 }, total: 0, queue: [] },
     defenseBonus: 0,
     marches: [],
     territory: [],

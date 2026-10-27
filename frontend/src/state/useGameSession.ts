@@ -55,6 +55,7 @@ import {
 import type { Actor, SessionEvent } from '../types';
 import { applyBuildPush, applyBuildResult, applyCancelResult, applyMarchPush, applyRecruitPush } from './cityUpdates';
 import { createRecruitActions } from './recruitActions';
+import { createDefenseActions } from './defenseActions';
 import { createExchangeAction, type ExchangeResource } from './exchangeAction';
 import { createTruceAction } from './truceAction';
 import { useWorldSession, type WorldSession } from './worldSession';
@@ -104,6 +105,7 @@ export interface GameSession {
   buildError: string | null;
   /** 征兵 / 取消征兵失败的人读提示（v11，征兵面板内展示） */
   recruitError: string | null;
+  defenseError: string | null;
   city: CityView | null;
   agent: AgentInfoView | null;
   events: SessionEvent[];
@@ -124,6 +126,10 @@ export interface GameSession {
   startRecruit: (troop: TroopKind, count: number) => Promise<void>;
   /** 取消征兵条目（v11 排队可取消，v71 起征募中也可取消；全额返还资源与人口） */
   cancelRecruit: (recruitId: string) => Promise<void>;
+  /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
+  craftDefense: (kind: import('../api/protocol').DefenseKind, count: number) => Promise<void>;
+  /** 取消打造（v73）：排队中 / 打造中都可取消，成本全额返还 */
+  cancelDefenseCraft: (craftId: string) => Promise<void>;
   /** 集市兑换（v22，AISLG-67 前端入口）：基础资源按 4:1 换金币；成功返回 null，失败返回人读错误 */
   exchangeGold: (resource: ExchangeResource, amount: number) => Promise<string | null>;
   /** 开启主动免战（v38 AISLG-122）：每周一次免费、12 小时；成功返回 null，失败返回人读错误 */
@@ -222,6 +228,7 @@ export function useGameSession(): GameSession {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [buildError, setBuildError] = useState<string | null>(null);
   const [recruitError, setRecruitError] = useState<string | null>(null);
+  const [defenseError, setDefenseError] = useState<string | null>(null);
   const [city, setCity] = useState<CityView | null>(null);
   const cityList = useCityList(setCity);
   const { applyState: applyCityList, reset: resetCityList } = cityList;
@@ -1068,6 +1075,12 @@ export function useGameSession(): GameSession {
     [appendLocalEvent, scheduleSync],
   );
 
+  // 城防器械（v73 AISLG-193）：打造 / 取消；库存与队列按需查询对齐
+  const { craftDefense, cancelDefenseCraft } = useMemo(
+    () => createDefenseActions({ clientRef, setDefenseError, appendLocalEvent, scheduleSync }),
+    [appendLocalEvent, scheduleSync],
+  );
+
   // 集市兑换（AISLG-67）同形态拆出；错误由弹窗侧接收展示，不走面板级 error 状态
   const { exchangeGold } = useMemo(
     () => createExchangeAction({ clientRef, setCity, appendLocalEvent, scheduleSync }),
@@ -1256,6 +1269,9 @@ export function useGameSession(): GameSession {
     cancelBuild,
     startRecruit,
     cancelRecruit,
+    craftDefense,
+    cancelDefenseCraft,
+    defenseError,
     exchangeGold,
     startTruce,
     cancelTruce,

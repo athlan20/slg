@@ -4,6 +4,7 @@
 
 import type { InitiatorRole, Resources } from './protocol';
 import type { FamousEffectView } from './famous-effects';
+import type { DefenseScoutView } from './protocol-defense';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchPurpose, MarchTask } from './protocol-battle';
 import type { YtTileCampView } from './protocol-yt';
@@ -138,6 +139,9 @@ export interface TileDetailView extends TileView {
   plunderedAt: string | null;
   /** 在野名将情报（v54，AISLG-144）：未被获得的在野名将所在野地才有，其余为 null */
   wildFamousIntel: WildFamousDetailView | null;
+  /** 城防器械（v73，AISLG-193）：自己的城给精确库存；他人的城只在侦察过时给最近一次
+   *  侦察快照（按侦察科技三档）；野地 / NPC 城 / 未侦察为 null */
+  defenses: DefenseScoutView | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */

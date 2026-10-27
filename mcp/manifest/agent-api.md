@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**72** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**73** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 72）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 73）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -371,6 +371,17 @@
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -477,7 +488,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 72,
+    "protocolVersion": 73,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -543,7 +554,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 72,
+    "protocolVersion": 73,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -567,7 +578,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/69 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/70 补读增量）**
 
 请求：
 
@@ -578,7 +589,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 69,
+    "docVersion": 70,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -597,8 +608,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 72,
-    "docNotice": "接口文档已从 v69 更新到 v72：请 GET /agent-api/changes/69 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 73,
+    "docNotice": "接口文档已从 v70 更新到 v73：请 GET /agent-api/changes/70 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -753,6 +764,7 @@
 | city.famousEffect | object \| null | 名城独有效果（v62 新增，AISLG-166）：{ kind, percent, resources }，只有占领者享受、跟着城走（换主人归新主人，放弃 / 被占即失效）。洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。普通城为 null。 |
 | city.guard | object \| null | 城守（v36 新增，AISLG-115）：该城任命的武将 { heroId, name, famous, lead, force, wit, level, bonusPercent }；未任为 null。产量加成（四资源非金，智力 × 0.1% 封顶 5%）已计入 production；守城战另享攻防加成（见 ASSIGN_HERO）。 |
 | city.recruitQueue | array | 征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。 |
+| city.defenses | object | 城防器械（v73，AISLG-193）：{ cap 库存上限（城墙等级 × 60）, stock 四种器械已入库件数（trap / chevaux / rolling_log / boulder，恒含四个键）, total 合计, queue 打造队列（第 1 项 status=crafting、其余 queued；条目结构同 CRAFT_DEFENSE 的 craft） }。守城战开打时按需自动消耗，战报的 defenses 字段给出用量与杀伤。 |
 | city.defenseBonus | number | 城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。 |
 | city.marches | array | 本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。 |
 | city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
@@ -1117,6 +1129,17 @@
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -1468,6 +1491,17 @@
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -1855,6 +1889,17 @@
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -3263,6 +3308,17 @@
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -9179,6 +9235,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -9798,6 +9865,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -10517,6 +10595,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -11120,6 +11209,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -12157,6 +12257,191 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "data": {
     "shieldUntil": null,
     "nextAvailableAt": "2026-10-10T00:00:00.000Z"
+  }
+}
+```
+
+### op 117 · CRAFT_DEFENSE — 打造城防器械（v73，AISLG-193）
+
+`C→S` 请求-响应 · 需登录后发送
+
+在城墙里打造四种一次性守城器械（陷阱（trap）：开战时对攻方步兵类兵种造成 500 点伤害（固定值，按各兵种总生命比例分摊）；单件成本 金/木/粮/石/铁 = 20/60/0/0/40，单件 5s；拒马（chevaux）：开战时对攻方骑兵类兵种造成 800 点伤害（固定值，按各兵种总生命比例分摊）；单件成本 金/木/粮/石/铁 = 40/200/0/0/80，单件 10s；滚木（rolling_log）：攻方近战部队第一次贴到城墙下时，对贴墙的近战兵种造成 400 点伤害；单件成本 金/木/粮/石/铁 = 30/200/0/0/0，单件 8s；擂石（boulder）：攻方冲车第一次贴到城墙下时，对冲车造成 1500 点伤害（正好击毁 1 辆冲车）；单件成本 金/木/粮/石/铁 = 40/0/0/380/0，单件 12s）。发起时立即从该城扣资源，入库在打造完成时（Worker 结算）。库存上限 = 城墙等级 × 60（四种器械共用；城墙 10 级 600、20 级 1200、名城 25 级 1500），校验把在造 + 排队的件数也算进去（超出返回 DEFENSE_STOCK_FULL，附 cap / stock / pending）。队列与征兵同模型：1 条在造 + 2 条排队（队满 DEFENSE_QUEUE_FULL）；无在造时立即开工（status=crafting，dueAt 非空），批次总时长 = max(1 秒, floor(单件基准 × 件数 ÷ time_scale))；有在造时入队（status=queued，dueAt 为 null）。校验顺序：城墙未建（WALL_NOT_BUILT）→ 库存上限 → 队列 → 资源。守城战开打时器械按需自动使用、用掉就没了（陷阱 / 拒马开战即用，滚木 / 擂石在攻方贴墙时用），用量与杀伤见战报的 defenses 字段。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| kind | 'trap' \| 'chevaux' \| 'rolling_log' \| 'boulder' | 必填。器械种类：trap 陷阱 / chevaux 拒马 / rolling_log 滚木 / boulder 擂石；缺失或未知返回 INVALID_PARAMS。 |
+| count | number | 必填。件数（正整数，且与库存 + 在造 + 排队合计不超过城墙等级 × 60）；成本 = 单件成本 × 件数。 |
+| cityId | string | 可选。在哪座城打造（缺省主城）；城墙等级、库存与扣资源都按该城。 |
+| cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| craft | object | 新建的打造条目 { id, cityId, kind, count, status, initiator, cost 成本快照, unitSeconds 单件基准秒数, startedAt, dueAt（排队为 null）, completedAt }。 |
+| stock | object | 发起后该城已入库的四种器械件数（不含在造 / 排队）。 |
+| cap | number | 该城库存上限（城墙等级 × 60）。 |
+
+**可能错误**：`INVALID_PARAMS`、`WALL_NOT_BUILT`、`DEFENSE_STOCK_FULL`、`DEFENSE_QUEUE_FULL`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：守城器械只在被攻打时自动消耗，不会被掠夺。被打前先补库存：城墙 10 级囤满 600 件约等于守军多两成战力。四种按威胁配比：对手步兵多造陷阱、骑兵多造拒马、带冲车必须备擂石、通用近战压力造滚木。队列满了（1 在造 + 2 排队）先等或取消。
+
+**示例**
+
+**打造 10 件陷阱（约 50s 后完成）**
+
+请求：
+
+```json
+{
+  "op": 117,
+  "seq": 21,
+  "data": {
+    "kind": "trap",
+    "count": 10
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 117,
+  "seq": 21,
+  "ok": true,
+  "data": {
+    "craft": {
+      "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "kind": "trap",
+      "count": 10,
+      "status": "crafting",
+      "initiator": "player",
+      "cost": {
+        "gold": 200,
+        "wood": 600,
+        "food": 0,
+        "stone": 0,
+        "iron": 400
+      },
+      "unitSeconds": 5,
+      "startedAt": "2026-09-25T08:00:00.000Z",
+      "dueAt": "2026-09-25T08:00:50.000Z",
+      "completedAt": null
+    },
+    "stock": {
+      "trap": 0,
+      "chevaux": 0,
+      "rolling_log": 0,
+      "boulder": 0
+    },
+    "cap": 600
+  }
+}
+```
+
+**超出库存上限（城墙 10 级、已入库 590、在造 20，再下 10 件）**
+
+请求：
+
+```json
+{
+  "op": 117,
+  "seq": 22,
+  "data": {
+    "kind": "chevaux",
+    "count": 10
+  }
+}
+```
+
+失败响应（`DEFENSE_STOCK_FULL`）：
+
+```json
+{
+  "op": 117,
+  "seq": 22,
+  "ok": false,
+  "error": {
+    "code": "DEFENSE_STOCK_FULL",
+    "message": "器械库存已达上限（城墙等级 × 60，四种器械共用），先把库存用在守城或升级城墙"
+  },
+  "data": {
+    "cap": 600,
+    "stock": 590,
+    "pending": 20
+  }
+}
+```
+
+### op 118 · CANCEL_DEFENSE_CRAFT — 取消打造（v73，AISLG-193）
+
+`C→S` 请求-响应 · 需登录后发送
+
+取消排队中（queued）或打造中（crafting）的器械条目：按发起时的成本快照全额返还到该城，库存不变；该城排队的下一条立即开工（同事务激活，推送 craft_started）。与 Worker 到点完成按条件守卫并发，先翻转状态者生效。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| craftId | string | 必填。要取消的打造条目 id（GET_STATE 的 city.defenses.queue 中条目的 id）；缺失或格式非法返回 INVALID_PARAMS。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| craft | object | 被取消的打造条目（status=cancelled，completedAt 为 null）。 |
+
+**可能错误**：`INVALID_PARAMS`、`DEFENSE_NOT_CANCELLABLE`（处置建议见第 4 节）
+
+**Agent 提示**：取消全额返还，但会丢掉这段时间的进度；只是缺资源的话优先等完成，别反复取消重下。
+
+**示例**
+
+**取消进行中的打造**
+
+请求：
+
+```json
+{
+  "op": 118,
+  "seq": 23,
+  "data": {
+    "craftId": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 118,
+  "seq": 23,
+  "ok": true,
+  "data": {
+    "craft": {
+      "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "kind": "trap",
+      "count": 10,
+      "status": "cancelled",
+      "initiator": "player",
+      "cost": {
+        "gold": 200,
+        "wood": 600,
+        "food": 0,
+        "stone": 0,
+        "iron": 400
+      },
+      "unitSeconds": 5,
+      "startedAt": "2026-09-25T08:00:00.000Z",
+      "dueAt": null,
+      "completedAt": null
+    }
   }
 }
 ```
@@ -13607,6 +13892,61 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2026 · PUSH_DEFENSE_STATE — 推送：打造状态变化（v73，AISLG-193）
+
+`S→C` 服务端推送 · 无 `seq`
+
+打造开始 / 入队 / 完成入库 / 取消时推给同账号全部在线连接（发起连接已拿到响应，不回推）。收到后建议 GET_STATE 重新对齐 city.defenses。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reason | 'craft_started' \| 'craft_queued' \| 'craft_completed' \| 'craft_cancelled' | 开工（含排队条目被激活）/ 入队 / 完成入库 / 取消返还。 |
+| craft | object | 打造条目视图（结构同 CRAFT_DEFENSE 的 craft）。 |
+| stock | object | 该城当前四种器械的已入库件数。 |
+| cap | number | 该城库存上限（城墙等级 × 60）。 |
+
+**示例**
+
+推送（`craft_completed`）：
+
+```json
+{
+  "op": 2026,
+  "push": true,
+  "data": {
+    "reason": "craft_completed",
+    "craft": {
+      "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "kind": "trap",
+      "count": 10,
+      "status": "completed",
+      "initiator": "player",
+      "cost": {
+        "gold": 200,
+        "wood": 600,
+        "food": 0,
+        "stone": 0,
+        "iron": 400
+      },
+      "unitSeconds": 5,
+      "startedAt": "2026-09-25T08:00:00.000Z",
+      "dueAt": "2026-09-25T08:00:50.000Z",
+      "completedAt": "2026-09-25T08:00:50.000Z"
+    },
+    "stock": {
+      "trap": 10,
+      "chevaux": 0,
+      "rolling_log": 0,
+      "boulder": 0
+    },
+    "cap": 600
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -13711,6 +14051,10 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `ANNOUNCEMENT_NOT_FOUND` | （v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。 | 不要重试同一个 id；重新用 GET_ANNOUNCEMENTS 拉取列表确认当前可见的公告。 |
 | `AGENT_PASSWORD_FORBIDDEN` | （v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。 | 改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。 |
 | `PASSWORD_LOGIN_CLOSED` | （v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。 | 网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。 |
+| `WALL_NOT_BUILT` | （v73，AISLG-193）城墙尚未建造：四种城防器械只能囤在城墙里，城墙 0 级时库存上限为 0，不能打造。响应的 data 附 cap（= 0）。 | 先建造并升级城墙再打造器械；城墙等级同时也是库存上限（每级 60 件，四种共用）。 |
+| `DEFENSE_STOCK_FULL` | （v73，AISLG-193）库存 + 在造 + 本次数量超过上限（城墙等级 × 60，四种器械共用）。响应的 data 附 cap / stock（已入库合计）/ pending（在造 + 排队合计）。 | 减少本次件数，或先把库存用在守城（守城战自动消耗）后再生出；升级城墙可提高上限。 |
+| `DEFENSE_QUEUE_FULL` | （v73，AISLG-193）打造队列已满：与征兵同规则，同一时间 1 条在造 + 最多 2 条排队。 | 等队首完成（或取消已有条目腾位置）后再发起。 |
+| `DEFENSE_NOT_CANCELLABLE` | （v73，AISLG-193）没有可取消的打造条目：条目不存在、不属于本账号，或已完成 / 已取消。 | 用 GET_STATE 的 city.defenses.queue 取当前条目的 craftId 再取消；已完成 / 已取消的不要重试。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -14127,6 +14471,17 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -14743,6 +15098,17 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
         "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -15102,7 +15468,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 72。
+- 协议版本随对外协议内容的每次变化递增；当前为 73。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

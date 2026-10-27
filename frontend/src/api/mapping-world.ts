@@ -48,6 +48,14 @@ function resourcesSuffix(resources: Partial<Resources> | undefined): string {
 }
 
 /** 科技中文名（v27 研究事件）；未知值原样显示 */
+/** 城防器械名（未知种类回落服务端原文以外的通用词，避免出现 undefined） */
+function defenseName(kind: unknown): string {
+  const { DEFENSE_COPY } = getCopy();
+  return typeof kind === 'string' && kind in DEFENSE_COPY.names
+    ? DEFENSE_COPY.names[kind as keyof typeof DEFENSE_COPY.names]
+    : String(kind ?? '');
+}
+
 function techLabel(tech: unknown): string {
   const { TECH_COPY } = getCopy();
   return (TECH_COPY.names as Record<string, string>)[String(tech)] ?? String(tech ?? '?');
@@ -143,7 +151,7 @@ export function eventText(view: EventView): string {
 }
 
 function baseEventText(view: EventView): string {
-  const { COPY, CITY_COPY, MOVING_COPY, YT_COPY, STARVE_COPY, TECH_COPY, RESOURCE_LABEL, EXTRA_STATE } = getCopy();
+  const { COPY, CITY_COPY, MOVING_COPY, YT_COPY, STARVE_COPY, TECH_COPY, RESOURCE_LABEL, EXTRA_STATE, DEFENSE_COPY } = getCopy();
   switch (view.type) {
     case 'build_started':
       return view.detail.fromQueue === true
@@ -186,6 +194,14 @@ function baseEventText(view: EventView): string {
       return TECH_COPY.event.completed(techLabel(view.detail.tech), Number(view.detail.level ?? 0));
     case 'research_cancelled':
       return TECH_COPY.event.cancelled(techLabel(view.detail.tech), Number(view.detail.level ?? 0), cargoText(view.detail.refund as Partial<Resources> | undefined));
+    case 'defense_craft_started':
+      return DEFENSE_COPY.event.started(defenseName(view.detail.kind), countOf(view.detail), formatClock(String(view.detail.dueAt ?? '')));
+    case 'defense_craft_queued':
+      return DEFENSE_COPY.event.queued(defenseName(view.detail.kind), countOf(view.detail));
+    case 'defense_craft_completed':
+      return DEFENSE_COPY.event.completed(defenseName(view.detail.kind), countOf(view.detail), Number(view.detail.total ?? 0));
+    case 'defense_craft_cancelled':
+      return DEFENSE_COPY.event.cancelled(defenseName(view.detail.kind), countOf(view.detail), cargoText(view.detail.refund as Partial<Resources> | undefined));
     case 'city_renamed':
       return EXTRA_STATE.event.cityRenamed(String(view.detail.from ?? ''), String(view.detail.to ?? ''));
     case 'account_reset':

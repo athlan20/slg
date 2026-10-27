@@ -5,6 +5,7 @@
 import type pg from 'pg';
 import { MAX_ACTIVE_BUILDS, buildTimeBasis } from './rules';
 import { MAX_ACTIVE_RECRUITS } from './troops';
+import { MAX_ACTIVE_DEFENSE_CRAFTS } from './city-defense';
 import { getTimeScale } from './time-scale';
 import { TECH_INFO } from './tech';
 
@@ -43,6 +44,32 @@ export async function activateQueuedBuilds<T = Record<string, unknown>>(client: 
      )
      RETURNING *`,
     [buildBasis.seconds, MAX_ACTIVE_BUILDS, buildBasis.scale, cityId, CONSTRUCTION_PER_LEVEL],
+  );
+  return act.rows as T[];
+}
+
+/**
+ * 把排队打造转入打造中（每城最多 MAX_ACTIVE_DEFENSE_CRAFTS 条）。cityId 为 null 时覆盖全部城。
+ * 时长 = max(1, 单件基准快照 × 件数 ÷ time_scale)——下限作用于批次总时长。
+ */
+export async function activateQueuedDefenseCrafts<T = Record<string, unknown>>(client: pg.PoolClient, cityId: string | null): Promise<T[]> {
+  const act = await client.query(
+    `UPDATE defense_crafts r SET status = 'crafting',
+        started_at = clock_timestamp(),
+        due_at = clock_timestamp() + make_interval(secs => GREATEST(1, FLOOR(r.unit_seconds * r.count / $1::float8)))
+     WHERE r.id IN (
+       SELECT id FROM (
+         SELECT q.id, row_number() OVER (PARTITION BY q.city_id ORDER BY q.started_at, q.id) AS rn
+         FROM defense_crafts q
+         WHERE q.status = 'queued'
+           AND ($3::uuid IS NULL OR q.city_id = $3::uuid)
+           AND NOT EXISTS (
+             SELECT 1 FROM defense_crafts a WHERE a.city_id = q.city_id AND a.status = 'crafting'
+           )
+       ) ranked WHERE ranked.rn <= $2
+     )
+     RETURNING *`,
+    [getTimeScale(), MAX_ACTIVE_DEFENSE_CRAFTS, cityId],
   );
   return act.rows as T[];
 }

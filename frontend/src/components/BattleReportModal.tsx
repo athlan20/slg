@@ -205,6 +205,12 @@ export function BattleReportModal({ report, onClose, onShare }: BattleReportModa
         {(report.towerDamage ?? 0) > 0 ? (
           <span role="战报弹窗-箭塔伤害" className="text-gold"> · {DEFENSE_COPY.report.towerDamage(report.towerDamage ?? 0)}</span>
         ) : null}
+        {report.defenses && report.defenses.length > 0 ? (
+          <span role="战报弹窗-城防器械" className="text-gold">
+            {' · '}
+            {report.defenses.map((use) => DEFENSE_COPY.report.defenseUse(DEFENSE_COPY.names[use.kind], use.used, use.killed)).join(' / ')}
+          </span>
+        ) : null}
       </p>
 
       {report.comment ? (

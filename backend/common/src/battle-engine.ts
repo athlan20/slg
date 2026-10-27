@@ -26,6 +26,13 @@
 
 import { TROOP_KINDS, type ArmyCounts, type TroopKind } from './protocol';
 import { CAVALRY_KINDS, counterMultiplier, ramAdjustedWall } from './troop-counter';
+import {
+  DEFENSE_INFO,
+  INFANTRY_KINDS,
+  WALL_MELEE_KINDS,
+  type DefenseKind,
+  type DefenseStock,
+} from './city-defense';
 import { specialtyBonus, type HeroSpecialty } from './hero-specialty';
 
 export interface HeroCombatBonus {
@@ -108,6 +115,14 @@ export interface CombatTechBonus {
   rangedRangePercent?: number;
 }
 
+/** 城防器械的单种用量（战报 / 调用方扣库存共用） */
+export interface DefenseUseEntry {
+  kind: DefenseKind;
+  used: number;
+  damage: number;
+  killed: number;
+}
+
 export interface BattleOptions {
   /** 守方城墙防御加成（百分数；攻城战传入，仅城墙位守方兵堆受击减免） */
   wallDefensePercent?: number;
@@ -125,6 +140,9 @@ export interface BattleOptions {
   attackerTech?: CombatTechBonus | null;
   /** 守方科技乘数（同上；NPC 一方不传） */
   defenderTech?: CombatTechBonus | null;
+  /** 守方城防器械库存（v73，AISLG-193；仅守城战 siege 生效）。引擎按需使用、最多用到把
+   *  对口敌军全部打掉，返回 defenseUse 由调用方在同一事务内扣库存。缺省 / 空 = 无器械 */
+  defenses?: DefenseStock | null;
   /** 回合上限（测试用；缺省 MAX_BATTLE_ROUNDS） */
   maxRounds?: number;
   /** 随机源（测试注入固定序列；缺省 Math.random） */
@@ -140,6 +158,8 @@ export interface BattleRoundLogEntry {
   defenderKilled: number;
   /** 本回合箭塔造成的伤害（已含在 defenderDamage 内；无箭塔 / 射程外为 0） */
   towerDamage: number;
+  /** 本回合城防器械造成的伤害（v73；已含在 defenderDamage 内；未触发为缺省） */
+  defenseDamage?: number;
 }
 
 /** 一方的战斗汇总（战报与结算共用） */
@@ -166,6 +186,8 @@ export interface BattleResult {
   /** 冲车破墙（v32，AISLG-86）：攻城战、城墙减伤 > 0 且攻方带冲车时给出开战时（第 1 回合）城墙减伤的
    *  原值与破墙后的值（百分数，保留 1 位小数）；其余为 null */
   wallBreak: { from: number; to: number } | null;
+  /** 城防器械用量（v73，AISLG-193；只含实际用掉的器械，未触发的不出现；无器械为空数组） */
+  defenseUse: DefenseUseEntry[];
 }
 
 /** 战场上的一个兵堆（同兵种聚为一堆；位置为一维坐标） */
@@ -362,12 +384,63 @@ export function simulateBattle(
       roundLog,
       towerDamage: 0,
       wallBreak: null,
+      defenseUse: [],
     };
   }
 
   let round = 0;
   let endReason: BattleResult['endReason'] = 'round_limit';
   let wallBreak: BattleResult['wallBreak'] = null;
+  // v73（AISLG-193）：城防器械库存 / 用量。陷阱、拒马开战时结算；滚木、擂石在攻方
+  // 对应兵堆第一次贴到城墙下时各结算一次。用量受库存限制，伤害按对口兵种总生命比例分摊。
+  const defenseStock: Record<DefenseKind, number> = {
+    trap: Math.max(0, Math.floor(opts.defenses?.trap ?? 0)),
+    chevaux: Math.max(0, Math.floor(opts.defenses?.chevaux ?? 0)),
+    rolling_log: Math.max(0, Math.floor(opts.defenses?.rolling_log ?? 0)),
+    boulder: Math.max(0, Math.floor(opts.defenses?.boulder ?? 0)),
+  };
+  const defenseUsed: Record<DefenseKind, { used: number; killed: number }> = {
+    trap: { used: 0, killed: 0 },
+    chevaux: { used: 0, killed: 0 },
+    rolling_log: { used: 0, killed: 0 },
+    boulder: { used: 0, killed: 0 },
+  };
+  let boulderFired = false;
+  let rollingLogFired = false;
+  /**
+   * 对一组攻方兵堆使用 kind 器械：件数 = min(库存, ceil(目标总生命 ÷ 单件伤害))——
+   * 最多用到把对口敌军全部打掉；伤害不吃防御与城墙减伤，按各兵堆总生命比例分摊进余伤池。
+   */
+  const useDefense = (kind: DefenseKind, targets: Stack[]): { damage: number; killed: number } => {
+    const live = targets.filter((stack) => stack.count > 0);
+    if (!siege || defenseStock[kind] <= 0 || live.length === 0) {
+      return { damage: 0, killed: 0 };
+    }
+    const per = DEFENSE_INFO[kind].damage;
+    const totalHp = live.reduce((sum, stack) => sum + stack.count * TROOP_STATS[stack.kind].hp, 0);
+    if (totalHp <= 0) {
+      return { damage: 0, killed: 0 };
+    }
+    const used = Math.min(defenseStock[kind], Math.ceil(totalHp / per));
+    const applied = Math.min(used * per, totalHp);
+    let killed = 0;
+    for (const stack of live) {
+      const hp = TROOP_STATS[stack.kind].hp;
+      const share = applied * ((stack.count * hp) / totalHp);
+      stack.wound += share;
+      const down = Math.min(stack.count, Math.floor(stack.wound / hp));
+      stack.count -= down;
+      stack.wound -= down * hp;
+      if (stack.count <= 0) {
+        stack.wound = 0;
+      }
+      killed += down;
+    }
+    defenseStock[kind] -= used;
+    defenseUsed[kind].used += used;
+    defenseUsed[kind].killed += killed;
+    return { damage: used * per, killed };
+  };
   /** 当前回合有效城墙减伤：冲车（v32）每回合按攻方存活冲车占比重新计算 */
   const currentWall = (): number => {
     if (!siege || wall <= 0) {
@@ -384,6 +457,7 @@ export function simulateBattle(
     let attKilled = 0;
     let defKilled = 0;
     let towerDmg = 0;
+    let defenseDmg = 0;
     const wallNow = currentWall();
     if (round === 1 && siege && wall > 0 && attStacks.some((s) => s.kind === 'siege_ram' && s.count > 0)) {
       wallBreak = { from: wall, to: Math.round(wallNow * 10) / 10 };
@@ -396,8 +470,23 @@ export function simulateBattle(
         attackerKilled: attKilled,
         defenderKilled: defKilled,
         towerDamage: towerDmg,
+        ...(defenseDmg > 0 ? { defenseDamage: defenseDmg } : {}),
       });
     };
+
+    // 城防器械（v73，AISLG-193）：陷阱 / 拒马在开战（第 1 回合）行动前结算；两者各按对口兵种分摊伤害
+    if (round === 1 && siege) {
+      const trapHit = useDefense('trap', attStacks.filter((stack) => INFANTRY_KINDS.includes(stack.kind)));
+      const chevauxHit = useDefense('chevaux', attStacks.filter((stack) => CAVALRY_KINDS.includes(stack.kind)));
+      defDmg += trapHit.damage + chevauxHit.damage;
+      attKilled += trapHit.killed + chevauxHit.killed;
+      defenseDmg += trapHit.damage + chevauxHit.damage;
+      if (trapHit.damage + chevauxHit.damage > 0 && attStacks.every((a) => a.count <= 0)) {
+        endReason = 'attacker_wiped';
+        logRound();
+        break outer;
+      }
+    }
 
     // 箭塔（v30，AISLG-82）：回合开始先射一箭——对射程内最近（最靠近城墙）的敌方兵堆造成固定伤害。
     // 塔不会被消灭，所以不进入兵堆与终局判定；守方兵堆全灭仍判守城失败（塔救不了没有守军的城）
@@ -499,6 +588,43 @@ export function simulateBattle(
           attKilled += killed;
         }
       }
+      // 城防器械（v73）：滚木 / 擂石在攻方对应兵堆第一次贴到城墙下时各结算一次。
+      // 「贴墙」= 该兵堆按有效射程已够到城墙位（pos + range ≥ FIELD_LENGTH）。擂石先打冲车，
+      // 滚木再打剩余的贴墙近战（含未被击毁的冲车）。
+      if (siege) {
+        const adjacentMelee = (): Stack[] =>
+          attStacks.filter(
+            (stack) =>
+              stack.count > 0 &&
+              WALL_MELEE_KINDS.includes(stack.kind) &&
+              stack.pos + rangeOf(stack, 0) >= FIELD_LENGTH,
+          );
+        if (!boulderFired) {
+          const rams = adjacentMelee().filter((stack) => stack.kind === 'siege_ram');
+          if (rams.length > 0) {
+            const hit = useDefense('boulder', rams);
+            if (hit.damage > 0) {
+              boulderFired = true;
+              defDmg += hit.damage;
+              attKilled += hit.killed;
+              defenseDmg += hit.damage;
+            }
+          }
+        }
+        if (!rollingLogFired) {
+          const melee = adjacentMelee();
+          if (melee.length > 0) {
+            const hit = useDefense('rolling_log', melee);
+            if (hit.damage > 0) {
+              rollingLogFired = true;
+              defDmg += hit.damage;
+              attKilled += hit.killed;
+              defenseDmg += hit.damage;
+            }
+          }
+        }
+      }
+
       // 终局判定：攻方全灭优先（同档同归于尽时攻方不得以零幸存「获胜」——
       // 胜方必有幸存是占领语义的引擎保证；守方零幸存的极端并灭按守方守住处理）。
       // 先记完本回合统计再退出（战报含终局回合）。
@@ -530,5 +656,13 @@ export function simulateBattle(
     roundLog,
     towerDamage: roundLog.reduce((sum, e) => sum + e.towerDamage, 0),
     wallBreak,
+    defenseUse: (Object.keys(defenseUsed) as DefenseKind[])
+      .filter((kind) => defenseUsed[kind].used > 0)
+      .map((kind) => ({
+        kind,
+        used: defenseUsed[kind].used,
+        damage: defenseUsed[kind].used * DEFENSE_INFO[kind].damage,
+        killed: defenseUsed[kind].killed,
+      })),
   };
 }

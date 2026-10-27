@@ -614,6 +614,22 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。',
     action: '网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。',
   },
+  WALL_NOT_BUILT: {
+    desc: '（v73，AISLG-193）城墙尚未建造：四种城防器械只能囤在城墙里，城墙 0 级时库存上限为 0，不能打造。响应的 data 附 cap（= 0）。',
+    action: '先建造并升级城墙再打造器械；城墙等级同时也是库存上限（每级 60 件，四种共用）。',
+  },
+  DEFENSE_STOCK_FULL: {
+    desc: '（v73，AISLG-193）库存 + 在造 + 本次数量超过上限（城墙等级 × 60，四种器械共用）。响应的 data 附 cap / stock（已入库合计）/ pending（在造 + 排队合计）。',
+    action: '减少本次件数，或先把库存用在守城（守城战自动消耗）后再生出；升级城墙可提高上限。',
+  },
+  DEFENSE_QUEUE_FULL: {
+    desc: '（v73，AISLG-193）打造队列已满：与征兵同规则，同一时间 1 条在造 + 最多 2 条排队。',
+    action: '等队首完成（或取消已有条目腾位置）后再发起。',
+  },
+  DEFENSE_NOT_CANCELLABLE: {
+    desc: '（v73，AISLG-193）没有可取消的打造条目：条目不存在、不属于本账号，或已完成 / 已取消。',
+    action: '用 GET_STATE 的 city.defenses.queue 取当前条目的 craftId 再取消；已完成 / 已取消的不要重试。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',

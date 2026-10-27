@@ -14,7 +14,7 @@
 import { createPool, ensureSchema, readDbConfig } from '../../common/src/db';
 import { ensureWorld } from '../../common/src/world-db';
 import { getTimeScale, refreshTimeScale, timeScaleStale } from '../../common/src/time-scale';
-import { processDueBuilds, processDueRecruits } from './queue-tick';
+import { processDueBuilds, processDueDefenseCrafts, processDueRecruits } from './queue-tick';
 import { processDueMarches } from './world-tick';
 import { processDueNpcAttacks } from './npc-attack';
 import { startNpcRaidTimer } from './npc-raid-timer';
@@ -78,6 +78,14 @@ async function main(): Promise<void> {
       }
     } catch (err) {
       console.error('worker recruit tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      const defenseDone = await processDueDefenseCrafts(pool);
+      if (defenseDone > 0) {
+        console.log(`completed ${defenseDone} defense craft(s)`);
+      }
+    } catch (err) {
+      console.error('worker defense craft tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v34（AISLG-107）：断粮预警 / 哗变（粮食为 0 且净产量为负时城内驻军逐小时减员）

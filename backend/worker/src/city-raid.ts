@@ -16,6 +16,7 @@ import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent, famousWarehousePercent } from '../../common/src/famous-effects';
 import { loadTechLevels } from '../../common/src/tech-db';
+import { consumeCityDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
 import pg from 'pg';
 import { DEFAULT_NPC_RAID_INTERVAL_MS } from './world-tick';
 import { scaledMs } from '../../common/src/time-scale';
@@ -96,11 +97,15 @@ export async function resolveNpcCityRaid(
   const guard = await loadCityGuard(client, target.cityId);
   const garrisonTotal = Object.values(garrison).reduce((sum, n) => sum + (n ?? 0), 0);
   const guardBonus = battleBonusOf(guard, garrisonTotal);
+  const defenses = await loadCityDefenses(client, target.cityId);
   const result = resolveBattle(attacker, garrison, {
     wallDefensePercent: wall, siege: true, tower: towerStats(levels.arrow_tower ?? 0, famousTowerPercent(famousName)),
     defenderHero: guardBonus,
     defenderTech: combatTechBonus(defenderTechs),
+    defenses,
   });
+  // v73（AISLG-193）：守城战后按引擎用量扣库存（同事务）
+  await consumeCityDefenses(client, target.cityId, result.defenseUse);
   const npcPower = armyPower(attacker);
   const naming = await loadCityNaming(client, target.cityId);
   const defenderName = naming

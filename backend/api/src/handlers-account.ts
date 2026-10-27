@@ -191,6 +191,8 @@ export async function handleResetAccount(
       await client.query(`DELETE FROM builds WHERE account_id = $1`, [accountId]);
       // 征兵队列与历史一并清空（v11）
       await client.query(`DELETE FROM recruits WHERE account_id = $1`, [accountId]);
+      // 城防器械打造队列与历史一并清空（v73，AISLG-193）；库存随城池行处理
+      await client.query(`DELETE FROM defense_crafts WHERE account_id = $1`, [accountId]);
       // v27（AISLG-77）：科技等级与研究记录一并清空（回到开号初始状态）
       await client.query(`DELETE FROM tech_research WHERE account_id = $1`, [accountId]);
       // v29（AISLG-76）：黄巾之乱的个人贡献一并清空
@@ -241,6 +243,8 @@ export async function handleResetAccount(
         `DELETE FROM city_buildings WHERE city_id = ANY($1::uuid[])`,
         [cityIds],
       );
+      // 城防器械库存随重置清空（v73，AISLG-193）：城还在，但器械回到零库存
+      await client.query(`DELETE FROM city_defenses WHERE city_id = ANY($1::uuid[])`, [cityIds]);
     await client.query(`DELETE FROM city_army WHERE city_id = ANY($1::uuid[])`, [cityRes.rows.map((row: { id: string }) => row.id)]);
     // 复原开号之初（与注册同一套 INITIAL_* 常量）：资源、人口、自带建筑（1 级官府）
     await client.query(

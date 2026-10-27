@@ -28,6 +28,7 @@ import {
   type BattleResult,
 } from '../../common/src/battle';
 import type { ScoutIntel } from '../../common/src/protocol-battle';
+import type { DefenseScoutView } from '../../common/src/protocol-defense';
 import { famousEncounter } from '../../common/src/famous-city';
 import { clearNativeGarrison, loadNativeGarrison, saveNativeGarrison } from '../../common/src/native-garrison';
 import { grantUnlock } from '../../common/src/hero-friendship-db';
@@ -329,6 +330,8 @@ export function buildScoutIntel(
   techs?: TechLevels,
   /** v38（AISLG-122）：玩家城目标的城墙减伤（城墙 + 守方城防科技，守城战同口径）；其余目标不传 */
   pvpWallPercent?: number,
+  /** v73（AISLG-193）：玩家城目标的城防器械（已按侦察科技降级）；野地 / NPC 城为 null */
+  defenses?: DefenseScoutView | null,
 ): ScoutIntel {
   const npc = tile.kind === 'npc_city' ? (tile.npc as NpcCitySnapshot | null) : null;
   // 名城：情报即当前阶段口径（外围 = 野战无城墙，城守 = 攻城战含城墙）
@@ -349,6 +352,7 @@ export function buildScoutIntel(
       ? pvpWallPercent
       : npc && (!encounter || encounter.siege) ? wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0) : 0,
     npcStock: npc ? npc.stock ?? null : null,
+    ...(tile.kind === 'city' ? { defenses: defenses ?? null } : {}),
     scoutedAt: at,
     ...(encounter && npc?.famous ? { famous: { name: npc.famous.name, stage: encounter.stage } } : {}),
   };

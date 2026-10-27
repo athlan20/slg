@@ -29,6 +29,9 @@ export type TechKind = (typeof TECH_KINDS)[number];
 /** 科技归类（服务端下发，前端分「发展 / 军事」两栏） */
 export type TechCategory = 'development' | 'military';
 
+/** 侦察报告详细度（侦察科技 Lv3 兵种明细 / Lv6 精确） */
+export type ScoutDetail = 'rough' | 'kinds' | 'exact';
+
 /** 各科技当前等级（0 = 未研究；账号级） */
 export type TechLevels = Record<TechKind, number>;
 

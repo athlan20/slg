@@ -6,7 +6,7 @@
  */
 
 import { Modal } from './ui/Modal';
-import { TROOP_KINDS, TROOP_POWER, type ArmyCounts, type CityView, type ScoutIntel } from '../api/protocol';
+import { DEFENSE_KINDS, TROOP_KINDS, TROOP_POWER, type ArmyCounts, type CityView, type ScoutIntel } from '../api/protocol';
 import { getCopy, useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 
@@ -63,7 +63,7 @@ function verdictOf(myPower: number, defenderPower: number, wallPercent: number):
 
 export function ScoutReportModal({ intel, city, onClose }: ScoutReportModalProps) {
   const copy = useCopy();
-  const { COPY, RESOURCE_LABEL, TECH_COPY, TERRAIN_LABEL, TROOP_LABEL } = copy;
+  const { COPY, DEFENSE_COPY, RESOURCE_LABEL, TECH_COPY, TERRAIN_LABEL, TROOP_LABEL } = copy;
   const now = Date.now();
   const garrisonRows = TROOP_KINDS.filter((kind) => (intel.garrison[kind] ?? 0) > 0);
   // 侦察科技决定详细度（v27 AISLG-77）：rough 只给总兵力范围、kinds 兵种近似、缺省 / exact 精确
@@ -120,6 +120,21 @@ export function ScoutReportModal({ intel, city, onClose }: ScoutReportModalProps
           <span>{COPY.scoutReport.garrisonPower(garrisonPower)}</span>
           {intel.wallDefensePercent > 0 ? <span className="text-warn">{COPY.scoutReport.wallRow(intel.wallDefensePercent)}</span> : null}
         </p>
+        {intel.defenses ? (
+          <p role="侦察报告弹窗-城防器械" className="mt-1 text-[12px] text-dim">
+            {!intel.defenses.has
+              ? DEFENSE_COPY.scout.none
+              : intel.defenses.detail === 'exact' && intel.defenses.counts
+                ? DEFENSE_COPY.scout.exact(
+                    DEFENSE_KINDS.filter((kind) => (intel.defenses?.counts?.[kind] ?? 0) > 0)
+                      .map((kind) => DEFENSE_COPY.scout.row(DEFENSE_COPY.names[kind], intel.defenses?.counts?.[kind] ?? 0))
+                      .join(' · '),
+                  )
+                : intel.defenses.detail === 'kinds' && intel.defenses.kinds
+                  ? DEFENSE_COPY.scout.kinds(intel.defenses.kinds.map((kind) => DEFENSE_COPY.names[kind]).join(' · '))
+                  : DEFENSE_COPY.scout.has}
+          </p>
+        ) : null}
         {verdict && garrisonTotal > 0 && precision === 'rough' ? (
           <p role="侦察报告弹窗-战力对比" className="mt-1 text-[13px] text-faint">
             {TECH_COPY.scout.noVerdict}
