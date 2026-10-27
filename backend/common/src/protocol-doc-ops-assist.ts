@@ -12,7 +12,7 @@ export const REQUEST_DISMISS_ASSIST: RequestOpDoc = {
   name: 'DISMISS_ASSIST',
   title: '召回 / 遣返协防部队（v74，AISLG-194）',
   preAuth: false,
-  summary: `让一支驻扎在盟友城里的协防部队回出发城：派出方随时可以召回，城主可以遣返任意一支驻扎在自己城里的协防部队。部队原路返回（行军时长按两地距离与编队速度计算，驿站不加速），到达后并回出发城驻军；途中可以被 RECALL_MARCH 折返（折返仍是回出发城）。每座城最多接收 ${ASSIST_MAX_PER_CITY} 支协防部队，同一账号对同一座城最多 1 支；退盟 / 被踢 / 解散与分城易主时相关协防部队自动遣返（事件 assist_returned，cause = ally_left / city_conquered）。`,
+  summary: `让一支驻扎在盟友城里的协防部队回出发城：派出方随时可以召回，城主可以遣返任意一支驻扎在自己城里的协防部队。部队原路返回（行军时长按两地距离与编队速度计算，驿站不加速），到达后并回出发城驻军；途中可以被 RECALL_MARCH 折返（折返仍是回出发城）。每座城最多接收 ${ASSIST_MAX_PER_CITY} 支协防部队，同一账号对同一座城最多 1 支；退盟 / 被踢 / 解散与城主放弃分城时相关协防部队自动遣返（事件 assist_returned，cause = ally_left / city_discarded）；分城被占领要求守方全灭，协防部队随城覆灭，派出方收到 assist_returned（cause = wiped，troops 为空、returning 为 null，没有返程行军）。`,
   requestFields: [
     { name: 'assistId', type: 'string', desc: '必填。协防记录 id：派出方看 GET_STATE 的 city.assistOut，城主看 city.assistIn（盟友看 GET_TILE 详情的 assists）。' },
   ],
