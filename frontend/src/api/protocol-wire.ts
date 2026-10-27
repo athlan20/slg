@@ -177,7 +177,7 @@ export interface AgentCommentReportResponseData {
 }
 
 /** 行军目的（marches.purpose 的合法取值；v16 起 attack 仅存量在途行军使用） */
-export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept'] as const;
+export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept', 'assist', 'caravan'] as const;
 
 export function isMarchPurpose(value: unknown): value is MarchPurpose {
   return typeof value === 'string' && (MARCH_PURPOSES as readonly string[]).includes(value);
@@ -188,7 +188,7 @@ export function isMarchPurpose(value: unknown): value is MarchPurpose {
  * 出征类目标（野地 / NPC 城）；侦察、调兵、增援、返程不接受 task。
  * v26（AISLG-79）：transport=运输，目标只能是本账号的另一座城，须带 cargo。
  */
-export const MARCH_TASKS = ['plunder', 'occupy', 'transport'] as const;
+export const MARCH_TASKS = ['plunder', 'occupy', 'transport', 'assist'] as const;
 
 export function isMarchTask(value: unknown): value is MarchTask {
   return typeof value === 'string' && (MARCH_TASKS as readonly string[]).includes(value);

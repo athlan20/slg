@@ -706,6 +706,34 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。',
     action: '用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。',
   },
+  MARKET_LOCKED: {
+    desc: '（v78，AISLG-196）交易所需要主城官府 ≥ 5 级且不在新手保护期；响应附 reason / government / required。',
+    action: '升级主城官府或等新手保护结束后再来。',
+  },
+  PRICE_OUT_OF_RANGE: {
+    desc: '（v78，AISLG-196）单价超出允许范围：资源之间 0.5–2，收金币 0.125–0.5；响应附 min / max。',
+    action: '按 GET_MARKET 的 limits.priceRangeResource / priceRangeGold 调整单价。',
+  },
+  ORDER_LIMIT: {
+    desc: '（v78，AISLG-196）同时挂单已达 5 张。',
+    action: '先撤单或等成交后再挂。',
+  },
+  DAILY_TRADE_LIMIT: {
+    desc: '（v78，AISLG-196）今日成交额度不足（主城官府等级 × 3000 × 缩放，买卖合计）；响应附 limit / used / remaining。',
+    action: '明天（北京日）额度重置后再交易；额度按卖出资源数量折算、买卖双方都计。',
+  },
+  ORDER_NOT_FOUND: {
+    desc: '（v78，AISLG-196）挂单不存在、已售罄、已过期或不属于你。',
+    action: '重新 GET_MARKET 拉最新挂单；过期挂单会自动退款。',
+  },
+  MARKET_ALLY_ONLY: {
+    desc: '（v78，AISLG-196）挂单勾选了「只卖给盟友」，你与卖家不在同一个联盟。',
+    action: '换一张公开挂单，或加入卖家所在联盟。',
+  },
+  ORDER_NOT_CANCELLABLE: {
+    desc: '（v78，AISLG-196）挂单已售罄或已过期，无法撤回。',
+    action: '刷新挂单列表确认状态。',
+  },
   DIPLOMACY_LIMIT: {
     desc: '（v77，AISLG-195）友盟 / 敌对数量已达上限（每联盟最多 2 个友盟、5 个敌对），响应附 limit。',
     action: '先解除一个现有关系，再结新友盟 / 宣布新敌对。',

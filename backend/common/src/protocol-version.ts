@@ -592,5 +592,12 @@
  *   （self / ally / friendly / hostile / neutral），GET_MAP_OVERVIEW 的 side 新增 friendly / hostile，PUSH_ATTACK_WARNING
  *   新增 hostileAlliance；GET_ALLIANCE 的联盟详情新增 friends / hostiles。新增错误码 DIPLOMACY_LIMIT / COOLDOWN /
  *   EXISTS / INVITE_NOT_FOUND；新表 alliance_relations（跨季保留）与 alliance_friend_invites（换季清空）。
+ * v78（玩家交易所，AISLG-196，只加不改）：集市新增挂单交易所：玩家卖出一种资源、标价收取另一种资源或金币；
+ *   新增 GET_MARKET（op 133）/ CREATE_MARKET_ORDER（134）/ BUY_MARKET_ORDER（135）/ CANCEL_MARKET_ORDER（136）。
+ *   挂单立即冻结卖出资源，48 小时未卖完自动撤单退款；吃单整单 / 部分成交，锁挂单行防超卖；双方各扣 5% 手续费，
+ *   各派一支商队（marches.purpose='caravan'，每格 15 秒基准、吃驿站与行军科技，不会被截击）送货。
+ *   单价范围资源间 0.5–2、收金币 0.125–0.5；单张 ≥ 1000、每账号最多 5 张；每日额度 = 主城官府 × 3000 × 缩放，
+ *   北京日重置。门槛主城官府 ≥ 5 且不在新手保护期；可勾选只卖给盟友。新增错误码 MARKET_* / PRICE_OUT_OF_RANGE /
+ *   ORDER_* / DAILY_TRADE_LIMIT；新表 market_orders / market_trades（换季清空），事件 market_*。
  */
-export const PROTOCOL_VERSION = 77;
+export const PROTOCOL_VERSION = 78;

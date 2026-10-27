@@ -43,6 +43,7 @@ import { resolveCampArrival } from './yt-camp';
 import { lockYt, newYtNotifies, publishYtNotifies, type YtNotifies } from './yt-event';
 import { campGarrison, loadCampAt } from '../../common/src/yellow-turban-db';
 import { movingNotifyPayload, resolveInterceptArrival, type MovingNotify } from './intercept-tick';
+import { settleCaravanArrival } from './market-tick';
 import { scaledMs } from '../../common/src/time-scale';
 import { readCargo } from '../../common/src/transport';
 import { loadTechLevels } from '../../common/src/tech-db';
@@ -87,6 +88,13 @@ export async function processDueMarches(pool: pg.Pool): Promise<number> {
     let resolved = 0;
     for (const march of due.rows as MarchRow[]) {
       const troops = toFullArmyCounts(march.troops ?? {});
+      if (march.purpose === 'caravan') {
+        // v78（AISLG-196）：商队到达直接入账，不战斗、不锁地块
+        await settleCaravanArrival(client, march);
+        notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
+        resolved += 1;
+        continue;
+      }
       if (march.purpose === 'return') {
         await settleReturn(client, march, troops);
         notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });

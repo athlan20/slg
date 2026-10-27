@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 77;
+export const PROTOCOL_VERSION = 78;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -200,6 +200,10 @@ export const Op = {
   ALLIANCE_DIPLOMACY_END: 130,
   ALLIANCE_DIPLOMACY_HOSTILE: 131,
   GET_ALLIANCE_DIPLOMACY: 132,
+  GET_MARKET: 133,
+  CREATE_MARKET_ORDER: 134,
+  BUY_MARKET_ORDER: 135,
+  CANCEL_MARKET_ORDER: 136,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -356,6 +360,13 @@ export type ErrorCode =
   | 'DIPLOMACY_COOLDOWN'
   | 'DIPLOMACY_EXISTS'
   | 'DIPLOMACY_INVITE_NOT_FOUND'
+  | 'MARKET_LOCKED'
+  | 'PRICE_OUT_OF_RANGE'
+  | 'ORDER_LIMIT'
+  | 'DAILY_TRADE_LIMIT'
+  | 'ORDER_NOT_FOUND'
+  | 'MARKET_ALLY_ONLY'
+  | 'ORDER_NOT_CANCELLABLE'
   | 'NOBILITY_TOO_LOW'
   | 'NOBILITY_SALARY_CLAIMED'
   | 'NOBILITY_SALARY_NONE'
@@ -1148,3 +1159,18 @@ export type {
   AllianceDiplomacyInviteRequestData,
   AllianceDiplomacyRespondRequestData,
 } from './protocol-alliance';
+
+// 玩家交易所（v78，AISLG-196）
+export type {
+  MarketSellerView,
+  MarketCityView,
+  MarketOrderView,
+  MarketTradeView,
+  MarketLimitsView,
+  GetMarketResponseData,
+  CreateMarketOrderResponseData,
+  BuyMarketOrderResponseData,
+  CancelMarketOrderResponseData,
+} from './protocol-market';
+export { MARKET_RESOURCES, MARKET_BUY_KINDS } from './protocol-market';
+export type { MarketResource, MarketBuyKind } from './protocol-market';

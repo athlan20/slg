@@ -228,6 +228,14 @@ export const Op = {
   ALLIANCE_DIPLOMACY_HOSTILE: 131,
   /** C→S 查询本联盟外交（v77：友盟 / 敌对 / 邀请；玩家与 Agent 通用） */
   GET_ALLIANCE_DIPLOMACY: 132,
+  /** C→S 查询玩家交易所挂单 / 我的挂单与成交记录（v78，AISLG-196；支持卖出 / 收取资源筛选与分页） */
+  GET_MARKET: 133,
+  /** C→S 挂单卖出资源（v78：data.sellResource / buyResource / amount / unitPrice / allyOnly；资源立即冻结） */
+  CREATE_MARKET_ORDER: 134,
+  /** C→S 吃单（v78：data.orderId + quantity；整单或部分成交，双方商队送货） */
+  BUY_MARKET_ORDER: 135,
+  /** C→S 撤单（v78：data.orderId；未成交部分立即退还） */
+  CANCEL_MARKET_ORDER: 136,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -593,6 +601,20 @@ export const ErrorCode = {
   DIPLOMACY_EXISTS: 'DIPLOMACY_EXISTS',
   /** 联盟外交：友好邀请不存在、已过期或已处理（v77） */
   DIPLOMACY_INVITE_NOT_FOUND: 'DIPLOMACY_INVITE_NOT_FOUND',
+  /** 交易所：主城官府不足 5 级，或账号仍在新手保护期（v78，AISLG-196） */
+  MARKET_LOCKED: 'MARKET_LOCKED',
+  /** 交易所：单价超出允许范围（资源 0.5–2、金币 0.125–0.5），响应附 min / max（v78） */
+  PRICE_OUT_OF_RANGE: 'PRICE_OUT_OF_RANGE',
+  /** 交易所：同时挂单已达 5 张（v78） */
+  ORDER_LIMIT: 'ORDER_LIMIT',
+  /** 交易所：当日成交额度不足，响应附 limit / used / remaining（v78） */
+  DAILY_TRADE_LIMIT: 'DAILY_TRADE_LIMIT',
+  /** 交易所：挂单不存在、已售罄、已过期或不属于你（v78） */
+  ORDER_NOT_FOUND: 'ORDER_NOT_FOUND',
+  /** 交易所：这张挂单只卖给盟友（v78） */
+  MARKET_ALLY_ONLY: 'MARKET_ALLY_ONLY',
+  /** 交易所：挂单不可撤回（已售罄 / 已过期）（v78） */
+  ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
   /** 爵位：占领名城需要大夫（爵位序号 3），响应附 required / current（v76，AISLG-197） */
   NOBILITY_TOO_LOW: 'NOBILITY_TOO_LOW',
   /** 爵位：今日俸禄已领（v76，北京日每天一次） */
@@ -1125,6 +1147,35 @@ export {
   isBattlefieldShopItem,
   BATTLEFIELD_SQUAD_STATUSES,
 } from './protocol-battlefield';
+
+// 玩家交易所（v78，AISLG-196）的载荷类型在 protocol-market.ts，规则在 market.ts
+export type {
+  MarketSellerView,
+  MarketCityView,
+  MarketOrderView,
+  MarketTradeView,
+  MarketLimitsView,
+  GetMarketRequestData,
+  GetMarketResponseData,
+  CreateMarketOrderRequestData,
+  CreateMarketOrderResponseData,
+  BuyMarketOrderRequestData,
+  BuyMarketOrderResponseData,
+  CancelMarketOrderRequestData,
+  CancelMarketOrderResponseData,
+} from './protocol-market';
+export {
+  MARKET_RESOURCES,
+  MARKET_BUY_KINDS,
+  MARKET_MIN_AMOUNT,
+  MARKET_MAX_OPEN_ORDERS,
+  MARKET_FEE_PERCENT,
+  MARKET_ORDER_TTL_MS,
+  MARKET_MIN_GOVERNMENT,
+  isMarketResource,
+  isMarketBuyKind,
+} from './market';
+export type { MarketResource, MarketBuyKind } from './market';
 
 // 声望与爵位（v76，AISLG-197）的载荷类型在 protocol-nobility.ts，规则在 nobility.ts
 export type { NobilityStatusView, GetNobilityResponseData, ClaimNobilitySalaryResponseData } from './protocol-nobility';

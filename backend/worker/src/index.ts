@@ -28,6 +28,7 @@ import { processHeroTraining } from './hero-training-tick';
 import { processArenaRewards } from './arena-tick';
 import { processAlliances } from './alliance-tick';
 import { processBattlefield } from './battlefield-tick';
+import { processMarketOrders } from './market-tick';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
@@ -123,6 +124,15 @@ async function main(): Promise<void> {
       await processAlliances(pool);
     } catch (err) {
       console.error('worker alliance tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v78（AISLG-196）：交易所 48 小时过期挂单自动撤单退款
+      const expired = await processMarketOrders(pool);
+      if (expired > 0) {
+        console.log(`expired ${expired} market order(s)`);
+      }
+    } catch (err) {
+      console.error('worker market tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v75（AISLG-198）：剧本战场——日程 / 耗粮 / 积分 / 行军与据点结算

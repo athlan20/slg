@@ -15,10 +15,12 @@ interface ExchangePopoverProps {
   anchorRef: RefObject<HTMLElement | null>;
   /** 发起兑换：成功返回 null（关闭浮层），失败返回人读错误 */
   onExchange: (resource: ExchangeResource, amount: number) => Promise<string | null>;
+  /** 打开玩家交易所（v78 AISLG-196）；不传则不显示入口 */
+  onOpenMarket?: () => void;
   onClose: () => void;
 }
 
-export function ExchangePopover({ resources, anchorRef, onExchange, onClose }: ExchangePopoverProps) {
+export function ExchangePopover({ resources, anchorRef, onExchange, onOpenMarket, onClose }: ExchangePopoverProps) {
   const copy = useCopy();
   const { COPY, RESOURCE_LABEL } = copy;
   const [resource, setResource] = useState<ExchangeResource>('food');
@@ -90,6 +92,16 @@ export function ExchangePopover({ resources, anchorRef, onExchange, onClose }: E
           </button>
         </div>
         <p className="text-[11.5px] leading-snug text-faint">{COPY.exchange.subtitle}</p>
+        {onOpenMarket ? (
+          <button
+            type="button"
+            role="集市兑换浮层-交易所"
+            onClick={onOpenMarket}
+            className="cursor-pointer self-start rounded border border-gold/60 px-2 py-0.5 text-[12px] text-gold hover:border-gold"
+          >
+            交易所
+          </button>
+        ) : null}
 
         <div role="集市兑换浮层-资源选择" className="flex gap-1.5">
           {EXCHANGE_RESOURCES.map((key) => (

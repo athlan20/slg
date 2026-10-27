@@ -40,6 +40,12 @@ import { handleBuyBattlefieldItem } from './handlers-battlefield-shop';
 import { handleClaimNobilitySalary, handleGetNobility } from './handlers-nobility';
 import { handleAllianceDiplomacyOp } from './handlers-alliance-diplomacy';
 import {
+  handleBuyMarketOrder,
+  handleCancelMarketOrder,
+  handleCreateMarketOrder,
+  handleGetMarket,
+} from './handlers-market';
+import {
   handleGetTile,
   handleGetWorldMap,
   handleMarch,
@@ -435,6 +441,18 @@ async function dispatchOp(
     case Op.ALLIANCE_DIPLOMACY_HOSTILE:
     case Op.GET_ALLIANCE_DIPLOMACY:
       await handleAllianceDiplomacyOp(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_MARKET:
+      await handleGetMarket(ctx, conn, op, seq, data);
+      break;
+    case Op.CREATE_MARKET_ORDER:
+      await handleCreateMarketOrder(ctx, conn, op, seq, data);
+      break;
+    case Op.BUY_MARKET_ORDER:
+      await handleBuyMarketOrder(ctx, conn, op, seq, data);
+      break;
+    case Op.CANCEL_MARKET_ORDER:
+      await handleCancelMarketOrder(ctx, conn, op, seq, data);
       break;
     case Op.GET_NOBILITY:
       await handleGetNobility(ctx, conn, op, seq);

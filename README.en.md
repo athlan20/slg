@@ -64,7 +64,7 @@ Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resourc
 ### 🏯 City building & economy
 - **15 building types**, each upgradable to level 20: farms, lumber mills, quarries, iron mines, houses, government offices, barracks, warehouses, walls, academies, parade grounds, beacon towers, relay stations, arrow towers, and taverns.
 - Five resources (food, wood, stone, iron, gold) keep producing — including while you're offline. Construction queues and chains upgrades.
-- Warehouses shield part of your stockpile from plunder; the market trades surplus resources for gold.
+- Warehouses shield part of your stockpile from plunder; the market trades surplus resources for gold, and a **player exchange** lets you post sell orders for resources or gold with caravan delivery (5% fee on both sides).
 - Armies eat: cut off the food supply and city garrisons mutiny, losing troops every hour.
 
 ### ⚔️ Troops & battle
