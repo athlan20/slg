@@ -86,6 +86,7 @@ Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resourc
 
 ### 🔥 Server-wide events & player vs player
 - **Yellow Turban Rebellion**: a recurring server-wide PvE event — rebel camps spawn across the map and everyone piles in to clear them.
+- **Ally assist**: station troops in an ally's city to fight alongside their garrison (losses split by pre-battle strength); recall them anytime, and the host can send them home.
 - **PvP**: plunder other players' cities, seize their wilderness, capture their branch cities (capitals can never fall).
 - PvP runs on hard rules, so it never becomes a sleep-loss game:
   - 3-day newbie protection
