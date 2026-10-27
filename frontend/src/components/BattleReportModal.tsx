@@ -141,7 +141,7 @@ const ROUNDS_PER_PAGE = 16;
 
 export function BattleReportModal({ report, onClose, onShare }: BattleReportModalProps) {
   const copy = useCopy();
-  const { COPY, DEFENSE_COPY, EXTRA_PANEL, CHAT_COPY } = copy;
+  const { COPY, DEFENSE_COPY, EXTRA_PANEL, CHAT_COPY, TROOP_LABEL } = copy;
   const [view, setView] = useState<'chart' | 'rounds'>('chart');
   const [roundPage, setRoundPage] = useState(0);
   const mineIsAttacker = report.role === 'attacker';
@@ -212,6 +212,16 @@ export function BattleReportModal({ report, onClose, onShare }: BattleReportModa
           </span>
         ) : null}
       </p>
+
+      {report.assistLosses ? (
+        <p role="战报弹窗-协防损失" className="shrink-0 rounded border border-line-soft bg-panel-2 px-2.5 py-1 text-[12px] text-dim">
+          {DEFENSE_COPY.report.assistLosses(
+            TROOP_KINDS.filter((kind) => (report.assistLosses?.[kind] ?? 0) > 0)
+              .map((kind) => `${TROOP_LABEL[kind].name}×${report.assistLosses?.[kind] ?? 0}`)
+              .join(' · ') || '0',
+          )}
+        </p>
+      ) : null}
 
       {report.comment ? (
         <div role="战报弹窗-Agent点评" className="shrink-0 rounded border border-accent-dim bg-accent-soft px-2.5 py-1">

@@ -43,6 +43,7 @@ export const RESET_TABLES: readonly string[] = [
   'recruits',
   'city_defenses',
   'defense_crafts',
+  'city_assist',
   'marches',
   'battle_reports',
   'scout_intel',

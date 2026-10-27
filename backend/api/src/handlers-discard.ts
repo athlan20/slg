@@ -19,11 +19,12 @@ import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { lockCitySnapshot } from './views';
+import { returnAssistsForCity } from '../../common/src/city-assist-db';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type DiscardOutcome =
-  | { ok: true; cityId: string; x: number; y: number; cooldownUntil: Date }
+  | { ok: true; cityId: string; x: number; y: number; cooldownUntil: Date; assistProviders: string[] }
   | { ok: false; code: ErrorCode };
 
 export async function handleDiscardCity(
@@ -70,6 +71,13 @@ export async function handleDiscardCity(
       { op: Op.PUSH_CITY_STATE, push: true, data: { reason: 'city_discarded', cityId } },
       conn,
     );
+    for (const provider of new Set(outcome.assistProviders)) {
+      ctx.registry.broadcast(provider, {
+        op: Op.PUSH_CITY_STATE,
+        push: true,
+        data: { reason: 'assist_changed', cityId },
+      });
+    }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw err;
@@ -151,10 +159,12 @@ async function discardCityTx(client: pg.PoolClient, accountId: string, cityId: s
      ON CONFLICT (x, y) DO UPDATE SET account_id = EXCLUDED.account_id, until = EXCLUDED.until`,
     [tile.x, tile.y, accountId, cooldownUntil],
   );
+  // v74（AISLG-194）：放弃的城若有人协防，协防部队先自动遣返原派出方（否则随城级联消失）
+  const returned = await returnAssistsForCity(client, cityId, 'city_discarded');
   // 名下野地转为无主（owner_city_id 外键 ON DELETE SET NULL），随后删除城池行：
   // 建筑、城内驻军、建造 / 征兵 / 研究队列与城守任命随外键级联清理（资源随城作废）
   await client.query(`DELETE FROM cities WHERE id = $1`, [cityId]);
-  return { ok: true, cityId, x: tile.x, y: tile.y, cooldownUntil };
+  return { ok: true, cityId, x: tile.x, y: tile.y, cooldownUntil, assistProviders: returned.map((row) => row.providerAccountId) };
 }
 
 /** 冷却截止 = 数据库当前时刻 + 基准时长（按时间缩放） */

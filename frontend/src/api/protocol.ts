@@ -178,6 +178,7 @@ export const Op = {
   CANCEL_TRUCE: 116,
   CRAFT_DEFENSE: 117,
   CANCEL_DEFENSE_CRAFT: 118,
+  DISMISS_ASSIST: 119,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -690,6 +691,7 @@ export type {
 } from './protocol-yt';
 import type { TechLevels } from './protocol-tech';
 import type { DefenseStockView } from './protocol-defense';
+import type { AssistOutView, AssistView } from './protocol-assist';
 import type { FamousEffectView, MarchView, TerritoryView } from './protocol-world';
 
 /**
@@ -859,6 +861,12 @@ export interface CityView {
   recruitQueue: RecruitView[];
   /** 城防器械（v73）：库存、上限（城墙等级 × 60）与打造队列 */
   defenses: DefenseStockView;
+  /** 协防（v74）：驻扎在本城的盟友部队（城主视图） */
+  assistIn: AssistView[];
+  /** 本城派出、正在盟友城里驻扎的部队（派出方视图，可召回；占校场名额） */
+  assistOut: AssistOutView[];
+  /** 本城可接收的协防部队上限 */
+  assistCap: number;
   /** 城墙守城防御加成（v11，占位 = 城墙等级 × 5，百分数数值；战斗结算上线后由其消费） */
   defenseBonus: number;
   /** 账号科技等级（v27 AISLG-77；全账号共享，已计入 production / storage / defenseBonus；负重与行军加成由客户端折算） */
@@ -978,6 +986,10 @@ export interface CancelRecruitRequestData {
 export interface CancelRecruitResponseData {
   recruit: RecruitView;
 }
+
+// 盟友协防（v74，AISLG-194）的类型在 protocol-assist.ts
+export type { AssistView, AssistOutView, DismissAssistRequestData, DismissAssistResponseData } from './protocol-assist';
+export { ASSIST_MAX_PER_CITY } from './protocol-assist';
 
 // 城防器械（v73，AISLG-193）的类型与数值镜像在 protocol-defense.ts
 export type {

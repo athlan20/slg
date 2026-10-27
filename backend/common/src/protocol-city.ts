@@ -13,6 +13,7 @@ import type {
 } from './protocol';
 import type { MarchView, TerritoryView } from './protocol-world';
 import type { DefenseStockView } from './protocol-defense';
+import type { AssistOutView, AssistView } from './protocol-assist';
 import type { TechLevels } from './tech';
 
 /** BUILD（op 21）请求载荷：kind 缺失或不是已知建筑类型时返回 INVALID_PARAMS */
@@ -77,8 +78,9 @@ export interface DiscardCityResponseData {
 
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
-  /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded';
+  /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57）；
+   *  assist_changed=协防部队入驻 / 召回 / 遣返 / 自动遣返（v74，AISLG-194；收到后重新 GET_STATE / GET_TILE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -217,6 +219,10 @@ export const EventType = {
   DEFENSE_CRAFT_COMPLETED: 'defense_craft_completed',
   /** v73：打造被取消（detail = { kind, count, refund }） */
   DEFENSE_CRAFT_CANCELLED: 'defense_craft_cancelled',
+  /** v74（AISLG-194）：协防部队入驻盟友城（detail = { assistId, hostCityId, hostCityName, hostUsername, troops }） */
+  ASSIST_ARRIVED: 'assist_arrived',
+  /** v74：协防部队离开盟友城返程（detail = { assistId, hostCityId, cause, troops, returning }；cause = recall / expel / ally_left / city_conquered） */
+  ASSIST_RETURNED: 'assist_returned',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;
@@ -329,6 +335,12 @@ export interface CityView {
   territory: TerritoryView[];
   /** 城防器械（v73，AISLG-193）：库存、上限（城墙等级 × 60）与打造队列 */
   defenses: DefenseStockView;
+  /** 协防（v74，AISLG-194）：驻扎在本城的盟友部队（城主视图；列出谁在协防、带了多少兵） */
+  assistIn: AssistView[];
+  /** 本城派出、正在盟友城里驻扎的部队（派出方视图，可召回）；占用校场出征名额 */
+  assistOut: AssistOutView[];
+  /** 本城可接收的协防部队上限（当前 5 支；洛阳 10 支留待洛阳争夺需求） */
+  assistCap: number;
   /** 建造队列（v4 新增）：第 1 项为在建（无在建时为空数组），其余为排队，按入队顺序 */
   queue: BuildView[];
   /** 兼容字段：当前在建建筑（= queue[0]，仅当其 status 为 building；无在建为 null） */

@@ -57,6 +57,8 @@ export async function saveBattleReport(
   notifies: TileNotify[],
   attackerHero: BattleHeroView | null = null,
   defenderHero: BattleHeroView | null = null,
+  /** v74（AISLG-194）：协防方战报专用——本场自己部队的伤亡 */
+  assistLosses: import('../../common/src/protocol').ArmyCounts | null = null,
 ): Promise<number> {
   const detail: BattleReportDetail = {
     x,
@@ -72,6 +74,7 @@ export async function saveBattleReport(
     ...(result.towerDamage > 0 ? { towerDamage: result.towerDamage } : {}),
     ...(result.wallBreak ? { wallBreak: result.wallBreak } : {}),
     ...(result.defenseUse.length > 0 ? { defenses: result.defenseUse } : {}),
+    ...(assistLosses ? { assistLosses } : {}),
     roundLog: result.roundLog,
   };
   const report = await insertBattleReport(client, accountId, detail);
@@ -288,10 +291,12 @@ export async function abortForAlly(
   troops: Partial<Record<TroopKind, number>>,
   settled: { row: { x: number | null; y: number | null } | null },
   notifies: TileNotify[],
+  /** v74（AISLG-194）：协防到达发现目标已不是盟友时用 ASSIST_NOT_ALLY；其余沿用 v67 的 ALLY_NOT_ATTACKABLE */
+  cause = 'ALLY_NOT_ATTACKABLE',
 ): Promise<void> {
   await markMarchArrived(client, march.id);
   const returning = await createReturnMarch(client, march, troops, settled, march.initiator);
-  await completeMarchEvent(client, march, 'aborted', { troops, returning, cause: 'ALLY_NOT_ATTACKABLE' });
+  await completeMarchEvent(client, march, 'aborted', { troops, returning, cause });
   notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
 }
 

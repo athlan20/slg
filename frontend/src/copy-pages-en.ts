@@ -44,6 +44,7 @@ export const TARGET_COPY_EN = {
     recall: 'Withdraw garrison',
     transfer: 'Transfer',
     transport: 'Transport',
+    assist: 'Assist',
   },
   confirm: (action: string) => `Confirm ${action}`,
   noOps: 'No actions available on this tile',

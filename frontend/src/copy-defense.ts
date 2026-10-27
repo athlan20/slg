@@ -35,6 +35,7 @@ export const DEFENSE_COPY = {
     wallBreak: (from: number, to: number) => `冲车破墙：城墙减伤 ${from}% → ${to}%`,
     defenseUse: (label: string, used: number, killed: number) => `${label}×${used}（打掉 ${killed} 兵）`,
     defenseTotal: (damage: number) => `城防器械造成伤害 ${damage}`,
+    assistLosses: (text: string) => `本场你的协防部队损失：${text}`,
   },
   /** 城防器械（v73，AISLG-193）：城墙详情里的打造面板 */
   craft: {
@@ -74,6 +75,30 @@ export const DEFENSE_COPY = {
     queued: (label: string, count: number) => `打造 ${label}×${count} 进入排队`,
     completed: (label: string, count: number, total: number) => `打造完成：${label}×${count} 入库（库存 ${total}）`,
     cancelled: (label: string, count: number, refund: string) => `取消打造 ${label}×${count}${refund ? `，返还 ${refund}` : ''}`,
+    assistArrived: (username: string, cityName: string, troops: string) => `协防部队入驻 ${username} 的 ${cityName}${troops ? `（${troops}）` : ''}`,
+    assistReturned: (username: string, cityName: string, cause: string) => `协防部队离开 ${username} 的 ${cityName}（${cause}）`,
+    assistCause: {
+      recall: '派出方召回',
+      expel: '城主遣返',
+      ally_left: '退出联盟',
+      city_conquered: '城池易主',
+      wiped: '战斗全灭',
+      target_gone: '目标失效',
+    } as Record<string, string>,
+  },
+  /** 协防（v74，AISLG-194）：军队页 / 地块详情 */
+  assist: {
+    title: '协防',
+    meta: (count: number, cap: number) => `协防 ${count} / ${cap}`,
+    inTitle: '驻守本城的协防',
+    outTitle: '本城在外协防',
+    empty: '暂无协防部队',
+    inLine: (username: string, cityName: string) => `${username} · ${cityName}`,
+    outLine: (username: string, cityName: string) => `${username} · ${cityName}`,
+    recall: '召回',
+    recallBusy: '召回中…',
+    capHint: (cap: number) => `每座城最多接收 ${cap} 支协防部队；同一账号对同一座城最多 1 支`,
+    troopsLabel: (text: string) => text,
   },
   names: {
     trap: '陷阱',

@@ -133,6 +133,8 @@ export interface TileDetailView extends TileView {
   wildFamousIntel: { scouted: boolean; name: string | null; attrs: { lead: number; force: number; wit: number } | null } | null;
   /** 城防器械（v73 AISLG-193）：自己的城给精确库存，他人的城给侦察快照；其余为 null */
   defenses: DefenseScoutView | null;
+  /** 协防部队（v74）：自己的城 / 盟友的城给 "谁在协防、带了多少兵"；其余为 null */
+  assists: import('./protocol-assist').AssistView[] | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */
@@ -156,7 +158,7 @@ export interface TerritoryView {
 }
 
 /** 出征任务（v16）：plunder 掠夺（缺省）/ occupy 占领；v26 transport 运输（目标限本账号另一座城，须带 cargo） */
-export type MarchTask = 'plunder' | 'occupy' | 'transport';
+export type MarchTask = 'plunder' | 'occupy' | 'transport' | 'assist';
 
 /** 行军视图 */
 export interface MarchView {
@@ -167,7 +169,7 @@ export interface MarchView {
   y: number;
   troops: ArmyCounts;
   /** v16 新增 plunder（掠夺）/ occupy（占领）/ reinforce（增援）；attack 仅存量在途行军 */
-  purpose: 'plunder' | 'occupy' | 'reinforce' | 'attack' | 'scout' | 'transfer' | 'transport' | 'intercept' | 'return';
+  purpose: 'plunder' | 'occupy' | 'reinforce' | 'attack' | 'scout' | 'transfer' | 'transport' | 'intercept' | 'return' | 'assist';
   status: 'marching' | 'arrived' | 'returned';
   initiator: InitiatorRole;
   startedAt: string;
@@ -242,6 +244,8 @@ export interface BattleReportView {
   wallBreak?: { from: number; to: number };
   /** 城防器械用量（v73 AISLG-193）：守城战实际用掉的器械，一种一项；无器械 / 未触发为缺省 */
   defenses?: DefenseUseView[];
+  /** 协防方视角的自身伤亡（v74）：只有协防方的战报带本字段 */
+  assistLosses?: ArmyCounts;
   roundLog: BattleRoundLogEntryView[];
   /** Agent 点评（v23 AISLG-53）；尚无点评时为 null */
   comment: BattleReportCommentView | null;

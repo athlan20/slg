@@ -11,12 +11,13 @@
 // - 主城被掠不改归属、无占领变化；事件 npc_raid（target='city'，含 loot）+
 //   守方视角战报（kind='city_raid'）。玩家互掠仍随玩家对抗阶段接入。
 
-import { combatTechBonus, defenseExtraPercent } from '../../common/src/tech';
+import { defenseExtraPercent } from '../../common/src/tech';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent, famousWarehousePercent } from '../../common/src/famous-effects';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { consumeCityDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
+import { loadDefenseSetup, applyDefenseBattle } from './assist-defense';
 import pg from 'pg';
 import { DEFAULT_NPC_RAID_INTERVAL_MS } from './world-tick';
 import { scaledMs } from '../../common/src/time-scale';
@@ -72,14 +73,9 @@ export async function resolveNpcCityRaid(
     return 0;
   }
   const levels = await loadBuildingLevels(client, target.cityId);
-  const armyRes = await client.query(
-    `SELECT troop, count FROM city_army WHERE city_id = $1 AND count > 0`,
-    [target.cityId],
-  );
-  const garrison: Partial<Record<TroopKind, number>> = {};
-  for (const row of armyRes.rows as { troop: TroopKind; count: number }[]) {
-    garrison[row.troop] = row.count;
-  }
+  // v74（AISLG-194）：城主驻军 + 协防部队合并成守方参战
+  const setup = await loadDefenseSetup(client, target.cityId, target.accountId, (accountId) => loadTechLevels(client, accountId));
+  const garrison = setup.hostArmy;
 
   // v27（AISLG-77）：玩家主城守城再加城防科技的额外减伤（NPC 城墙不吃）
   // v62（AISLG-166）：名城（洛阳 / 长安 / 襄阳）的守城加成跟着被攻城走
@@ -89,33 +85,45 @@ export async function resolveNpcCityRaid(
   // v22 AISLG-40 方案 B：袭击强度按守军战力推导（下限官府一半、上限官府等级），
   // 不再用官府建筑等级——升官府（经济行为）不再自动放大挨打规模；
   // v23 两阶段流程下编成在发起时固定，到达不重算（预警期间征兵提高的是守方战力）
-  const garrisonPower = armyPower(garrison);
+  const garrisonPower = armyPower(setup.merged);
   const raidLevel = precomputed ? precomputed.raidLevel : cityRaidLevel(garrisonPower, target.govLevel);
   const attacker = precomputed ? precomputed.army : npcRaidArmy(raidLevel);
   // v30（AISLG-82）：箭塔只在守城战（NPC 袭击主城）生效，等级取被袭击城自己的箭塔
   // v36（AISLG-115）：城守加成（守军攻击 / 减伤同出征口径，按守军规模折算统率摊薄）
   const guard = await loadCityGuard(client, target.cityId);
   const garrisonTotal = Object.values(garrison).reduce((sum, n) => sum + (n ?? 0), 0);
-  const guardBonus = battleBonusOf(guard, garrisonTotal);
+  // 城守武将只加成城主自己的部队（v74）：加成按城主兵力折算，覆盖比例交给引擎
+  const guardBonus = battleBonusOf(guard, setup.hostUnits);
   const defenses = await loadCityDefenses(client, target.cityId);
-  const result = resolveBattle(attacker, garrison, {
+  const result = resolveBattle(attacker, setup.merged, {
     wallDefensePercent: wall, siege: true, tower: towerStats(levels.arrow_tower ?? 0, famousTowerPercent(famousName)),
     defenderHero: guardBonus,
-    defenderTech: combatTechBonus(defenderTechs),
+    defenderHeroScale: setup.heroScale,
+    defenderTech: setup.defenderTech,
     defenses,
   });
   // v73（AISLG-193）：守城战后按引擎用量扣库存（同事务）
   await consumeCityDefenses(client, target.cityId, result.defenseUse);
   const npcPower = armyPower(attacker);
   const naming = await loadCityNaming(client, target.cityId);
+  const assistNote = setup.parties.length > 0 ? ` · 协防 ${setup.parties.length} 支` : '';
   const defenderName = naming
-    ? `${naming.username} 的主城守军（${naming.cityName}${guard ? ` · 城守 ${guard.name}` : ''}）`
-    : '主城守军';
+    ? `${naming.username} 的主城守军（${naming.cityName}${guard ? ` · 城守 ${guard.name}` : ''}${assistNote}）`
+    : `主城守军${assistNote}`;
   const reportId = await saveBattleReport(
     client, target.accountId, 'defender', !result.attackerWon, 'city_raid',
     target.x, target.y, result, 'NPC 袭击部队', defenderName, wall, notifies,
     null, guard ? heroBattleView(guard, garrisonTotal) : null,
   );
+  // v74：协防方各收到一份战报（defender 为合并编成，assistLosses 给出自己那部分损失）
+  const assistLosses = await applyDefenseBattle(client, target.cityId, setup, result, notifies);
+  for (const party of assistLosses) {
+    await saveBattleReport(
+      client, party.accountId, 'defender', !result.attackerWon, 'city_raid',
+      target.x, target.y, result, 'NPC 袭击部队', defenderName, wall, notifies,
+      null, guard ? heroBattleView(guard, garrisonTotal) : null, party.losses,
+    );
+  }
   // v36（AISLG-116）：城守守城同样获得经验 = 歼灭敌军参考战力（守不住减半）
   if (guard) {
     const gained = Math.floor(armyPower(result.attacker.losses) * (result.attackerWon ? 0.5 : 1));
@@ -131,19 +139,6 @@ export async function resolveNpcCityRaid(
       reason: 'hero_state', accountId: target.accountId,
       data: { reason: 'exp_gained', heroId: guard.id, exp: { gained, level: exp?.level ?? guard.level, leveledTo: exp?.leveledTo ?? null } },
     });
-  }
-
-  // 驻军按战斗结果回写（全灭即清空；守住按幸存数）
-  await client.query(`DELETE FROM city_army WHERE city_id = $1`, [target.cityId]);
-  const survivors = result.defender.survivors;
-  for (const kind of Object.keys(survivors) as TroopKind[]) {
-    const count = survivors[kind] ?? 0;
-    if (count > 0) {
-      await client.query(
-        `INSERT INTO city_army (city_id, troop, count) VALUES ($1, $2, $3)`,
-        [target.cityId, kind, count],
-      );
-    }
   }
 
   if (!result.attackerWon) {

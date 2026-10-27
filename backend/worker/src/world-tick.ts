@@ -37,6 +37,7 @@ import {
 } from './tick-shared';
 import { areAllies } from '../../common/src/alliance-db';
 import { buildScoutIntel, resolveBattleArrival } from './battle-tick';
+import { settleAssistArrival } from './assist-tick';
 import { resolveOccupyArrival, resolvePlunderArrival } from './plunder-tick';
 import { resolveCampArrival } from './yt-camp';
 import { lockYt, newYtNotifies, publishYtNotifies, type YtNotifies } from './yt-event';
@@ -194,6 +195,10 @@ async function resolveArrival(
     await settleScoutArrival(client, march, troops, tile, settled, notifies);
     return;
   }
+  if (march.purpose === 'assist') {
+    await settleAssistArrival(client, march, troops, settled, notifies);
+    return;
+  }
   if (march.purpose === 'transfer') {
     await settleTransferArrival(client, march, troops, tile, settled, notifies);
     return;
@@ -304,6 +309,16 @@ async function settleScoutArrival(
     );
     for (const row of armyRes.rows as { troop: TroopKind; count: number }[]) {
       garrison[row.troop] = row.count;
+    }
+    // v74（AISLG-194）：协防部队计入侦察到的守军总数（外人只能看到总数，看不到是谁在协防）
+    const assistRes = await client.query(`SELECT troops FROM city_assist WHERE city_id = $1`, [tile.owner_city_id]);
+    for (const row of assistRes.rows as Array<{ troops: Partial<Record<TroopKind, number>> | null }>) {
+      for (const [kind, count] of Object.entries(row.troops ?? {})) {
+        const value = Math.max(0, Math.floor(count ?? 0));
+        if (value > 0) {
+          garrison[kind as TroopKind] = (garrison[kind as TroopKind] ?? 0) + value;
+        }
+      }
     }
     const levels = await loadBuildingLevels(client, tile.owner_city_id);
     const ownerRes = await client.query(`SELECT account_id, famous_name FROM cities WHERE id = $1`, [tile.owner_city_id]);

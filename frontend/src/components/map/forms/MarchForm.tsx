@@ -12,7 +12,7 @@ import { ConfirmButton } from './ConfirmButton';
 import type { TargetCtx } from './targetTypes';
 import { TroopPicker, troopTotal } from './TroopPicker';
 
-export type MarchAct = 'plunder' | 'occupy' | 'clear' | 'reinforce' | 'transfer';
+export type MarchAct = 'plunder' | 'occupy' | 'clear' | 'reinforce' | 'transfer' | 'assist';
 
 export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
   const copy = useCopy();
@@ -38,7 +38,9 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
     return marchTravelSeconds(origin.x, origin.y, x, y, troops, city.timeScale, marchBonusPercent(city.techs) + station);
   }, [origin, total, act, city, x, y, troops]);
 
-  const hint = enemyWild
+  const hint = act === 'assist'
+    ? COPY.worldMap.taskAssistHint
+    : enemyWild
     ? COPY.worldMap.attackHintEnemyWild
     : enemyCity
       ? act === 'occupy' && enemyBranch
@@ -57,7 +59,9 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
             : COPY.worldMap.transferHint;
 
   const label =
-    act === 'occupy'
+    act === 'assist'
+      ? COPY.worldMap.confirmAssist
+      : act === 'occupy'
       ? enemyWild
         ? COPY.worldMap.confirmOccupyEnemyWild
         : enemyBranch
@@ -73,7 +77,8 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
 
   const submit = () =>
     run(async () => {
-      const ok = await world.march(x, y, troops, act === 'occupy' ? 'occupy' : 'plunder', undefined, undefined, withHero ? (hero?.selectedHeroId ?? null) : null);
+      const task = act === 'occupy' ? 'occupy' : act === 'assist' ? 'assist' : 'plunder';
+      const ok = await world.march(x, y, troops, task, undefined, undefined, withHero ? (hero?.selectedHeroId ?? null) : null);
       if (ok) {
         setTroops({});
         if (withHero) {

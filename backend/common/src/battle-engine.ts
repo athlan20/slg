@@ -140,6 +140,9 @@ export interface BattleOptions {
   attackerTech?: CombatTechBonus | null;
   /** 守方科技乘数（同上；NPC 一方不传） */
   defenderTech?: CombatTechBonus | null;
+  /** 守方武将加成的覆盖比例（v74，AISLG-194）：协防时城守武将只加成城主自己的部队，
+   *  按城主兵力占守方总兵力的比例折算（0..1，缺省 1 = 全部守军都吃城守加成） */
+  defenderHeroScale?: number;
   /** 守方城防器械库存（v73，AISLG-193；仅守城战 siege 生效）。引擎按需使用、最多用到把
    *  对口敌军全部打掉，返回 defenseUse 由调用方在同一事务内扣库存。缺省 / 空 = 无器械 */
   defenses?: DefenseStock | null;
@@ -354,6 +357,7 @@ export function simulateBattle(
   // v72（AISLG-192）：科技乘数按阵营取——攻方打人吃 attackerTech.atkPercent、挨打吃 defenderTech.defPercent
   const attTech = opts.attackerTech ?? null;
   const defTech = opts.defenderTech ?? null;
+  const defHeroScale = Math.max(0, Math.min(1, opts.defenderHeroScale ?? 1));
   /** 有效速度：驾驭科技只加骑兵类战斗速度（影响分档与每回合推进距离） */
   const speedOf = (stack: Stack, side: 0 | 1): number => {
     const base = TROOP_STATS[stack.kind].speed;
@@ -555,12 +559,16 @@ export function simulateBattle(
         const wallPercent = siege && unit.side === 0 && target.pos === FIELD_LENGTH ? wallNow : 0;
         const hero = unit.side === 0 ? attHero : defHero;
         const foe = unit.side === 0 ? defHero : attHero;
+        // v74：守方（side=1）的城守加成按覆盖比例折算（协防部队不吃城主武将的加成）
+        const heroScale = unit.side === 1 ? defHeroScale : 1;
+        const foeHeroScale = unit.side === 0 ? defHeroScale : 1;
         const specialty = specialtyBonus(hero?.specialty, unit.stack.kind, hero?.specialtyScale ?? 1, siege);
         const resistance = specialtyBonus(foe?.specialty, target.kind, foe?.specialtyScale ?? 1, siege);
         const techAtk = Math.max(0, (unit.side === 0 ? attTech : defTech)?.atkPercent ?? 0);
         const techDef = Math.max(0, (unit.side === 0 ? defTech : attTech)?.defPercent ?? 0);
         const total = attackTotal(unit.stack, target, wallPercent, rng,
-          (hero?.atkPercent ?? 0) + specialty.atkPercent, (foe?.defPercent ?? 0) + resistance.defPercent,
+          ((hero?.atkPercent ?? 0) + specialty.atkPercent) * heroScale,
+          ((foe?.defPercent ?? 0) + resistance.defPercent) * foeHeroScale,
           techAtk, techDef);
         if (total > 0) {
           attacks.push({ att: unit.stack, target, total, byAttacker: unit.side === 0 });

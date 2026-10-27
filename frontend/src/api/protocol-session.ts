@@ -18,6 +18,8 @@ export type EventType =
   | 'defense_craft_queued'
   | 'defense_craft_completed'
   | 'defense_craft_cancelled'
+  | 'assist_arrived'
+  | 'assist_returned'
   | 'march_started'
   | 'march_completed'
   | 'wilderness_occupied'

@@ -200,6 +200,8 @@ export const Op = {
   CRAFT_DEFENSE: 117,
   /** C→S 取消打造（v73，AISLG-193：data.craftId；排队中与打造中都可取消，成本全额返还，下一条立即开工） */
   CANCEL_DEFENSE_CRAFT: 118,
+  /** C→S 召回 / 遣返协防部队（v74，AISLG-194：data.assistId；派出方随时召回，城主可遣返任意一支） */
+  DISMISS_ASSIST: 119,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -517,6 +519,12 @@ export const ErrorCode = {
   DEFENSE_QUEUE_FULL: 'DEFENSE_QUEUE_FULL',
   /** 城防器械：没有可取消的打造条目（已完成 / 已取消 / 不属于本账号）（v73，AISLG-193） */
   DEFENSE_NOT_CANCELLABLE: 'DEFENSE_NOT_CANCELLABLE',
+  /** 协防：目标城不是盟友的城（v74，AISLG-194） */
+  ASSIST_NOT_ALLY: 'ASSIST_NOT_ALLY',
+  /** 协防：目标城已接收 5 支协防部队，或本账号对同一座城已有 1 支（含在途）（v74，AISLG-194） */
+  ASSIST_LIMIT: 'ASSIST_LIMIT',
+  /** 协防：协防部队不存在、已返回，或不属于你（v74，AISLG-194） */
+  ASSIST_NOT_FOUND: 'ASSIST_NOT_FOUND',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -997,6 +1005,10 @@ export type {
 } from './protocol-defense';
 export { DEFENSE_KINDS, isDefenseKind, defenseCap, defenseTotal } from './city-defense';
 export type { DefenseKind, DefenseStock } from './city-defense';
+
+// 盟友协防（v74，AISLG-194）的载荷类型在 protocol-assist.ts，规则在 city-assist.ts
+export type { AssistView, AssistOutView, DismissAssistRequestData, DismissAssistResponseData } from './protocol-assist';
+export { ASSIST_MAX_PER_CITY, assistCap } from './city-assist';
 
 // 城池 / 事件 / 建造 / 生产的视图类型（v7..v12 既有形态）同样拆在 protocol-city.ts
 export type {

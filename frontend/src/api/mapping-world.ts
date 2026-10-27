@@ -202,6 +202,20 @@ function baseEventText(view: EventView): string {
       return DEFENSE_COPY.event.completed(defenseName(view.detail.kind), countOf(view.detail), Number(view.detail.total ?? 0));
     case 'defense_craft_cancelled':
       return DEFENSE_COPY.event.cancelled(defenseName(view.detail.kind), countOf(view.detail), cargoText(view.detail.refund as Partial<Resources> | undefined));
+    case 'assist_arrived':
+      return DEFENSE_COPY.event.assistArrived(
+        String(view.detail.hostUsername ?? ''),
+        tName(String(view.detail.hostCityName ?? '')),
+        troopsSuffix(view.detail.troops as Record<string, unknown> | undefined),
+      );
+    case 'assist_returned': {
+      const cause = typeof view.detail.cause === 'string' ? (DEFENSE_COPY.event.assistCause[view.detail.cause] ?? view.detail.cause) : '';
+      return DEFENSE_COPY.event.assistReturned(
+        String(view.detail.hostUsername ?? EXTRA_STATE.mapping.cityFallback),
+        tName(String(view.detail.hostCityName ?? EXTRA_STATE.mapping.cityFallback)),
+        cause,
+      );
+    }
     case 'city_renamed':
       return EXTRA_STATE.event.cityRenamed(String(view.detail.from ?? ''), String(view.detail.to ?? ''));
     case 'account_reset':

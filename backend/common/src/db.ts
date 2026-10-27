@@ -652,6 +652,23 @@ CREATE TABLE IF NOT EXISTS defense_crafts (
 );
 CREATE INDEX IF NOT EXISTS idx_defense_crafts_city ON defense_crafts (city_id, status);
 CREATE INDEX IF NOT EXISTS idx_defense_crafts_due ON defense_crafts (due_at) WHERE status = 'crafting';
+
+-- v74（AISLG-194 盟友协防）：city_assist = 驻扎在盟友城里的协防部队（城 × 派出账号唯一：
+-- 同一账号对同一座城最多 1 支）。troops 为 jsonb 快照，守城战后按同兵种伤亡比例拆分后回写；
+-- 全灭 / 召回 / 遣返 / 退盟 / 易主时删除行。耗粮由派出方的出发城承担（2 倍），占派出城校场名额。
+CREATE TABLE IF NOT EXISTS city_assist (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  from_city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  troops jsonb NOT NULL,
+  initiator text NOT NULL,
+  arrive_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (city_id, account_id)
+);
+CREATE INDEX IF NOT EXISTS idx_city_assist_city ON city_assist (city_id);
+CREATE INDEX IF NOT EXISTS idx_city_assist_from ON city_assist (from_city_id);
+CREATE INDEX IF NOT EXISTS idx_city_assist_account ON city_assist (account_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tech_research_one_active ON tech_research (account_id) WHERE status = 'researching';
 
 -- v36（AISLG-114/115/116）：武将。account_heroes = 账号级武将（普通将从酒馆招募、名将从 PvE 获得）；
