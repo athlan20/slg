@@ -40,6 +40,8 @@ interface TopBarProps {
   /** 剧本战场（v75 AISLG-198）：没有战场时为 null；报名 / 进行中显示常驻胶囊 */
   battlefield: BattlefieldEventView | null;
   onOpenBattlefield: () => void;
+  /** 玩家交易所（v78 AISLG-196） */
+  onOpenMarket: () => void;
 }
 
 const topBtn =
@@ -65,9 +67,10 @@ export function TopBar({
   switching,
   battlefield,
   onOpenBattlefield,
+  onOpenMarket,
 }: TopBarProps) {
   const copy = useCopy();
-  const { COPY, NAV_COPY, TOP_COPY, BATTLEFIELD_COPY } = copy;
+  const { COPY, NAV_COPY, TOP_COPY, BATTLEFIELD_COPY, MARKET_COPY } = copy;
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [lastRequest, setLastRequest] = useState(exchangeRequest);
   const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -140,6 +143,16 @@ export function TopBar({
         </button>
         <button
           type="button"
+          role="顶栏-交易所按钮"
+          title={MARKET_COPY.launcher.title}
+          aria-label={MARKET_COPY.launcher.open}
+          onClick={onOpenMarket}
+          className={topBtn}
+        >
+          {MARKET_COPY.launcher.open}
+        </button>
+        <button
+          type="button"
           role="顶栏-排行榜按钮"
           title={COPY.leaderboard.title}
           aria-label={COPY.leaderboard.title}
@@ -150,7 +163,7 @@ export function TopBar({
         </button>
       </div>
       {exchangeOpen && city ? (
-        <ExchangePopover resources={city.resources} anchorRef={anchorRef} onExchange={onExchange} onClose={() => setExchangeOpen(false)} />
+        <ExchangePopover resources={city.resources} anchorRef={anchorRef} onExchange={onExchange} onOpenMarket={() => { setExchangeOpen(false); onOpenMarket(); }} onClose={() => setExchangeOpen(false)} />
       ) : null}
     </header>
   );

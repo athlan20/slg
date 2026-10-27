@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**77** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**78** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 77）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 78）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -496,7 +496,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 77,
+    "protocolVersion": 78,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -562,7 +562,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 77,
+    "protocolVersion": 78,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -586,7 +586,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/74 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/75 补读增量）**
 
 请求：
 
@@ -597,7 +597,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 74,
+    "docVersion": 75,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -616,8 +616,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 77,
-    "docNotice": "接口文档已从 v74 更新到 v77：请 GET /agent-api/changes/74 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 78,
+    "docNotice": "接口文档已从 v75 更新到 v78：请 GET /agent-api/changes/75 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -13960,6 +13960,387 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 133 · GET_MARKET — 查询玩家交易所（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 返回可买挂单（可按卖出 / 收取资源筛选、分页）、我的挂单与成交记录、我的额度与门槛；玩家与 Agent 通用。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| sellResource | 'food' \| 'wood' \| 'stone' \| 'iron' | 可选。只看卖出该资源的挂单。 |
+| buyResource | 'food' \| 'wood' \| 'stone' \| 'iron' \| 'gold' | 可选。只看收取该资源 / 金币的挂单。 |
+| page | number | 页码，从 1 起；每页 10 条。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orders | array | 可买挂单（单价升序）：{ id, seller{accountId,username,nobility,nobilityName,allianceId,allianceName}, city{id,name,x,y}, sellResource, buyResource, total, remaining, unitPrice, allyOnly, createdAt, expiresAt, mine }。只卖给盟友的单对非盟友不返回。 |
+| page / pageSize / total | number | 分页信息，每页 10 条。 |
+| mine.orders | array | 我的挂单（进行中 + 最近结束，最多 20 条），结构同 orders。 |
+| mine.trades | array | 我的成交记录（最近 20 条）：{ id, role: buy\|sell, other{accountId,username}, sellResource, buyResource, quantity, paid, delivered（扣 5% 后实收）, fee, createdAt, deliveredAt（双方商队都送达才非 null） }。 |
+| limits | object | 我的额度与门槛：{ minAmount, maxOpenOrders, activeOrders, feePercent, government, dailyLimit, dailyUsed, dailyRemaining, locked, lockedReason: government\|newbie\|null, priceRangeResource{min,max}, priceRangeGold{min,max} }。 |
+
+**Agent 提示**：先 GET_MARKET 看 orders 与 limits：locked 为 true 时不能交易。单价范围见 limits；吃单前确认自己 buyResource 足够。成交后商队要飞一会儿，deliveredAt 为 null 表示还在路上。
+
+**示例**
+
+**看铁换粮的挂单**
+
+请求：
+
+```json
+{
+  "op": 133,
+  "seq": 60,
+  "data": {
+    "sellResource": "iron",
+    "buyResource": "food"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 133,
+  "seq": 60,
+  "ok": true,
+  "data": {
+    "orders": [
+      {
+        "id": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+        "seller": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "alice",
+          "nobility": 3,
+          "nobilityName": "大夫",
+          "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+          "allianceName": "卧龙盟"
+        },
+        "city": {
+          "id": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+          "name": "主城",
+          "x": 612,
+          "y": 388
+        },
+        "sellResource": "iron",
+        "buyResource": "food",
+        "total": 10000,
+        "remaining": 10000,
+        "unitPrice": 1.2,
+        "allyOnly": false,
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z",
+        "mine": false
+      }
+    ],
+    "page": 1,
+    "pageSize": 10,
+    "total": 1,
+    "mine": {
+      "orders": [],
+      "trades": []
+    },
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 1,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 0,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
+### op 134 · CREATE_MARKET_ORDER — 挂单卖出资源（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 卖出资源从当前城（可带 cityId）立即冻结；挂单后可在 GET_MARKET 的 mine.orders 看到。单价超范围返回 PRICE_OUT_OF_RANGE；官府 / 保护期门槛 MARKET_LOCKED；满 5 张 ORDER_LIMIT。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| sellResource | 'food' \| 'wood' \| 'stone' \| 'iron' | 必填。卖出的资源。 |
+| buyResource | 'food' \| 'wood' \| 'stone' \| 'iron' \| 'gold' | 必填。收取的资源或金币。 |
+| amount | number | 必填。卖出总量，≥ 1000，不能超过挂单城现有数量。 |
+| unitPrice | number | 必填。每 1 个卖出资源换多少个收取物；范围见 GET_MARKET 的 limits（资源 0.5–2 / 金币 0.125–0.5，最多 4 位小数）。 |
+| allyOnly | boolean | 可选。true = 只卖给同联盟成员。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| order | object | 新挂单，结构同 GET_MARKET 的 orders。 |
+| limits | object | 挂单后的额度，结构同 GET_MARKET 的 limits。 |
+
+**可能错误**：`INVALID_PARAMS`、`MARKET_LOCKED`、`PRICE_OUT_OF_RANGE`、`ORDER_LIMIT`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：挂单前算好单价：资源之间参考价 1:1，收金币参考价 0.25。只卖给盟友可减少被陌生人吃掉，但也少买家。
+
+**示例**
+
+**卖 1 万铁，每 1 铁换 1.2 粮**
+
+请求：
+
+```json
+{
+  "op": 134,
+  "seq": 61,
+  "data": {
+    "sellResource": "iron",
+    "buyResource": "food",
+    "amount": 10000,
+    "unitPrice": 1.2
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 134,
+  "seq": 61,
+  "ok": true,
+  "data": {
+    "order": {
+      "id": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+      "seller": {
+        "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+        "username": "alice",
+        "nobility": 3,
+        "nobilityName": "大夫",
+        "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+        "allianceName": "卧龙盟"
+      },
+      "city": {
+        "id": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+        "name": "主城",
+        "x": 612,
+        "y": 388
+      },
+      "sellResource": "iron",
+      "buyResource": "food",
+      "total": 10000,
+      "remaining": 10000,
+      "unitPrice": 1.2,
+      "allyOnly": false,
+      "createdAt": "2026-09-25T08:00:00.000Z",
+      "expiresAt": "2026-09-27T08:00:00.000Z",
+      "mine": true
+    },
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 2,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 0,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
+### op 135 · BUY_MARKET_ORDER — 吃单（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 吃单可整单或部分（quantity ≤ remaining）。成交时锁挂单行、扣买家款、按 5% 手续费拆出双方实收并各派一支商队。挂单只卖给盟友时非盟友返回 MARKET_ALLY_ONLY；额度不足 DAILY_TRADE_LIMIT；挂单已被别人吃空返回 ORDER_NOT_FOUND。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orderId | string | 必填。挂单 id。 |
+| quantity | number | 必填。买入数量（正整数，≤ 挂单剩余量）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| trade | object | 成交记录（买家视角），结构同 GET_MARKET 的 mine.trades。 |
+| remaining | number | 成交后挂单剩余量（0 = 售罄）。 |
+| limits | object | 成交后的额度，结构同 GET_MARKET 的 limits。 |
+
+**可能错误**：`INVALID_PARAMS`、`MARKET_LOCKED`、`MARKET_ALLY_ONLY`、`DAILY_TRADE_LIMIT`、`ORDER_NOT_FOUND`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：部分成交可以拆单降低一次性投入；注意 5% 手续费与商队飞行时间。额度按卖出资源数量计，买卖都占额度。
+
+**示例**
+
+**买 4000 铁（付 4800 粮，实收 3800 铁）**
+
+请求：
+
+```json
+{
+  "op": 135,
+  "seq": 62,
+  "data": {
+    "orderId": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+    "quantity": 4000
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 135,
+  "seq": 62,
+  "ok": true,
+  "data": {
+    "trade": {
+      "id": "…",
+      "role": "buy",
+      "other": {
+        "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+        "username": "alice"
+      },
+      "sellResource": "iron",
+      "buyResource": "food",
+      "quantity": 4000,
+      "paid": 4800,
+      "delivered": 3800,
+      "fee": 200,
+      "createdAt": "2026-09-25T08:00:00.000Z",
+      "deliveredAt": null
+    },
+    "remaining": 6000,
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 1,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 4000,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
+### op 136 · CANCEL_MARKET_ORDER — 撤单（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 卖家可随时撤回未成交部分，冻结资源立即退还到挂单城；已售罄 / 已过期返回 ORDER_NOT_CANCELLABLE。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orderId | string | 必填。挂单 id（只能是自己的）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orderId | string | 撤单的挂单 id。 |
+| refunded | number | 退还数量。 |
+| resource | string | 退还的资源种类。 |
+| limits | object | 撤单后的额度，结构同 GET_MARKET 的 limits。 |
+
+**可能错误**：`INVALID_PARAMS`、`ORDER_NOT_FOUND`、`ORDER_NOT_CANCELLABLE`（处置建议见第 4 节）
+
+**Agent 提示**：挂单 48 小时会自动撤单退款，不需要手动撤；急着用资源时再撤。
+
+**示例**
+
+**撤回 6000 铁**
+
+请求：
+
+```json
+{
+  "op": 136,
+  "seq": 63,
+  "data": {
+    "orderId": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 136,
+  "seq": 63,
+  "ok": true,
+  "data": {
+    "orderId": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+    "refunded": 6000,
+    "resource": "iron",
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 1,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 0,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -15647,6 +16028,13 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `BATTLEFIELD_SHOP_LIMIT` | （v75，AISLG-198）本场该商品已达到限购数量。 | 换其他商品，或等下一场额度重置（军功余额跨场保留）。 |
 | `BATTLEFIELD_MERIT_INSUFFICIENT` | （v75，AISLG-198）战场军功余额不足；响应附 cost / balance。 | 继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。 |
 | `BATTLEFIELD_TARGET_INVALID` | （v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。 | 用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。 |
+| `MARKET_LOCKED` | （v78，AISLG-196）交易所需要主城官府 ≥ 5 级且不在新手保护期；响应附 reason / government / required。 | 升级主城官府或等新手保护结束后再来。 |
+| `PRICE_OUT_OF_RANGE` | （v78，AISLG-196）单价超出允许范围：资源之间 0.5–2，收金币 0.125–0.5；响应附 min / max。 | 按 GET_MARKET 的 limits.priceRangeResource / priceRangeGold 调整单价。 |
+| `ORDER_LIMIT` | （v78，AISLG-196）同时挂单已达 5 张。 | 先撤单或等成交后再挂。 |
+| `DAILY_TRADE_LIMIT` | （v78，AISLG-196）今日成交额度不足（主城官府等级 × 3000 × 缩放，买卖合计）；响应附 limit / used / remaining。 | 明天（北京日）额度重置后再交易；额度按卖出资源数量折算、买卖双方都计。 |
+| `ORDER_NOT_FOUND` | （v78，AISLG-196）挂单不存在、已售罄、已过期或不属于你。 | 重新 GET_MARKET 拉最新挂单；过期挂单会自动退款。 |
+| `MARKET_ALLY_ONLY` | （v78，AISLG-196）挂单勾选了「只卖给盟友」，你与卖家不在同一个联盟。 | 换一张公开挂单，或加入卖家所在联盟。 |
+| `ORDER_NOT_CANCELLABLE` | （v78，AISLG-196）挂单已售罄或已过期，无法撤回。 | 刷新挂单列表确认状态。 |
 | `DIPLOMACY_LIMIT` | （v77，AISLG-195）友盟 / 敌对数量已达上限（每联盟最多 2 个友盟、5 个敌对），响应附 limit。 | 先解除一个现有关系，再结新友盟 / 宣布新敌对。 |
 | `DIPLOMACY_COOLDOWN` | （v77，AISLG-195）刚解除友好，72 小时内同一对联盟不能再次结好；响应附 refriendAfter / retryAfterSeconds。 | 等到 refriendAfter 之后再发邀请 / 同意邀请。 |
 | `DIPLOMACY_EXISTS` | （v77，AISLG-195）与目标联盟已经是友盟 / 敌对，或已有待处理邀请。 | 用 GET_ALLIANCE_DIPLOMACY 查当前关系与邀请，避免重复操作。 |
@@ -17083,7 +17471,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 77。
+- 协议版本随对外协议内容的每次变化递增；当前为 78。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

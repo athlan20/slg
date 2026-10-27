@@ -54,8 +54,10 @@ import { ANNOUNCEMENT_COPY } from '../copy-announcement';
 import { ANNOUNCEMENT_COPY_EN } from '../copy-announcement-en';
 import { ALLIANCE_COPY } from '../copy-alliance';
 import { BATTLEFIELD_COPY } from '../copy-battlefield';
+import { MARKET_COPY } from '../copy-market';
 import { ALLIANCE_COPY_EN } from '../copy-alliance-en';
 import { BATTLEFIELD_COPY_EN } from '../copy-battlefield-en';
+import { MARKET_COPY_EN } from '../copy-market-en';
 
 /** 中文文案全集（结构基准）：英文 Bundle 必须与之同构 */
 const ZH = {
@@ -103,6 +105,7 @@ const ZH = {
   ANNOUNCEMENT_COPY,
   ALLIANCE_COPY,
   BATTLEFIELD_COPY,
+  MARKET_COPY,
   SEASON_COPY,
   HALL_COPY,
 };
@@ -155,6 +158,7 @@ const EN: Bundle = {
   ANNOUNCEMENT_COPY: ANNOUNCEMENT_COPY_EN,
   ALLIANCE_COPY: ALLIANCE_COPY_EN,
   BATTLEFIELD_COPY: BATTLEFIELD_COPY_EN,
+  MARKET_COPY: MARKET_COPY_EN,
   SEASON_COPY: SEASON_COPY_EN,
   HALL_COPY: HALL_COPY_EN,
 };

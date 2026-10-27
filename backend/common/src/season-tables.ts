@@ -90,6 +90,8 @@ export const RESET_TABLES: readonly string[] = [
   'battlefield_merit',
   'battlefield_purchases',
   // 声望与爵位（v76，AISLG-197）：每日俸禄领取记录换季清空（accounts 的声望 / 爵位在换季时单独清零）
+  'market_orders',
+  'market_trades',
   'nobility_claims',
 ];
 

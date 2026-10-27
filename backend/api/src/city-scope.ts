@@ -28,6 +28,8 @@ export const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.MARCH,
   Op.SCOUT,
   Op.EXCHANGE,
+  Op.CREATE_MARKET_ORDER,
+  Op.BUY_MARKET_ORDER,
   Op.GET_TECHS,
   Op.RESEARCH_TECH,
   Op.BUILD_FARM,

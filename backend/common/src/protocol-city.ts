@@ -231,6 +231,12 @@ export const EventType = {
   BATTLEFIELD_REWARD: 'battlefield_reward',
   /** v75：战场商店兑换（detail = { eventId, item, cost, reward }） */
   BATTLEFIELD_SHOP: 'battlefield_shop',
+  /** v78（AISLG-196）：交易所挂单 / 成交 / 撤单 / 过期（detail 见各接口） */
+  MARKET_ORDER_CREATED: 'market_order_created',
+  MARKET_ORDER_FILLED: 'market_order_filled',
+  MARKET_ORDER_CANCELLED: 'market_order_cancelled',
+  MARKET_ORDER_EXPIRED: 'market_order_expired',
+  MARKET_TRADE: 'market_trade',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;

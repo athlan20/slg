@@ -8,7 +8,7 @@ import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchView, TerrainKind, TileKind } from './protocol-world';
 
 /** 行军目的（marches.purpose 的合法取值；v16 起 attack 仅存量在途行军使用） */
-export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept', 'assist'] as const;
+export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept', 'assist', 'caravan'] as const;
 
 export type MarchPurpose = (typeof MARCH_PURPOSES)[number];
 

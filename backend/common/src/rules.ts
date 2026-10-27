@@ -6,6 +6,8 @@
 import { BUILDING_KINDS, RESOURCE_KEYS, type BuildingKind, type KindActionCosts, type Resources } from './protocol';
 import { FAMOUS_THEME_LEVEL_MAX, famousThemeBuildingOf } from './famous-effects';
 import { getTimeScale, scaledRate } from './time-scale';
+import { EXCHANGE_INPUT_PER_GOLD, exchangeGoldFor } from './exchange';
+export { EXCHANGE_INPUT_PER_GOLD, exchangeGoldFor } from './exchange';
 
 /** 建筑建成后的经济产出；非生产建筑为 null（军营的征兵、城墙的守城加成属后续玩法） */
 export type ProducesKind = 'food' | 'wood' | 'stone' | 'iron' | 'gold';
@@ -479,12 +481,6 @@ export function applyCost(resources: Resources, cost: Resources): Resources {
  * 定位是「过满资源的可持续出口」而非套利通道：四资源换金的产出比官府产金低一个量级，
  * 不构成最优策略，只为满仓资源保底变现（同时缓解储量顶满后的产出作废）。
  */
-export const EXCHANGE_INPUT_PER_GOLD = 4;
-
-/** 兑换所得金币 = floor(amount ÷ 汇率)；不足 1 金返回 0（协议层按 INVALID_PARAMS 拒绝） */
-export function exchangeGoldFor(amount: number): number {
-  return Math.floor(Math.max(0, amount) / EXCHANGE_INPUT_PER_GOLD);
-}
 
 /** 到期完成的状态推进（纯函数）：Worker 依据它的结果写库；对建筑类型不敏感 */
 export function completeBuild(build: { status: string; level: number }): {

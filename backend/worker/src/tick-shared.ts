@@ -121,6 +121,8 @@ export interface MarchRow {
   ambush_at?: Date | null;
   /** v36（AISLG-114）：随队武将 id，其余为 null */
   hero_id?: string | null;
+  /** v78（AISLG-196）：商队目的地城 */
+  to_city_id?: string | null;
 }
 
 /** 结束后经 pg_notify 发给 API 的载荷（battle_report 为 v13 新增；
