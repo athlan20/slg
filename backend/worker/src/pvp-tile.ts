@@ -41,7 +41,7 @@ import {
   type TileNotify,
   abortForAlly,
 } from './tick-shared';
-import { areAllies } from '../../common/src/alliance-db';
+import { cannotAttack } from '../../common/src/alliance-db';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -116,7 +116,7 @@ export async function resolvePvpOccupyArrival(
     return;
   }
   // v67（AISLG-182）：出发后目标才成为盟友（同一联盟）：不开战，原路返回
-  if (await areAllies(client, march.account_id, owner.account_id)) {
+  if (await cannotAttack(client, march.account_id, owner.account_id)) {
     await abortForAlly(client, march, troops, settled, notifies);
     return;
   }

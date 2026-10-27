@@ -20,6 +20,8 @@ export const KEEP_TABLES: readonly string[] = [
   // 联盟（v66，AISLG-181）：联盟本身与成员关系跨季保留（账号保留，社交关系随之保留）
   'alliances',
   'alliance_members',
+  // 联盟外交关系（v77，AISLG-195）：与联盟一致跨季保留
+  'alliance_relations',
 ];
 
 /** 换季时清空的表：世界级 + 账号级游戏态 + 榜单快照 */
@@ -74,6 +76,8 @@ export const RESET_TABLES: readonly string[] = [
   // 联盟的申请与邀请（v66，AISLG-181）：换季清空；联盟频道消息在 chat_messages 里一并清
   'alliance_requests',
   'alliance_invites',
+  // 联盟友好邀请（v77，AISLG-195）：换季清空
+  'alliance_friend_invites',
   // 联盟地图标记（v69，AISLG-184）：换季清空
   'alliance_marks',
   // 联盟榜快照（v70，AISLG-185）：与 leaderboard_snapshots 同理，换季清空（换季前已存档前三）

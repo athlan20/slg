@@ -67,7 +67,8 @@ export function TargetPanel() {
   /** 调兵 / 运输目标：本账号的分城（非出发主城） */
   const transferable = isOwnCity && detail?.owner?.cityId !== city.id;
   /** 盟友的城池 / 野地（AISLG-182 / F2）：攻击类操作禁用并说明原因 */
-  const allyBlocked = detail?.owner?.ally === true;
+  const allyBlocked =
+    detail?.owner?.relation === 'ally' || detail?.owner?.relation === 'friendly' || detail?.owner?.ally === true;
   /** 有联盟才能打标记（AISLG-184 / F2） */
   const inAlliance = session.alliance.state?.alliance != null;
 
@@ -196,6 +197,11 @@ export function TargetPanel() {
             {blockedNow ? (
               <p role="选中详情-盟友提示" className="text-[12px] leading-relaxed text-st-online">
                 {ALLIANCE_COPY.ally.blocked}
+              </p>
+            ) : null}
+            {detail?.owner?.relation === 'hostile' ? (
+              <p role="选中详情-敌对提示" className="text-[12px] leading-relaxed text-st-error">
+                {ALLIANCE_COPY.diplomacy.hostiles}
               </p>
             ) : null}
             {!blockedNow && current === 'scout' ? <ScoutForm key={`${x},${y}`} ctx={ctx} /> : null}

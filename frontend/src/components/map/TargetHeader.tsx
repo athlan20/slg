@@ -156,7 +156,17 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
                 {detail.owner ? COPY.worldMap.ownerRow(`${detail.owner.username} · ${tName(detail.owner.cityName)}`) : COPY.worldMap.ownerNone}
               </p>
             ) : null}
-            {detail.owner?.ally ? (
+            {detail.owner?.relation === 'friendly' ? (
+              <p role="选中详情-友盟" className="truncate font-semibold text-accent">
+                {ALLIANCE_COPY.diplomacy.friends}
+              </p>
+            ) : null}
+            {detail.owner?.relation === 'hostile' ? (
+              <p role="选中详情-敌对" className="truncate font-semibold text-st-error">
+                {ALLIANCE_COPY.diplomacy.hostiles}
+              </p>
+            ) : null}
+            {detail.owner?.ally || detail.owner?.relation === 'ally' ? (
               <p role="选中详情-盟友" className="truncate font-semibold text-st-online">
                 {ALLIANCE_COPY.ally.tag}
               </p>

@@ -45,6 +45,7 @@ interface TileQueryRow extends TileRow {
   owner_is_ally?: boolean;
   owner_username: string | null;
   owner_nobility?: number | null;
+  owner_relation?: string | null;
   owner_city_name: string | null;
   garrison: number | null;
   /** 请求账号对该地块的侦察快照（scout_intel.detail 拆列）；未侦察均为 null */
@@ -86,6 +87,14 @@ const TILE_SELECT = `
   SELECT wt.x, wt.y, wt.terrain, wt.kind, wt.level, wt.owner_city_id, wt.npc, wt.plundered_at,
          c.account_id AS owner_account_id, a.username AS owner_username, a.nobility AS owner_nobility, c.name AS owner_city_name,
          (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally,
+         CASE
+           WHEN c.account_id = $1 THEN 'self'
+           WHEN am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id THEN 'ally'
+           WHEN r.relation = 'friendly' THEN 'friendly'
+           WHEN r.relation = 'hostile' THEN 'hostile'
+           WHEN r.relation = 'neutral' AND r.no_attack_until > now() THEN 'friendly'
+           ELSE 'neutral'
+         END AS owner_relation,
          c.truce_until AS owner_city_truce_until, a.newbie_until AS owner_newbie_until, a.self_truce_until AS owner_shield_until,
          wt.owner_changed_until, c.durability, c.durability_settled_at,
          at.level AS owner_repair_level,
@@ -104,6 +113,8 @@ const TILE_SELECT = `
   LEFT JOIN account_techs at ON at.account_id = c.account_id AND at.tech = 'repair'
   LEFT JOIN alliance_members am_me ON am_me.account_id = $1
   LEFT JOIN alliance_members am_o ON am_o.account_id = c.account_id
+  LEFT JOIN alliance_relations r ON r.a_id = LEAST(am_me.alliance_id, am_o.alliance_id)
+    AND r.b_id = GREATEST(am_me.alliance_id, am_o.alliance_id)
   LEFT JOIN (SELECT account_id, MIN(created_at) AS first_created FROM cities GROUP BY account_id) om
     ON om.account_id = c.account_id
   LEFT JOIN (SELECT x, y, sum(count) AS total FROM tile_army GROUP BY x, y) ta
@@ -111,6 +122,13 @@ const TILE_SELECT = `
   LEFT JOIN scout_intel si ON si.account_id = $1 AND si.x = wt.x AND si.y = wt.y
   LEFT JOIN yt_camps yc ON yc.x = wt.x AND yc.y = wt.y AND yc.status = 'active'
 `;
+
+function ownerRelationOf(value: string | null | undefined, ownerAccountId: string, requesterAccountId?: string): TileOwnerView['relation'] {
+  if (value === 'self' || value === 'ally' || value === 'friendly' || value === 'hostile' || value === 'neutral') {
+    return value;
+  }
+  return requesterAccountId && ownerAccountId === requesterAccountId ? 'self' : 'neutral';
+}
 
 function emptyArmy(): Record<TroopKind, number> {
   const army = {} as Record<TroopKind, number>;
@@ -209,6 +227,7 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
       nobility: Math.max(0, Number(row.owner_nobility ?? 0)),
       nobilityName: nobilityName(Number(row.owner_nobility ?? 0)),
       ally: row.owner_is_ally === true,
+      relation: ownerRelationOf(row.owner_relation, row.owner_account_id, requesterAccountId),
     };
   }
   // NPC 城池库存档位（v23 AISLG-55）：对全服可见（只给档位不给数值，精确值走侦察）
@@ -374,7 +393,8 @@ async function assistsOf(
     return null;
   }
   const own = accountId !== undefined && row.owner_account_id === accountId;
-  return own || row.owner_is_ally === true ? await loadCityAssists(q, row.owner_city_id) : null;
+  const side = row.owner_relation === 'ally' || row.owner_relation === 'friendly' || row.owner_is_ally === true;
+  return own || side ? await loadCityAssists(q, row.owner_city_id) : null;
 }
 
 /** 在野名将详情（v54）：未被获得才给出；名字与属性只对侦察过的账号开放 */

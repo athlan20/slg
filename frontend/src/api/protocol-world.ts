@@ -38,6 +38,8 @@ export interface TileOwnerView {
   nobilityName: string;
   /** 占领者与自己同属一个联盟（v67，AISLG-182）：盟友的地块不能攻击 / 侦察，地图单独着色；自己的地块为 false */
   ally: boolean;
+  /** v77（AISLG-195）：与占领者的关系 self / ally / friendly / hostile / neutral */
+  relation: 'self' | 'ally' | 'friendly' | 'hostile' | 'neutral';
 }
 
 /** NPC 城池库存档位（v23 AISLG-55；相对该城初始库存，不给精确数值） */
@@ -353,7 +355,7 @@ export interface WorldMapResponseData {
 }
 
 /** 小地图城池点位的归属：本方 / 他方玩家城池 / NPC 城池 / 未被占领的名城 */
-export type MapOverviewSide = 'own' | 'ally' | 'enemy' | 'npc' | 'famous';
+export type MapOverviewSide = 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous';
 
 /** GET_MAP_OVERVIEW 响应（v58，AISLG-160）：城池点位 [x, y, side]，按 y 行 x 列排序；野地不返回 */
 export interface MapOverviewResponseData {

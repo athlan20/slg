@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 76;
+export const PROTOCOL_VERSION = 77;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -195,6 +195,11 @@ export const Op = {
   GET_NOBILITY: 126,
   /** 领取每日爵位俸禄（v76：北京日每天一次，平民无俸禄） */
   CLAIM_NOBILITY_SALARY: 127,
+  ALLIANCE_DIPLOMACY_INVITE: 128,
+  ALLIANCE_DIPLOMACY_RESPOND: 129,
+  ALLIANCE_DIPLOMACY_END: 130,
+  ALLIANCE_DIPLOMACY_HOSTILE: 131,
+  GET_ALLIANCE_DIPLOMACY: 132,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -347,6 +352,13 @@ export type ErrorCode =
   | 'PASSIVE_TRUCE_NOT_CANCELLABLE'
   | 'TILE_PROTECTED'
   | 'ALLY_NOT_ATTACKABLE'
+  | 'DIPLOMACY_LIMIT'
+  | 'DIPLOMACY_COOLDOWN'
+  | 'DIPLOMACY_EXISTS'
+  | 'DIPLOMACY_INVITE_NOT_FOUND'
+  | 'NOBILITY_TOO_LOW'
+  | 'NOBILITY_SALARY_CLAIMED'
+  | 'NOBILITY_SALARY_NONE'
   | 'ALLIANCE_MARK_LIMIT'
   | 'ALLIANCE_MARK_EXISTS'
   | 'WX_TICKET_INVALID'
@@ -1125,3 +1137,14 @@ export type {
 
 // 声望与爵位（v76，AISLG-197）
 export type { NobilityStatusView, GetNobilityResponseData, ClaimNobilitySalaryResponseData } from './protocol-nobility';
+
+// 联盟外交（v77，AISLG-195）
+export type {
+  AllianceRelationKind,
+  AllianceDiplomacyEntryView,
+  AllianceFriendInviteView,
+  GetAllianceDiplomacyResponseData,
+  AllianceDiplomacyTargetRequestData,
+  AllianceDiplomacyInviteRequestData,
+  AllianceDiplomacyRespondRequestData,
+} from './protocol-alliance';

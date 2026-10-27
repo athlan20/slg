@@ -108,7 +108,7 @@ export const REQUEST_GET_WORLD_MAP: RequestOpDoc = {
     { name: 'tiles[].terrain', type: "'plain' | 'grass' | 'forest' | 'hill' | 'desert' | 'marsh' | 'lake' | 'gold_mine'", desc: '地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。' },
     { name: 'tiles[].kind', type: "'wilderness' | 'npc_city' | 'city'", desc: '地块类别：野地 / NPC 城池 / 玩家城池（主城与分城）。' },
     { name: 'tiles[].level', type: 'number', desc: `野地等级（1..${WILDERNESS_LEVEL_MAX}）或 NPC 城池等级（1..3）；玩家城池为 0。` },
-    { name: 'tiles[].owner', type: 'object | null', desc: '占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally }；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。' },
+    { name: 'tiles[].owner', type: 'object | null', desc: '占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally, relation }；relation（v77）= self / ally / friendly / hostile / neutral；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。' },
     { name: 'tiles[].garrison', type: 'number', desc: '地块驻军总数；未占领野地为 0（原住守军不计入驻军总数；其编成见 GET_TILE 的 nativePower 与侦察）；NPC 城池需侦察（v17）：未侦察为 0，已侦察为最近一次侦察快照的总数。' },
     { name: 'tiles[].npcStockTier', type: "'rich' | 'normal' | 'low' | 'empty' | null", desc: "NPC 城池库存档位（v23 新增，AISLG-55）：相对该城初始库存——rich 丰厚（>60%）/ normal 一般（20%–60%）/ low 见底（<20%）/ empty 已空；只给档位不给精确数值（精确库存仍要走 SCOUT 侦察）；非 NPC 城为 null。掠夺后档位随库存变化，全服看到的档位一致。" },
     { name: 'tiles[].camp', type: 'object | null', desc: '黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small|medium|large|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。' },
@@ -170,7 +170,7 @@ export const REQUEST_GET_MAP_OVERVIEW: RequestOpDoc = {
   dataFields: [
     { name: 'size', type: 'number', desc: `世界边长（世界为 size×size 方格，当前 ${WORLD_SIZE}）。` },
     { name: 'at', type: 'string', desc: '统计时刻（ISO 8601）。' },
-    { name: 'cities', type: 'array', desc: "城池点位 [x, y, side] 数组；side 取 'own' | 'ally' | 'enemy' | 'npc' | 'famous'（ally 为 v67 新增：同联盟盟友的城池）。" },
+    { name: 'cities', type: 'array', desc: "城池点位 [x, y, side] 数组；side 取 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous'（ally 为 v67 同联盟盟友；friendly / hostile 为 v77 友盟 / 敌对联盟成员）。" },
   ],
   errors: [],
   examples: [

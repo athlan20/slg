@@ -23,7 +23,7 @@ import { loadMovingTarget, rowIndexAt, rowStepMs } from '../../common/src/moving
 import { loadCampAt } from '../../common/src/yellow-turban-db';
 import { reachWindowOf, routeIndexOfCell } from '../../common/src/moving-target';
 import { activeAt, inNewbieProtection } from '../../common/src/protection';
-import { areAllies } from '../../common/src/alliance-db';
+import { canAssist, cannotAttack } from '../../common/src/alliance-db';
 import { assistLimitDenial } from '../../common/src/city-assist-db';
 
 /** MARCH 请求参数校验（分发层用）：坐标为整数、troops 为已知兵种的非负整数且不全为 0；
@@ -299,10 +299,12 @@ export async function resolveMarchTarget(
     return { purpose: 'transfer', targetCityId: city.id };
   }
   // v67（AISLG-182）：盟友（同一联盟）的城池不能掠夺 / 占领（运输与调兵走上面的分支，不受影响）
-  if (await areAllies(client, accountId, city.account_id)) {
-    // v74（AISLG-194）：盟友城接受 task='assist'（协防）；上限（每城 5 支 / 同账号同城 1 支 / 在途也算）在此初核，
-    // Worker 到达时复核
+  if (await cannotAttack(client, accountId, city.account_id)) {
+    // v74（AISLG-194）：盟友 / 友盟的城接受 task='assist'（协防）；解除友好后的 24 小时冷却内不能协防
     if (task === 'assist') {
+      if (!(await canAssist(client, accountId, city.account_id))) {
+        return { purpose: null, reason: 'ASSIST_NOT_ALLY' };
+      }
       const denial = await assistLimitDenial(client, city.id, accountId);
       return denial ? { purpose: null, reason: denial } : { purpose: 'assist', targetCityId: city.id };
     }
@@ -352,7 +354,7 @@ export async function isAllyOfCity(client: pg.PoolClient, accountId: string, cit
   if (!res.rowCount) {
     return false;
   }
-  return areAllies(client, accountId, (res.rows[0] as { account_id: string }).account_id);
+  return cannotAttack(client, accountId, (res.rows[0] as { account_id: string }).account_id);
 }
 
 /** 目标方（city 行含守方账号的保护列）与进攻方账号的保护 / 免战判定（v38，AISLG-122）；

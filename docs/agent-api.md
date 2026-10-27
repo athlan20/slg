@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**76** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**77** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 76）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 77）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -496,7 +496,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 76,
+    "protocolVersion": 77,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -562,7 +562,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 76,
+    "protocolVersion": 77,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -586,7 +586,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/73 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/74 补读增量）**
 
 请求：
 
@@ -597,7 +597,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 73,
+    "docVersion": 74,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -616,8 +616,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 76,
-    "docNotice": "接口文档已从 v73 更新到 v76：请 GET /agent-api/changes/73 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 77,
+    "docNotice": "接口文档已从 v74 更新到 v77：请 GET /agent-api/changes/74 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -3757,7 +3757,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].terrain | 'plain' \| 'grass' \| 'forest' \| 'hill' \| 'desert' \| 'marsh' \| 'lake' \| 'gold_mine' | 地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。 |
 | tiles[].kind | 'wilderness' \| 'npc_city' \| 'city' | 地块类别：野地 / NPC 城池 / 玩家城池（主城与分城）。 |
 | tiles[].level | number | 野地等级（1..10）或 NPC 城池等级（1..3）；玩家城池为 0。 |
-| tiles[].owner | object \| null | 占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally }；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。 |
+| tiles[].owner | object \| null | 占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally, relation }；relation（v77）= self / ally / friendly / hostile / neutral；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。 |
 | tiles[].garrison | number | 地块驻军总数；未占领野地为 0（原住守军不计入驻军总数；其编成见 GET_TILE 的 nativePower 与侦察）；NPC 城池需侦察（v17）：未侦察为 0，已侦察为最近一次侦察快照的总数。 |
 | tiles[].npcStockTier | 'rich' \| 'normal' \| 'low' \| 'empty' \| null | NPC 城池库存档位（v23 新增，AISLG-55）：相对该城初始库存——rich 丰厚（>60%）/ normal 一般（20%–60%）/ low 见底（<20%）/ empty 已空；只给档位不给精确数值（精确库存仍要走 SCOUT 侦察）；非 NPC 城为 null。掠夺后档位随库存变化，全服看到的档位一致。 |
 | tiles[].camp | object \| null | 黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small\|medium\|large\|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer\|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。 |
@@ -5382,8 +5382,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | broadcasts | array | 播报列表（新→旧）：{ id, type, detail, createdAt }。 |
-| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' \| 'nobility_promoted' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；以上均必达、不受每分钟 3 条限频）。 |
-| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }。 |
+| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' \| 'nobility_promoted' \| 'alliance_diplomacy' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；alliance_diplomacy 为 v77 结成友盟 / 宣布敌对；以上均必达、不受每分钟 3 条限频）。 |
+| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }；alliance_diplomacy = { kind: friendly\|hostile\|neutral, actorAlliance, actorAllianceName, otherAlliance, otherAllianceName }。 |
 | broadcasts[].createdAt | string | 播报写入时间（ISO 8601）。 |
 
 **Agent 提示**：播报是全服氛围信息，与你的决策无强制关系；但「某 NPC 城被掠空」意味着那座城不再值得打，「首个占领金矿」意味着金矿红利已被拿走。别把播报当任务清单——玩家对打法的意图直接与玩家沟通确认。
@@ -11444,7 +11444,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | --- | --- | --- |
 | size | number | 世界边长（世界为 size×size 方格，当前 1000）。 |
 | at | string | 统计时刻（ISO 8601）。 |
-| cities | array | 城池点位 [x, y, side] 数组；side 取 'own' \| 'ally' \| 'enemy' \| 'npc' \| 'famous'（ally 为 v67 新增：同联盟盟友的城池）。 |
+| cities | array | 城池点位 [x, y, side] 数组；side 取 'own' \| 'ally' \| 'friendly' \| 'hostile' \| 'enemy' \| 'npc' \| 'famous'（ally 为 v67 同联盟盟友；friendly / hostile 为 v77 友盟 / 敌对联盟成员）。 |
 
 **Agent 提示**：想找城（名城、NPC 城、他人城池）时先用它看全局方位，再用 GET_WORLD_MAP 按窗口取地块详情、GET_TILE 看驻军。它不返回野地，找野地仍用 GET_WORLD_MAP。
 
@@ -11932,7 +11932,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| alliance | object \| null | 联盟详情 { id, name, leader{accountId,username}, memberCount, maxMembers, createdAt, notice, members[], power 联盟势力（v70，现算：全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和 × 1）, rank 联盟榜名次（v70：取最近一次榜单快照；成员不足 5 人或未上榜为 null） }；没有联盟为 null。members 每项 { accountId, username, role: leader\|vice\|member, governmentLevel, territoryCount, joinedAt, lastActiveAt, online }。 |
+| alliance | object \| null | 联盟详情 { id, name, leader{accountId,username}, memberCount, maxMembers, createdAt, notice, members[], power 联盟势力（v70，现算：全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和 × 1）, rank 联盟榜名次（v70：取最近一次榜单快照；成员不足 5 人或未上榜为 null）, friends 友盟名单（v77：数组，元素同 GET_ALLIANCE_DIPLOMACY 的 friends）, hostiles 敌对名单（v77） }；没有联盟为 null。members 每项 { accountId, username, role: leader\|vice\|member, governmentLevel, territoryCount, joinedAt, lastActiveAt, online }。 |
 | myRole | 'leader' \| 'vice' \| 'member' \| null | 我在该联盟的职位；没有联盟或查看别人的联盟为 null。 |
 | cooldownUntil | string \| null | 冷却截止（ISO 8601）；不在冷却中为 null。冷却中不能创建也不能加入联盟。 |
 | myRequest | object \| null | 我发出的待处理申请 { alliance（联盟概要）, createdAt, expiresAt }；同一时间只有 1 条。 |
@@ -13526,6 +13526,436 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
     "name": "大夫",
     "prestige": 2350,
     "claimedAt": "2026-10-27T04:00:00.000Z"
+  }
+}
+```
+
+### op 128 · ALLIANCE_DIPLOMACY_INVITE — 发起友好邀请（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由盟主 / 副盟主向另一个联盟发出友好邀请（48 小时有效）。双方任一方的友盟已达 2 个返回 DIPLOMACY_LIMIT；已是友盟 / 敌对返回 DIPLOMACY_EXISTS；解除友好 72 小时冷却内返回 DIPLOMACY_COOLDOWN。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 目标联盟 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌（含刚发出的邀请）。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`、`ALLIANCE_NOT_FOUND`、`DIPLOMACY_LIMIT`、`DIPLOMACY_EXISTS`、`DIPLOMACY_COOLDOWN`（处置建议见第 4 节）
+
+**Agent 提示**：管理操作 Agent 不能做；由玩家的盟主 / 副盟主在联盟面板发起。
+
+**示例**
+
+**向洛阳盟发出邀请**
+
+请求：
+
+```json
+{
+  "op": 128,
+  "seq": 51,
+  "data": {
+    "allianceId": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 128,
+  "seq": 51,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "friendly",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "hostiles": [],
+    "invites": [
+      {
+        "id": "12",
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "inviter": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "bob"
+        },
+        "direction": "received",
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z"
+      }
+    ],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 129 · ALLIANCE_DIPLOMACY_RESPOND — 同意 / 拒绝友好邀请（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由收到邀请一方的盟主 / 副盟主答复（accept=true 同意 / false 拒绝）。同意时双方友盟名额、72 小时冷却都会复核（不通过返回 DIPLOMACY_LIMIT / DIPLOMACY_COOLDOWN），成功后双方联盟频道各写一条系统消息并全服播报。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| inviteId | string | 邀请 id（GET_ALLIANCE_DIPLOMACY 的 invites[].id）。 |
+| accept | boolean | true 同意 / false 拒绝。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`、`DIPLOMACY_INVITE_NOT_FOUND`、`DIPLOMACY_LIMIT`、`DIPLOMACY_EXISTS`、`DIPLOMACY_COOLDOWN`（处置建议见第 4 节）
+
+**Agent 提示**：同意后双方成员立即不能互相攻击，且可以互相协防；规划军事行动前先确认。
+
+**示例**
+
+**同意邀请，双方成为友盟**
+
+请求：
+
+```json
+{
+  "op": 129,
+  "seq": 52,
+  "data": {
+    "inviteId": "12",
+    "accept": true
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 129,
+  "seq": 52,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "friendly",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "hostiles": [],
+    "invites": [],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 130 · ALLIANCE_DIPLOMACY_END — 解除友好 / 敌对（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由盟主 / 副盟主单方面解除与目标联盟的友好或敌对，回到中立。解除友好会写入 24 小时不可攻击 + 72 小时不可再结好的冷却（防解约偷袭 / 反复横跳）。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 目标联盟 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`（处置建议见第 4 节）
+
+**Agent 提示**：解除友好不等于立刻能打：24 小时冷却内攻击仍会被拒（ALLY_NOT_ATTACKABLE）。
+
+**示例**
+
+**解除与洛阳盟的友好（24 小时内仍不能互相攻击）**
+
+请求：
+
+```json
+{
+  "op": 130,
+  "seq": 53,
+  "data": {
+    "allianceId": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 130,
+  "seq": 53,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [],
+    "hostiles": [],
+    "invites": [],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 131 · ALLIANCE_DIPLOMACY_HOSTILE — 宣布敌对（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由盟主 / 副盟主单方面把目标联盟标为敌对（不需要对方同意，最多 5 个），地图上对方成员的城与野地标红、对方来袭时预警标出「敌对联盟」。若原是友盟，保留 24 小时不可攻击冷却。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 目标联盟 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`、`DIPLOMACY_LIMIT`、`DIPLOMACY_EXISTS`（处置建议见第 4 节）
+
+**Agent 提示**：敌对只是标记，不改变战斗与收益；可以随时单方面解除回到中立。
+
+**示例**
+
+**把洛阳盟标为敌对**
+
+请求：
+
+```json
+{
+  "op": 131,
+  "seq": 54,
+  "data": {
+    "allianceId": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 131,
+  "seq": 54,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [],
+    "hostiles": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "hostile",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "invites": [
+      {
+        "id": "12",
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "inviter": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "bob"
+        },
+        "direction": "received",
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z"
+      }
+    ],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 132 · GET_ALLIANCE_DIPLOMACY — 查询联盟外交（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议返回本联盟的友盟名单、敌对名单与待处理邀请（发出 / 收到）；玩家与 Agent 通用。没有联盟返回 ALLIANCE_NOT_IN。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 我的联盟 id。 |
+| friends | array | 友盟名单（最多 2 个）：{ alliance 联盟概要 { id, name, leader, memberCount, maxMembers, createdAt }, relation: friendly, since, noAttackUntil, refriendAfter }。 |
+| hostiles | array | 敌对名单（最多 5 个）：结构同 friends，relation: hostile。 |
+| invites | array | 待处理友好邀请：{ id, alliance 对方联盟, inviter 发起人, direction: sent\|received, createdAt, expiresAt }。 |
+| limits | object | 上限：{ friends: 2, hostiles: 5 }。 |
+
+**可能错误**：`ALLIANCE_NOT_IN`（处置建议见第 4 节）
+
+**Agent 提示**：外交是盟主 / 副盟主的玩家操作，Agent 只能查。友盟成员不能互相攻击，规划进攻前先查 friendships；解除友好有 24 小时不可攻击 + 72 小时不可再结好的冷却。
+
+**示例**
+
+**有一个友盟，并收到洛阳盟的邀请**
+
+请求：
+
+```json
+{
+  "op": 132,
+  "seq": 50,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 132,
+  "seq": 50,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "friendly",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "hostiles": [],
+    "invites": [
+      {
+        "id": "12",
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "inviter": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "bob"
+        },
+        "direction": "received",
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z"
+      }
+    ],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
   }
 }
 ```
@@ -15217,6 +15647,10 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `BATTLEFIELD_SHOP_LIMIT` | （v75，AISLG-198）本场该商品已达到限购数量。 | 换其他商品，或等下一场额度重置（军功余额跨场保留）。 |
 | `BATTLEFIELD_MERIT_INSUFFICIENT` | （v75，AISLG-198）战场军功余额不足；响应附 cost / balance。 | 继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。 |
 | `BATTLEFIELD_TARGET_INVALID` | （v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。 | 用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。 |
+| `DIPLOMACY_LIMIT` | （v77，AISLG-195）友盟 / 敌对数量已达上限（每联盟最多 2 个友盟、5 个敌对），响应附 limit。 | 先解除一个现有关系，再结新友盟 / 宣布新敌对。 |
+| `DIPLOMACY_COOLDOWN` | （v77，AISLG-195）刚解除友好，72 小时内同一对联盟不能再次结好；响应附 refriendAfter / retryAfterSeconds。 | 等到 refriendAfter 之后再发邀请 / 同意邀请。 |
+| `DIPLOMACY_EXISTS` | （v77，AISLG-195）与目标联盟已经是友盟 / 敌对，或已有待处理邀请。 | 用 GET_ALLIANCE_DIPLOMACY 查当前关系与邀请，避免重复操作。 |
+| `DIPLOMACY_INVITE_NOT_FOUND` | （v77，AISLG-195）友好邀请不存在、已过期（48 小时）或已处理。 | 重新发起邀请；过期邀请不会出现在 GET_ALLIANCE_DIPLOMACY 里。 |
 | `NOBILITY_TOO_LOW` | （v76，AISLG-197）爵位不足：占领名城需要「大夫」（爵位序号 3）及以上；响应附 required / current。攻打外围与掠夺不受限。 | 先在世界地图战斗里累计声望升到大夫（2000 声望）再来占领名城。 |
 | `NOBILITY_SALARY_CLAIMED` | （v76，AISLG-197）今日（北京日）俸禄已领，响应附 nextClaimAt。 | 明天北京时间 0 点后再领；金额随爵位提高。 |
 | `NOBILITY_SALARY_NONE` | （v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。 | 打世界地图战斗或参加剧本战场攒声望。 |
@@ -16649,7 +17083,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 76。
+- 协议版本随对外协议内容的每次变化递增；当前为 77。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

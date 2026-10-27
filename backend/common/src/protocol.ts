@@ -218,6 +218,16 @@ export const Op = {
   GET_NOBILITY: 126,
   /** C→S 领取每日爵位俸禄（v76：北京日每天一次，平民无俸禄） */
   CLAIM_NOBILITY_SALARY: 127,
+  /** C→S 发起联盟友好邀请（v77，AISLG-195：data.allianceId；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_INVITE: 128,
+  /** C→S 同意 / 拒绝友好邀请（v77：data.inviteId + data.accept；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_RESPOND: 129,
+  /** C→S 解除友好 / 敌对，回到中立（v77：data.allianceId；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_END: 130,
+  /** C→S 单方面宣布敌对（v77：data.allianceId；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_HOSTILE: 131,
+  /** C→S 查询本联盟外交（v77：友盟 / 敌对 / 邀请；玩家与 Agent 通用） */
+  GET_ALLIANCE_DIPLOMACY: 132,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -575,6 +585,14 @@ export const ErrorCode = {
   BATTLEFIELD_MERIT_INSUFFICIENT: 'BATTLEFIELD_MERIT_INSUFFICIENT',
   /** 剧本战场：目标坐标与据点 id 都没给或对不上（v75） */
   BATTLEFIELD_TARGET_INVALID: 'BATTLEFIELD_TARGET_INVALID',
+  /** 联盟外交：友盟 / 敌对数量已达上限（v77，AISLG-195；友盟 2、敌对 5） */
+  DIPLOMACY_LIMIT: 'DIPLOMACY_LIMIT',
+  /** 联盟外交：解除友好后的冷却中，暂时不能再次结好（v77，响应附 refriendAfter / retryAfterSeconds） */
+  DIPLOMACY_COOLDOWN: 'DIPLOMACY_COOLDOWN',
+  /** 联盟外交：与目标联盟已经是该关系（或已有待处理邀请）（v77） */
+  DIPLOMACY_EXISTS: 'DIPLOMACY_EXISTS',
+  /** 联盟外交：友好邀请不存在、已过期或已处理（v77） */
+  DIPLOMACY_INVITE_NOT_FOUND: 'DIPLOMACY_INVITE_NOT_FOUND',
   /** 爵位：占领名城需要大夫（爵位序号 3），响应附 required / current（v76，AISLG-197） */
   NOBILITY_TOO_LOW: 'NOBILITY_TOO_LOW',
   /** 爵位：今日俸禄已领（v76，北京日每天一次） */
@@ -1000,7 +1018,15 @@ export type {
   AllianceMarkView,
   GetAllianceMarksResponseData,
   PushAllianceMarkData,
+  AllianceRelationKind,
+  AllianceDiplomacyEntryView,
+  AllianceFriendInviteView,
+  GetAllianceDiplomacyResponseData,
+  AllianceDiplomacyTargetRequestData,
+  AllianceDiplomacyInviteRequestData,
+  AllianceDiplomacyRespondRequestData,
 } from './protocol-alliance';
+export { ALLIANCE_MAX_FRIENDS, ALLIANCE_MAX_HOSTILES } from './protocol-alliance';
 
 // 公告（v60，AISLG-162）的载荷类型与常量在 protocol-announcement.ts
 export {

@@ -33,6 +33,8 @@ export interface PlayerAttackWarningPushData {
   attacker: { username: string; cityId: string; cityName: string };
   /** 预计到达时刻（ISO 8601；即行军到达结算时刻） */
   arriveAt: string;
+  /** 进攻方联盟与你所在联盟是敌对关系（v77，AISLG-195）；否则缺省 / null */
+  hostileAlliance?: { id: string; name: string } | null;
 }
 
 /** TRUCE（op 53）请求载荷：开启主动免战，无参数 */

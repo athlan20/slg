@@ -25,6 +25,10 @@ function systemView(system: ChatSystemView, filter: BannedWordFilter, nobility?:
       return { kind: system.kind, from: mask(system.from), to: mask(system.to), reason: system.reason };
     case 'alliance_mark_created':
       return { kind: system.kind, player: mask(system.player), markKind: system.markKind, x: system.x, y: system.y };
+    case 'alliance_diplomacy_friendly':
+    case 'alliance_diplomacy_hostile':
+    case 'alliance_diplomacy_neutral':
+      return { kind: system.kind, player: mask(system.player), otherAllianceName: system.otherAllianceName };
   }
 }
 
