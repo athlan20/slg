@@ -130,6 +130,8 @@ export interface GameSession {
   craftDefense: (kind: import('../api/protocol').DefenseKind, count: number) => Promise<void>;
   /** 取消打造（v73）：排队中 / 打造中都可取消，成本全额返还 */
   cancelDefenseCraft: (craftId: string) => Promise<void>;
+  /** 召回 / 遣返协防部队（v74）：派出方召回、城主遣返；成功返回 null，失败返回人读错误 */
+  dismissAssist: (assistId: string) => Promise<string | null>;
   /** 集市兑换（v22，AISLG-67 前端入口）：基础资源按 4:1 换金币；成功返回 null，失败返回人读错误 */
   exchangeGold: (resource: ExchangeResource, amount: number) => Promise<string | null>;
   /** 开启主动免战（v38 AISLG-122）：每周一次免费、12 小时；成功返回 null，失败返回人读错误 */
@@ -1081,6 +1083,29 @@ export function useGameSession(): GameSession {
     [appendLocalEvent, scheduleSync],
   );
 
+  // 协防召回 / 遣返（v74 AISLG-194）：成功后按需查询对齐（协防列表 / 返程行军）
+  const dismissAssist = useCallback(
+    async (assistId: string): Promise<string | null> => {
+      const { DEFENSE_COPY } = getCopy();
+      const client = clientRef.current;
+      if (!client?.connected) {
+        return DEFENSE_COPY.craft.offline;
+      }
+      try {
+        const res = await client.request(Op.DISMISS_ASSIST, { assistId });
+        if (res.ok) {
+          scheduleSync();
+          return null;
+        }
+        scheduleSync();
+        return res.error?.message ?? DEFENSE_COPY.craft.fallback;
+      } catch (err) {
+        return err instanceof Error ? err.message : DEFENSE_COPY.craft.fallback;
+      }
+    },
+    [scheduleSync],
+  );
+
   // 集市兑换（AISLG-67）同形态拆出；错误由弹窗侧接收展示，不走面板级 error 状态
   const { exchangeGold } = useMemo(
     () => createExchangeAction({ clientRef, setCity, appendLocalEvent, scheduleSync }),
@@ -1271,6 +1296,7 @@ export function useGameSession(): GameSession {
     cancelRecruit,
     craftDefense,
     cancelDefenseCraft,
+    dismissAssist,
     defenseError,
     exchangeGold,
     startTruce,

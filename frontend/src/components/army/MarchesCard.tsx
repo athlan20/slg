@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { TROOP_KINDS, type MarchView } from '../../api/protocol';
+import { TROOP_KINDS, type AssistOutView, type AssistView, type MarchView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
 import { getCopy, useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
@@ -23,7 +23,7 @@ function compositionText(march: MarchView): string {
 
 export function MarchesCard({ role }: { role: string }) {
   const copy = useCopy();
-  const { ARMY_COPY, COPY, EXTRA_PANEL } = copy;
+  const { ARMY_COPY, COPY, DEFENSE_COPY, EXTRA_PANEL } = copy;
   const { session } = useGame();
   const { go } = useNav();
   const { world, city } = session;
@@ -31,6 +31,22 @@ export function MarchesCard({ role }: { role: string }) {
   const marches = city ? activeMarches(city) : [];
   const now = useNow(marches.length > 0);
   const heroes = session.heroSession.state?.heroes ?? [];
+
+  const [assistBusy, setAssistBusy] = useState<string | null>(null);
+  const [assistError, setAssistError] = useState<string | null>(null);
+  const assistsIn: AssistView[] = city?.assistIn ?? [];
+  const assistsOut: AssistOutView[] = city?.assistOut ?? [];
+
+  const dismiss = async (id: string) => {
+    if (assistBusy) {
+      return;
+    }
+    setAssistBusy(id);
+    setAssistError(null);
+    const message = await session.dismissAssist(id);
+    setAssistError(message);
+    setAssistBusy(null);
+  };
 
   const recall = async (id: string) => {
     if (recallBusyId) {
@@ -108,6 +124,54 @@ export function MarchesCard({ role }: { role: string }) {
           );
         }}
       />
+
+      {(assistsIn.length > 0 || assistsOut.length > 0 || assistError) ? (
+        <div role="军队页-协防" className="mt-1 flex shrink-0 flex-col gap-0.5 border-t border-line-soft pt-1">
+          <span role="军队页-协防标题" className="text-[11px] font-semibold text-faint" title={DEFENSE_COPY.assist.capHint(city?.assistCap ?? 5)}>
+            {DEFENSE_COPY.assist.title}
+            {city ? ` · ${DEFENSE_COPY.assist.meta(assistsIn.length, city.assistCap)}` : ''}
+          </span>
+          {assistsOut.map((item) => (
+            <div key={item.id} role="军队页-协防在外条目" className="flex items-center gap-1 text-[11px]">
+              <span className="min-w-0 flex-1 truncate" title={DEFENSE_COPY.assist.outLine(item.hostUsername, tName(item.hostCityName))}>
+                {DEFENSE_COPY.assist.outLine(item.hostUsername, tName(item.hostCityName))} · {armyText(item.troops)}
+              </span>
+              <button
+                type="button"
+                role="军队页-协防召回按钮"
+                disabled={assistBusy === item.id}
+                onClick={() => void dismiss(item.id)}
+                className="shrink-0 cursor-pointer rounded border border-warn px-1.5 text-[10.5px] text-warn disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {assistBusy === item.id ? DEFENSE_COPY.assist.recallBusy : DEFENSE_COPY.assist.recall}
+              </button>
+            </div>
+          ))}
+          {assistsIn.map((item) => (
+            <div key={item.id} role="军队页-协防进驻条目" className="flex items-center gap-1 text-[11px] text-dim">
+              <span className="min-w-0 flex-1 truncate" title={`${DEFENSE_COPY.assist.inLine(item.username, tName(item.fromCityName))} · ${armyText(item.troops)}`}>
+                {DEFENSE_COPY.assist.inLine(item.username, tName(item.fromCityName))} · {armyText(item.troops)}
+              </span>
+              <button
+                type="button"
+                role="军队页-协防遣返按钮"
+                disabled={assistBusy === item.id}
+                onClick={() => void dismiss(item.id)}
+                className="shrink-0 cursor-pointer rounded border border-warn px-1.5 text-[10.5px] text-warn disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {assistBusy === item.id ? DEFENSE_COPY.assist.recallBusy : DEFENSE_COPY.assist.recall}
+              </button>
+            </div>
+          ))}
+          {assistError ? <p role="军队页-协防错误" className="truncate text-[11px] text-warn" title={assistError}>{assistError}</p> : null}
+        </div>
+      ) : null}
     </Card>
   );
+}
+
+function armyText(troops: Record<string, number>): string {
+  const { TROOP_LABEL } = getCopy();
+  const parts = TROOP_KINDS.filter((kind) => (troops[kind] ?? 0) > 0).map((kind) => `${TROOP_LABEL[kind].short}${troops[kind]}`);
+  return parts.join(' ') || '—';
 }

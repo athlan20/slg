@@ -28,6 +28,7 @@ import {
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
 import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
+import { handleDismissAssist } from './handlers-assist';
 import {
   handleGetTile,
   handleGetWorldMap,
@@ -395,6 +396,9 @@ async function dispatchOp(
       break;
     case Op.CANCEL_DEFENSE_CRAFT:
       await handleCancelDefenseCraft(ctx, conn, op, seq, data);
+      break;
+    case Op.DISMISS_ASSIST:
+      await handleDismissAssist(ctx, conn, op, seq, data);
       break;
     case Op.BUILD: {
       const kind = readString(data, 'kind');

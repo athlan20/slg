@@ -69,6 +69,9 @@ import {
   loadDefenseCrafts,
   type DefenseCraftRow,
 } from '../../common/src/city-defense-db';
+import { assistCap } from '../../common/src/city-assist';
+import { loadAssistsFromCity, loadCityAssists } from '../../common/src/city-assist-db';
+import type { AssistOutView, AssistView } from '../../common/src/protocol-assist';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { currentCityId } from './city-scope';
 
@@ -216,6 +219,9 @@ export interface CitySnapshot {
   /** 城防器械库存（v73，恒含四个键）与打造队列 */
   defenseStock: Record<string, number>;
   defenseCrafts: DefenseCraftRow[];
+  /** 协防（v74）：驻扎在本城的盟友部队与本城派出的部队 */
+  assistsIn: AssistView[];
+  assistsOut: AssistOutView[];
   /** 本城进行中的行军（v12） */
   marches: MarchRow[];
   /** 本城占领的野地（v12，含驻军总数） */
@@ -307,6 +313,8 @@ export async function lockCitySnapshot(
   );
   const defenseStock = await loadCityDefenses(client, row.id);
   const defenseCrafts = await loadDefenseCrafts(client, row.id);
+  const assistsIn = await loadCityAssists(client, row.id);
+  const assistsOut = await loadAssistsFromCity(client, row.id);
   const marchRes = await client.query(
     `SELECT * FROM marches
      WHERE from_city_id = $1 AND status = 'marching'
@@ -349,14 +357,16 @@ export async function lockCitySnapshot(
     recruitQueue: recruitRes.rows as RecruitRow[],
     defenseStock,
     defenseCrafts,
+    assistsIn,
+    assistsOut,
     marches: marchRes.rows as MarchRow[],
     territory,
   };
 }
 
 /** 本城在外部队数（v30，AISLG-80）：进行中的行军（含返程）+ 本城占领野地的驻军（每块野地算一支） */
-export function deployCountOf(snap: Pick<CitySnapshot, 'marches' | 'territory'>): number {
-  return snap.marches.length + snap.territory.length;
+export function deployCountOf(snap: Pick<CitySnapshot, 'marches' | 'territory'> & { assistsOut?: unknown[] }): number {
+  return snap.marches.length + snap.territory.length + (snap.assistsOut?.length ?? 0);
 }
 
 /** 按建筑类型展开数量（0/1）与等级两张映射（v7 起为九种建筑） */
@@ -435,6 +445,10 @@ export function toCityView(snap: CitySnapshot): CityView {
       total: defenseStockTotal(snap.defenseStock),
       queue: snap.defenseCrafts.map(defenseCraftView),
     },
+    // v74（AISLG-194）：协防列表（城主 / 派出方各自可见）与接收上限
+    assistIn: snap.assistsIn,
+    assistOut: snap.assistsOut,
+    assistCap: assistCap(snap.famousName),
     defenseBonus: wallBasePercent(snap.levels.wall) + defenseExtraPercent(snap.techs) + famousWallExtraPercent(snap.famousName),
     techs: { ...snap.techs },
     // v30（AISLG-80）：在外部队 = 行军中（含返程）+ 驻守野地；上限 = 校场等级（未建按 1）

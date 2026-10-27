@@ -22,6 +22,7 @@ import { loadCampAt } from '../../common/src/yellow-turban-db';
 import { reachWindowOf, routeIndexOfCell } from '../../common/src/moving-target';
 import { activeAt, inNewbieProtection } from '../../common/src/protection';
 import { areAllies } from '../../common/src/alliance-db';
+import { assistLimitDenial } from '../../common/src/city-assist-db';
 
 /** MARCH 请求参数校验（分发层用）：坐标为整数、troops 为已知兵种的非负整数且不全为 0；
  *  task（v16）可选，缺省 'plunder'，非法值拒绝。
@@ -59,7 +60,7 @@ export function readMarchParams(
   if ('task' in (data ?? {}) && data?.task !== undefined && !isMarchTask(data?.task)) {
     return null;
   }
-  const task: MarchTask = data?.task === 'occupy' ? 'occupy' : data?.task === 'transport' ? 'transport' : 'plunder';
+  const task: MarchTask = data?.task === 'occupy' ? 'occupy' : data?.task === 'transport' ? 'transport' : data?.task === 'assist' ? 'assist' : 'plunder';
   let targetId: string | null = null;
   if (data?.targetId !== undefined && data?.targetId !== null) {
     if (typeof data.targetId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.targetId)) {
@@ -88,6 +89,10 @@ export function readMarchParams(
   if (heroId === false) {
     return null;
   }
+  // v74（AISLG-194）：协防暂不带随队武将（协防部队的武将加成规则未定，先拒绝而不是静默忽略）
+  if (task === 'assist' && heroId !== null) {
+    return null;
+  }
   return { x: x as number, y: y as number, troops, task, cargo, targetId, heroId };
 }
 
@@ -102,11 +107,11 @@ function readHeroId(data: Record<string, unknown> | undefined): string | null | 
 
 /** 出征目标判定结果：purpose 写入 marches；reason 为拒绝错误码 */
 export interface MarchTargetVerdict {
-  purpose: 'plunder' | 'occupy' | 'reinforce' | 'transfer' | 'transport' | 'intercept' | null;
+  purpose: 'plunder' | 'occupy' | 'reinforce' | 'transfer' | 'transport' | 'intercept' | 'assist' | null;
   reason?:
     | 'MOVING_TARGET_GONE'
     | 'TARGET_NOT_ATTACKABLE' | 'INVALID_PARAMS' | 'TASK_INVALID_FOR_TARGET' | 'PLUNDER_COOLDOWN' | 'TERRITORY_LIMIT'
-    | OccupyCityDenial | 'OUTER_NOT_CLEARED'
+    | OccupyCityDenial | 'OUTER_NOT_CLEARED' | 'ASSIST_NOT_ALLY' | 'ASSIST_LIMIT'
     | 'NEWBIE_PROTECTED' | 'TARGET_IN_TRUCE' | 'SELF_TRUCE_ACTIVE' | 'TILE_PROTECTED'
     | 'ALLY_NOT_ATTACKABLE';
   targetCityId?: string;
@@ -272,6 +277,10 @@ export async function resolveMarchTarget(
     id: string; account_id: string; truce_until: Date | null; newbie_until: Date | null; self_truce_until: Date | null;
   };
   if (city.account_id === accountId) {
+    if (task === 'assist') {
+      // 自己的城不需要协防（调兵走 transfer）
+      return { purpose: null, reason: 'TASK_INVALID_FOR_TARGET' };
+    }
     if (city.id === fromCityId) {
       // 目标即出发城（主城）：文档口径为「自己的城」不可出征 → TARGET_NOT_ATTACKABLE
       return { purpose: null, reason: 'TARGET_NOT_ATTACKABLE' };
@@ -280,7 +289,17 @@ export async function resolveMarchTarget(
   }
   // v67（AISLG-182）：盟友（同一联盟）的城池不能掠夺 / 占领（运输与调兵走上面的分支，不受影响）
   if (await areAllies(client, accountId, city.account_id)) {
+    // v74（AISLG-194）：盟友城接受 task='assist'（协防）；上限（每城 5 支 / 同账号同城 1 支 / 在途也算）在此初核，
+    // Worker 到达时复核
+    if (task === 'assist') {
+      const denial = await assistLimitDenial(client, city.id, accountId);
+      return denial ? { purpose: null, reason: denial } : { purpose: 'assist', targetCityId: city.id };
+    }
     return { purpose: null, reason: 'ALLY_NOT_ATTACKABLE' };
+  }
+  // v74：非盟友的城不能协防
+  if (task === 'assist') {
+    return { purpose: null, reason: 'ASSIST_NOT_ALLY' };
   }
   // 他人城池（v38 AISLG-122 开放掠夺；v40 AISLG-124 分城开放「占领」）
   if (task === 'occupy') {

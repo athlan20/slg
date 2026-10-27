@@ -142,6 +142,9 @@ export interface TileDetailView extends TileView {
   /** 城防器械（v73，AISLG-193）：自己的城给精确库存；他人的城只在侦察过时给最近一次
    *  侦察快照（按侦察科技三档）；野地 / NPC 城 / 未侦察为 null */
   defenses: DefenseScoutView | null;
+  /** 协防部队（v74，AISLG-194）：自己的城或盟友的城给出 "谁在协防、带了多少兵"；
+   *  其他人 / 野地 / NPC 城为 null（外人侦察只能看到计入守军总数的兵力） */
+  assists: import('./protocol-assist').AssistView[] | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */

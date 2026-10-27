@@ -15,7 +15,7 @@ import { famousEffectText } from '../famousEffectText';
 
 export function CityStatsCard({ city }: { city: CityView | null }) {
   const copy = useCopy();
-  const { CITY_PAGE_COPY, CITY_COPY, RESOURCE_LABEL, CHAT_COPY } = copy;
+  const { CITY_PAGE_COPY, CITY_COPY, DEFENSE_COPY, RESOURCE_LABEL, CHAT_COPY } = copy;
   const { session } = useGame();
   const ref = city ? session.cityList.cities.find((item) => item.id === city.id) : undefined;
   const shareable = ref !== undefined && ref.x !== null && ref.y !== null;
@@ -40,6 +40,15 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
       { key: 'deploy', label: CITY_PAGE_COPY.statDeploy, value: `${city.deploy.count} / ${city.deploy.limit}`, sub: CITY_PAGE_COPY.statDeploySub },
       { key: 'def', label: CITY_PAGE_COPY.statDefense, value: `+${city.defenseBonus}%`, sub: CITY_PAGE_COPY.statDefenseSub },
     );
+    // v74（AISLG-194）：城池概况也列出谁在协防、带了多少兵
+    if (city.assistIn.length > 0) {
+      tiles.push({
+        key: 'assist',
+        label: DEFENSE_COPY.assist.title,
+        value: DEFENSE_COPY.assist.meta(city.assistIn.length, city.assistCap),
+        sub: city.assistIn.map((item) => `${tName(item.username)}（${item.fromCityName}）`).join(' · '),
+      });
+    }
   }
   // 每行 4 格，分页：高度不够时翻页，不裁切
   const rows: Array<typeof tiles> = [];

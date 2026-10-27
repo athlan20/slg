@@ -193,6 +193,11 @@ export async function handleResetAccount(
       await client.query(`DELETE FROM recruits WHERE account_id = $1`, [accountId]);
       // 城防器械打造队列与历史一并清空（v73，AISLG-193）；库存随城池行处理
       await client.query(`DELETE FROM defense_crafts WHERE account_id = $1`, [accountId]);
+      // 协防部队（v74，AISLG-194）：本账号派出 / 被协防的记录随重置清空（部队随之消失）
+      await client.query(
+        `DELETE FROM city_assist WHERE account_id = $1 OR city_id IN (SELECT id FROM cities WHERE account_id = $1)`,
+        [accountId],
+      );
       // v27（AISLG-77）：科技等级与研究记录一并清空（回到开号初始状态）
       await client.query(`DELETE FROM tech_research WHERE account_id = $1`, [accountId]);
       // v29（AISLG-76）：黄巾之乱的个人贡献一并清空

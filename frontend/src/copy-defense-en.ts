@@ -52,6 +52,7 @@ export const DEFENSE_COPY_EN = {
       `Battering Ram broke through the wall: wall damage reduction ${from}% → ${to}%`,
     defenseUse: (label: string, used: number, killed: number) => `${label}×${used} (${killed} troops killed)`,
     defenseTotal: (damage: number) => `City defenses dealt ${damage} damage`,
+    assistLosses: (text: string) => `Your assist troops lost this battle: ${text}`,
   },
   /** City-defense devices (v73, AISLG-193): craft panel in the Wall detail */
   craft: {
@@ -92,6 +93,30 @@ export const DEFENSE_COPY_EN = {
     queued: (label: string, count: number) => `Crafting ${label}×${count} queued`,
     completed: (label: string, count: number, total: number) => `Crafting done: ${label}×${count} added (stock ${total})`,
     cancelled: (label: string, count: number, refund: string) => `Cancelled crafting ${label}×${count}${refund ? `, refunded ${refund}` : ''}`,
+    assistArrived: (username: string, cityName: string, troops: string) => `Assist troops arrived at ${username}'s ${cityName}${troops ? ` (${troops})` : ''}`,
+    assistReturned: (username: string, cityName: string, cause: string) => `Assist troops left ${username}'s ${cityName} (${cause})`,
+    assistCause: {
+      recall: 'recalled by sender',
+      expel: 'expelled by host',
+      ally_left: 'left the alliance',
+      city_conquered: 'city conquered',
+      wiped: 'wiped out',
+      target_gone: 'target gone',
+    } as Record<string, string>,
+  },
+  /** Ally assist (v74, AISLG-194): army page / tile detail */
+  assist: {
+    title: 'Assist',
+    meta: (count: number, cap: number) => `Assist ${count} / ${cap}`,
+    inTitle: 'Assisting this city',
+    outTitle: 'Your troops assisting allies',
+    empty: 'No assist troops',
+    inLine: (username: string, cityName: string) => `${username} · ${cityName}`,
+    outLine: (username: string, cityName: string) => `${username} · ${cityName}`,
+    recall: 'Recall',
+    recallBusy: 'Recalling…',
+    capHint: (cap: number) => `Each city accepts up to ${cap} assist parties; one per account per city`,
+    troopsLabel: (text: string) => text,
   },
   names: {
     trap: 'Trap',

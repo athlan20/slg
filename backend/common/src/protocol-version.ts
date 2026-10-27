@@ -560,5 +560,13 @@
  *   库存由 Worker 结算方在同一事务扣减。ScoutIntel / TileDetailView 新增 defenses（按侦察科技三档：rough 有 / 无、
  *   kinds 种类、exact 件数）。新增错误码 WALL_NOT_BUILT / DEFENSE_STOCK_FULL / DEFENSE_QUEUE_FULL / DEFENSE_NOT_CANCELLABLE；
  *   新表 city_defenses / defense_crafts（换季清空），事件 defense_craft_*（四类）。
+ * v74（盟友协防，AISLG-194，只加不改）：MARCH 新增 task='assist'——目标只能是盟友的主城 / 分城，部队到达后驻扎在对方城里
+ *   （每人每城最多 1 支、每城最多 5 支，在途也算；占派出城校场名额、耗粮由出发城按野外 2 倍承担）。
+ *   守城战里协防部队与城主驻军合并成守方（各方科技只作用于各自部队、城守武将只加成城主部队），
+ *   战后伤亡按同兵种开战数量比例拆分（余数归城主），协防方各收到一份带 assistLosses 的战报；协防方也收到来袭预警。
+ *   新增 DISMISS_ASSIST（op 119，派出方召回 / 城主遣返，生成返程行军）；CityView 新增 assistIn / assistOut / assistCap，
+ *   TileDetailView 新增 assists（自己的城与盟友的城可见）；PUSH_CITY_STATE 新增 reason=assist_changed。
+ *   退盟 / 被踢 / 解散与分城易主时相关协防部队自动遣返；新增错误码 ASSIST_NOT_ALLY / ASSIST_LIMIT / ASSIST_NOT_FOUND；
+ *   新表 city_assist（换季清空），事件 assist_arrived / assist_returned。
  */
-export const PROTOCOL_VERSION = 73;
+export const PROTOCOL_VERSION = 74;

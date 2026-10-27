@@ -20,6 +20,7 @@ import { armyPower } from '../../common/src/battle';
 import { settleDurability } from '../../common/src/protection';
 import { repairPercent } from '../../common/src/tech';
 import { degradeDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
+import { loadCityAssists } from '../../common/src/city-assist-db';
 import type { DefenseScoutView } from '../../common/src/protocol-defense';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { advanceTile, effectiveGatherOf, type TileReserveStep } from '../../common/src/wilderness-reserve';
@@ -352,10 +353,24 @@ export async function loadTileDetail(
     npc: npcView,
     scoutedAt,
     defenses,
+    assists: await assistsOf(q, row, accountId),
     plunderedAt: row.plundered_at ? row.plundered_at.toISOString() : null,
     wildFamousIntel: wildFamousDetail(row, scoutedAt !== null),
   };
   return detail;
+}
+
+/** 城防器械 / 协防的可见性：自己的城与盟友的城给出协防明细（v74），其余为 null */
+async function assistsOf(
+  q: pg.Pool | pg.PoolClient,
+  row: TileQueryRow,
+  accountId?: string,
+): Promise<import('../../common/src/protocol-assist').AssistView[] | null> {
+  if (row.kind !== 'city' || !row.owner_city_id) {
+    return null;
+  }
+  const own = accountId !== undefined && row.owner_account_id === accountId;
+  return own || row.owner_is_ally === true ? await loadCityAssists(q, row.owner_city_id) : null;
 }
 
 /** 在野名将详情（v54）：未被获得才给出；名字与属性只对侦察过的账号开放 */

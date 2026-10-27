@@ -354,6 +354,8 @@ export async function loadArmyFoodUsePerHour(
     `SELECT troops FROM marches WHERE from_city_id = $1 AND status = 'marching'`,
     [cityId],
   );
+  // v74（AISLG-194）：协防部队的粮食由派出方出发城承担，按野外部队 2 倍计
+  const assisting = await client.query(`SELECT troops FROM city_assist WHERE from_city_id = $1`, [cityId]);
   const cityCounts: Partial<Record<TroopKind, number>> = {};
   for (const row of city.rows as Array<{ troop: TroopKind; count: number }>) {
     cityCounts[row.troop] = row.count;
@@ -369,6 +371,11 @@ export async function loadArmyFoodUsePerHour(
     addField(row.troop, row.count);
   }
   for (const row of marching.rows as Array<{ troops: Partial<Record<TroopKind, number>> | null }>) {
+    for (const [troop, count] of Object.entries(row.troops ?? {})) {
+      addField(troop, count ?? 0);
+    }
+  }
+  for (const row of assisting.rows as Array<{ troops: Partial<Record<TroopKind, number>> | null }>) {
     for (const [troop, count] of Object.entries(row.troops ?? {})) {
       addField(troop, count ?? 0);
     }

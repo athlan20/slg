@@ -415,6 +415,8 @@ const WORLD_MAP = {
   taskTitle: '出征任务',
   taskPlunder: '掠夺',
   taskPlunderHint: '胜利按负重携回资源（地形资源 × 1500 × 等级，v19 校准；无金币），不改归属、部队返程；目标有掠夺冷却（时长随全局加速缩短）',
+  taskAssistHint: '协防：部队到达后驻扎在盟友城里，守城时与城主驻军一起参战（伤亡按开战数量比例分摊）；占本城校场出征名额，耗粮按野外 2 倍由出发城承担，随时可召回。每座城最多 5 支协防、同一账号对同一座城最多 1 支',
+  confirmAssist: '确认协防',
   taskOccupy: '占领',
   taskOccupyHint: (limit: number, owned: number) => `胜利后幸存部队驻守并获得加成（占领上限 = 官府等级 ${limit}，当前 ${owned}）`,
   taskCarryLine: (carry: number) => `编队负重 ${carry}`,

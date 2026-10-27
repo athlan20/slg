@@ -8,7 +8,7 @@ import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchView, TerrainKind, TileKind } from './protocol-world';
 
 /** 行军目的（marches.purpose 的合法取值；v16 起 attack 仅存量在途行军使用） */
-export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept'] as const;
+export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept', 'assist'] as const;
 
 export type MarchPurpose = (typeof MARCH_PURPOSES)[number];
 
@@ -21,7 +21,7 @@ export function isMarchPurpose(value: unknown): value is MarchPurpose {
  * 出征类目标（野地 / NPC 城）；侦察、调兵、增援、返程不接受 task。
  * v26（AISLG-79）：transport=运输，目标只能是本账号的另一座城，须带 cargo。
  */
-export const MARCH_TASKS = ['plunder', 'occupy', 'transport'] as const;
+export const MARCH_TASKS = ['plunder', 'occupy', 'transport', 'assist'] as const;
 
 export type MarchTask = (typeof MARCH_TASKS)[number];
 
@@ -126,6 +126,9 @@ export interface BattleReportView {
   wallBreak?: { from: number; to: number };
   /** 城防器械用量（v73，AISLG-193；守城战实际用掉的器械，一种一项；无器械 / 未触发为缺省） */
   defenses?: DefenseUseView[];
+  /** 协防方视角的自身伤亡（v74，AISLG-194）：只有协防方的战报带本字段；按同兵种开战数量比例分摊。
+   *  战报的 defender 仍是合并后的守方编成，本字段单独给出"我的那部分"损失。 */
+  assistLosses?: import('./protocol').ArmyCounts;
   roundLog: BattleRoundLogEntryView[];
   /** Agent 写回的点评（v23，AISLG-53；玩家自己的 Agent 读战报后写回的大白话复盘）；
    *  尚未有点评为 null——没有点评时战报照常展示 */

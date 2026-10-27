@@ -122,6 +122,9 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   DEFENSE_STOCK_FULL: '器械库存已达上限（城墙等级 × 60，四种器械共用），先把库存用在守城或升级城墙',
   DEFENSE_QUEUE_FULL: '打造队列已满（1 条在造 + 2 条排队），请等待队首完成',
   DEFENSE_NOT_CANCELLABLE: '打造任务不存在、不属于本账号或已完成 / 已取消，无法取消',
+  ASSIST_NOT_ALLY: '协防只能派到盟友的城池：目标与你不在同一个联盟',
+  ASSIST_LIMIT: '该城已接收 5 支协防部队，或者你已有一支部队在那里（同一账号对同一座城最多 1 支；在途部队也计算在内）',
+  ASSIST_NOT_FOUND: '协防部队不存在、已经返回，或不属于你',
   ANNOUNCEMENT_NOT_FOUND: '公告不存在、已撤回或尚未生效',
   MAINTENANCE: '服务器正在换季维护，请稍后再试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除

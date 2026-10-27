@@ -52,7 +52,7 @@ interface PendingAttack {
 }
 
 /** 落库一条袭击 + 预警事件（事务内）；预警推送经返回值由提交方发出 */
-async function insertAttack(client: pg.PoolClient, attack: PendingAttack): Promise<{ attackId: string; detail: Record<string, unknown> }> {
+async function insertAttack(client: pg.PoolClient, attack: PendingAttack): Promise<{ attackId: string; detail: Record<string, unknown>; assistIds: string[] }> {
   // v31（AISLG-81）：被袭击城（占领野地算其所属城）的烽火台等级决定预警提前量（每级 +10%）与敌情详细度
   const beacon = (await loadBuildingLevels(client, attack.targetCityId)).beacon;
   const leadMs = npcWarningLeadMs() * beaconLeadMultiplier(beacon);
@@ -92,7 +92,25 @@ async function insertAttack(client: pg.PoolClient, attack: PendingAttack): Promi
     initiator: null,
     detail,
   });
-  return { attackId: row.id, detail };
+  // v74（AISLG-194）：城池被来袭时，驻扎在该城的协防方也收到预警（同一份敌情快照）
+  const assistIds: string[] = [];
+  if (attack.target === 'city') {
+    const assistRes = await client.query(
+      `SELECT account_id FROM city_assist WHERE city_id = $1 AND account_id <> $2`,
+      [attack.targetCityId, attack.accountId],
+    );
+    for (const assist of assistRes.rows as Array<{ account_id: string }>) {
+      assistIds.push(assist.account_id);
+      await insertEvent(client, {
+        accountId: assist.account_id,
+        cityId: attack.targetCityId,
+        type: EventType.NPC_ATTACK_WARNING,
+        initiator: null,
+        detail,
+      });
+    }
+  }
+  return { attackId: row.id, detail, assistIds };
 }
 
 /**
@@ -103,7 +121,7 @@ async function insertAttack(client: pg.PoolClient, attack: PendingAttack): Promi
  */
 export async function createNpcAttack(pool: pg.Pool): Promise<number> {
   const client = await pool.connect();
-  let warning: { accountId: string; data: Record<string, unknown> } | null = null;
+  let warning: { accountId: string; data: Record<string, unknown>; assistIds: string[] } | null = null;
   try {
     await client.query('BEGIN');
     // 主城目标（20%）：主城 = 账号最早创建的城；官府 ≥ 2 过滤新号；免战期不入池；
@@ -146,7 +164,7 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
           army: npcRaidArmy(raidLevel),
         };
         const created = await insertAttack(client, attack);
-        warning = { accountId: attack.accountId, data: created.detail };
+        warning = { accountId: attack.accountId, data: created.detail, assistIds: created.assistIds };
       }
     }
     // 野地目标（80% 或主城池为空）
@@ -179,15 +197,17 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
           army: npcRaidArmy(tile.level),
         };
         const created = await insertAttack(client, attack);
-        warning = { accountId: attack.accountId, data: created.detail };
+        warning = { accountId: attack.accountId, data: created.detail, assistIds: created.assistIds };
       }
     }
     await client.query('COMMIT');
     if (warning) {
-      await pool.query('SELECT pg_notify($1, $2)', [
-        NOTIFY_CHANNEL,
-        JSON.stringify({ reason: 'npc_warning', accountId: warning.accountId, data: warning.data }),
-      ]);
+      for (const accountId of [warning.accountId, ...warning.assistIds]) {
+        await pool.query('SELECT pg_notify($1, $2)', [
+          NOTIFY_CHANNEL,
+          JSON.stringify({ reason: 'npc_warning', accountId, data: warning.data }),
+        ]);
+      }
     }
     return warning ? 1 : 0;
   } catch (err) {
@@ -210,7 +230,7 @@ export async function createNearbyNpcAttack(
   fromY: number,
   radius: number,
   level: number,
-): Promise<{ accountId: string; data: Record<string, unknown> } | null> {
+): Promise<{ accountId: string; data: Record<string, unknown>; assistIds: string[] } | null> {
   const res = await client.query(
     `SELECT target, x, y, terrain, level, city_id, account_id FROM (
        SELECT 'wilderness' AS target, wt.x, wt.y, wt.terrain, wt.level, wt.owner_city_id AS city_id, c.account_id,
@@ -252,7 +272,7 @@ export async function createNearbyNpcAttack(
     army: npcRaidArmy(level),
   };
   const created = await insertAttack(client, attack);
-  return { accountId: attack.accountId, data: created.detail };
+  return { accountId: attack.accountId, data: created.detail, assistIds: created.assistIds };
 }
 
 /** npc_attacks 表行形态 */
