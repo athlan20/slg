@@ -6,7 +6,7 @@ import type { AllianceLeaderboardEntryView } from './protocol-alliance';
 import type { TroopKind } from './protocol';
 
 /** 排行榜类别（v23 AISLG-61；v50 AISLG-133 新增 model 模型榜；v70 AISLG-185 新增 alliance 联盟榜） */
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance'] as const;
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance', 'nobility'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 
@@ -20,6 +20,9 @@ export interface LeaderboardEntryView {
   agentOnline: boolean;
   /** Agent 自报的模型名原文（v50；null = 从未声明）。自报不验证，展示标注「自报」 */
   agentModel: string | null;
+  /** 爵位（v76，AISLG-197） */
+  nobility: number;
+  nobilityName: string;
 }
 
 /** 模型榜单行（v50，AISLG-133） */
@@ -74,6 +77,8 @@ export const SERVER_BROADCAST_TYPES = [
   'arena_champion',
   // v60 AISLG-162 公告：运维发布时同步播报标题（detail.announcementId / title）
   'announcement',
+  // v76 AISLG-197 爵位：升到大夫及以上
+  'nobility_promoted',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

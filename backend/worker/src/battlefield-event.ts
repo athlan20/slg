@@ -23,6 +23,7 @@ import {
   type BattlefieldSquadRow,
 } from '../../common/src/battlefield-db';
 import { insertEvent } from '../../common/src/events';
+import { addPrestige } from '../../common/src/nobility-db';
 import { insertServerBroadcast, type ServerBroadcastCreated } from '../../common/src/server-broadcast';
 import { publishAnnouncement } from '../../common/src/announcement-publish';
 import type { TileNotify } from './tick-shared';
@@ -222,10 +223,21 @@ export async function accrueScores(client: pg.PoolClient, event: BattlefieldEven
 }
 
 /** 事务内给一个账号记军功（同时累计到跨场余额，战场商店用） */
-export async function grantMerit(client: pg.PoolClient, eventId: string, accountId: string, amount: number): Promise<void> {
+export async function grantMerit(
+  client: pg.PoolClient,
+  eventId: string,
+  accountId: string,
+  amount: number,
+  broadcasts: ServerBroadcastCreated[],
+): Promise<void> {
   const gained = Math.max(0, Math.floor(amount));
   if (gained === 0) {
     return;
+  }
+  // v76（AISLG-197）：剧本战场的军功按 1:1 再计一次声望
+  const prestige = await addPrestige(client, accountId, gained, 'battlefield');
+  if (prestige.broadcast) {
+    broadcasts.push(prestige.broadcast);
   }
   await client.query(
     `UPDATE battlefield_participants SET merit = merit + $3 WHERE event_id = $1 AND account_id = $2`,

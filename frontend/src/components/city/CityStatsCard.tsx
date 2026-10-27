@@ -40,6 +40,13 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
       { key: 'deploy', label: CITY_PAGE_COPY.statDeploy, value: `${city.deploy.count} / ${city.deploy.limit}`, sub: CITY_PAGE_COPY.statDeploySub },
       { key: 'def', label: CITY_PAGE_COPY.statDefense, value: `+${city.defenseBonus}%`, sub: CITY_PAGE_COPY.statDefenseSub },
     );
+    // v76（AISLG-197）：城池称号与账号爵位
+    tiles.push({
+      key: 'nobility',
+      label: CITY_COPY.nobility.label,
+      value: CITY_COPY.nobility.meta(city.title, city.nobility.name),
+      sub: session.nobility.state ? CITY_COPY.nobility.salary(session.nobility.state.salaryGold) : CITY_COPY.nobility.noNobility,
+    });
     // v74（AISLG-194）：城池概况也列出谁在协防、带了多少兵
     if (city.assistIn.length > 0) {
       tiles.push({
@@ -75,6 +82,29 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
         ) : null
       }
     >
+      {city && session.nobility.state ? (
+        <div role="城池页-概况-爵位" className="mb-1.5 flex items-center gap-2 text-[11.5px] text-dim">
+          <span>
+            {CITY_COPY.nobility.meta(city.title, city.nobility.name)} · {CITY_COPY.nobility.salary(session.nobility.state.salaryGold)}
+          </span>
+          {session.nobility.state.claimable ? (
+            <button
+              type="button"
+              role="城池页-概况-领俸禄"
+              disabled={session.nobility.busy}
+              onClick={() => void session.nobility.claim()}
+              className="cursor-pointer rounded border border-gold/60 px-1.5 py-0.5 text-gold disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {CITY_COPY.nobility.claim}
+            </button>
+          ) : (
+            <span className="text-faint">
+              {session.nobility.state.index === 0 ? CITY_COPY.nobility.noNobility : CITY_COPY.nobility.claimed}
+            </span>
+          )}
+          {session.nobility.error ? <span className="text-st-error">{session.nobility.error}</span> : null}
+        </div>
+      ) : null}
       {city?.famousName && city.famousEffect ? (
         <p role="城池页-概况-名城效果" className="mb-1.5 truncate rounded border border-gold/50 px-2 py-0.5 text-[11.5px] text-gold">
           {CITY_COPY.famous.title(tName(city.famousName))} · {CITY_COPY.famous.effectRow(famousEffectText(city.famousEffect, CITY_COPY.famous.effect, RESOURCE_LABEL))}

@@ -162,7 +162,7 @@ async function resolveStrongholdBattle(
       [event.id, squad.camp, stronghold.id],
     );
     if (firstCapture) {
-      await grantMerit(client, event.id, squad.account_id, BATTLEFIELD_FIRST_CAPTURE_MERIT);
+      await grantMerit(client, event.id, squad.account_id, BATTLEFIELD_FIRST_CAPTURE_MERIT, broadcasts);
     }
     const username = await loadUsername(client, squad.account_id);
     await battlefieldBroadcast(client, broadcasts, 'battlefield_stronghold', {
@@ -182,6 +182,10 @@ async function resolveStrongholdBattle(
     wallDefensePercent: siege ? wallDefensePercent(Number(stronghold.wall_level)) : 0,
     tower: siege ? towerStats(Number(stronghold.tower_level)) : null,
   });
+  // 军功先算好：战报要记录本场获得的声望，且要与 grantMerit 入账的数值一致
+  const defenderLossPower = armyPower(result.defender.losses);
+  const firstCapture = result.attackerWon && stronghold.first_captured_at === null;
+  const attackerMerit = defenderLossPower + (firstCapture ? BATTLEFIELD_FIRST_CAPTURE_MERIT : 0);
   const attackerName = await loadUsername(client, squad.account_id);
   const defenderName = `${stronghold.name}守军${stronghold.owner_camp ? `（${stronghold.owner_camp === 'yuan' ? '袁绍军' : '曹操军'}）` : ''}`;
   const reportId = await saveBattleReport(
@@ -197,6 +201,10 @@ async function resolveStrongholdBattle(
     defenderName,
     siege ? wallDefensePercent(Number(stronghold.wall_level)) : 0,
     notifies,
+    null,
+    null,
+    null,
+    attackerMerit,
   );
   // 守方伤亡拆分：NPC 余数 + 各玩家据守部队按开战数量占比
   const split = splitBattlefieldDefenderLosses(
@@ -204,15 +212,9 @@ async function resolveStrongholdBattle(
     defenders.map((row) => ({ id: row.id, troops: row.troops })),
     result.defender.losses,
   );
-  let attackerLossPower = armyPower(result.attacker.losses);
-  let defenderLossPower = armyPower(result.defender.losses);
+  const attackerLossPower = armyPower(result.attacker.losses);
   // 攻方军功 = 歼灭守军（含 NPC）参考战力；首占据点额外 +200
-  let attackerMerit = defenderLossPower;
-  const firstCapture = result.attackerWon && stronghold.first_captured_at === null;
-  if (firstCapture) {
-    attackerMerit += BATTLEFIELD_FIRST_CAPTURE_MERIT;
-  }
-  await grantMerit(client, event.id, squad.account_id, attackerMerit);
+  await grantMerit(client, event.id, squad.account_id, attackerMerit, broadcasts);
   // 守方玩家军功 = 歼灭攻方战力，按各自部队占比分摊（NPC 不吃军功）
   let defenderUnits = 0;
   for (const defender of defenders) {
@@ -222,7 +224,7 @@ async function resolveStrongholdBattle(
     for (const defender of defenders) {
       const units = Object.values(defender.troops).reduce((sum, value) => sum + Math.max(0, Math.floor(value ?? 0)), 0);
       const merit = Math.floor((attackerLossPower * units) / defenderUnits);
-      await grantMerit(client, event.id, defender.account_id, merit);
+      await grantMerit(client, event.id, defender.account_id, merit, broadcasts);
     }
   }
   // 更新守军：NPC 余量 + 各据守队伍扣伤亡

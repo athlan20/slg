@@ -37,6 +37,9 @@ export interface TileOwnerView {
   username: string;
   cityId: string;
   cityName: string;
+  /** 占领者爵位（v76，AISLG-197）：序号与名称 */
+  nobility: number;
+  nobilityName: string;
   /** 占领者与请求账号同属一个联盟（v67，AISLG-182）：盟友的地块不能攻击 / 侦察，地图单独着色；自己的地块与未入盟时为 false */
   ally: boolean;
 }

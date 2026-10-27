@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**75** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**76** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 75）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 76）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -53,6 +53,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -491,7 +496,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 75,
+    "protocolVersion": 76,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -557,7 +562,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 75,
+    "protocolVersion": 76,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -581,7 +586,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/72 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/73 补读增量）**
 
 请求：
 
@@ -592,7 +597,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 72,
+    "docVersion": 73,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -611,8 +616,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 75,
-    "docNotice": "接口文档已从 v72 更新到 v75：请 GET /agent-api/changes/72 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 76,
+    "docNotice": "接口文档已从 v73 更新到 v76：请 GET /agent-api/changes/73 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -738,6 +743,8 @@
 | city.id | string | 城池 UUID。 |
 | city.name | string | 城池名称，注册时创建的主城默认为「主城」，可用 RENAME_CITY 修改。 |
 | city.level | number | 城池等级（v7 新增；v24 起 = 该城官府等级 levels.government，不另设升级系统；此前恒为 1）。官府升级，城池等级跟着升。 |
+| city.title | string | 城池称号（v76，AISLG-197）：按官府等级 1–4 城池 / 5–9 县城 / 10–14 郡城 / 15–19 州城 / 20+ 都城；都城只给主城，分城最高州城。无数值加成。 |
+| city.nobility | object | 账号爵位（v76，AISLG-197）：{ index（0 = 平民，索引见 GET_NOBILITY）, name }。 |
 | city.resources.gold | number | 金（由官府自动生产）。 |
 | city.resources.wood | number | 木。 |
 | city.resources.food | number | 粮。 |
@@ -774,7 +781,7 @@
 | city.defenseBonus | number | 城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。 |
 | city.marches | array | 本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。 |
 | city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
-| cities | array | v12 新增：账号全部城池 { id, name, level, x, y, isMain }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。 |
+| cities | array | v12 新增：账号全部城池 { id, name, level, x, y, isMain, title 城池称号, nobility 爵位 }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。 |
 | branch | object | v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。 |
 | city.storage | object | 储量上限（v7 新增，v8 规则确认；v22 AISLG-41 随全局缩放）：{ gold, food, wood, stone, iron }；四资源各自 = （10000 + 对应资源**建筑产量**（各生产建筑等级 × 每级速率之和，**不含**无建筑的 100/h 基础产量）× 100）× timeScale，金币 = 100 万 × timeScale——上限与产出同幅缩放，填满时长不受缩放影响：四资源恒为基准 100 小时；金币随官府等级与金矿占领加成变化（仅有官府产金时 = 10000 ÷ 官府等级 小时，官府 Lv4 时才是 2500 小时），请用 storage[k] ÷ production[k] 现算。达到上限后停止对应生产；已有超限存量不扣减。仓库不改变储量上限（v21 起防掠夺保护消费方已接入：NPC 袭击主城攻破后可掠量 = max(0, 存量 − 保护额)，保护量 4000×等级、四资源固定均分各 1000×等级；金币不受仓库保护，但 NPC 单次最多抢走存量的 5%（v41 AISLG-125）、玩家互掠为存量的 10%）。 |
 | city.queue | array | 建造队列（v4 新增）：第 1 项为在建（status=building，dueAt 非空），其余为排队（status=queued，dueAt 为 null），按入队顺序；已取消的条目不在其中（CANCEL_BUILD 取消）。 |
@@ -817,6 +824,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -1182,6 +1194,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 1900,
         "wood": 1950,
@@ -1583,6 +1600,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 1900,
         "wood": 1950,
@@ -3005,6 +3027,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -4790,6 +4817,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | reports[].id | number | 战报自增序号（分页游标）。 |
 | reports[].x / reports[].y | number | 战斗发生地块坐标。 |
 | reports[].kind | 'wilderness' \| 'npc_city' \| 'npc_raid' \| 'city_raid' \| 'intercept' \| 'yellow_turban' \| 'battlefield' | 战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）/ 剧本战场据点（v75，AISLG-198，battlefield）。 |
+| reports[].prestigeGained | number | 本场获得的声望（v76，AISLG-197）：按歼灭敌军参考战力 1:1；剧本战场按军功 1:1 另计。竞技场 / 将星塔不计，0 / 缺省表示无。 |
 | reports[].towerDamage | number \| undefined | 箭塔造成的总伤害（v30，AISLG-82）：仅守城战且守方有箭塔时 > 0（已含在 defender.damage 内）；无箭塔 / 历史战报为 undefined。逐回合见 roundLog[].towerDamage。 |
 | reports[].contact | 'missed' \| 'gone' \| undefined | 仅 kind=intercept 的未接战结果（v28）：missed 扑空（到达时目标已走远）/ gone 目标消失（已被击败或过时）；此时 endReason=no_contact、rounds=0、双方无损失。接战的截击与其他战报无此字段。 |
 | reports[].role | 'attacker' \| 'defender' | 本账号在该场战斗中的角色。 |
@@ -5354,8 +5382,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | broadcasts | array | 播报列表（新→旧）：{ id, type, detail, createdAt }。 |
-| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；以上均必达、不受每分钟 3 条限频）。 |
-| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }。 |
+| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' \| 'nobility_promoted' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；以上均必达、不受每分钟 3 条限频）。 |
+| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }。 |
 | broadcasts[].createdAt | string | 播报写入时间（ISO 8601）。 |
 
 **Agent 提示**：播报是全服氛围信息，与你的决策无强制关系；但「某 NPC 城被掠空」意味着那座城不再值得打，「首个占领金矿」意味着金矿红利已被拿走。别把播报当任务清单——玩家对打法的意图直接与玩家沟通确认。
@@ -5400,26 +5428,26 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
-### op 43 · GET_LEADERBOARD — 查询全服排行榜（v23，AISLG-61；v50 新增模型榜；v70 新增联盟榜）
+### op 43 · GET_LEADERBOARD — 查询全服排行榜（v23，AISLG-61；v50 新增模型榜；v70 新增联盟榜；v76 新增爵位榜）
 
 `C→S` 请求-响应 · 需登录后发送
 
-查询五个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）/ **model 模型榜（v50，AISLG-133）**：把最近 7 天 Agent 上线过、且进了战力统计的账号按 Agent 自报模型（LOGIN 的 agentModel）归类分组，「未声明」与「其他」（名单外）也是组，每组排名分 = 该模型实力前 10 名的平均战力（不足 10 名取全部平均）——防止单个账号（刷小号）拉高或拉低整体。模型为**自报口径，不验证**。**alliance 联盟榜（v70，AISLG-185）**：按联盟势力降序，势力 = 全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和（权重为占位）；成员不足 5 人的联盟不上榜；同势力按联盟名排序。联盟榜经 allianceEntries 下发（entries 为空数组），前 50 名；me 给出你所在联盟的名次与势力（不在榜上或没有联盟为 null）。玩家三榜返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）；模型榜经 modelEntries 下发（entries 为空数组、me 为 null）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。
+查询六个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）/ **model 模型榜（v50，AISLG-133）**：把最近 7 天 Agent 上线过、且进了战力统计的账号按 Agent 自报模型（LOGIN 的 agentModel）归类分组，「未声明」与「其他」（名单外）也是组，每组排名分 = 该模型实力前 10 名的平均战力（不足 10 名取全部平均）——防止单个账号（刷小号）拉高或拉低整体。模型为**自报口径，不验证**。**nobility 爵位榜（v76，AISLG-197）**：按账号累计声望降序（声望只增不减，换季清零；来源见 GET_NOBILITY）。**alliance 联盟榜（v70，AISLG-185）**：按联盟势力降序，势力 = 全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和（权重为占位）；成员不足 5 人的联盟不上榜；同势力按联盟名排序。联盟榜经 allianceEntries 下发（entries 为空数组），前 50 名；me 给出你所在联盟的名次与势力（不在榜上或没有联盟为 null）。玩家三榜返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）；模型榜经 modelEntries 下发（entries 为空数组、me 为 null）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。
 
 **请求字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' | 必填。榜单类别；model 为按 Agent 自报模型归类的模型榜（v50）；alliance 为联盟势力榜（v70）。 |
+| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' \| 'nobility' | 必填。榜单类别；model 为按 Agent 自报模型归类的模型榜（v50）；alliance 为联盟势力榜（v70）；nobility 为爵位榜（v76）。 |
 
 **响应 data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' | 回显榜单类别。 |
+| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' \| 'nobility' | 回显榜单类别。 |
 | updatedAt | string | 快照计算时间（ISO 8601）。 |
-| entries | array | 玩家三榜的前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接, agentModel 该账号 Agent 自报的模型名原文（v50，null = 从未声明；自报不验证） }，按 rank 升序；kind=model 为空数组。 |
-| me | object \| null | 本账号的 { rank, value }；快照里没有本账号为 null；kind=model 恒为 null；kind=alliance 时为我所在联盟的 { rank, value }（势力），没有联盟或未上榜为 null。 |
+| entries | array | 玩家三榜的前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接, agentModel 该账号 Agent 自报的模型名原文（v50，null = 从未声明；自报不验证）, nobility 爵位序号与 nobilityName 爵位名（v76） }，按 rank 升序；kind=model 为空数组。 |
+| me | object \| null | 本账号的 { rank, value, nobility, nobilityName }；快照里没有本账号为 null；kind=model 恒为 null；kind=alliance 时为我所在联盟的 { rank, value }（势力），没有联盟或未上榜为 null。 |
 | allianceEntries | array | 仅 kind=alliance（v70）：联盟榜条目 { rank 名次, allianceId, name 联盟名, leader{accountId,username} 盟主, memberCount 成员数, value 势力 }，前 50 名，按 rank 升序。 |
 | modelEntries | array | 仅 kind=model（v50）：模型榜条目 { rank 名次, modelId 归类标识（undeclared / other / 常见模型 id）, label 展示名（如 Claude Opus 5.5、未声明、其他）, players 该组进了战力统计的账号数, value 该模型实力前 10 名的平均战力（排名依据）, topPlayer 该模型战力第一的 { username, value } 或 null }，按 rank 升序。 |
 
@@ -5461,12 +5489,16 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "cityName": "主城",
         "value": 3640,
         "agentOnline": true,
-        "agentModel": "claude-opus-5-5"
+        "agentModel": "claude-opus-5-5",
+        "nobility": 3,
+        "nobilityName": "大夫"
       }
     ],
     "me": {
       "rank": 1,
-      "value": 3640
+      "value": 3640,
+      "nobility": 3,
+      "nobilityName": "大夫"
     }
   }
 }
@@ -8936,6 +8968,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -9569,6 +9606,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -10302,6 +10344,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -10919,6 +10966,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -13350,6 +13402,134 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 126 · GET_NOBILITY — 查询声望与爵位（v76，AISLG-197）
+
+`C→S` 请求-响应 · 需登录后发送
+
+累计声望只增不减：世界地图上的每一场战斗（攻守、输赢、NPC / 玩家 / 黄巾）按歼灭敌军的参考战力 1:1 计；剧本战场的军功按 1 军功 = 1 声望再计一次。竞技场与将星塔不计。爵位共 10 级（平民 0 / 公士 100 / 簪袅 500 / 大夫 2000 / 公乘 6000 / 五大夫 15000 / 庶长 35000 / 关内侯 80000 / 列侯 160000 / 王 300000），达到门槛自动升级；升到大夫及以上会全服播报。大夫（3）起可以占领名城（之前只能打外围与掠夺）；五大夫 / 列侯各让普通武将上限 +1。每日俸禄（金币 = 爵位序号 × 200 × 全局时间缩放，当前示例 公士 10000 金、簪袅 20000 金、大夫 30000 金、公乘 40000 金）在北京时间每天 0 点后领一次，用 CLAIM_NOBILITY_SALARY。声威与爵位随赛季重置；上一季的最高爵位随名人堂留存。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| prestige | number | 累计声望。 |
+| index | number | 爵位序号（0 = 平民）。 |
+| name | string | 爵位名称。 |
+| privilege | string | 该爵位特权说明。 |
+| next | object \| null | 下一级爵位 { index, name, threshold }；已到「王」为 null。 |
+| progressPercent | number | 距离下一级的进度（0..100；满级 100）。 |
+| salaryGold | number | 每日俸禄金额（金币；平民 0；已按全局时间缩放折算）。 |
+| claimedToday | boolean | 今日（北京日）是否已领。 |
+| claimable | boolean | 现在是否可以领。 |
+| lastClaimedAt | string \| null | 最近一次领取时刻；从未领过为 null。 |
+| nextClaimAt | string | 下次可领时刻（今日已领 = 明日 0 点北京时间；否则为现在）。 |
+| heroCapBonus | number | 普通武将上限加成（五大夫 +1、列侯再 +1）。 |
+| canOccupyFamous | boolean | 能否占领名城（爵位 ≥ 大夫）。 |
+
+**Agent 提示**：声望是长期累积线：能打就打，不用刻意刷。打名城前先确认 canOccupyFamous；否则先打 NPC 城 / 野地攒到 2000 声望。俸禄每天记得领（claimable 为 true 时），金额随爵位提高。
+
+**示例**
+
+**大夫：今天还能领俸禄，距公乘还差 3650 声望**
+
+请求：
+
+```json
+{
+  "op": 126,
+  "seq": 40,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 126,
+  "seq": 40,
+  "ok": true,
+  "data": {
+    "prestige": 2350,
+    "index": 3,
+    "name": "大夫",
+    "privilege": "可占领名城；每日俸禄",
+    "next": {
+      "index": 4,
+      "name": "公乘",
+      "threshold": 6000
+    },
+    "progressPercent": 8,
+    "salaryGold": 30000,
+    "claimedToday": false,
+    "claimable": true,
+    "lastClaimedAt": null,
+    "nextClaimAt": "2026-10-27T04:00:00.000Z",
+    "heroCapBonus": 0,
+    "canOccupyFamous": true
+  }
+}
+```
+
+### op 127 · CLAIM_NOBILITY_SALARY — 领取每日爵位俸禄（v76，AISLG-197）
+
+`C→S` 请求-响应 · 需登录后发送
+
+按北京日领取一次爵位俸禄（金币），直接加到主城。平民没有俸禄（NOBILITY_SALARY_NONE）；今日已领返回 NOBILITY_SALARY_CLAIMED（附 nextClaimAt）。金额 = 爵位序号 × 200 × 全局时间缩放。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| gold | number | 本次领取的金币。 |
+| index | number | 领取后的爵位序号。 |
+| name | string | 领取后的爵位名称。 |
+| prestige | number | 领取后的累计声望。 |
+| claimedAt | string | 领取时刻（ISO 8601）。 |
+
+**可能错误**：`NOBILITY_SALARY_NONE`、`NOBILITY_SALARY_CLAIMED`（处置建议见第 4 节）
+
+**Agent 提示**：每天上线先领一次（幂等：重复领只会返回已领）。金币直接进主城，可用于建造 / 征兵 / 俸禄。
+
+**示例**
+
+**大夫领取 3 万金（示例按 50 倍缩放）**
+
+请求：
+
+```json
+{
+  "op": 127,
+  "seq": 41,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 127,
+  "seq": 41,
+  "ok": true,
+  "data": {
+    "gold": 30000,
+    "index": 3,
+    "name": "大夫",
+    "prestige": 2350,
+    "claimedAt": "2026-10-27T04:00:00.000Z"
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -15037,6 +15217,9 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `BATTLEFIELD_SHOP_LIMIT` | （v75，AISLG-198）本场该商品已达到限购数量。 | 换其他商品，或等下一场额度重置（军功余额跨场保留）。 |
 | `BATTLEFIELD_MERIT_INSUFFICIENT` | （v75，AISLG-198）战场军功余额不足；响应附 cost / balance。 | 继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。 |
 | `BATTLEFIELD_TARGET_INVALID` | （v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。 | 用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。 |
+| `NOBILITY_TOO_LOW` | （v76，AISLG-197）爵位不足：占领名城需要「大夫」（爵位序号 3）及以上；响应附 required / current。攻打外围与掠夺不受限。 | 先在世界地图战斗里累计声望升到大夫（2000 声望）再来占领名城。 |
+| `NOBILITY_SALARY_CLAIMED` | （v76，AISLG-197）今日（北京日）俸禄已领，响应附 nextClaimAt。 | 明天北京时间 0 点后再领；金额随爵位提高。 |
+| `NOBILITY_SALARY_NONE` | （v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。 | 打世界地图战斗或参加剧本战场攒声望。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -15135,6 +15318,11 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -15765,6 +15953,11 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 1780,
         "wood": 1910,
@@ -16456,7 +16649,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 75。
+- 协议版本随对外协议内容的每次变化递增；当前为 76。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

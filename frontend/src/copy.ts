@@ -497,6 +497,7 @@ const LEADERBOARD = {
   territory: '领地数量',
   plunder: '累计掠夺',
   model: '模型榜',
+  nobility: '爵位榜',
   updatedAt: (time: string) => `快照 ${time}`,
   rankColumn: '名次',
   playerColumn: '玩家',

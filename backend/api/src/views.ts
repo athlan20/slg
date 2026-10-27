@@ -52,6 +52,7 @@ import {
   territoryDisplayRates,
 } from '../../common/src/wilderness-reserve';
 import { reserveViewFrom } from './reserve-view';
+import { cityTitle, nobilityName } from '../../common/src/nobility';
 import { getTimeScale } from '../../common/src/time-scale';
 import { selfTruceNextAvailableAt, settleDurability } from '../../common/src/protection';
 import { cityLevelOf } from '../../common/src/branch-city';
@@ -242,6 +243,8 @@ export interface CitySnapshot {
   newbieUntil: Date | null;
   /** 主动免战截止（v38 AISLG-122，账号级）：TRUCE 开启后写入；未开启为 null */
   shieldUntil: Date | null;
+  /** 声望与爵位（v76，AISLG-197）：账号当前爵位序号（0 = 平民） */
+  nobility: number;
   /** 上次开启主动免战的时刻（v38；周窗口判定用） */
   shieldUsedAt: Date | null;
   /** 分城城防值原始列（v40 AISLG-124；主城为 null；展示前需经 settleDurability 惰性结算） */
@@ -299,11 +302,11 @@ export async function lockCitySnapshot(
   const army = await loadCityArmy(client, row.id);
   // v38（AISLG-122）：账号级保护状态（新手保护 / 主动免战）
   const accountRes = await client.query(
-    `SELECT newbie_until, self_truce_until, self_truce_used_at FROM accounts WHERE id = $1`,
+    `SELECT newbie_until, self_truce_until, self_truce_used_at, nobility FROM accounts WHERE id = $1`,
     [accountId],
   );
   const accountRow = accountRes.rows[0] as
-    | { newbie_until: Date | null; self_truce_until: Date | null; self_truce_used_at: Date | null }
+    | { newbie_until: Date | null; self_truce_until: Date | null; self_truce_used_at: Date | null; nobility: number }
     | undefined;
   const recruitRes = await client.query(
     `SELECT * FROM recruits
@@ -336,6 +339,7 @@ export async function lockCitySnapshot(
     truceUntil: row.truce_until,
     newbieUntil: accountRow?.newbie_until ?? null,
     shieldUntil: accountRow?.self_truce_until ?? null,
+    nobility: Math.max(0, Number(accountRow?.nobility ?? 0)),
     shieldUsedAt: accountRow?.self_truce_used_at ?? null,
     durability: row.durability,
     durabilitySettledAt: row.durability_settled_at,
@@ -398,6 +402,9 @@ export function toCityView(snap: CitySnapshot): CityView {
     name: snap.name,
     // v24（AISLG-58）：城池等级 = 该城官府等级（原 cities.level 恒为 1，不再作为口径）
     level: cityLevelOf(snap.levels.government),
+    // v76（AISLG-197）：城池称号（按官府等级；都城只给主城）与账号爵位
+    title: cityTitle(snap.levels.government, snap.cityId === snap.mainCityId),
+    nobility: { index: snap.nobility, name: nobilityName(snap.nobility) },
     resources: snap.resources,
     // v5 单实例：数量恒为 0/1；等级才是权威状态
     buildings: records.buildings,

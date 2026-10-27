@@ -34,6 +34,8 @@ export const SERVER_BROADCAST_TYPES = [
   'battlefield_started',
   'battlefield_stronghold',
   'battlefield_finished',
+  // v76（AISLG-197）爵位：升到大夫及以上，必达（不受每分钟限频）
+  'nobility_promoted',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];
@@ -50,7 +52,7 @@ export function isServerBroadcastType(value: unknown): value is ServerBroadcastT
  * 只统计最近 7 天 Agent 上线过的账号，排名 = 该模型实力前 10 名的平均战力。
  * v70（AISLG-185）新增 alliance 联盟榜：按联盟势力排名（成员不足 5 人不上榜），条目见 allianceEntries。
  */
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance'] as const;
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance', 'nobility'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 
@@ -68,6 +70,9 @@ export interface LeaderboardEntryView {
   agentOnline: boolean;
   /** Agent 自报的模型名原文（v50；null = 从未声明）。自报不验证，展示时标注「自报」 */
   agentModel: string | null;
+  /** 爵位序号与名称（v76，AISLG-197；所有个人榜条目都带，便于在各榜展示身份） */
+  nobility: number;
+  nobilityName: string;
 }
 
 /** 模型榜单行（v50，AISLG-133；GET_LEADERBOARD kind=model 时下发） */

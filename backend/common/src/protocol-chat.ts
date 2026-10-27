@@ -51,6 +51,9 @@ export type ChatSystemKind = (typeof CHAT_SYSTEM_KINDS)[number];
 export interface ChatPlayerView {
   accountId: string;
   username: string;
+  /** 爵位（v76，AISLG-197）：序号与名称，聊天里显示在名字旁边 */
+  nobility: number;
+  nobilityName: string;
 }
 
 /**

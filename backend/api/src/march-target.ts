@@ -15,6 +15,8 @@ import type { NpcCitySnapshot } from '../../common/src/world';
 import type { TileRow } from '../../common/src/world-db';
 import { checkOccupyNpcCity, type OccupyCityDenial } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
+import { FAMOUS_CITY_NOBILITY_INDEX } from '../../common/src/nobility';
+import { loadNobilityIndex } from '../../common/src/nobility-db';
 import { loadBuildingLevels } from '../../common/src/production';
 import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';import { parseCargo } from '../../common/src/transport';
 import { loadMovingTarget, rowIndexAt, rowStepMs } from '../../common/src/moving-target-db';
@@ -111,10 +113,12 @@ export interface MarchTargetVerdict {
   reason?:
     | 'MOVING_TARGET_GONE'
     | 'TARGET_NOT_ATTACKABLE' | 'INVALID_PARAMS' | 'TASK_INVALID_FOR_TARGET' | 'PLUNDER_COOLDOWN' | 'TERRITORY_LIMIT'
-    | OccupyCityDenial | 'OUTER_NOT_CLEARED' | 'ASSIST_NOT_ALLY' | 'ASSIST_LIMIT'
+    | OccupyCityDenial | 'OUTER_NOT_CLEARED' | 'NOBILITY_TOO_LOW' | 'ASSIST_NOT_ALLY' | 'ASSIST_LIMIT'
     | 'NEWBIE_PROTECTED' | 'TARGET_IN_TRUCE' | 'SELF_TRUCE_ACTIVE' | 'TILE_PROTECTED'
     | 'ALLY_NOT_ATTACKABLE';
   targetCityId?: string;
+  /** v76（AISLG-197）：NOBILITY_TOO_LOW 的所需 / 当前爵位序号 */
+  nobility?: { required: number; current: number };
   /** v38（AISLG-122）：NEWBIE_PROTECTED / TARGET_IN_TRUCE / SELF_TRUCE_ACTIVE 的截止时刻，
    *  handleMarch 据此回传 until 与 retryAfterSeconds */
   protectedUntil?: Date;
@@ -245,6 +249,13 @@ export async function resolveMarchTarget(
       return { purpose: null, reason: 'OUTER_NOT_CLEARED' };
     }
     if (task === 'occupy') {
+      // v76（AISLG-197）：名城需要「大夫」及以上爵位；攻打外围与掠夺不受限
+      if (famous !== undefined) {
+        const current = await loadNobilityIndex(client, accountId);
+        if (current < FAMOUS_CITY_NOBILITY_INDEX) {
+          return { purpose: null, reason: 'NOBILITY_TOO_LOW', nobility: { required: FAMOUS_CITY_NOBILITY_INDEX, current } };
+        }
+      }
       const standing = await loadBranchStanding(client, accountId);
       const denial = checkOccupyNpcCity({
         mainGovernment: standing.mainGovernment,

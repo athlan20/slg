@@ -6,6 +6,7 @@
 
 import type { TroopKind } from './protocol';
 import { WILD_FAMOUS_HEROES } from './hero-wild';
+import { nobilityHeroCapBonus } from './nobility';
 
 /** 普通将三项属性随机范围 */
 export const HERO_ATTR_MIN = 10;
@@ -21,8 +22,8 @@ export const TAVERN_CANDIDATE_COUNT = 3;
 export const RECRUIT_BASE_GOLD = 500;
 export const RECRUIT_GOLD_PER_ATTR = 20;
 /** 账号普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1（酒馆取账号所有城中的最高等级） */
-export function normalHeroCap(maxTavernLevel: number): number {
-  return Math.ceil(Math.max(0, Math.floor(maxTavernLevel)) / 2) + 1;
+export function normalHeroCap(maxTavernLevel: number, nobilityIndex = 0): number {
+  return Math.ceil(Math.max(0, Math.floor(maxTavernLevel)) / 2) + 1 + nobilityHeroCapBonus(nobilityIndex);
 }
 /** 账号名将上限（不占普通将上限） */
 export const FAMOUS_HERO_CAP = 3;

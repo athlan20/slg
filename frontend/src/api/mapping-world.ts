@@ -439,7 +439,7 @@ export function serverBroadcastText(view: {
   type: string;
   detail: Record<string, unknown>;
 }): string {
-  const { YT_COPY, HERO_COPY, EXTRA_STATE, ANNOUNCEMENT_COPY } = getCopy();
+  const { YT_COPY, HERO_COPY, EXTRA_STATE, ANNOUNCEMENT_COPY, CITY_COPY } = getCopy();
   const actor =
     typeof view.detail.username === 'string'
       ? view.detail.cityName
@@ -478,6 +478,8 @@ export function serverBroadcastText(view: {
     case 'star_tower_cleared':
       // v55 AISLG-146：将星塔 Boss 层首通（floor 为刚通过的层）
       return EXTRA_STATE.broadcast.starTowerCleared(actor, Number(view.detail.floor ?? 0));
+    case 'nobility_promoted':
+      return CITY_COPY.nobility.promoted(actor, String(view.detail.name ?? ''));
     case 'yt_finished':
       return YT_COPY.broadcast.finished(String(view.detail.reason ?? ''), Number(view.detail.clearedCamps ?? 0), Number(view.detail.totalCamps ?? 0), Number(view.detail.scatteredCamps ?? 0));
     default:

@@ -172,6 +172,25 @@ async function computePlunderRows(client: pg.PoolClient): Promise<LeaderboardRow
     }));
 }
 
+/** 爵位榜（v76，AISLG-197）：按累计声望排名 */
+async function computeNobilityRows(client: pg.PoolClient): Promise<LeaderboardRow[]> {
+  const res = await client.query(
+    `SELECT a.id AS account_id, a.username, a.agent_model, a.prestige,
+            (SELECT c.name FROM cities c WHERE c.account_id = a.id ORDER BY c.created_at LIMIT 1) AS city_name
+     FROM accounts a
+     WHERE a.prestige > 0`,
+  );
+  return (res.rows as Array<{ account_id: string; username: string; agent_model: string | null; prestige: string | number; city_name: string | null }>)
+    .filter((row) => row.city_name !== null && Number(row.prestige) > 0)
+    .map((row) => ({
+      account_id: row.account_id,
+      username: row.username,
+      city_name: row.city_name as string,
+      value: Number(row.prestige),
+      agent_model: row.agent_model,
+    }));
+}
+
 /** 模型榜聚合输入（v50，AISLG-133）：本赛季、最近 7 天 Agent 上线过且有城池的账号，战力取全量战力行（v65 起限本赛季） */
 async function computeModelRows(client: pg.PoolClient, powerRows: readonly LeaderboardRow[]): Promise<ReturnType<typeof aggregateModelLeaderboard>> {
   const res = await client.query(
@@ -205,6 +224,7 @@ export async function refreshLeaderboards(pool: pg.Pool): Promise<void> {
       ['power', powerRows],
       ['territory', await computeTerritoryRows(client)],
       ['plunder', await computePlunderRows(client)],
+      ['nobility', await computeNobilityRows(client)],
     ] as const) {
       const ranked = [...rows].sort((a, b) => b.value - a.value || a.username.localeCompare(b.username)).slice(0, LEADERBOARD_SIZE);
       await client.query(`DELETE FROM leaderboard_snapshots WHERE kind = $1`, [kind]);

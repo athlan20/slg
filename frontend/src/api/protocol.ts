@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 75;
+export const PROTOCOL_VERSION = 76;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -191,6 +191,10 @@ export const Op = {
   MARCH_BATTLEFIELD_SQUAD: 124,
   /** 战场商店兑换（v75）：data.item（+ hero_exp 时的 heroId） */
   BUY_BATTLEFIELD_ITEM: 125,
+  /** 查询声望与爵位、今日俸禄状态（v76，AISLG-197） */
+  GET_NOBILITY: 126,
+  /** 领取每日爵位俸禄（v76：北京日每天一次，平民无俸禄） */
+  CLAIM_NOBILITY_SALARY: 127,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -838,6 +842,10 @@ export interface CityView {
   famousEffect: FamousEffectView | null;
   /** 城池等级（v24 起 = 该城官府等级） */
   level: number;
+  /** 城池称号（v76，AISLG-197）：城池 / 县城 / 郡城 / 州城 / 都城（分城最高州城） */
+  title: string;
+  /** 账号爵位（v76）：{ index（0 = 平民）, name } */
+  nobility: { index: number; name: string };
   resources: Resources;
   /** 按建筑类型统计的已建数量（单实例规则下为 0 或 1） */
   buildings: BuildingCounts;
@@ -1114,3 +1122,6 @@ export type {
   EnterBattlefieldRequestData,
   BuyBattlefieldItemResponseData,
 } from './protocol-battlefield';
+
+// 声望与爵位（v76，AISLG-197）
+export type { NobilityStatusView, GetNobilityResponseData, ClaimNobilitySalaryResponseData } from './protocol-nobility';

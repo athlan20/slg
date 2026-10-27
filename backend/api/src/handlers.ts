@@ -37,6 +37,7 @@ import {
   handleSplitBattlefieldSquad,
 } from './handlers-battlefield';
 import { handleBuyBattlefieldItem } from './handlers-battlefield-shop';
+import { handleClaimNobilitySalary, handleGetNobility } from './handlers-nobility';
 import {
   handleGetTile,
   handleGetWorldMap,
@@ -76,6 +77,7 @@ import { handleGetLeaderboard } from './handlers-leaderboard';
 import { effectiveLevelSql } from '../../common/src/production';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
 import { loadCityState } from './views';
+import { cityTitle } from '../../common/src/nobility';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
 import { handleDiscardCity } from './handlers-discard';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
@@ -426,6 +428,12 @@ async function dispatchOp(
     case Op.BUY_BATTLEFIELD_ITEM:
       await handleBuyBattlefieldItem(ctx, conn, op, seq, data);
       break;
+    case Op.GET_NOBILITY:
+      await handleGetNobility(ctx, conn, op, seq);
+      break;
+    case Op.CLAIM_NOBILITY_SALARY:
+      await handleClaimNobilitySalary(ctx, conn, op, seq);
+      break;
     case Op.BUILD: {
       const kind = readString(data, 'kind');
       if (!isBuildingKind(kind)) {
@@ -554,6 +562,8 @@ async function handleGetState(
     x: row.x,
     y: row.y,
     isMain: index === 0,
+    title: cityTitle(row.level, index === 0),
+    nobility: city?.nobility ?? { index: 0, name: '平民' },
   }));
   const mainGovernment = cities[0]?.level ?? 0;
   const branch = {

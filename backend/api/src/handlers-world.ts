@@ -186,7 +186,7 @@ export async function handleMarch(
               retryAfterSeconds: Math.max(1, Math.ceil((target.protectedUntil.getTime() - dbNow.getTime()) / 1000)),
             }
           : undefined;
-      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft };
+      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft, ...(target.nobility ? { nobility: target.nobility } : {}) };
       respondError(ctx.registry, conn, op, seq, target.reason ?? 'TARGET_NOT_ATTACKABLE', Object.keys(data).length ? data : undefined);
       return;
     }

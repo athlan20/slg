@@ -125,6 +125,8 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     id: CITY_ID,
     name: '主城',
     level: 1,
+    title: '城池',
+    nobility: { index: 0, name: '平民' },
     resources: { ...INITIAL_RESOURCES },
     buildings: { ...INITIAL_BUILDINGS_VIEW },
     levels: { ...INITIAL_LEVELS },

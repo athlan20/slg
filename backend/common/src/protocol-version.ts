@@ -576,5 +576,13 @@
  *   日程按北京时间现实时间：每周二 20:00 报名、周三 20:00 开战、周四 20:00 结束；30×30 独立地图，中间一条河只有 3 处渡口；
  *   军功 = 歼灭敌军参考战力 1:1（首占据点额外 200），结束按胜负与个人名次发奖；乌巢让敌方部队耗粮翻倍、人少补偿、
  *   守军随报名人数加厚。新增 PUSH_BATTLEFIELD_STATE（op 2027）与错误码 BATTLEFIELD_*；新表 battlefield_*（换季清空）。
+ * v76（声望与爵位，AISLG-197，只加不改）：世界地图上每一场战斗（攻守 / 输赢 / NPC / 玩家 / 黄巾）按歼灭敌军参考战力 1:1
+ *   累计声望；剧本战场军功按 1 军功 = 1 声望再计一次；竞技场与将星塔不计。声望达到门槛自动升爵（10 级：平民 → 王），
+ *   升到大夫及以上全服播报；新增 GET_NOBILITY（op 126）与 CLAIM_NOBILITY_SALARY（127，北京日一次，金币 = 爵位序号 × 200 × 缩放）。
+ *   大夫起才能占领名城（否则 NOBILITY_TOO_LOW，附所需 / 当前爵位），攻打外围与掠夺不受限；五大夫 / 列侯让普通武将上限各 +1。
+ *   CityView 新增 title（城池 / 县城 / 郡城 / 州城 / 都城）与 nobility；cities[]、聊天 sender / recipient、TileView.owner 同口径带爵位；
+ *   GET_LEADERBOARD 新增 kind=nobility，个人榜条目带 nobility / nobilityName；BattleReportDetail 新增 prestigeGained。
+ *   新增错误码 NOBILITY_TOO_LOW / NOBILITY_SALARY_CLAIMED / NOBILITY_SALARY_NONE；accounts 新增 prestige / nobility，
+ *   新表 nobility_claims（换季清空）；换季时声望与爵位清零，爵位榜与其他个人榜一起进入名人堂。
  */
-export const PROTOCOL_VERSION = 75;
+export const PROTOCOL_VERSION = 76;

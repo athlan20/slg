@@ -214,6 +214,10 @@ export const Op = {
   MARCH_BATTLEFIELD_SQUAD: 124,
   /** C→S 战场商店兑换（v75：data.item（+ hero_exp 时的 data.heroId）；军功跨场累积、每场限购） */
   BUY_BATTLEFIELD_ITEM: 125,
+  /** C→S 查询声望与爵位、今日俸禄状态（v76，AISLG-197） */
+  GET_NOBILITY: 126,
+  /** C→S 领取每日爵位俸禄（v76：北京日每天一次，平民无俸禄） */
+  CLAIM_NOBILITY_SALARY: 127,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -571,6 +575,12 @@ export const ErrorCode = {
   BATTLEFIELD_MERIT_INSUFFICIENT: 'BATTLEFIELD_MERIT_INSUFFICIENT',
   /** 剧本战场：目标坐标与据点 id 都没给或对不上（v75） */
   BATTLEFIELD_TARGET_INVALID: 'BATTLEFIELD_TARGET_INVALID',
+  /** 爵位：占领名城需要大夫（爵位序号 3），响应附 required / current（v76，AISLG-197） */
+  NOBILITY_TOO_LOW: 'NOBILITY_TOO_LOW',
+  /** 爵位：今日俸禄已领（v76，北京日每天一次） */
+  NOBILITY_SALARY_CLAIMED: 'NOBILITY_SALARY_CLAIMED',
+  /** 爵位：平民没有俸禄，先攒声望升爵（v76） */
+  NOBILITY_SALARY_NONE: 'NOBILITY_SALARY_NONE',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -1089,6 +1099,19 @@ export {
   isBattlefieldShopItem,
   BATTLEFIELD_SQUAD_STATUSES,
 } from './protocol-battlefield';
+
+// 声望与爵位（v76，AISLG-197）的载荷类型在 protocol-nobility.ts，规则在 nobility.ts
+export type { NobilityStatusView, GetNobilityResponseData, ClaimNobilitySalaryResponseData } from './protocol-nobility';
+export {
+  NOBILITY_TIERS,
+  FAMOUS_CITY_NOBILITY_INDEX,
+  nobilityIndexOf,
+  nobilityName,
+  nobilitySalaryGold,
+  nobilityHeroCapBonus,
+  cityTitle,
+} from './nobility';
+export type { NobilityTier } from './nobility';
 
 // 城池 / 事件 / 建造 / 生产的视图类型（v7..v12 既有形态）同样拆在 protocol-city.ts
 export type {

@@ -706,6 +706,18 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。',
     action: '用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。',
   },
+  NOBILITY_TOO_LOW: {
+    desc: '（v76，AISLG-197）爵位不足：占领名城需要「大夫」（爵位序号 3）及以上；响应附 required / current。攻打外围与掠夺不受限。',
+    action: '先在世界地图战斗里累计声望升到大夫（2000 声望）再来占领名城。',
+  },
+  NOBILITY_SALARY_CLAIMED: {
+    desc: '（v76，AISLG-197）今日（北京日）俸禄已领，响应附 nextClaimAt。',
+    action: '明天北京时间 0 点后再领；金额随爵位提高。',
+  },
+  NOBILITY_SALARY_NONE: {
+    desc: '（v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。',
+    action: '打世界地图战斗或参加剧本战场攒声望。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',
