@@ -3,6 +3,7 @@
 // 被擦除，不构成加载环）。
 
 import type { InitiatorRole } from './protocol';
+import type { DefenseScoutView, DefenseUseView } from './protocol-defense';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchView, TerrainKind, TileKind } from './protocol-world';
 
@@ -79,6 +80,8 @@ export interface BattleRoundLogEntryView {
   defenderKilled: number;
   /** 本回合箭塔造成的伤害（v30，AISLG-82；已含在 defenderDamage 内；历史战报 / 无箭塔缺省视为 0） */
   towerDamage?: number;
+  /** 本回合城防器械造成的伤害（v73，AISLG-193；已含在 defenderDamage 内；历史战报 / 未触发缺省视为 0） */
+  defenseDamage?: number;
 }
 
 /** Agent 写回的战报点评（v23，AISLG-53；每份战报最新一条，重写覆盖） */
@@ -121,6 +124,8 @@ export interface BattleReportView {
   /** 冲车破墙（v33，AISLG-86）：攻城战攻方带冲车且城墙减伤 > 0 时，开战时（第 1 回合）城墙减伤的原值与破墙后的值
    *  （百分数，1 位小数；例：70 → 42）；每回合按当时存活的冲车重算，此处只给开战时数值；其余为 undefined */
   wallBreak?: { from: number; to: number };
+  /** 城防器械用量（v73，AISLG-193；守城战实际用掉的器械，一种一项；无器械 / 未触发为缺省） */
+  defenses?: DefenseUseView[];
   roundLog: BattleRoundLogEntryView[];
   /** Agent 写回的点评（v23，AISLG-53；玩家自己的 Agent 读战报后写回的大白话复盘）；
    *  尚未有点评为 null——没有点评时战报照常展示 */
@@ -201,6 +206,9 @@ export interface ScoutIntel {
   garrison: ArmyCounts;
   /** 侦察详细度（v27，AISLG-77；缺省视为 exact，兼容历史情报）：rough / kinds / exact，由发起侦察时的侦察科技等级决定 */
   detail?: 'rough' | 'kinds' | 'exact';
+  /** 城防器械（v73，AISLG-193）：玩家城池的库存按侦察科技三档降级；野地 / NPC 城池为 null 或缺省。
+   *  rough 只有 has；kinds 给有库存的种类；exact 给件数 */
+  defenses?: DefenseScoutView | null;
   /** 总兵力范围（v27，AISLG-77）：exact 时 min = max = 真实总数；其余为真实总数 ±20% */
   garrisonTotal?: { min: number; max: number };
   /** 守方城墙防御加成（百分数；NPC 城池按其城墙等级推导，其余 0） */

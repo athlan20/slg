@@ -552,5 +552,13 @@
  *   战斗 / 防护 / 驾驭 / 抛射只在世界地图战斗中生效（攻守双方各自一套；竞技场与将星塔不传，NPC 一方不传），且与武将加成叠两层
  *   （武将 20% 封顶不变）；征兵 / 建造 / 研究时长、部队耗粮、野地掠夺池、分城城防回涨分别按对应科技折扣 / 加成。
  *   老账号的新科技从 0 级开始（account_techs 无行即 0），其余协议无变化。
+ * v73（城防器械，AISLG-193，只加不改）：城墙里新增四种一次性守城器械（陷阱 trap / 拒马 chevaux / 滚木 rolling_log / 擂石 boulder）：
+ *   新增 CRAFT_DEFENSE（op 117）打造（一次下单若干件，库存上限 = 城墙等级 × 60 四种共用，队列 1 在造 + 2 排队）、
+ *   CANCEL_DEFENSE_CRAFT（op 118）取消（排队中 / 打造中都可，成本全额返还）与 PUSH_DEFENSE_STATE（op 2026）；
+ *   CityView 新增 defenses（cap / stock / total / queue）。守城战（主城与分城，对手为 NPC 或玩家）自动按需使用：
+ *   陷阱 / 拒马开战时结算，滚木 / 擂石在攻方对应兵堆第一次贴墙时结算，用量与杀伤写进战报的 defenses 字段，
+ *   库存由 Worker 结算方在同一事务扣减。ScoutIntel / TileDetailView 新增 defenses（按侦察科技三档：rough 有 / 无、
+ *   kinds 种类、exact 件数）。新增错误码 WALL_NOT_BUILT / DEFENSE_STOCK_FULL / DEFENSE_QUEUE_FULL / DEFENSE_NOT_CANCELLABLE；
+ *   新表 city_defenses / defense_crafts（换季清空），事件 defense_craft_*（四类）。
  */
-export const PROTOCOL_VERSION = 72;
+export const PROTOCOL_VERSION = 73;

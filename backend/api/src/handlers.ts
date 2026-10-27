@@ -27,6 +27,7 @@ import {
 } from './handlers-city';
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
+import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
 import {
   handleGetTile,
   handleGetWorldMap,
@@ -388,6 +389,13 @@ async function dispatchOp(
       await handleCancelRecruit(ctx, conn, op, seq, recruitId);
       break;
     }
+    case Op.CRAFT_DEFENSE:
+      // 参数校验在 handler 内（kind 枚举 + count 正整数），失败附当前城池状态
+      await handleCraftDefense(ctx, conn, op, seq, data);
+      break;
+    case Op.CANCEL_DEFENSE_CRAFT:
+      await handleCancelDefenseCraft(ctx, conn, op, seq, data);
+      break;
     case Op.BUILD: {
       const kind = readString(data, 'kind');
       if (!isBuildingKind(kind)) {

@@ -1,5 +1,5 @@
 {
-  "version": 72,
+  "version": 73,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -635,6 +635,17 @@
             "repair": 0
           },
           "recruitQueue": [],
+          "defenses": {
+            "cap": 0,
+            "stock": {
+              "trap": 0,
+              "chevaux": 0,
+              "rolling_log": 0,
+              "boulder": 0
+            },
+            "total": 0,
+            "queue": []
+          },
           "defenseBonus": 0,
           "marches": [],
           "territory": [],
@@ -774,7 +785,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 72,
+                "protocolVersion": 73,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -823,7 +834,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 72,
+                "protocolVersion": 73,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -843,14 +854,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/69 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/70 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 69,
+              "docVersion": 70,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -865,8 +876,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 72,
-                "docNotice": "接口文档已从 v69 更新到 v72：请 GET /agent-api/changes/69 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 73,
+                "docNotice": "接口文档已从 v70 更新到 v73：请 GET /agent-api/changes/70 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -1126,6 +1137,11 @@
           "name": "city.recruitQueue",
           "type": "array",
           "desc": "征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。"
+        },
+        {
+          "name": "city.defenses",
+          "type": "object",
+          "desc": "城防器械（v73，AISLG-193）：{ cap 库存上限（城墙等级 × 60）, stock 四种器械已入库件数（trap / chevaux / rolling_log / boulder，恒含四个键）, total 合计, queue 打造队列（第 1 项 status=crafting、其余 queued；条目结构同 CRAFT_DEFENSE 的 craft） }。守城战开打时按需自动消耗，战报的 defenses 字段给出用量与杀伤。"
         },
         {
           "name": "city.defenseBonus",
@@ -1514,6 +1530,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -1858,6 +1885,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -2238,6 +2276,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -3700,6 +3749,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -10089,6 +10149,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -10702,6 +10773,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -11425,6 +11507,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -12021,6 +12114,17 @@
                     "repair": 0
                   },
                   "recruitQueue": [],
+                  "defenses": {
+                    "cap": 0,
+                    "stock": {
+                      "trap": 0,
+                      "chevaux": 0,
+                      "rolling_log": 0,
+                      "boulder": 0
+                    },
+                    "total": 0,
+                    "queue": []
+                  },
                   "defenseBonus": 0,
                   "marches": [],
                   "territory": [],
@@ -13136,6 +13240,203 @@
         }
       ],
       "agentNote": "主动免战解除后本周次数就用掉了，不要为了「先开着、等要出兵再关」去开关：解除只是应急（比如开错了、想马上反击）。解除后别人的在途部队到达时也不再扑空。"
+    },
+    {
+      "op": 117,
+      "kind": "request",
+      "name": "CRAFT_DEFENSE",
+      "title": "打造城防器械（v73，AISLG-193）",
+      "preAuth": false,
+      "summary": "在城墙里打造四种一次性守城器械（陷阱（trap）：开战时对攻方步兵类兵种造成 500 点伤害（固定值，按各兵种总生命比例分摊）；单件成本 金/木/粮/石/铁 = 20/60/0/0/40，单件 5s；拒马（chevaux）：开战时对攻方骑兵类兵种造成 800 点伤害（固定值，按各兵种总生命比例分摊）；单件成本 金/木/粮/石/铁 = 40/200/0/0/80，单件 10s；滚木（rolling_log）：攻方近战部队第一次贴到城墙下时，对贴墙的近战兵种造成 400 点伤害；单件成本 金/木/粮/石/铁 = 30/200/0/0/0，单件 8s；擂石（boulder）：攻方冲车第一次贴到城墙下时，对冲车造成 1500 点伤害（正好击毁 1 辆冲车）；单件成本 金/木/粮/石/铁 = 40/0/0/380/0，单件 12s）。发起时立即从该城扣资源，入库在打造完成时（Worker 结算）。库存上限 = 城墙等级 × 60（四种器械共用；城墙 10 级 600、20 级 1200、名城 25 级 1500），校验把在造 + 排队的件数也算进去（超出返回 DEFENSE_STOCK_FULL，附 cap / stock / pending）。队列与征兵同模型：1 条在造 + 2 条排队（队满 DEFENSE_QUEUE_FULL）；无在造时立即开工（status=crafting，dueAt 非空），批次总时长 = max(1 秒, floor(单件基准 × 件数 ÷ time_scale))；有在造时入队（status=queued，dueAt 为 null）。校验顺序：城墙未建（WALL_NOT_BUILT）→ 库存上限 → 队列 → 资源。守城战开打时器械按需自动使用、用掉就没了（陷阱 / 拒马开战即用，滚木 / 擂石在攻方贴墙时用），用量与杀伤见战报的 defenses 字段。",
+      "requestFields": [
+        {
+          "name": "kind",
+          "type": "'trap' | 'chevaux' | 'rolling_log' | 'boulder'",
+          "desc": "必填。器械种类：trap 陷阱 / chevaux 拒马 / rolling_log 滚木 / boulder 擂石；缺失或未知返回 INVALID_PARAMS。"
+        },
+        {
+          "name": "count",
+          "type": "number",
+          "desc": "必填。件数（正整数，且与库存 + 在造 + 排队合计不超过城墙等级 × 60）；成本 = 单件成本 × 件数。"
+        },
+        {
+          "name": "cityId",
+          "type": "string",
+          "desc": "可选。在哪座城打造（缺省主城）；城墙等级、库存与扣资源都按该城。"
+        },
+        {
+          "name": "cityId",
+          "type": "string",
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "craft",
+          "type": "object",
+          "desc": "新建的打造条目 { id, cityId, kind, count, status, initiator, cost 成本快照, unitSeconds 单件基准秒数, startedAt, dueAt（排队为 null）, completedAt }。"
+        },
+        {
+          "name": "stock",
+          "type": "object",
+          "desc": "发起后该城已入库的四种器械件数（不含在造 / 排队）。"
+        },
+        {
+          "name": "cap",
+          "type": "number",
+          "desc": "该城库存上限（城墙等级 × 60）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "WALL_NOT_BUILT",
+        "DEFENSE_STOCK_FULL",
+        "DEFENSE_QUEUE_FULL",
+        "INSUFFICIENT_RESOURCES"
+      ],
+      "examples": [
+        {
+          "caption": "打造 10 件陷阱（约 50s 后完成）",
+          "request": {
+            "op": 117,
+            "seq": 21,
+            "data": {
+              "kind": "trap",
+              "count": 10
+            }
+          },
+          "responses": [
+            {
+              "op": 117,
+              "seq": 21,
+              "ok": true,
+              "data": {
+                "craft": {
+                  "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+                  "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "kind": "trap",
+                  "count": 10,
+                  "status": "crafting",
+                  "initiator": "player",
+                  "cost": {
+                    "gold": 200,
+                    "wood": 600,
+                    "food": 0,
+                    "stone": 0,
+                    "iron": 400
+                  },
+                  "unitSeconds": 5,
+                  "startedAt": "2026-09-25T08:00:00.000Z",
+                  "dueAt": "2026-09-25T08:00:50.000Z",
+                  "completedAt": null
+                },
+                "stock": {
+                  "trap": 0,
+                  "chevaux": 0,
+                  "rolling_log": 0,
+                  "boulder": 0
+                },
+                "cap": 600
+              }
+            }
+          ]
+        },
+        {
+          "caption": "超出库存上限（城墙 10 级、已入库 590、在造 20，再下 10 件）",
+          "request": {
+            "op": 117,
+            "seq": 22,
+            "data": {
+              "kind": "chevaux",
+              "count": 10
+            }
+          },
+          "responses": [
+            {
+              "op": 117,
+              "seq": 22,
+              "ok": false,
+              "error": {
+                "code": "DEFENSE_STOCK_FULL",
+                "message": "器械库存已达上限（城墙等级 × 60，四种器械共用），先把库存用在守城或升级城墙"
+              },
+              "data": {
+                "cap": 600,
+                "stock": 590,
+                "pending": 20
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "守城器械只在被攻打时自动消耗，不会被掠夺。被打前先补库存：城墙 10 级囤满 600 件约等于守军多两成战力。四种按威胁配比：对手步兵多造陷阱、骑兵多造拒马、带冲车必须备擂石、通用近战压力造滚木。队列满了（1 在造 + 2 排队）先等或取消。"
+    },
+    {
+      "op": 118,
+      "kind": "request",
+      "name": "CANCEL_DEFENSE_CRAFT",
+      "title": "取消打造（v73，AISLG-193）",
+      "preAuth": false,
+      "summary": "取消排队中（queued）或打造中（crafting）的器械条目：按发起时的成本快照全额返还到该城，库存不变；该城排队的下一条立即开工（同事务激活，推送 craft_started）。与 Worker 到点完成按条件守卫并发，先翻转状态者生效。",
+      "requestFields": [
+        {
+          "name": "craftId",
+          "type": "string",
+          "desc": "必填。要取消的打造条目 id（GET_STATE 的 city.defenses.queue 中条目的 id）；缺失或格式非法返回 INVALID_PARAMS。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "craft",
+          "type": "object",
+          "desc": "被取消的打造条目（status=cancelled，completedAt 为 null）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "DEFENSE_NOT_CANCELLABLE"
+      ],
+      "examples": [
+        {
+          "caption": "取消进行中的打造",
+          "request": {
+            "op": 118,
+            "seq": 23,
+            "data": {
+              "craftId": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f"
+            }
+          },
+          "responses": [
+            {
+              "op": 118,
+              "seq": 23,
+              "ok": true,
+              "data": {
+                "craft": {
+                  "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+                  "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "kind": "trap",
+                  "count": 10,
+                  "status": "cancelled",
+                  "initiator": "player",
+                  "cost": {
+                    "gold": 200,
+                    "wood": 600,
+                    "food": 0,
+                    "stone": 0,
+                    "iron": 400
+                  },
+                  "unitSeconds": 5,
+                  "startedAt": "2026-09-25T08:00:00.000Z",
+                  "dueAt": null,
+                  "completedAt": null
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "取消全额返还，但会丢掉这段时间的进度；只是缺资源的话优先等完成，别反复取消重下。"
     },
     {
       "op": 2000,
@@ -14683,6 +14984,70 @@
         }
       ],
       "agentNote": "只作提示；需要完整列表时 GET_ALLIANCE_MARKS。"
+    },
+    {
+      "op": 2026,
+      "kind": "push",
+      "name": "PUSH_DEFENSE_STATE",
+      "title": "推送：打造状态变化（v73，AISLG-193）",
+      "summary": "打造开始 / 入队 / 完成入库 / 取消时推给同账号全部在线连接（发起连接已拿到响应，不回推）。收到后建议 GET_STATE 重新对齐 city.defenses。",
+      "dataFields": [
+        {
+          "name": "reason",
+          "type": "'craft_started' | 'craft_queued' | 'craft_completed' | 'craft_cancelled'",
+          "desc": "开工（含排队条目被激活）/ 入队 / 完成入库 / 取消返还。"
+        },
+        {
+          "name": "craft",
+          "type": "object",
+          "desc": "打造条目视图（结构同 CRAFT_DEFENSE 的 craft）。"
+        },
+        {
+          "name": "stock",
+          "type": "object",
+          "desc": "该城当前四种器械的已入库件数。"
+        },
+        {
+          "name": "cap",
+          "type": "number",
+          "desc": "该城库存上限（城墙等级 × 60）。"
+        }
+      ],
+      "examples": [
+        {
+          "op": 2026,
+          "push": true,
+          "data": {
+            "reason": "craft_completed",
+            "craft": {
+              "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+              "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+              "kind": "trap",
+              "count": 10,
+              "status": "completed",
+              "initiator": "player",
+              "cost": {
+                "gold": 200,
+                "wood": 600,
+                "food": 0,
+                "stone": 0,
+                "iron": 400
+              },
+              "unitSeconds": 5,
+              "startedAt": "2026-09-25T08:00:00.000Z",
+              "dueAt": "2026-09-25T08:00:50.000Z",
+              "completedAt": "2026-09-25T08:00:50.000Z"
+            },
+            "stock": {
+              "trap": 10,
+              "chevaux": 0,
+              "rolling_log": 0,
+              "boulder": 0
+            },
+            "cap": 600
+          }
+        }
+      ]
     }
   ],
   "errorCodes": {
@@ -15077,6 +15442,22 @@
     "PASSWORD_LOGIN_CLOSED": {
       "desc": "（v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。",
       "action": "网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。"
+    },
+    "WALL_NOT_BUILT": {
+      "desc": "（v73，AISLG-193）城墙尚未建造：四种城防器械只能囤在城墙里，城墙 0 级时库存上限为 0，不能打造。响应的 data 附 cap（= 0）。",
+      "action": "先建造并升级城墙再打造器械；城墙等级同时也是库存上限（每级 60 件，四种共用）。"
+    },
+    "DEFENSE_STOCK_FULL": {
+      "desc": "（v73，AISLG-193）库存 + 在造 + 本次数量超过上限（城墙等级 × 60，四种器械共用）。响应的 data 附 cap / stock（已入库合计）/ pending（在造 + 排队合计）。",
+      "action": "减少本次件数，或先把库存用在守城（守城战自动消耗）后再生出；升级城墙可提高上限。"
+    },
+    "DEFENSE_QUEUE_FULL": {
+      "desc": "（v73，AISLG-193）打造队列已满：与征兵同规则，同一时间 1 条在造 + 最多 2 条排队。",
+      "action": "等队首完成（或取消已有条目腾位置）后再发起。"
+    },
+    "DEFENSE_NOT_CANCELLABLE": {
+      "desc": "（v73，AISLG-193）没有可取消的打造条目：条目不存在、不属于本账号，或已完成 / 已取消。",
+      "action": "用 GET_STATE 的 city.defenses.queue 取当前条目的 craftId 再取消；已完成 / 已取消的不要重试。"
     },
     "INTERNAL": {
       "desc": "服务端内部错误。",
@@ -15614,6 +15995,17 @@
                   "repair": 0
                 },
                 "recruitQueue": [],
+                "defenses": {
+                  "cap": 0,
+                  "stock": {
+                    "trap": 0,
+                    "chevaux": 0,
+                    "rolling_log": 0,
+                    "boulder": 0
+                  },
+                  "total": 0,
+                  "queue": []
+                },
                 "defenseBonus": 0,
                 "marches": [],
                 "territory": [],
@@ -16222,6 +16614,17 @@
                   "repair": 0
                 },
                 "recruitQueue": [],
+                "defenses": {
+                  "cap": 0,
+                  "stock": {
+                    "trap": 0,
+                    "chevaux": 0,
+                    "rolling_log": 0,
+                    "boulder": 0
+                  },
+                  "total": 0,
+                  "queue": []
+                },
                 "defenseBonus": 0,
                 "marches": [],
                 "territory": [],

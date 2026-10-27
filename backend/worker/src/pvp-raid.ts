@@ -18,6 +18,7 @@ import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/b
 import { armyCarryCapacity } from '../../common/src/troops';
 import { carryingPercent, combatTechBonus, defenseExtraPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
+import { consumeCityDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent, famousWarehousePercent } from '../../common/src/famous-effects';
@@ -129,6 +130,7 @@ export async function resolvePvpPlunderArrival(
   const garrisonTotal = Object.values(garrison).reduce((sum, n) => sum + (n ?? 0), 0);
   const guardBonus = battleBonusOf(guard, garrisonTotal);
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
+  const defenses = await loadCityDefenses(client, city.id);
   const result = resolveBattle(troops, garrison, {
     wallDefensePercent: wall,
     siege: true,
@@ -137,7 +139,10 @@ export async function resolvePvpPlunderArrival(
     defenderHero: guardBonus,
     attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
     defenderTech: combatTechBonus(await loadTechLevels(client, city.account_id)),
+    defenses,
   });
+  // v73（AISLG-193）：攻守双方战报都带器械用量，库存同事务扣减
+  await consumeCityDefenses(client, city.id, result.defenseUse);
 
   // 双方战报（每账号一份，各自视角）与命名
   const attackerNaming = await loadCityNaming(client, march.from_city_id);

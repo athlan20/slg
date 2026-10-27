@@ -624,6 +624,34 @@ CREATE TABLE IF NOT EXISTS tech_research (
 );
 CREATE INDEX IF NOT EXISTS idx_tech_research_account ON tech_research (account_id, status);
 CREATE INDEX IF NOT EXISTS idx_tech_research_due ON tech_research (due_at) WHERE status = 'researching';
+
+-- v73（AISLG-193 城防器械）：城墙里囤的四种一次性守城器械（陷阱 / 拒马 / 滚木 / 擂石）。
+-- city_defenses = 库存（城 × 器械；缺行 = 0，四种共用上限 城墙等级 × 60）；
+-- defense_crafts = 打造队列（与征兵同模型：1 条在造 + 2 条排队；cost 为发起时成本快照，
+-- 取消时全额返还；unit_seconds 为单件基准时长快照，在造期间的 due_at 按批次总时长计算）
+CREATE TABLE IF NOT EXISTS city_defenses (
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  kind text NOT NULL,
+  count integer NOT NULL DEFAULT 0,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (city_id, kind)
+);
+CREATE TABLE IF NOT EXISTS defense_crafts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  kind text NOT NULL,
+  count integer NOT NULL,
+  status text NOT NULL,
+  initiator text NOT NULL,
+  cost jsonb NOT NULL DEFAULT '{}'::jsonb,
+  unit_seconds integer NOT NULL,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  due_at timestamptz,
+  completed_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS idx_defense_crafts_city ON defense_crafts (city_id, status);
+CREATE INDEX IF NOT EXISTS idx_defense_crafts_due ON defense_crafts (due_at) WHERE status = 'crafting';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tech_research_one_active ON tech_research (account_id) WHERE status = 'researching';
 
 -- v36（AISLG-114/115/116）：武将。account_heroes = 账号级武将（普通将从酒馆招募、名将从 PvE 获得）；

@@ -12,6 +12,7 @@ import type {
   Resources,
 } from './protocol';
 import type { MarchView, TerritoryView } from './protocol-world';
+import type { DefenseStockView } from './protocol-defense';
 import type { TechLevels } from './tech';
 
 /** BUILD（op 21）请求载荷：kind 缺失或不是已知建筑类型时返回 INVALID_PARAMS */
@@ -208,6 +209,14 @@ export const EventType = {
   CITY_CONQUERED: 'city_conquered',
   /** v61（AISLG-165）：名下野地储量采空（detail = { x, y, terrain, level, at }；驻军仍在时只按恢复速度采集） */
   WILDERNESS_DEPLETED: 'wilderness_depleted',
+  /** v73（AISLG-193）：开始打造城防器械（detail = { kind, count, cost, dueAt }） */
+  DEFENSE_CRAFT_STARTED: 'defense_craft_started',
+  /** v73：打造进入排队（detail = { kind, count, cost }） */
+  DEFENSE_CRAFT_QUEUED: 'defense_craft_queued',
+  /** v73：打造完成入库（detail = { kind, count, stock, cap }） */
+  DEFENSE_CRAFT_COMPLETED: 'defense_craft_completed',
+  /** v73：打造被取消（detail = { kind, count, refund }） */
+  DEFENSE_CRAFT_CANCELLED: 'defense_craft_cancelled',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;
@@ -318,6 +327,8 @@ export interface CityView {
   marches: MarchView[];
   /** 本城占领的野地（v12 新增；含占领加成与驻军采集速率，production 已计入两者） */
   territory: TerritoryView[];
+  /** 城防器械（v73，AISLG-193）：库存、上限（城墙等级 × 60）与打造队列 */
+  defenses: DefenseStockView;
   /** 建造队列（v4 新增）：第 1 项为在建（无在建时为空数组），其余为排队，按入队顺序 */
   queue: BuildView[];
   /** 兼容字段：当前在建建筑（= queue[0]，仅当其 status 为 building；无在建为 null） */

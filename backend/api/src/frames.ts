@@ -118,6 +118,10 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   ALLIANCE_MARK_LIMIT: '联盟的地图标记已达上限（20 个），等有标记到期或被删除后再打',
   ALLIANCE_MARK_EXISTS: '这个格子已经有联盟标记了',
   ALLY_NOT_ATTACKABLE: '盟友不可攻击：同一联盟的成员之间不能掠夺、抢野地、占领分城或侦察',
+  WALL_NOT_BUILT: '城墙尚未建造，器械只能囤在城墙里（先建城墙再打造陷阱 / 拒马 / 滚木 / 擂石）',
+  DEFENSE_STOCK_FULL: '器械库存已达上限（城墙等级 × 60，四种器械共用），先把库存用在守城或升级城墙',
+  DEFENSE_QUEUE_FULL: '打造队列已满（1 条在造 + 2 条排队），请等待队首完成',
+  DEFENSE_NOT_CANCELLABLE: '打造任务不存在、不属于本账号或已完成 / 已取消，无法取消',
   ANNOUNCEMENT_NOT_FOUND: '公告不存在、已撤回或尚未生效',
   MAINTENANCE: '服务器正在换季维护，请稍后再试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除

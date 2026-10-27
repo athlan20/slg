@@ -176,6 +176,8 @@ export const Op = {
   CANCEL_TRAINING: 115,
   /** 提前解除主动免战（v71，AISLG-190）：本周免费次数不返还；被动免战不可解除 */
   CANCEL_TRUCE: 116,
+  CRAFT_DEFENSE: 117,
+  CANCEL_DEFENSE_CRAFT: 118,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -230,6 +232,7 @@ export const Op = {
   PUSH_ALLIANCE_STATE: 2024,
   /** 联盟地图标记变化推送（v69，AISLG-184）：reason = added / removed */
   PUSH_ALLIANCE_MARK: 2025,
+  PUSH_DEFENSE_STATE: 2026,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
@@ -686,6 +689,7 @@ export type {
   YellowTurbanPushData,
 } from './protocol-yt';
 import type { TechLevels } from './protocol-tech';
+import type { DefenseStockView } from './protocol-defense';
 import type { FamousEffectView, MarchView, TerritoryView } from './protocol-world';
 
 /**
@@ -853,6 +857,8 @@ export interface CityView {
   durability: number | null;
   /** 征兵队列（v11）：第 1 项为征募中（dueAt 非空），其余为排队；已取消的条目不在其中 */
   recruitQueue: RecruitView[];
+  /** 城防器械（v73）：库存、上限（城墙等级 × 60）与打造队列 */
+  defenses: DefenseStockView;
   /** 城墙守城防御加成（v11，占位 = 城墙等级 × 5，百分数数值；战斗结算上线后由其消费） */
   defenseBonus: number;
   /** 账号科技等级（v27 AISLG-77；全账号共享，已计入 production / storage / defenseBonus；负重与行军加成由客户端折算） */
@@ -972,6 +978,21 @@ export interface CancelRecruitRequestData {
 export interface CancelRecruitResponseData {
   recruit: RecruitView;
 }
+
+// 城防器械（v73，AISLG-193）的类型与数值镜像在 protocol-defense.ts
+export type {
+  DefenseKind,
+  DefenseCraftView,
+  DefenseStockView,
+  DefenseUseView,
+  DefenseScoutView,
+  CraftDefenseRequestData,
+  CraftDefenseResponseData,
+  CancelDefenseCraftRequestData,
+  CancelDefenseCraftResponseData,
+  DefenseStatePushData,
+} from './protocol-defense';
+export { DEFENSE_KINDS, DEFENSE_INFO, DEFENSE_STOCK_PER_WALL_LEVEL } from './protocol-defense';
 
 /** PUSH_RECRUIT_STATE（op 2004）推送载荷 */
 export interface RecruitStatePushData {

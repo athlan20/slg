@@ -76,6 +76,9 @@ export function CityPage() {
                   onClose={() => selectBuilding(null)}
                   onStartBuild={(kind) => void session.startBuild(kind)}
                   onStartUpgrade={(kind, toLevel) => void session.startUpgrade(kind, toLevel)}
+                  defenseError={session.defenseError}
+                  onCraftDefense={(kind, count) => void session.craftDefense(kind, count)}
+                  onCancelDefenseCraft={(craftId) => void session.cancelDefenseCraft(craftId)}
                 />
               ) : (
                 <p role="城池页-建筑详情-空态" className="grid flex-1 place-items-center text-[12.5px] text-faint">

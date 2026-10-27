@@ -77,6 +77,7 @@ import {
   REQUEST_RESEARCH_TECH,
 } from './protocol-doc-ops-tech';
 import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT } from './protocol-doc-ops-army';
+import { PUSH_DEFENSE_STATE, REQUEST_CANCEL_DEFENSE_CRAFT, REQUEST_CRAFT_DEFENSE } from './protocol-doc-ops-defense';
 import {
   PUSH_MARCH_STATE,
   PUSH_NPC_ATTACK_WARNING,
@@ -148,6 +149,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.famousEffect', type: 'object | null', desc: `名城独有效果（v62 新增，AISLG-166）：{ kind, percent, resources }，只有占领者享受、跟着城走（换主人归新主人，放弃 / 被占即失效）。洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。普通城为 null。` },
     { name: 'city.guard', type: 'object | null', desc: '城守（v36 新增，AISLG-115）：该城任命的武将 { heroId, name, famous, lead, force, wit, level, bonusPercent }；未任为 null。产量加成（四资源非金，智力 × 0.1% 封顶 5%）已计入 production；守城战另享攻防加成（见 ASSIGN_HERO）。' },
     { name: 'city.recruitQueue', type: 'array', desc: '征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。' },
+    { name: 'city.defenses', type: 'object', desc: '城防器械（v73，AISLG-193）：{ cap 库存上限（城墙等级 × 60）, stock 四种器械已入库件数（trap / chevaux / rolling_log / boulder，恒含四个键）, total 合计, queue 打造队列（第 1 项 status=crafting、其余 queued；条目结构同 CRAFT_DEFENSE 的 craft） }。守城战开打时按需自动消耗，战报的 defenses 字段给出用量与杀伤。' },
     { name: 'city.defenseBonus', type: 'number', desc: '城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。' },
     { name: 'city.marches', type: 'array', desc: '本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。' },
     { name: 'city.territory', type: 'array', desc: '本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。' },
@@ -421,6 +423,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.AGENT_REPORT_PLAN]: REQUEST_AGENT_REPORT_PLAN,
   [Op.RECRUIT]: withCityId(REQUEST_RECRUIT),
   [Op.CANCEL_RECRUIT]: REQUEST_CANCEL_RECRUIT,
+  [Op.CRAFT_DEFENSE]: withCityId(REQUEST_CRAFT_DEFENSE),
+  [Op.CANCEL_DEFENSE_CRAFT]: REQUEST_CANCEL_DEFENSE_CRAFT,
   [Op.GET_WORLD_MAP]: REQUEST_GET_WORLD_MAP,
   [Op.GET_MAP_OVERVIEW]: REQUEST_GET_MAP_OVERVIEW,
   [Op.GET_TILE]: REQUEST_GET_TILE,
@@ -460,6 +464,7 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.PUSH_CITY_STATE]: PUSH_CITY_STATE,
   [Op.PUSH_AGENT_PLAN]: PUSH_AGENT_PLAN,
   [Op.PUSH_RECRUIT_STATE]: PUSH_RECRUIT_STATE,
+  [Op.PUSH_DEFENSE_STATE]: PUSH_DEFENSE_STATE,
   [Op.PUSH_MARCH_STATE]: PUSH_MARCH_STATE,
   [Op.PUSH_TILE_STATE]: PUSH_TILE_STATE,
   [Op.PUSH_BATTLE_REPORT]: PUSH_BATTLE_REPORT,

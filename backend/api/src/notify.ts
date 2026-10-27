@@ -7,6 +7,8 @@ import pg from 'pg';
 import { NOTIFY_CHANNEL, readDbConfig } from '../../common/src/db';
 import { Op } from '../../common/src/protocol';
 import { loadBattleReport } from '../../common/src/battle-db';
+import { defenseCap } from '../../common/src/city-defense';
+import { defenseCraftView, loadCityDefenses, loadDefenseCraft } from '../../common/src/city-defense-db';
 import type { ConnectionRegistry } from './connections';
 import { buildView, marchView, recruitView, type BuildRow, type MarchRow, type RecruitRow } from './views';
 import { loadWorldWindow } from './views-world';
@@ -99,6 +101,9 @@ export class CompletionNotifier {
         /** reason='alliance_chat'（v68 AISLG-183）时的联盟与消息编号：联盟大事的系统消息落库后推给本联盟在线成员 */
         allianceId?: string;
         messageId?: number;
+        /** reason='defense_changed'（v73 AISLG-193）时的变更类型与打造条目 id */
+        change?: 'craft_completed' | 'craft_started';
+        craftId?: string;
       } = {};
       try {
         payload = msg.payload ? JSON.parse(msg.payload) : {};
@@ -125,6 +130,11 @@ export class CompletionNotifier {
           { op: Op.PUSH_ANNOUNCEMENT, push: true, data: payload.announcement },
           (conn) => host === null || conn.host === host,
         );
+        return;
+      }
+      if (payload.reason === 'defense_changed' && payload.accountId && payload.craftId) {
+        // 城防器械打造变化（v73 AISLG-193）：Worker 完成后直推 PUSH_DEFENSE_STATE（漏推由按需查询兜底）
+        void this.pushDefenseChange(payload.accountId, payload.craftId, payload.change ?? 'craft_completed');
         return;
       }
       if (payload.reason === 'alliance_state' && Array.isArray(payload.accountIds) && payload.data) {
@@ -408,6 +418,29 @@ export class CompletionNotifier {
   }
 
   /** 查询水位线之后完成的建造并推送给账号在线连接。单飞：并发触发时只跑一次，结束后补跑。 */
+  /** 打造完成后直推 PUSH_DEFENSE_STATE（库存与上限现查，避免通知载荷过期） */
+  private async pushDefenseChange(accountId: string, craftId: string, change: 'craft_completed' | 'craft_started'): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      const craft = await loadDefenseCraft(client, craftId);
+      if (!craft) {
+        return;
+      }
+      const stock = await loadCityDefenses(client, craft.city_id);
+      const wallRes = await client.query(`SELECT level FROM city_buildings WHERE city_id = $1 AND kind = 'wall'`, [craft.city_id]);
+      const cap = defenseCap(Number((wallRes.rows[0] as { level?: number } | undefined)?.level ?? 0));
+      this.registry.broadcast(accountId, {
+        op: Op.PUSH_DEFENSE_STATE,
+        push: true,
+        data: { reason: change, craft: defenseCraftView(craft), stock, cap },
+      });
+    } catch (err) {
+      console.error('defense push failed:', err);
+    } finally {
+      client.release();
+    }
+  }
+
   async poll(): Promise<void> {
     if (this.stopped || !this.watermark) {
       return;

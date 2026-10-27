@@ -21,6 +21,7 @@ import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
 import { combatTechBonus, defenseExtraPercent, repairPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
+import { consumeCityDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent } from '../../common/src/famous-effects';
@@ -122,6 +123,7 @@ export async function resolvePvpConquestArrival(
   const garrisonTotal = Object.values(garrison).reduce((sum, n) => sum + (n ?? 0), 0);
   const guardBonus = battleBonusOf(guard, garrisonTotal);
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
+  const defenses = await loadCityDefenses(client, city.id);
   const result = resolveBattle(troops, garrison, {
     wallDefensePercent: wall,
     siege: true,
@@ -130,7 +132,10 @@ export async function resolvePvpConquestArrival(
     defenderHero: guardBonus,
     attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
     defenderTech: combatTechBonus(defenderTechs),
+    defenses,
   });
+  // v73（AISLG-193）：器械消耗与城防值结算在同一事务；战报由下方双方视角落库
+  await consumeCityDefenses(client, city.id, result.defenseUse);
 
   const attackerNaming = await loadNaming(client, march.from_city_id);
   const defenderNaming = await loadNaming(client, city.id);

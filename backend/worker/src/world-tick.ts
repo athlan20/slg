@@ -45,7 +45,8 @@ import { movingNotifyPayload, resolveInterceptArrival, type MovingNotify } from 
 import { scaledMs } from '../../common/src/time-scale';
 import { readCargo } from '../../common/src/transport';
 import { loadTechLevels } from '../../common/src/tech-db';
-import { defenseExtraPercent } from '../../common/src/tech';
+import { defenseExtraPercent, scoutDetailOf } from '../../common/src/tech';
+import { degradeDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
 import { famousWallExtraPercent } from '../../common/src/famous-effects';
 import { wallDefensePercent } from '../../common/src/battle';
 import { loadBuildingLevels } from '../../common/src/production';
@@ -283,6 +284,9 @@ async function settleScoutArrival(
   let garrison: Partial<Record<TroopKind, number>> = {};
   /** v38（AISLG-122）：玩家城侦察的城墙减伤（城墙 + 守方城防科技）；其余目标为 undefined */
   let pvpWallPercent: number | undefined;
+  /** v73（AISLG-193）：玩家城侦察的器械库存（尚未按侦察科技降级） */
+  let defenseStock: Awaited<ReturnType<typeof loadCityDefenses>> | null = null;
+  const attackerTechs = await loadTechLevels(client, march.account_id);
   if (tile.kind === 'wilderness' && !tile.owner_city_id) {
     // v29（AISLG-76）：黄巾营地 / 老巢所在格——侦察到的是营地当前守军（含战后存量与老巢当前阶段）
     const camp = await loadCampAt(client, tile.x, tile.y);
@@ -309,6 +313,7 @@ async function settleScoutArrival(
       levels.wall ?? 0,
       (ownerCity ? defenseExtraPercent(await loadTechLevels(client, ownerCity.account_id)) : 0) + famousWallExtraPercent(ownerCity?.famous_name),
     );
+    defenseStock = await loadCityDefenses(client, tile.owner_city_id);
   } else {
     garrison = await loadTileArmy(client, tile.x, tile.y);
   }
@@ -319,7 +324,15 @@ async function settleScoutArrival(
   }
   const nowRes = await client.query(`SELECT now() AS now`);
   const at = (nowRes.rows[0].now as Date).toISOString();
-  const intel = buildScoutIntel(tile, toFullArmyCounts(garrison), owner, at, await loadTechLevels(client, march.account_id), pvpWallPercent);
+  const intel = buildScoutIntel(
+    tile,
+    toFullArmyCounts(garrison),
+    owner,
+    at,
+    attackerTechs,
+    pvpWallPercent,
+    defenseStock ? degradeDefenses(defenseStock, scoutDetailOf(attackerTechs)) : null,
+  );
   await saveScoutIntel(client, march.account_id, intel);
   await client.query(
     `UPDATE marches SET status = 'arrived', resolved_at = clock_timestamp() WHERE id = $1 AND status = 'marching'`,

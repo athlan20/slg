@@ -196,6 +196,10 @@ export const Op = {
   CANCEL_TRAINING: 115,
   /** C→S 提前解除主动免战（v71，AISLG-190：无参数；解除后立即可被攻击、可出兵，本周免费次数不返还；被动免战不可解除） */
   CANCEL_TRUCE: 116,
+  /** C→S 打造城防器械（v73，AISLG-193：data.kind + data.count，可选 cityId；陷阱 / 拒马 / 滚木 / 擂石，库存上限 = 城墙等级 × 60） */
+  CRAFT_DEFENSE: 117,
+  /** C→S 取消打造（v73，AISLG-193：data.craftId；排队中与打造中都可取消，成本全额返还，下一条立即开工） */
+  CANCEL_DEFENSE_CRAFT: 118,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -261,6 +265,8 @@ export const Op = {
   PUSH_ALLIANCE_STATE: 2024,
   /** S→C 推送：联盟地图标记变化（v69，AISLG-184；reason = added 新增 / removed 删除；只推给本联盟在线成员，含 Agent 连接） */
   PUSH_ALLIANCE_MARK: 2025,
+  /** S→C 推送：城防器械打造状态变化（v73，AISLG-193；reason = craft_started / craft_queued / craft_completed / craft_cancelled） */
+  PUSH_DEFENSE_STATE: 2026,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -503,6 +509,14 @@ export const ErrorCode = {
   ALLIANCE_MARK_LIMIT: 'ALLIANCE_MARK_LIMIT',
   /** 联盟：同一格子已经有一个有效标记，不能重复标记（v69，AISLG-184） */
   ALLIANCE_MARK_EXISTS: 'ALLIANCE_MARK_EXISTS',
+  /** 城防器械：城墙未建（器械只能囤在城墙里），响应附 cap（v73，AISLG-193） */
+  WALL_NOT_BUILT: 'WALL_NOT_BUILT',
+  /** 城防器械：库存 + 在造 + 本次数量超过上限（城墙等级 × 60），响应附 cap / stock / pending（v73，AISLG-193） */
+  DEFENSE_STOCK_FULL: 'DEFENSE_STOCK_FULL',
+  /** 城防器械：打造队列已满（1 条在造 + 2 条排队）（v73，AISLG-193） */
+  DEFENSE_QUEUE_FULL: 'DEFENSE_QUEUE_FULL',
+  /** 城防器械：没有可取消的打造条目（已完成 / 已取消 / 不属于本账号）（v73，AISLG-193） */
+  DEFENSE_NOT_CANCELLABLE: 'DEFENSE_NOT_CANCELLABLE',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -968,6 +982,21 @@ export type {
 } from './protocol-tech';
 export { TECH_KINDS, isTechKind } from './tech';
 export type { TechKind, TechLevels } from './tech';
+
+// 城防器械（v73，AISLG-193）的载荷类型在 protocol-defense.ts，规则与数值在 city-defense.ts
+export type {
+  DefenseCraftView,
+  DefenseStockView,
+  CraftDefenseRequestData,
+  CraftDefenseResponseData,
+  CancelDefenseCraftRequestData,
+  CancelDefenseCraftResponseData,
+  DefenseStatePushData,
+  DefenseUseView,
+  DefenseScoutView,
+} from './protocol-defense';
+export { DEFENSE_KINDS, isDefenseKind, defenseCap, defenseTotal } from './city-defense';
+export type { DefenseKind, DefenseStock } from './city-defense';
 
 // 城池 / 事件 / 建造 / 生产的视图类型（v7..v12 既有形态）同样拆在 protocol-city.ts
 export type {

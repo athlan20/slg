@@ -5,6 +5,7 @@
 import type { ArmyCounts, InitiatorRole, Resources, TroopKind } from './protocol';
 import type { YtTileCampView } from './protocol-yt';
 import type { BattleHeroView } from './protocol-hero';
+import type { DefenseScoutView, DefenseUseView } from './protocol-defense';
 
 /** 地形清单（v19 新增金矿 gold_mine）：平原 / 草原 / 森林 / 丘陵 / 荒漠 / 沼泽 / 湖泊 / 金矿 */
 export type TerrainKind = 'plain' | 'grass' | 'forest' | 'hill' | 'desert' | 'marsh' | 'lake' | 'gold_mine';
@@ -130,6 +131,8 @@ export interface TileDetailView extends TileView {
   plunderedAt: string | null;
   /** 在野名将情报（v54）：侦察后给出名字与属性 */
   wildFamousIntel: { scouted: boolean; name: string | null; attrs: { lead: number; force: number; wit: number } | null } | null;
+  /** 城防器械（v73 AISLG-193）：自己的城给精确库存，他人的城给侦察快照；其余为 null */
+  defenses: DefenseScoutView | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */
@@ -237,6 +240,8 @@ export interface BattleReportView {
   towerDamage?: number;
   /** 冲车破墙（v33 AISLG-86）：开战时城墙减伤原值 → 破墙后（百分数）；无冲车 / 非攻城战为缺省 */
   wallBreak?: { from: number; to: number };
+  /** 城防器械用量（v73 AISLG-193）：守城战实际用掉的器械，一种一项；无器械 / 未触发为缺省 */
+  defenses?: DefenseUseView[];
   roundLog: BattleRoundLogEntryView[];
   /** Agent 点评（v23 AISLG-53）；尚无点评时为 null */
   comment: BattleReportCommentView | null;
@@ -303,6 +308,8 @@ export interface ScoutIntel {
   npcStock: Partial<Record<'gold' | 'wood' | 'food' | 'stone' | 'iron', number>> | null;
   /** 情报获取时间（ISO 8601） */
   scoutedAt: string;
+  /** 城防器械（v73 AISLG-193）：玩家城池才有；按侦察科技三档 */
+  defenses?: DefenseScoutView | null;
 }
 
 /** GET_STATE 响应的 cities 元素：账号全部城池（主城在前） */

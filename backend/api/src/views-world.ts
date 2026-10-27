@@ -19,6 +19,8 @@ import {
 import { armyPower } from '../../common/src/battle';
 import { settleDurability } from '../../common/src/protection';
 import { repairPercent } from '../../common/src/tech';
+import { degradeDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
+import type { DefenseScoutView } from '../../common/src/protocol-defense';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { advanceTile, effectiveGatherOf, type TileReserveStep } from '../../common/src/wilderness-reserve';
 import { reserveViewFrom } from './reserve-view';
@@ -44,6 +46,8 @@ interface TileQueryRow extends TileRow {
   garrison: number | null;
   /** 请求账号对该地块的侦察快照（scout_intel.detail 拆列）；未侦察均为 null */
   intel_garrison: Record<TroopKind, number> | null;
+  /** 侦察快照里的城防器械（v73，AISLG-193） */
+  intel_defenses?: DefenseScoutView | null;
   intel_stock: Partial<Record<'gold' | 'wood' | 'food' | 'stone' | 'iron', number>> | null;
   intel_at: Date | null;
   /** 侦察详细度与总兵力范围（v27 AISLG-77；历史情报缺省 = exact） */
@@ -85,6 +89,7 @@ const TILE_SELECT = `
          c.created_at AS owner_created_at, om.first_created AS owner_main_created_at,
          COALESCE(ta.total, 0)::int AS garrison,
          si.detail->'garrison' AS intel_garrison, si.detail->'npcStock' AS intel_stock, si.scouted_at AS intel_at,
+         si.detail->'defenses' AS intel_defenses,
          si.detail->>'detail' AS intel_detail, si.detail->'garrisonTotal' AS intel_total,
          row_to_json(yc) AS camp_json,
          wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit,
@@ -316,6 +321,15 @@ export async function loadTileDetail(
   // 侦察过的地块一律给出最近一次快照时间（v23，AISLG-62：此前仅 NPC 城池返回；
   // 字段原本就有，只是把 scout_intel 的联表值对非 NPC 地块也透出，无新增字段）
   const scoutedAt = row.intel_at ? row.intel_at.toISOString() : null;
+  // v73（AISLG-193）：自己的城给精确库存；他人的城只给最近一次侦察快照（按侦察科技降级）
+  let defenses: DefenseScoutView | null = null;
+  if (row.kind === 'city' && row.owner_city_id) {
+    if (accountId !== undefined && row.owner_account_id === accountId) {
+      defenses = degradeDefenses(await loadCityDefenses(q, row.owner_city_id), 'exact');
+    } else if (row.intel_defenses) {
+      defenses = row.intel_defenses;
+    }
+  }
   const reserveStep = reserveStepOf(row, garrisonTotal);
   const detail: TileDetailView = {
     ...view,
@@ -337,6 +351,7 @@ export async function loadTileDetail(
         : null,
     npc: npcView,
     scoutedAt,
+    defenses,
     plunderedAt: row.plundered_at ? row.plundered_at.toISOString() : null,
     wildFamousIntel: wildFamousDetail(row, scoutedAt !== null),
   };

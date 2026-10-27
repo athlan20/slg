@@ -71,6 +71,7 @@ export async function saveBattleReport(
     wallDefensePercent: wallPercent,
     ...(result.towerDamage > 0 ? { towerDamage: result.towerDamage } : {}),
     ...(result.wallBreak ? { wallBreak: result.wallBreak } : {}),
+    ...(result.defenseUse.length > 0 ? { defenses: result.defenseUse } : {}),
     roundLog: result.roundLog,
   };
   const report = await insertBattleReport(client, accountId, detail);

@@ -61,6 +61,14 @@ import { projectStarvation } from '../../common/src/starvation';
 import { deployLimit, towerStats } from '../../common/src/building-effects';
 import { famousEffectView, famousTowerPercent, famousWallExtraPercent } from '../../common/src/famous-effects';
 import { constructionReductionPercent, defenseExtraPercent, repairPercent, type TechLevels } from '../../common/src/tech';
+import { defenseCap } from '../../common/src/city-defense';
+import {
+  defenseCraftView,
+  defenseStockTotal,
+  loadCityDefenses,
+  loadDefenseCrafts,
+  type DefenseCraftRow,
+} from '../../common/src/city-defense-db';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { currentCityId } from './city-scope';
 
@@ -205,6 +213,9 @@ export interface CitySnapshot {
   queue: BuildRow[];
   /** 征募中在前，排队按入队顺序 */
   recruitQueue: RecruitRow[];
+  /** 城防器械库存（v73，恒含四个键）与打造队列 */
+  defenseStock: Record<string, number>;
+  defenseCrafts: DefenseCraftRow[];
   /** 本城进行中的行军（v12） */
   marches: MarchRow[];
   /** 本城占领的野地（v12，含驻军总数） */
@@ -294,6 +305,8 @@ export async function lockCitySnapshot(
      ORDER BY CASE status WHEN 'recruiting' THEN 0 ELSE 1 END, started_at, id`,
     [row.id],
   );
+  const defenseStock = await loadCityDefenses(client, row.id);
+  const defenseCrafts = await loadDefenseCrafts(client, row.id);
   const marchRes = await client.query(
     `SELECT * FROM marches
      WHERE from_city_id = $1 AND status = 'marching'
@@ -334,6 +347,8 @@ export async function lockCitySnapshot(
     armyFoodUsePerHour,
     queue: queueRes.rows as BuildRow[],
     recruitQueue: recruitRes.rows as RecruitRow[],
+    defenseStock,
+    defenseCrafts,
     marches: marchRes.rows as MarchRow[],
     territory,
   };
@@ -413,6 +428,13 @@ export function toCityView(snap: CitySnapshot): CityView {
       ? { heroId: snap.guardHero.id, ...snap.guardHero, bonusPercent: snap.guardProductionPercent }
       : null,
     recruitQueue: snap.recruitQueue.map(recruitView),
+    // v73（AISLG-193）：城防器械库存与打造队列（上限 = 城墙等级 × 60，四种器械共用）
+    defenses: {
+      cap: defenseCap(snap.levels.wall ?? 0),
+      stock: { trap: 0, chevaux: 0, rolling_log: 0, boulder: 0, ...snap.defenseStock } as Record<'trap' | 'chevaux' | 'rolling_log' | 'boulder', number>,
+      total: defenseStockTotal(snap.defenseStock),
+      queue: snap.defenseCrafts.map(defenseCraftView),
+    },
     defenseBonus: wallBasePercent(snap.levels.wall) + defenseExtraPercent(snap.techs) + famousWallExtraPercent(snap.famousName),
     techs: { ...snap.techs },
     // v30（AISLG-80）：在外部队 = 行军中（含返程）+ 驻守野地；上限 = 校场等级（未建按 1）
