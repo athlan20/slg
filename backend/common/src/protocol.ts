@@ -236,6 +236,10 @@ export const Op = {
   BUY_MARKET_ORDER: 135,
   /** C→S 撤单（v78：data.orderId；未成交部分立即退还） */
   CANCEL_MARKET_ORDER: 136,
+  /** C→S 查询洛阳争夺状态（v79，AISLG-200：占领者 / 窗口 / 洛阳之主 / 政令；玩家与 Agent 通用） */
+  GET_LUOYANG: 137,
+  /** C→S 洛阳之主盟主发布政令（v79：data.kind = recruit|march|research；每 7 天一次） */
+  PUBLISH_DECREE: 138,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -601,6 +605,12 @@ export const ErrorCode = {
   DIPLOMACY_EXISTS: 'DIPLOMACY_EXISTS',
   /** 联盟外交：友好邀请不存在、已过期或已处理（v77） */
   DIPLOMACY_INVITE_NOT_FOUND: 'DIPLOMACY_INVITE_NOT_FOUND',
+  /** 洛阳：不在争夺窗口内（北京时间每周六 21:00–23:00），响应附 nextOpenAt / retryAfterSeconds（v79，AISLG-200） */
+  LUOYANG_CLOSED: 'LUOYANG_CLOSED',
+  /** 洛阳：你所在联盟不是洛阳之主，不能发布政令（v79） */
+  DECREE_NOT_HOLDER: 'DECREE_NOT_HOLDER',
+  /** 洛阳：政令冷却中（每 7 天一次），响应附 nextAt / retryAfterSeconds（v79） */
+  DECREE_COOLDOWN: 'DECREE_COOLDOWN',
   /** 交易所：主城官府不足 5 级，或账号仍在新手保护期（v78，AISLG-196） */
   MARKET_LOCKED: 'MARKET_LOCKED',
   /** 交易所：单价超出允许范围（资源 0.5–2、金币 0.125–0.5），响应附 min / max（v78） */
@@ -1147,6 +1157,24 @@ export {
   isBattlefieldShopItem,
   BATTLEFIELD_SQUAD_STATUSES,
 } from './protocol-battlefield';
+
+// 洛阳争夺（v79，AISLG-200）的载荷类型在 protocol-luoyang.ts，规则在 luoyang.ts
+export type {
+  LuoyangOwnerView,
+  LuoyangDecreeView,
+  LuoyangStatusView,
+  PublishDecreeRequestData,
+  PublishDecreeResponseData,
+} from './protocol-luoyang';
+export {
+  LUOYANG_NAME,
+  DECREE_KINDS,
+  isDecreeKind,
+  luoyangWindowOpen,
+  nextLuoyangOpen,
+  currentLuoyangWindow,
+} from './luoyang';
+export type { DecreeKind } from './luoyang';
 
 // 玩家交易所（v78，AISLG-196）的载荷类型在 protocol-market.ts，规则在 market.ts
 export type {

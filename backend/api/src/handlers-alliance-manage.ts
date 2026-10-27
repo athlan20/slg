@@ -3,6 +3,7 @@
 // 并发下两条路径同时把同一账号加进不同联盟，由 alliance_members 主键兜底，映射成 ALLIANCE_ALREADY_IN。
 
 import type pg from 'pg';
+import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { Op, type ErrorCode } from '../../common/src/protocol';
 import {
   ALLIANCE_CREATE_COST_GOLD,
@@ -190,6 +191,7 @@ export async function handleAllianceCreate(
     const ins = await client.query(`INSERT INTO alliances (name, leader_id) VALUES ($1, $2) RETURNING id`, [name, me]);
     const allianceId = (ins.rows[0] as { id: string }).id;
     await addMember(client, allianceId, me, 'leader');
+    await refreshLuoyangHolder(client);
     await recordAllianceEvent(client, allianceId, 'joined', { accountId: me, role: 'leader', created: true });
     return {
       ok: true,
@@ -377,6 +379,7 @@ export async function handleAllianceRespond(
         return fail('ALLIANCE_FULL');
       }
       await addMember(client, mine.allianceId, subject, 'member');
+      await refreshLuoyangHolder(client);
       await recordAllianceEvent(client, mine.allianceId, 'joined', { accountId: subject, role: 'member' });
       const members = await memberIds(client, mine.allianceId);
       return {
@@ -413,6 +416,7 @@ export async function handleAllianceRespond(
       return fail('ALLIANCE_FULL');
     }
     await addMember(client, subject, me, 'member');
+    await refreshLuoyangHolder(client);
     await recordAllianceEvent(client, subject, 'joined', { accountId: me, role: 'member' });
     const name = await allianceName(client, subject);
     const members = await memberIds(client, subject);
@@ -441,6 +445,7 @@ export async function handleAllianceLeave(ctx: HandlerContext, conn: ConnInfo, o
       }
       // 只剩盟主一人：退出等于解散
       await disbandAlliance(client, mine.allianceId);
+      await refreshLuoyangHolder(client);
       await setCooldown(client, me);
       await recordAllianceEvent(client, mine.allianceId, 'disbanded', { accountId: me });
       // v74：退盟 / 解散时相关协防部队自动遣返
@@ -455,6 +460,7 @@ export async function handleAllianceLeave(ctx: HandlerContext, conn: ConnInfo, o
       };
     }
     await removeMember(client, me);
+    await refreshLuoyangHolder(client);
     await recordAllianceEvent(client, mine.allianceId, 'left', { accountId: me });
     // v74：退盟时我派出 / 我城里接收的协防部队自动遣返
     const returned = await returnAssistsForAccount(client, me, 'ally_left');
@@ -489,6 +495,7 @@ export async function handleAllianceDisband(ctx: HandlerContext, conn: ConnInfo,
     await recordAllianceEvent(client, mine.allianceId, 'disbanded', { accountId: me });
     // 成员是被动散伙，不吃冷却；解散者本人吃冷却（防建了又散来回试）
     const members = await disbandAlliance(client, mine.allianceId);
+    await refreshLuoyangHolder(client);
     await setCooldown(client, me);
     // v74：解散后全员的协防部队自动遣返
     const returned: AssistReturnResult[] = [];
@@ -544,6 +551,7 @@ export async function handleAllianceKick(
     const name = await allianceName(client, mine.allianceId);
     const members = await memberIds(client, mine.allianceId);
     await removeMember(client, targetId);
+    await refreshLuoyangHolder(client);
     await recordAllianceEvent(client, mine.allianceId, 'kicked', { accountId: targetId, by: me });
     // v74：被踢者的协防部队自动遣返
     const returned = await returnAssistsForAccount(client, targetId, 'ally_left');

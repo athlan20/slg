@@ -229,6 +229,8 @@ export interface CitySnapshot {
   territory: TerritoryRow[];
   /** 独占产量加成（百分数，v24 AISLG-56：名城分城 +20%）与名城名；普通城为 0 / null */
   productionBonusPercent: number;
+  /** 洛阳之主联盟的全员产量加成（v79，AISLG-200；0 或 5） */
+  luoyangBonusPercent: number;
   famousName: string | null;
   /** 城守产量加成（百分数，v36 AISLG-115：四资源非金）与城守武将；未任为 0 / null */
   guardProductionPercent: number;
@@ -302,11 +304,16 @@ export async function lockCitySnapshot(
   const army = await loadCityArmy(client, row.id);
   // v38（AISLG-122）：账号级保护状态（新手保护 / 主动免战）
   const accountRes = await client.query(
-    `SELECT newbie_until, self_truce_until, self_truce_used_at, nobility FROM accounts WHERE id = $1`,
+    `SELECT a.newbie_until, a.self_truce_until, a.self_truce_used_at, a.nobility,
+            COALESCE(al.luoyang_holder, false) AS luoyang_holder
+     FROM accounts a
+     LEFT JOIN alliance_members am ON am.account_id = a.id
+     LEFT JOIN alliances al ON al.id = am.alliance_id
+     WHERE a.id = $1`,
     [accountId],
   );
   const accountRow = accountRes.rows[0] as
-    | { newbie_until: Date | null; self_truce_until: Date | null; self_truce_used_at: Date | null; nobility: number }
+    | { newbie_until: Date | null; self_truce_until: Date | null; self_truce_used_at: Date | null; nobility: number; luoyang_holder: boolean }
     | undefined;
   const recruitRes = await client.query(
     `SELECT * FROM recruits
@@ -347,6 +354,7 @@ export async function lockCitySnapshot(
     mutinyNextAt: row.mutiny_next_at,
     famousName: row.famous_name,
     productionBonusPercent: row.famous_name ? FAMOUS_PRODUCTION_BONUS_PERCENT : 0,
+    luoyangBonusPercent: accountRow?.luoyang_holder ? 5 : 0,
     guardProductionPercent: guard ? guardProductionPercent(guard.wit) : 0,
     guardHero: guard
       ? { id: guard.id, name: guard.name, famous: guard.famous, lead: guard.lead, force: guard.force, wit: guard.wit, level: guard.level }
@@ -389,7 +397,7 @@ export function toCityView(snap: CitySnapshot): CityView {
   const queue = snap.queue.map(buildView);
   const records = kindRecords(snap.levels);
   const production = productionPerHour(
-    snap.levels, territoryDisplayRates(snap.territory), snap.productionBonusPercent, snap.techs, snap.guardProductionPercent,
+    snap.levels, territoryDisplayRates(snap.territory), snap.productionBonusPercent + snap.luoyangBonusPercent, snap.techs, snap.guardProductionPercent,
   );
   const roundedProduction = {} as Record<ProducedResource, number>;
   for (const key of Object.keys(production) as Array<keyof typeof production>) {
@@ -437,9 +445,12 @@ export function toCityView(snap: CitySnapshot): CityView {
     durability:
       snap.cityId === snap.mainCityId
         ? null
-        : settleDurability(snap.durability, snap.durabilitySettledAt, snap.truceUntil, new Date(), repairPercent(snap.techs)),
+        : snap.famousName === '洛阳'
+          ? Math.max(0, Math.min(100, Number(snap.durability ?? 100)))
+          : settleDurability(snap.durability, snap.durabilitySettledAt, snap.truceUntil, new Date(), repairPercent(snap.techs)),
     famousName: snap.famousName,
     productionBonusPercent: snap.productionBonusPercent,
+    luoyangBonusPercent: snap.luoyangBonusPercent,
     famousEffect: famousEffectView(snap.famousName),
     guard: snap.guardHero
       ? { heroId: snap.guardHero.id, ...snap.guardHero, bonusPercent: snap.guardProductionPercent }

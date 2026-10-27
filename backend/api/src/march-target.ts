@@ -16,6 +16,7 @@ import type { TileRow } from '../../common/src/world-db';
 import { checkOccupyNpcCity, type OccupyCityDenial } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
 import { FAMOUS_CITY_NOBILITY_INDEX } from '../../common/src/nobility';
+import { isLuoyangName, luoyangWindowOpen, nextLuoyangOpen } from '../../common/src/luoyang';
 import { loadNobilityIndex } from '../../common/src/nobility-db';
 import { loadBuildingLevels } from '../../common/src/production';
 import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';import { parseCargo } from '../../common/src/transport';
@@ -113,12 +114,14 @@ export interface MarchTargetVerdict {
   reason?:
     | 'MOVING_TARGET_GONE'
     | 'TARGET_NOT_ATTACKABLE' | 'INVALID_PARAMS' | 'TASK_INVALID_FOR_TARGET' | 'PLUNDER_COOLDOWN' | 'TERRITORY_LIMIT'
-    | OccupyCityDenial | 'OUTER_NOT_CLEARED' | 'NOBILITY_TOO_LOW' | 'ASSIST_NOT_ALLY' | 'ASSIST_LIMIT'
+    | OccupyCityDenial | 'OUTER_NOT_CLEARED' | 'NOBILITY_TOO_LOW' | 'LUOYANG_CLOSED' | 'ASSIST_NOT_ALLY' | 'ASSIST_LIMIT'
     | 'NEWBIE_PROTECTED' | 'TARGET_IN_TRUCE' | 'SELF_TRUCE_ACTIVE' | 'TILE_PROTECTED'
     | 'ALLY_NOT_ATTACKABLE';
   targetCityId?: string;
   /** v76（AISLG-197）：NOBILITY_TOO_LOW 的所需 / 当前爵位序号 */
   nobility?: { required: number; current: number };
+  /** v79（AISLG-200）：LUOYANG_CLOSED 的下次开放时刻 */
+  luoyangNextOpenAt?: Date;
   /** v38（AISLG-122）：NEWBIE_PROTECTED / TARGET_IN_TRUCE / SELF_TRUCE_ACTIVE 的截止时刻，
    *  handleMarch 据此回传 until 与 retryAfterSeconds */
   protectedUntil?: Date;
@@ -276,7 +279,7 @@ export async function resolveMarchTarget(
     return { purpose: null, reason: 'TARGET_NOT_ATTACKABLE' };
   }
   const cityRes = await client.query(
-    `SELECT c.id, c.account_id, c.truce_until, a.newbie_until, a.self_truce_until
+    `SELECT c.id, c.account_id, c.truce_until, c.famous_name, a.newbie_until, a.self_truce_until
      FROM cities c JOIN accounts a ON a.id = c.account_id
      WHERE c.id = $1`,
     [tile.owner_city_id],
@@ -285,7 +288,8 @@ export async function resolveMarchTarget(
     return { purpose: null, reason: 'TARGET_NOT_ATTACKABLE' };
   }
   const city = cityRes.rows[0] as {
-    id: string; account_id: string; truce_until: Date | null; newbie_until: Date | null; self_truce_until: Date | null;
+    id: string; account_id: string; truce_until: Date | null; famous_name: string | null;
+    newbie_until: Date | null; self_truce_until: Date | null;
   };
   if (city.account_id === accountId) {
     if (task === 'assist') {
@@ -305,7 +309,7 @@ export async function resolveMarchTarget(
       if (!(await canAssist(client, accountId, city.account_id))) {
         return { purpose: null, reason: 'ASSIST_NOT_ALLY' };
       }
-      const denial = await assistLimitDenial(client, city.id, accountId);
+      const denial = await assistLimitDenial(client, city.id, accountId, city.famous_name);
       return denial ? { purpose: null, reason: denial } : { purpose: 'assist', targetCityId: city.id };
     }
     return { purpose: null, reason: 'ALLY_NOT_ATTACKABLE' };
@@ -338,7 +342,12 @@ export async function resolveMarchTarget(
       return { purpose: null, reason: denial };
     }
   }
-  const denial = await pvpTargetDenial(client, accountId, city, dbNow);
+  // v79（AISLG-200）：洛阳被玩家占领后，只在周六 21:00–23:00 可攻打；窗口内没有被动免战
+  const luoyang = isLuoyangName(city.famous_name);
+  if (luoyang && !luoyangWindowOpen(dbNow)) {
+    return { purpose: null, reason: 'LUOYANG_CLOSED', luoyangNextOpenAt: nextLuoyangOpen(dbNow) };
+  }
+  const denial = await pvpTargetDenial(client, accountId, city, dbNow, luoyang && luoyangWindowOpen(dbNow));
   if (denial) {
     return denial;
   }
@@ -364,13 +373,15 @@ async function pvpTargetDenial(
   accountId: string,
   city: { account_id: string; truce_until: Date | null; newbie_until: Date | null; self_truce_until: Date | null },
   dbNow: Date,
+  /** v79：洛阳窗口内跳过城级被动免战 */
+  skipTruce = false,
 ): Promise<MarchTargetVerdict | null> {
   // 守方新手保护：别人不能侦察、攻击他
   if (inNewbieProtection(city.newbie_until, dbNow)) {
     return { purpose: null, reason: 'NEWBIE_PROTECTED', protectedUntil: activeAt(city.newbie_until, dbNow) ?? undefined };
   }
   // 守方免战：被动（被打后，城级）与主动（账号级）任一生效，取更晚者
-  const truceAt = laterOf(activeAt(city.truce_until, dbNow), activeAt(city.self_truce_until, dbNow));
+  const truceAt = laterOf(skipTruce ? null : activeAt(city.truce_until, dbNow), activeAt(city.self_truce_until, dbNow));
   if (truceAt) {
     return { purpose: null, reason: 'TARGET_IN_TRUCE', protectedUntil: truceAt };
   }

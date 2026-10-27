@@ -9,6 +9,7 @@
 import pg from 'pg';
 import { EventType, Op, type ErrorCode, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
+import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { loadBuildingLevels } from '../../common/src/production';
 import { discardCooldownDays } from '../../common/src/branch-city';
 import { FAMOUS_CITY_LEVEL, famousGarrisons, newFamousState } from '../../common/src/famous-city';
@@ -51,7 +52,8 @@ export async function handleDiscardCity(
       respondError(ctx.registry, conn, op, seq, outcome.code);
       return;
     }
-    await insertEvent(client, {
+    await refreshLuoyangHolder(client);
+  await insertEvent(client, {
       accountId,
       cityId: null,
       type: EventType.CITY_DISCARDED,

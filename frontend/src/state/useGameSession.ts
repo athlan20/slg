@@ -70,6 +70,7 @@ import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useBattlefieldSession, type BattlefieldSession } from './battlefield';
 import { useNobilitySession, type NobilitySession } from './nobilitySession';
 import { useMarketSession, type MarketSession } from './marketSession';
+import { useLuoyangSession, type LuoyangSession } from './luoyangSession';
 import { useSessionExtras } from './session-extras';
 import { useChat, type ChatState } from './useChat';
 import { useAnnouncements, type AnnouncementSlice } from './announcements';
@@ -210,6 +211,8 @@ export interface GameSession {
   nobility: NobilitySession;
   /** 玩家交易所（v78 AISLG-196）：挂单 / 吃单 / 撤单 / 我的成交 */
   market: MarketSession;
+  /** 洛阳争夺（v79 AISLG-200）：状态 / 窗口 / 政令 */
+  luoyang: LuoyangSession;
   /** 加载更早的一页事件（滚动到底部触发；游标 = 已加载的最小服务端事件 id） */
   loadOlderEvents: () => Promise<void>;
   /** 账号安全（v43）：Agent 令牌签发 / 吊销、微信绑定状态刷新 */
@@ -423,6 +426,10 @@ export function useGameSession(): GameSession {
   // 玩家交易所切片（v78，AISLG-196）：挂单列表 / 我的挂单与成交，写操作后刷新城池
   const market = useMarketSession({ clientRef, connected: connection === 'online', scheduleSync });
   const { clear: marketClear } = market;
+
+  // 洛阳争夺切片（v79，AISLG-200）
+  const luoyang = useLuoyangSession({ clientRef, connected: connection === 'online' });
+  const { clear: luoyangClear } = luoyang;
 
   // 任务与签到会话切片（v53 AISLG-200）：打开养成页拉取当日任务 / 签到状态，领奖与签到后回带城池资源
   const questSession = useQuestSession({ clientRef, connected: connection === 'online', setCity });
@@ -645,6 +652,7 @@ export function useGameSession(): GameSession {
       battlefieldClear();
       nobilityClear();
       marketClear();
+      luoyangClear();
       questClear();
       seasonClear();
       hallClear();
@@ -653,7 +661,7 @@ export function useGameSession(): GameSession {
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, questClear, resetCityList, seasonClear, hallClear],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -682,7 +690,7 @@ export function useGameSession(): GameSession {
     hallClear();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, questClear, hallClear, allianceClear, allianceMarksClear]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1226,6 +1234,7 @@ export function useGameSession(): GameSession {
       battlefieldClear();
       nobilityClear();
       marketClear();
+      luoyangClear();
         questClear();
         await syncAll('initial');
         return null;
@@ -1234,7 +1243,7 @@ export function useGameSession(): GameSession {
     } catch (err) {
       return err instanceof Error ? err.message : COPY.errors.reset.fallback;
     }
-  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, questClear, resetCityList]);
+  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList]);
 
   /** 加载更早的一页事件（beforeId 游标分页；本地临时事件 id 为负，不作为游标） */
   const loadOlderEvents = useCallback(async () => {
@@ -1356,6 +1365,7 @@ export function useGameSession(): GameSession {
     battlefield,
     nobility,
     market,
+    luoyang,
     loadOlderEvents,
     security,
     connectForWechat,

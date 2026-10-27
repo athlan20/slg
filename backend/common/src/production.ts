@@ -293,10 +293,18 @@ export interface SettledCity {
   reserves: TerritorySettle['updates'];
 }
 
-/** 城池的独占产量加成（百分数）：名城分城（cities.famous_name 非空）+20%，其余 0 */
+/** 城池的产量加成（百分数）：名城分城（cities.famous_name 非空）+20%；v79 再加洛阳之主联盟 +5% */
 export async function loadProductionBonusPercent(q: pg.Pool | pg.PoolClient, cityId: string): Promise<number> {
-  const res = await q.query(`SELECT famous_name FROM cities WHERE id = $1`, [cityId]);
-  return res.rows[0]?.famous_name ? FAMOUS_PRODUCTION_BONUS_PERCENT : 0;
+  const res = await q.query(
+    `SELECT c.famous_name, COALESCE(al.luoyang_holder, false) AS luoyang
+     FROM cities c
+     LEFT JOIN alliance_members am ON am.account_id = c.account_id
+     LEFT JOIN alliances al ON al.id = am.alliance_id
+     WHERE c.id = $1`,
+    [cityId],
+  );
+  const row = res.rows[0] as { famous_name: string | null; luoyang: boolean } | undefined;
+  return (row?.famous_name ? FAMOUS_PRODUCTION_BONUS_PERCENT : 0) + (row?.luoyang ? 5 : 0);
 }
 
 /**

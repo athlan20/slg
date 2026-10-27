@@ -80,6 +80,7 @@ import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT } from './p
 import { PUSH_DEFENSE_STATE, REQUEST_CANCEL_DEFENSE_CRAFT, REQUEST_CRAFT_DEFENSE } from './protocol-doc-ops-defense';
 import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
 import { REQUEST_CLAIM_NOBILITY_SALARY, REQUEST_GET_NOBILITY } from './protocol-doc-ops-nobility';
+import { REQUEST_GET_LUOYANG, REQUEST_PUBLISH_DECREE } from './protocol-doc-ops-luoyang';
 import {
   REQUEST_BUY_MARKET_ORDER,
   REQUEST_CANCEL_MARKET_ORDER,
@@ -171,7 +172,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.shieldUntil', type: 'string | null', desc: '主动免战截止（v38，AISLG-122，账号级）：TRUCE 开启后 12 小时基准随缩放；开着时别人打不了你（含 NPC 袭击目标池跳过）、你也不能出兵打玩家（SELF_TRUCE_ACTIVE，打野地 / NPC 不受限）。未开启为 null。' },
     { name: 'city.shieldNextAt', type: 'string | null', desc: '下一次可开启主动免战的时刻（v38，AISLG-122；每周一次，ISO 8601）；当前可开启为 null。' },
     { name: 'city.durability', type: 'number | null', desc: '分城城防值（v40，AISLG-124）：0..100，被「占领」打赢一击 −35（冲车加成最多再 −15）、归零一击换主；免战结束后每小时回涨 10 至满（免战内不回涨）。主城为 null（永不被占领）。' },
-    { name: 'city.famousName / city.productionBonusPercent', type: 'string | null / number', desc: '名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。v64（AISLG-168）：占领名城的分城可征募该名城的专属兵（名城 → 兵种对照见 RECRUIT 的 summary），失守即失去征募资格。' },
+    { name: 'city.luoyangBonusPercent（v79 洛阳之主联盟 +5%，已计入 production）/ city.famousName / city.productionBonusPercent', type: 'string | null / number', desc: '名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。v64（AISLG-168）：占领名城的分城可征募该名城的专属兵（名城 → 兵种对照见 RECRUIT 的 summary），失守即失去征募资格。' },
     { name: 'city.famousEffect', type: 'object | null', desc: `名城独有效果（v62 新增，AISLG-166）：{ kind, percent, resources }，只有占领者享受、跟着城走（换主人归新主人，放弃 / 被占即失效）。洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。普通城为 null。` },
     { name: 'city.guard', type: 'object | null', desc: '城守（v36 新增，AISLG-115）：该城任命的武将 { heroId, name, famous, lead, force, wit, level, bonusPercent }；未任为 null。产量加成（四资源非金，智力 × 0.1% 封顶 5%）已计入 production；守城战另享攻防加成（见 ASSIGN_HERO）。' },
     { name: 'city.recruitQueue', type: 'array', desc: '征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。' },
@@ -472,6 +473,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.CREATE_MARKET_ORDER]: REQUEST_CREATE_MARKET_ORDER,
   [Op.BUY_MARKET_ORDER]: REQUEST_BUY_MARKET_ORDER,
   [Op.CANCEL_MARKET_ORDER]: REQUEST_CANCEL_MARKET_ORDER,
+  [Op.GET_LUOYANG]: REQUEST_GET_LUOYANG,
+  [Op.PUBLISH_DECREE]: REQUEST_PUBLISH_DECREE,
   [Op.PUSH_BATTLEFIELD_STATE]: PUSH_BATTLEFIELD_STATE,
   [Op.GET_WORLD_MAP]: REQUEST_GET_WORLD_MAP,
   [Op.GET_MAP_OVERVIEW]: REQUEST_GET_MAP_OVERVIEW,

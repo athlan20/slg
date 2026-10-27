@@ -12,8 +12,9 @@ import { TROOP_KINDS, type ArmyCounts, type TroopKind } from './protocol';
 export const ASSIST_MAX_PER_CITY = 5;
 
 /** 该城可接收的协防上限（当前所有城统一；保留参数位给名城的例外） */
-export function assistCap(_famousName?: string | null): number {
-  return ASSIST_MAX_PER_CITY;
+export function assistCap(famousName?: string | null): number {
+  // v79（AISLG-200）：洛阳可接收 10 支协防（普通城 5 支）
+  return famousName === '洛阳' ? 10 : ASSIST_MAX_PER_CITY;
 }
 
 /** 一支协防部队（视图与合并用） */

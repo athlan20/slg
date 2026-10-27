@@ -316,6 +316,8 @@ export interface CityView {
   famousName: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
+  /** 洛阳之主联盟的全员产量加成（v79，AISLG-200；0 或 5，已计入 production） */
+  luoyangBonusPercent: number;
   /** 名城独有效果（v62，AISLG-166）：只有占领者享受，效果跟着城走；普通城为 null。守城 / 箭塔 / 仓库 / 行军 / 野地产出的口径见 FamousEffectView */
   famousEffect: FamousEffectView | null;
   /** 城守（v36，AISLG-115）：该城任命的武将（ASSIGN_HERO 任命 / 撤任）；未任为 null。

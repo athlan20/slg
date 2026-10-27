@@ -599,5 +599,12 @@
  *   单价范围资源间 0.5–2、收金币 0.125–0.5；单张 ≥ 1000、每账号最多 5 张；每日额度 = 主城官府 × 3000 × 缩放，
  *   北京日重置。门槛主城官府 ≥ 5 且不在新手保护期；可勾选只卖给盟友。新增错误码 MARKET_* / PRICE_OUT_OF_RANGE /
  *   ORDER_* / DAILY_TRADE_LIMIT；新表 market_orders / market_trades（换季清空），事件 market_*。
+ * v79（洛阳争夺，AISLG-200，只加不改）：洛阳仍是名城分城，占领者所在联盟成为「洛阳之主」，占领者为洛阳太守。
+ *   洛阳被玩家占领后，只在每周六 21:00–23:00（北京时间现实时间）可攻打 / 侦察，窗口外返回 LUOYANG_CLOSED（附 nextOpenAt）；
+ *   窗口内没有被动免战、城防不回涨，窗口结束回满 100 并进入保护；洛阳可接收 10 支协防（普通城 5 支）。
+ *   洛阳之主联盟全员所有城四资源产量 +5%（与名城 / 科技 / 城守同池）。盟主每 7 天可发一道政令（持续 7 天）：
+ *   征兵 −15% / 行军 +10% / 研究 −15%，洛阳易主立即失效。赛季末洛阳之主联盟进名人堂，在盟成员各得 1 万金 + 四资源各 5 万。
+ *   新增 GET_LUOYANG（op 137）/ PUBLISH_DECREE（138）与错误码 LUOYANG_CLOSED / DECREE_NOT_HOLDER / DECREE_COOLDOWN；
+ *   CityView 新增 luoyangBonusPercent；alliances 新增 luoyang_holder / decree_*（跨季重置）；推送/播报 luoyang_window。
  */
-export const PROTOCOL_VERSION = 78;
+export const PROTOCOL_VERSION = 79;

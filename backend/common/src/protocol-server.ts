@@ -38,6 +38,8 @@ export const SERVER_BROADCAST_TYPES = [
   'nobility_promoted',
   // v77（AISLG-195）联盟外交：结成友盟 / 宣布敌对，必达（不受每分钟限频）
   'alliance_diplomacy',
+  // v79（AISLG-200）洛阳：窗口预告 / 开始 / 结束，必达
+  'luoyang_window',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

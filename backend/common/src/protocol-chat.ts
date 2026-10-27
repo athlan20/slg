@@ -47,6 +47,7 @@ export const CHAT_SYSTEM_KINDS = [
   'alliance_diplomacy_friendly',
   'alliance_diplomacy_hostile',
   'alliance_diplomacy_neutral',
+  'alliance_decree',
 ] as const;
 export type ChatSystemKind = (typeof CHAT_SYSTEM_KINDS)[number];
 
@@ -95,7 +96,9 @@ export type ChatSystemView =
   /** v77（AISLG-195）：与某联盟结成友盟 / 宣布敌对 / 回到中立 */
   | { kind: 'alliance_diplomacy_friendly'; player: ChatPlayerView; otherAllianceName: string }
   | { kind: 'alliance_diplomacy_hostile'; player: ChatPlayerView; otherAllianceName: string }
-  | { kind: 'alliance_diplomacy_neutral'; player: ChatPlayerView; otherAllianceName: string };
+  | { kind: 'alliance_diplomacy_neutral'; player: ChatPlayerView; otherAllianceName: string }
+  /** v79（AISLG-200）：洛阳之主盟主发布政令 */
+  | { kind: 'alliance_decree'; player: ChatPlayerView; decreeKind: string; until: string };
 
 /**
  * 一条聊天消息（CHAT_HISTORY、CHAT_SEND 响应与 PUSH_CHAT_MESSAGE 共用）。

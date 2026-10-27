@@ -18,6 +18,7 @@ import { checkOccupyNpcCity } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
 import { FAMOUS_CITY_NOBILITY_INDEX } from '../../common/src/nobility';
 import { loadNobilityIndex } from '../../common/src/nobility-db';
+import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { DURABILITY_MAX } from '../../common/src/protection';
 import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';
 import { loadBuildingLevels } from '../../common/src/production';
@@ -185,6 +186,8 @@ export async function resolveNpcOccupyArrival(
 
   const cityName = npc.famous?.name ?? `分城(${tile.x},${tile.y})`;
   const newCityId = await convertNpcCityToBranch(client, march.account_id, tile, npc, result.attacker.survivors, cityName, notifies);
+  // v79（AISLG-200）：占领洛阳后刷新洛阳之主
+  await refreshLuoyangHolder(client);
   await completeMarchEvent(client, march, 'battle_won', { ...base, occupied: true, cityId: newCityId });
   await insertEvent(client, {
     accountId: march.account_id,

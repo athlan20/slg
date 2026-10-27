@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 78;
+export const PROTOCOL_VERSION = 79;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -204,6 +204,8 @@ export const Op = {
   CREATE_MARKET_ORDER: 134,
   BUY_MARKET_ORDER: 135,
   CANCEL_MARKET_ORDER: 136,
+  GET_LUOYANG: 137,
+  PUBLISH_DECREE: 138,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -360,6 +362,9 @@ export type ErrorCode =
   | 'DIPLOMACY_COOLDOWN'
   | 'DIPLOMACY_EXISTS'
   | 'DIPLOMACY_INVITE_NOT_FOUND'
+  | 'LUOYANG_CLOSED'
+  | 'DECREE_NOT_HOLDER'
+  | 'DECREE_COOLDOWN'
   | 'MARKET_LOCKED'
   | 'PRICE_OUT_OF_RANGE'
   | 'ORDER_LIMIT'
@@ -861,6 +866,8 @@ export interface CityView {
   famousName: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
+  /** 洛阳之主联盟的全员产量加成（v79 AISLG-200；0 或 5，已计入 production） */
+  luoyangBonusPercent: number;
   /** 名城独有效果（v62，AISLG-166）：只有占领者享受、跟着城走；普通城为 null */
   famousEffect: FamousEffectView | null;
   /** 城池等级（v24 起 = 该城官府等级） */
@@ -1174,3 +1181,7 @@ export type {
 } from './protocol-market';
 export { MARKET_RESOURCES, MARKET_BUY_KINDS } from './protocol-market';
 export type { MarketResource, MarketBuyKind } from './protocol-market';
+
+// 洛阳争夺（v79，AISLG-200）
+export type { LuoyangOwnerView, LuoyangDecreeView, LuoyangStatusView, PublishDecreeResponseData, DecreeKind } from './protocol-luoyang';
+export { DECREE_KINDS } from './protocol-luoyang';
