@@ -1,4 +1,5 @@
-// 剧本战场（v75，AISLG-198）的玩家操作：查询、报名、入场、拆队、行军 / 攻打（商店在 handlers-battlefield-shop.ts）。
+// 剧本战场（v75，AISLG-198；v80，AISLG-199）的玩家操作：查询、报名、入场、拆队、行军 / 攻打
+// （商店在 handlers-battlefield-shop.ts，赤壁火攻 / 连锁在 handlers-battlefield-skill.ts）。
 // 地图与据点状态的查询在 GET_BATTLEFIELD；行军的到达结算与据点战斗在 Worker
 // （worker/src/battlefield-tick.ts），API 只校验并写入行军意图。
 // 规则与数值见 common/src/battlefield.ts；报名 / 入场 / 行军 / 兑换 Agent 都能做。
@@ -6,14 +7,18 @@
 import pg from 'pg';
 import { Op, EventType, TROOP_KINDS, isBattlefieldCamp, type TroopKind } from '../../common/src/protocol';
 import {
+  BATTLEFIELD_CHIBI_NOBILITY_INDEX,
   BATTLEFIELD_ENTRY_POPULATION,
   BATTLEFIELD_MAX_SQUADS,
   battlefieldEntryPopulation,
   battlefieldMarchMs,
   battlefieldPassable,
   battlefieldPathSteps,
-  BATTLEFIELD_STRONGHOLDS,
+  battlefieldStrongholds,
+  battlefieldUnlocked,
 } from '../../common/src/battlefield';
+import type { BattlefieldScript } from '../../common/src/protocol-battlefield';
+import { loadNobilityIndex } from '../../common/src/nobility-db';
 import {
   battlefieldEventView,
   loadBattlefieldCampCounts,
@@ -87,7 +92,7 @@ function readTroops(value: unknown): Partial<Record<TroopKind, number>> | null {
 }
 
 /** 操作成功后统一刷新并返回完整战场状态（客户端无需再查一次） */
-async function respondState(
+export async function respondState(
   ctx: HandlerContext,
   conn: ConnInfo,
   op: number,
@@ -100,7 +105,12 @@ async function respondState(
 }
 
 /** 全服广播战场状态（API 侧操作后直接推，Worker 侧经 pg_notify） */
-async function broadcastState(ctx: HandlerContext, accountId: string, reason: 'signup' | 'started' | 'stronghold' | 'finished', strongholdId?: string): Promise<void> {
+export async function broadcastState(
+  ctx: HandlerContext,
+  accountId: string,
+  reason: 'signup' | 'started' | 'stronghold' | 'finished' | 'wind',
+  strongholdId?: string,
+): Promise<void> {
   const event = await loadLatestBattlefieldEvent(ctx.pool);
   if (!event) {
     return;
@@ -121,7 +131,12 @@ export async function handleGetBattlefield(
   await respondState(ctx, conn, op, seq, accountId);
 }
 
-/** SIGNUP_BATTLEFIELD（op 121）：报名选阵营，官府 ≥ 5，阵营人数失衡时暂停 */
+/** 本场剧本（读行时未知值按官渡） */
+export function scriptOfRow(value: unknown): BattlefieldScript {
+  return value === 'dongzhuo' || value === 'chibi' ? value : 'guandu';
+}
+
+/** SIGNUP_BATTLEFIELD（op 121）：报名选阵营，官府 ≥ 5，阵营人数失衡时暂停；讨董只有讨董联军，统一记 yuan；赤壁需爵位大夫 */
 export async function handleSignupBattlefield(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -139,13 +154,18 @@ export async function handleSignupBattlefield(
   try {
     await client.query('BEGIN');
     const eventRes = await client.query(`SELECT * FROM battlefield_events ORDER BY signup_start DESC LIMIT 1 FOR UPDATE`);
-    const event = eventRes.rows[0] as { id: string; status: string; signup_start: Date; start_at: Date; end_at: Date } | undefined;
+    const event = eventRes.rows[0] as
+      | { id: string; script: string; status: string; signup_start: Date; start_at: Date; end_at: Date }
+      | undefined;
     const now = Date.now();
     if (!event || event.status !== 'signup' || now < event.signup_start.getTime() || now >= event.start_at.getTime()) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_SIGNUP_CLOSED');
       return;
     }
+    const script = scriptOfRow(event.script);
+    // 讨董是单阵营合作本：所有报名玩家都在讨董联军（yuan）一边，不做阵营人数失衡判断
+    const joinCamp = script === 'dongzhuo' ? 'yuan' : camp;
     const main = await loadMainCity(client, accountId);
     if (!main) {
       await client.query('ROLLBACK');
@@ -156,6 +176,15 @@ export async function handleSignupBattlefield(
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_GOVERNMENT_TOO_LOW', { required: 5, current: main.government });
       return;
+    }
+    if (script === 'chibi') {
+      // 赤壁：爵位大夫及以上才能报名（v76 爵位已上线）
+      const nobility = await loadNobilityIndex(client, accountId);
+      if (nobility < BATTLEFIELD_CHIBI_NOBILITY_INDEX) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'NOBILITY_TOO_LOW', { required: BATTLEFIELD_CHIBI_NOBILITY_INDEX, current: nobility });
+        return;
+      }
     }
     const exists = await client.query(
       `SELECT 1 FROM battlefield_participants WHERE event_id = $1 AND account_id = $2`,
@@ -172,11 +201,11 @@ export async function handleSignupBattlefield(
     );
     const countOf = (value: string): number =>
       Number((counts.rows as Array<{ camp: string; n: number }>).find((row) => row.camp === value)?.n ?? 0);
-    const other = camp === 'yuan' ? 'cao' : 'yuan';
-    const mine = countOf(camp);
+    const other = joinCamp === 'yuan' ? 'cao' : 'yuan';
+    const mine = countOf(joinCamp);
     const theirs = countOf(other);
     const limit = Math.floor(theirs * 1.5);
-    if (theirs > 0 && mine >= limit && mine - theirs >= 5) {
+    if (script !== 'dongzhuo' && theirs > 0 && mine >= limit && mine - theirs >= 5) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_CAMP_FULL', { count: mine, otherCount: theirs, limit });
       return;
@@ -184,7 +213,7 @@ export async function handleSignupBattlefield(
     const inserted = await client.query(
       `INSERT INTO battlefield_participants (event_id, account_id, camp, main_city_id)
        VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING 1`,
-      [event.id, accountId, camp, main.id],
+      [event.id, accountId, joinCamp, main.id],
     );
     if (!inserted.rowCount) {
       await client.query('ROLLBACK');
@@ -196,7 +225,7 @@ export async function handleSignupBattlefield(
       cityId: main.id,
       type: EventType.BATTLEFIELD_SIGNED_UP,
       initiator: conn.role,
-      detail: { eventId: event.id, camp },
+      detail: { eventId: event.id, camp: joinCamp },
     });
     await client.query('COMMIT');
   } catch (err) {
@@ -406,7 +435,7 @@ export async function handleSplitBattlefieldSquad(
   await respondState(ctx, conn, op, seq, accountId);
 }
 
-/** MARCH_BATTLEFIELD_SQUAD（op 124）：战场内行军；目标为敌方据点时到达后自动开战 */
+/** MARCH_BATTLEFIELD_SQUAD（op 124）：战场内行军；目标为敌方据点时到达后自动开战（讨董关卡按顺序解锁） */
 export async function handleMarchBattlefieldSquad(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -421,36 +450,66 @@ export async function handleMarchBattlefieldSquad(
     return;
   }
   const strongholdId = typeof data?.strongholdId === 'string' ? data.strongholdId : null;
-  const def = strongholdId ? BATTLEFIELD_STRONGHOLDS.find((item) => item.id === strongholdId) : undefined;
   const rawX = data?.x;
   const rawY = data?.y;
+  // 据点 id 要到读出本场剧本后才能解析（不同剧本的据点表不同）；坐标在这里先做基本校验
   let x: number | null = null;
   let y: number | null = null;
-  if (def) {
-    x = def.x;
-    y = def.y;
-    if (rawX !== undefined || rawY !== undefined) {
-      if (rawX !== def.x || rawY !== def.y) {
-        respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_TARGET_INVALID');
-        return;
-      }
-    }
-  } else if (typeof rawX === 'number' && typeof rawY === 'number' && Number.isInteger(rawX) && Number.isInteger(rawY)) {
+  if (!strongholdId && typeof rawX === 'number' && typeof rawY === 'number' && Number.isInteger(rawX) && Number.isInteger(rawY)) {
     x = rawX;
     y = rawY;
   }
-  if (x === null || y === null || !battlefieldPassable(x, y)) {
-    respondError(ctx.registry, conn, op, seq, strongholdId ? 'BATTLEFIELD_TARGET_INVALID' : 'BATTLEFIELD_UNREACHABLE');
+  if (!strongholdId && (x === null || y === null || !battlefieldPassable(x, y))) {
+    respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_UNREACHABLE');
     return;
   }
   const client = await ctx.pool.connect();
   try {
     await client.query('BEGIN');
     const eventRes = await client.query(`SELECT * FROM battlefield_events ORDER BY signup_start DESC LIMIT 1`);
-    const event = eventRes.rows[0] as { id: string; status: string; start_at: Date } | undefined;
+    const event = eventRes.rows[0] as { id: string; script: string; status: string; start_at: Date } | undefined;
     if (!event || event.status !== 'active' || Date.now() < event.start_at.getTime()) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_NOT_ACTIVE');
+      return;
+    }
+    const script = scriptOfRow(event.script);
+    const defs = battlefieldStrongholds(script);
+    let def: (typeof defs)[number] | undefined;
+    if (strongholdId) {
+      const index = defs.findIndex((item) => item.id === strongholdId);
+      def = index >= 0 ? defs[index] : undefined;
+      if (!def) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_TARGET_INVALID');
+        return;
+      }
+      if (rawX !== undefined || rawY !== undefined) {
+        if (rawX !== def.x || rawY !== def.y) {
+          await client.query('ROLLBACK');
+          respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_TARGET_INVALID');
+          return;
+        }
+      }
+      x = def.x;
+      y = def.y;
+      // 讨董：前一关没被讨董联军打下时，本关不能攻打
+      if (script === 'dongzhuo' && index > 0) {
+        const previous = await client.query(
+          `SELECT owner_camp FROM battlefield_strongholds WHERE event_id = $1 AND id = $2`,
+          [event.id, defs[index - 1].id],
+        );
+        const previousOwner = (previous.rows[0] as { owner_camp: string | null } | undefined)?.owner_camp ?? null;
+        if (!battlefieldUnlocked(script, index, previousOwner === 'yuan' || previousOwner === 'cao' ? previousOwner : null)) {
+          await client.query('ROLLBACK');
+          respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_STRONGHOLD_LOCKED', { unlockAfter: defs[index - 1].id });
+          return;
+        }
+      }
+    }
+    if (x === null || y === null || !battlefieldPassable(x, y)) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, strongholdId ? 'BATTLEFIELD_TARGET_INVALID' : 'BATTLEFIELD_UNREACHABLE');
       return;
     }
     const squad = await lockSquad(client, squadId, accountId);

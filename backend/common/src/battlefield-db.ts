@@ -1,4 +1,4 @@
-// 剧本战场（v75，AISLG-198）的读取与视图：API 的查询 / 操作响应共用一套口径，
+// 剧本战场（v75，AISLG-198；v80，AISLG-199）的读取与视图：API 的查询 / 操作响应共用一套口径，
 // Worker 的结算只复用行类型与通知载荷。规则与数值见 battlefield.ts。
 
 import type pg from 'pg';
@@ -6,8 +6,17 @@ import type { ArmyCounts, TroopKind } from './protocol';
 import { TROOP_KINDS } from './protocol';
 import { armyPower, toFullArmyCounts } from './battle';
 import {
+  BATTLEFIELD_DONGZHUO_TIERS,
   BATTLEFIELD_RANK_REWARDS,
-  BATTLEFIELD_SHOP,
+  BATTLEFIELD_SCRIPT_NAMES,
+  battlefieldCampName,
+  battlefieldScriptForWindow,
+  battlefieldShopItems,
+  battlefieldStrongholds,
+  battlefieldUnlocked,
+  battlefieldWindBonusCamp,
+  battlefieldWindLabel,
+  type BattlefieldWind,
   BATTLEFIELD_LOSE_REWARD,
   BATTLEFIELD_WIN_REWARD,
   battlefieldWindow,
@@ -17,6 +26,8 @@ import {
 import type {
   BattlefieldCampView,
   BattlefieldEventView,
+  BattlefieldProgressRewardView,
+  BattlefieldScript,
   BattlefieldMeView,
   BattlefieldMeritEntryView,
   BattlefieldShopItemView,
@@ -42,6 +53,9 @@ export interface BattlefieldEventRow {
   underdog_multiplier: string | number;
   last_score_at: Date | null;
   last_food_at: Date | null;
+  wind: string | null;
+  wind_next_at: Date | null;
+  wind_notice_at: Date | null;
   signup_announced_at: Date | null;
   start_announced_at: Date | null;
   finished_at: Date | null;
@@ -61,6 +75,10 @@ export interface BattlefieldStrongholdRow {
   tower_level: number;
   first_captured_at: Date | null;
   captured_at: Date | null;
+  chain_until: Date | null;
+  fire_next_at: Date | null;
+  /** 火攻余伤池：兵种 → 未折算成阵亡的小数伤害（v80） */
+  fire_wounds: Record<string, number> | null;
 }
 
 export interface BattlefieldParticipantRow {
@@ -92,8 +110,10 @@ export interface BattlefieldSquadRow {
   arrive_at: Date | null;
 }
 
-const CAMPS: readonly BattlefieldCamp[] = ['yuan', 'cao'];
-const CAMP_NAMES: Record<BattlefieldCamp, string> = { yuan: '袁绍军', cao: '曹操军' };
+/** 行数据里的剧本字段收窄（未知值按官渡处理，兼容旧行） */
+function asScript(value: unknown): BattlefieldScript {
+  return value === 'dongzhuo' || value === 'chibi' ? value : 'guandu';
+}
 
 function asCamp(value: unknown): BattlefieldCamp | null {
   return value === 'yuan' || value === 'cao' ? value : null;
@@ -208,9 +228,11 @@ export async function loadBattlefieldCampCounts(q: Queryable, eventId: string): 
 }
 
 export function battlefieldEventView(row: BattlefieldEventRow, counts: Record<BattlefieldCamp, CampCounts>): BattlefieldEventView {
+  const script = asScript(row.script);
+  const wind = row.wind === 'se' || row.wind === 'nw' ? (row.wind as BattlefieldWind) : null;
   const campView = (camp: BattlefieldCamp): BattlefieldCampView => ({
     camp,
-    name: CAMP_NAMES[camp],
+    name: battlefieldCampName(script, camp),
     signups: counts[camp].signups,
     entered: counts[camp].entered,
     score: Math.floor(Number(camp === 'yuan' ? row.score_yuan : row.score_cao)),
@@ -218,8 +240,8 @@ export function battlefieldEventView(row: BattlefieldEventRow, counts: Record<Ba
   const underdogCamp = asCamp(row.underdog_camp);
   return {
     id: row.id,
-    script: 'guandu',
-    name: '官渡之战',
+    script,
+    name: BATTLEFIELD_SCRIPT_NAMES[script],
     status: row.status === 'active' || row.status === 'finished' ? row.status : 'signup',
     signupStartAt: row.signup_start.toISOString(),
     startAt: row.start_at.toISOString(),
@@ -228,6 +250,16 @@ export function battlefieldEventView(row: BattlefieldEventRow, counts: Record<Ba
     winner: asCamp(row.winner_camp),
     finishReason: row.finish_reason === 'base_captured' ? 'base_captured' : row.finish_reason === 'score' ? 'score' : null,
     underdog: underdogCamp ? { camp: underdogCamp, multiplier: Number(row.underdog_multiplier) } : null,
+    wind:
+      script === 'chibi' && wind && row.wind_next_at
+        ? {
+            direction: wind,
+            label: battlefieldWindLabel(wind),
+            bonusCamp: battlefieldWindBonusCamp(wind),
+            nextAt: row.wind_next_at.toISOString(),
+            noticeAt: new Date(row.wind_next_at.getTime() - 30 * 60 * 1000).toISOString(),
+          }
+        : null,
   };
 }
 
@@ -268,6 +300,7 @@ export function mergeStrongholdGarrison(
 export function battlefieldStrongholdView(
   row: BattlefieldStrongholdRow,
   squads: readonly BattlefieldSquadRow[],
+  unlocked = true,
 ): BattlefieldStrongholdView {
   const garrison = mergeStrongholdGarrison(row, squads);
   return {
@@ -284,16 +317,20 @@ export function battlefieldStrongholdView(
     towerLevel: Number(row.tower_level),
     firstCaptureAvailable: row.first_captured_at === null,
     capturedAt: row.captured_at ? row.captured_at.toISOString() : null,
+    unlocked,
+    chainUntil: row.chain_until ? row.chain_until.toISOString() : null,
+    fireNextAt: row.fire_next_at ? row.fire_next_at.toISOString() : null,
   };
 }
 
 export function battlefieldShopView(
   counts: Record<string, number>,
   cumulativeMerit: number,
+  script: BattlefieldScript = 'guandu',
 ): { items: BattlefieldShopItemView[]; cumulativeMerit: number } {
   return {
     cumulativeMerit,
-    items: BATTLEFIELD_SHOP.map((def) => ({
+    items: battlefieldShopItems(script).map((def) => ({
       item: def.item,
       label: def.label,
       cost: def.cost,
@@ -310,7 +347,14 @@ export function battlefieldShopView(
 }
 
 export function battlefieldRewardsView(): GetBattlefieldResponseData['rewards'] {
+  const progressTiers: BattlefieldProgressRewardView[] = BATTLEFIELD_DONGZHUO_TIERS.map((tier) => ({
+    label: tier.label,
+    progress: tier.progress,
+    gold: tier.gold,
+    resourcesEach: tier.resourcesEach,
+  }));
   return {
+    progressTiers,
     winner: {
       label: '胜方每人',
       rank: null,
@@ -377,17 +421,21 @@ export async function loadBattlefieldState(
 ): Promise<GetBattlefieldResponseData> {
   const window = battlefieldWindow(now);
   const nextSignupAt = window.signupStart.toISOString();
+  const nextScript = battlefieldScriptForWindow(window);
   if (!event) {
+    const cumulativeMerit = await loadBattlefieldCumulativeMerit(pool, accountId);
     return {
       event: null,
       nextSignupAt,
+      nextScript,
       strongholds: [],
       me: null,
       top: [],
-      shop: { items: battlefieldShopView({}, await loadBattlefieldCumulativeMerit(pool, accountId)).items, cumulativeMerit: await loadBattlefieldCumulativeMerit(pool, accountId) },
+      shop: battlefieldShopView({}, cumulativeMerit),
       rewards: battlefieldRewardsView(),
     };
   }
+  const script = asScript(event.script);
   const [counts, strongholds, garrisonSquads, participant, squads, cumulativeMerit, shopCounts, board] = await Promise.all([
     loadBattlefieldCampCounts(pool, event.id),
     loadBattlefieldStrongholds(pool, event.id),
@@ -412,15 +460,26 @@ export async function loadBattlefieldState(
       cumulativeMerit,
     };
   }
+  // 据点按剧本的定义顺序输出；讨董按推进线（汜水关 → 虎牢关 → 洛阳）算解锁状态
+  const defs = battlefieldStrongholds(script);
+  const rowById = new Map(strongholds.map((row) => [row.id, row]));
+  const ownerById = new Map(strongholds.map((row) => [row.id, asCamp(row.owner_camp)]));
+  const ordered =
+    script === 'dongzhuo'
+      ? defs.flatMap((def) => (rowById.has(def.id) ? [rowById.get(def.id) as BattlefieldStrongholdRow] : []))
+      : strongholds;
   return {
     event: battlefieldEventView(event, counts),
     nextSignupAt,
-    strongholds: strongholds.map((row) => battlefieldStrongholdView(row, garrisonSquads)),
+    nextScript,
+    strongholds: ordered.map((row) => {
+      const index = defs.findIndex((def) => def.id === row.id);
+      const previous = index > 0 ? (ownerById.get(defs[index - 1].id) ?? null) : null;
+      return battlefieldStrongholdView(row, garrisonSquads, battlefieldUnlocked(script, Math.max(0, index), previous));
+    }),
     me,
     top: board.top,
-    shop: battlefieldShopView(shopCounts, cumulativeMerit),
+    shop: battlefieldShopView(shopCounts, cumulativeMerit, script),
     rewards: battlefieldRewardsView(),
   };
 }
-
-export { CAMPS as BATTLEFIELD_CAMP_LIST, CAMP_NAMES as BATTLEFIELD_CAMP_NAMES };

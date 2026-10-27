@@ -240,6 +240,10 @@ export const Op = {
   GET_LUOYANG: 137,
   /** C→S 洛阳之主盟主发布政令（v79：data.kind = recruit|march|research；每 7 天一次） */
   PUBLISH_DECREE: 138,
+  /** C→S 赤壁火攻（v80，AISLG-199：data.strongholdId；孙刘方、东南风期间，花 300 军功，目标须为曹方且与己方据点相邻，每目标 2 小时一次） */
+  FIRE_BATTLEFIELD_STRONGHOLD: 139,
+  /** C→S 赤壁连锁战船（v80，AISLG-199：data.strongholdId；曹方己方据点，花 200 军功，持续 6 小时，守军受伤 −15%、被火攻翻倍） */
+  CHAIN_BATTLEFIELD_STRONGHOLD: 140,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -597,6 +601,18 @@ export const ErrorCode = {
   BATTLEFIELD_MERIT_INSUFFICIENT: 'BATTLEFIELD_MERIT_INSUFFICIENT',
   /** 剧本战场：目标坐标与据点 id 都没给或对不上（v75） */
   BATTLEFIELD_TARGET_INVALID: 'BATTLEFIELD_TARGET_INVALID',
+  /** 剧本战场：前置关卡还没打下，这个据点暂不能攻打（v80，讨伐董卓；附 unlockAfter 据点 id） */
+  BATTLEFIELD_STRONGHOLD_LOCKED: 'BATTLEFIELD_STRONGHOLD_LOCKED',
+  /** 剧本战场：当前风向不允许这个技能（v80，赤壁火攻需东南风；附 wind / required） */
+  BATTLEFIELD_WIND_MISMATCH: 'BATTLEFIELD_WIND_MISMATCH',
+  /** 剧本战场：火攻冷却中，同一目标 2 小时一次（v80，附 nextAt） */
+  BATTLEFIELD_FIRE_COOLDOWN: 'BATTLEFIELD_FIRE_COOLDOWN',
+  /** 剧本战场：连锁战船仍在生效，不能重复连锁（v80，附 chainUntil） */
+  BATTLEFIELD_CHAIN_ACTIVE: 'BATTLEFIELD_CHAIN_ACTIVE',
+  /** 剧本战场：本场剧本没有这个技能，或阵营不对（v80：火攻须孙刘方、连锁须曹方） */
+  BATTLEFIELD_SKILL_UNAVAILABLE: 'BATTLEFIELD_SKILL_UNAVAILABLE',
+  /** 剧本战场：未带兵入场，不能使用技能（v80） */
+  BATTLEFIELD_NOT_ENTERED: 'BATTLEFIELD_NOT_ENTERED',
   /** 联盟外交：友盟 / 敌对数量已达上限（v77，AISLG-195；友盟 2、敌对 5） */
   DIPLOMACY_LIMIT: 'DIPLOMACY_LIMIT',
   /** 联盟外交：解除友好后的冷却中，暂时不能再次结好（v77，响应附 refriendAfter / retryAfterSeconds） */
@@ -1147,10 +1163,16 @@ export type {
   BuyBattlefieldItemRequestData,
   BuyBattlefieldItemResponseData,
   BattlefieldPushData,
+  BattlefieldScript,
+  BattlefieldProgressRewardView,
+  FireBattlefieldRequestData,
+  ChainBattlefieldRequestData,
 } from './protocol-battlefield';
 export {
   BATTLEFIELD_CAMPS,
   isBattlefieldCamp,
+  BATTLEFIELD_SCRIPTS,
+  isBattlefieldScript,
   BATTLEFIELD_STATUSES,
   BATTLEFIELD_STRONGHOLD_KINDS,
   BATTLEFIELD_SHOP_ITEMS,

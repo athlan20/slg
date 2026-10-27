@@ -706,6 +706,30 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。',
     action: '用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。',
   },
+  BATTLEFIELD_STRONGHOLD_LOCKED: {
+    desc: '（v80，AISLG-199）讨伐董卓的关卡按顺序解锁：汜水关 → 虎牢关 → 洛阳，前一关没被讨董联军打下时不能攻打（GET_BATTLEFIELD 的 strongholds[].unlocked 为 false）。',
+    action: '先攻下前一关（看 strongholds 里 unlocked 为 true 的据点再下令）。',
+  },
+  BATTLEFIELD_WIND_MISMATCH: {
+    desc: '（v80，AISLG-199）赤壁火攻只能在东南风期间发动（event.wind.direction = se）。',
+    action: '等下一次风向切换（event.wind.nextAt）再发动，切换前 30 分钟会预告。',
+  },
+  BATTLEFIELD_FIRE_COOLDOWN: {
+    desc: '（v80，AISLG-199）同一目标据点每 2 小时最多被火攻一次；响应附 nextAt。',
+    action: '换一个目标，或等 nextAt 之后再火攻。',
+  },
+  BATTLEFIELD_CHAIN_ACTIVE: {
+    desc: '（v80，AISLG-199）该据点的连锁战船仍在生效（6 小时内不能重复连锁）；响应附 chainUntil。',
+    action: '等 chainUntil 之后再连锁；连锁期内被火攻伤害翻倍，留意守军。',
+  },
+  BATTLEFIELD_SKILL_UNAVAILABLE: {
+    desc: '（v80，AISLG-199）本场剧本没有这个技能（只有赤壁有火攻 / 连锁），或阵营不对：火攻只给孙刘方，连锁只给曹方。',
+    action: '看 event.script 与自己的 me.camp 再发。',
+  },
+  BATTLEFIELD_NOT_ENTERED: {
+    desc: '（v80，AISLG-199）报名了但还没带兵入场，不能使用战场技能。',
+    action: '本场已开战就只能等下一场；报名期内要在开战前 ENTER_BATTLEFIELD。',
+  },
   LUOYANG_CLOSED: {
     desc: '（v79，AISLG-200）洛阳只在每周六 21:00–23:00（北京时间现实时间）开放攻打 / 侦察；响应附 nextOpenAt / retryAfterSeconds。',
     action: '等到 nextOpenAt 再发起。窗口内洛阳没有被动免战、城防不回涨。',

@@ -179,7 +179,7 @@ export const Op = {
   CRAFT_DEFENSE: 117,
   CANCEL_DEFENSE_CRAFT: 118,
   DISMISS_ASSIST: 119,
-  /** 查询剧本战场（v75，AISLG-198）：当前 / 最近一场官渡、据点、我的队伍与军功、军功榜、商店 */
+  /** 查询剧本战场（v75，AISLG-198）：当前 / 最近一场（官渡 / 讨董 / 赤壁）、据点、我的队伍与军功、军功榜、商店 */
   GET_BATTLEFIELD: 120,
   /** 报名剧本战场（v75）：data.camp = yuan | cao */
   SIGNUP_BATTLEFIELD: 121,
@@ -206,6 +206,10 @@ export const Op = {
   CANCEL_MARKET_ORDER: 136,
   GET_LUOYANG: 137,
   PUBLISH_DECREE: 138,
+  /** 赤壁火攻（v80，AISLG-199）：data.strongholdId；东南风、孙刘方，花 300 军功 */
+  FIRE_BATTLEFIELD_STRONGHOLD: 139,
+  /** 赤壁连锁战船（v80，AISLG-199）：data.strongholdId；曹方己方据点，花 200 军功，持续 6 小时 */
+  CHAIN_BATTLEFIELD_STRONGHOLD: 140,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -365,6 +369,12 @@ export type ErrorCode =
   | 'LUOYANG_CLOSED'
   | 'DECREE_NOT_HOLDER'
   | 'DECREE_COOLDOWN'
+  | 'BATTLEFIELD_STRONGHOLD_LOCKED'
+  | 'BATTLEFIELD_WIND_MISMATCH'
+  | 'BATTLEFIELD_FIRE_COOLDOWN'
+  | 'BATTLEFIELD_CHAIN_ACTIVE'
+  | 'BATTLEFIELD_SKILL_UNAVAILABLE'
+  | 'BATTLEFIELD_NOT_ENTERED'
   | 'MARKET_LOCKED'
   | 'PRICE_OUT_OF_RANGE'
   | 'ORDER_LIMIT'
@@ -1147,6 +1157,8 @@ export type {
   BattlefieldShopItem,
   BattlefieldShopItemView,
   BattlefieldRewardTierView,
+  BattlefieldProgressRewardView,
+  BattlefieldScript,
   GetBattlefieldResponseData,
   BattlefieldPushData,
   EnterBattlefieldRequestData,

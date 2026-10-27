@@ -6,10 +6,12 @@
 // 有攻守往返的节奏，战场行军每格固定 60 秒。
 
 import type { Resources } from './protocol';
+import type { BattlefieldScript } from './protocol-battlefield';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import { TROOP_KINDS } from './protocol';
 import { armyPower, toFullArmyCounts } from './battle';
 import { TROOP_INFO } from './troops';
+import { TROOP_STATS } from './battle-engine';
 
 // ---- 日程（北京时间） ----
 
@@ -87,7 +89,7 @@ export interface BattlefieldStrongholdDef {
   towerLevel: number;
 }
 
-/** 9 个据点（需求表格）：两个大营、3 个渡口、3 个普通据点、乌巢粮仓 */
+/** 官渡 9 个据点：两个大营、3 个渡口、3 个普通据点、乌巢粮仓 */
 export const BATTLEFIELD_STRONGHOLDS: readonly BattlefieldStrongholdDef[] = [
   {
     id: 'yuan_camp', name: '袁绍大营', kind: 'base', x: 2, y: 15,
@@ -127,6 +129,251 @@ export const BATTLEFIELD_STRONGHOLDS: readonly BattlefieldStrongholdDef[] = [
   },
 ] as const;
 
+/** 讨伐董卓：一条推进线，汜水关 → 虎牢关 → 洛阳（前一关打下后下一关才开放） */
+export const BATTLEFIELD_DONGZHUO_STRONGHOLDS: readonly BattlefieldStrongholdDef[] = [
+  { id: 'suishui', name: '汜水关', kind: 'post', x: 7, y: 15, pointsPerHour: 0, garrisonMultiplier: 15, wallLevel: 10, towerLevel: 10 },
+  { id: 'hulao', name: '虎牢关', kind: 'ford', x: 15, y: 15, pointsPerHour: 0, garrisonMultiplier: 40, wallLevel: 15, towerLevel: 15 },
+  { id: 'luoyang', name: '洛阳', kind: 'base', x: 23, y: 15, pointsPerHour: 0, garrisonMultiplier: 30, wallLevel: 20, towerLevel: 20 },
+] as const;
+
+/** 赤壁：双方各 4 个据点 + 1 座大营（10 个），中间江面只有 3 处渡口可通过 */
+export const BATTLEFIELD_CHIBI_STRONGHOLDS: readonly BattlefieldStrongholdDef[] = [
+  { id: 'sun_base', name: '孙刘大营', kind: 'base', x: 2, y: 15, pointsPerHour: 0, garrisonMultiplier: 10, wallLevel: 10, towerLevel: 10 },
+  { id: 'cao_base', name: '曹操大营', kind: 'base', x: 27, y: 15, pointsPerHour: 0, garrisonMultiplier: 10, wallLevel: 10, towerLevel: 10 },
+  { id: 'sun_1', name: '孙刘据点·柴桑', kind: 'post', x: 6, y: 5, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+  { id: 'sun_2', name: '孙刘据点·夏口', kind: 'post', x: 6, y: 15, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+  { id: 'sun_3', name: '孙刘据点·赤壁', kind: 'post', x: 6, y: 25, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+  { id: 'sun_4', name: '孙刘据点·乌林', kind: 'post', x: 11, y: 10, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+  { id: 'cao_1', name: '曹操据点·江陵', kind: 'post', x: 23, y: 5, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+  { id: 'cao_2', name: '曹操据点·巴丘', kind: 'post', x: 23, y: 15, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+  { id: 'cao_3', name: '曹操据点·华容', kind: 'post', x: 23, y: 25, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+  { id: 'cao_4', name: '曹操据点·乌林北', kind: 'post', x: 18, y: 10, pointsPerHour: 10, garrisonMultiplier: 2, wallLevel: 0, towerLevel: 0 },
+] as const;
+
+/** 剧本名称与每周轮换顺序：官渡 → 讨伐董卓 → 赤壁 */
+export const BATTLEFIELD_SCRIPT_NAMES: Record<BattlefieldScript, string> = {
+  guandu: '官渡之战',
+  dongzhuo: '讨伐董卓',
+  chibi: '赤壁之战',
+};
+
+/** 各剧本的阵营显示名（讨董只有讨董联军一方在打，董卓军是 NPC） */
+export const BATTLEFIELD_CAMP_NAMES: Record<BattlefieldScript, Record<BattlefieldCamp, string>> = {
+  guandu: { yuan: '袁绍军', cao: '曹操军' },
+  dongzhuo: { yuan: '讨董联军', cao: '董卓军' },
+  chibi: { yuan: '孙刘联军', cao: '曹操军' },
+};
+
+export function battlefieldCampName(script: BattlefieldScript, camp: BattlefieldCamp): string {
+  return BATTLEFIELD_CAMP_NAMES[script][camp];
+}
+
+export const BATTLEFIELD_SCRIPT_ORDER: readonly BattlefieldScript[] = ['guandu', 'dongzhuo', 'chibi'];
+
+/**
+ * 轮换锚点：2026-10-27 这一周（报名周二 20:00，即 198 首场所在周）为官渡，之后每周依次讨董、赤壁、官渡……
+ * 锚点取在本周而不是上线周，是为了上线前后本周剧本不跳变（上线后三周：官渡 → 讨董 → 赤壁）。
+ */
+export const BATTLEFIELD_SCRIPT_ANCHOR_MS = Date.parse('2026-10-27T20:00:00+08:00');
+
+/** 报名开始时刻所在的那一周决定剧本（每周一场，周数取模轮换） */
+export function battlefieldScriptForSignupStart(signupStart: Date): BattlefieldScript {
+  const weeks = Math.round((signupStart.getTime() - BATTLEFIELD_SCRIPT_ANCHOR_MS) / (7 * DAY_MS));
+  const size = BATTLEFIELD_SCRIPT_ORDER.length;
+  return BATTLEFIELD_SCRIPT_ORDER[((weeks % size) + size) % size];
+}
+
+export function battlefieldScriptForWindow(window: BattlefieldWindow): BattlefieldScript {
+  return battlefieldScriptForSignupStart(window.signupStart);
+}
+
+/** 下一周的剧本（用于报名公告里预告） */
+export function battlefieldNextScript(window: BattlefieldWindow): BattlefieldScript {
+  return battlefieldScriptForSignupStart(new Date(window.signupStart.getTime() + 7 * DAY_MS));
+}
+
+export function battlefieldStrongholds(script: BattlefieldScript): readonly BattlefieldStrongholdDef[] {
+  if (script === 'dongzhuo') {
+    return BATTLEFIELD_DONGZHUO_STRONGHOLDS;
+  }
+  if (script === 'chibi') {
+    return BATTLEFIELD_CHIBI_STRONGHOLDS;
+  }
+  return BATTLEFIELD_STRONGHOLDS;
+}
+
+/** 讨董：按顺序解锁（第一个永远开放；后面要求前一个已被讨董联军占领） */
+export function battlefieldUnlocked(script: BattlefieldScript, index: number, previousOwner: BattlefieldCamp | null): boolean {
+  if (script !== 'dongzhuo') {
+    return true;
+  }
+  return index === 0 || previousOwner === 'yuan';
+}
+
+// ---- 赤壁风向 ----
+
+export const BATTLEFIELD_WIND_MS = 6 * 3_600_000;
+export const BATTLEFIELD_WIND_NOTICE_MS = 30 * 60 * 1000;
+export type BattlefieldWind = 'se' | 'nw';
+
+export function battlefieldWindLabel(wind: BattlefieldWind): string {
+  return wind === 'se' ? '东南风' : '西北风';
+}
+
+/** 顺风阵营：东南风利孙刘（yuan），西北风利曹操（cao） */
+export function battlefieldWindBonusCamp(wind: BattlefieldWind): BattlefieldCamp {
+  return wind === 'se' ? 'yuan' : 'cao';
+}
+
+/** 顺风方远程兵种与床弩射程 +%（走科技乘数的射程入口，AISLG-192） */
+export const BATTLEFIELD_WIND_RANGE_PERCENT = 10;
+
+export function battlefieldFlipWind(wind: BattlefieldWind): BattlefieldWind {
+  return wind === 'se' ? 'nw' : 'se';
+}
+
+/** 开战时的初始风向（随机源可注入，测试用固定序列） */
+export function battlefieldInitialWind(random: () => number = Math.random): BattlefieldWind {
+  return random() < 0.5 ? 'se' : 'nw';
+}
+
+/**
+ * 到点推进风向：每过 6 小时交替一次，返回推进后的风向与下次切换时刻。
+ * 若 Worker 停了很久，会一次性补齐到 now 之后的第一个切换点（风向只交替，不跳过）。
+ */
+export function battlefieldAdvanceWind(
+  wind: BattlefieldWind,
+  nextAt: Date,
+  now: Date,
+): { wind: BattlefieldWind; nextAt: Date; switched: boolean } {
+  let current = wind;
+  let next = nextAt.getTime();
+  let switched = false;
+  while (now.getTime() >= next) {
+    current = battlefieldFlipWind(current);
+    next += BATTLEFIELD_WIND_MS;
+    switched = true;
+  }
+  return { wind: current, nextAt: new Date(next), switched };
+}
+
+/** 风向对阵营的射程加成（科技乘数入口）：顺风方 +10%，逆风方与 NPC 无加成 */
+export function battlefieldWindTech(wind: BattlefieldWind, camp: BattlefieldCamp): { rangedRangePercent: number } | null {
+  return battlefieldWindBonusCamp(wind) === camp ? { rangedRangePercent: BATTLEFIELD_WIND_RANGE_PERCENT } : null;
+}
+
+// ---- 赤壁据点技能：火攻 / 连锁战船 ----
+
+/** 火攻（孙刘方、东南风期间）：花费军功、对与己方据点相邻的曹方据点 */
+export const BATTLEFIELD_FIRE_MERIT_COST = 300;
+/** 火攻伤害 = 目标守军总生命的比例（连锁战船期间翻倍） */
+export const BATTLEFIELD_FIRE_HP_RATIO = 0.2;
+export const BATTLEFIELD_FIRE_COOLDOWN_MS = 2 * 3_600_000;
+/** 相邻 = 曼哈顿距离不超过该值（地图 30×30，据点之间约 10 格以内视为相邻） */
+export const BATTLEFIELD_NEIGHBOR_DISTANCE = 10;
+
+/** 连锁战船（曹方）：花费军功、给己方据点连锁 6 小时 */
+export const BATTLEFIELD_CHAIN_MERIT_COST = 200;
+export const BATTLEFIELD_CHAIN_MS = 6 * 3_600_000;
+/** 连锁期间守军受到的伤害 −% */
+export const BATTLEFIELD_CHAIN_DEFENSE_PERCENT = 15;
+/** 连锁期间被火攻的伤害倍数（20% → 40%） */
+export const BATTLEFIELD_CHAIN_FIRE_MULTIPLIER = 2;
+
+/** 火攻伤害占守军总生命的比例（连锁战船期间翻倍） */
+export function battlefieldFireHpRatio(chained: boolean): number {
+  return chained ? BATTLEFIELD_FIRE_HP_RATIO * BATTLEFIELD_CHAIN_FIRE_MULTIPLIER : BATTLEFIELD_FIRE_HP_RATIO;
+}
+
+export function battlefieldChainActive(chainUntil: Date | null, now: Date): boolean {
+  return chainUntil !== null && chainUntil.getTime() > now.getTime();
+}
+
+/** 火攻冷却是否已过（fireNextAt 为空表示从未被火攻） */
+export function battlefieldFireReady(fireNextAt: Date | null, now: Date): boolean {
+  return fireNextAt === null || fireNextAt.getTime() <= now.getTime();
+}
+
+/** 风向预告是否到点：距下次切换不足 30 分钟，且本轮还没预告过 */
+export function battlefieldWindNoticeDue(nextAt: Date, now: Date, noticed: boolean): boolean {
+  return !noticed && now.getTime() >= nextAt.getTime() - BATTLEFIELD_WIND_NOTICE_MS;
+}
+
+export function battlefieldNeighbors(a: { x: number; y: number }, b: { x: number; y: number }): boolean {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) <= BATTLEFIELD_NEIGHBOR_DISTANCE;
+}
+
+/**
+ * 火攻结算：按各兵种「单兵生命 × 数量」占总生命的比例（即 ratio × 该兵种总生命）写入余伤池，
+ * 整单位折算阵亡，余数留在池里等下一次火攻继续累计。返回各兵种阵亡数与新的余伤池。
+ */
+export function battlefieldFireDamage(
+  garrison: Partial<Record<TroopKind, number>>,
+  wounds: Partial<Record<TroopKind, number>>,
+  ratio: number,
+): { kills: Partial<Record<TroopKind, number>>; wounds: Partial<Record<TroopKind, number>> } {
+  const kills: Partial<Record<TroopKind, number>> = {};
+  const nextWounds: Partial<Record<TroopKind, number>> = {};
+  for (const kind of TROOP_KINDS) {
+    const count = Math.max(0, Math.floor(garrison[kind] ?? 0));
+    if (count <= 0) {
+      continue;
+    }
+    const hp = TROOP_STATS[kind].hp;
+    let pool = Math.max(0, Number(wounds[kind] ?? 0)) + ratio * count * hp;
+    const down = Math.min(count, Math.floor(pool / hp));
+    pool -= down * hp;
+    if (down >= count) {
+      pool = 0;
+    }
+    // 去掉浮点噪声（余伤只保留到千分位，写库稳定）
+    pool = Math.round(pool * 1000) / 1000;
+    if (down > 0) {
+      kills[kind] = down;
+    }
+    if (pool > 0) {
+      nextWounds[kind] = pool;
+    }
+  }
+  return { kills, wounds: nextWounds };
+}
+
+// ---- 讨伐董卓：全服合作 ----
+
+/** 虎牢关守将吕布（NPC，不发放）：攻击 +20%、减伤 −20%（沿用武将加成口径） */
+export const BATTLEFIELD_LVBU_BONUS = { atkPercent: 20, defPercent: 20 } as const;
+
+/** 讨董合作奖励档位（全员按最远进度领一档，军功 > 0 才能领；个人名次额外奖励与官渡相同） */
+export const BATTLEFIELD_DONGZHUO_TIERS: readonly { progress: number; label: string; gold: number; resourcesEach: number }[] = [
+  { progress: 1, label: '破汜水关', gold: 1000, resourcesEach: 5000 },
+  { progress: 2, label: '破虎牢关', gold: 2000, resourcesEach: 10000 },
+  { progress: 3, label: '攻下洛阳', gold: 4000, resourcesEach: 20000 },
+] as const;
+
+/** 讨董进度 = 已打下的关卡数（汜水关 → 虎牢关 → 洛阳，顺序解锁所以就是前缀长度） */
+export function battlefieldDongzhuoProgress(owners: Readonly<Record<string, BattlefieldCamp | null | undefined>>): number {
+  const order = BATTLEFIELD_DONGZHUO_STRONGHOLDS.map((def) => def.id);
+  let progress = 0;
+  for (const id of order) {
+    if (owners[id] !== 'yuan') {
+      break;
+    }
+    progress += 1;
+  }
+  return progress;
+}
+
+export function battlefieldDongzhuoTier(progress: number): Resources {
+  const tier = [...BATTLEFIELD_DONGZHUO_TIERS].reverse().find((item) => progress >= item.progress);
+  if (!tier) {
+    return { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 };
+  }
+  return { gold: tier.gold, wood: tier.resourcesEach, food: tier.resourcesEach, stone: tier.resourcesEach, iron: tier.resourcesEach };
+}
+
+/** 赤壁入场门槛：爵位大夫（nobility.ts 序号 3）；爵位系统上线后才生效 */
+export const BATTLEFIELD_CHIBI_NOBILITY_INDEX = 3;
+
 /** 3 级 NPC 城守军（参考战力约 646）：义兵 100、刀盾兵 30、弓箭兵 40、轻骑兵 12 */
 export const BATTLEFIELD_NPC_CITY_GARRISON: Readonly<Partial<Record<TroopKind, number>>> = {
   militia: 100,
@@ -135,11 +382,13 @@ export const BATTLEFIELD_NPC_CITY_GARRISON: Readonly<Partial<Record<TroopKind, n
   cavalry: 12,
 };
 
-/** 守军随报名人数加厚：倍数 = max(1, 报名人数 ÷ 20) */
+/** 守军随报名人数加厚：倍数 = max(1, 报名人数 ÷ 20)；讨董关卡守军更厚，按 ÷ 10 */
 export const BATTLEFIELD_GARRISON_PER_PLAYERS = 20;
+export const BATTLEFIELD_DONGZHUO_GARRISON_PER_PLAYERS = 10;
 
-export function battlefieldGarrisonPlayerMultiplier(signups: number): number {
-  return Math.max(1, Math.max(0, signups) / BATTLEFIELD_GARRISON_PER_PLAYERS);
+export function battlefieldGarrisonPlayerMultiplier(signups: number, script: BattlefieldScript = 'guandu'): number {
+  const per = script === 'dongzhuo' ? BATTLEFIELD_DONGZHUO_GARRISON_PER_PLAYERS : BATTLEFIELD_GARRISON_PER_PLAYERS;
+  return Math.max(1, Math.max(0, signups) / per);
 }
 
 /** 某据点的初始 NPC 守军（含报名人数加厚倍数；四舍五入、非零兵种至少 1） */
@@ -302,10 +551,31 @@ export function battlefieldRewardFor(rank: number | null, won: boolean): Resourc
   };
 }
 
+/** 按剧本结算：官渡 / 赤壁按胜负；讨董按全服进度档（无胜败），两者都再加名次额外奖励 */
+export function battlefieldRewardForScript(
+  script: BattlefieldScript,
+  rank: number | null,
+  won: boolean,
+  progress: number,
+): Resources {
+  if (script !== 'dongzhuo') {
+    return battlefieldRewardFor(rank, won);
+  }
+  const team = battlefieldDongzhuoTier(progress);
+  const extra = rank === null ? null : battlefieldRankReward(rank);
+  return {
+    gold: team.gold + (extra?.gold ?? 0),
+    wood: team.wood + (extra?.wood ?? 0),
+    food: team.food + (extra?.food ?? 0),
+    stone: team.stone + (extra?.stone ?? 0),
+    iron: team.iron + (extra?.iron ?? 0),
+  };
+}
+
 // ---- 战场商店 ----
 
 export interface BattlefieldShopDef {
-  item: 'resources' | 'hero_exp' | 'swordsman' | 'cavalry';
+  item: 'resources' | 'hero_exp' | 'swordsman' | 'cavalry' | 'iron_cavalry';
   label: string;
   /** 价格（军功） */
   cost: number;
@@ -327,8 +597,18 @@ export const BATTLEFIELD_SHOP: readonly BattlefieldShopDef[] = [
   { item: 'cavalry', label: '轻骑兵', cost: 600, limit: 2, troop: 'cavalry', count: 50 },
 ] as const;
 
-export function battlefieldShopDef(item: string): BattlefieldShopDef | undefined {
-  return BATTLEFIELD_SHOP.find((def) => def.item === item);
+/** 赤壁场次额外开放：铁骑兵 20（直接进主城），800 军功，每场限购 1 次 */
+export const BATTLEFIELD_SHOP_CHIBI: readonly BattlefieldShopDef[] = [
+  ...BATTLEFIELD_SHOP,
+  { item: 'iron_cavalry', label: '铁骑兵', cost: 800, limit: 1, troop: 'iron_cavalry', count: 20 },
+] as const;
+
+export function battlefieldShopItems(script: BattlefieldScript): readonly BattlefieldShopDef[] {
+  return script === 'chibi' ? BATTLEFIELD_SHOP_CHIBI : BATTLEFIELD_SHOP;
+}
+
+export function battlefieldShopDef(item: string, script: BattlefieldScript = 'guandu'): BattlefieldShopDef | undefined {
+  return battlefieldShopItems(script).find((def) => def.item === item);
 }
 
 // ---- 据点守军拆分（玩家据守部队与 NPC 守军共同防守） ----

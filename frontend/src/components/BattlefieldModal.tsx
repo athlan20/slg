@@ -1,5 +1,5 @@
-/** 剧本战场弹窗（v75，AISLG-198）：官渡之战的报名 / 入场 / 战场地图与据点 / 队伍行军与拆队 / 军功榜 / 战场商店。
- *  数据来自会话切片（GET_BATTLEFIELD + PUSH_BATTLEFIELD_STATE 重拉）；所有操作以服务端判定为准。
+/** 剧本战场弹窗（v75，AISLG-198；v80 讨伐董卓 / 赤壁之战）：报名 / 入场 / 战场地图与据点 / 队伍行军与拆队 / 军功榜 / 战场商店；
+ *  赤壁额外有风向、火攻与连锁战船。数据来自会话切片（GET_BATTLEFIELD + PUSH_BATTLEFIELD_STATE 重拉）；所有操作以服务端判定为准。
  *  入口：顶栏「战场」胶囊（报名中 / 进行中高亮）。 */
 
 import { useMemo, useState } from 'react';
@@ -35,6 +35,10 @@ function ownerClass(camp: BattlefieldCamp | null): string {
   return 'border-line bg-panel-2 text-dim';
 }
 
+/** 火攻 / 连锁的军功花费（与服务端 common/src/battlefield.ts 的 BATTLEFIELD_FIRE_MERIT_COST / BATTLEFIELD_CHAIN_MERIT_COST 一致） */
+const FIRE_MERIT_COST = 300;
+const CHAIN_MERIT_COST = 200;
+
 function sumTroops(troops: Partial<Record<TroopKind, number>>): number {
   return TROOP_KINDS.reduce((sum, kind) => sum + Math.max(0, Math.floor(troops[kind] ?? 0)), 0);
 }
@@ -60,6 +64,11 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
   const [heroId, setHeroId] = useState<string>('');
 
   const army = session.city?.army ?? null;
+  const script = event?.script ?? 'guandu';
+  const nowMs = Date.now();
+  /** 阵营显示名以服务端为准（讨董只有讨董联军，赤壁是孙刘联军） */
+  const campName = (camp: BattlefieldCamp): string =>
+    event?.camps[camp].name ?? (camp === 'yuan' ? B.camps.yuan : B.camps.cao);
   const strongholds = state?.strongholds ?? [];
   const squads = me?.squads ?? [];
   const currentSquad = squads.find((squad) => squad.id === selectedSquad) ?? null;
@@ -99,8 +108,8 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
           title={stronghold ? `${stronghold.name}（${x},${y}）` : undefined}
           onClick={() => stronghold && setSelectedStronghold(stronghold.id)}
           className={`relative aspect-square min-w-0 rounded-[1px] ${classes} ${stronghold ? 'cursor-pointer' : 'cursor-default'} ${
-            selectedStronghold === stronghold?.id ? 'ring-1 ring-gold' : ''
-          }`}
+            stronghold && !stronghold.unlocked ? 'opacity-40' : ''
+          } ${selectedStronghold === stronghold?.id ? 'ring-1 ring-gold' : ''}`}
         >
           {mine.length > 0 ? <span className="absolute inset-[2px] rounded-full border border-gold" /> : null}
         </button>,
@@ -108,9 +117,12 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
     }
   }
 
+  // 讨董是单阵营合作本：只给一个加入按钮（服务端统一记为讨董联军）
+  const signupCamps: readonly BattlefieldCamp[] = script === 'dongzhuo' ? ['yuan'] : ['yuan', 'cao'];
+  const signupRule = script === 'dongzhuo' ? B.rules.dongzhuo : script === 'chibi' ? B.rules.chibi : B.rules.signup;
   const signupButtons = (
-    <div role="战场-报名" className="flex shrink-0 items-center gap-2 text-[12.5px]">
-      {(['yuan', 'cao'] as const).map((camp) => (
+    <div role="战场-报名" className="flex shrink-0 flex-wrap items-center gap-2 text-[12.5px]">
+      {signupCamps.map((camp) => (
         <button
           key={camp}
           type="button"
@@ -118,10 +130,10 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
           onClick={() => void bf.signup(camp)}
           className="cursor-pointer rounded border border-line bg-panel-2 px-2.5 py-1 hover:border-accent-dim hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {B.signup.button(camp === 'yuan' ? B.camps.yuan : B.camps.cao)}
+          {B.signup.button(campName(camp))}
         </button>
       ))}
-      <span className="text-faint">{B.rules.signup}</span>
+      <span className="text-faint">{signupRule}</span>
     </div>
   );
 
@@ -164,6 +176,48 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 
+  /** 赤壁技能：孙刘方火攻曹方据点（东南风）、曹方给己方据点连锁战船 */
+  const skillButtons = (stronghold: NonNullable<typeof currentStronghold>) => {
+    if (script !== 'chibi' || !active || !me?.entered) {
+      return null;
+    }
+    const chainOn = stronghold.chainUntil !== null && Date.parse(stronghold.chainUntil) > nowMs;
+    const fireOn = stronghold.fireNextAt !== null && Date.parse(stronghold.fireNextAt) > nowMs;
+    if (me.camp === 'yuan' && stronghold.ownerCamp === 'cao') {
+      const southeast = event?.wind?.direction === 'se';
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[11.5px] text-faint">{B.skills.fireHint}</span>
+          <button
+            type="button"
+            disabled={bf.busy || !southeast || fireOn}
+            title={southeast ? undefined : B.skills.fireNotice}
+            onClick={() => void bf.fire(stronghold.id)}
+            className="cursor-pointer self-start rounded border border-st-error bg-st-error/15 px-2 py-0.5 text-st-error disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {B.skills.fire(FIRE_MERIT_COST)}
+          </button>
+        </div>
+      );
+    }
+    if (me.camp === 'cao' && stronghold.ownerCamp === 'cao') {
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[11.5px] text-faint">{B.skills.chainHint}</span>
+          <button
+            type="button"
+            disabled={bf.busy || chainOn}
+            onClick={() => void bf.chain(stronghold.id)}
+            className="cursor-pointer self-start rounded border border-gold bg-gold/10 px-2 py-0.5 text-gold disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {B.skills.chain(CHAIN_MERIT_COST)}
+          </button>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const mapTab = (
     <div role="战场-地图页签" className="flex min-h-0 flex-1 flex-col gap-2 sm:flex-row">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -185,15 +239,21 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
           <div role="战场-据点详情" className="flex flex-col gap-0.5 rounded border border-line-soft p-2">
             <b className="truncate">{tName(currentStronghold.name)}</b>
             <span className={currentStronghold.ownerCamp ? 'text-dim' : 'text-faint'}>
-              {currentStronghold.ownerCamp
-                ? B.stronghold.owner(currentStronghold.ownerCamp === 'yuan' ? B.camps.yuan : B.camps.cao)
-                : B.stronghold.neutral}
+              {currentStronghold.ownerCamp ? B.stronghold.owner(campName(currentStronghold.ownerCamp)) : B.stronghold.neutral}
             </span>
             <span className="text-faint">{B.stronghold.points(currentStronghold.pointsPerHour)}</span>
             <span className="text-faint">{B.stronghold.garrison(currentStronghold.garrisonPower)}</span>
             {currentStronghold.wallLevel > 0 ? <span className="text-faint">{B.stronghold.wall(currentStronghold.wallLevel)}</span> : null}
             {currentStronghold.towerLevel > 0 ? <span className="text-faint">{B.stronghold.tower(currentStronghold.towerLevel)}</span> : null}
             {currentStronghold.firstCaptureAvailable ? <span className="text-gold">{B.stronghold.first}</span> : null}
+            {!currentStronghold.unlocked ? <span className="text-st-error">{B.stronghold.locked}</span> : null}
+            {currentStronghold.chainUntil && Date.parse(currentStronghold.chainUntil) > nowMs ? (
+              <span className="text-gold">{B.stronghold.chained(B.timeOf(currentStronghold.chainUntil))}</span>
+            ) : null}
+            {currentStronghold.fireNextAt && Date.parse(currentStronghold.fireNextAt) > nowMs ? (
+              <span className="text-faint">{B.stronghold.fireCooldown(B.timeOf(currentStronghold.fireNextAt))}</span>
+            ) : null}
+            {skillButtons(currentStronghold)}
           </div>
         ) : (
           <p className="text-faint">{B.squads.target}</p>
@@ -333,7 +393,7 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
         {(state?.top ?? []).map((entry) => (
           <div key={`${entry.accountId}-${entry.rank}`} role="战场-军功条目" className="flex items-center justify-between border-b border-line-soft py-0.5">
             <span className="min-w-0 truncate">
-              #{entry.rank} {tName(entry.username)} · {entry.camp === 'yuan' ? B.camps.yuan : B.camps.cao}
+              #{entry.rank} {tName(entry.username)} · {campName(entry.camp)}
             </span>
             <b className="shrink-0 font-mono text-gold">{entry.merit}</b>
           </div>
@@ -343,8 +403,19 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
         <p className="text-dim">{B.rewards.title}</p>
         {state ? (
           <>
-            <p>{B.rewards.win(state.rewards.winner.gold, state.rewards.winner.resourcesEach)}</p>
-            <p>{B.rewards.lose(state.rewards.loser.gold, state.rewards.loser.resourcesEach)}</p>
+            {state.rewards.progressTiers.length > 0 ? (
+              <>
+                {state.rewards.progressTiers.map((tier) => (
+                  <p key={tier.progress}>{B.rewards.progress(tName(tier.label), tier.gold, tier.resourcesEach)}</p>
+                ))}
+                <p>{B.rewards.progressNote}</p>
+              </>
+            ) : (
+              <>
+                <p>{B.rewards.win(state.rewards.winner.gold, state.rewards.winner.resourcesEach)}</p>
+                <p>{B.rewards.lose(state.rewards.loser.gold, state.rewards.loser.resourcesEach)}</p>
+              </>
+            )}
             {state.rewards.rankTiers.map((tier) => (
               <p key={tier.label}>{B.rewards.rank(tName(tier.label), tier.gold, tier.resourcesEach)}</p>
             ))}
@@ -361,17 +432,25 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
     <>
       <div role="战场-概况" className="flex shrink-0 flex-col gap-1">
         <div className="flex items-center justify-between gap-2 text-[12.5px]">
-          <span className={event?.status === 'active' ? 'text-ok' : event?.status === 'signup' ? 'text-gold' : 'text-faint'}>
-            {event ? B.status[event.status] : B.status.finished}
+          <span className="flex min-w-0 items-center gap-2">
+            <b className="truncate">{B.scripts[script]}</b>
+            <span className={event?.status === 'active' ? 'text-ok' : event?.status === 'signup' ? 'text-gold' : 'text-faint'}>
+              {event ? B.status[event.status] : B.status.finished}
+            </span>
           </span>
           {event ? <span className="truncate text-faint">{B.subtitle(B.timeOf(event.startAt), B.timeOf(event.endAt))}</span> : null}
         </div>
+        {event?.wind ? (
+          <p role="战场-风向" className="shrink-0 text-[12.5px] text-accent">
+            {B.wind.title}：{B.wind.line(B.wind.dir[event.wind.direction], B.timeOf(event.wind.nextAt))} · {B.wind.bonus}
+          </p>
+        ) : null}
         {event ? (
           <div role="战场-阵营比分" className="flex items-center gap-3 text-[13px]">
-            {(['yuan', 'cao'] as const).map((camp) => (
+            {(['yuan', 'cao'] as const).filter((camp) => script !== 'dongzhuo' || camp === 'yuan').map((camp) => (
               <span key={camp} className="flex items-center gap-1.5">
                 <i className={`inline-block h-2 w-2 rounded-full ${CAMP_COLOR[camp]}`} />
-                <b>{camp === 'yuan' ? B.camps.yuan : B.camps.cao}</b>
+                <b>{campName(camp)}</b>
                 <span className="text-faint">
                   {B.camps.signups(event.camps[camp].signups)} · {B.camps.entered(event.camps[camp].entered)} ·{' '}
                   {B.camps.score(event.camps[camp].score)}

@@ -1,16 +1,25 @@
-// 剧本战场·官渡（v75，AISLG-198）的行军到达与据点战斗结算：
-// 到点队伍在据点开战（大营按守城战，其余野战），更新守军 / 归属 / 军功 / 战报，并在大营被攻破时结束战场。
+// 剧本战场（v75，AISLG-198；v80，AISLG-199）的行军到达与据点战斗结算：
+// 到点队伍在据点开战（有城墙的据点按守城战，其余野战），更新守军 / 归属 / 军功 / 战报；
+// 大营被攻破时结束战场。赤壁的风向射程加成与连锁减伤走战斗科技乘数，讨董虎牢关带吕布加成。
 // 生命周期、积分与发奖在 battlefield-event.ts / battlefield-tick.ts。
 
 import pg from 'pg';
 import { EventType, TROOP_KINDS, type TroopKind } from '../../common/src/protocol';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
+import type { CombatTechBonus } from '../../common/src/battle-engine';
 import { towerStats } from '../../common/src/building-effects';
 import {
+  BATTLEFIELD_CHAIN_DEFENSE_PERCENT,
   BATTLEFIELD_FIRST_CAPTURE_MERIT,
+  BATTLEFIELD_LVBU_BONUS,
+  battlefieldCampName,
+  battlefieldChainActive,
+  battlefieldWindTech,
   splitBattlefieldDefenderLosses,
   type BattlefieldCamp,
+  type BattlefieldWind,
 } from '../../common/src/battlefield';
+import type { BattlefieldScript } from '../../common/src/protocol-battlefield';
 import {
   loadLatestBattlefieldEvent,
   type BattlefieldEventRow,
@@ -32,6 +41,15 @@ import {
 
 function asCamp(value: unknown): BattlefieldCamp {
   return value === 'cao' ? 'cao' : 'yuan';
+}
+
+function asScript(value: unknown): BattlefieldScript {
+  return value === 'dongzhuo' || value === 'chibi' ? value : 'guandu';
+}
+
+/** 当前风向（只有赤壁有风向；其他剧本与风向未定为 null） */
+function windOf(event: BattlefieldEventRow): BattlefieldWind | null {
+  return event.wind === 'se' || event.wind === 'nw' ? event.wind : null;
 }
 
 export async function processBattlefieldMovements(pool: pg.Pool): Promise<number> {
@@ -157,7 +175,7 @@ async function resolveStrongholdBattle(
     await client.query(
       `UPDATE battlefield_strongholds
        SET owner_camp = $2, garrison = '{}'::jsonb, captured_at = now(),
-           first_captured_at = COALESCE(first_captured_at, now())
+           first_captured_at = COALESCE(first_captured_at, now()), chain_until = NULL, fire_wounds = '{}'::jsonb
        WHERE event_id = $1 AND id = $3`,
       [event.id, squad.camp, stronghold.id],
     );
@@ -176,18 +194,41 @@ async function resolveStrongholdBattle(
     });
     return stronghold.kind === 'base' ? 'base_captured' : 'attacker_won';
   }
-  const siege = stronghold.kind === 'base';
+  // 有城墙的据点按守城战（官渡 / 赤壁大营；讨董三关都有城墙）
+  const siege = Number(stronghold.wall_level) > 0;
+  const script = asScript(event.script);
+  const now = new Date();
+  const defenderCamp = stronghold.owner_camp === 'yuan' || stronghold.owner_camp === 'cao' ? stronghold.owner_camp : null;
+  // 赤壁风向：顺风方远程兵种与床弩射程 +10%（科技乘数入口）；连锁战船：曹方据点守军受伤 −15%
+  const wind = script === 'chibi' ? windOf(event) : null;
+  const attackerTech = wind ? battlefieldWindTech(wind, squad.camp as BattlefieldCamp) : null;
+  const defenderTech: CombatTechBonus = {};
+  if (wind && defenderCamp) {
+    const windBonus = battlefieldWindTech(wind, defenderCamp);
+    if (windBonus) {
+      defenderTech.rangedRangePercent = windBonus.rangedRangePercent;
+    }
+  }
+  if (defenderCamp === 'cao' && battlefieldChainActive(stronghold.chain_until, now)) {
+    defenderTech.defPercent = BATTLEFIELD_CHAIN_DEFENSE_PERCENT;
+  }
+  // 讨董：虎牢关守将吕布（NPC 守军期间）带武将加成；被讨董联军打下后不再有吕布
+  const defenderHero = script === 'dongzhuo' && stronghold.id === 'hulao' && defenderCamp === null ? BATTLEFIELD_LVBU_BONUS : null;
   const result = resolveBattle(attacker, merged, {
     siege,
     wallDefensePercent: siege ? wallDefensePercent(Number(stronghold.wall_level)) : 0,
     tower: siege ? towerStats(Number(stronghold.tower_level)) : null,
+    attackerTech,
+    defenderTech: Object.keys(defenderTech).length > 0 ? defenderTech : null,
+    defenderHero,
   });
   // 军功先算好：战报要记录本场获得的声望，且要与 grantMerit 入账的数值一致
   const defenderLossPower = armyPower(result.defender.losses);
   const firstCapture = result.attackerWon && stronghold.first_captured_at === null;
   const attackerMerit = defenderLossPower + (firstCapture ? BATTLEFIELD_FIRST_CAPTURE_MERIT : 0);
   const attackerName = await loadUsername(client, squad.account_id);
-  const defenderName = `${stronghold.name}守军${stronghold.owner_camp ? `（${stronghold.owner_camp === 'yuan' ? '袁绍军' : '曹操军'}）` : ''}`;
+  const attackerLabel = `${attackerName}（${battlefieldCampName(script, squad.camp as BattlefieldCamp)}）`;
+  const defenderName = `${stronghold.name}守军${defenderCamp ? `（${battlefieldCampName(script, defenderCamp)}）` : script === 'dongzhuo' ? '（董卓军）' : ''}`;
   const reportId = await saveBattleReport(
     client,
     squad.account_id,
@@ -197,7 +238,7 @@ async function resolveStrongholdBattle(
     stronghold.x,
     stronghold.y,
     result,
-    `${attackerName}（${squad.camp === 'yuan' ? '袁绍军' : '曹操军'}）`,
+    attackerLabel,
     defenderName,
     siege ? wallDefensePercent(Number(stronghold.wall_level)) : 0,
     notifies,
@@ -264,7 +305,7 @@ async function resolveStrongholdBattle(
       stronghold.x,
       stronghold.y,
       result,
-      `${attackerName}（${squad.camp === 'yuan' ? '袁绍军' : '曹操军'}）`,
+      attackerLabel,
       defenderName,
       siege ? wallDefensePercent(Number(stronghold.wall_level)) : 0,
       notifies,
@@ -293,7 +334,7 @@ async function resolveStrongholdBattle(
     await client.query(
       `UPDATE battlefield_strongholds
        SET owner_camp = $2, garrison = $3::jsonb, captured_at = now(),
-           first_captured_at = COALESCE(first_captured_at, now())
+           first_captured_at = COALESCE(first_captured_at, now()), chain_until = NULL, fire_wounds = '{}'::jsonb
        WHERE event_id = $1 AND id = $4`,
       [event.id, squad.camp, JSON.stringify(npcAfter), stronghold.id],
     );

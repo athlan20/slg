@@ -1,11 +1,19 @@
-// 剧本战场协议的类型（v75，AISLG-198）：官渡之战。
+// 剧本战场协议的类型（v75，AISLG-198：官渡之战；v80，AISLG-199：讨伐董卓、赤壁之战）。
 // 规则与数值见 common/src/battlefield.ts，生命周期与结算在 worker/src/battlefield-tick.ts。
 // 本文件只依赖 protocol / protocol-army 的类型（类型导入运行时擦除），不构成加载环。
 
 import type { Resources } from './protocol';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 
-/** 阵营：袁绍军 / 曹操军 */
+/** 剧本标识：官渡之战 / 讨伐董卓（全服合作）/ 赤壁之战；每周一场轮换 */
+export const BATTLEFIELD_SCRIPTS = ['guandu', 'dongzhuo', 'chibi'] as const;
+export type BattlefieldScript = (typeof BATTLEFIELD_SCRIPTS)[number];
+
+export function isBattlefieldScript(value: unknown): value is BattlefieldScript {
+  return value === 'guandu' || value === 'dongzhuo' || value === 'chibi';
+}
+
+/** 阵营：袁绍军 / 曹操军（讨董只有讨董联军一方在打，赤壁为孙刘联军 yuan 对曹操军 cao） */
 export const BATTLEFIELD_CAMPS = ['yuan', 'cao'] as const;
 export type BattlefieldCamp = (typeof BATTLEFIELD_CAMPS)[number];
 
@@ -22,7 +30,7 @@ export const BATTLEFIELD_STRONGHOLD_KINDS = ['base', 'ford', 'post', 'granary'] 
 export type BattlefieldStrongholdKind = (typeof BATTLEFIELD_STRONGHOLD_KINDS)[number];
 
 /** 战场商店商品 */
-export const BATTLEFIELD_SHOP_ITEMS = ['resources', 'hero_exp', 'swordsman', 'cavalry'] as const;
+export const BATTLEFIELD_SHOP_ITEMS = ['resources', 'hero_exp', 'swordsman', 'cavalry', 'iron_cavalry'] as const;
 export type BattlefieldShopItem = (typeof BATTLEFIELD_SHOP_ITEMS)[number];
 
 export function isBattlefieldShopItem(value: unknown): value is BattlefieldShopItem {
@@ -71,6 +79,12 @@ export interface BattlefieldStrongholdView {
   /** 首次被玩家阵营打下 ≥ 200 军功的首占奖励是否还没被拿过 */
   firstCaptureAvailable: boolean;
   capturedAt: string | null;
+  /** 讨董：前置关卡是否已打下（false = 尚未解锁，不能攻打） */
+  unlocked: boolean;
+  /** 赤壁连锁战船截止（Cao 方技能；其他为 null） */
+  chainUntil: string | null;
+  /** 赤壁火攻冷却截止（每个目标 2 小时；其他为 null） */
+  fireNextAt: string | null;
 }
 
 /** 阵营简报 */
@@ -84,10 +98,10 @@ export interface BattlefieldCampView {
   score: number;
 }
 
-/** 一场剧本战场（官渡） */
+/** 一场剧本战场（官渡 / 讨董 / 赤壁） */
 export interface BattlefieldEventView {
   id: string;
-  script: 'guandu';
+  script: BattlefieldScript;
   name: string;
   status: BattlefieldStatus;
   signupStartAt: string;
@@ -100,6 +114,8 @@ export interface BattlefieldEventView {
   finishReason: 'score' | 'base_captured' | null;
   /** 人少补偿：开战时人数少的一方与积分产出倍率；人数差距不足 70% 为 null */
   underdog: { camp: BattlefieldCamp; multiplier: number } | null;
+  /** 赤壁风向（其他剧本为 null）：se 东南风利孙刘 / nw 西北风利曹操；nextAt 为下次切换，noticeAt 为提前 30 分钟预告 */
+  wind: { direction: 'se' | 'nw'; label: string; bonusCamp: BattlefieldCamp; nextAt: string; noticeAt: string } | null;
 }
 
 /** 军功榜一行 */
@@ -149,19 +165,36 @@ export interface BattlefieldRewardTierView {
   resourcesEach: number;
 }
 
+/** 讨董合作奖励档（全员按最远进度领一档） */
+export interface BattlefieldProgressRewardView {
+  label: string;
+  /** 打下的关卡数（1 = 汜水关，2 = 虎牢关，3 = 洛阳） */
+  progress: number;
+  gold: number;
+  resourcesEach: number;
+}
+
 /** GET_BATTLEFIELD（op 120）响应 */
 export interface GetBattlefieldResponseData {
   /** 当前（或最近一场）战场；从未开过为 null */
   event: BattlefieldEventView | null;
   /** 下一场报名开始时刻（现实时间，北京时间每周二 20:00） */
   nextSignupAt: string;
+  /** 下一场的剧本（报名公告里预告；讨董 / 赤壁 / 官渡轮换） */
+  nextScript: BattlefieldScript;
   /** 据点（进行中 / 最近一场，按种类与坐标排序）；没有战场为空数组 */
   strongholds: BattlefieldStrongholdView[];
   me: BattlefieldMeView | null;
   /** 军功榜前 10（按军功降序，军功 0 不上榜） */
   top: BattlefieldMeritEntryView[];
   shop: { items: BattlefieldShopItemView[]; cumulativeMerit: number };
-  rewards: { winner: BattlefieldRewardTierView; loser: BattlefieldRewardTierView; rankTiers: BattlefieldRewardTierView[] };
+  /** 官渡 / 赤壁的胜败奖励与名次额外奖励；讨董的 winner / loser 不适用，以 progressTiers 为准 */
+  rewards: {
+    winner: BattlefieldRewardTierView;
+    loser: BattlefieldRewardTierView;
+    rankTiers: BattlefieldRewardTierView[];
+    progressTiers: BattlefieldProgressRewardView[];
+  };
 }
 
 /** 报名请求（op 121）：选阵营 */
@@ -203,9 +236,19 @@ export interface BuyBattlefieldItemResponseData {
   bought: number;
 }
 
+/** 火攻请求（op 139，v80）：孙刘方、东南风期间，对与己方据点相邻的曹方据点发动 */
+export interface FireBattlefieldRequestData {
+  strongholdId: string;
+}
+
+/** 连锁战船请求（op 140，v80）：曹方给己方据点连锁 6 小时 */
+export interface ChainBattlefieldRequestData {
+  strongholdId: string;
+}
+
 /** PUSH_BATTLEFIELD_STATE（op 2027）：全服广播 */
 export interface BattlefieldPushData {
-  reason: 'signup' | 'started' | 'stronghold' | 'finished';
+  reason: 'signup' | 'started' | 'stronghold' | 'finished' | 'wind';
   event: BattlefieldEventView;
   /** reason=stronghold 时易手的据点 id */
   strongholdId?: string;

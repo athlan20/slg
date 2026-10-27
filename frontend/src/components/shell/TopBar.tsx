@@ -108,7 +108,7 @@ export function TopBar({
           title={BATTLEFIELD_COPY.launcher.title}
           className={`${topBtn} ${battlefield.status === 'active' ? 'border-gold text-gold' : battlefield.status === 'signup' ? 'border-accent-dim text-accent' : ''}`}
         >
-          {battlefield.status === 'signup' ? BATTLEFIELD_COPY.launcher.signup : battlefield.status === 'active' ? BATTLEFIELD_COPY.launcher.active : BATTLEFIELD_COPY.launcher.finished}
+          {battlefield.status === 'signup' ? BATTLEFIELD_COPY.launcher.signup : battlefield.status === 'active' ? BATTLEFIELD_COPY.scripts[battlefield.script] : BATTLEFIELD_COPY.launcher.finished}
           {battlefield.status === 'active' ? (
             <b className="ml-1 font-mono">
               {battlefield.camps.yuan.score}:{battlefield.camps.cao.score}

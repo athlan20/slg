@@ -22,11 +22,19 @@ CREATE TABLE IF NOT EXISTS battlefield_events (
   last_food_at timestamptz,
   signup_announced_at timestamptz,
   start_announced_at timestamptz,
+  -- 赤壁风向（v80）：se 东南风 / nw 西北风；每 6 小时切换，提前 30 分钟预告
+  wind text,
+  wind_next_at timestamptz,
+  wind_notice_at timestamptz,
   finished_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (script, signup_start)
 );
 CREATE INDEX IF NOT EXISTS idx_battlefield_events_status ON battlefield_events (status, signup_start DESC);
+-- v80：给已存在的表补赤壁 / 多剧本列
+ALTER TABLE battlefield_events ADD COLUMN IF NOT EXISTS wind text;
+ALTER TABLE battlefield_events ADD COLUMN IF NOT EXISTS wind_next_at timestamptz;
+ALTER TABLE battlefield_events ADD COLUMN IF NOT EXISTS wind_notice_at timestamptz;
 
 -- 报名 / 入场：报名时写一行，入场后 entered_at 非空并从主城扣兵；merit 为本场军功。
 CREATE TABLE IF NOT EXISTS battlefield_participants (
@@ -80,8 +88,15 @@ CREATE TABLE IF NOT EXISTS battlefield_strongholds (
   tower_level integer NOT NULL DEFAULT 0,
   first_captured_at timestamptz,
   captured_at timestamptz,
+  -- 赤壁据点技能（v80）：连锁战船截止 / 火攻冷却截止；fire_wounds 为火攻余伤池（兵种 → 未折算的小数伤害）
+  chain_until timestamptz,
+  fire_next_at timestamptz,
+  fire_wounds jsonb NOT NULL DEFAULT '{}'::jsonb,
   PRIMARY KEY (event_id, id)
 );
+ALTER TABLE battlefield_strongholds ADD COLUMN IF NOT EXISTS chain_until timestamptz;
+ALTER TABLE battlefield_strongholds ADD COLUMN IF NOT EXISTS fire_next_at timestamptz;
+ALTER TABLE battlefield_strongholds ADD COLUMN IF NOT EXISTS fire_wounds jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 -- 战场商店的军功余额：跨场累积、换季清空（不在 accounts 上，避免换季账号列的特殊处理）。
 CREATE TABLE IF NOT EXISTS battlefield_merit (

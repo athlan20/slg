@@ -1,4 +1,4 @@
-// 剧本战场商店（v75，AISLG-198）：军功兑换资源包 / 武将经验 / 兵，按场限购。
+// 剧本战场商店（v75，AISLG-198；v80 赤壁额外有铁骑兵）：军功兑换资源包 / 武将经验 / 兵，按场限购。
 // 军功来自 battlefield_merit（跨场累积、换季清零），价格与限购见 common/src/battlefield.ts。
 
 import { EventType, isBattlefieldShopItem } from '../../common/src/protocol';
@@ -8,7 +8,7 @@ import { grantHeroExp } from '../../common/src/hero-db';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { loadMainCity } from './handlers-battlefield';
+import { loadMainCity, scriptOfRow } from './handlers-battlefield';
 
 /** BUY_BATTLEFIELD_ITEM（op 125）：军功换资源包 / 武将经验 / 兵 */
 export async function handleBuyBattlefieldItem(
@@ -24,9 +24,8 @@ export async function handleBuyBattlefieldItem(
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }
-  const def = battlefieldShopDef(item);
   const heroId = typeof data?.heroId === 'string' ? data.heroId : null;
-  if (!def || (item === 'hero_exp' && !heroId)) {
+  if (item === 'hero_exp' && !heroId) {
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }
@@ -34,13 +33,21 @@ export async function handleBuyBattlefieldItem(
   let reward: Record<string, unknown> = {};
   let bought = 0;
   let balance = 0;
+  let cost = 0;
   try {
     await client.query('BEGIN');
     const eventRes = await client.query(`SELECT * FROM battlefield_events ORDER BY signup_start DESC LIMIT 1`);
-    const event = eventRes.rows[0] as { id: string } | undefined;
+    const event = eventRes.rows[0] as { id: string; script: string } | undefined;
     if (!event) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_NOT_ACTIVE');
+      return;
+    }
+    // 商品按本场剧本的货架取（赤壁多一个铁骑兵）
+    const def = battlefieldShopDef(item, scriptOfRow(event.script));
+    if (!def) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
       return;
     }
     const main = await loadMainCity(client, accountId);
@@ -49,6 +56,7 @@ export async function handleBuyBattlefieldItem(
       respondError(ctx.registry, conn, op, seq, 'INTERNAL');
       return;
     }
+    cost = def.cost;
     const purchaseRes = await client.query(
       `INSERT INTO battlefield_purchases (event_id, account_id, item, count) VALUES ($1, $2, $3, 0)
        ON CONFLICT (event_id, account_id, item) DO UPDATE SET count = battlefield_purchases.count
@@ -123,8 +131,8 @@ export async function handleBuyBattlefieldItem(
   }
   respondOk(ctx.registry, conn, op, seq, {
     item,
-    cost: def.cost,
-    cumulativeMerit: balance - def.cost,
+    cost,
+    cumulativeMerit: balance - cost,
     bought,
     reward,
   });

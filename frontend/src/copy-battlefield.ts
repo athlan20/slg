@@ -1,14 +1,19 @@
-// 剧本战场·官渡文案（v75，AISLG-198；与 copy.ts 分文件以控制单文件行数）。
+// 剧本战场文案（v75 官渡，AISLG-198；v80 讨伐董卓 / 赤壁之战，AISLG-199；与 copy.ts 分文件以控制单文件行数）。
 
 export const BATTLEFIELD_COPY = {
   launcher: {
     signup: '战场报名中',
-    active: '官渡之战',
-    finished: '官渡已结束',
+    active: '进行中',
+    finished: '剧本已结束',
     title: '打开剧本战场',
   },
-  title: '剧本战场·官渡之战',
-  reportKind: '剧本战场·官渡之战',
+  scripts: {
+    guandu: '官渡之战',
+    dongzhuo: '讨伐董卓',
+    chibi: '赤壁之战',
+  },
+  title: '剧本战场',
+  reportKind: '剧本战场',
   timeOf: (iso: string) =>
     new Date(iso).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }),
   subtitle: (start: string, end: string) => `开战 ${start} · 结束 ${end}（北京时间，现实时间）`,
@@ -29,6 +34,8 @@ export const BATTLEFIELD_COPY = {
     entry: '开战前从主城带一支部队入场（按人口最多 3000），开战后不能追加兵力。',
     movement: '行军每格 60 秒；中间一条河，只有 3 处渡口能过。',
     merit: '军功 = 歼灭敌军参考战力；首占据点 +200。军功可在战场商店换东西（跨场累积、换季清零）。',
+    dongzhuo: '全服合作：所有报名玩家都是讨董联军，对手是董卓军。汜水关 → 虎牢关 → 洛阳，前一关打下才开放下一关；守军伤亡保留，可以分批消耗。',
+    chibi: '孙刘联军对曹操军，爵位大夫及以上才能报名。风向每 6 小时交替，顺风方远程兵种与床弩射程 +10%；东南风火攻，曹方连锁战船。',
   },
   signup: {
     title: '选择阵营',
@@ -77,6 +84,25 @@ export const BATTLEFIELD_COPY = {
     wall: (n: number) => `城墙 ${n} 级`,
     tower: (n: number) => `箭塔 ${n} 级`,
     first: '首占 +200 军功还在',
+    locked: '未解锁：前一关还没打下',
+    chained: (time: string) => `连锁战船生效至 ${time}`,
+    fireCooldown: (time: string) => `火攻冷却至 ${time}`,
+  },
+  wind: {
+    title: '风向',
+    dir: { se: '东南风', nw: '西北风' },
+    line: (label: string, next: string) => `${label} · ${next} 切换`,
+    notice: (label: string, at: string) => `${at} 将转为${label}（已预告）`,
+    bonus: '顺风方远程兵种与床弩射程 +10%',
+  },
+  skills: {
+    fire: (cost: number) => `火攻（${cost} 军功）`,
+    chain: (cost: number) => `连锁战船（${cost} 军功）`,
+    fireHint: '东南风期间，孙刘方对与己方相邻的曹方据点火攻：守军损失总生命 20%（连锁中为 40%），每据点每 2 小时一次。',
+    chainHint: '曹方给己方据点连锁 6 小时：守军受到的伤害 −15%，但被火攻时伤害翻倍。',
+    fireDone: '火攻已发动',
+    chainDone: '连锁战船已生效',
+    fireNotice: '只能在东南风期间火攻',
   },
   shop: {
     title: '战场商店',
@@ -99,6 +125,8 @@ export const BATTLEFIELD_COPY = {
     win: (gold: number, each: number) => `胜方：${gold} 金 + 四资源各 ${each}`,
     lose: (gold: number, each: number) => `败方：${gold} 金 + 四资源各 ${each}`,
     rank: (label: string, gold: number, each: number) => `${label}：${gold} 金 + 各 ${each}`,
+    progress: (label: string, gold: number, each: number) => `${label}：${gold} 金 + 四资源各 ${each}`,
+    progressNote: '全服合作：全员按最远进度领一档。',
     note: '军功 > 0 才能领；结束后自动入账，幸存部队回主城。',
   },
   errors: {
@@ -119,6 +147,13 @@ export const BATTLEFIELD_COPY = {
     BATTLEFIELD_SHOP_LIMIT: '本场该商品已换满',
     BATTLEFIELD_MERIT_INSUFFICIENT: '军功不足',
     BATTLEFIELD_TARGET_INVALID: '目标参数无效',
+    BATTLEFIELD_STRONGHOLD_LOCKED: '这座关卡还没打下，前一关占领后才能攻打',
+    BATTLEFIELD_WIND_MISMATCH: '当前不是东南风，火攻不能用',
+    BATTLEFIELD_FIRE_COOLDOWN: '该据点刚被火攻过，每 2 小时一次',
+    BATTLEFIELD_CHAIN_ACTIVE: '该据点的连锁战船还在生效',
+    BATTLEFIELD_SKILL_UNAVAILABLE: '本场没有这个技能，或阵营不对',
+    BATTLEFIELD_NOT_ENTERED: '还没有带兵入场，不能用技能',
+    NOBILITY_TOO_LOW: '赤壁报名需要爵位达到大夫',
     INSUFFICIENT_TROOPS: '城内兵力不足',
     HERO_NOT_FOUND: '武将不存在',
   },

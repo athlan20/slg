@@ -606,5 +606,14 @@
  *   征兵 −15% / 行军 +10% / 研究 −15%，洛阳易主立即失效。赛季末洛阳之主联盟进名人堂，在盟成员各得 1 万金 + 四资源各 5 万。
  *   新增 GET_LUOYANG（op 137）/ PUBLISH_DECREE（138）与错误码 LUOYANG_CLOSED / DECREE_NOT_HOLDER / DECREE_COOLDOWN；
  *   CityView 新增 luoyangBonusPercent；alliances 新增 luoyang_holder / decree_*（跨季重置）；推送/播报 luoyang_window。
+ * v80（剧本战场二：讨伐董卓 / 赤壁之战，AISLG-199，只加不改）：剧本每周轮换（官渡 → 讨董 → 赤壁，循环），GET_BATTLEFIELD 新增
+ *   event.script（guandu / dongzhuo / chibi）、event.wind（赤壁专有：风向、切换时刻与切换前 30 分钟预告）、nextScript、
+ *   strongholds[].unlocked / chainUntil / fireNextAt、rewards.progressTiers，商店赤壁多一个 iron_cavalry（铁骑兵 20，800 军功，每场限 1）。
+ *   讨伐董卓：单阵营合作本（报名统一记为 yuan），汜水关 → 虎牢关 → 洛阳顺序解锁，守军 ×15 / ×40 / ×30 × max(1, 报名 ÷ 10)，
+ *   虎牢关守将吕布带武将加成，全员按最远进度领一档奖励。赤壁之战：孙刘联军对曹操军，爵位大夫才能报名；风向每 6 小时交替，
+ *   顺风方远程兵种与床弩射程 +10%（走科技乘数入口）；火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）东南风期间孙刘方花 300 军功，
+ *   对相邻曹方据点立即造成总生命 20% 伤害（写入余伤池、按生命比例折算阵亡），每目标 2 小时一次；连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，
+ *   op 140）曹方花 200 军功连锁 6 小时：守军受伤 −15%、被火攻翻倍。新增错误码 BATTLEFIELD_STRONGHOLD_LOCKED / WIND_MISMATCH /
+ *   FIRE_COOLDOWN / CHAIN_ACTIVE / SKILL_UNAVAILABLE / NOT_ENTERED；事件 battlefield_skill；PUSH_BATTLEFIELD_STATE reason 新增 wind。
  */
-export const PROTOCOL_VERSION = 79;
+export const PROTOCOL_VERSION = 80;

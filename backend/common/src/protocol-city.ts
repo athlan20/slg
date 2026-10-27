@@ -231,6 +231,8 @@ export const EventType = {
   BATTLEFIELD_REWARD: 'battlefield_reward',
   /** v75：战场商店兑换（detail = { eventId, item, cost, reward }） */
   BATTLEFIELD_SHOP: 'battlefield_shop',
+  /** v80（AISLG-199）：赤壁据点技能（detail = { eventId, skill: fire|chain, strongholdId, cost, ... }） */
+  BATTLEFIELD_SKILL: 'battlefield_skill',
   /** v78（AISLG-196）：交易所挂单 / 成交 / 撤单 / 过期（detail 见各接口） */
   MARKET_ORDER_CREATED: 'market_order_created',
   MARKET_ORDER_FILLED: 'market_order_filled',

@@ -1,8 +1,9 @@
-// 剧本战场·官渡（v75，AISLG-198）的 Worker 日程与结算入口：
-// - 每周二 20:00 报名、周三 20:00 开战、周四 20:00 结束（北京时间现实时间）；
-// - 报名期创建战场与 9 个据点（NPC 守军），开战时按报名人数加厚守军、算人少补偿；
+// 剧本战场（v75，AISLG-198 官渡；v80，AISLG-199 讨董 / 赤壁）的 Worker 日程与结算入口：
+// - 每周二 20:00 报名、周三 20:00 开战、周四 20:00 结束（北京时间现实时间）；每周一场，剧本按周轮换；
+// - 报名期创建战场与据点（NPC 守军），开战时按报名人数加厚守军、算人少补偿、赤壁随机初始风向；
 // - 每小时内按据点归属累计阵营积分（人少一方 × 补偿倍率），乌巢让敌方耗粮翻倍；
-// - 到点结束按胜负与个人军功发奖，幸存部队回主城。
+// - 赤壁每 6 小时切换风向，切换前 30 分钟预告；
+// - 到点结束按胜负（讨董按进度）与个人军功发奖，幸存部队回主城。
 // 据点战斗与行军到达在 battlefield-move.ts，公共生命周期函数在 battlefield-event.ts。
 
 import pg from 'pg';
@@ -12,9 +13,15 @@ import { getTimeScale } from '../../common/src/time-scale';
 import { TROOP_INFO } from '../../common/src/troops';
 import {
   BATTLEFIELD_START_NOTICE_MS,
+  battlefieldAdvanceWind,
+  battlefieldWindNoticeDue,
+  battlefieldFlipWind,
+  battlefieldScriptForWindow,
   battlefieldWindow,
   type BattlefieldCamp,
+  type BattlefieldWind,
 } from '../../common/src/battlefield';
+import type { BattlefieldScript } from '../../common/src/protocol-battlefield';
 import {
   loadLatestBattlefieldEvent,
   type BattlefieldEventRow,
@@ -34,6 +41,7 @@ import {
   publishBroadcasts,
   publishNotifies,
   sendAnnouncement,
+  sendWindNotice,
 } from './battlefield-event';
 import { processBattlefieldMovements } from './battlefield-move';
 
@@ -58,17 +66,18 @@ export async function processBattlefieldLifecycle(pool: pg.Pool): Promise<void> 
     if (!event || event.signup_start.getTime() < window.signupStart.getTime() - 1000) {
       if (now >= window.signupStart) {
         const status = now >= window.startAt ? 'active' : 'signup';
+        const script = battlefieldScriptForWindow(window);
         const inserted = await client.query(
           `INSERT INTO battlefield_events (script, signup_start, start_at, end_at, status)
-           VALUES ('guandu', $1, $2, $3, $4)
+           VALUES ($5, $1, $2, $3, $4)
            ON CONFLICT (script, signup_start) DO NOTHING
            RETURNING *`,
-          [window.signupStart, window.startAt, window.endAt, status],
+          [window.signupStart, window.startAt, window.endAt, status, script],
         );
         event = (inserted.rows[0] as BattlefieldEventRow | undefined) ?? null;
         if (event) {
           created = true;
-          await insertStrongholds(client, event.id);
+          await insertStrongholds(client, event.id, script);
           if (status === 'signup') {
             await battlefieldBroadcast(client, broadcasts, 'battlefield_signup', {
               eventId: event.id,
@@ -90,7 +99,7 @@ export async function processBattlefieldLifecycle(pool: pg.Pool): Promise<void> 
     }
     // 兼容运维脚本 / 人工插入的战场：据点行缺失时补建（幂等）
     if (event && (event.status === 'signup' || event.status === 'active')) {
-      await insertStrongholds(client, event.id);
+      await insertStrongholds(client, event.id, asScript(event.script));
     }
     if (event && event.status === 'signup') {
       if (event.signup_announced_at === null) {
@@ -229,16 +238,67 @@ export async function processBattlefieldScores(pool: pg.Pool): Promise<void> {
   }
 }
 
-/** 第四步：到点的战场行军 / 攻打据点结算 */
+/** 第四步：赤壁风向到点切换（每 6 小时交替），切换前 30 分钟预告一次 */
+export async function processBattlefieldWind(pool: pg.Pool): Promise<void> {
+  const client = await pool.connect();
+  let notice: { event: BattlefieldEventRow; switchAt: Date; next: BattlefieldWind } | null = null;
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [BATTLEFIELD_LOCK_ID]);
+    const eventRes = await client.query(
+      `SELECT * FROM battlefield_events WHERE status = 'active' AND script = 'chibi' ORDER BY signup_start DESC LIMIT 1 FOR UPDATE`,
+    );
+    const event = eventRes.rows[0] as BattlefieldEventRow | undefined;
+    if (!event || event.wind === null || event.wind_next_at === null) {
+      await client.query('ROLLBACK');
+      return;
+    }
+    const now = new Date();
+    const wind = event.wind === 'nw' ? 'nw' : 'se';
+    const advanced = battlefieldAdvanceWind(wind, event.wind_next_at, now);
+    if (advanced.switched) {
+      await client.query(
+        `UPDATE battlefield_events SET wind = $2, wind_next_at = $3, wind_notice_at = NULL WHERE id = $1`,
+        [event.id, advanced.wind, advanced.nextAt],
+      );
+      await client.query('COMMIT');
+      await notifyBattlefield(pool, 'wind', event.id);
+      return;
+    }
+    // 预告：距离下次切换不足 30 分钟且还没预告过，抢占标记后发公告
+    if (battlefieldWindNoticeDue(event.wind_next_at, now, event.wind_notice_at !== null)) {
+      const claimed = await client.query(
+        `UPDATE battlefield_events SET wind_notice_at = now() WHERE id = $1 AND wind_notice_at IS NULL RETURNING id`,
+        [event.id],
+      );
+      if (claimed.rowCount === 1) {
+        notice = { event, switchAt: event.wind_next_at, next: battlefieldFlipWind(wind) };
+      }
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+  if (notice) {
+    await sendWindNotice(pool, notice.event, notice.switchAt, notice.next);
+  }
+}
+
+function asScript(value: unknown): BattlefieldScript {
+  return value === 'dongzhuo' || value === 'chibi' ? value : 'guandu';
+}
+
+/** 第五步：到点的战场行军 / 攻打据点结算 */
 export async function processBattlefield(pool: pg.Pool): Promise<void> {
   await processBattlefieldLifecycle(pool);
   await processBattlefieldFood(pool);
   await processBattlefieldScores(pool);
+  await processBattlefieldWind(pool);
   const resolved = await processBattlefieldMovements(pool);
   if (resolved > 0) {
     console.log(`resolved ${resolved} battlefield movement(s)`);
   }
 }
-
-// 保留给未来剧本（讨董 / 赤壁）的扩展点：当前只有官渡
-export const BATTLEFIELD_SCRIPT = 'guandu';

@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**79** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**80** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 79）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 80）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -497,7 +497,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 79,
+    "protocolVersion": 80,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -563,7 +563,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 79,
+    "protocolVersion": 80,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -587,7 +587,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/76 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/77 补读增量）**
 
 请求：
 
@@ -598,7 +598,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 76,
+    "docVersion": 77,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -617,8 +617,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 79,
-    "docNotice": "接口文档已从 v76 更新到 v79：请 GET /agent-api/changes/76 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 80,
+    "docNotice": "接口文档已从 v77 更新到 v80：请 GET /agent-api/changes/77 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -12542,7 +12542,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-让一支驻扎在盟友城里的协防部队回出发城：派出方随时可以召回，城主可以遣返任意一支驻扎在自己城里的协防部队。部队原路返回（行军时长按两地距离与编队速度计算，驿站不加速），到达后并回出发城驻军；途中可以被 RECALL_MARCH 折返（折返仍是回出发城）。每座城最多接收 5 支协防部队，同一账号对同一座城最多 1 支；退盟 / 被踢 / 解散与分城易主时相关协防部队自动遣返（事件 assist_returned，cause = ally_left / city_conquered）。
+让一支驻扎在盟友城里的协防部队回出发城：派出方随时可以召回，城主可以遣返任意一支驻扎在自己城里的协防部队。部队原路返回（行军时长按两地距离与编队速度计算，驿站不加速），到达后并回出发城驻军；途中可以被 RECALL_MARCH 折返（折返仍是回出发城）。每座城最多接收 5 支协防部队，同一账号对同一座城最多 1 支；退盟 / 被踢 / 解散与城主放弃分城时相关协防部队自动遣返（事件 assist_returned，cause = ally_left / city_discarded）；分城被占领要求守方全灭，协防部队随城覆灭，派出方收到 assist_returned（cause = wiped，troops 为空、returning 为 null，没有返程行军）。
 
 **请求字段**
 
@@ -12595,7 +12595,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-周期性的阵营对阵营活动，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）；报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。
+周期性的剧本战场，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）。每周一场，剧本按周轮换：官渡之战 → 讨伐董卓 → 赤壁之战（循环），本场剧本见 event.script、下一场见 nextScript。官渡之战（script=guandu）是阵营对阵：报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。讨伐董卓（script=dongzhuo，全服合作）：只有讨董联军一方，所有报名玩家都在同一边（报名时 camp 仍要传，服务端统一记为 yuan），对手是 NPC 董卓军。一条推进线 汜水关 → 虎牢关 → 洛阳，前一关打下后下一关才开放（strongholds[].unlocked）。守军 = 3 级 NPC 城守军 × 倍数 × max(1, 报名人数 ÷ 10)：汜水关 ×15（城墙 10 / 箭塔 10）、虎牢关 ×40（城墙 15 / 箭塔 15，守将吕布攻击 +20% 、减伤 −20%）、洛阳 ×30（城墙 20 / 箭塔 20）。守军伤亡保留不回血。攻下洛阳即结束（胜）；时间到也结束。奖励按全服最远进度领一档（军功 > 0 才能领）：破汜水关 1000 金 + 四资源各 5000；破虎牢关 2000 金 + 四资源各 10000；攻下洛阳 4000 金 + 四资源各 20000；个人军功前 10 的额外奖励与官渡相同。没有玩家对抗。 赤壁之战（script=chibi）：孙刘联军（yuan）对曹操军（cao），人数限制、人少补偿、胜负判定、奖励表与官渡相同；报名要求爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。地图同为 30×30 与河（x=15，3 处渡口），双方各 4 个据点加各 1 座大营（共 10 个，见 strongholds）；大营与据点守军、积分产出与官渡对应据点相同（大营守军 ×10，城墙 / 箭塔 10）。风向：开战时随机东南风（se）或西北风（nw），之后每 6 小时交替一次，切换前 30 分钟预告；event.wind = { direction, label, bonusCamp, nextAt, noticeAt }。顺风方（se 利孙刘、nw 利曹操）的远程兵种与床弩射程 +10%（战报可见）。火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）：孙刘方、东南风期间，花 300 军功，火攻与己方据点相邻（曼哈顿距离 ≤ 10）的曹方据点，立即对守军造成总生命 20% 的伤害；同一目标每 2 小时最多一次。连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，op 140）：曹方给己方据点花 200 军功连锁 6 小时：守军受到的伤害 −15%，但被火攻时伤害翻倍（20% → 40%）。赤壁商店另有铁骑兵 20（直接进主城，800 军功，每场限 1 次）。
 
 **请求字段**
 
@@ -12605,15 +12605,16 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
 | nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
-| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
 | me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
 | top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
-| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
-| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
 
-**Agent 提示**：先看 event.status：signup 期只能报名 / 入场，active 才能行军与攻打。行军目标用 strongholds 的 id（MARCH_BATTLEFIELD_SQUAD 会按据点坐标走最短路径）；河只有 3 处渡口，先取渡口再渡河。攻打前用 garrisonPower 与自己的队伍战力对比，大营是守城战（城墙 + 箭塔），没有把握先打渡口 / 普通据点。军功来自歼灭敌军（打 NPC 也算），首占据点 +200；乌巢（granary_wuchao）价值 30 分/小时并让敌方耗粮翻倍，适合偷袭。结束奖励自动入账，军功可立刻在战场商店换资源 / 武将经验 / 兵。
+**Agent 提示**：先看 event.script 与 event.status：signup 期只能报名 / 入场，active 才能行军与攻打。行军目标用 strongholds 的 id（MARCH_BATTLEFIELD_SQUAD 会按据点坐标走最短路径）；河只有 3 处渡口，先取渡口再渡河。攻打前用 garrisonPower 与自己的队伍战力对比，有城墙的据点按守城战（城墙 + 箭塔），没有把握先打渡口 / 普通据点。军功来自歼灭敌军（打 NPC 也算），首占据点 +200；乌巢（granary_wuchao）价值 30 分/小时并让敌方耗粮翻倍，适合偷袭。结束奖励自动入账，军功可立刻在战场商店换资源 / 武将经验 / 兵。讨董：只看 unlocked 为 true 的关卡，先打汜水关再虎牢关，洛阳最后；赤壁：先看 event.wind，东南风时孙刘方可以火攻，西北风时曹方可以连锁，留意预告的切换时刻。
 
 **示例**
 
@@ -12666,6 +12667,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "underdog": null
     },
     "nextSignupAt": "2026-10-02T08:00:00.000Z",
+    "nextScript": "dongzhuo",
     "strongholds": [
       {
         "id": "ford_yanjin",
@@ -12893,37 +12895,39 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "gold": 2500,
           "resourcesEach": 12000
         }
-      ]
+      ],
+      "progressTiers": []
     }
   }
 }
 ```
 
-### op 121 · SIGNUP_BATTLEFIELD — 报名剧本战场（v75，AISLG-198）
+### op 121 · SIGNUP_BATTLEFIELD — 报名剧本战场（v75，AISLG-198；v80 讨董 / 赤壁）
 
 `C→S` 请求-响应 · 需登录后发送
 
-在报名期（北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放））选阵营报名：主城官府 ≥ 5 级；同一场只能报一次，阵营选定后不能改。一方报名人数超过另一方 1.5 倍且多出 5 人以上时，人多的一方暂停报名（返回 BATTLEFIELD_CAMP_FULL，附 count / otherCount / limit）。报名只占阵营人数，不带兵；带兵用 ENTER_BATTLEFIELD（开战前）。
+在报名期（北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放））报名：主城官府 ≥ 5 级；同一场只能报一次，阵营选定后不能改。官渡 / 赤壁：一方报名人数超过另一方 1.5 倍且多出 5 人以上时，人多的一方暂停报名（返回 BATTLEFIELD_CAMP_FULL，附 count / otherCount / limit）；赤壁另需爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。讨伐董卓是单阵营合作本，所有报名玩家都记为讨董联军（yuan），不做人数失衡判断。报名只占阵营人数，不带兵；带兵用 ENTER_BATTLEFIELD（开战前）。
 
 **请求字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| camp | 'yuan' \| 'cao' | 必填。袁绍军 yuan / 曹操军 cao。 |
+| camp | 'yuan' \| 'cao' | 必填。袁绍军 yuan / 曹操军 cao（讨董场统一记为 yuan，此字段仍需传合法值）。 |
 
 **响应 data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
 | nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
-| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
 | me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
 | top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
-| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
-| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
 
-**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_SIGNUP_CLOSED`、`BATTLEFIELD_ALREADY_JOINED`、`BATTLEFIELD_GOVERNMENT_TOO_LOW`、`BATTLEFIELD_CAMP_FULL`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_SIGNUP_CLOSED`、`BATTLEFIELD_ALREADY_JOINED`、`BATTLEFIELD_GOVERNMENT_TOO_LOW`、`BATTLEFIELD_CAMP_FULL`、`NOBILITY_TOO_LOW`（处置建议见第 4 节）
 
 **Agent 提示**：报名前先 GET_BATTLEFIELD 看双方 signups，选人少的一方通常能吃到人少补偿；报名后记得在开战前 ENTER_BATTLEFIELD 带兵入场，否则开战后无法入场。
 
@@ -13009,13 +13013,14 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
 | nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
-| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
 | me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
 | top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
-| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
-| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
 
 **可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_JOINED`、`BATTLEFIELD_ENTRY_CLOSED`、`BATTLEFIELD_ALREADY_ENTERED`、`BATTLEFIELD_POPULATION_LIMIT`、`INSUFFICIENT_TROOPS`（处置建议见第 4 节）
 
@@ -13116,13 +13121,14 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
 | nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
-| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
 | me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
 | top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
-| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
-| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
 
 **可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_SQUAD_NOT_FOUND`、`BATTLEFIELD_SQUAD_BUSY`、`BATTLEFIELD_SQUAD_LIMIT`、`INSUFFICIENT_TROOPS`（处置建议见第 4 节）
 
@@ -13242,7 +13248,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-给一支待命 / 据守中的队伍下令：目标给 strongholdId（自动取据点坐标）或 x / y；每格 60 秒现实时间，河只能从 3 处渡口（y=5/15/25）通过。到达友方据点 = 入驻据守（合并守军）；到达敌方 / 中立据点 = 自动开战（大营按守城战），胜方幸存部队留守、据点易手。行军中不能再次下令。
+给一支待命 / 据守中的队伍下令：目标给 strongholdId（自动取据点坐标）或 x / y；每格 60 秒现实时间，河只能从 3 处渡口（y=5/15/25）通过。到达友方据点 = 入驻据守（合并守军）；到达敌方 / 中立据点 = 自动开战（有城墙的据点按守城战），胜方幸存部队留守、据点易手。行军中不能再次下令。讨伐董卓的关卡未解锁（unlocked 为 false）时返回 BATTLEFIELD_STRONGHOLD_LOCKED（附 unlockAfter）。
 
 **请求字段**
 
@@ -13257,15 +13263,16 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null }。从未开过为 null。 |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
 | nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
-| strongholds | array | 9 个据点：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt }。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
 | me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
 | top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
-| shop | object | 战场商店：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
-| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }] }。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
 
-**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SQUAD_NOT_FOUND`、`BATTLEFIELD_SQUAD_BUSY`、`BATTLEFIELD_UNREACHABLE`、`BATTLEFIELD_TARGET_INVALID`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SQUAD_NOT_FOUND`、`BATTLEFIELD_SQUAD_BUSY`、`BATTLEFIELD_UNREACHABLE`、`BATTLEFIELD_TARGET_INVALID`、`BATTLEFIELD_STRONGHOLD_LOCKED`（处置建议见第 4 节）
 
 **Agent 提示**：到达结算与战报由服务端在 Worker 里完成，客户端轮询 / 收 PUSH_BATTLEFIELD_STATE 后重查即可。攻打前对比 garrisonPower 与自己的队伍战力；没有把握先打渡口（10 分/小时）或普通据点。战败的幸存部队会退回出发位置。
 
@@ -13347,13 +13354,13 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。
+用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。赤壁场次另有 铁骑兵 800 军功（直接进主城，每场限 1 次）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。
 
 **请求字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| item | 'resources' \| 'hero_exp' \| 'swordsman' \| 'cavalry' | 必填。商品。 |
+| item | 'resources' \| 'hero_exp' \| 'swordsman' \| 'cavalry' \| 'iron_cavalry' | 必填。商品（iron_cavalry 仅赤壁场次可买）。 |
 | heroId | string | item=hero_exp 时必填：经验给这个武将（必须属于本账号）。 |
 
 **响应 data 字段**
@@ -14495,6 +14502,256 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
     "canPublishDecree": false,
     "decreeNextAt": "2026-11-03T04:00:00.000Z",
     "myAllianceIsHolder": true
+  }
+}
+```
+
+### op 139 · FIRE_BATTLEFIELD_STRONGHOLD — 赤壁火攻（v80，AISLG-199）
+
+`C→S` 请求-响应 · 需登录后发送
+
+仅赤壁场次、孙刘方（me.camp = yuan）、已入场，并且当前风向为东南风（event.wind.direction = se）时可用：花 300 军功，火攻一座曹方据点（ownerCamp = cao）。目标必须与己方据点相邻（曼哈顿距离 ≤ 10）。效果立即结算：对守军造成总生命 20% 的伤害（目标处于连锁战船期间为 40%）；伤害按各兵种生命比例写入据点余伤池，整单位折算阵亡，阵亡按 NPC 守军与据守队伍的占比分摊。同一目标每 2 小时最多被火攻一次（冷却 fireNextAt）。火攻不计军功，也不改变归属，要靠后续攻打夺下据点。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| strongholdId | string | 必填。目标曹方据点 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SKILL_UNAVAILABLE`、`BATTLEFIELD_NOT_JOINED`、`BATTLEFIELD_NOT_ENTERED`、`BATTLEFIELD_WIND_MISMATCH`、`BATTLEFIELD_TARGET_INVALID`、`BATTLEFIELD_FIRE_COOLDOWN`、`BATTLEFIELD_MERIT_INSUFFICIENT`（处置建议见第 4 节）
+
+**Agent 提示**：火攻前先看 event.wind：只有东南风能用，西北风要等下一次切换（event.wind.nextAt）。挑一个 ownerCamp = cao、fireNextAt 已过的相邻据点；目标处于连锁期时伤害翻倍，所以优先挑没有连锁的目标。每次 300 军功，冷却中的目标别反复尝试。
+
+**示例**
+
+**东南风期间火攻相邻的巴丘据点**
+
+请求：
+
+```json
+{
+  "op": 139,
+  "seq": 36,
+  "data": {
+    "strongholdId": "cao_2"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 139,
+  "seq": 36,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "strongholds": [
+      {
+        "id": "cao_2",
+        "name": "曹操据点·巴丘",
+        "kind": "ford",
+        "x": 23,
+        "y": 15,
+        "ownerCamp": "cao",
+        "pointsPerHour": 10,
+        "garrison": {
+          "porter": 0,
+          "militia": 96,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 40,
+          "archer": 48,
+          "cavalry": 15,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "garrisonPower": 560,
+        "wallLevel": 0,
+        "towerLevel": 0,
+        "firstCaptureAvailable": false,
+        "capturedAt": "2026-09-25T08:00:00.000Z",
+        "chainUntil": null,
+        "fireNextAt": "2026-09-25T10:00:00.000Z",
+        "unlocked": true
+      }
+    ]
+  }
+}
+```
+
+### op 140 · CHAIN_BATTLEFIELD_STRONGHOLD — 赤壁连锁战船（v80，AISLG-199）
+
+`C→S` 请求-响应 · 需登录后发送
+
+仅赤壁场次、曹操军（me.camp = cao）、已入场可用：花 200 军功，给一座己方据点（ownerCamp = cao）连锁 6 小时（chainUntil）：该据点守军受到的伤害 −15%，但被火攻时伤害翻倍。连锁期间不能重复连锁（BATTLEFIELD_CHAIN_ACTIVE）；据点易手后连锁立即失效。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| strongholdId | string | 必填。己方据点 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SKILL_UNAVAILABLE`、`BATTLEFIELD_NOT_JOINED`、`BATTLEFIELD_NOT_ENTERED`、`BATTLEFIELD_TARGET_INVALID`、`BATTLEFIELD_CHAIN_ACTIVE`、`BATTLEFIELD_MERIT_INSUFFICIENT`（处置建议见第 4 节）
+
+**Agent 提示**：连锁适合在孙刘方准备火攻前先给要守的据点加一层防护：连锁期间正面战斗更耐打，但一旦被火攻伤害会翻倍，所以要结合风向和对面相邻据点判断。
+
+**示例**
+
+**给江陵据点连锁战船**
+
+请求：
+
+```json
+{
+  "op": 140,
+  "seq": 37,
+  "data": {
+    "strongholdId": "cao_1"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 140,
+  "seq": 37,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "strongholds": [
+      {
+        "id": "cao_1",
+        "name": "曹操据点·江陵",
+        "kind": "ford",
+        "x": 23,
+        "y": 5,
+        "ownerCamp": "cao",
+        "pointsPerHour": 10,
+        "garrison": {
+          "porter": 0,
+          "militia": 96,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 40,
+          "archer": 48,
+          "cavalry": 15,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "garrisonPower": 560,
+        "wallLevel": 0,
+        "towerLevel": 0,
+        "firstCaptureAvailable": false,
+        "capturedAt": "2026-09-25T08:00:00.000Z",
+        "chainUntil": "2026-09-25T14:00:00.000Z",
+        "fireNextAt": null,
+        "unlocked": true
+      }
+    ]
   }
 }
 ```
@@ -16000,17 +16257,17 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
-### op 2027 · PUSH_BATTLEFIELD_STATE — 推送：剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198）
+### op 2027 · PUSH_BATTLEFIELD_STATE — 推送：剧本战场报名 / 开战 / 据点易手 / 收场 / 赤壁风向（v75，AISLG-198；v80）
 
 `S→C` 服务端推送 · 无 `seq`
 
-报名开始、开战、据点易手（含大营被攻破）、战场收场时推给全部在线连接；载荷里的 event 与 GET_BATTLEFIELD 的 event 同结构。
+报名开始、开战、据点易手（含大营被攻破、火攻 / 连锁）、战场收场，以及赤壁风向切换与切换前 30 分钟预告时推给全部在线连接；载荷里的 event 与 GET_BATTLEFIELD 的 event 同结构。
 
 **data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| reason | 'signup' \| 'started' \| 'stronghold' \| 'finished' | 报名 / 开战 / 据点易手 / 收场。 |
+| reason | 'signup' \| 'started' \| 'stronghold' \| 'finished' \| 'wind' | 报名 / 开战 / 据点易手（含火攻、连锁） / 收场 / 风向（赤壁切换或预告）。 |
 | event | object | 战场视图（结构同 GET_BATTLEFIELD 的 event）。 |
 | strongholdId | string | reason=stronghold 时易手的据点 id。 |
 
@@ -16186,6 +16443,12 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `BATTLEFIELD_SHOP_LIMIT` | （v75，AISLG-198）本场该商品已达到限购数量。 | 换其他商品，或等下一场额度重置（军功余额跨场保留）。 |
 | `BATTLEFIELD_MERIT_INSUFFICIENT` | （v75，AISLG-198）战场军功余额不足；响应附 cost / balance。 | 继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。 |
 | `BATTLEFIELD_TARGET_INVALID` | （v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。 | 用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。 |
+| `BATTLEFIELD_STRONGHOLD_LOCKED` | （v80，AISLG-199）讨伐董卓的关卡按顺序解锁：汜水关 → 虎牢关 → 洛阳，前一关没被讨董联军打下时不能攻打（GET_BATTLEFIELD 的 strongholds[].unlocked 为 false）。 | 先攻下前一关（看 strongholds 里 unlocked 为 true 的据点再下令）。 |
+| `BATTLEFIELD_WIND_MISMATCH` | （v80，AISLG-199）赤壁火攻只能在东南风期间发动（event.wind.direction = se）。 | 等下一次风向切换（event.wind.nextAt）再发动，切换前 30 分钟会预告。 |
+| `BATTLEFIELD_FIRE_COOLDOWN` | （v80，AISLG-199）同一目标据点每 2 小时最多被火攻一次；响应附 nextAt。 | 换一个目标，或等 nextAt 之后再火攻。 |
+| `BATTLEFIELD_CHAIN_ACTIVE` | （v80，AISLG-199）该据点的连锁战船仍在生效（6 小时内不能重复连锁）；响应附 chainUntil。 | 等 chainUntil 之后再连锁；连锁期内被火攻伤害翻倍，留意守军。 |
+| `BATTLEFIELD_SKILL_UNAVAILABLE` | （v80，AISLG-199）本场剧本没有这个技能（只有赤壁有火攻 / 连锁），或阵营不对：火攻只给孙刘方，连锁只给曹方。 | 看 event.script 与自己的 me.camp 再发。 |
+| `BATTLEFIELD_NOT_ENTERED` | （v80，AISLG-199）报名了但还没带兵入场，不能使用战场技能。 | 本场已开战就只能等下一场；报名期内要在开战前 ENTER_BATTLEFIELD。 |
 | `LUOYANG_CLOSED` | （v79，AISLG-200）洛阳只在每周六 21:00–23:00（北京时间现实时间）开放攻打 / 侦察；响应附 nextOpenAt / retryAfterSeconds。 | 等到 nextOpenAt 再发起。窗口内洛阳没有被动免战、城防不回涨。 |
 | `DECREE_NOT_HOLDER` | （v79，AISLG-200）只有洛阳之主联盟的盟主可以发布政令。 | 先占领洛阳，且由该联盟盟主操作。 |
 | `DECREE_COOLDOWN` | （v79，AISLG-200）政令每 7 天只能发布一次；响应附 nextAt / retryAfterSeconds。 | 等 nextAt 之后再发。 |
@@ -17634,7 +17897,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 79。
+- 协议版本随对外协议内容的每次变化递增；当前为 80。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

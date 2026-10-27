@@ -37,6 +37,7 @@ import {
   handleSplitBattlefieldSquad,
 } from './handlers-battlefield';
 import { handleBuyBattlefieldItem } from './handlers-battlefield-shop';
+import { handleChainBattlefieldStronghold, handleFireBattlefieldStronghold } from './handlers-battlefield-skill';
 import { handleClaimNobilitySalary, handleGetNobility } from './handlers-nobility';
 import { handleAllianceDiplomacyOp } from './handlers-alliance-diplomacy';
 import { handleGetLuoyang, handlePublishDecree } from './handlers-luoyang';
@@ -435,6 +436,12 @@ async function dispatchOp(
       break;
     case Op.BUY_BATTLEFIELD_ITEM:
       await handleBuyBattlefieldItem(ctx, conn, op, seq, data);
+      break;
+    case Op.FIRE_BATTLEFIELD_STRONGHOLD:
+      await handleFireBattlefieldStronghold(ctx, conn, op, seq, data);
+      break;
+    case Op.CHAIN_BATTLEFIELD_STRONGHOLD:
+      await handleChainBattlefieldStronghold(ctx, conn, op, seq, data);
       break;
     case Op.ALLIANCE_DIPLOMACY_INVITE:
     case Op.ALLIANCE_DIPLOMACY_RESPOND:

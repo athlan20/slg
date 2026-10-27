@@ -1,4 +1,4 @@
-// 剧本战场会话切片（v75，AISLG-198）：拉取战场状态、报名、入场、拆队、行军 / 攻打、商店兑换。
+// 剧本战场会话切片（v75，AISLG-198；v80 赤壁火攻 / 连锁）：拉取战场状态、报名、入场、拆队、行军 / 攻打、商店兑换、据点技能。
 // 推送只带事件摘要，收到后一律重拉权威状态；页面打开期间每分钟兜底重拉一次。
 
 import { useCallback, useEffect, useState } from 'react';
@@ -26,6 +26,8 @@ export interface BattlefieldSession {
   split: (squadId: string, troops: Partial<Record<TroopKind, number>>) => Promise<boolean>;
   march: (squadId: string, target: { strongholdId?: string; x?: number; y?: number }) => Promise<boolean>;
   buy: (item: BattlefieldShopItem, heroId?: string) => Promise<boolean>;
+  fire: (strongholdId: string) => Promise<boolean>;
+  chain: (strongholdId: string) => Promise<boolean>;
   onPush: (data: BattlefieldPushData) => void;
   clearError: () => void;
   clear: () => void;
@@ -126,6 +128,8 @@ export function useBattlefieldSession(deps: {
     (item: BattlefieldShopItem, heroId?: string) => run(Op.BUY_BATTLEFIELD_ITEM, { item, ...(heroId ? { heroId } : {}) }),
     [run],
   );
+  const fire = useCallback((strongholdId: string) => run(Op.FIRE_BATTLEFIELD_STRONGHOLD, { strongholdId }), [run]);
+  const chain = useCallback((strongholdId: string) => run(Op.CHAIN_BATTLEFIELD_STRONGHOLD, { strongholdId }), [run]);
 
   const onPush = useCallback((): void => {
     void fetchState();
@@ -137,7 +141,7 @@ export function useBattlefieldSession(deps: {
     setError(null);
   }, []);
 
-  return { state, error, busy, fetchState, signup, enter, split, march, buy, onPush, clearError, clear };
+  return { state, error, busy, fetchState, signup, enter, split, march, buy, fire, chain, onPush, clearError, clear };
 }
 
 export type { BuyBattlefieldItemResponseData };
