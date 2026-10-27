@@ -23,7 +23,7 @@ import { settleTerritoryReserves, type TerritorySettle } from './wilderness-rese
 import { emitReserveDepletions, persistTileReserves } from './wilderness-reserve-db';
 import { armyFoodUsePerHour } from './troops';
 import { FAMOUS_PRODUCTION_BONUS_PERCENT } from './famous-city';
-import { farmingPercent, storagePercent, type TechLevels } from './tech';
+import { farmingPercent, storagePercent, supplyReductionPercent, type TechLevels } from './tech';
 import { loadTechLevelsByCity } from './tech-db';
 import { loadCityGuard } from './hero-db';
 import { guardProductionPercent } from './hero';
@@ -334,9 +334,15 @@ export function effectiveLevelSql(levelExpr: string, kindExpr: string, famousExp
  * 全军小时耗粮（v14，读取时现查现算，不做事件驱动缓存）：城内驻军 1 倍 +
  * 行军中（含返程）与野地驻军 ×FIELD_TROOP_FOOD_MULTIPLIER（旧源码 refreshFoodArmyUse
  * 同规则；新架构在每次结算前重算，编成变化自然生效）。未知兵种按 0 计。
+ * v72（AISLG-192）：补给科技按每级 −3% 缩短耗粮（城内 / 行军 / 驻守同口径）；
+ * techs 未传时按城池所属账号现查，保证所有结算路径口径一致。
  * 须在城池行已锁定的同一事务内调用，与结算取同一时刻的编成。
  */
-export async function loadArmyFoodUsePerHour(client: pg.PoolClient, cityId: string): Promise<number> {
+export async function loadArmyFoodUsePerHour(
+  client: pg.PoolClient,
+  cityId: string,
+  techs?: Partial<TechLevels>,
+): Promise<number> {
   const city = await client.query(`SELECT troop, count FROM city_army WHERE city_id = $1`, [cityId]);
   const garrison = await client.query(
     `SELECT ta.troop AS troop, ta.count AS count
@@ -367,7 +373,17 @@ export async function loadArmyFoodUsePerHour(client: pg.PoolClient, cityId: stri
       addField(troop, count ?? 0);
     }
   }
-  return scaledRate(armyFoodUsePerHour(cityCounts) + FIELD_TROOP_FOOD_MULTIPLIER * armyFoodUsePerHour(fieldCounts));
+  let supply = techs ? supplyReductionPercent(techs) : null;
+  if (supply === null) {
+    const techRes = await client.query(
+      `SELECT t.level FROM account_techs t JOIN cities c ON c.account_id = t.account_id
+       WHERE c.id = $1 AND t.tech = 'supply'`,
+      [cityId],
+    );
+    supply = supplyReductionPercent({ supply: techRes.rowCount ? Number(techRes.rows[0].level) : 0 });
+  }
+  const gross = armyFoodUsePerHour(cityCounts) + FIELD_TROOP_FOOD_MULTIPLIER * armyFoodUsePerHour(fieldCounts);
+  return scaledRate(gross * (1 - supply / 100));
 }
 
 /**

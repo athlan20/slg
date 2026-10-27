@@ -15,6 +15,7 @@ import {
   populationGrowthPerHour,
 } from './rules';
 import { emptyBuildingLevels, productionPerHour, storageCaps } from './production';
+import { emptyTechLevels } from './tech';
 import { atBaseTimeScale } from './time-scale';
 import type { ArmyCounts, CityView } from './protocol';
 import { EMPTY_ARMY } from './protocol-doc-army-consts';
@@ -149,7 +150,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     guard: null,
     deploy: { count: 0, limit: 1 },
     tower: null,
-    techs: { farming: 0, carrying: 0, marching: 0, storage: 0, scouting: 0, defense: 0 },
+    techs: emptyTechLevels(),
     recruitQueue: [],
     defenseBonus: 0,
     marches: [],

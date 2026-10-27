@@ -12,6 +12,8 @@ import pg from 'pg';
 import { EventType, RESOURCE_KEYS, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
+import { combatTechBonus } from '../../common/src/tech';
+import { loadTechLevels } from '../../common/src/tech-db';
 import { checkOccupyNpcCity } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
 import { DURABILITY_MAX } from '../../common/src/protection';
@@ -105,7 +107,12 @@ export async function resolveNpcOccupyArrival(
   const wall = wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0);
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  const result = resolveBattle(troops, npc.garrison, { wallDefensePercent: wall, siege: true, attackerHero: hero?.engine ?? null });
+  const result = resolveBattle(troops, npc.garrison, {
+    wallDefensePercent: wall,
+    siege: true,
+    attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+  });
   const naming = await loadCityNaming(client, march.from_city_id);
   const attackerName = naming ? `${naming.username} · ${naming.cityName}` : '出征部队';
   const reportId = await saveBattleReport(

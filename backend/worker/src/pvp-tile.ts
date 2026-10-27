@@ -19,6 +19,8 @@ import pg from 'pg';
 import { EventType, type InitiatorRole, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle } from '../../common/src/battle';
+import { combatTechBonus } from '../../common/src/tech';
+import { loadTechLevels } from '../../common/src/tech-db';
 import { territoryLimit } from '../../common/src/plunder';
 import { TILE_CAPTURE_PROTECTION_MS, activeAt, inNewbieProtection } from '../../common/src/protection';
 import { scaledMs } from '../../common/src/time-scale';
@@ -154,6 +156,9 @@ export async function resolvePvpOccupyArrival(
     wallDefensePercent: 0,
     siege: false,
     attackerHero: hero?.engine ?? null,
+    // v72（AISLG-192）：双方各自的世界地图科技乘数；NPC / 野地守军没有科技
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+    defenderTech: combatTechBonus(await loadTechLevels(client, owner.account_id)),
   });
   const attackerNaming = await loadAttackerNaming(client, march.from_city_id);
   const attackerName = attackerNaming ? `${attackerNaming.username} · ${attackerNaming.cityName}` : '出征部队';

@@ -16,8 +16,8 @@ export interface CounterRule {
   multiplier: number;
 }
 
-/** 骑兵类（长枪 / 白毦克制对象）：v64 起含两种名城专属骑兵 */
-const CAVALRY_KINDS: TroopKind[] = ['cavalry', 'iron_cavalry', 'hubao_cavalry', 'xiliang_cavalry'];
+/** 骑兵类（长枪 / 白毦克制对象；驾驭科技的速度加成对象）：v64 起含两种名城专属骑兵 */
+export const CAVALRY_KINDS: TroopKind[] = ['cavalry', 'iron_cavalry', 'hubao_cavalry', 'xiliang_cavalry'];
 
 export const COUNTER_RULES: CounterRule[] = [
   { attackers: ['pikeman'], targets: CAVALRY_KINDS, multiplier: 1.2 },

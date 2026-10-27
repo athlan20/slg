@@ -64,7 +64,7 @@ export const Op = {
   GET_SERVER_BROADCASTS: 42,
   /** C→S 查询全服排行榜（v23，AISLG-61：三榜快照，前 50 名 + 我的名次） */
   GET_LEADERBOARD: 43,
-  /** C→S 查询科技状态（v27，AISLG-77：6 项科技等级 / 下一级成本与耗时 / 进行中的研究） */
+  /** C→S 查询科技状态（v27 AISLG-77；v72 AISLG-192 起 16 项：等级 / 下一级成本与耗时 / 进行中的研究） */
   GET_TECHS: 44,
   /** C→S 发起科技研究（v27，AISLG-77：data.tech；账号同一时间只研究一项，需书院） */
   RESEARCH_TECH: 45,

@@ -60,7 +60,7 @@ import { readCargo } from '../../common/src/transport';
 import { projectStarvation } from '../../common/src/starvation';
 import { deployLimit, towerStats } from '../../common/src/building-effects';
 import { famousEffectView, famousTowerPercent, famousWallExtraPercent } from '../../common/src/famous-effects';
-import { defenseExtraPercent, type TechLevels } from '../../common/src/tech';
+import { constructionReductionPercent, defenseExtraPercent, repairPercent, type TechLevels } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { currentCityId } from './city-scope';
 
@@ -378,7 +378,7 @@ export function toCityView(snap: CitySnapshot): CityView {
     buildings: records.buildings,
     levels: records.levels,
     // v6：下一步动作成本（未建=建造成本，已建未满级=升级成本）
-    costs: actionCosts(snap.levels, snap.famousName),
+    costs: actionCosts(snap.levels, snap.famousName, constructionReductionPercent(snap.techs)),
     // v63（AISLG-167）：各建筑等级上限；名城主题建筑为 25，其余 20
     levelMax: buildingLevelMaxes(snap.famousName),
     farms: records.buildings.farm,
@@ -405,7 +405,7 @@ export function toCityView(snap: CitySnapshot): CityView {
     durability:
       snap.cityId === snap.mainCityId
         ? null
-        : settleDurability(snap.durability, snap.durabilitySettledAt, snap.truceUntil, new Date()),
+        : settleDurability(snap.durability, snap.durabilitySettledAt, snap.truceUntil, new Date(), repairPercent(snap.techs)),
     famousName: snap.famousName,
     productionBonusPercent: snap.productionBonusPercent,
     famousEffect: famousEffectView(snap.famousName),

@@ -14,6 +14,7 @@ import type { ConnInfo } from './connections';
 import { loadCityState, lockCitySnapshot, recruitView, type CitySnapshot, type RecruitRow } from './views';
 import { insufficientPopulationDetail, insufficientResourcesDetail } from './handlers-city';
 import { activateQueuedRecruits } from '../../common/src/queue-activate';
+import { drillReductionPercent } from '../../common/src/tech';
 
 /** 征兵失败响应附当前城池状态（含本次读取触发的结算），客户端据此自行刷新 */
 async function respondRecruitDenied(
@@ -71,7 +72,7 @@ export async function handleRecruit(
     const afterPopulation = snap.population - verdict.population;
     const status = verdict.mode === 'start' ? 'recruiting' : 'queued';
     // v22（AISLG-39）：缩放与 1 秒下限作用于批次总时长（unitSeconds 快照为未缩放基准）
-    const durationSeconds = recruitBatchSeconds(troop, count);
+    const durationSeconds = recruitBatchSeconds(troop, count, drillReductionPercent(snap.techs));
     const ins = await client.query(
       `INSERT INTO recruits (account_id, city_id, troop, count, status, initiator, cost, population, unit_seconds, due_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9,

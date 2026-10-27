@@ -545,5 +545,12 @@
  *   新增 CANCEL_TRAINING（op 115）取消历练：武将立刻回家、不给经验，推送 PUSH_HERO_STATE reason=training_cancelled；无历练中的武将返回新错误码 TRAINING_NOT_CANCELLABLE。
  *   新增 CANCEL_TRUCE（op 116）提前解除主动免战：立即可被攻击、可出兵，本周免费次数不返还（事件 truce_cancelled）；无生效中的主动免战返回 TRUCE_NOT_ACTIVE；
  *   城池处于被动免战（被攻破后 4 小时）且无主动免战时返回 PASSIVE_TRUCE_NOT_CANCELLABLE（被动免战不可主动解除）。
+ * v72（科技扩到十六项，AISLG-192，只加不改）：GET_TECHS 的 techs 从 6 项扩到 16 项——新增 drill 练兵 / combat 战斗 /
+ *   protection 防护 / riding 驾驭 / archery 抛射 / supply 补给 / construction 建筑 / research 研究 / looting 掠夺 / repair 维修，
+ *   每项 10 级、账号共享、同一时间只研究一项（规则与成本 / 时长公式沿用 v27）。TechEntryView 新增 category（development 发展 /
+ *   military 军事，前端分两栏），percentPerLevel 与 currentPercent 改为带符号（时长 / 耗粮 / 受伤类为负数）。
+ *   战斗 / 防护 / 驾驭 / 抛射只在世界地图战斗中生效（攻守双方各自一套；竞技场与将星塔不传，NPC 一方不传），且与武将加成叠两层
+ *   （武将 20% 封顶不变）；征兵 / 建造 / 研究时长、部队耗粮、野地掠夺池、分城城防回涨分别按对应科技折扣 / 加成。
+ *   老账号的新科技从 0 级开始（account_techs 无行即 0），其余协议无变化。
  */
-export const PROTOCOL_VERSION = 71;
+export const PROTOCOL_VERSION = 72;

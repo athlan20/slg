@@ -37,6 +37,7 @@ const TECH_TABLE = TECH_KINDS.map((kind) => `${TECH_INFO[kind].label}（${kind}�
 const ENTRY_EXAMPLE = {
   kind: 'farming',
   label: TECH_INFO.farming.label,
+  category: TECH_INFO.farming.category,
   level: 0,
   maxLevel: MAX_TECH_LEVEL,
   percentPerLevel: TECH_INFO.farming.percentPerLevel,
@@ -50,13 +51,13 @@ export const REQUEST_GET_TECHS: RequestOpDoc = {
   name: 'GET_TECHS',
   title: '查询科技状态（v27，AISLG-77）',
   preAuth: false,
-  summary: `查询账号的科技研究：六项科技（${TECH_TABLE}）各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 ${MAX_TECH_LEVEL} 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。`,
+  summary: `查询账号的科技研究：十六项科技（${TECH_TABLE}）各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技分「发展 / 军事」两类（条目 category：development / military），前端分两栏展示；其中战斗 / 防护 / 驾驭 / 抛射四项只在世界地图战斗中生效。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 ${MAX_TECH_LEVEL} 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。`,
   requestFields: [
     { name: 'cityId', type: 'string', desc: '可选。指定城池（缺省主城），仅影响 academyLevel 与 academyOk 的判定。' },
   ],
   dataFields: [
     { name: 'academyLevel', type: 'number', desc: '查询城的书院等级（0 = 未建）。' },
-    { name: 'techs', type: 'array', desc: '六项科技，每项 { kind, label, level 当前等级, maxLevel, percentPerLevel 每级效果百分数（侦察为 0）, effect 效果说明, currentPercent 当前累计加成百分数, next 下一级信息或 null（满级） }。' },
+    { name: 'techs', type: 'array', desc: '十六项科技（v72 起），每项 { kind, label, category 归类 development / military, level 当前等级, maxLevel, percentPerLevel 每级效果百分数（带符号：负数为减少时长 / 耗粮 / 受伤；侦察为 0）, effect 效果说明, currentPercent 当前累计效果百分数（带符号）, next 下一级信息或 null（满级） }。' },
     { name: 'techs[].next', type: 'object | null', desc: '{ level 目标等级, cost 成本（五资源）, seconds 耗时（秒，已按全局时间缩放折算）, academyRequired 要求的书院等级（= 目标等级）, academyOk 查询城书院是否满足 }；满级为 null。' },
     { name: 'research', type: 'object | null', desc: '账号进行中的研究 { id, cityId 扣资源的城, tech, level 完成后的目标等级, status, initiator, cost 成本快照, startedAt, dueAt, completedAt }；没有为 null。' },
   ],
@@ -68,7 +69,7 @@ export const REQUEST_GET_TECHS: RequestOpDoc = {
       responses: [{ op: Op.GET_TECHS, seq: 12, ok: true, data: { academyLevel: 1, techs: [ENTRY_EXAMPLE, '（其余五项同结构）'], research: null } }],
     },
   ],
-  agentNote: `科技规划：书院等级是研究的硬门槛（第 N 级要书院 ≥ N 级），先升书院再研究高级科技。农耕 / 储存直接放大经济，负重 / 行军服务掠夺与出征，侦察决定侦察报告的详细度（Lv${SCOUT_KINDS_LEVEL} 起兵种明细、Lv${SCOUT_EXACT_LEVEL} 起精确数量，之前只有总兵力约数——想精确评估野地 / NPC 城守军先点侦察），城防只加主城守城。研究完成会收到 PUSH_TECH_STATE（reason=research_completed）。`,
+  agentNote: `科技规划：书院等级是研究的硬门槛（第 N 级要书院 ≥ N 级），先升书院再研究高级科技。农耕 / 储存 / 建筑 / 研究 / 补给 / 掠夺 / 维修直接放大经济与后勤，负重 / 行军服务掠夺与出征，侦察决定侦察报告的详细度（Lv${SCOUT_KINDS_LEVEL} 起兵种明细、Lv${SCOUT_EXACT_LEVEL} 起精确数量，之前只有总兵力约数——想精确评估野地 / NPC 城守军先点侦察）。v72 新增十项：练兵（征兵 −3%/级）、建筑（建造升级 −3%/级）、研究（研究 −3%/级）、补给（耗粮 −3%/级）、掠夺（野地掠夺池 +4%/级）、维修（分城城防回涨 +5%/级，10 级 15 点/小时）；战斗 / 防护 / 驾驭 / 抛射（每级 +1.5% 攻击 / −1.5% 受伤 / +2% 骑兵速度 / +1% 远程射程）只在世界地图战斗生效，竞技场与将星塔不受影响，与武将加成叠两层。研究完成会收到 PUSH_TECH_STATE（reason=research_completed）。`,
 };
 
 export const REQUEST_RESEARCH_TECH: RequestOpDoc = {

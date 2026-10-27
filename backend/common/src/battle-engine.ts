@@ -25,7 +25,7 @@
 // 三处以引擎结果为准（v15 前幸存者凭空消失的记账缺口见评审记录）。
 
 import { TROOP_KINDS, type ArmyCounts, type TroopKind } from './protocol';
-import { counterMultiplier, ramAdjustedWall } from './troop-counter';
+import { CAVALRY_KINDS, counterMultiplier, ramAdjustedWall } from './troop-counter';
 import { specialtyBonus, type HeroSpecialty } from './hero-specialty';
 
 export interface HeroCombatBonus {
@@ -95,6 +95,19 @@ export const MAX_BATTLE_ROUNDS = 100;
  */
 export const JUDGMENT_RATES = { dodge: 500, block: 1000, pierce: 500, crit: 1000 } as const;
 
+/** 世界地图战斗的科技乘数（v72，AISLG-192）：调用方由 tech.combatTechBonus 换算传入；
+ *  竞技场 / 将星塔不传（不受科技影响），NPC 一方不传。与武将加成是两层乘法。 */
+export interface CombatTechBonus {
+  /** 全军攻击 +%（战斗科技，每级 1.5%） */
+  atkPercent?: number;
+  /** 全军受到伤害 −%（防护科技，每级 1.5%） */
+  defPercent?: number;
+  /** 骑兵类兵种战斗速度 +%（驾驭科技，每级 2%） */
+  cavalrySpeedPercent?: number;
+  /** 远程兵种射程 +%（抛射科技，每级 1%） */
+  rangedRangePercent?: number;
+}
+
 export interface BattleOptions {
   /** 守方城墙防御加成（百分数；攻城战传入，仅城墙位守方兵堆受击减免） */
   wallDefensePercent?: number;
@@ -108,6 +121,10 @@ export interface BattleOptions {
   attackerHero?: HeroCombatBonus | null;
   /** 守方武将加成（v36，AISLG-115：城守）；口径同 attackerHero */
   defenderHero?: HeroCombatBonus | null;
+  /** 攻方科技乘数（v72，AISLG-192；仅世界地图战斗传入，竞技场 / 将星塔不传） */
+  attackerTech?: CombatTechBonus | null;
+  /** 守方科技乘数（同上；NPC 一方不传） */
+  defenderTech?: CombatTechBonus | null;
   /** 回合上限（测试用；缺省 MAX_BATTLE_ROUNDS） */
   maxRounds?: number;
   /** 随机源（测试注入固定序列；缺省 Math.random） */
@@ -209,6 +226,8 @@ function attackTotal(
   rng: () => number,
   attBonusPercent = 0,
   defBonusPercent = 0,
+  techAtkPercent = 0,
+  techDefPercent = 0,
 ): number {
   const attStats = TROOP_STATS[att.kind];
   const defStats = TROOP_STATS[target.kind];
@@ -222,6 +241,13 @@ function attackTotal(
   }
   if (defBonusPercent > 0) {
     total *= 1 - defBonusPercent / 100;
+  }
+  // 科技乘数（v72）：在武将加成之后单独一层（武将 20% 封顶不被科技突破）
+  if (techAtkPercent > 0) {
+    total *= 1 + techAtkPercent / 100;
+  }
+  if (techDefPercent > 0) {
+    total *= 1 - techDefPercent / 100;
   }
   const roll = Math.floor(rng() * 10000);
   if (roll < JUDGMENT_RATES.dodge) {
@@ -261,22 +287,23 @@ function frontmost(enemies: Stack[], side: 0 | 1): Stack | null {
   return best;
 }
 
-/** 全体兵堆按速度降序分档（同速同档）；档内次序固定（守方在前、同阵营按兵种清单序），只影响 rng 消费序 */
-function speedTiers(attStacks: Stack[], defStacks: Stack[]): Unit[][] {
+/** 全体兵堆按速度降序分档（同速同档）；档内次序固定（守方在前、同阵营按兵种清单序），只影响 rng 消费序。
+ *  v72：速度按科技乘数后的有效值分档（驾驭科技让骑兵更快） */
+function speedTiers(attStacks: Stack[], defStacks: Stack[], speedOf: (stack: Stack, side: 0 | 1) => number): Unit[][] {
   const units: Unit[] = [
     ...attStacks.map((stack) => ({ stack, side: 0 as const })),
     ...defStacks.map((stack) => ({ stack, side: 1 as const })),
   ];
   units.sort(
     (a, b) =>
-      TROOP_STATS[b.stack.kind].speed - TROOP_STATS[a.stack.kind].speed ||
+      speedOf(b.stack, b.side) - speedOf(a.stack, a.side) ||
       b.side - a.side ||
       TROOP_KINDS.indexOf(a.stack.kind) - TROOP_KINDS.indexOf(b.stack.kind),
   );
   const tiers: Unit[][] = [];
   for (const unit of units) {
-    const speed = TROOP_STATS[unit.stack.kind].speed;
-    if (tiers.length === 0 || TROOP_STATS[tiers[tiers.length - 1][0].stack.kind].speed !== speed) {
+    const speed = speedOf(unit.stack, unit.side);
+    if (tiers.length === 0 || speedOf(tiers[tiers.length - 1][0].stack, tiers[tiers.length - 1][0].side) !== speed) {
       tiers.push([]);
     }
     tiers[tiers.length - 1].push(unit);
@@ -302,6 +329,24 @@ export function simulateBattle(
   // 武将加成按阵营取（v36）：攻方打人吃 attackerHero.atkPercent、挨打吃 defenderHero.defPercent，反之亦然
   const attHero = opts.attackerHero ?? null;
   const defHero = opts.defenderHero ?? null;
+  // v72（AISLG-192）：科技乘数按阵营取——攻方打人吃 attackerTech.atkPercent、挨打吃 defenderTech.defPercent
+  const attTech = opts.attackerTech ?? null;
+  const defTech = opts.defenderTech ?? null;
+  /** 有效速度：驾驭科技只加骑兵类战斗速度（影响分档与每回合推进距离） */
+  const speedOf = (stack: Stack, side: 0 | 1): number => {
+    const base = TROOP_STATS[stack.kind].speed;
+    const percent = Math.max(0, (side === 0 ? attTech : defTech)?.cavalrySpeedPercent ?? 0);
+    return CAVALRY_KINDS.includes(stack.kind) ? base * (1 + percent / 100) : base;
+  };
+  /** 有效射程：抛射科技只加远程兵种（基础射程 > 近战基准 10） */
+  const rangeOf = (stack: Stack, side: 0 | 1): number => {
+    const base = TROOP_STATS[stack.kind].range;
+    if (base <= 10) {
+      return base;
+    }
+    const percent = Math.max(0, (side === 0 ? attTech : defTech)?.rangedRangePercent ?? 0);
+    return base * (1 + percent / 100);
+  };
   const attStacks = makeStacks(attacker, 1);
   const defStacks = makeStacks(defender, -1);
   const roundLog: BattleRoundLogEntry[] = [];
@@ -379,21 +424,22 @@ export function simulateBattle(
     }
 
     // 速度降序逐档行动；档内基于档初状态判定移动 / 攻击，伤亡档末统一生效（同速无先手差）
-    for (const tier of speedTiers(attStacks, defStacks)) {
+    for (const tier of speedTiers(attStacks, defStacks, speedOf)) {
       const moves: Array<{ stack: Stack; to: number }> = [];
       const attacks: Array<{ att: Stack; target: Stack; total: number; byAttacker: boolean }> = [];
       for (const unit of tier) {
         if (unit.stack.count <= 0) {
           continue;
         }
-        const stats = TROOP_STATS[unit.stack.kind];
         const enemies = unit.side === 0 ? defStacks : attStacks;
         const target = frontmost(enemies, unit.side);
         if (!target) {
           continue;
         }
         const inRange =
-          unit.side === 0 ? unit.stack.pos + stats.range >= target.pos : unit.stack.pos - stats.range <= target.pos;
+          unit.side === 0
+            ? unit.stack.pos + rangeOf(unit.stack, 0) >= target.pos
+            : unit.stack.pos - rangeOf(unit.stack, 1) <= target.pos;
         if (!inRange) {
           if (siege && unit.side === 1) {
             // 据墙待敌：敌方仍有兵堆在向城墙逼近（处于守方前沿射程之外）时原地等待，
@@ -402,7 +448,7 @@ export function simulateBattle(
             // 远程白嫖的结构问题，同时守军不再无脑弃墙野战）
             const front = frontmost(defStacks, 0);
             const enemyClosing = attStacks.some(
-              (e) => e.count > 0 && e.pos + TROOP_STATS[e.kind].range < (front?.pos ?? 0),
+              (e) => e.count > 0 && e.pos + rangeOf(e, 0) < (front?.pos ?? 0),
             );
             if (enemyClosing) {
               continue;
@@ -411,8 +457,8 @@ export function simulateBattle(
           // 推进（攻方向 FIELD_LENGTH、守方向 0；守城近战出城迎击同样走这里）
           const to =
             unit.side === 0
-              ? Math.min(unit.stack.pos + stats.speed, FIELD_LENGTH)
-              : Math.max(unit.stack.pos - stats.speed, 0);
+              ? Math.min(unit.stack.pos + speedOf(unit.stack, unit.side), FIELD_LENGTH)
+              : Math.max(unit.stack.pos - speedOf(unit.stack, unit.side), 0);
           moves.push({ stack: unit.stack, to });
           continue;
         }
@@ -422,8 +468,11 @@ export function simulateBattle(
         const foe = unit.side === 0 ? defHero : attHero;
         const specialty = specialtyBonus(hero?.specialty, unit.stack.kind, hero?.specialtyScale ?? 1, siege);
         const resistance = specialtyBonus(foe?.specialty, target.kind, foe?.specialtyScale ?? 1, siege);
+        const techAtk = Math.max(0, (unit.side === 0 ? attTech : defTech)?.atkPercent ?? 0);
+        const techDef = Math.max(0, (unit.side === 0 ? defTech : attTech)?.defPercent ?? 0);
         const total = attackTotal(unit.stack, target, wallPercent, rng,
-          (hero?.atkPercent ?? 0) + specialty.atkPercent, (foe?.defPercent ?? 0) + resistance.defPercent);
+          (hero?.atkPercent ?? 0) + specialty.atkPercent, (foe?.defPercent ?? 0) + resistance.defPercent,
+          techAtk, techDef);
         if (total > 0) {
           attacks.push({ att: unit.stack, target, total, byAttacker: unit.side === 0 });
         }

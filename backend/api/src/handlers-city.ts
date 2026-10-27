@@ -41,6 +41,7 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { buildView, loadCityState, lockCitySnapshot, type BuildRow, type CitySnapshot } from './views';
 import { activateQueuedBuilds } from '../../common/src/queue-activate';
+import { constructionReductionPercent } from '../../common/src/tech';
 
 /**
  * 建造 / 升级的共用事务路径：同一事务内行锁、生产结算、校验决策、入队/开工、
@@ -117,7 +118,7 @@ async function runBuildAction(
     // v22（AISLG-43）：连续升级返回整链计划（每级成本与时长，客户端可展示 / 预估）
     const chain =
       verdict.toLevel !== null
-        ? upgradeChainPlan(verdict.kind, verdict.fromLevel, verdict.toLevel)
+        ? upgradeChainPlan(verdict.kind, verdict.fromLevel, verdict.toLevel, constructionReductionPercent(snap.techs))
         : undefined;
     respondOk(ctx.registry, conn, op, seq, chain ? { build: view, chain } : { build: view });
     ctx.registry.broadcast(
@@ -153,7 +154,7 @@ export async function handleBuild(
     if (!verdict.ok) {
       return verdict;
     }
-    return { ...verdict, kind, level: 1 as const, toLevel: null, fromLevel: 0, dueSeconds: buildSeconds() };
+    return { ...verdict, kind, level: 1 as const, toLevel: null, fromLevel: 0, dueSeconds: buildSeconds(constructionReductionPercent(snap.techs)) };
   });
 }
 
@@ -174,15 +175,20 @@ export async function handleUpgrade(
     if (!verdict.ok) {
       return verdict;
     }
-    return { ...verdict, kind, fromLevel: currentLevel, dueSeconds: upgradeSeconds(currentLevel) };
+    return { ...verdict, kind, fromLevel: currentLevel, dueSeconds: upgradeSeconds(currentLevel, constructionReductionPercent(snap.techs)) };
   });
 }
 
 /** 连续升级的整链计划（响应体 chain）：每级 { level, cost, seconds }，秒为该级单级时长（未加速基准由服务端缩放后给出） */
-function upgradeChainPlan(kind: BuildingKind, fromLevel: number, toLevel: number): Array<{ level: number; cost: Resources; seconds: number }> {
+function upgradeChainPlan(
+  kind: BuildingKind,
+  fromLevel: number,
+  toLevel: number,
+  reducePercent: number,
+): Array<{ level: number; cost: Resources; seconds: number }> {
   const plan: Array<{ level: number; cost: Resources; seconds: number }> = [];
   for (let level = fromLevel + 1; level <= toLevel; level += 1) {
-    plan.push({ level, cost: upgradeCost(kind, level - 1), seconds: upgradeSeconds(level - 1) });
+    plan.push({ level, cost: upgradeCost(kind, level - 1), seconds: upgradeSeconds(level - 1, reducePercent) });
   }
   return plan;
 }
