@@ -99,7 +99,7 @@ export const DEFENSE_COPY_EN = {
       recall: 'recalled by sender',
       expel: 'expelled by host',
       ally_left: 'left the alliance',
-      city_conquered: 'city conquered',
+      city_discarded: 'host abandoned the city',
       wiped: 'wiped out',
       target_gone: 'target gone',
     } as Record<string, string>,

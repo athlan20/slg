@@ -81,7 +81,7 @@ export const DEFENSE_COPY = {
       recall: '派出方召回',
       expel: '城主遣返',
       ally_left: '退出联盟',
-      city_conquered: '城池易主',
+      city_discarded: '城主放弃分城',
       wiped: '战斗全灭',
       target_gone: '目标失效',
     } as Record<string, string>,
