@@ -481,7 +481,8 @@ export type AllianceEventKind =
   | 'mark_created'
   | 'diplomacy_friendly'
   | 'diplomacy_hostile'
-  | 'diplomacy_neutral';
+  | 'diplomacy_neutral'
+  | 'decree_published';
 /**
  * 本联盟的外交全貌（友盟 / 敌对 / 邀请；v77，AISLG-195）。
  * 友盟 / 敌对上限之外不返回，调用方以 limits 展示。
@@ -590,6 +591,13 @@ export async function recordAllianceEvent(
     system = { kind: 'alliance_diplomacy_hostile', player: player(detail.accountId), otherAllianceName: String(detail.otherAllianceName ?? '') };
   } else if (kind === 'diplomacy_neutral') {
     system = { kind: 'alliance_diplomacy_neutral', player: player(detail.accountId), otherAllianceName: String(detail.otherAllianceName ?? '') };
+  } else if (kind === 'decree_published') {
+    system = {
+      kind: 'alliance_decree',
+      player: player(detail.accountId),
+      decreeKind: String(detail.decreeKind ?? ''),
+      until: String(detail.until ?? ''),
+    };
   } else if (kind === 'mark_created') {
     system = {
       kind: 'alliance_mark_created',

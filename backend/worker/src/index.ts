@@ -29,6 +29,8 @@ import { processArenaRewards } from './arena-tick';
 import { processAlliances } from './alliance-tick';
 import { processBattlefield } from './battlefield-tick';
 import { processMarketOrders } from './market-tick';
+import { processLuoyang } from './luoyang-tick';
+import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
@@ -45,6 +47,8 @@ async function main(): Promise<void> {
   await ensureSchema(maintenancePool);
   // v12：世界生成幂等（与 API 并发由咨询锁串行化），Worker 只依赖已存在的表
   await ensureWorld(maintenancePool);
+  // v79（AISLG-200）：启动时刷新一次洛阳之主缓存（易主路径之外，兼容部署前已有的洛阳）
+  await refreshLuoyangHolder(maintenancePool).catch(() => undefined);
   // v20：全局时间缩放从 settings 预热（AISLG-38），此后定期刷新（切换无需重启）
   await refreshTimeScale(pool).catch(() => undefined);
   console.log(`slg-worker started, tick=${TICK_MS}ms, time_scale=${getTimeScale()}`);
@@ -124,6 +128,12 @@ async function main(): Promise<void> {
       await processAlliances(pool);
     } catch (err) {
       console.error('worker alliance tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v79（AISLG-200）：洛阳窗口回满城防 / 预告 / 开始 / 结束播报
+      await processLuoyang(pool);
+    } catch (err) {
+      console.error('worker luoyang tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v78（AISLG-196）：交易所 48 小时过期挂单自动撤单退款

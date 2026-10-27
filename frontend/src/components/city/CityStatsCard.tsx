@@ -15,7 +15,7 @@ import { famousEffectText } from '../famousEffectText';
 
 export function CityStatsCard({ city }: { city: CityView | null }) {
   const copy = useCopy();
-  const { CITY_PAGE_COPY, CITY_COPY, DEFENSE_COPY, RESOURCE_LABEL, CHAT_COPY } = copy;
+  const { CITY_PAGE_COPY, CITY_COPY, DEFENSE_COPY, RESOURCE_LABEL, CHAT_COPY, LUOYANG_COPY } = copy;
   const { session } = useGame();
   const ref = city ? session.cityList.cities.find((item) => item.id === city.id) : undefined;
   const shareable = ref !== undefined && ref.x !== null && ref.y !== null;
@@ -47,6 +47,14 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
       value: CITY_COPY.nobility.meta(city.title, city.nobility.name),
       sub: session.nobility.state ? CITY_COPY.nobility.salary(session.nobility.state.salaryGold) : CITY_COPY.nobility.noNobility,
     });
+    if (city.luoyangBonusPercent > 0) {
+      tiles.push({
+        key: 'luoyang',
+        label: LUOYANG_COPY.title,
+        value: `+${city.luoyangBonusPercent}%`,
+        sub: LUOYANG_COPY.bonus(city.luoyangBonusPercent),
+      });
+    }
     // v74（AISLG-194）：城池概况也列出谁在协防、带了多少兵
     if (city.assistIn.length > 0) {
       tiles.push({

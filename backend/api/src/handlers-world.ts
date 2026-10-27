@@ -52,6 +52,8 @@ import { famousMarchPercent } from '../../common/src/famous-effects';
 import { checkHeroMarchable } from './handlers-hero';
 import type { AccountHeroRow } from '../../common/src/hero-db';
 import { cargoOverCapacity } from '../../common/src/transport';
+import { loadActiveDecree } from '../../common/src/luoyang-db';
+import { decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { carryingPercent, marchingPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { resolveIntercept, resolveMarchTarget } from './march-target';
@@ -186,7 +188,7 @@ export async function handleMarch(
               retryAfterSeconds: Math.max(1, Math.ceil((target.protectedUntil.getTime() - dbNow.getTime()) / 1000)),
             }
           : undefined;
-      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft, ...(target.nobility ? { nobility: target.nobility } : {}) };
+      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft, ...(target.nobility ? { nobility: target.nobility } : {}), ...(target.luoyangNextOpenAt ? { nextOpenAt: target.luoyangNextOpenAt.toISOString(), retryAfterSeconds: Math.max(1, Math.ceil((target.luoyangNextOpenAt.getTime() - dbNow.getTime()) / 1000)) } : {}) };
       respondError(ctx.registry, conn, op, seq, target.reason ?? 'TARGET_NOT_ATTACKABLE', Object.keys(data).length ? data : undefined);
       return;
     }
@@ -246,7 +248,9 @@ export async function handleMarch(
     // v62（AISLG-166）：出发城为许昌时，自己城池之间的调兵 / 运输行军速度另 +20%（与驿站加算）
     const selfCityMarch = target.purpose === 'transfer' || target.purpose === 'transport';
     const selfCityBonus = selfCityMarch ? stationPercent(snap.levels.post_station) + famousMarchPercent(snap.famousName) : 0;
-    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + selfCityBonus);
+    const decree = await loadActiveDecree(client, accountId);
+    const decreeSpeed = decreeMarchSpeedPercent(decree?.kind ?? null, decree?.until ?? null, new Date());
+    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + selfCityBonus + decreeSpeed);
     const arriveMs = dbNow.getTime() + travel * 1000;
     // v35（AISLG-112）：截击「到了先埋伏」——目标路线与时刻表固定，出发即可算出接战时刻 =
     // max(到达时刻, 目标进入选定格相邻范围的时刻)，Worker 按该时刻结算；提前到达的部队

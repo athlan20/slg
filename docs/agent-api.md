@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**78** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**79** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 78）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 79）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -348,6 +348,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -496,7 +497,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 78,
+    "protocolVersion": 79,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -562,7 +563,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 78,
+    "protocolVersion": 79,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -586,7 +587,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/75 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/76 补读增量）**
 
 请求：
 
@@ -597,7 +598,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 75,
+    "docVersion": 76,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -616,8 +617,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 78,
-    "docNotice": "接口文档已从 v75 更新到 v78：请 GET /agent-api/changes/75 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 79,
+    "docNotice": "接口文档已从 v76 更新到 v79：请 GET /agent-api/changes/76 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -770,7 +771,7 @@
 | city.shieldUntil | string \| null | 主动免战截止（v38，AISLG-122，账号级）：TRUCE 开启后 12 小时基准随缩放；开着时别人打不了你（含 NPC 袭击目标池跳过）、你也不能出兵打玩家（SELF_TRUCE_ACTIVE，打野地 / NPC 不受限）。未开启为 null。 |
 | city.shieldNextAt | string \| null | 下一次可开启主动免战的时刻（v38，AISLG-122；每周一次，ISO 8601）；当前可开启为 null。 |
 | city.durability | number \| null | 分城城防值（v40，AISLG-124）：0..100，被「占领」打赢一击 −35（冲车加成最多再 −15）、归零一击换主；免战结束后每小时回涨 10 至满（免战内不回涨）。主城为 null（永不被占领）。 |
-| city.famousName / city.productionBonusPercent | string \| null / number | 名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。v64（AISLG-168）：占领名城的分城可征募该名城的专属兵（名城 → 兵种对照见 RECRUIT 的 summary），失守即失去征募资格。 |
+| city.luoyangBonusPercent（v79 洛阳之主联盟 +5%，已计入 production）/ city.famousName / city.productionBonusPercent | string \| null / number | 名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。v64（AISLG-168）：占领名城的分城可征募该名城的专属兵（名城 → 兵种对照见 RECRUIT 的 summary），失守即失去征募资格。 |
 | city.famousEffect | object \| null | 名城独有效果（v62 新增，AISLG-166）：{ kind, percent, resources }，只有占领者享受、跟着城走（换主人归新主人，放弃 / 被占即失效）。洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。普通城为 null。 |
 | city.guard | object \| null | 城守（v36 新增，AISLG-115）：该城任命的武将 { heroId, name, famous, lead, force, wit, level, bonusPercent }；未任为 null。产量加成（四资源非金，智力 × 0.1% 封顶 5%）已计入 production；守城战另享攻防加成（见 ASSIGN_HERO）。 |
 | city.recruitQueue | array | 征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。 |
@@ -1119,6 +1120,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -1489,6 +1491,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -1895,6 +1898,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -3322,6 +3326,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -9263,6 +9268,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -9901,6 +9907,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -10639,6 +10646,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -11261,6 +11269,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -14341,6 +14350,155 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 137 · GET_LUOYANG — 查询洛阳争夺状态（v79，AISLG-200）
+
+`C→S` 请求-响应 · 需登录后发送
+
+洛阳是 8 座名城之一，仍是占领者的分城；占领者所在联盟成为「洛阳之主」，占领者本人是「洛阳太守」。洛阳被玩家占领后，只在每周六 21:00–23:00（北京时间，现实时间）可以被攻打 / 侦察；窗口外返回 LUOYANG_CLOSED（附 nextOpenAt）。窗口内洛阳没有被动免战、城防值不回涨，每次打赢按现有规则扣城防，归零换主；窗口结束时城防回满并进入保护。洛阳可接收 10 支协防（普通城 5 支），盟友 / 友盟都能协防。洛阳之主联盟全员所有城的粮木石铁产量 +5%（与名城 / 科技 / 城守同一百分比池相加）。盟主每 7 天可以发布一道政令（三选一，持续 7 天）：征兵时长 −15% / 行军速度 +10% / 科技研究时长 −15%；洛阳易主时旧政令立即失效。赛季结束时占有洛阳的联盟进入名人堂，结算时在盟成员每人获得 10,000 金币与四资源各 50,000。窗口预告 / 开始 / 结束、洛阳易主、政令发布都有全服播报，并在相关联盟频道发系统消息。 本协议返回洛阳占领者、争夺窗口、洛阳之主联盟加成与当前政令；玩家与 Agent 通用。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| owner | object \| null | 洛阳当前占领者（玩家分城）：{ cityId, cityName, accountId, username, allianceId, allianceName, durability }；NPC 阶段为 null。 |
+| windowOpen / windowStartAt / windowEndAt / nextOpenAt | boolean / string | 当前是否在争夺窗口、本次窗口起止、下一次开放时刻（北京时间周六 21:00–23:00）。 |
+| bonusPercent | number | 洛阳之主联盟全员的四资源产量加成（当前 5）；不是洛阳之主为 0。 |
+| assistCap | number | 洛阳可接收的协防部队上限（当前 10）。 |
+| decree | object \| null | 生效中的政令：{ kind: recruit\|march\|research, until, nextAt, canPublish, leaderName }；没有为 null。 |
+| canPublishDecree / decreeNextAt / myAllianceIsHolder | boolean / string / boolean | 我是否能发政令、下次可发时刻、我所在联盟是否洛阳之主。 |
+
+**Agent 提示**：窗口外不要对洛阳发起掠夺 / 占领 / 侦察（LUOYANG_CLOSED）。窗口内洛阳无被动免战、城防不回涨；攻方要有空分城名额。洛阳之主盟员可享受 +5% 产量，盟主每 7 天可发政令。
+
+**示例**
+
+**洛阳由卧龙盟占领，本周窗口未开，征兵政令生效中**
+
+请求：
+
+```json
+{
+  "op": 137,
+  "seq": 70,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 137,
+  "seq": 70,
+  "ok": true,
+  "data": {
+    "owner": {
+      "cityId": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+      "cityName": "洛阳",
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "allianceName": "卧龙盟",
+      "durability": 65
+    },
+    "windowOpen": false,
+    "windowStartAt": "2026-10-31T13:00:00.000Z",
+    "windowEndAt": "2026-10-31T15:00:00.000Z",
+    "nextOpenAt": "2026-10-31T13:00:00.000Z",
+    "bonusPercent": 5,
+    "assistCap": 10,
+    "decree": {
+      "kind": "recruit",
+      "until": "2026-11-03T04:00:00.000Z",
+      "nextAt": "2026-11-03T04:00:00.000Z",
+      "canPublish": false,
+      "leaderName": "alice"
+    },
+    "canPublishDecree": false,
+    "decreeNextAt": "2026-11-03T04:00:00.000Z",
+    "myAllianceIsHolder": true
+  }
+}
+```
+
+### op 138 · PUBLISH_DECREE — 发布洛阳政令（v79，AISLG-200）
+
+`C→S` 请求-响应 · 需登录后发送
+
+洛阳是 8 座名城之一，仍是占领者的分城；占领者所在联盟成为「洛阳之主」，占领者本人是「洛阳太守」。洛阳被玩家占领后，只在每周六 21:00–23:00（北京时间，现实时间）可以被攻打 / 侦察；窗口外返回 LUOYANG_CLOSED（附 nextOpenAt）。窗口内洛阳没有被动免战、城防值不回涨，每次打赢按现有规则扣城防，归零换主；窗口结束时城防回满并进入保护。洛阳可接收 10 支协防（普通城 5 支），盟友 / 友盟都能协防。洛阳之主联盟全员所有城的粮木石铁产量 +5%（与名城 / 科技 / 城守同一百分比池相加）。盟主每 7 天可以发布一道政令（三选一，持续 7 天）：征兵时长 −15% / 行军速度 +10% / 科技研究时长 −15%；洛阳易主时旧政令立即失效。赛季结束时占有洛阳的联盟进入名人堂，结算时在盟成员每人获得 10,000 金币与四资源各 50,000。窗口预告 / 开始 / 结束、洛阳易主、政令发布都有全服播报，并在相关联盟频道发系统消息。 仅洛阳之主联盟的盟主（玩家连接）可发布；每 7 天一次，持续 7 天，三选一（recruit / march / research）。发布后全服播报并在联盟频道发系统消息。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| kind | 'recruit' \| 'march' \| 'research' | 政令：征兵时长 −15% / 行军速度 +10% / 科技研究时长 −15%。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_LUOYANG） | object | 发布后的洛阳状态（含新政令）。 |
+
+**可能错误**：`INVALID_PARAMS`、`AGENT_FORBIDDEN`、`DECREE_NOT_HOLDER`、`DECREE_COOLDOWN`（处置建议见第 4 节）
+
+**Agent 提示**：管理操作需要玩家盟主本人；Agent 只能查询 GET_LUOYANG。政令到期后自动失效，冷却按发布时刻 +7 天。
+
+**示例**
+
+**发布征兵政令**
+
+请求：
+
+```json
+{
+  "op": 138,
+  "seq": 71,
+  "data": {
+    "kind": "recruit"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 138,
+  "seq": 71,
+  "ok": true,
+  "data": {
+    "owner": {
+      "cityId": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+      "cityName": "洛阳",
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "allianceName": "卧龙盟",
+      "durability": 65
+    },
+    "windowOpen": false,
+    "windowStartAt": "2026-10-31T13:00:00.000Z",
+    "windowEndAt": "2026-10-31T15:00:00.000Z",
+    "nextOpenAt": "2026-10-31T13:00:00.000Z",
+    "bonusPercent": 5,
+    "assistCap": 10,
+    "decree": {
+      "kind": "recruit",
+      "until": "2026-11-03T04:00:00.000Z",
+      "nextAt": "2026-11-03T04:00:00.000Z",
+      "canPublish": false,
+      "leaderName": "alice"
+    },
+    "canPublishDecree": false,
+    "decreeNextAt": "2026-11-03T04:00:00.000Z",
+    "myAllianceIsHolder": true
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -16028,6 +16186,9 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `BATTLEFIELD_SHOP_LIMIT` | （v75，AISLG-198）本场该商品已达到限购数量。 | 换其他商品，或等下一场额度重置（军功余额跨场保留）。 |
 | `BATTLEFIELD_MERIT_INSUFFICIENT` | （v75，AISLG-198）战场军功余额不足；响应附 cost / balance。 | 继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。 |
 | `BATTLEFIELD_TARGET_INVALID` | （v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。 | 用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。 |
+| `LUOYANG_CLOSED` | （v79，AISLG-200）洛阳只在每周六 21:00–23:00（北京时间现实时间）开放攻打 / 侦察；响应附 nextOpenAt / retryAfterSeconds。 | 等到 nextOpenAt 再发起。窗口内洛阳没有被动免战、城防不回涨。 |
+| `DECREE_NOT_HOLDER` | （v79，AISLG-200）只有洛阳之主联盟的盟主可以发布政令。 | 先占领洛阳，且由该联盟盟主操作。 |
+| `DECREE_COOLDOWN` | （v79，AISLG-200）政令每 7 天只能发布一次；响应附 nextAt / retryAfterSeconds。 | 等 nextAt 之后再发。 |
 | `MARKET_LOCKED` | （v78，AISLG-196）交易所需要主城官府 ≥ 5 级且不在新手保护期；响应附 reason / government / required。 | 升级主城官府或等新手保护结束后再来。 |
 | `PRICE_OUT_OF_RANGE` | （v78，AISLG-196）单价超出允许范围：资源之间 0.5–2，收金币 0.125–0.5；响应附 min / max。 | 按 GET_MARKET 的 limits.priceRangeResource / priceRangeGold 调整单价。 |
 | `ORDER_LIMIT` | （v78，AISLG-196）同时挂单已达 5 张。 | 先撤单或等成交后再挂。 |
@@ -16435,6 +16596,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -17070,6 +17232,7 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -17471,7 +17634,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 78。
+- 协议版本随对外协议内容的每次变化递增；当前为 79。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

@@ -22,6 +22,8 @@ import { deployCountOf, loadCityState, lockCitySnapshot, marchView, type MarchRo
 import { canDeployMore } from '../../common/src/building-effects';
 import { checkHeroMarchable } from './handlers-hero';
 import { cannotAttack } from '../../common/src/alliance-db';
+import { isLuoyangName, luoyangWindowOpen, nextLuoyangOpen, decreeMarchSpeedPercent } from '../../common/src/luoyang';
+import { loadActiveDecree } from '../../common/src/luoyang-db';
 import { isAllyOfCity } from './march-target';
 
 /** 战报点评正文的长度上限（v23 AISLG-53；占位值随需求「已定」标注可调） */
@@ -117,11 +119,11 @@ export async function handleScout(
     let pvpTarget: { accountId: string; username: string } | null = null;
     if (tile && tile.kind === 'city' && tile.owner_city_id) {
       const ownerRes = await client.query(
-        `SELECT c.account_id, a.username, a.newbie_until
+        `SELECT c.account_id, c.famous_name, a.username, a.newbie_until
          FROM cities c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`,
         [tile.owner_city_id],
       );
-      const owner = ownerRes.rows[0] as { account_id: string; username: string; newbie_until: Date | null } | undefined;
+      const owner = ownerRes.rows[0] as { account_id: string; famous_name: string | null; username: string; newbie_until: Date | null } | undefined;
       if (owner && owner.account_id === accountId) {
         await client.query('ROLLBACK');
         respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
@@ -136,6 +138,16 @@ export async function handleScout(
       if (owner) {
         const nowRes = await client.query(`SELECT now() AS now`);
         const dbNow = nowRes.rows[0].now as Date;
+        // v79（AISLG-200）：洛阳只在周六 21:00–23:00 可侦察
+        if (isLuoyangName(owner.famous_name) && !luoyangWindowOpen(dbNow)) {
+          const next = nextLuoyangOpen(dbNow);
+          await client.query('ROLLBACK');
+          respondError(ctx.registry, conn, op, seq, 'LUOYANG_CLOSED', {
+            nextOpenAt: next.toISOString(),
+            retryAfterSeconds: Math.max(1, Math.ceil((next.getTime() - dbNow.getTime()) / 1000)),
+          });
+          return;
+        }
         if (inNewbieProtection(owner.newbie_until, dbNow)) {
           const until = activeAt(owner.newbie_until, dbNow);
           await client.query('ROLLBACK');
@@ -161,7 +173,8 @@ export async function handleScout(
     );
     await client.query(`DELETE FROM city_army WHERE city_id = $1 AND troop = 'scout' AND count <= 0`, [snap.cityId]);
     const troops = { scout: count };
-    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs));
+    const decree = await loadActiveDecree(client, accountId);
+    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + decreeMarchSpeedPercent(decree?.kind ?? null, decree?.until ?? null, new Date()));
     const ins = await client.query(
       `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at, hero_id)
        VALUES ($1, $2, $3, $4, $5::jsonb, 'scout', 'marching', $6, now() + make_interval(secs => $7), $8)

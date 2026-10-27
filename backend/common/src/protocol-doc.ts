@@ -706,6 +706,18 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。',
     action: '用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。',
   },
+  LUOYANG_CLOSED: {
+    desc: '（v79，AISLG-200）洛阳只在每周六 21:00–23:00（北京时间现实时间）开放攻打 / 侦察；响应附 nextOpenAt / retryAfterSeconds。',
+    action: '等到 nextOpenAt 再发起。窗口内洛阳没有被动免战、城防不回涨。',
+  },
+  DECREE_NOT_HOLDER: {
+    desc: '（v79，AISLG-200）只有洛阳之主联盟的盟主可以发布政令。',
+    action: '先占领洛阳，且由该联盟盟主操作。',
+  },
+  DECREE_COOLDOWN: {
+    desc: '（v79，AISLG-200）政令每 7 天只能发布一次；响应附 nextAt / retryAfterSeconds。',
+    action: '等 nextAt 之后再发。',
+  },
   MARKET_LOCKED: {
     desc: '（v78，AISLG-196）交易所需要主城官府 ≥ 5 级且不在新手保护期；响应附 reason / government / required。',
     action: '升级主城官府或等新手保护结束后再来。',

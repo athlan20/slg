@@ -26,6 +26,8 @@ import {
   type TechLevels,
 } from '../../common/src/tech';
 import { loadActiveResearch, loadTechLevels, researchView, type TechResearchRow } from '../../common/src/tech-db';
+import { loadActiveDecree } from '../../common/src/luoyang-db';
+import { DECREE_EFFECTS } from '../../common/src/luoyang';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
@@ -132,7 +134,10 @@ export async function handleResearchTech(
       });
       return;
     }
-    const { cost, level, seconds } = verdict;
+    // v79（AISLG-200）：洛阳之主政令「研究」缩短 15%
+    const decree = await loadActiveDecree(client, accountId);
+    const seconds = Math.max(1, Math.ceil(verdict.seconds * (decree?.kind === 'research' ? DECREE_EFFECTS.research.timeMultiplier : 1)));
+    const { cost, level } = verdict;
     await client.query(
       `UPDATE cities SET gold = gold - $2, wood = wood - $3, food = food - $4, stone = stone - $5, iron = iron - $6
        WHERE id = $1`,

@@ -29,6 +29,8 @@ function systemView(system: ChatSystemView, filter: BannedWordFilter, nobility?:
     case 'alliance_diplomacy_hostile':
     case 'alliance_diplomacy_neutral':
       return { kind: system.kind, player: mask(system.player), otherAllianceName: system.otherAllianceName };
+    case 'alliance_decree':
+      return { kind: system.kind, player: mask(system.player), decreeKind: system.decreeKind, until: system.until };
   }
 }
 

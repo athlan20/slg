@@ -113,7 +113,7 @@ export const HALL_COPY = {
   loading: '加载中…',
   loadFailed: '名人堂加载失败，稍后再试',
   more: '更多',
-  kinds: { power: '力量', territory: '领土', plunder: '掠夺', model: '模型', arena: '竞技场', starTower: '将星塔', alliance: '联盟', nobility: '爵位' } as Record<string, string>,
+  kinds: { power: '力量', territory: '领土', plunder: '掠夺', model: '模型', arena: '竞技场', starTower: '将星塔', alliance: '联盟', nobility: '爵位', luoyang: '洛阳' } as Record<string, string>,
   rankColumn: '名次',
   playerColumn: '玩家',
   modelColumn: '模型',

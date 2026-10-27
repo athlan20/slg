@@ -52,6 +52,7 @@ import {
   abortForAlly,
 } from './tick-shared';
 import { cannotAttack } from '../../common/src/alliance-db';
+import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -87,7 +88,7 @@ export async function resolvePvpPlunderArrival(
   );
   const city = cityRes.rows[0] as
     | {
-        id: string; account_id: string; truce_until: Date | null;
+        id: string; account_id: string; truce_until: Date | null; famous_name: string | null;
         gold: number; wood: number; food: number; stone: number; iron: number;
         username: string; newbie_until: Date | null; self_truce_until: Date | null;
       }
@@ -102,12 +103,22 @@ export async function resolvePvpPlunderArrival(
     await abortForAlly(client, march, troops, settled, notifies);
     return;
   }
+  // v79（AISLG-200）：洛阳只在周六 21:00–23:00 可攻打；窗口关闭则扑空返程
+  const luoyang = isLuoyangName(city.famous_name);
+  if (luoyang && !luoyangWindowOpen(now)) {
+    await abortMarchToReturn(client, march, troops, settled, notifies);
+    return;
+  }
   // 锁内复核保护 / 免战（同一城多支部队先后到达：前一支攻破触发免战后，后到的扑空返程）
   if (inNewbieProtection(city.newbie_until, now)) {
     await abortProtected(client, march, troops, settled, notifies, 'NEWBIE_PROTECTED', city.newbie_until);
     return;
   }
-  if (inTruce(city.truce_until, city.self_truce_until, now)) {
+  if (luoyang && city.self_truce_until && city.self_truce_until > now) {
+    await abortProtected(client, march, troops, settled, notifies, 'TARGET_IN_TRUCE', city.self_truce_until);
+    return;
+  }
+  if (!luoyang && inTruce(city.truce_until, city.self_truce_until, now)) {
     const until = city.truce_until && city.truce_until > now ? city.truce_until : city.self_truce_until;
     await abortProtected(client, march, troops, settled, notifies, 'TARGET_IN_TRUCE', until);
     return;
@@ -254,7 +265,7 @@ export async function resolvePvpPlunderArrival(
   );
   const carry = armyCarryCapacity(result.attacker.survivors, carryingPercent(await loadTechLevels(client, march.account_id)));
   const loot = loadByCarry(carry, pool);
-  const truceUntil = new Date(now.getTime() + scaledMs(PVP_CITY_TRUCE_MS));
+  const truceUntil = luoyang ? null : new Date(now.getTime() + scaledMs(PVP_CITY_TRUCE_MS));
   await client.query(
     `UPDATE cities SET gold = gold - $2, wood = wood - $3, food = food - $4,
             stone = stone - $5, iron = iron - $6, truce_until = $7 WHERE id = $1`,
@@ -296,7 +307,7 @@ export async function resolvePvpPlunderArrival(
       outcome: 'garrison_lost',
       attacker: { username: attackerNaming?.username ?? null, cityId: march.from_city_id, cityName: attackerNaming?.cityName ?? null },
       loot,
-      truceUntil: truceUntil.toISOString(),
+      truceUntil: truceUntil ? truceUntil.toISOString() : null,
       losses: result.defender.losses,
       rounds: result.rounds,
       attackerPower, defenderPower,

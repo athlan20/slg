@@ -49,6 +49,48 @@ export async function archiveSeason(client: pg.PoolClient, seasonId: number, sea
     [seasonId, ARCHIVE_TOP_N],
   );
 
+  // 洛阳之主（v79，AISLG-200）：赛季末占有洛阳的联盟进名人堂；在盟成员每人 1 万金 + 四资源各 5 万
+  const luoyang = await client.query(
+    `SELECT al.id, al.name, al.leader_id, la.username AS leader_name,
+            (SELECT count(*) FROM alliance_members m WHERE m.alliance_id = al.id)::int AS member_count
+     FROM cities c
+     JOIN alliance_members am ON am.account_id = c.account_id
+     JOIN alliances al ON al.id = am.alliance_id
+     JOIN accounts la ON la.id = al.leader_id
+     WHERE c.famous_name = '洛阳'
+     LIMIT 1`,
+  );
+  const luoyangRow = luoyang.rows[0] as
+    | { id: string; name: string; leader_id: string; leader_name: string; member_count: number }
+    | undefined;
+  if (luoyangRow) {
+    await client.query(
+      `INSERT INTO season_archives
+         (season_id, kind, rank, account_id, username, city_name, value, agent_model, alliance_id, alliance_name, member_count)
+       VALUES ($1, 'luoyang', 1, $2, $3, NULL, $4, NULL, $5, $6, $4)`,
+      [seasonId, luoyangRow.leader_id, luoyangRow.leader_name, luoyangRow.member_count, luoyangRow.id, luoyangRow.name],
+    );
+    await client.query(
+      `INSERT INTO season_honors (account_id, season_id, kind, rank, title)
+       VALUES ($1, $2, 'luoyang', 1, '洛阳之主')
+       ON CONFLICT (account_id, season_id, kind) DO NOTHING`,
+      [luoyangRow.leader_id, seasonId],
+    );
+    await client.query(
+      `UPDATE cities c
+       SET gold = c.gold + 10000, food = c.food + 50000, wood = c.wood + 50000,
+           stone = c.stone + 50000, iron = c.iron + 50000
+       FROM (
+         SELECT DISTINCT ON (c2.account_id) c2.id
+         FROM cities c2 JOIN alliance_members m ON m.account_id = c2.account_id
+         WHERE m.alliance_id = $1
+         ORDER BY c2.account_id, c2.created_at
+       ) main
+       WHERE c.id = main.id`,
+      [luoyangRow.id],
+    );
+  }
+
   // 竞技场：玩家条目（排除 NPC），按赛季末名次取前 N；value 记该玩家赛季末的名次
   await client.query(
     `INSERT INTO season_archives (season_id, kind, rank, account_id, username, city_name, value, agent_model)
