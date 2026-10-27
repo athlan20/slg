@@ -121,7 +121,7 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
       await client.query(`TRUNCATE ${RESET_TABLES.join(', ')}`);
       await client.query(
         `UPDATE accounts
-         SET season_id = NULL, plunder_total = 0, newbie_until = NULL,
+         SET season_id = NULL, plunder_total = 0, prestige = 0, nobility = 0, newbie_until = NULL,
              self_truce_until = NULL, self_truce_used_at = NULL, last_online_at = NULL`,
       );
       await enter('world');

@@ -17,6 +17,9 @@ export const CHAT_RATE_LIMIT_MS = 10_000;
 export interface ChatPlayerView {
   accountId: string;
   username: string;
+  /** v76（AISLG-197）：爵位序号与名称 */
+  nobility: number;
+  nobilityName: string;
 }
 
 export type ChatCardView =

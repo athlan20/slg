@@ -280,7 +280,8 @@ export async function handleResetAccount(
     // Agent 离线日报同属账号数据，一并清空（v23 AISLG-54）
     await client.query(`DELETE FROM agent_daily_reports WHERE account_id = $1`, [accountId]);
     // 累计掠夺台账随重置清零（v23 AISLG-61）
-    await client.query(`UPDATE accounts SET plunder_total = 0 WHERE id = $1`, [accountId]);
+    await client.query(`UPDATE accounts SET plunder_total = 0, prestige = 0, nobility = 0 WHERE id = $1`, [accountId]);
+    await client.query(`DELETE FROM nobility_claims WHERE account_id = $1`, [accountId]);
     // v38（AISLG-122）：重置 = 回到开号初始状态——重新进入新手保护（3 天基准随缩放），
     // 清掉主动免战与本城被动免战（免战是「城被攻破」的产物，重置后不再是）
     await client.query(

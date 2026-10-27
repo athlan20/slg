@@ -392,10 +392,12 @@ export async function heroCounts(
   );
   const row = res.rows[0] as { normal_count: number; famous_count: number };
   const maxTavern = await maxTavernLevel(q, accountId);
+  const nobilityRes = await q.query(`SELECT nobility FROM accounts WHERE id = $1`, [accountId]);
+  const nobility = Math.max(0, Number((nobilityRes.rows[0] as { nobility: number } | undefined)?.nobility ?? 0));
   return {
     normalCount: row.normal_count,
     famousCount: row.famous_count,
-    normalCap: normalHeroCap(maxTavern),
+    normalCap: normalHeroCap(maxTavern, nobility),
     famousCap: FAMOUS_HERO_CAP,
     maxTavernLevel: maxTavern,
   };

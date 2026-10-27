@@ -68,6 +68,7 @@ import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useMapOverview, type MapOverviewSession } from './mapOverview';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useBattlefieldSession, type BattlefieldSession } from './battlefield';
+import { useNobilitySession, type NobilitySession } from './nobilitySession';
 import { useSessionExtras } from './session-extras';
 import { useChat, type ChatState } from './useChat';
 import { useAnnouncements, type AnnouncementSlice } from './announcements';
@@ -204,6 +205,8 @@ export interface GameSession {
   yellowTurban: YellowTurbanSession;
   /** 剧本战场会话（v75 AISLG-198）：官渡的报名 / 入场 / 队伍 / 军功 / 商店 */
   battlefield: BattlefieldSession;
+  /** 声望与爵位（v76 AISLG-197）：爵位 / 今日俸禄状态与领取 */
+  nobility: NobilitySession;
   /** 加载更早的一页事件（滚动到底部触发；游标 = 已加载的最小服务端事件 id） */
   loadOlderEvents: () => Promise<void>;
   /** 账号安全（v43）：Agent 令牌签发 / 吊销、微信绑定状态刷新 */
@@ -409,6 +412,10 @@ export function useGameSession(): GameSession {
   // 剧本战场会话切片（v75，AISLG-198）：官渡的报名 / 入场 / 队伍 / 军功 / 商店，推送到达重拉
   const battlefield = useBattlefieldSession({ clientRef, connected: connection === 'online' });
   const { clear: battlefieldClear, onPush: onBattlefieldPush } = battlefield;
+
+  // 声望与爵位切片（v76，AISLG-197）：连接建立时拉取，领俸禄后重拉
+  const nobility = useNobilitySession({ clientRef, connected: connection === 'online' });
+  const { clear: nobilityClear } = nobility;
 
   // 任务与签到会话切片（v53 AISLG-200）：打开养成页拉取当日任务 / 签到状态，领奖与签到后回带城池资源
   const questSession = useQuestSession({ clientRef, connected: connection === 'online', setCity });
@@ -629,6 +636,7 @@ export function useGameSession(): GameSession {
       movingClear();
       ytClear();
       battlefieldClear();
+      nobilityClear();
       questClear();
       seasonClear();
       hallClear();
@@ -637,7 +645,7 @@ export function useGameSession(): GameSession {
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, questClear, resetCityList, seasonClear, hallClear],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, questClear, resetCityList, seasonClear, hallClear],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -666,7 +674,7 @@ export function useGameSession(): GameSession {
     hallClear();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, questClear, hallClear, allianceClear, allianceMarksClear]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, questClear, hallClear, allianceClear, allianceMarksClear]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1208,6 +1216,7 @@ export function useGameSession(): GameSession {
         movingClear();
         ytClear();
       battlefieldClear();
+      nobilityClear();
         questClear();
         await syncAll('initial');
         return null;
@@ -1216,7 +1225,7 @@ export function useGameSession(): GameSession {
     } catch (err) {
       return err instanceof Error ? err.message : COPY.errors.reset.fallback;
     }
-  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, questClear, resetCityList]);
+  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, questClear, resetCityList]);
 
   /** 加载更早的一页事件（beforeId 游标分页；本地临时事件 id 为负，不作为游标） */
   const loadOlderEvents = useCallback(async () => {
@@ -1336,6 +1345,7 @@ export function useGameSession(): GameSession {
     moving,
     yellowTurban,
     battlefield,
+    nobility,
     loadOlderEvents,
     security,
     connectForWechat,

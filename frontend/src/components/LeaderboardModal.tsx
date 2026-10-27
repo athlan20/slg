@@ -51,6 +51,7 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
     plunder: COPY.leaderboard.plunder,
     model: COPY.leaderboard.model,
     alliance: ALLIANCE_COPY.board.tab,
+    nobility: COPY.leaderboard.nobility,
   };
   const [tab, setTab] = useState<LeaderboardKind>(view?.kind ?? 'power');
   // 联盟榜里点开的联盟（公开信息视图）；null = 显示榜单
@@ -155,6 +156,7 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
                     <span className="font-mono">{entry.rank}</span>
                     <span className="min-w-0 truncate">
                       <span className="text-fg">{entry.username}</span>
+                      <span className="ml-1.5 text-gold">{entry.nobilityName}</span>
                       <span className="ml-1.5 text-faint">{tName(entry.cityName)}</span>
                       {entry.agentOnline ? <span className="tag actor-system ml-1.5">{COPY.leaderboard.agentBadge}</span> : null}
                       {entry.agentModel ? (

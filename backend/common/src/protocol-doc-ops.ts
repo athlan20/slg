@@ -79,6 +79,7 @@ import {
 import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT } from './protocol-doc-ops-army';
 import { PUSH_DEFENSE_STATE, REQUEST_CANCEL_DEFENSE_CRAFT, REQUEST_CRAFT_DEFENSE } from './protocol-doc-ops-defense';
 import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
+import { REQUEST_CLAIM_NOBILITY_SALARY, REQUEST_GET_NOBILITY } from './protocol-doc-ops-nobility';
 import {
   PUSH_BATTLEFIELD_STATE,
   REQUEST_BUY_BATTLEFIELD_ITEM,
@@ -130,6 +131,8 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.id', type: 'string', desc: '城池 UUID。' },
     { name: 'city.name', type: 'string', desc: '城池名称，注册时创建的主城默认为「主城」，可用 RENAME_CITY 修改。' },
     { name: 'city.level', type: 'number', desc: '城池等级（v7 新增；v24 起 = 该城官府等级 levels.government，不另设升级系统；此前恒为 1）。官府升级，城池等级跟着升。' },
+    { name: 'city.title', type: 'string', desc: '城池称号（v76，AISLG-197）：按官府等级 1–4 城池 / 5–9 县城 / 10–14 郡城 / 15–19 州城 / 20+ 都城；都城只给主城，分城最高州城。无数值加成。' },
+    { name: 'city.nobility', type: 'object', desc: '账号爵位（v76，AISLG-197）：{ index（0 = 平民，索引见 GET_NOBILITY）, name }。' },
     { name: 'city.resources.gold', type: 'number', desc: '金（由官府自动生产）。' },
     { name: 'city.resources.wood', type: 'number', desc: '木。' },
     { name: 'city.resources.food', type: 'number', desc: '粮。' },
@@ -166,7 +169,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.defenseBonus', type: 'number', desc: '城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。' },
     { name: 'city.marches', type: 'array', desc: '本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。' },
     { name: 'city.territory', type: 'array', desc: '本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。' },
-    { name: 'cities', type: 'array', desc: 'v12 新增：账号全部城池 { id, name, level, x, y, isMain }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。' },
+    { name: 'cities', type: 'array', desc: 'v12 新增：账号全部城池 { id, name, level, x, y, isMain, title 城池称号, nobility 爵位 }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。' },
     { name: 'branch', type: 'object', desc: 'v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。' },
     { name: 'city.storage', type: 'object', desc: '储量上限（v7 新增，v8 规则确认；v22 AISLG-41 随全局缩放）：{ gold, food, wood, stone, iron }；四资源各自 = （10000 + 对应资源**建筑产量**（各生产建筑等级 × 每级速率之和，**不含**无建筑的 100/h 基础产量）× 100）× timeScale，金币 = 100 万 × timeScale——上限与产出同幅缩放，填满时长不受缩放影响：四资源恒为基准 100 小时；金币随官府等级与金矿占领加成变化（仅有官府产金时 = 10000 ÷ 官府等级 小时，官府 Lv4 时才是 2500 小时），请用 storage[k] ÷ production[k] 现算。达到上限后停止对应生产；已有超限存量不扣减。仓库不改变储量上限（v21 起防掠夺保护消费方已接入：NPC 袭击主城攻破后可掠量 = max(0, 存量 − 保护额)，保护量 4000×等级、四资源固定均分各 1000×等级；金币不受仓库保护，但 NPC 单次最多抢走存量的 5%（v41 AISLG-125）、玩家互掠为存量的 10%）。' },
     { name: 'city.queue', type: 'array', desc: '建造队列（v4 新增）：第 1 项为在建（status=building，dueAt 非空），其余为排队（status=queued，dueAt 为 null），按入队顺序；已取消的条目不在其中（CANCEL_BUILD 取消）。' },
@@ -445,6 +448,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.SPLIT_BATTLEFIELD_SQUAD]: REQUEST_SPLIT_BATTLEFIELD_SQUAD,
   [Op.MARCH_BATTLEFIELD_SQUAD]: REQUEST_MARCH_BATTLEFIELD_SQUAD,
   [Op.BUY_BATTLEFIELD_ITEM]: REQUEST_BUY_BATTLEFIELD_ITEM,
+  [Op.GET_NOBILITY]: REQUEST_GET_NOBILITY,
+  [Op.CLAIM_NOBILITY_SALARY]: REQUEST_CLAIM_NOBILITY_SALARY,
   [Op.PUSH_BATTLEFIELD_STATE]: PUSH_BATTLEFIELD_STATE,
   [Op.GET_WORLD_MAP]: REQUEST_GET_WORLD_MAP,
   [Op.GET_MAP_OVERVIEW]: REQUEST_GET_MAP_OVERVIEW,

@@ -83,6 +83,16 @@ export const CITY_COPY_EN = {
       'the city as a Branch City (occupying grants an exclusive output bonus); when time runs out, the outer-ring ' +
       'garrisons refill',
   },
+  nobility: {
+    label: 'Title / Nobility',
+    meta: (title: string, name: string) => `${title} · ${name}`,
+    claim: 'Claim daily salary',
+    claimed: 'Salary claimed today',
+    noNobility: 'Commoners receive no salary',
+    claimFailed: 'Failed to claim salary, please retry',
+    salary: (gold: number) => `Today's salary: ${gold} gold`,
+    promoted: (actor: string, name: string) => `${actor} was promoted to ${name}`,
+  },
   errors: {
     governmentTooLow:
       'Occupying an NPC city requires the Main City Government Hall at the specified level (see the Branch City quota hint)',

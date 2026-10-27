@@ -141,6 +141,9 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   BATTLEFIELD_SHOP_LIMIT: '本场该商品已达到限购数量',
   BATTLEFIELD_MERIT_INSUFFICIENT: '战场军功不足（军功跨场累积、换季清零）',
   BATTLEFIELD_TARGET_INVALID: '请给出目标坐标或据点 id（二者都缺或对不上）',
+  NOBILITY_TOO_LOW: '爵位不足：占领名城需要「大夫」及以上爵位',
+  NOBILITY_SALARY_CLAIMED: '今日俸禄已经领过了（北京时间每天 0 点重置）',
+  NOBILITY_SALARY_NONE: '平民没有俸禄：累计声望升爵后才有',
   ANNOUNCEMENT_NOT_FOUND: '公告不存在、已撤回或尚未生效',
   MAINTENANCE: '服务器正在换季维护，请稍后再试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除

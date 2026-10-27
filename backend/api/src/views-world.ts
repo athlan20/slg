@@ -3,6 +3,7 @@
 
 import { campRowFromJson, ytTileCampView } from '../../common/src/yellow-turban-db';
 import pg from 'pg';
+import { nobilityName } from '../../common/src/nobility';
 import {
   TROOP_KINDS,
   type FamousTileView,
@@ -43,6 +44,7 @@ interface TileQueryRow extends TileRow {
   /** 占领者与请求账号同一联盟（v67，AISLG-182；自己不算盟友） */
   owner_is_ally?: boolean;
   owner_username: string | null;
+  owner_nobility?: number | null;
   owner_city_name: string | null;
   garrison: number | null;
   /** 请求账号对该地块的侦察快照（scout_intel.detail 拆列）；未侦察均为 null */
@@ -82,7 +84,7 @@ interface TileQueryRow extends TileRow {
 // $1 恒为请求账号 id（NPC 城池的 garrison 掩蔽按其侦察快照判定，v17；null 匹配不到任何行）
 const TILE_SELECT = `
   SELECT wt.x, wt.y, wt.terrain, wt.kind, wt.level, wt.owner_city_id, wt.npc, wt.plundered_at,
-         c.account_id AS owner_account_id, a.username AS owner_username, c.name AS owner_city_name,
+         c.account_id AS owner_account_id, a.username AS owner_username, a.nobility AS owner_nobility, c.name AS owner_city_name,
          (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally,
          c.truce_until AS owner_city_truce_until, a.newbie_until AS owner_newbie_until, a.self_truce_until AS owner_shield_until,
          wt.owner_changed_until, c.durability, c.durability_settled_at,
@@ -204,6 +206,8 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
       username: row.owner_username,
       cityId: row.owner_city_id,
       cityName: row.owner_city_name,
+      nobility: Math.max(0, Number(row.owner_nobility ?? 0)),
+      nobilityName: nobilityName(Number(row.owner_nobility ?? 0)),
       ally: row.owner_is_ally === true,
     };
   }

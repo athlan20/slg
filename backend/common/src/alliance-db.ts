@@ -5,6 +5,7 @@
 import type pg from 'pg';
 import { NOTIFY_CHANNEL } from './db';
 import type { ChatPlayerView, ChatSystemView } from './protocol-chat';
+import { nobilityName } from './nobility';
 import {
   ALLIANCE_COOLDOWN_MS,
   ALLIANCE_MAX_MEMBERS,
@@ -342,10 +343,15 @@ export async function recordAllianceEvent(
   }
   const accountIds = [detail.accountId, detail.by, detail.from, detail.to].filter((id): id is string => typeof id === 'string');
   const names = await accountNames(q, accountIds);
-  const player = (accountId: unknown): ChatPlayerView => ({
-    accountId: accountId as string,
-    username: names.get(accountId as string) ?? '',
-  });
+  const player = (accountId: unknown): ChatPlayerView => {
+    const info = names.get(accountId as string);
+    return {
+      accountId: accountId as string,
+      username: info?.username ?? '',
+      nobility: info?.nobility ?? 0,
+      nobilityName: nobilityName(info?.nobility ?? 0),
+    };
+  };
   let system: ChatSystemView;
   if (kind === 'joined') {
     system = { kind: 'alliance_joined', player: player(detail.accountId), founder: detail.created === true };
@@ -381,12 +387,17 @@ export async function recordAllianceEvent(
 }
 
 /** 一批账号的用户名（系统消息快照用）；查不到的不出现在结果里 */
-async function accountNames(q: Q, accountIds: readonly string[]): Promise<Map<string, string>> {
+async function accountNames(q: Q, accountIds: readonly string[]): Promise<Map<string, { username: string; nobility: number }>> {
   if (accountIds.length === 0) {
     return new Map();
   }
-  const res = await q.query(`SELECT id, username FROM accounts WHERE id = ANY($1::uuid[])`, [[...new Set(accountIds)]]);
-  return new Map((res.rows as Array<{ id: string; username: string }>).map((row) => [row.id, row.username]));
+  const res = await q.query(`SELECT id, username, nobility FROM accounts WHERE id = ANY($1::uuid[])`, [[...new Set(accountIds)]]);
+  return new Map(
+    (res.rows as Array<{ id: string; username: string; nobility: number }>).map((row) => [
+      row.id,
+      { username: row.username, nobility: Math.max(0, Number(row.nobility)) },
+    ]),
+  );
 }
 
 export interface LeaderTransfer {

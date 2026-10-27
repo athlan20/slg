@@ -198,6 +198,7 @@ export const LEADERBOARD_EN = {
   territory: 'Territories',
   plunder: 'Total Plunder',
   model: 'Model Leaderboard',
+  nobility: 'Nobility',
   updatedAt: (time: string) => `Snapshot ${time}`,
   rankColumn: 'Rank',
   playerColumn: 'Player',

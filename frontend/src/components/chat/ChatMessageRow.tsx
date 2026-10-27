@@ -25,7 +25,10 @@ export function ChatMessageRow({ message }: { message: ChatMessageView }) {
     <div role="聊天-消息" className="flex min-w-0 flex-col gap-0.5">
       <div className="flex min-w-0 items-baseline gap-1.5 text-[11.5px]">
         {mine ? (
-          <span className="min-w-0 truncate font-semibold text-accent">{message.sender.username}</span>
+          <>
+            <span className="min-w-0 truncate font-semibold text-accent">{message.sender.username}</span>
+            <span className="shrink-0 text-[10.5px] text-gold">{message.sender.nobilityName}</span>
+          </>
         ) : (
           <button
             type="button"
@@ -36,6 +39,7 @@ export function ChatMessageRow({ message }: { message: ChatMessageView }) {
             {message.sender.username}
           </button>
         )}
+        {!mine ? <span className="shrink-0 text-[10.5px] text-gold">{message.sender.nobilityName}</span> : null}
         {message.recipient ? <span className="min-w-0 truncate text-faint">→ {message.recipient.username}</span> : null}
         <span className="ml-auto shrink-0 font-mono text-faint">{formatReportTime(message.createdAt)}</span>
       </div>

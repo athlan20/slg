@@ -264,6 +264,10 @@ export interface CityView {
   name: string;
   /** 城池数字等级（v7；提升条件与作用待设计，当前恒为 1） */
   level: number;
+  /** 城池称号（v76，AISLG-197）：按官府等级 1–4 城池 / 5–9 县城 / 10–14 郡城 / 15–19 州城 / 20+ 都城（分城最高州城） */
+  title: string;
+  /** 账号爵位（v76，AISLG-197）：{ index（0 = 平民）, name } */
+  nobility: { index: number; name: string };
   resources: Resources;
   /** 按建筑类型统计的已建数量（v3 新增；v5 单实例规则下为 0 或 1） */
   buildings: BuildingCounts;

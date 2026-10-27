@@ -26,7 +26,7 @@ export async function archiveSeason(client: pg.PoolClient, seasonId: number, sea
     `INSERT INTO season_archives (season_id, kind, rank, account_id, username, city_name, value, agent_model)
      SELECT $1, kind, rank, account_id, username, city_name, value, agent_model
      FROM leaderboard_snapshots
-     WHERE kind IN ('power', 'territory', 'plunder') AND rank <= $2`,
+     WHERE kind IN ('power', 'territory', 'plunder', 'nobility') AND rank <= $2`,
     [seasonId, ARCHIVE_TOP_N],
   );
 
@@ -93,7 +93,7 @@ async function writeHonors(client: pg.PoolClient, seasonId: number, seasonName: 
     `INSERT INTO season_honors (account_id, season_id, kind, rank, title)
      SELECT a.account_id, a.season_id, a.kind, a.rank,
        $2 || '·' ||
-       CASE a.kind WHEN 'power' THEN '力量榜' WHEN 'territory' THEN '领土榜' WHEN 'plunder' THEN '掠夺榜'
+       CASE a.kind WHEN 'power' THEN '力量榜' WHEN 'territory' THEN '领土榜' WHEN 'plunder' THEN '掠夺榜' WHEN 'nobility' THEN '爵位榜'
                    WHEN 'arena' THEN '竞技场' WHEN 'starTower' THEN '将星塔' ELSE a.kind END ||
        CASE a.rank WHEN 1 THEN '冠军' WHEN 2 THEN '亚军' ELSE '季军' END
      FROM season_archives a

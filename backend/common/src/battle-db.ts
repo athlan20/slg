@@ -15,6 +15,8 @@ export interface BattleReportRow {
   x: number;
   y: number;
   kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'battlefield';
+  /** v76（AISLG-197）：本场获得的声望 */
+  prestigeGained?: number;
   detail: Omit<BattleReportView, 'id' | 'createdAt' | 'comment'> & { createdAt?: string };
   /** Agent 写回的点评（v23 AISLG-53；独立列，重写覆盖） */
   agent_comment?: string | null;

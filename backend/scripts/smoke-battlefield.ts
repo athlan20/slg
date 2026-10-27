@@ -109,6 +109,23 @@ async function main(): Promise<void> {
     check(captured, '延津渡口归属袁绍军');
     check(merit > 0, `拿到军功（${merit}）`);
 
+    step('声望：剧本战场军功按 1:1 计，战报带 prestigeGained');
+    const nobility = await player.request(Op.GET_NOBILITY);
+    check(nobility.ok === true, '查询爵位成功');
+    const prestige = Number(dataOf(nobility).prestige ?? 0);
+    check(prestige >= merit, `声望 ${prestige} ≥ 军功 ${merit}`);
+    const reports = await player.request(Op.GET_BATTLE_REPORTS, { limit: 1 });
+    const report = ((dataOf(reports).reports ?? []) as Array<{ prestigeGained?: number }>)[0];
+    check(Number(report?.prestigeGained ?? 0) > 0, '战报带本场声望');
+
+    step('爵位俸禄：北京日只能领一次');
+    await client.query(`UPDATE accounts SET prestige = 2500, nobility = 3 WHERE id = $1`, [accountId]);
+    const salary = await player.request(Op.CLAIM_NOBILITY_SALARY, {});
+    check(salary.ok === true, '领取俸禄成功');
+    check(Number(dataOf(salary).gold) > 0, '俸禄金币入账');
+    const again = await player.request(Op.CLAIM_NOBILITY_SALARY, {});
+    check(again.ok === false && again.error?.code === 'NOBILITY_SALARY_CLAIMED', '重复领取被拒绝');
+
     step('战场商店兑换资源包');
     const buy = await player.request(Op.BUY_BATTLEFIELD_ITEM, { item: 'resources' });
     check(buy.ok === true, '兑换成功');

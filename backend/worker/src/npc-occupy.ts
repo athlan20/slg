@@ -16,6 +16,8 @@ import { combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { checkOccupyNpcCity } from '../../common/src/branch-city';
 import { famousStage } from '../../common/src/famous-city';
+import { FAMOUS_CITY_NOBILITY_INDEX } from '../../common/src/nobility';
+import { loadNobilityIndex } from '../../common/src/nobility-db';
 import { DURABILITY_MAX } from '../../common/src/protection';
 import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';
 import { loadBuildingLevels } from '../../common/src/production';
@@ -150,15 +152,22 @@ export async function resolveNpcOccupyArrival(
   }
 
   // 到达复核分城资格（发起后主城官府 / 分城数可能变化）
+  // v76（AISLG-197）：名城还要求「大夫」及以上爵位（发起后可能已升爵 / 降级）
+  const nobilityDenial =
+    npc.famous !== undefined && (await loadNobilityIndex(client, march.account_id)) < FAMOUS_CITY_NOBILITY_INDEX
+      ? 'NOBILITY_TOO_LOW'
+      : null;
   const standing = await loadBranchStanding(client, march.account_id);
   const fromLevels = await loadBuildingLevels(client, march.from_city_id);
-  const denial = checkOccupyNpcCity({
-    mainGovernment: standing.mainGovernment,
-    fromGovernment: fromLevels.government,
-    branchCount: standing.branchCount,
-    targetLevel: tile.level,
-    discardCooldown: await loadDiscardCooldownActive(client, march.account_id, tile.x, tile.y),
-  });
+  const denial =
+    nobilityDenial ??
+    checkOccupyNpcCity({
+      mainGovernment: standing.mainGovernment,
+      fromGovernment: fromLevels.government,
+      branchCount: standing.branchCount,
+      targetLevel: tile.level,
+      discardCooldown: await loadDiscardCooldownActive(client, march.account_id, tile.x, tile.y),
+    });
   await markMarchArrived(client, march.id);
   if (denial) {
     const returning = await createReturnMarch(client, march, result.attacker.survivors, settled, march.initiator);

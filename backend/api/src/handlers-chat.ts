@@ -4,6 +4,7 @@
 // 联盟频道（v68，AISLG-183）：只有本联盟成员能读，无联盟返回 ALLIANCE_NOT_IN。
 
 import { getMembership } from '../../common/src/alliance-db';
+import { loadNobilityIndexes } from '../../common/src/nobility-db';
 import { Op } from '../../common/src/protocol';
 import type { ChatPlayerView } from '../../common/src/protocol-chat';
 import type { ConnInfo } from './connections';
@@ -101,7 +102,8 @@ async function handleHistory(
   }
   const filter = bannedWordFilter();
   const hasMore = rows.length > limit;
-  const messages = rows.slice(0, limit).reverse().map((row) => chatMessageView(row, filter));
+  const nobility = await loadNobilityIndexes(ctx.pool, rows.flatMap((row) => [row.sender_id, row.recipient_id].filter((id): id is string => Boolean(id))));
+  const messages = rows.slice(0, limit).reverse().map((row) => chatMessageView(row, filter, nobility));
   respondOk(ctx.registry, conn, op, seq, { messages, hasMore });
 }
 
@@ -116,6 +118,10 @@ async function handleConversations(ctx: HandlerContext, conn: ConnInfo, op: numb
   const unreadByPeer = new Map(unreadRows.map((row) => [row.peer_id, row.n]));
   const unreadTotal = unreadRows.reduce((sum, row) => sum + row.n, 0);
 
+  const nobility = await loadNobilityIndexes(
+    ctx.pool,
+    rows.flatMap((row) => [row.sender_id, row.recipient_id].filter((id): id is string => Boolean(id))),
+  );
   const conversations = lastIds.flatMap(({ peer_id, last_id }) => {
     const row = rowById.get(Number(last_id));
     if (!row) {
@@ -125,7 +131,7 @@ async function handleConversations(ctx: HandlerContext, conn: ConnInfo, op: numb
     return [
       {
         peer: playerView(peer_id, peerName, filter),
-        last: chatMessageView(row, filter),
+        last: chatMessageView(row, filter, nobility),
         unread: unreadByPeer.get(peer_id) ?? 0,
       },
     ];
