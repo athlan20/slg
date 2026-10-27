@@ -16,7 +16,7 @@ import { EventType, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
 import { armyCarryCapacity } from '../../common/src/troops';
-import { carryingPercent, defenseExtraPercent } from '../../common/src/tech';
+import { carryingPercent, combatTechBonus, defenseExtraPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
@@ -135,6 +135,8 @@ export async function resolvePvpPlunderArrival(
     tower: towerStats(levels.arrow_tower ?? 0, famousTowerPercent(famousName)),
     attackerHero: hero?.engine ?? null,
     defenderHero: guardBonus,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+    defenderTech: combatTechBonus(await loadTechLevels(client, city.account_id)),
   });
 
   // 双方战报（每账号一份，各自视角）与命名

@@ -12,7 +12,7 @@ import type { Resources, TroopKind } from '../../common/src/protocol';
 import { armyPower, resolveBattle } from '../../common/src/battle';
 import { armyCarryCapacity } from '../../common/src/troops';
 import { loadByCarry, lootTotal, PLUNDERABLE_KEYS, type PlunderLoot } from '../../common/src/plunder';
-import { carryingPercent } from '../../common/src/tech';
+import { carryingPercent, combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { YT_TIER_INFO, ytBossUnlockCount, ytLootPool } from '../../common/src/yellow-turban';
 import {
@@ -72,7 +72,12 @@ export async function resolveCampArrival(
   const defender = campGarrison(camp, now);
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  const result = resolveBattle(troops, defender, { wallDefensePercent: 0, siege: false, attackerHero: hero?.engine ?? null });
+  const result = resolveBattle(troops, defender, {
+    wallDefensePercent: 0,
+    siege: false,
+    attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+  });
   const label = tier === 'boss' ? `${YT_TIER_INFO.boss.label} · ${stage === 'keeper' ? '城守' : '外围'}` : YT_TIER_INFO[tier].label;
   const naming = await loadCityNaming(client, march.from_city_id);
   const reportId = await saveBattleReport(

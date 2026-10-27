@@ -2,21 +2,23 @@
 // 科技规则与数值见 common/src/tech.ts。类型导入在运行时被擦除，不构成加载环。
 
 import type { InitiatorRole, Resources } from './protocol';
-import type { TechKind } from './tech';
+import type { TechCategory, TechKind } from './tech';
 
 /** 一项科技的当前状态与下一级信息 */
 export interface TechEntryView {
   kind: TechKind;
   /** 中文名 */
   label: string;
+  /** 归类（v72）：development 发展 / military 军事；界面据此分两栏 */
+  category: TechCategory;
   /** 当前等级（0 = 未研究；账号共享） */
   level: number;
   maxLevel: number;
-  /** 每级效果（百分数；侦察科技为 0，按等级解锁内容） */
+  /** 每级效果（百分数，带符号；侦察科技为 0，按等级解锁内容） */
   percentPerLevel: number;
   /** 一句话效果说明 */
   effect: string;
-  /** 当前等级的累计效果（百分数；侦察为 0） */
+  /** 当前等级的累计效果（百分数，带符号：负数为减少时长 / 耗粮 / 受伤；侦察为 0） */
   currentPercent: number;
   /** 下一级的研究信息；满级为 null。academyRequired = 下一级要求的书院等级（= 目标等级） */
   next: {

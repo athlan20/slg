@@ -19,7 +19,7 @@ import pg from 'pg';
 import { EventType, type InitiatorRole, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
-import { defenseExtraPercent } from '../../common/src/tech';
+import { combatTechBonus, defenseExtraPercent, repairPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
@@ -116,7 +116,8 @@ export async function resolvePvpConquestArrival(
   }
   // v62（AISLG-166）：守方名城（洛阳）城墙额外减伤、长安箭塔伤害
   const famousName = await loadFamousName(client, city.id);
-  const wall = wallDefensePercent(levels.wall ?? 0, defenseExtraPercent(await loadTechLevels(client, city.account_id)) + famousWallExtraPercent(famousName));
+  const defenderTechs = await loadTechLevels(client, city.account_id);
+  const wall = wallDefensePercent(levels.wall ?? 0, defenseExtraPercent(defenderTechs) + famousWallExtraPercent(famousName));
   const guard = await loadCityGuard(client, city.id);
   const garrisonTotal = Object.values(garrison).reduce((sum, n) => sum + (n ?? 0), 0);
   const guardBonus = battleBonusOf(guard, garrisonTotal);
@@ -127,6 +128,8 @@ export async function resolvePvpConquestArrival(
     tower: towerStats(levels.arrow_tower ?? 0, famousTowerPercent(famousName)),
     attackerHero: hero?.engine ?? null,
     defenderHero: guardBonus,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+    defenderTech: combatTechBonus(defenderTechs),
   });
 
   const attackerNaming = await loadNaming(client, march.from_city_id);
@@ -211,7 +214,7 @@ export async function resolvePvpConquestArrival(
     [city.id],
   );
   const dRow = durabilityRow.rows[0] as { durability: number | null; durability_settled_at: Date | null; truce_until: Date | null };
-  const before = settleDurability(dRow.durability, dRow.durability_settled_at, dRow.truce_until, now);
+  const before = settleDurability(dRow.durability, dRow.durability_settled_at, dRow.truce_until, now, repairPercent(defenderTechs));
   let survivorTotal = 0;
   let ramCount = 0;
   for (const [kind, count] of Object.entries(result.attacker.survivors)) {

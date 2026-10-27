@@ -55,6 +55,7 @@ export function buildTechState(
     return {
       kind,
       label: info.label,
+      category: info.category,
       level,
       maxLevel: MAX_TECH_LEVEL,
       percentPerLevel: info.percentPerLevel,
@@ -66,7 +67,8 @@ export function buildTechState(
           : {
               level: nextLevel,
               cost: techCost(kind, nextLevel),
-              seconds: researchSeconds(nextLevel),
+              // v72：研究时长按该账号当前「研究」科技等级缩短
+              seconds: researchSeconds(nextLevel, levels.research),
               academyRequired: nextLevel,
               academyOk: academyLevel >= nextLevel,
             },

@@ -13,7 +13,8 @@
 // - 锁序与全栈统一：cities → world_tiles（本文件只做结算，锁由调用方持有）。
 
 import { degradeGarrison } from '../../common/src/scout-detail';
-import type { TechLevels } from '../../common/src/tech';
+import { combatTechBonus, type TechLevels } from '../../common/src/tech';
+import { loadTechLevels } from '../../common/src/tech-db';
 import pg from 'pg';
 import { EventType, RESOURCE_KEYS, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
@@ -78,6 +79,8 @@ export async function resolveBattleArrival(
     wallDefensePercent: wall,
     siege: tile.kind === 'npc_city',
     attackerHero: hero?.engine ?? null,
+    // v72（AISLG-192）：世界地图战斗吃攻方科技乘数；NPC 守方不吃
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
   });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   if (!npc) {
@@ -249,7 +252,7 @@ export async function resolveNpcWildernessRaid(
   target: NpcWildernessRaidTarget,
 ): Promise<void> {
   const { tile, level, garrison, accountId, cityId } = target;
-  const raid = resolveNpcRaid(garrison, level);
+  const raid = resolveNpcRaid(garrison, level, undefined, combatTechBonus(await loadTechLevels(client, accountId)));
   const npcPower = armyPower(npcRaidArmy(level));
   const garrisonPower = armyPower(garrison);
   const reportId = await saveBattleReport(

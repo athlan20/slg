@@ -7,7 +7,7 @@
 
 import { TROOP_KINDS, type ArmyCounts, type TroopKind } from './protocol';
 import { wallBasePercent } from './rules';
-import { simulateBattle, type BattleOptions, type BattleResult } from './battle-engine';
+import { simulateBattle, type BattleOptions, type BattleResult, type CombatTechBonus } from './battle-engine';
 
 // 消费方的历史引用面保持在 './battle'（引擎与兵种属性经本文件重导出）
 export * from './battle-engine';
@@ -186,7 +186,9 @@ export function resolveNpcRaid(
   garrison: Partial<Record<TroopKind, number>>,
   level: number,
   rng?: () => number,
+  /** v72（AISLG-192）：守方（被袭击野地的驻军主）科技乘数；NPC 一方不传 */
+  defenderTech: CombatTechBonus | null = null,
 ): NpcRaidOutcome {
-  const result = simulateBattle(npcRaidArmy(level), garrison, { siege: false, rng });
+  const result = simulateBattle(npcRaidArmy(level), garrison, { siege: false, rng, defenderTech });
   return { defended: !result.attackerWon, result };
 }

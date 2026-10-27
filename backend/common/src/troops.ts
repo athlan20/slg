@@ -246,17 +246,19 @@ export function recruitUnitSeconds(troop: TroopKind): number {
 }
 
 /**
- * 批次征募总时长（秒）= max(1, 基准单兵时长 × 数量 ÷ time_scale)——**下限作用于
- * 批次总时长**而非单兵（v22，AISLG-39 方案 A：修复 v20 起单兵被逐个钳 1 秒、批量
- * 征兵比文档公式慢数倍的问题；显式环境变量覆盖优先且不再缩放，与建造路径一致）。
+ * 批次征募总时长（秒）= max(1, 基准单兵时长 × 数量 × 练兵科技折扣 ÷ time_scale)——
+ * **下限作用于批次总时长**而非单兵（v22，AISLG-39 方案 A：修复 v20 起单兵被逐个钳
+ * 1 秒、批量征兵比文档公式慢数倍的问题；显式环境变量覆盖优先且不再缩放，与建造路径一致）。
+ * v72（AISLG-192）：drillPercent 为「练兵」科技的征兵时长减少百分数（每级 3%，正数）。
  */
-export function recruitBatchSeconds(troop: TroopKind, count: number): number {
+export function recruitBatchSeconds(troop: TroopKind, count: number, drillPercent = 0): number {
   const n = Math.max(1, Math.floor(count));
+  const factor = 1 - Math.min(100, Math.max(0, drillPercent)) / 100;
   const raw = Number(process.env.RECRUIT_UNIT_SECONDS);
   if (Number.isFinite(raw) && raw >= 1) {
-    return Math.floor(raw) * n;
+    return Math.max(1, Math.floor(Math.floor(raw) * n * factor));
   }
-  return scaledSeconds(TROOP_INFO[troop].unitSeconds * n);
+  return scaledSeconds(TROOP_INFO[troop].unitSeconds * n * factor);
 }
 
 /** 一支部队的小时耗粮合计 = Σ(单兵 foodUse × 数量)；未知兵种按 0 计 */

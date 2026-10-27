@@ -11,7 +11,7 @@
 // - 主城被掠不改归属、无占领变化；事件 npc_raid（target='city'，含 loot）+
 //   守方视角战报（kind='city_raid'）。玩家互掠仍随玩家对抗阶段接入。
 
-import { defenseExtraPercent } from '../../common/src/tech';
+import { combatTechBonus, defenseExtraPercent } from '../../common/src/tech';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent, famousWarehousePercent } from '../../common/src/famous-effects';
@@ -83,7 +83,8 @@ export async function resolveNpcCityRaid(
   // v27（AISLG-77）：玩家主城守城再加城防科技的额外减伤（NPC 城墙不吃）
   // v62（AISLG-166）：名城（洛阳 / 长安 / 襄阳）的守城加成跟着被攻城走
   const famousName = await loadFamousName(client, target.cityId);
-  const wall = wallDefensePercent(levels.wall ?? 0, defenseExtraPercent(await loadTechLevels(client, target.accountId)) + famousWallExtraPercent(famousName));
+  const defenderTechs = await loadTechLevels(client, target.accountId);
+  const wall = wallDefensePercent(levels.wall ?? 0, defenseExtraPercent(defenderTechs) + famousWallExtraPercent(famousName));
   // v22 AISLG-40 方案 B：袭击强度按守军战力推导（下限官府一半、上限官府等级），
   // 不再用官府建筑等级——升官府（经济行为）不再自动放大挨打规模；
   // v23 两阶段流程下编成在发起时固定，到达不重算（预警期间征兵提高的是守方战力）
@@ -98,6 +99,7 @@ export async function resolveNpcCityRaid(
   const result = resolveBattle(attacker, garrison, {
     wallDefensePercent: wall, siege: true, tower: towerStats(levels.arrow_tower ?? 0, famousTowerPercent(famousName)),
     defenderHero: guardBonus,
+    defenderTech: combatTechBonus(defenderTechs),
   });
   const npcPower = armyPower(attacker);
   const naming = await loadCityNaming(client, target.cityId);

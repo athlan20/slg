@@ -18,6 +18,7 @@ import {
 } from '../../common/src/protocol';
 import { armyPower } from '../../common/src/battle';
 import { settleDurability } from '../../common/src/protection';
+import { repairPercent } from '../../common/src/tech';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { advanceTile, effectiveGatherOf, type TileReserveStep } from '../../common/src/wilderness-reserve';
 import { reserveViewFrom } from './reserve-view';
@@ -63,6 +64,8 @@ interface TileQueryRow extends TileRow {
   /** 城主的最早建城时刻（判定主城：created_at 相等即主城） */
   owner_created_at?: Date | null;
   owner_main_created_at?: Date | null;
+  /** 城主的「维修」科技等级（v72，AISLG-192；城防值与展示口径一致地回涨） */
+  owner_repair_level?: number | null;
   /** 在野名将落位（v54）：名字 / 属性；wild_claimed 为该名将已被任何人获得 */
   wild_hero?: string | null;
   wild_lead?: number | null;
@@ -78,6 +81,7 @@ const TILE_SELECT = `
          (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally,
          c.truce_until AS owner_city_truce_until, a.newbie_until AS owner_newbie_until, a.self_truce_until AS owner_shield_until,
          wt.owner_changed_until, c.durability, c.durability_settled_at,
+         at.level AS owner_repair_level,
          c.created_at AS owner_created_at, om.first_created AS owner_main_created_at,
          COALESCE(ta.total, 0)::int AS garrison,
          si.detail->'garrison' AS intel_garrison, si.detail->'npcStock' AS intel_stock, si.scouted_at AS intel_at,
@@ -89,6 +93,7 @@ const TILE_SELECT = `
   FROM world_tiles wt
   LEFT JOIN cities c ON c.id = wt.owner_city_id
   LEFT JOIN accounts a ON a.id = c.account_id
+  LEFT JOIN account_techs at ON at.account_id = c.account_id AND at.tech = 'repair'
   LEFT JOIN alliance_members am_me ON am_me.account_id = $1
   LEFT JOIN alliance_members am_o ON am_o.account_id = c.account_id
   LEFT JOIN (SELECT account_id, MIN(created_at) AS first_created FROM cities GROUP BY account_id) om
@@ -169,6 +174,7 @@ function durabilityView(row: TileQueryRow, requesterAccountId?: string): number 
     row.durability_settled_at ?? null,
     row.owner_city_truce_until ?? null,
     new Date(),
+    repairPercent({ repair: row.owner_repair_level ?? 0 }),
   );
 }
 

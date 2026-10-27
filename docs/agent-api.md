@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**71** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**72** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 71）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 72）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -358,7 +358,17 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -467,7 +477,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 71,
+    "protocolVersion": 72,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -533,7 +543,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 71,
+    "protocolVersion": 72,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -557,7 +567,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/68 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/69 补读增量）**
 
 请求：
 
@@ -568,7 +578,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 68,
+    "docVersion": 69,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -587,8 +597,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 71,
-    "docNotice": "接口文档已从 v68 更新到 v71：请 GET /agent-api/changes/68 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 72,
+    "docNotice": "接口文档已从 v69 更新到 v72：请 GET /agent-api/changes/69 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -1094,7 +1104,17 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -1435,7 +1455,17 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -1812,7 +1842,17 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -3210,7 +3250,17 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -5490,7 +5540,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-查询账号的科技研究：六项科技（农耕（farming）：粮、木、石、铁产量每级 +5%；负重（carrying）：部队负重每级 +5%（掠夺与运输共用）；行军（marching）：行军速度每级 +5%；储存（storage）：粮、木、石、铁储量上限每级 +5%；侦察（scouting）：侦察报告更详细：Lv3 起看到兵种明细，Lv6 起看到精确数量；城防（defense）：主城守城时城墙减伤每级额外 +1%（加在城墙加成上））各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 10 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。
+查询账号的科技研究：十六项科技（农耕（farming）：粮、木、石、铁产量每级 +5%；负重（carrying）：部队负重每级 +5%（掠夺与运输共用）；行军（marching）：行军速度每级 +5%；储存（storage）：粮、木、石、铁储量上限每级 +5%；侦察（scouting）：侦察报告更详细：Lv3 起看到兵种明细，Lv6 起看到精确数量；城防（defense）：主城守城时城墙减伤每级额外 +1%（加在城墙加成上）；练兵（drill）：征兵时长每级 −3%（10 级 −30%）；战斗（combat）：世界地图战斗中我方全军攻击每级 +1.5%（10 级 +15%）；防护（protection）：世界地图战斗中我方全军受到伤害每级 −1.5%（10 级 −15%）；驾驭（riding）：骑兵类兵种战斗速度每级 +2%（10 级 +20%）；抛射（archery）：远程兵种（弓箭兵 / 床弩 / 诸葛连弩 / 先登死士）射程每级 +1%（10 级 +10%）；补给（supply）：部队耗粮（城内、行军、驻守）每级 −3%（10 级 −30%）；建筑（construction）：建造、升级时长每级 −3%（10 级 −30%）；研究（research）：科技研究时长每级 −3%（10 级 −30%）；掠夺（looting）：掠夺野地时可抢的资源池每级 +4%（10 级 +40%）；维修（repair）：分城城防值每小时回涨每级 +5%（基础 10 点/小时，10 级 15 点/小时））各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技分「发展 / 军事」两类（条目 category：development / military），前端分两栏展示；其中战斗 / 防护 / 驾驭 / 抛射四项只在世界地图战斗中生效。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 10 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。
 
 **请求字段**
 
@@ -5504,13 +5554,13 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | academyLevel | number | 查询城的书院等级（0 = 未建）。 |
-| techs | array | 六项科技，每项 { kind, label, level 当前等级, maxLevel, percentPerLevel 每级效果百分数（侦察为 0）, effect 效果说明, currentPercent 当前累计加成百分数, next 下一级信息或 null（满级） }。 |
+| techs | array | 十六项科技（v72 起），每项 { kind, label, category 归类 development / military, level 当前等级, maxLevel, percentPerLevel 每级效果百分数（带符号：负数为减少时长 / 耗粮 / 受伤；侦察为 0）, effect 效果说明, currentPercent 当前累计效果百分数（带符号）, next 下一级信息或 null（满级） }。 |
 | techs[].next | object \| null | { level 目标等级, cost 成本（五资源）, seconds 耗时（秒，已按全局时间缩放折算）, academyRequired 要求的书院等级（= 目标等级）, academyOk 查询城书院是否满足 }；满级为 null。 |
 | research | object \| null | 账号进行中的研究 { id, cityId 扣资源的城, tech, level 完成后的目标等级, status, initiator, cost 成本快照, startedAt, dueAt, completedAt }；没有为 null。 |
 
 **可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
 
-**Agent 提示**：科技规划：书院等级是研究的硬门槛（第 N 级要书院 ≥ N 级），先升书院再研究高级科技。农耕 / 储存直接放大经济，负重 / 行军服务掠夺与出征，侦察决定侦察报告的详细度（Lv3 起兵种明细、Lv6 起精确数量，之前只有总兵力约数——想精确评估野地 / NPC 城守军先点侦察），城防只加主城守城。研究完成会收到 PUSH_TECH_STATE（reason=research_completed）。
+**Agent 提示**：科技规划：书院等级是研究的硬门槛（第 N 级要书院 ≥ N 级），先升书院再研究高级科技。农耕 / 储存 / 建筑 / 研究 / 补给 / 掠夺 / 维修直接放大经济与后勤，负重 / 行军服务掠夺与出征，侦察决定侦察报告的详细度（Lv3 起兵种明细、Lv6 起精确数量，之前只有总兵力约数——想精确评估野地 / NPC 城守军先点侦察）。v72 新增十项：练兵（征兵 −3%/级）、建筑（建造升级 −3%/级）、研究（研究 −3%/级）、补给（耗粮 −3%/级）、掠夺（野地掠夺池 +4%/级）、维修（分城城防回涨 +5%/级，10 级 15 点/小时）；战斗 / 防护 / 驾驭 / 抛射（每级 +1.5% 攻击 / −1.5% 受伤 / +2% 骑兵速度 / +1% 远程射程）只在世界地图战斗生效，竞技场与将星塔不受影响，与武将加成叠两层。研究完成会收到 PUSH_TECH_STATE（reason=research_completed）。
 
 **示例**
 
@@ -5539,6 +5589,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       {
         "kind": "farming",
         "label": "农耕",
+        "category": "development",
         "level": 0,
         "maxLevel": 10,
         "percentPerLevel": 5,
@@ -5575,7 +5626,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| tech | 'farming' \| 'carrying' \| 'marching' \| 'storage' \| 'scouting' \| 'defense' | 必填。科技类型；缺失或不是已知类型返回 INVALID_PARAMS。 |
+| tech | 'farming' \| 'carrying' \| 'marching' \| 'storage' \| 'scouting' \| 'defense' \| 'drill' \| 'combat' \| 'protection' \| 'riding' \| 'archery' \| 'supply' \| 'construction' \| 'research' \| 'looting' \| 'repair' | 必填。科技类型；缺失或不是已知类型返回 INVALID_PARAMS。 |
 | cityId | string | 可选。发起研究 / 扣资源的城（缺省主城）；非本账号的城返回 INVALID_PARAMS。 |
 | cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
 
@@ -9115,7 +9166,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -9724,7 +9785,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -10433,7 +10504,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -11026,7 +11107,17 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -14023,7 +14114,17 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -14629,7 +14730,17 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
       "defenseBonus": 0,
@@ -14991,7 +15102,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 71。
+- 协议版本随对外协议内容的每次变化递增；当前为 72。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

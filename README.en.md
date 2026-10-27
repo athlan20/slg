@@ -82,7 +82,7 @@ Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resourc
 ### 🎖️ Heroes & tech
 - Recruit heroes at the tavern. They lead marches (attack and damage-reduction bonuses) or hold city defense.
 - Heroes demand salaries — unpaid heroes can't march — and a hero leading a lost battle is wounded for a while.
-- Research six technologies at the academy: farming, carrying, marching, storage, scouting, and defense.
+- Research sixteen technologies at the academy (two columns: development and military): farming, carrying, storage, supply, construction, research, looting, repair, plus marching, scouting, fortification, drill, combat, protection, riding, and archery.
 
 ### 🔥 Server-wide events & player vs player
 - **Yellow Turban Rebellion**: a recurring server-wide PvE event — rebel camps spawn across the map and everyone piles in to clear them.

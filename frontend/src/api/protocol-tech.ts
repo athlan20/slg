@@ -3,10 +3,31 @@
 
 import type { InitiatorRole, Resources } from './protocol';
 
-/** 六项科技：农耕 / 负重 / 行军 / 储存 / 侦察 / 城防 */
-export const TECH_KINDS = ['farming', 'carrying', 'marching', 'storage', 'scouting', 'defense'] as const;
+/** 十六项科技（v72，AISLG-192）：农耕 / 负重 / 行军 / 储存 / 侦察 / 城防 +
+ *  练兵 / 战斗 / 防护 / 驾驭 / 抛射 / 补给 / 建筑 / 研究 / 掠夺 / 维修 */
+export const TECH_KINDS = [
+  'farming',
+  'carrying',
+  'marching',
+  'storage',
+  'scouting',
+  'defense',
+  'drill',
+  'combat',
+  'protection',
+  'riding',
+  'archery',
+  'supply',
+  'construction',
+  'research',
+  'looting',
+  'repair',
+] as const;
 
 export type TechKind = (typeof TECH_KINDS)[number];
+
+/** 科技归类（服务端下发，前端分「发展 / 军事」两栏） */
+export type TechCategory = 'development' | 'military';
 
 /** 各科技当前等级（0 = 未研究；账号级） */
 export type TechLevels = Record<TechKind, number>;
@@ -14,11 +35,14 @@ export type TechLevels = Record<TechKind, number>;
 export interface TechEntryView {
   kind: TechKind;
   label: string;
+  /** 归类（v72）：development 发展 / military 军事 */
+  category: TechCategory;
   level: number;
   maxLevel: number;
-  /** 每级效果（百分数；侦察为 0，按等级解锁情报内容） */
+  /** 每级效果（百分数，带符号；侦察为 0，按等级解锁情报内容） */
   percentPerLevel: number;
   effect: string;
+  /** 当前累计效果（百分数，带符号：负数为减少时长 / 耗粮 / 受伤） */
   currentPercent: number;
   /** 下一级信息；满级为 null */
   next: {
