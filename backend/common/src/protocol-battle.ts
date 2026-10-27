@@ -103,7 +103,7 @@ export interface BattleReportView {
    *  pvp_raid 玩家攻打玩家城（v38，AISLG-122；守城战同 city_raid，攻守双方各得一份战报） /
    *  pvp_wilderness 玩家抢占玩家野地（v39，AISLG-123；野地战无城墙，双方各得一份） /
    *  pvp_conquest 玩家攻打玩家分城「占领」（v40，AISLG-124；守城战，打赢降城防值 / 归零换主） */
-  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest';
+  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
   /** 报告持有方在本场战斗中的角色（攻方 = 出征者；守方 = 被袭击的驻军主） */
   role: 'attacker' | 'defender';
   /** 报告持有方是否获胜 */

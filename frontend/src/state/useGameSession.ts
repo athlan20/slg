@@ -67,6 +67,7 @@ import { useQuestSession, type QuestSession } from './questSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useMapOverview, type MapOverviewSession } from './mapOverview';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
+import { useBattlefieldSession, type BattlefieldSession } from './battlefield';
 import { useSessionExtras } from './session-extras';
 import { useChat, type ChatState } from './useChat';
 import { useAnnouncements, type AnnouncementSlice } from './announcements';
@@ -201,6 +202,8 @@ export interface GameSession {
   moving: MovingTargetsSession;
   /** 黄巾之乱会话（v29 AISLG-76）：事件进度 / 营地 / 我的贡献 / 贡献榜 */
   yellowTurban: YellowTurbanSession;
+  /** 剧本战场会话（v75 AISLG-198）：官渡的报名 / 入场 / 队伍 / 军功 / 商店 */
+  battlefield: BattlefieldSession;
   /** 加载更早的一页事件（滚动到底部触发；游标 = 已加载的最小服务端事件 id） */
   loadOlderEvents: () => Promise<void>;
   /** 账号安全（v43）：Agent 令牌签发 / 吊销、微信绑定状态刷新 */
@@ -403,6 +406,10 @@ export function useGameSession(): GameSession {
   const yellowTurban = useYellowTurban({ clientRef, connected: connection === 'online' });
   const { clear: ytClear, onPush: onYtPush } = yellowTurban;
 
+  // 剧本战场会话切片（v75，AISLG-198）：官渡的报名 / 入场 / 队伍 / 军功 / 商店，推送到达重拉
+  const battlefield = useBattlefieldSession({ clientRef, connected: connection === 'online' });
+  const { clear: battlefieldClear, onPush: onBattlefieldPush } = battlefield;
+
   // 任务与签到会话切片（v53 AISLG-200）：打开养成页拉取当日任务 / 签到状态，领奖与签到后回带城池资源
   const questSession = useQuestSession({ clientRef, connected: connection === 'online', setCity });
   const { clear: questClear } = questSession;
@@ -480,6 +487,10 @@ export function useGameSession(): GameSession {
       } else if (frame.op === Op.PUSH_STARVATION_STATE) {
         // v34（AISLG-107）：断粮预警 / 哗变——不记本地事件（服务端事件 starvation_warning / mutiny 随下方增量查询补齐，
         // 避免重复）；增量查询同时对齐驻军减员与 starveAt / mutinyNextAt，顶栏红色提示随之出现
+      } else if (frame.op === Op.PUSH_BATTLEFIELD_STATE) {
+        // v75（AISLG-198）：剧本战场报名 / 开战 / 据点易手 / 收场（全服广播，与账号状态无关）
+        onBattlefieldPush(frame.data as unknown as import('../api/protocol').BattlefieldPushData);
+        return;
       } else if (frame.op === Op.PUSH_YELLOW_TURBAN_STATE) {
         // v29（AISLG-76）：黄巾之乱起事 / 进度 / 老巢出现 / 收场（全服广播，与账号状态无关）
         onYtPush();
@@ -566,7 +577,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush],
+    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {
@@ -617,6 +628,7 @@ export function useGameSession(): GameSession {
       heroClear();
       movingClear();
       ytClear();
+      battlefieldClear();
       questClear();
       seasonClear();
       hallClear();
@@ -625,7 +637,7 @@ export function useGameSession(): GameSession {
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, resetCityList, seasonClear, hallClear],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, questClear, resetCityList, seasonClear, hallClear],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -654,7 +666,7 @@ export function useGameSession(): GameSession {
     hallClear();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, hallClear, allianceClear, allianceMarksClear]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, questClear, hallClear, allianceClear, allianceMarksClear]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1195,6 +1207,7 @@ export function useGameSession(): GameSession {
         heroClear();
         movingClear();
         ytClear();
+      battlefieldClear();
         questClear();
         await syncAll('initial');
         return null;
@@ -1203,7 +1216,7 @@ export function useGameSession(): GameSession {
     } catch (err) {
       return err instanceof Error ? err.message : COPY.errors.reset.fallback;
     }
-  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, questClear, resetCityList]);
+  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, questClear, resetCityList]);
 
   /** 加载更早的一页事件（beforeId 游标分页；本地临时事件 id 为负，不作为游标） */
   const loadOlderEvents = useCallback(async () => {
@@ -1322,6 +1335,7 @@ export function useGameSession(): GameSession {
     hallOfFame,
     moving,
     yellowTurban,
+    battlefield,
     loadOlderEvents,
     security,
     connectForWechat,

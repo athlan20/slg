@@ -151,6 +151,15 @@ export class CompletionNotifier {
         );
         return;
       }
+      if (payload.reason === 'battlefield_state' && payload.data) {
+        // 剧本战场（v75，AISLG-198）：报名 / 开战 / 据点易手 / 收场，全服在线连接广播
+        this.registry.broadcastAll({
+          op: Op.PUSH_BATTLEFIELD_STATE,
+          push: true,
+          data: payload.data,
+        });
+        return;
+      }
       if (payload.reason === 'npc_warning' && payload.accountId && payload.data) {
         // NPC 袭击预警（v23 AISLG-57）：推给被袭击账号的全部在线连接（含 Agent 连接）
         this.registry.broadcast(payload.accountId, {

@@ -186,7 +186,7 @@ export const REQUEST_GET_BATTLE_REPORTS: RequestOpDoc = {
     { name: 'reports[].attacker.hero.specialty / reports[].defender.hero.specialty', type: 'string | null | undefined', desc: 'v59: Immutable ordinary-hero specialty at combat time; famous heroes have null and historical reports may omit it. specialtyScale records command dilution (0..1). Base atkPercent/defPercent remain the original hero bonuses; specialty bonuses apply per matching troop stack.' },
     { name: 'reports[].id', type: 'number', desc: '战报自增序号（分页游标）。' },
     { name: 'reports[].x / reports[].y', type: 'number', desc: '战斗发生地块坐标。' },
-    { name: 'reports[].kind', type: "'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban'", desc: '战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）。' },
+    { name: 'reports[].kind', type: "'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'battlefield'", desc: '战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）/ 剧本战场据点（v75，AISLG-198，battlefield）。' },
     { name: 'reports[].towerDamage', type: 'number | undefined', desc: '箭塔造成的总伤害（v30，AISLG-82）：仅守城战且守方有箭塔时 > 0（已含在 defender.damage 内）；无箭塔 / 历史战报为 undefined。逐回合见 roundLog[].towerDamage。' },
     { name: 'reports[].contact', type: "'missed' | 'gone' | undefined", desc: '仅 kind=intercept 的未接战结果（v28）：missed 扑空（到达时目标已走远）/ gone 目标消失（已被击败或过时）；此时 endReason=no_contact、rounds=0、双方无损失。接战的截击与其他战报无此字段。' },
     { name: 'reports[].role', type: "'attacker' | 'defender'", desc: '本账号在该场战斗中的角色。' },

@@ -30,6 +30,14 @@ import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handler
 import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
 import { handleDismissAssist } from './handlers-assist';
 import {
+  handleEnterBattlefield,
+  handleGetBattlefield,
+  handleMarchBattlefieldSquad,
+  handleSignupBattlefield,
+  handleSplitBattlefieldSquad,
+} from './handlers-battlefield';
+import { handleBuyBattlefieldItem } from './handlers-battlefield-shop';
+import {
   handleGetTile,
   handleGetWorldMap,
   handleMarch,
@@ -399,6 +407,24 @@ async function dispatchOp(
       break;
     case Op.DISMISS_ASSIST:
       await handleDismissAssist(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_BATTLEFIELD:
+      await handleGetBattlefield(ctx, conn, op, seq);
+      break;
+    case Op.SIGNUP_BATTLEFIELD:
+      await handleSignupBattlefield(ctx, conn, op, seq, data);
+      break;
+    case Op.ENTER_BATTLEFIELD:
+      await handleEnterBattlefield(ctx, conn, op, seq, data);
+      break;
+    case Op.SPLIT_BATTLEFIELD_SQUAD:
+      await handleSplitBattlefieldSquad(ctx, conn, op, seq, data);
+      break;
+    case Op.MARCH_BATTLEFIELD_SQUAD:
+      await handleMarchBattlefieldSquad(ctx, conn, op, seq, data);
+      break;
+    case Op.BUY_BATTLEFIELD_ITEM:
+      await handleBuyBattlefieldItem(ctx, conn, op, seq, data);
       break;
     case Op.BUILD: {
       const kind = readString(data, 'kind');

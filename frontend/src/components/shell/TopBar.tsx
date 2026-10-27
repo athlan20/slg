@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import type { CityView, NpcAttackWarningPushData } from '../../api/protocol';
+import type { BattlefieldEventView, CityView, NpcAttackWarningPushData } from '../../api/protocol';
 import { useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
 import type { ExchangeResource } from '../../state/exchangeAction';
@@ -37,6 +37,9 @@ interface TopBarProps {
   onSelectCity: (cityId: string) => void;
   /** 当前城详情在重拉（切换中）：胶囊显示「切换中…」并禁用 */
   switching: boolean;
+  /** 剧本战场（v75 AISLG-198）：没有战场时为 null；报名 / 进行中显示常驻胶囊 */
+  battlefield: BattlefieldEventView | null;
+  onOpenBattlefield: () => void;
 }
 
 const topBtn =
@@ -60,9 +63,11 @@ export function TopBar({
   cityList,
   onSelectCity,
   switching,
+  battlefield,
+  onOpenBattlefield,
 }: TopBarProps) {
   const copy = useCopy();
-  const { COPY, NAV_COPY, TOP_COPY } = copy;
+  const { COPY, NAV_COPY, TOP_COPY, BATTLEFIELD_COPY } = copy;
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [lastRequest, setLastRequest] = useState(exchangeRequest);
   const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -92,6 +97,22 @@ export function TopBar({
         )}
       </div>
       <SeasonPill info={season} />
+      {battlefield ? (
+        <button
+          type="button"
+          role="顶栏-剧本战场"
+          onClick={onOpenBattlefield}
+          title={BATTLEFIELD_COPY.launcher.title}
+          className={`${topBtn} ${battlefield.status === 'active' ? 'border-gold text-gold' : battlefield.status === 'signup' ? 'border-accent-dim text-accent' : ''}`}
+        >
+          {battlefield.status === 'signup' ? BATTLEFIELD_COPY.launcher.signup : battlefield.status === 'active' ? BATTLEFIELD_COPY.launcher.active : BATTLEFIELD_COPY.launcher.finished}
+          {battlefield.status === 'active' ? (
+            <b className="ml-1 font-mono">
+              {battlefield.camps.yuan.score}:{battlefield.camps.cao.score}
+            </b>
+          ) : null}
+        </button>
+      ) : null}
       <AlertPills city={city} incoming={incoming} onOpenWarning={onOpenWarning} />
       {city ? (
         <div className="shrink-0 max-lg:hidden">

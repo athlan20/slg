@@ -642,6 +642,70 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 易主自动遣返），或不属于你（只有派出方与城主能召回 / 遣返）。',
     action: '重新 GET_STATE / GET_TILE 拿最新的 assistIn / assistOut 列表后再操作。',
   },
+  BATTLEFIELD_GOVERNMENT_TOO_LOW: {
+    desc: '（v75，AISLG-198）报名剧本战场要求主城官府 ≥ 5 级；响应附 required / current。',
+    action: '先升级主城官府到 5 级；分城官府不计。',
+  },
+  BATTLEFIELD_SIGNUP_CLOSED: {
+    desc: '（v75，AISLG-198）当前不在剧本战场的报名期（北京时间每周二 20:00 至周三 20:00）。',
+    action: '用 GET_BATTLEFIELD 的 nextSignupAt 等下一场报名；报名开始后 SERVER 会全服播报。',
+  },
+  BATTLEFIELD_ALREADY_JOINED: {
+    desc: '（v75，AISLG-198）本场已经报过名（阵营选定后不能改）。',
+    action: '直接 GET_BATTLEFIELD 查自己的阵营与队伍，或等开战后入场。',
+  },
+  BATTLEFIELD_NOT_JOINED: {
+    desc: '（v75，AISLG-198）没有报名本场战场，不能入场或操作队伍。',
+    action: '先在报名期 SIGNUP_BATTLEFIELD 选阵营。',
+  },
+  BATTLEFIELD_CAMP_FULL: {
+    desc: '（v75，AISLG-198）该阵营报名人数超过另一方 1.5 倍且多出 5 人以上，暂停报名；响应附 count / otherCount / limit。',
+    action: '改选另一方；或等双方人数接近后再报名。',
+  },
+  BATTLEFIELD_ENTRY_CLOSED: {
+    desc: '（v75，AISLG-198）战场已经开战，不能再带部队入场（报名期结束即锁死入场）。',
+    action: '本场只能在已入场的队伍里拆队 / 行军；下一场报名时再入场。',
+  },
+  BATTLEFIELD_ALREADY_ENTERED: {
+    desc: '（v75，AISLG-198）本场已经带过部队入场（每人每场只能入场一次，开战后也不能追加）。',
+    action: '用 SPLIT_BATTLEFIELD_SQUAD 拆分已有队伍，或等下一场。',
+  },
+  BATTLEFIELD_POPULATION_LIMIT: {
+    desc: '（v75，AISLG-198）带入部队的人口超过 3000；响应附 limit / current。',
+    action: '减少铁骑兵等高人口兵种的数量，或只带主力兵种。',
+  },
+  BATTLEFIELD_SQUAD_LIMIT: {
+    desc: '（v75，AISLG-198）每人最多 3 支队伍。',
+    action: '把要拆出的兵力并回现有队伍，或等有队伍阵亡后再拆。',
+  },
+  BATTLEFIELD_SQUAD_NOT_FOUND: {
+    desc: '（v75，AISLG-198）队伍不存在、已阵亡，或不属于本账号。',
+    action: '重新 GET_BATTLEFIELD 拿最新队伍列表。',
+  },
+  BATTLEFIELD_SQUAD_BUSY: {
+    desc: '（v75，AISLG-198）队伍正在行军，不能再次下令。',
+    action: '等 arriveAt 到达后再下令。',
+  },
+  BATTLEFIELD_UNREACHABLE: {
+    desc: '（v75，AISLG-198）目标不可达：30×30 地图中间的河只有 3 处渡口（y = 5 / 15 / 25）能过，或坐标越界。',
+    action: '先走到渡口再渡河，或改选同侧目标。',
+  },
+  BATTLEFIELD_NOT_ACTIVE: {
+    desc: '（v75，AISLG-198）剧本战场不在进行中（报名期或已结束）。',
+    action: '报名期只做报名 / 入场；行军与攻打在开战后才能做。',
+  },
+  BATTLEFIELD_SHOP_LIMIT: {
+    desc: '（v75，AISLG-198）本场该商品已达到限购数量。',
+    action: '换其他商品，或等下一场额度重置（军功余额跨场保留）。',
+  },
+  BATTLEFIELD_MERIT_INSUFFICIENT: {
+    desc: '（v75，AISLG-198）战场军功余额不足；响应附 cost / balance。',
+    action: '继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。',
+  },
+  BATTLEFIELD_TARGET_INVALID: {
+    desc: '（v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。',
+    action: '用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',
