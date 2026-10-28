@@ -241,6 +241,7 @@ function CityCapsule({ cityList, onSelectCity, switching }: { cityList: CityList
               onSelectCity(cityId);
             }
           }}
+          onLocate={() => setOpen(false)}
           style={{ top: menuTop, left: menuLeft }}
           className="fixed z-50 w-[min(320px,calc(100vw-16px))] max-h-[min(70dvh,420px)] overflow-y-auto"
         />

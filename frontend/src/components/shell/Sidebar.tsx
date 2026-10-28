@@ -151,7 +151,15 @@ export function Sidebar(props: SidebarProps) {
         <span className="text-faint max-xl:hidden">▾</span>
       </button>
       {cityOpen ? (
-        <CityMenu cityList={cityList} onChoose={chooseCity} className="absolute left-1 top-[52px] z-30 max-lg:hidden" />
+        <CityMenu
+          cityList={cityList}
+          onChoose={chooseCity}
+          onLocate={() => {
+            setCityOpen(false);
+            setAccountOpen(false);
+          }}
+          className="absolute left-1 top-[52px] z-30 max-lg:hidden"
+        />
       ) : null}
 
       <nav role="导航-菜单" className="flex min-h-0 flex-1 flex-col gap-0.5 max-lg:flex-row max-lg:justify-around">

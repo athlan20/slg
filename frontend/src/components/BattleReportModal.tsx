@@ -21,6 +21,8 @@ interface BattleReportModalProps {
   onClose: () => void;
   /** 有值时标题栏显示「分享」（AISLG-138：把本场战报放进聊天输入框） */
   onShare?: () => void;
+  /** 有值时坐标旁显示「定位」（AISLG-203：调用方负责关弹窗并跳到地图）；剧本战场战报不显示 */
+  onLocate?: (x: number, y: number) => void;
 }
 
 function totalOf(army: ArmyCounts): number {
@@ -142,7 +144,7 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
 /** 逐回合明细每页格数（8 列 × 2 行）：长战报分页，不出滚动条 */
 const ROUNDS_PER_PAGE = 16;
 
-export function BattleReportModal({ report, onClose, onShare }: BattleReportModalProps) {
+export function BattleReportModal({ report, onClose, onShare, onLocate }: BattleReportModalProps) {
   const copy = useCopy();
   const { COPY, DEFENSE_COPY, EXTRA_PANEL, CHAT_COPY, TROOP_LABEL } = copy;
   const [view, setView] = useState<'chart' | 'rounds'>('chart');
@@ -200,7 +202,18 @@ export function BattleReportModal({ report, onClose, onShare }: BattleReportModa
       }
     >
       <p role="战报弹窗-头部" className="truncate font-mono text-[12px] text-faint">
-        {COPY.battleReport.location(report.x, report.y)} · {COPY.battleReport.idBadge(report.id)} · {formatReportTime(report.createdAt)} · {COPY.battleReport.roundsMeta(report.rounds)} · {endReasonText(report)}
+        {COPY.battleReport.location(report.x, report.y)}
+        {onLocate && report.kind !== 'battlefield' ? (
+          <button
+            type="button"
+            role="战报弹窗-定位"
+            onClick={() => onLocate(report.x, report.y)}
+            className="ml-1.5 cursor-pointer rounded border border-line px-1.5 align-middle text-[11px] text-dim hover:border-accent hover:text-accent"
+          >
+            {COPY.battleReport.locate}
+          </button>
+        ) : null}
+        {' · '}{COPY.battleReport.idBadge(report.id)} · {formatReportTime(report.createdAt)} · {COPY.battleReport.roundsMeta(report.rounds)} · {endReasonText(report)}
         {report.wallDefensePercent > 0 ? <span className="text-dim"> · {COPY.battleReport.wallBadge(report.wallDefensePercent)}</span> : null}
         {report.wallBreak ? (
           <span role="战报弹窗-冲车破墙" className="text-gold"> · {DEFENSE_COPY.report.wallBreak(report.wallBreak.from, report.wallBreak.to)}</span>

@@ -15,6 +15,7 @@ export const CITY_COPY_EN = {
     branchLocked: (minGovernment: number) =>
       `From Main City Government Hall Lv ${minGovernment}, NPC cities can be occupied as Branch Cities`,
     switching: 'Switching…',
+    locate: 'Locate',
   },
   /** 出征任务：占领 NPC 城（变分城） */
   worldMap: {

@@ -60,13 +60,14 @@ export default function App() {
 
   return (
     <HeroContext.Provider value={heroPick}>
-      <BattleReportModalProvider
-        fetchReportById={session.world.fetchBattleReportById}
-        onShareReport={(report) => session.chat.shareDraft({ card: { kind: 'report', reportId: report.id }, label: reportShareLabel(report) })}
-      >
-        <ScoutReportModalProvider city={session.city}>
-          <GameContext.Provider value={game}>
-            <NavProvider>
+      <ScoutReportModalProvider city={session.city}>
+        <GameContext.Provider value={game}>
+          <NavProvider>
+            {/* 战报弹窗宿主放在 GameContext / NavProvider 内：弹窗的「定位」要经 useMapJump 取会话与导航（AISLG-203） */}
+            <BattleReportModalProvider
+              fetchReportById={session.world.fetchBattleReportById}
+              onShareReport={(report) => session.chat.shareDraft({ card: { kind: 'report', reportId: report.id }, label: reportShareLabel(report) })}
+            >
               {loggedIn ? (
                 <>
                   <AppShell />
@@ -100,10 +101,10 @@ export default function App() {
                   </div>
                 </main>
               )}
-            </NavProvider>
-          </GameContext.Provider>
-        </ScoutReportModalProvider>
-      </BattleReportModalProvider>
+            </BattleReportModalProvider>
+          </NavProvider>
+        </GameContext.Provider>
+      </ScoutReportModalProvider>
     </HeroContext.Provider>
   );
 }

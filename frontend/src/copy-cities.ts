@@ -11,6 +11,8 @@ export const CITY_COPY = {
     branchQuota: (count: number, limit: number) => `分城 ${count}/${limit}`,
     branchLocked: (minGovernment: number) => `主城官府 ${minGovernment} 级起可占领 NPC 城变分城`,
     switching: '切换中…',
+    /** 行内「定位」：地图居中到该城并选中，不切换当前城池（AISLG-203） */
+    locate: '定位',
   },
   /** 出征任务：占领 NPC 城（变分城） */
   worldMap: {

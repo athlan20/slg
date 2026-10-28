@@ -614,6 +614,8 @@ const BATTLE_REPORT = {
   sideMine: '我方',
   sideEnemy: '敌方',
   location: (x: number, y: number) => `(${x},${y})`,
+  /** 坐标旁的「定位」：关闭弹窗、地图居中选中该格（AISLG-203；剧本战场战报不显示） */
+  locate: '定位',
   roundsMeta: (rounds: number) => `${rounds} 回合`,
   endWiped: '守方全灭',
   endAttackerWiped: '攻方全灭',

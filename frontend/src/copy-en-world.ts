@@ -313,6 +313,7 @@ export const BATTLE_REPORT_EN = {
   sideMine: 'Our side',
   sideEnemy: 'Enemy side',
   location: (x: number, y: number) => `(${x},${y})`,
+  locate: 'Locate',
   roundsMeta: (rounds: number) => `${rounds} rounds`,
   endWiped: 'Defenders wiped out',
   endAttackerWiped: 'Attackers wiped out',

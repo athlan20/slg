@@ -88,6 +88,24 @@ test.describe('手机顶栏城池胶囊（AISLG-191）', () => {
     await expect(menu).toBeHidden();
   });
 
+  test('多城账号：下拉行里的「定位」不切换当前城池，收起下拉并切到地图页（AISLG-203）', async ({ page }) => {
+    const username = uniqueUsername('e2e_capsule_locate');
+    const branchName = `定位分城${Date.now() % 100000}`;
+    await seedAccount(username, E2E_PASSWORD);
+    await addBranchCity(username, branchName);
+    await loginViaForm(page, username);
+
+    const capsule = page.locator('[role="顶栏-城池胶囊"]');
+    const menu = page.locator('[role="导航-城池下拉"]');
+    await capsule.click();
+    const before = await capsule.textContent();
+    await menu.locator('[role="城池下拉-行"]').filter({ hasText: branchName }).locator('[role="城池下拉-定位"]').tap();
+
+    await expect(menu).toBeHidden();
+    await expect(page.locator('[role="导航-地图"]')).toHaveAttribute('aria-current', 'page');
+    expect(await capsule.textContent()).toBe(before);
+  });
+
   test('只有主城的账号：胶囊照常显示，弹层只有一座城与分城名额', async ({ page }) => {
     const username = uniqueUsername('e2e_capsule_solo');
     await loginViaForm(page, username);

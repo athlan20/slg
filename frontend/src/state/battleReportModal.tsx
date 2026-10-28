@@ -1,5 +1,5 @@
-// 战报详情弹窗的全局宿主：Provider 挂在 App 根部，任意组件经 useBattleReportModal()
-// 拿到打开句柄即可弹出同一份战报弹窗（展示组件见 components/BattleReportModal）。
+// 战报详情弹窗的全局宿主：Provider 挂在 App 的 GameContext / NavProvider 内部（需要取会话与导航，供「定位」使用），
+// 任意组件经 useBattleReportModal() 拿到打开句柄即可弹出同一份战报弹窗（展示组件见 components/BattleReportModal）。
 // 两种打开形态（docs/battle-report-api.md 第 6 节「战报入口盘点」）：
 // - openBattleReport(report)：手里已有完整战报（列表 / 推送），直接按引用快照展示；
 // - openBattleReportById(reportId)：事件流等只有 reportId 的入口，经注入的
@@ -8,6 +8,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BattleReportCommentView, BattleReportView } from '../api/protocol';
 import { BattleReportModal } from '../components/BattleReportModal';
+import { useMapJump } from '../components/chat/useMapJump';
 import { useCopy } from '../i18n/bundle';
 
 /** 战报点评的模块级事件总线（v23 AISLG-53）：推送到达时 emit，Provider 若正开着
@@ -43,6 +44,7 @@ const BattleReportModalContext = createContext<BattleReportModalApi | null>(null
 export function BattleReportModalProvider({ children, fetchReportById, onShareReport }: BattleReportModalProviderProps) {
   const copy = useCopy();
   const { COPY } = copy;
+  const jumpToMap = useMapJump();
   const [state, setState] = useState<ModalState | null>(null);
   /** 反查请求序号：关闭或被新打开取代后，迟到的响应直接丢弃 */
   const requestSeqRef = useRef(0);
@@ -103,6 +105,10 @@ export function BattleReportModalProvider({ children, fetchReportById, onShareRe
           report={state.report}
           onClose={closeBattleReport}
           onShare={state.shareable && onShareReport ? () => onShareReport(state.report) : undefined}
+          onLocate={(x, y) => {
+            closeBattleReport();
+            jumpToMap(x, y);
+          }}
         />
       ) : state ? (
         <div
