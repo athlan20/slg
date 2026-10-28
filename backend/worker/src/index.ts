@@ -14,7 +14,7 @@
 import { createPool, ensureSchema, readDbConfig } from '../../common/src/db';
 import { ensureWorld } from '../../common/src/world-db';
 import { getTimeScale, refreshTimeScale, timeScaleStale } from '../../common/src/time-scale';
-import { processDueBuilds, processDueRecruits } from './queue-tick';
+import { processDueBuilds, processDueDefenseCrafts, processDueRecruits } from './queue-tick';
 import { processDueMarches } from './world-tick';
 import { processDueNpcAttacks } from './npc-attack';
 import { startNpcRaidTimer } from './npc-raid-timer';
@@ -27,6 +27,10 @@ import { processHeroSalaries } from './hero-salary-tick';
 import { processHeroTraining } from './hero-training-tick';
 import { processArenaRewards } from './arena-tick';
 import { processAlliances } from './alliance-tick';
+import { processBattlefield } from './battlefield-tick';
+import { processMarketOrders } from './market-tick';
+import { processLuoyang } from './luoyang-tick';
+import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
@@ -43,6 +47,8 @@ async function main(): Promise<void> {
   await ensureSchema(maintenancePool);
   // v12：世界生成幂等（与 API 并发由咨询锁串行化），Worker 只依赖已存在的表
   await ensureWorld(maintenancePool);
+  // v79（AISLG-200）：启动时刷新一次洛阳之主缓存（易主路径之外，兼容部署前已有的洛阳）
+  await refreshLuoyangHolder(maintenancePool).catch(() => undefined);
   // v20：全局时间缩放从 settings 预热（AISLG-38），此后定期刷新（切换无需重启）
   await refreshTimeScale(pool).catch(() => undefined);
   console.log(`slg-worker started, tick=${TICK_MS}ms, time_scale=${getTimeScale()}`);
@@ -80,6 +86,14 @@ async function main(): Promise<void> {
       console.error('worker recruit tick failed:', err instanceof Error ? err.message : err);
     }
     try {
+      const defenseDone = await processDueDefenseCrafts(pool);
+      if (defenseDone > 0) {
+        console.log(`completed ${defenseDone} defense craft(s)`);
+      }
+    } catch (err) {
+      console.error('worker defense craft tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
       // v34（AISLG-107）：断粮预警 / 哗变（粮食为 0 且净产量为负时城内驻军逐小时减员）
       await processStarvation(pool);
     } catch (err) {
@@ -114,6 +128,27 @@ async function main(): Promise<void> {
       await processAlliances(pool);
     } catch (err) {
       console.error('worker alliance tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v79（AISLG-200）：洛阳窗口回满城防 / 预告 / 开始 / 结束播报
+      await processLuoyang(pool);
+    } catch (err) {
+      console.error('worker luoyang tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v78（AISLG-196）：交易所 48 小时过期挂单自动撤单退款
+      const expired = await processMarketOrders(pool);
+      if (expired > 0) {
+        console.log(`expired ${expired} market order(s)`);
+      }
+    } catch (err) {
+      console.error('worker market tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v75（AISLG-198）：剧本战场——日程 / 耗粮 / 积分 / 行军与据点结算
+      await processBattlefield(pool);
+    } catch (err) {
+      console.error('worker battlefield tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v29（AISLG-76）：黄巾之乱——起事 / 坐大 / 大营发兵 / 到时限收场

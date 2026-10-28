@@ -3,11 +3,12 @@
 // 被擦除，不构成加载环）。
 
 import type { InitiatorRole } from './protocol';
+import type { DefenseScoutView, DefenseUseView } from './protocol-defense';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchView, TerrainKind, TileKind } from './protocol-world';
 
 /** 行军目的（marches.purpose 的合法取值；v16 起 attack 仅存量在途行军使用） */
-export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept'] as const;
+export const MARCH_PURPOSES = ['attack', 'scout', 'transfer', 'return', 'plunder', 'occupy', 'reinforce', 'transport', 'intercept', 'assist', 'caravan'] as const;
 
 export type MarchPurpose = (typeof MARCH_PURPOSES)[number];
 
@@ -20,7 +21,7 @@ export function isMarchPurpose(value: unknown): value is MarchPurpose {
  * 出征类目标（野地 / NPC 城）；侦察、调兵、增援、返程不接受 task。
  * v26（AISLG-79）：transport=运输，目标只能是本账号的另一座城，须带 cargo。
  */
-export const MARCH_TASKS = ['plunder', 'occupy', 'transport'] as const;
+export const MARCH_TASKS = ['plunder', 'occupy', 'transport', 'assist'] as const;
 
 export type MarchTask = (typeof MARCH_TASKS)[number];
 
@@ -79,6 +80,8 @@ export interface BattleRoundLogEntryView {
   defenderKilled: number;
   /** 本回合箭塔造成的伤害（v30，AISLG-82；已含在 defenderDamage 内；历史战报 / 无箭塔缺省视为 0） */
   towerDamage?: number;
+  /** 本回合城防器械造成的伤害（v73，AISLG-193；已含在 defenderDamage 内；历史战报 / 未触发缺省视为 0） */
+  defenseDamage?: number;
 }
 
 /** Agent 写回的战报点评（v23，AISLG-53；每份战报最新一条，重写覆盖） */
@@ -100,7 +103,9 @@ export interface BattleReportView {
    *  pvp_raid 玩家攻打玩家城（v38，AISLG-122；守城战同 city_raid，攻守双方各得一份战报） /
    *  pvp_wilderness 玩家抢占玩家野地（v39，AISLG-123；野地战无城墙，双方各得一份） /
    *  pvp_conquest 玩家攻打玩家分城「占领」（v40，AISLG-124；守城战，打赢降城防值 / 归零换主） */
-  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest';
+  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
+  /** v76（AISLG-197）：本场获得的声望（按歼灭敌军参考战力；0 / 缺省 = 无） */
+  prestigeGained?: number;
   /** 报告持有方在本场战斗中的角色（攻方 = 出征者；守方 = 被袭击的驻军主） */
   role: 'attacker' | 'defender';
   /** 报告持有方是否获胜 */
@@ -121,6 +126,11 @@ export interface BattleReportView {
   /** 冲车破墙（v33，AISLG-86）：攻城战攻方带冲车且城墙减伤 > 0 时，开战时（第 1 回合）城墙减伤的原值与破墙后的值
    *  （百分数，1 位小数；例：70 → 42）；每回合按当时存活的冲车重算，此处只给开战时数值；其余为 undefined */
   wallBreak?: { from: number; to: number };
+  /** 城防器械用量（v73，AISLG-193；守城战实际用掉的器械，一种一项；无器械 / 未触发为缺省） */
+  defenses?: DefenseUseView[];
+  /** 协防方视角的自身伤亡（v74，AISLG-194）：只有协防方的战报带本字段；按同兵种开战数量比例分摊。
+   *  战报的 defender 仍是合并后的守方编成，本字段单独给出"我的那部分"损失。 */
+  assistLosses?: import('./protocol').ArmyCounts;
   roundLog: BattleRoundLogEntryView[];
   /** Agent 写回的点评（v23，AISLG-53；玩家自己的 Agent 读战报后写回的大白话复盘）；
    *  尚未有点评为 null——没有点评时战报照常展示 */
@@ -201,6 +211,9 @@ export interface ScoutIntel {
   garrison: ArmyCounts;
   /** 侦察详细度（v27，AISLG-77；缺省视为 exact，兼容历史情报）：rough / kinds / exact，由发起侦察时的侦察科技等级决定 */
   detail?: 'rough' | 'kinds' | 'exact';
+  /** 城防器械（v73，AISLG-193）：玩家城池的库存按侦察科技三档降级；野地 / NPC 城池为 null 或缺省。
+   *  rough 只有 has；kinds 给有库存的种类；exact 给件数 */
+  defenses?: DefenseScoutView | null;
   /** 总兵力范围（v27，AISLG-77）：exact 时 min = max = 真实总数；其余为真实总数 ±20% */
   garrisonTotal?: { min: number; max: number };
   /** 守方城墙防御加成（百分数；NPC 城池按其城墙等级推导，其余 0） */

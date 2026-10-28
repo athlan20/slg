@@ -15,6 +15,7 @@ import {
   type ListAlliancesResponseData,
   type PushAllianceStateData,
   type ErrorCode,
+  type GetAllianceDiplomacyResponseData,
 } from '../api/protocol';
 import { getCopy } from '../i18n/bundle';
 
@@ -69,6 +70,13 @@ export interface AllianceSession {
   kick: (accountId: string) => Promise<boolean>;
   setRole: (accountId: string, role: AllianceRole) => Promise<boolean>;
   setNotice: (notice: string) => Promise<boolean>;
+  /** 外交全貌（v77，AISLG-195）；null = 尚未拉取 */
+  diplomacy: GetAllianceDiplomacyResponseData | null;
+  refreshDiplomacy: () => Promise<void>;
+  inviteFriendly: (allianceId: string) => Promise<boolean>;
+  respondFriendly: (inviteId: string, accept: boolean) => Promise<boolean>;
+  endRelation: (allianceId: string) => Promise<boolean>;
+  declareHostile: (allianceId: string) => Promise<boolean>;
   onPush: (data: PushAllianceStateData) => void;
   /** 登出 / 切换账号时清空 */
   clear: () => void;
@@ -89,6 +97,7 @@ export function useAllianceSession(clientRef: { current: ApiClient | null }, con
   const [state, setState] = useState<GetAllianceResponseData | null>(null);
   const [open, setOpen] = useState(false);
   const [list, setListState] = useState<AllianceListState | null>(null);
+  const [diplomacy, setDiplomacy] = useState<GetAllianceDiplomacyResponseData | null>(null);
   const [listLoading, setListLoading] = useState(false);
   const [error, setError] = useState<AllianceError | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -121,12 +130,25 @@ export function useAllianceSession(clientRef: { current: ApiClient | null }, con
     [clientRef],
   );
 
+  const refreshDiplomacy = useCallback(async (): Promise<void> => {
+    const res = await call(Op.GET_ALLIANCE_DIPLOMACY, {});
+    if (res.ok && res.data) {
+      setDiplomacy(res.data as unknown as GetAllianceDiplomacyResponseData);
+    }
+  }, [call]);
+
   const refresh = useCallback(async (): Promise<void> => {
     const res = await call(Op.GET_ALLIANCE, {});
     if (res.ok && res.data) {
-      setState(res.data as unknown as GetAllianceResponseData);
+      const next = res.data as unknown as GetAllianceResponseData;
+      setState(next);
+      if (next.alliance) {
+        void refreshDiplomacy();
+      } else {
+        setDiplomacy(null);
+      }
     }
-  }, [call]);
+  }, [call, refreshDiplomacy]);
 
   const setList = useCallback((next: AllianceListState | null) => {
     listRef.current = next;
@@ -205,6 +227,10 @@ export function useAllianceSession(clientRef: { current: ApiClient | null }, con
       setBusy(false);
       if (res.ok) {
         setDone(opts.done ?? null);
+        const data = res.data as unknown as Record<string, unknown>;
+        if (Array.isArray(data?.friends) && Array.isArray(data?.hostiles)) {
+          setDiplomacy(data as unknown as GetAllianceDiplomacyResponseData);
+        }
       } else {
         setError({ ...res.error, scene: opts.scene });
       }
@@ -284,6 +310,24 @@ export function useAllianceSession(clientRef: { current: ApiClient | null }, con
 
   const setNotice = useCallback((notice: string) => act(Op.ALLIANCE_SET_NOTICE, { notice }, { done: getCopy().ALLIANCE_COPY.notice.saved }), [act]);
 
+  const inviteFriendly = useCallback(
+    (allianceId: string) => act(Op.ALLIANCE_DIPLOMACY_INVITE, { allianceId }, { done: getCopy().ALLIANCE_COPY.action.friendInvited }),
+    [act],
+  );
+  const respondFriendly = useCallback(
+    (inviteId: string, accept: boolean) =>
+      act(Op.ALLIANCE_DIPLOMACY_RESPOND, { inviteId, accept }, { done: accept ? getCopy().ALLIANCE_COPY.action.friendly : getCopy().ALLIANCE_COPY.action.responded }),
+    [act],
+  );
+  const endRelation = useCallback(
+    (allianceId: string) => act(Op.ALLIANCE_DIPLOMACY_END, { allianceId }, { done: getCopy().ALLIANCE_COPY.action.neutral }),
+    [act],
+  );
+  const declareHostile = useCallback(
+    (allianceId: string) => act(Op.ALLIANCE_DIPLOMACY_HOSTILE, { allianceId }, { done: getCopy().ALLIANCE_COPY.action.hostile }),
+    [act],
+  );
+
   const onPush = useCallback(
     (_data: PushAllianceStateData) => {
       // 推送只说明「联盟状态变了」，具体内容一律重拉，不在推送里做增量合并
@@ -301,6 +345,7 @@ export function useAllianceSession(clientRef: { current: ApiClient | null }, con
 
   const clear = useCallback(() => {
     setState(null);
+    setDiplomacy(null);
     setOpen(false);
     setList(null);
     setListLoading(false);
@@ -337,6 +382,12 @@ export function useAllianceSession(clientRef: { current: ApiClient | null }, con
     kick,
     setRole,
     setNotice,
+    diplomacy,
+    refreshDiplomacy,
+    inviteFriendly,
+    respondFriendly,
+    endRelation,
+    declareHostile,
     onPush,
     clear,
   };

@@ -27,6 +27,26 @@ import {
 } from './handlers-city';
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
+import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
+import { handleDismissAssist } from './handlers-assist';
+import {
+  handleEnterBattlefield,
+  handleGetBattlefield,
+  handleMarchBattlefieldSquad,
+  handleSignupBattlefield,
+  handleSplitBattlefieldSquad,
+} from './handlers-battlefield';
+import { handleBuyBattlefieldItem } from './handlers-battlefield-shop';
+import { handleChainBattlefieldStronghold, handleFireBattlefieldStronghold } from './handlers-battlefield-skill';
+import { handleClaimNobilitySalary, handleGetNobility } from './handlers-nobility';
+import { handleAllianceDiplomacyOp } from './handlers-alliance-diplomacy';
+import { handleGetLuoyang, handlePublishDecree } from './handlers-luoyang';
+import {
+  handleBuyMarketOrder,
+  handleCancelMarketOrder,
+  handleCreateMarketOrder,
+  handleGetMarket,
+} from './handlers-market';
 import {
   handleGetTile,
   handleGetWorldMap,
@@ -66,6 +86,7 @@ import { handleGetLeaderboard } from './handlers-leaderboard';
 import { effectiveLevelSql } from '../../common/src/production';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
 import { loadCityState } from './views';
+import { cityTitle } from '../../common/src/nobility';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
 import { handleDiscardCity } from './handlers-discard';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
@@ -388,6 +409,71 @@ async function dispatchOp(
       await handleCancelRecruit(ctx, conn, op, seq, recruitId);
       break;
     }
+    case Op.CRAFT_DEFENSE:
+      // 参数校验在 handler 内（kind 枚举 + count 正整数），失败附当前城池状态
+      await handleCraftDefense(ctx, conn, op, seq, data);
+      break;
+    case Op.CANCEL_DEFENSE_CRAFT:
+      await handleCancelDefenseCraft(ctx, conn, op, seq, data);
+      break;
+    case Op.DISMISS_ASSIST:
+      await handleDismissAssist(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_BATTLEFIELD:
+      await handleGetBattlefield(ctx, conn, op, seq);
+      break;
+    case Op.SIGNUP_BATTLEFIELD:
+      await handleSignupBattlefield(ctx, conn, op, seq, data);
+      break;
+    case Op.ENTER_BATTLEFIELD:
+      await handleEnterBattlefield(ctx, conn, op, seq, data);
+      break;
+    case Op.SPLIT_BATTLEFIELD_SQUAD:
+      await handleSplitBattlefieldSquad(ctx, conn, op, seq, data);
+      break;
+    case Op.MARCH_BATTLEFIELD_SQUAD:
+      await handleMarchBattlefieldSquad(ctx, conn, op, seq, data);
+      break;
+    case Op.BUY_BATTLEFIELD_ITEM:
+      await handleBuyBattlefieldItem(ctx, conn, op, seq, data);
+      break;
+    case Op.FIRE_BATTLEFIELD_STRONGHOLD:
+      await handleFireBattlefieldStronghold(ctx, conn, op, seq, data);
+      break;
+    case Op.CHAIN_BATTLEFIELD_STRONGHOLD:
+      await handleChainBattlefieldStronghold(ctx, conn, op, seq, data);
+      break;
+    case Op.ALLIANCE_DIPLOMACY_INVITE:
+    case Op.ALLIANCE_DIPLOMACY_RESPOND:
+    case Op.ALLIANCE_DIPLOMACY_END:
+    case Op.ALLIANCE_DIPLOMACY_HOSTILE:
+    case Op.GET_ALLIANCE_DIPLOMACY:
+      await handleAllianceDiplomacyOp(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_LUOYANG:
+      await handleGetLuoyang(ctx, conn, op, seq);
+      break;
+    case Op.PUBLISH_DECREE:
+      await handlePublishDecree(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_MARKET:
+      await handleGetMarket(ctx, conn, op, seq, data);
+      break;
+    case Op.CREATE_MARKET_ORDER:
+      await handleCreateMarketOrder(ctx, conn, op, seq, data);
+      break;
+    case Op.BUY_MARKET_ORDER:
+      await handleBuyMarketOrder(ctx, conn, op, seq, data);
+      break;
+    case Op.CANCEL_MARKET_ORDER:
+      await handleCancelMarketOrder(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_NOBILITY:
+      await handleGetNobility(ctx, conn, op, seq);
+      break;
+    case Op.CLAIM_NOBILITY_SALARY:
+      await handleClaimNobilitySalary(ctx, conn, op, seq);
+      break;
     case Op.BUILD: {
       const kind = readString(data, 'kind');
       if (!isBuildingKind(kind)) {
@@ -516,6 +602,8 @@ async function handleGetState(
     x: row.x,
     y: row.y,
     isMain: index === 0,
+    title: cityTitle(row.level, index === 0),
+    nobility: city?.nobility ?? { index: 0, name: '平民' },
   }));
   const mainGovernment = cities[0]?.level ?? 0;
   const branch = {

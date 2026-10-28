@@ -17,6 +17,9 @@ export const CHAT_RATE_LIMIT_MS = 10_000;
 export interface ChatPlayerView {
   accountId: string;
   username: string;
+  /** v76（AISLG-197）：爵位序号与名称 */
+  nobility: number;
+  nobilityName: string;
 }
 
 export type ChatCardView =
@@ -39,7 +42,10 @@ export type ChatSystemView =
   | { kind: 'alliance_left'; player: ChatPlayerView }
   | { kind: 'alliance_kicked'; player: ChatPlayerView; by: ChatPlayerView }
   | { kind: 'alliance_leader_changed'; from: ChatPlayerView; to: ChatPlayerView; reason: 'transfer' | 'inactive' }
-  | { kind: 'alliance_mark_created'; player: ChatPlayerView; markKind: AllianceMarkKind; x: number; y: number };
+  | { kind: 'alliance_mark_created'; player: ChatPlayerView; markKind: AllianceMarkKind; x: number; y: number }
+  | { kind: 'alliance_diplomacy_friendly'; player: ChatPlayerView; otherAllianceName: string }
+  | { kind: 'alliance_diplomacy_hostile'; player: ChatPlayerView; otherAllianceName: string }
+  | { kind: 'alliance_diplomacy_neutral'; player: ChatPlayerView; otherAllianceName: string };
 
 export interface ChatMessageView {
   id: number;

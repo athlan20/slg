@@ -53,7 +53,13 @@ import { QUEST_COPY_EN } from '../copy-quest-en';
 import { ANNOUNCEMENT_COPY } from '../copy-announcement';
 import { ANNOUNCEMENT_COPY_EN } from '../copy-announcement-en';
 import { ALLIANCE_COPY } from '../copy-alliance';
+import { BATTLEFIELD_COPY } from '../copy-battlefield';
+import { MARKET_COPY } from '../copy-market';
+import { LUOYANG_COPY } from '../copy-luoyang';
 import { ALLIANCE_COPY_EN } from '../copy-alliance-en';
+import { BATTLEFIELD_COPY_EN } from '../copy-battlefield-en';
+import { MARKET_COPY_EN } from '../copy-market-en';
+import { LUOYANG_COPY_EN } from '../copy-luoyang-en';
 import { SHORTFALL_COPY } from '../copy-shortfall';
 import { SHORTFALL_COPY_EN } from '../copy-shortfall-en';
 
@@ -102,6 +108,9 @@ const ZH = {
   QUEST_COPY,
   ANNOUNCEMENT_COPY,
   ALLIANCE_COPY,
+  BATTLEFIELD_COPY,
+  MARKET_COPY,
+  LUOYANG_COPY,
   SEASON_COPY,
   HALL_COPY,
   SHORTFALL_COPY,
@@ -154,6 +163,9 @@ const EN: Bundle = {
   QUEST_COPY: QUEST_COPY_EN,
   ANNOUNCEMENT_COPY: ANNOUNCEMENT_COPY_EN,
   ALLIANCE_COPY: ALLIANCE_COPY_EN,
+  BATTLEFIELD_COPY: BATTLEFIELD_COPY_EN,
+  MARKET_COPY: MARKET_COPY_EN,
+  LUOYANG_COPY: LUOYANG_COPY_EN,
   SEASON_COPY: SEASON_COPY_EN,
   HALL_COPY: HALL_COPY_EN,
   SHORTFALL_COPY: SHORTFALL_COPY_EN,

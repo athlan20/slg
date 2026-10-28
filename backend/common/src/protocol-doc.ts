@@ -614,6 +614,190 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。',
     action: '网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。',
   },
+  WALL_NOT_BUILT: {
+    desc: '（v73，AISLG-193）城墙尚未建造：四种城防器械只能囤在城墙里，城墙 0 级时库存上限为 0，不能打造。响应的 data 附 cap（= 0）。',
+    action: '先建造并升级城墙再打造器械；城墙等级同时也是库存上限（每级 60 件，四种共用）。',
+  },
+  DEFENSE_STOCK_FULL: {
+    desc: '（v73，AISLG-193）库存 + 在造 + 本次数量超过上限（城墙等级 × 60，四种器械共用）。响应的 data 附 cap / stock（已入库合计）/ pending（在造 + 排队合计）。',
+    action: '减少本次件数，或先把库存用在守城（守城战自动消耗）后再生出；升级城墙可提高上限。',
+  },
+  DEFENSE_QUEUE_FULL: {
+    desc: '（v73，AISLG-193）打造队列已满：与征兵同规则，同一时间 1 条在造 + 最多 2 条排队。',
+    action: '等队首完成（或取消已有条目腾位置）后再发起。',
+  },
+  DEFENSE_NOT_CANCELLABLE: {
+    desc: '（v73，AISLG-193）没有可取消的打造条目：条目不存在、不属于本账号，或已完成 / 已取消。',
+    action: '用 GET_STATE 的 city.defenses.queue 取当前条目的 craftId 再取消；已完成 / 已取消的不要重试。',
+  },
+  ASSIST_NOT_ALLY: {
+    desc: '（v74，AISLG-194）协防目标不是盟友的城池：MARCH task=assist 只能派往同一联盟成员的城（自己的城请用 transfer 调兵）。',
+    action: '确认目标城的主人与你同属一个联盟；不是盟友就换目标，或先拉对方入盟。',
+  },
+  ASSIST_LIMIT: {
+    desc: '（v74，AISLG-194）协防名额已满：每座城最多接收 5 支协防部队（在途部队也计入），同一账号对同一座城最多 1 支。到达时复核不通过，部队原路返回（事件 cause=ASSIST_LIMIT）。',
+    action: '换一座盟友城协防，或等该城已有部队召回 / 遣返后再派；同一座城不要重复派第二支。',
+  },
+  ASSIST_NOT_FOUND: {
+    desc: '（v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 放弃分城自动遣返 / 分城被占领时随城覆灭），或不属于你（只有派出方与城主能召回 / 遣返）。',
+    action: '重新 GET_STATE / GET_TILE 拿最新的 assistIn / assistOut 列表后再操作。',
+  },
+  BATTLEFIELD_GOVERNMENT_TOO_LOW: {
+    desc: '（v75，AISLG-198）报名剧本战场要求主城官府 ≥ 5 级；响应附 required / current。',
+    action: '先升级主城官府到 5 级；分城官府不计。',
+  },
+  BATTLEFIELD_SIGNUP_CLOSED: {
+    desc: '（v75，AISLG-198）当前不在剧本战场的报名期（北京时间每周二 20:00 至周三 20:00）。',
+    action: '用 GET_BATTLEFIELD 的 nextSignupAt 等下一场报名；报名开始后 SERVER 会全服播报。',
+  },
+  BATTLEFIELD_ALREADY_JOINED: {
+    desc: '（v75，AISLG-198）本场已经报过名（阵营选定后不能改）。',
+    action: '直接 GET_BATTLEFIELD 查自己的阵营与队伍，或等开战后入场。',
+  },
+  BATTLEFIELD_NOT_JOINED: {
+    desc: '（v75，AISLG-198）没有报名本场战场，不能入场或操作队伍。',
+    action: '先在报名期 SIGNUP_BATTLEFIELD 选阵营。',
+  },
+  BATTLEFIELD_CAMP_FULL: {
+    desc: '（v75，AISLG-198）该阵营报名人数超过另一方 1.5 倍且多出 5 人以上，暂停报名；响应附 count / otherCount / limit。',
+    action: '改选另一方；或等双方人数接近后再报名。',
+  },
+  BATTLEFIELD_ENTRY_CLOSED: {
+    desc: '（v75，AISLG-198）战场已经开战，不能再带部队入场（报名期结束即锁死入场）。',
+    action: '本场只能在已入场的队伍里拆队 / 行军；下一场报名时再入场。',
+  },
+  BATTLEFIELD_ALREADY_ENTERED: {
+    desc: '（v75，AISLG-198）本场已经带过部队入场（每人每场只能入场一次，开战后也不能追加）。',
+    action: '用 SPLIT_BATTLEFIELD_SQUAD 拆分已有队伍，或等下一场。',
+  },
+  BATTLEFIELD_POPULATION_LIMIT: {
+    desc: '（v75，AISLG-198）带入部队的人口超过 3000；响应附 limit / current。',
+    action: '减少铁骑兵等高人口兵种的数量，或只带主力兵种。',
+  },
+  BATTLEFIELD_SQUAD_LIMIT: {
+    desc: '（v75，AISLG-198）每人最多 3 支队伍。',
+    action: '把要拆出的兵力并回现有队伍，或等有队伍阵亡后再拆。',
+  },
+  BATTLEFIELD_SQUAD_NOT_FOUND: {
+    desc: '（v75，AISLG-198）队伍不存在、已阵亡，或不属于本账号。',
+    action: '重新 GET_BATTLEFIELD 拿最新队伍列表。',
+  },
+  BATTLEFIELD_SQUAD_BUSY: {
+    desc: '（v75，AISLG-198）队伍正在行军，不能再次下令。',
+    action: '等 arriveAt 到达后再下令。',
+  },
+  BATTLEFIELD_UNREACHABLE: {
+    desc: '（v75，AISLG-198）目标不可达：30×30 地图中间的河只有 3 处渡口（y = 5 / 15 / 25）能过，或坐标越界。',
+    action: '先走到渡口再渡河，或改选同侧目标。',
+  },
+  BATTLEFIELD_NOT_ACTIVE: {
+    desc: '（v75，AISLG-198）剧本战场不在进行中（报名期或已结束）。',
+    action: '报名期只做报名 / 入场；行军与攻打在开战后才能做。',
+  },
+  BATTLEFIELD_SHOP_LIMIT: {
+    desc: '（v75，AISLG-198）本场该商品已达到限购数量。',
+    action: '换其他商品，或等下一场额度重置（军功余额跨场保留）。',
+  },
+  BATTLEFIELD_MERIT_INSUFFICIENT: {
+    desc: '（v75，AISLG-198）战场军功余额不足；响应附 cost / balance。',
+    action: '继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。',
+  },
+  BATTLEFIELD_TARGET_INVALID: {
+    desc: '（v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。',
+    action: '用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。',
+  },
+  BATTLEFIELD_STRONGHOLD_LOCKED: {
+    desc: '（v80，AISLG-199）讨伐董卓的关卡按顺序解锁：汜水关 → 虎牢关 → 洛阳，前一关没被讨董联军打下时不能攻打（GET_BATTLEFIELD 的 strongholds[].unlocked 为 false）。',
+    action: '先攻下前一关（看 strongholds 里 unlocked 为 true 的据点再下令）。',
+  },
+  BATTLEFIELD_WIND_MISMATCH: {
+    desc: '（v80，AISLG-199）赤壁火攻只能在东南风期间发动（event.wind.direction = se）。',
+    action: '等下一次风向切换（event.wind.nextAt）再发动，切换前 30 分钟会预告。',
+  },
+  BATTLEFIELD_FIRE_COOLDOWN: {
+    desc: '（v80，AISLG-199）同一目标据点每 2 小时最多被火攻一次；响应附 nextAt。',
+    action: '换一个目标，或等 nextAt 之后再火攻。',
+  },
+  BATTLEFIELD_CHAIN_ACTIVE: {
+    desc: '（v80，AISLG-199）该据点的连锁战船仍在生效（6 小时内不能重复连锁）；响应附 chainUntil。',
+    action: '等 chainUntil 之后再连锁；连锁期内被火攻伤害翻倍，留意守军。',
+  },
+  BATTLEFIELD_SKILL_UNAVAILABLE: {
+    desc: '（v80，AISLG-199）本场剧本没有这个技能（只有赤壁有火攻 / 连锁），或阵营不对：火攻只给孙刘方，连锁只给曹方。',
+    action: '看 event.script 与自己的 me.camp 再发。',
+  },
+  BATTLEFIELD_NOT_ENTERED: {
+    desc: '（v80，AISLG-199）报名了但还没带兵入场，不能使用战场技能。',
+    action: '本场已开战就只能等下一场；报名期内要在开战前 ENTER_BATTLEFIELD。',
+  },
+  LUOYANG_CLOSED: {
+    desc: '（v79，AISLG-200）洛阳只在每周六 21:00–23:00（北京时间现实时间）开放攻打 / 侦察；响应附 nextOpenAt / retryAfterSeconds。',
+    action: '等到 nextOpenAt 再发起。窗口内洛阳没有被动免战、城防不回涨。',
+  },
+  DECREE_NOT_HOLDER: {
+    desc: '（v79，AISLG-200）只有洛阳之主联盟的盟主可以发布政令。',
+    action: '先占领洛阳，且由该联盟盟主操作。',
+  },
+  DECREE_COOLDOWN: {
+    desc: '（v79，AISLG-200）政令每 7 天只能发布一次；响应附 nextAt / retryAfterSeconds。',
+    action: '等 nextAt 之后再发。',
+  },
+  MARKET_LOCKED: {
+    desc: '（v78，AISLG-196）交易所需要主城官府 ≥ 5 级且不在新手保护期；响应附 reason / government / required。',
+    action: '升级主城官府或等新手保护结束后再来。',
+  },
+  PRICE_OUT_OF_RANGE: {
+    desc: '（v78，AISLG-196）单价超出允许范围：资源之间 0.5–2，收金币 0.125–0.5；响应附 min / max。',
+    action: '按 GET_MARKET 的 limits.priceRangeResource / priceRangeGold 调整单价。',
+  },
+  ORDER_LIMIT: {
+    desc: '（v78，AISLG-196）同时挂单已达 5 张。',
+    action: '先撤单或等成交后再挂。',
+  },
+  DAILY_TRADE_LIMIT: {
+    desc: '（v78，AISLG-196）今日成交额度不足（主城官府等级 × 3000 × 缩放，买卖合计）；响应附 limit / used / remaining。',
+    action: '明天（北京日）额度重置后再交易；额度按卖出资源数量折算、买卖双方都计。',
+  },
+  ORDER_NOT_FOUND: {
+    desc: '（v78，AISLG-196）挂单不存在、已售罄、已过期或不属于你。',
+    action: '重新 GET_MARKET 拉最新挂单；过期挂单会自动退款。',
+  },
+  MARKET_ALLY_ONLY: {
+    desc: '（v78，AISLG-196）挂单勾选了「只卖给盟友」，你与卖家不在同一个联盟。',
+    action: '换一张公开挂单，或加入卖家所在联盟。',
+  },
+  ORDER_NOT_CANCELLABLE: {
+    desc: '（v78，AISLG-196）挂单已售罄或已过期，无法撤回。',
+    action: '刷新挂单列表确认状态。',
+  },
+  DIPLOMACY_LIMIT: {
+    desc: '（v77，AISLG-195）友盟 / 敌对数量已达上限（每联盟最多 2 个友盟、5 个敌对），响应附 limit。',
+    action: '先解除一个现有关系，再结新友盟 / 宣布新敌对。',
+  },
+  DIPLOMACY_COOLDOWN: {
+    desc: '（v77，AISLG-195）刚解除友好，72 小时内同一对联盟不能再次结好；响应附 refriendAfter / retryAfterSeconds。',
+    action: '等到 refriendAfter 之后再发邀请 / 同意邀请。',
+  },
+  DIPLOMACY_EXISTS: {
+    desc: '（v77，AISLG-195）与目标联盟已经是友盟 / 敌对，或已有待处理邀请。',
+    action: '用 GET_ALLIANCE_DIPLOMACY 查当前关系与邀请，避免重复操作。',
+  },
+  DIPLOMACY_INVITE_NOT_FOUND: {
+    desc: '（v77，AISLG-195）友好邀请不存在、已过期（48 小时）或已处理。',
+    action: '重新发起邀请；过期邀请不会出现在 GET_ALLIANCE_DIPLOMACY 里。',
+  },
+  NOBILITY_TOO_LOW: {
+    desc: '（v76，AISLG-197）爵位不足：占领名城需要「大夫」（爵位序号 3）及以上；响应附 required / current。攻打外围与掠夺不受限。',
+    action: '先在世界地图战斗里累计声望升到大夫（2000 声望）再来占领名城。',
+  },
+  NOBILITY_SALARY_CLAIMED: {
+    desc: '（v76，AISLG-197）今日（北京日）俸禄已领，响应附 nextClaimAt。',
+    action: '明天北京时间 0 点后再领；金额随爵位提高。',
+  },
+  NOBILITY_SALARY_NONE: {
+    desc: '（v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。',
+    action: '打世界地图战斗或参加剧本战场攒声望。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',

@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import type { CityView, NpcAttackWarningPushData } from '../../api/protocol';
+import type { BattlefieldEventView, CityView, NpcAttackWarningPushData } from '../../api/protocol';
 import { useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
 import type { ExchangeResource } from '../../state/exchangeAction';
@@ -36,6 +36,11 @@ interface TopBarProps {
   onSelectCity: (cityId: string) => void;
   /** 当前城详情在重拉（切换中）：胶囊显示「切换中…」并禁用 */
   switching: boolean;
+  /** 剧本战场（v75 AISLG-198）：没有战场时为 null；报名 / 进行中显示常驻胶囊 */
+  battlefield: BattlefieldEventView | null;
+  onOpenBattlefield: () => void;
+  /** 玩家交易所（v78 AISLG-196） */
+  onOpenMarket: () => void;
 }
 
 const topBtn =
@@ -58,9 +63,12 @@ export function TopBar({
   cityList,
   onSelectCity,
   switching,
+  battlefield,
+  onOpenBattlefield,
+  onOpenMarket,
 }: TopBarProps) {
   const copy = useCopy();
-  const { COPY, NAV_COPY, TOP_COPY } = copy;
+  const { COPY, NAV_COPY, TOP_COPY, BATTLEFIELD_COPY, MARKET_COPY } = copy;
   const { exchangeAsk } = useNav();
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [lastAskId, setLastAskId] = useState(exchangeAsk.id);
@@ -93,6 +101,22 @@ export function TopBar({
         )}
       </div>
       <SeasonPill info={season} />
+      {battlefield ? (
+        <button
+          type="button"
+          role="顶栏-剧本战场"
+          onClick={onOpenBattlefield}
+          title={BATTLEFIELD_COPY.launcher.title}
+          className={`${topBtn} ${battlefield.status === 'active' ? 'border-gold text-gold' : battlefield.status === 'signup' ? 'border-accent-dim text-accent' : ''}`}
+        >
+          {battlefield.status === 'signup' ? BATTLEFIELD_COPY.launcher.signup : battlefield.status === 'active' ? BATTLEFIELD_COPY.scripts[battlefield.script] : BATTLEFIELD_COPY.launcher.finished}
+          {battlefield.status === 'active' ? (
+            <b className="ml-1 font-mono">
+              {battlefield.camps.yuan.score}:{battlefield.camps.cao.score}
+            </b>
+          ) : null}
+        </button>
+      ) : null}
       <AlertPills city={city} incoming={incoming} onOpenWarning={onOpenWarning} />
       {city ? (
         <div className="shrink-0 max-lg:hidden">
@@ -123,6 +147,16 @@ export function TopBar({
         </button>
         <button
           type="button"
+          role="顶栏-交易所按钮"
+          title={MARKET_COPY.launcher.title}
+          aria-label={MARKET_COPY.launcher.open}
+          onClick={onOpenMarket}
+          className={topBtn}
+        >
+          {MARKET_COPY.launcher.open}
+        </button>
+        <button
+          type="button"
           role="顶栏-排行榜按钮"
           title={COPY.leaderboard.title}
           aria-label={COPY.leaderboard.title}
@@ -134,10 +168,15 @@ export function TopBar({
       </div>
       {exchangeOpen && city ? (
         <ExchangePopover
+          key={exchangeAsk.id}
           resources={city.resources}
           anchorRef={anchorRef}
           neededGold={neededGold}
           onExchange={onExchange}
+          onOpenMarket={() => {
+            setExchangeOpen(false);
+            onOpenMarket();
+          }}
           onClose={() => setExchangeOpen(false)}
         />
       ) : null}

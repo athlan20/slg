@@ -16,7 +16,7 @@
 // - 攻方战败：幸存部队撤回出发城（v15 语义，与 battle-tick 一致）；
 // - 目标失效（易主 / 转城 / 任务不再适用）：不战斗，部队原路返回（aborted）。
 
-import { carryingPercent } from '../../common/src/tech';
+import { carryingPercent, combatTechBonus, lootingPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import pg from 'pg';
 import { EventType, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
@@ -140,6 +140,7 @@ export async function resolvePlunderArrival(
     wallDefensePercent: wall,
     siege: npc !== null,
     attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
   });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   if (!npc) {
@@ -191,8 +192,9 @@ export async function resolvePlunderArrival(
 
   // 胜利：按幸存部队的负重从奖励池装填（冷却内到达 → 收益为零，战斗照常结算）
   const now = await dbNow(client);
-  const carry = armyCarryCapacity(result.attacker.survivors, carryingPercent(await loadTechLevels(client, march.account_id)));
-  const pool = npc ? npcStockPool(npc) : wildernessPlunderPool(target.terrain, target.level);
+  const plunderTechs = await loadTechLevels(client, march.account_id);
+  const carry = armyCarryCapacity(result.attacker.survivors, carryingPercent(plunderTechs));
+  const pool = npc ? npcStockPool(npc) : wildernessPlunderPool(target.terrain, target.level, lootingPercent(plunderTechs));
   // v61（AISLG-165）：野地的地形资源奖励以该地块当前储量为上限（掠空即止）；金币不受储量约束
   const reserve = npc ? 0 : ((await readTileReserve(client, target.x, target.y, now)) ?? 0);
   if (!npc) {
@@ -308,7 +310,12 @@ export async function resolveOccupyArrival(
   const defender = await loadNativeGarrison(client, target);
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  const result = resolveBattle(troops, defender, { wallDefensePercent: 0, siege: false, attackerHero: hero?.engine ?? null });
+  const result = resolveBattle(troops, defender, {
+    wallDefensePercent: 0,
+    siege: false,
+    attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+  });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   await saveNativeGarrison(client, target, result.defender.survivors);
   const naming = await loadCityNaming(client, march.from_city_id);

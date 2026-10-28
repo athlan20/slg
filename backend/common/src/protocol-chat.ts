@@ -44,6 +44,10 @@ export const CHAT_SYSTEM_KINDS = [
   'alliance_kicked',
   'alliance_leader_changed',
   'alliance_mark_created',
+  'alliance_diplomacy_friendly',
+  'alliance_diplomacy_hostile',
+  'alliance_diplomacy_neutral',
+  'alliance_decree',
 ] as const;
 export type ChatSystemKind = (typeof CHAT_SYSTEM_KINDS)[number];
 
@@ -51,6 +55,9 @@ export type ChatSystemKind = (typeof CHAT_SYSTEM_KINDS)[number];
 export interface ChatPlayerView {
   accountId: string;
   username: string;
+  /** 爵位（v76，AISLG-197）：序号与名称，聊天里显示在名字旁边 */
+  nobility: number;
+  nobilityName: string;
 }
 
 /**
@@ -85,7 +92,13 @@ export type ChatSystemView =
   /** reason：transfer 盟主主动转让；inactive 盟主长期不活跃被自动转让 */
   | { kind: 'alliance_leader_changed'; from: ChatPlayerView; to: ChatPlayerView; reason: 'transfer' | 'inactive' }
   /** 有人在地图上打了标记（v69，AISLG-184）：标记的附言不进系统消息，客户端按类型与坐标拼文案 */
-  | { kind: 'alliance_mark_created'; player: ChatPlayerView; markKind: AllianceMarkKind; x: number; y: number };
+  | { kind: 'alliance_mark_created'; player: ChatPlayerView; markKind: AllianceMarkKind; x: number; y: number }
+  /** v77（AISLG-195）：与某联盟结成友盟 / 宣布敌对 / 回到中立 */
+  | { kind: 'alliance_diplomacy_friendly'; player: ChatPlayerView; otherAllianceName: string }
+  | { kind: 'alliance_diplomacy_hostile'; player: ChatPlayerView; otherAllianceName: string }
+  | { kind: 'alliance_diplomacy_neutral'; player: ChatPlayerView; otherAllianceName: string }
+  /** v79（AISLG-200）：洛阳之主盟主发布政令 */
+  | { kind: 'alliance_decree'; player: ChatPlayerView; decreeKind: string; until: string };
 
 /**
  * 一条聊天消息（CHAT_HISTORY、CHAT_SEND 响应与 PUSH_CHAT_MESSAGE 共用）。

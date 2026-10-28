@@ -64,7 +64,7 @@ Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resourc
 ### 🏯 City building & economy
 - **15 building types**, each upgradable to level 20: farms, lumber mills, quarries, iron mines, houses, government offices, barracks, warehouses, walls, academies, parade grounds, beacon towers, relay stations, arrow towers, and taverns.
 - Five resources (food, wood, stone, iron, gold) keep producing — including while you're offline. Construction queues and chains upgrades.
-- Warehouses shield part of your stockpile from plunder; the market trades surplus resources for gold.
+- Warehouses shield part of your stockpile from plunder; the market trades surplus resources for gold, and a **player exchange** lets you post sell orders for resources or gold with caravan delivery (5% fee on both sides).
 - Armies eat: cut off the food supply and city garrisons mutiny, losing troops every hour.
 
 ### ⚔️ Troops & battle
@@ -82,10 +82,15 @@ Traditional SLG games reward grinding: alarm clocks at 3 a.m. to collect resourc
 ### 🎖️ Heroes & tech
 - Recruit heroes at the tavern. They lead marches (attack and damage-reduction bonuses) or hold city defense.
 - Heroes demand salaries — unpaid heroes can't march — and a hero leading a lost battle is wounded for a while.
-- Research six technologies at the academy: farming, carrying, marching, storage, scouting, and defense.
+- **Prestige & nobility**: battles on the world map earn prestige from enemy power destroyed and automatically promote you (Commoner → King). Nobility pays a daily salary, unlocks Famous City occupation, and adds +1 normal hero slot at two ranks; cities show County / Commandery / Province / Capital titles by Government Hall level.
+- Research sixteen technologies at the academy (two columns: development and military): farming, carrying, storage, supply, construction, research, looting, repair, plus marching, scouting, fortification, drill, combat, protection, riding, and archery.
 
 ### 🔥 Server-wide events & player vs player
 - **Yellow Turban Rebellion**: a recurring server-wide PvE event — rebel camps spawn across the map and everyone piles in to clear them.
+- **Script Battlefield · Guandu**: signup opens Tuesday 20:00, battle starts Wednesday 20:00 and ends Thursday 20:00 (Beijing time). Pick Yuan Shao or Cao Cao, bring one army into a separate 30×30 map, fight over 9 strongholds, earn merit for the battlefield shop, and get rewards based on camp victory and personal rank.
+- **Script Battlefield · Dong Zhuo / Red Cliffs**: one script per week, rotating Guandu → Dong Zhuo → Red Cliffs. Dong Zhuo is a server-wide co-op: take Sishui Pass, Hulao Pass and Luoyang in order (Lü Bu holds Hulao; everyone gets a reward tier by progress). Red Cliffs pits Sun-Liu against Cao Cao: the wind shifts every 6 hours, the side with the wind gets +10% range, southeast wind allows fire attacks, and Cao can chain its warships. Signup needs the Grand Officer rank.
+- **Alliance diplomacy**: form friendly alliances (no attacks between members, mutual reinforcement, max 2) or unilaterally mark an alliance hostile (red on the map, max 5); ending a friendship blocks attacks for 24h and re-friending for 72h.
+- **Ally assist**: station troops in an ally's city to fight alongside their garrison (losses split by pre-battle strength); recall them anytime, and the host can send them home.
 - **PvP**: plunder other players' cities, seize their wilderness, capture their branch cities (capitals can never fall).
 - PvP runs on hard rules, so it never becomes a sleep-loss game:
   - 3-day newbie protection

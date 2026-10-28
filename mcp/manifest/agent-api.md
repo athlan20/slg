@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**71** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**80** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 71）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 80）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -53,6 +53,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -343,6 +348,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -358,9 +364,33 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -467,7 +497,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 71,
+    "protocolVersion": 80,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -533,7 +563,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 71,
+    "protocolVersion": 80,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -557,7 +587,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/68 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/77 补读增量）**
 
 请求：
 
@@ -568,7 +598,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 68,
+    "docVersion": 77,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -587,8 +617,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 71,
-    "docNotice": "接口文档已从 v68 更新到 v71：请 GET /agent-api/changes/68 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 80,
+    "docNotice": "接口文档已从 v77 更新到 v80：请 GET /agent-api/changes/77 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -714,6 +744,8 @@
 | city.id | string | 城池 UUID。 |
 | city.name | string | 城池名称，注册时创建的主城默认为「主城」，可用 RENAME_CITY 修改。 |
 | city.level | number | 城池等级（v7 新增；v24 起 = 该城官府等级 levels.government，不另设升级系统；此前恒为 1）。官府升级，城池等级跟着升。 |
+| city.title | string | 城池称号（v76，AISLG-197）：按官府等级 1–4 城池 / 5–9 县城 / 10–14 郡城 / 15–19 州城 / 20+ 都城；都城只给主城，分城最高州城。无数值加成。 |
+| city.nobility | object | 账号爵位（v76，AISLG-197）：{ index（0 = 平民，索引见 GET_NOBILITY）, name }。 |
 | city.resources.gold | number | 金（由官府自动生产）。 |
 | city.resources.wood | number | 木。 |
 | city.resources.food | number | 粮。 |
@@ -739,14 +771,18 @@
 | city.shieldUntil | string \| null | 主动免战截止（v38，AISLG-122，账号级）：TRUCE 开启后 12 小时基准随缩放；开着时别人打不了你（含 NPC 袭击目标池跳过）、你也不能出兵打玩家（SELF_TRUCE_ACTIVE，打野地 / NPC 不受限）。未开启为 null。 |
 | city.shieldNextAt | string \| null | 下一次可开启主动免战的时刻（v38，AISLG-122；每周一次，ISO 8601）；当前可开启为 null。 |
 | city.durability | number \| null | 分城城防值（v40，AISLG-124）：0..100，被「占领」打赢一击 −35（冲车加成最多再 −15）、归零一击换主；免战结束后每小时回涨 10 至满（免战内不回涨）。主城为 null（永不被占领）。 |
-| city.famousName / city.productionBonusPercent | string \| null / number | 名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。v64（AISLG-168）：占领名城的分城可征募该名城的专属兵（名城 → 兵种对照见 RECRUIT 的 summary），失守即失去征募资格。 |
+| city.luoyangBonusPercent（v79 洛阳之主联盟 +5%，已计入 production）/ city.famousName / city.productionBonusPercent | string \| null / number | 名城分城标记（v24 新增，AISLG-56）：占领名城得到的分城带名城名（famousName）与独占产量加成百分数（productionBonusPercent，当前 20，已计入 production）；普通城为 null / 0。v64（AISLG-168）：占领名城的分城可征募该名城的专属兵（名城 → 兵种对照见 RECRUIT 的 summary），失守即失去征募资格。 |
 | city.famousEffect | object \| null | 名城独有效果（v62 新增，AISLG-166）：{ kind, percent, resources }，只有占领者享受、跟着城走（换主人归新主人，放弃 / 被占即失效）。洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。普通城为 null。 |
 | city.guard | object \| null | 城守（v36 新增，AISLG-115）：该城任命的武将 { heroId, name, famous, lead, force, wit, level, bonusPercent }；未任为 null。产量加成（四资源非金，智力 × 0.1% 封顶 5%）已计入 production；守城战另享攻防加成（见 ASSIGN_HERO）。 |
 | city.recruitQueue | array | 征兵队列（v11 新增）：第 1 项为征募中（status=recruiting，dueAt 非空），其余为排队（status=queued，dueAt 为 null）；已取消条目不在其中。 |
+| city.assistIn | array | （v74，AISLG-194）驻扎在本城的盟友协防部队：{ id, accountId, username, fromCityId, fromCityName, troops（全兵种计数）, arrivedAt, initiator }。城主与盟友可见；外人侦察时只计入守军总数。 |
+| city.assistOut | array | （v74）本城派出、正在盟友城里驻扎的协防部队：{ id, hostCityId, hostCityName, hostUsername, troops, arrivedAt }。占校场出征名额，可用 DISMISS_ASSIST 召回。 |
+| city.assistCap | number | （v74）本城可接收的协防部队上限（当前 5 支；洛阳 10 支留待洛阳争夺需求）。 |
+| city.defenses | object | 城防器械（v73，AISLG-193）：{ cap 库存上限（城墙等级 × 60）, stock 四种器械已入库件数（trap / chevaux / rolling_log / boulder，恒含四个键）, total 合计, queue 打造队列（第 1 项 status=crafting、其余 queued；条目结构同 CRAFT_DEFENSE 的 craft） }。守城战开打时按需自动消耗，战报的 defenses 字段给出用量与杀伤。 |
 | city.defenseBonus | number | 城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。 |
 | city.marches | array | 本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。 |
 | city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
-| cities | array | v12 新增：账号全部城池 { id, name, level, x, y, isMain }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。 |
+| cities | array | v12 新增：账号全部城池 { id, name, level, x, y, isMain, title 城池称号, nobility 爵位 }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。 |
 | branch | object | v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。 |
 | city.storage | object | 储量上限（v7 新增，v8 规则确认；v22 AISLG-41 随全局缩放）：{ gold, food, wood, stone, iron }；四资源各自 = （10000 + 对应资源**建筑产量**（各生产建筑等级 × 每级速率之和，**不含**无建筑的 100/h 基础产量）× 100）× timeScale，金币 = 100 万 × timeScale——上限与产出同幅缩放，填满时长不受缩放影响：四资源恒为基准 100 小时；金币随官府等级与金矿占领加成变化（仅有官府产金时 = 10000 ÷ 官府等级 小时，官府 Lv4 时才是 2500 小时），请用 storage[k] ÷ production[k] 现算。达到上限后停止对应生产；已有超限存量不扣减。仓库不改变储量上限（v21 起防掠夺保护消费方已接入：NPC 袭击主城攻破后可掠量 = max(0, 存量 − 保护额)，保护量 4000×等级、四资源固定均分各 1000×等级；金币不受仓库保护，但 NPC 单次最多抢走存量的 5%（v41 AISLG-125）、玩家互掠为存量的 10%）。 |
 | city.queue | array | 建造队列（v4 新增）：第 1 项为在建（status=building，dueAt 非空），其余为排队（status=queued，dueAt 为 null），按入队顺序；已取消的条目不在其中（CANCEL_BUILD 取消）。 |
@@ -789,6 +825,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -1079,6 +1120,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -1094,9 +1136,33 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -1130,6 +1196,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 1900,
         "wood": 1950,
@@ -1420,6 +1491,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -1435,9 +1507,33 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -1507,6 +1603,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 1900,
         "wood": 1950,
@@ -1797,6 +1898,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -1812,9 +1914,33 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -2905,6 +3031,11 @@
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -3195,6 +3326,7 @@
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -3210,9 +3342,33 @@
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -3606,7 +3762,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].terrain | 'plain' \| 'grass' \| 'forest' \| 'hill' \| 'desert' \| 'marsh' \| 'lake' \| 'gold_mine' | 地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。 |
 | tiles[].kind | 'wilderness' \| 'npc_city' \| 'city' | 地块类别：野地 / NPC 城池 / 玩家城池（主城与分城）。 |
 | tiles[].level | number | 野地等级（1..10）或 NPC 城池等级（1..3）；玩家城池为 0。 |
-| tiles[].owner | object \| null | 占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally }；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。 |
+| tiles[].owner | object \| null | 占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally, relation }；relation（v77）= self / ally / friendly / hostile / neutral；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。 |
 | tiles[].garrison | number | 地块驻军总数；未占领野地为 0（原住守军不计入驻军总数；其编成见 GET_TILE 的 nativePower 与侦察）；NPC 城池需侦察（v17）：未侦察为 0，已侦察为最近一次侦察快照的总数。 |
 | tiles[].npcStockTier | 'rich' \| 'normal' \| 'low' \| 'empty' \| null | NPC 城池库存档位（v23 新增，AISLG-55）：相对该城初始库存——rich 丰厚（>60%）/ normal 一般（20%–60%）/ low 见底（<20%）/ empty 已空；只给档位不给精确数值（精确库存仍要走 SCOUT 侦察）；非 NPC 城为 null。掠夺后档位随库存变化，全服看到的档位一致。 |
 | tiles[].camp | object \| null | 黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small\|medium\|large\|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer\|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。 |
@@ -3723,6 +3879,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tile.wilderness | object \| null | 野地收益预览：{ resource 加成资源, bonusRate 占领加成/小时（= 基线 + 等级 × 每级增量，v21 加成保底：森林/草原/金矿 30+70×等级、平原/丘陵/荒漠 25+55×等级、沼泽 20+40×等级、湖泊 40+80×等级）, gatherRate 当前驻军采集/小时（v61 起受储量约束：储量空时只按恢复速度采集）, reserve 野地储量（v61，同 tiles[].reserve）}；非野地为 null。 |
 | tile.npc | object \| null | NPC 城池情报（v13 需侦察）：{ garrison 驻防按兵种（快照）, stock 可掠夺库存（快照）, scoutDetail / garrisonTotal（v27）}；未侦察或非 NPC 城为 null。**v27 起驻防精度随侦察科技**：scoutDetail=rough（侦察科技 Lv0–2）时 garrison 全 0，只有 garrisonTotal { min, max } 给总兵力约数（真实 ±20%）；kinds（Lv3–5）给兵种明细、各兵种数量为近似值（真实 ±20%，同一地块固定不变）；exact（Lv6+）精确。历史情报无 scoutDetail 字段，视为 exact。 |
 | tile.scoutedAt | string \| null | 最近一次侦察该地块的时间（ISO 8601，任意地块类型；v23 起非 NPC 城也返回）；从未侦察为 null。 |
+| tile.assists | array \| null | （v74，AISLG-194）城池的协防部队：{ id, accountId, username, fromCityId, fromCityName, troops（全兵种计数）, arrivedAt, initiator }。自己的城与盟友的城可见；其他人的城为 null（外人侦察只能看到计入守军总数的兵力）。 |
 | tile.durability | number \| null | 他人分城的当前城防值（v40，AISLG-124）：0..100，按「免战截止前不回涨、之后每小时 +10」惰性结算展示；非 null 即可被 task=occupy 攻打的分城，归零一击换主。主城 / 野地 / NPC 城 / 自己的城为 null。 |
 | tile.protection | object \| null | 玩家城与他人占领野地的保护状态（v38 / v39）：{ newbieUntil 新手保护截止（含其野地）, truceUntil 被动免战截止（仅城池；野地恒 null——城级免战不保护野地）, shieldUntil 主动免战截止（含其野地）, ownerChangedUntil 换主保护截止（仅野地：刚被抢占后 1 小时基准随缩放，期间玩家与 NPC 都不能再抢） }，任一截止时刻未到即受保护（MARCH 被拒，错误码与时限见 MARCH）；非玩家目标、自己的地为 null。到期自动失效，无事件。 |
 | tile.reserve | object \| null | 野地储量（v61，AISLG-165）：{ tier 档位 ample 充足 >60% / normal 一般 20%–60% / depleted 枯竭 <20%（所有人可见）, current 当前储量, cap 上限, eta { kind empty 预计采空 / full 预计回满, at } }；current / cap / eta 仅归属方与侦察过该地块的账号可见，其余为 null。储量与上限为基准单位（bonusRate、gatherRate 同口径）；采集与恢复速率随 time_scale 放大，eta 为真实时刻（采空 / 回满随之缩短）。非野地为 null。 |
@@ -3814,7 +3971,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 
 `C→S` 请求-响应 · 需登录后发送
 
-从账号主城派出部队前往目标地块，到达后由服务端自动结算。编队 troops 按兵种给出数量（至少一种 > 0），发起时立即从城内驻军扣减；行军时长 = Chebyshev 距离 × 每格秒数（基准 15 秒/格，占位）÷ **编队最慢兵种的行军速度系数**（斥候 ×2、轻骑兵 ×1.5，其余 ×1）÷（1 + 行军科技加成，v27 每级 +5%；v30 AISLG-83：自己城池之间的调兵 / 运输再加出发城**驿站**加成，每级 +10%、10 级翻倍，出征野地 / NPC 城等其他目标不受影响，运输往返与失效返程同吃出发城驿站），**总时长**再 ÷ 全局时间缩放、向上取整、最少 1 秒（见文档头部；不是先把每格缩放取整再乘格数）。以响应里的 arriveAt 为准。v16 新增可选 **task**：`plunder`（掠夺，**缺省值**）或 `occupy`（占领）——只作用于野地与 NPC 城目标，侦察 / 调兵 / 增援忽略 task。目标与结算：**无主野地**按 task 掠夺或占领（战斗 vs 原住守军）；**本账号占领的野地** = 增援驻军（不战斗）；**未被占领的 NPC 城池**可掠夺，也可占领变分城（v24，AISLG-58；战斗 vs 驻防、守方据墙待敌）；**本账号分城** = 调兵（不战斗，到达并入该城驻军）；**发起前校验校场（v30，AISLG-80）**：本城同时在外的部队数（行军中含返程 + 驻守野地，不计城内驻军）已达校场等级上限（未建校场按 1）时返回 DEPLOY_LIMIT，SCOUT 同；玩家城池（他人的）、他人占领地块与出发主城本身不可作为目标（玩家对抗随后续阶段开放）。**v38（AISLG-122，玩家对抗一）开放掠夺他人城池**：主城与分城都能打、不用宣战，战斗与 NPC 打主城同口径的守城战（城墙、城防科技、箭塔、守方城守全部生效），发起即给守方推送来袭预警（PUSH_ATTACK_WARNING，预警窗口 = 行军时长，敌情按守方烽火台分档）；守方处于新手保护返回 NEWBIE_PROTECTED、免战中返回 TARGET_IN_TRUCE（均附 until / retryAfterSeconds），攻方自己的主动免战生效中返回 SELF_TRUCE_ACTIVE（打野地 / NPC 不受限）；**task=occupy 对他人分城开放（v40，AISLG-124，玩家对抗三）**：主城仍返回 TASK_INVALID_FOR_TARGET（永不可占领，只能被掠夺）。分城占领资格与占 NPC 城同口径（GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH，目标等级 = 该城官府等级），发起时初核、到达复核（名额没了照打、只降城防值不换主，事件 battle_won 记 occupied=false 与 denial）。守城战打赢一次（守军全灭）城防值 −35，攻方幸存冲车占比每 1% 再 +1.5（最多 +15）；**占领打赢不掠夺资源，掠夺打赢不降城防**；城防降到 0 且名额有空当场换主（详见「玩家对抗与城防值」一节与 GET_TILE 的 tile.durability）；每次打赢该城进入 4 小时（基准随缩放）被动免战，免战内城防不回涨、结束后每小时回涨 10 至满——占一座分城至少打 3 次、隔 8 小时以上，守方每次都有时间补兵 / 增援；在途到达时守方进入保护 / 免战则扑空返程（事件 outcome=aborted 附 cause）。**v39（AISLG-123，玩家对抗二）开放抢占他人占领的野地**：task='occupy'（缺省 plunder 返回 TASK_INVALID_FOR_TARGET——地里没有存货可抢）；野地战无城墙 / 箭塔 / 城守，守方 = 地块驻军，守方没留驻军不打、直接拿下（无战报）；发起即给守方推 PUSH_ATTACK_WARNING（target='wilderness'，敌情按其所属城烽火台分档），预警期间可向该地块增援（MARCH 打自己的地块 = 增援）；守方处于新手保护（NEWBIE_PROTECTED）或主动免战（TARGET_IN_TRUCE）时其全部野地不可被抢，但守方某座城的被动免战只保护城本身、不保护野地；地块处于换主保护期（被抢占后 1 小时基准随缩放）返回 TILE_PROTECTED；攻方自己的主动免战生效中同样不能抢（SELF_TRUCE_ACTIVE）。**抢占结算**：打赢且出发城占领名额（官府等级）有空 → 地块易主、幸存部队驻守并获得加成、地块进入换主保护（1 小时基准随缩放，玩家与 NPC 都不能再抢）；名额已满 → 守方照样失地（wilderness_lost cause=conquest）、地块变无主（不设保护）、攻方幸存返程（事件 battle_won 记 occupied=false / denial=TERRITORY_LIMIT）；打输 → 守方继续占领，攻方残部返程；战报 kind='pvp_wilderness' 攻守双方各一份。**到达复核口径（v39）**：到达时地块已无主（对方召回等）→ 扑空返程（aborted，cause=target_gone）；已易主第三人 → 扑空返程（aborted，cause=owner_changed）；已归本账号 → 转增援并入驻军。战斗为多回合推进结构（速度与射程影响接敌、城墙为守方提供受击减免；具体算法不对外公开，机制概览见术语表「战斗」、兵种数值见「兵种与战斗属性」）；攻方歼灭守方获胜、胜方幸存 ≥ 1，攻方战败（全灭或回合耗尽）时幸存部队撤回出发城。**掠夺结算（task=plunder）**：野地奖励池 = 地形对应资源 × 750 × 等级 + 金币 × 250 × 等级（v21 掠夺含金，AISLG-31；金矿 gold_mine 保持空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。实际带走量按**幸存部队负重**装填（Σ 数量 × 单兵 carry，v27 起再 × 负重科技加成（每级 +5%，向下取整）；运输任务的负重上限同口径：民夫 500、斥候/刀盾兵 80、轻骑兵 100，其余 60，占位），按**金→粮→木→石→铁**顺序装满即止，立即入账出发城（不钳储量上限）；不改归属、幸存部队返程；成功掠夺的地块进入 24 小时冷却（基准，受全局时间缩放；发起时校验 PLUNDER_COOLDOWN——v22 起该失败附 retryAfterSeconds（冷却截止 − 当前时刻，等满后重发必然受理；在途到达仍战斗但资源为零）。**掠夺玩家城（v38，AISLG-122）**：可抢池 = 城内资源先扣仓库保护（粮/木/石/铁 各保护 1000×仓库等级，金币不受保护），再乘单次比例上限（四资源 45%、金币 15%，v42 AISLG-126 校准拍板）与等级差衰减（出发城官府比目标城官府高 5 级起每多 1 级收益 −15%、最低 25%——大号打小号不禁止但收益递减），最后仍按幸存部队负重装填；攻破（守军全灭）后该城进入 4 小时（基准，随缩放）被动免战，玩家与 NPC 都不能再打它（GET_TILE 的 tile.protection 可查）；战报 kind='pvp_raid'，攻守双方各得一份；玩家城不受地块掠夺冷却限制（免战即冷却）。**名城（v24，AISLG-56，GET_TILE / 地图的 famous 字段标识，全图 8 座）分两阶段**：外围阶段对其出征（掠夺 / 占领都一样）打的是外围驻军（野战无城墙），打赢 = 外围清空、名城进入城守阶段（事件 battle_won 含 stage='outer'、outerCleared=true、recoversAt），无战利品；城守阶段（限时，超时外围恢复满编）再出征攻城守——task=plunder 掠夺其库存，task=occupy 占领并变分城（以名城命名、产量 +20%，名城计入分城上限）；外围未清时对其 task=occupy 返回 OUTER_NOT_CLEARED。名城守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。**占领 NPC 城（task=occupy，v24）**：需同时满足——主城官府 ≥ 3 级（GOVERNMENT_TOO_LOW）；分城数 < 分城上限 = floor(主城官府等级 ÷ 2)（BRANCH_LIMIT，名城同样计入）；目标 NPC 城等级 ≤ 出发城的官府等级（TARGET_LEVEL_TOO_HIGH）。发起时初核，Worker 到达时复核（不满足则胜利后不建分城、幸存部队返程，事件 battle_won 记录 occupied=false 与 denial）。打赢后该城成为分城：接收 NPC 城的建筑与**剩余库存**，幸存部队进城驻守，分城可独立建造 / 征兵 / 出征（城池类协议带 cityId）；占领不受掠夺冷却限制，不另行掠夺（库存随城移交）。**占领野地结算（task=occupy 目标为野地）**：无一次性战利品；该城占领野地数低于官府等级（上限 = 官府等级，随官府升级提高）时改归属、幸存部队驻守并获得持续加成；发起时初核 TERRITORY_LIMIT，到达复核（超限则胜利后不改归属、幸存部队返程，事件记录 occupied=false / denial=TERRITORY_LIMIT）。**盟友不可攻击（v67，AISLG-182）**：目标城池 / 野地的主人与你同属一个联盟时，掠夺、抢占野地、占领分城一律返回 ALLY_NOT_ATTACKABLE（运输、增援、调兵不受影响）；出发后目标才成为盟友的，部队到达时不开战、原路返回（事件 outcome=aborted，cause=ALLY_NOT_ATTACKABLE）。每场战斗生成一份战报（GET_BATTLE_REPORTS 可查、PUSH_BATTLE_REPORT 推送）。
+从账号主城派出部队前往目标地块，到达后由服务端自动结算。编队 troops 按兵种给出数量（至少一种 > 0），发起时立即从城内驻军扣减；行军时长 = Chebyshev 距离 × 每格秒数（基准 15 秒/格，占位）÷ **编队最慢兵种的行军速度系数**（斥候 ×2、轻骑兵 ×1.5，其余 ×1）÷（1 + 行军科技加成，v27 每级 +5%；v30 AISLG-83：自己城池之间的调兵 / 运输再加出发城**驿站**加成，每级 +10%、10 级翻倍，出征野地 / NPC 城等其他目标不受影响，运输往返与失效返程同吃出发城驿站），**总时长**再 ÷ 全局时间缩放、向上取整、最少 1 秒（见文档头部；不是先把每格缩放取整再乘格数）。以响应里的 arriveAt 为准。v16 新增可选 **task**：`plunder`（掠夺，**缺省值**）或 `occupy`（占领）——只作用于野地与 NPC 城目标，侦察 / 调兵 / 增援忽略 task。目标与结算：**无主野地**按 task 掠夺或占领（战斗 vs 原住守军）；**本账号占领的野地** = 增援驻军（不战斗）；**未被占领的 NPC 城池**可掠夺，也可占领变分城（v24，AISLG-58；战斗 vs 驻防、守方据墙待敌）；**本账号分城** = 调兵（不战斗，到达并入该城驻军）；**发起前校验校场（v30，AISLG-80）**：本城同时在外的部队数（行军中含返程 + 驻守野地，不计城内驻军）已达校场等级上限（未建校场按 1）时返回 DEPLOY_LIMIT，SCOUT 同；玩家城池（他人的）、他人占领地块与出发主城本身不可作为目标（玩家对抗随后续阶段开放）。**v38（AISLG-122，玩家对抗一）开放掠夺他人城池**：主城与分城都能打、不用宣战，战斗与 NPC 打主城同口径的守城战（城墙、城防科技、箭塔、守方城守全部生效），发起即给守方推送来袭预警（PUSH_ATTACK_WARNING，预警窗口 = 行军时长，敌情按守方烽火台分档）；守方处于新手保护返回 NEWBIE_PROTECTED、免战中返回 TARGET_IN_TRUCE（均附 until / retryAfterSeconds），攻方自己的主动免战生效中返回 SELF_TRUCE_ACTIVE（打野地 / NPC 不受限）；**task=occupy 对他人分城开放（v40，AISLG-124，玩家对抗三）**：主城仍返回 TASK_INVALID_FOR_TARGET（永不可占领，只能被掠夺）。分城占领资格与占 NPC 城同口径（GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH，目标等级 = 该城官府等级），发起时初核、到达复核（名额没了照打、只降城防值不换主，事件 battle_won 记 occupied=false 与 denial）。守城战打赢一次（守军全灭）城防值 −35，攻方幸存冲车占比每 1% 再 +1.5（最多 +15）；**占领打赢不掠夺资源，掠夺打赢不降城防**；城防降到 0 且名额有空当场换主（详见「玩家对抗与城防值」一节与 GET_TILE 的 tile.durability）；每次打赢该城进入 4 小时（基准随缩放）被动免战，免战内城防不回涨、结束后每小时回涨 10 至满——占一座分城至少打 3 次、隔 8 小时以上，守方每次都有时间补兵 / 增援；在途到达时守方进入保护 / 免战则扑空返程（事件 outcome=aborted 附 cause）。**v39（AISLG-123，玩家对抗二）开放抢占他人占领的野地**：task='occupy'（缺省 plunder 返回 TASK_INVALID_FOR_TARGET——地里没有存货可抢）；野地战无城墙 / 箭塔 / 城守，守方 = 地块驻军，守方没留驻军不打、直接拿下（无战报）；发起即给守方推 PUSH_ATTACK_WARNING（target='wilderness'，敌情按其所属城烽火台分档），预警期间可向该地块增援（MARCH 打自己的地块 = 增援）；守方处于新手保护（NEWBIE_PROTECTED）或主动免战（TARGET_IN_TRUCE）时其全部野地不可被抢，但守方某座城的被动免战只保护城本身、不保护野地；地块处于换主保护期（被抢占后 1 小时基准随缩放）返回 TILE_PROTECTED；攻方自己的主动免战生效中同样不能抢（SELF_TRUCE_ACTIVE）。**抢占结算**：打赢且出发城占领名额（官府等级）有空 → 地块易主、幸存部队驻守并获得加成、地块进入换主保护（1 小时基准随缩放，玩家与 NPC 都不能再抢）；名额已满 → 守方照样失地（wilderness_lost cause=conquest）、地块变无主（不设保护）、攻方幸存返程（事件 battle_won 记 occupied=false / denial=TERRITORY_LIMIT）；打输 → 守方继续占领，攻方残部返程；战报 kind='pvp_wilderness' 攻守双方各一份。**到达复核口径（v39）**：到达时地块已无主（对方召回等）→ 扑空返程（aborted，cause=target_gone）；已易主第三人 → 扑空返程（aborted，cause=owner_changed）；已归本账号 → 转增援并入驻军。战斗为多回合推进结构（速度与射程影响接敌、城墙为守方提供受击减免；具体算法不对外公开，机制概览见术语表「战斗」、兵种数值见「兵种与战斗属性」）；攻方歼灭守方获胜、胜方幸存 ≥ 1，攻方战败（全灭或回合耗尽）时幸存部队撤回出发城。**掠夺结算（task=plunder）**：野地奖励池 = 地形对应资源 × 750 × 等级 + 金币 × 250 × 等级（v21 掠夺含金，AISLG-31；金矿 gold_mine 保持空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。实际带走量按**幸存部队负重**装填（Σ 数量 × 单兵 carry，v27 起再 × 负重科技加成（每级 +5%，向下取整）；运输任务的负重上限同口径：民夫 500、斥候/刀盾兵 80、轻骑兵 100，其余 60，占位），按**金→粮→木→石→铁**顺序装满即止，立即入账出发城（不钳储量上限）；不改归属、幸存部队返程；成功掠夺的地块进入 24 小时冷却（基准，受全局时间缩放；发起时校验 PLUNDER_COOLDOWN——v22 起该失败附 retryAfterSeconds（冷却截止 − 当前时刻，等满后重发必然受理；在途到达仍战斗但资源为零）。**掠夺玩家城（v38，AISLG-122）**：可抢池 = 城内资源先扣仓库保护（粮/木/石/铁 各保护 1000×仓库等级，金币不受保护），再乘单次比例上限（四资源 45%、金币 15%，v42 AISLG-126 校准拍板）与等级差衰减（出发城官府比目标城官府高 5 级起每多 1 级收益 −15%、最低 25%——大号打小号不禁止但收益递减），最后仍按幸存部队负重装填；攻破（守军全灭）后该城进入 4 小时（基准，随缩放）被动免战，玩家与 NPC 都不能再打它（GET_TILE 的 tile.protection 可查）；战报 kind='pvp_raid'，攻守双方各得一份；玩家城不受地块掠夺冷却限制（免战即冷却）。**名城（v24，AISLG-56，GET_TILE / 地图的 famous 字段标识，全图 8 座）分两阶段**：外围阶段对其出征（掠夺 / 占领都一样）打的是外围驻军（野战无城墙），打赢 = 外围清空、名城进入城守阶段（事件 battle_won 含 stage='outer'、outerCleared=true、recoversAt），无战利品；城守阶段（限时，超时外围恢复满编）再出征攻城守——task=plunder 掠夺其库存，task=occupy 占领并变分城（以名城命名、产量 +20%，名城计入分城上限）；外围未清时对其 task=occupy 返回 OUTER_NOT_CLEARED。名城守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。**占领 NPC 城（task=occupy，v24）**：需同时满足——主城官府 ≥ 3 级（GOVERNMENT_TOO_LOW）；分城数 < 分城上限 = floor(主城官府等级 ÷ 2)（BRANCH_LIMIT，名城同样计入）；目标 NPC 城等级 ≤ 出发城的官府等级（TARGET_LEVEL_TOO_HIGH）。发起时初核，Worker 到达时复核（不满足则胜利后不建分城、幸存部队返程，事件 battle_won 记录 occupied=false 与 denial）。打赢后该城成为分城：接收 NPC 城的建筑与**剩余库存**，幸存部队进城驻守，分城可独立建造 / 征兵 / 出征（城池类协议带 cityId）；占领不受掠夺冷却限制，不另行掠夺（库存随城移交）。**占领野地结算（task=occupy 目标为野地）**：无一次性战利品；该城占领野地数低于官府等级（上限 = 官府等级，随官府升级提高）时改归属、幸存部队驻守并获得持续加成；发起时初核 TERRITORY_LIMIT，到达复核（超限则胜利后不改归属、幸存部队返程，事件记录 occupied=false / denial=TERRITORY_LIMIT）。**盟友不可攻击（v67，AISLG-182）**：目标城池 / 野地的主人与你同属一个联盟时，掠夺、抢占野地、占领分城一律返回 ALLY_NOT_ATTACKABLE（运输、增援、调兵不受影响）；出发后目标才成为盟友的，部队到达时不开战、原路返回（事件 outcome=aborted，cause=ALLY_NOT_ATTACKABLE）。**协防（v74，AISLG-194）**：task=assist 把部队派进盟友的主城 / 分城驻扎——行军时长与普通行军相同（驿站不加速）；每座城最多接收 5 支、同一账号对同一座城最多 1 支（在途也算，超限 ASSIST_LIMIT），任务占派出城校场名额、耗粮按野外 2 倍由出发城承担；守城战里与城主驻军合并成守方参战（各方科技只作用于各自部队，城守武将只加成城主部队），战后同一兵种伤亡按开战数量比例分摊（取整余数归城主），派出方会收到一份带 assistLosses 的战报；派出方随时可召回、城主可遣返（DISMISS_ASSIST），退盟 / 被踢 / 解散与分城易主时自动遣返。出发后才退盟的，到达按 ASSIST_NOT_ALLY 原路返回。每场战斗生成一份战报（GET_BATTLE_REPORTS 可查、PUSH_BATTLE_REPORT 推送）。
 
 **请求字段**
 
@@ -3823,7 +3980,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | x | number | 必填。目标地块 x，0..999。 |
 | y | number | 必填。目标地块 y，0..999。 |
 | troops | object | 必填。按兵种的派出数量（未知兵种、负数、非整数或全 0 返回 INVALID_PARAMS）；超过城内驻军返回 INSUFFICIENT_TROOPS。 |
-| task | 'plunder' \| 'occupy' \| 'transport' | 可选（v16）。出征任务：plunder=掠夺（缺省）、occupy=占领（野地占领驻守；NPC 城占领变分城，v24）、transport=运输（v26，AISLG-79，目标只能是本账号的另一座城，须同时带 cargo）；plunder / occupy 仅野地与 NPC 城目标接受，非法值返回 INVALID_PARAMS。缺省 plunder 对 v15 及以前不带 task 的客户端是破坏性语义变更（旧式请求从「战斗并占领」变为「掠夺」）。 |
+| task | 'plunder' \| 'occupy' \| 'transport' \| 'assist' | 可选（v16）。出征任务：plunder=掠夺（缺省）、occupy=占领（野地占领驻守；NPC 城占领变分城，v24）、transport=运输（v26，AISLG-79，目标只能是本账号的另一座城，须同时带 cargo）、assist=协防（v74，AISLG-194，目标只能是盟友的主城 / 分城；到达后驻扎在对方城里，守城时与城主驻军合并参战，随时可召回）。plunder / occupy 仅野地与 NPC 城目标接受，assist 仅盟友城接受（非盟友返回 ASSIST_NOT_ALLY，名额满 / 同账号重复返回 ASSIST_LIMIT），非法值返回 INVALID_PARAMS。缺省 plunder 对 v15 及以前不带 task 的客户端是破坏性语义变更（旧式请求从「战斗并占领」变为「掠夺」）。 |
 | targetId | string | 可选（v28，AISLG-78）。截击移动目标：目标 id（GET_MOVING_TARGETS）；此时 (x, y) 须是该目标路线上正在或将要经过的格（已过去的格 / 不在路线上返回 INVALID_PARAMS；目标不存在 / 已消失返回 MOVING_TARGET_GONE），task 被忽略、带 cargo 返回 INVALID_PARAMS。v35（AISLG-112）「到了先埋伏」：目标路线与时刻表固定，发起时即把 arriveAt 定为预计接战时刻 = max(部队到达时刻, 目标进入该格相邻范围（Chebyshev ≤ 1）的时刻)——提前到达的部队原地埋伏等目标经过，无需掐点；到达时目标已走出范围（太晚）仍按到达时刻结算、扑空返程。格式非 UUID 返回 INVALID_PARAMS。 |
 | heroId | string | 可选（v36，AISLG-114）。随队武将 id（GET_HEROES 的 heroes[]）：全军攻击 + 武力 × 0.3%、受到伤害 − 智力 × 0.3%（各封顶 20%，统率超编按比例摊薄——能吃到加成的兵数 = 统率 × 20）。一支部队至多一名；同一武将同一时间只能在一支部队里；城守 / 重伤（战败后 2 小时基准）/ 欠饷的武将不能带队（GUARD_ASSIGN_DENIED / HERO_WOUNDED / HERO_ARREARS）。战报与 march_completed 事件的 heroExp 会带出武将与经验信息。 |
 | cargo | object | task=transport 时必填（v26）：运送的资源 { gold, wood, food, stone, iron }，各项缺省 0、须为非负整数，总量 ≥ 1（缺失 / 全 0 / 未知键 / 非法值返回 INVALID_PARAMS）；其余任务带 cargo 同样返回 INVALID_PARAMS。总量不得超过所派编队的负重（Σ 数量 × 单兵 carry，民夫 500、斥候/刀盾兵 80、轻骑兵 100，其余 60，与掠夺共用同一张表），超出返回 CARGO_OVER_CAPACITY；出发城现有资源不够返回 INSUFFICIENT_RESOURCES。 |
@@ -4664,7 +4821,8 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | reports[].attacker.hero.specialty / reports[].defender.hero.specialty | string \| null \| undefined | v59: Immutable ordinary-hero specialty at combat time; famous heroes have null and historical reports may omit it. specialtyScale records command dilution (0..1). Base atkPercent/defPercent remain the original hero bonuses; specialty bonuses apply per matching troop stack. |
 | reports[].id | number | 战报自增序号（分页游标）。 |
 | reports[].x / reports[].y | number | 战斗发生地块坐标。 |
-| reports[].kind | 'wilderness' \| 'npc_city' \| 'npc_raid' \| 'city_raid' \| 'intercept' \| 'yellow_turban' | 战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）。 |
+| reports[].kind | 'wilderness' \| 'npc_city' \| 'npc_raid' \| 'city_raid' \| 'intercept' \| 'yellow_turban' \| 'battlefield' | 战斗类别：野地遭遇战 / NPC 城池攻城战 / NPC 袭击驻军 / NPC 袭击主城（v21，守方为守城战）/ 截击移动目标（v28，AISLG-78，含扑空与目标消失）/ 黄巾营地与老巢（v29，AISLG-76，yellow_turban）/ 剧本战场据点（v75，AISLG-198，battlefield）。 |
+| reports[].prestigeGained | number | 本场获得的声望（v76，AISLG-197）：按歼灭敌军参考战力 1:1；剧本战场按军功 1:1 另计。竞技场 / 将星塔不计，0 / 缺省表示无。 |
 | reports[].towerDamage | number \| undefined | 箭塔造成的总伤害（v30，AISLG-82）：仅守城战且守方有箭塔时 > 0（已含在 defender.damage 内）；无箭塔 / 历史战报为 undefined。逐回合见 roundLog[].towerDamage。 |
 | reports[].contact | 'missed' \| 'gone' \| undefined | 仅 kind=intercept 的未接战结果（v28）：missed 扑空（到达时目标已走远）/ gone 目标消失（已被击败或过时）；此时 endReason=no_contact、rounds=0、双方无损失。接战的截击与其他战报无此字段。 |
 | reports[].role | 'attacker' \| 'defender' | 本账号在该场战斗中的角色。 |
@@ -5229,8 +5387,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | broadcasts | array | 播报列表（新→旧）：{ id, type, detail, createdAt }。 |
-| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；以上均必达、不受每分钟 3 条限频）。 |
-| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）。 |
+| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' \| 'nobility_promoted' \| 'alliance_diplomacy' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；alliance_diplomacy 为 v77 结成友盟 / 宣布敌对；以上均必达、不受每分钟 3 条限频）。 |
+| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }；alliance_diplomacy = { kind: friendly\|hostile\|neutral, actorAlliance, actorAllianceName, otherAlliance, otherAllianceName }。 |
 | broadcasts[].createdAt | string | 播报写入时间（ISO 8601）。 |
 
 **Agent 提示**：播报是全服氛围信息，与你的决策无强制关系；但「某 NPC 城被掠空」意味着那座城不再值得打，「首个占领金矿」意味着金矿红利已被拿走。别把播报当任务清单——玩家对打法的意图直接与玩家沟通确认。
@@ -5275,26 +5433,26 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
-### op 43 · GET_LEADERBOARD — 查询全服排行榜（v23，AISLG-61；v50 新增模型榜；v70 新增联盟榜）
+### op 43 · GET_LEADERBOARD — 查询全服排行榜（v23，AISLG-61；v50 新增模型榜；v70 新增联盟榜；v76 新增爵位榜）
 
 `C→S` 请求-响应 · 需登录后发送
 
-查询五个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）/ **model 模型榜（v50，AISLG-133）**：把最近 7 天 Agent 上线过、且进了战力统计的账号按 Agent 自报模型（LOGIN 的 agentModel）归类分组，「未声明」与「其他」（名单外）也是组，每组排名分 = 该模型实力前 10 名的平均战力（不足 10 名取全部平均）——防止单个账号（刷小号）拉高或拉低整体。模型为**自报口径，不验证**。**alliance 联盟榜（v70，AISLG-185）**：按联盟势力降序，势力 = 全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和（权重为占位）；成员不足 5 人的联盟不上榜；同势力按联盟名排序。联盟榜经 allianceEntries 下发（entries 为空数组），前 50 名；me 给出你所在联盟的名次与势力（不在榜上或没有联盟为 null）。玩家三榜返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）；模型榜经 modelEntries 下发（entries 为空数组、me 为 null）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。
+查询六个全服榜之一：power 综合战力（全部兵力战力之和：城内驻军 + 占领野地的驻军 + 行军中的部队，按「兵种与战斗属性」的战力系数合计）/ territory 领地数量（占领的野地数）/ plunder 累计掠夺量（掠夺入账的四资源合计，记在账号上——玩家与 Agent 打出的成绩算同一账号）/ **model 模型榜（v50，AISLG-133）**：把最近 7 天 Agent 上线过、且进了战力统计的账号按 Agent 自报模型（LOGIN 的 agentModel）归类分组，「未声明」与「其他」（名单外）也是组，每组排名分 = 该模型实力前 10 名的平均战力（不足 10 名取全部平均）——防止单个账号（刷小号）拉高或拉低整体。模型为**自报口径，不验证**。**nobility 爵位榜（v76，AISLG-197）**：按账号累计声望降序（声望只增不减，换季清零；来源见 GET_NOBILITY）。**alliance 联盟榜（v70，AISLG-185）**：按联盟势力降序，势力 = 全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和（权重为占位）；成员不足 5 人的联盟不上榜；同势力按联盟名排序。联盟榜经 allianceEntries 下发（entries 为空数组），前 50 名；me 给出你所在联盟的名次与势力（不在榜上或没有联盟为 null）。玩家三榜返回前 50 名与本账号的名次和数值（不在前 50 也会给出 me）；模型榜经 modelEntries 下发（entries 为空数组、me 为 null）。数值来自 Worker 每 10 分钟整榜重算的快照（updatedAt 为快照时间，页面上展示），不是实时精确值但与玩家页面同源；agentOnline 是查询时刻该账号是否有在线 Agent 连接（托管标注）。快照尚未生成时返回空榜（entries = []、me = null），不报错。
 
 **请求字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' | 必填。榜单类别；model 为按 Agent 自报模型归类的模型榜（v50）；alliance 为联盟势力榜（v70）。 |
+| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' \| 'nobility' | 必填。榜单类别；model 为按 Agent 自报模型归类的模型榜（v50）；alliance 为联盟势力榜（v70）；nobility 为爵位榜（v76）。 |
 
 **响应 data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' | 回显榜单类别。 |
+| kind | 'power' \| 'territory' \| 'plunder' \| 'model' \| 'alliance' \| 'nobility' | 回显榜单类别。 |
 | updatedAt | string | 快照计算时间（ISO 8601）。 |
-| entries | array | 玩家三榜的前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接, agentModel 该账号 Agent 自报的模型名原文（v50，null = 从未声明；自报不验证） }，按 rank 升序；kind=model 为空数组。 |
-| me | object \| null | 本账号的 { rank, value }；快照里没有本账号为 null；kind=model 恒为 null；kind=alliance 时为我所在联盟的 { rank, value }（势力），没有联盟或未上榜为 null。 |
+| entries | array | 玩家三榜的前 50 名：{ rank 名次, accountId, username, cityName 主城名, value 数值, agentOnline 该账号是否有在线 Agent 连接, agentModel 该账号 Agent 自报的模型名原文（v50，null = 从未声明；自报不验证）, nobility 爵位序号与 nobilityName 爵位名（v76） }，按 rank 升序；kind=model 为空数组。 |
+| me | object \| null | 本账号的 { rank, value, nobility, nobilityName }；快照里没有本账号为 null；kind=model 恒为 null；kind=alliance 时为我所在联盟的 { rank, value }（势力），没有联盟或未上榜为 null。 |
 | allianceEntries | array | 仅 kind=alliance（v70）：联盟榜条目 { rank 名次, allianceId, name 联盟名, leader{accountId,username} 盟主, memberCount 成员数, value 势力 }，前 50 名，按 rank 升序。 |
 | modelEntries | array | 仅 kind=model（v50）：模型榜条目 { rank 名次, modelId 归类标识（undeclared / other / 常见模型 id）, label 展示名（如 Claude Opus 5.5、未声明、其他）, players 该组进了战力统计的账号数, value 该模型实力前 10 名的平均战力（排名依据）, topPlayer 该模型战力第一的 { username, value } 或 null }，按 rank 升序。 |
 
@@ -5336,12 +5494,16 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "cityName": "主城",
         "value": 3640,
         "agentOnline": true,
-        "agentModel": "claude-opus-5-5"
+        "agentModel": "claude-opus-5-5",
+        "nobility": 3,
+        "nobilityName": "大夫"
       }
     ],
     "me": {
       "rank": 1,
-      "value": 3640
+      "value": 3640,
+      "nobility": 3,
+      "nobilityName": "大夫"
     }
   }
 }
@@ -5490,7 +5652,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-查询账号的科技研究：六项科技（农耕（farming）：粮、木、石、铁产量每级 +5%；负重（carrying）：部队负重每级 +5%（掠夺与运输共用）；行军（marching）：行军速度每级 +5%；储存（storage）：粮、木、石、铁储量上限每级 +5%；侦察（scouting）：侦察报告更详细：Lv3 起看到兵种明细，Lv6 起看到精确数量；城防（defense）：主城守城时城墙减伤每级额外 +1%（加在城墙加成上））各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 10 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。
+查询账号的科技研究：十六项科技（农耕（farming）：粮、木、石、铁产量每级 +5%；负重（carrying）：部队负重每级 +5%（掠夺与运输共用）；行军（marching）：行军速度每级 +5%；储存（storage）：粮、木、石、铁储量上限每级 +5%；侦察（scouting）：侦察报告更详细：Lv3 起看到兵种明细，Lv6 起看到精确数量；城防（defense）：主城守城时城墙减伤每级额外 +1%（加在城墙加成上）；练兵（drill）：征兵时长每级 −3%（10 级 −30%）；战斗（combat）：世界地图战斗中我方全军攻击每级 +1.5%（10 级 +15%）；防护（protection）：世界地图战斗中我方全军受到伤害每级 −1.5%（10 级 −15%）；驾驭（riding）：骑兵类兵种战斗速度每级 +2%（10 级 +20%）；抛射（archery）：远程兵种（弓箭兵 / 床弩 / 诸葛连弩 / 先登死士）射程每级 +1%（10 级 +10%）；补给（supply）：部队耗粮（城内、行军、驻守）每级 −3%（10 级 −30%）；建筑（construction）：建造、升级时长每级 −3%（10 级 −30%）；研究（research）：科技研究时长每级 −3%（10 级 −30%）；掠夺（looting）：掠夺野地时可抢的资源池每级 +4%（10 级 +40%）；维修（repair）：分城城防值每小时回涨每级 +5%（基础 10 点/小时，10 级 15 点/小时））各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技分「发展 / 军事」两类（条目 category：development / military），前端分两栏展示；其中战斗 / 防护 / 驾驭 / 抛射四项只在世界地图战斗中生效。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 10 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。
 
 **请求字段**
 
@@ -5504,13 +5666,13 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | academyLevel | number | 查询城的书院等级（0 = 未建）。 |
-| techs | array | 六项科技，每项 { kind, label, level 当前等级, maxLevel, percentPerLevel 每级效果百分数（侦察为 0）, effect 效果说明, currentPercent 当前累计加成百分数, next 下一级信息或 null（满级） }。 |
+| techs | array | 十六项科技（v72 起），每项 { kind, label, category 归类 development / military, level 当前等级, maxLevel, percentPerLevel 每级效果百分数（带符号：负数为减少时长 / 耗粮 / 受伤；侦察为 0）, effect 效果说明, currentPercent 当前累计效果百分数（带符号）, next 下一级信息或 null（满级） }。 |
 | techs[].next | object \| null | { level 目标等级, cost 成本（五资源）, seconds 耗时（秒，已按全局时间缩放折算）, academyRequired 要求的书院等级（= 目标等级）, academyOk 查询城书院是否满足 }；满级为 null。 |
 | research | object \| null | 账号进行中的研究 { id, cityId 扣资源的城, tech, level 完成后的目标等级, status, initiator, cost 成本快照, startedAt, dueAt, completedAt }；没有为 null。 |
 
 **可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
 
-**Agent 提示**：科技规划：书院等级是研究的硬门槛（第 N 级要书院 ≥ N 级），先升书院再研究高级科技。农耕 / 储存直接放大经济，负重 / 行军服务掠夺与出征，侦察决定侦察报告的详细度（Lv3 起兵种明细、Lv6 起精确数量，之前只有总兵力约数——想精确评估野地 / NPC 城守军先点侦察），城防只加主城守城。研究完成会收到 PUSH_TECH_STATE（reason=research_completed）。
+**Agent 提示**：科技规划：书院等级是研究的硬门槛（第 N 级要书院 ≥ N 级），先升书院再研究高级科技。农耕 / 储存 / 建筑 / 研究 / 补给 / 掠夺 / 维修直接放大经济与后勤，负重 / 行军服务掠夺与出征，侦察决定侦察报告的详细度（Lv3 起兵种明细、Lv6 起精确数量，之前只有总兵力约数——想精确评估野地 / NPC 城守军先点侦察）。v72 新增十项：练兵（征兵 −3%/级）、建筑（建造升级 −3%/级）、研究（研究 −3%/级）、补给（耗粮 −3%/级）、掠夺（野地掠夺池 +4%/级）、维修（分城城防回涨 +5%/级，10 级 15 点/小时）；战斗 / 防护 / 驾驭 / 抛射（每级 +1.5% 攻击 / −1.5% 受伤 / +2% 骑兵速度 / +1% 远程射程）只在世界地图战斗生效，竞技场与将星塔不受影响，与武将加成叠两层。研究完成会收到 PUSH_TECH_STATE（reason=research_completed）。
 
 **示例**
 
@@ -5539,6 +5701,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       {
         "kind": "farming",
         "label": "农耕",
+        "category": "development",
         "level": 0,
         "maxLevel": 10,
         "percentPerLevel": 5,
@@ -5575,7 +5738,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| tech | 'farming' \| 'carrying' \| 'marching' \| 'storage' \| 'scouting' \| 'defense' | 必填。科技类型；缺失或不是已知类型返回 INVALID_PARAMS。 |
+| tech | 'farming' \| 'carrying' \| 'marching' \| 'storage' \| 'scouting' \| 'defense' \| 'drill' \| 'combat' \| 'protection' \| 'riding' \| 'archery' \| 'supply' \| 'construction' \| 'research' \| 'looting' \| 'repair' | 必填。科技类型；缺失或不是已知类型返回 INVALID_PARAMS。 |
 | cityId | string | 可选。发起研究 / 扣资源的城（缺省主城）；非本账号的城返回 INVALID_PARAMS。 |
 | cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
 
@@ -8810,6 +8973,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -9100,6 +9268,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -9115,9 +9284,33 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -9419,6 +9612,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -9709,6 +9907,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -9724,9 +9923,33 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -10128,6 +10351,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -10418,6 +10646,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -10433,9 +10662,33 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -10721,6 +10974,11 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -11011,6 +11269,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -11026,9 +11285,33 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -11170,7 +11453,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | --- | --- | --- |
 | size | number | 世界边长（世界为 size×size 方格，当前 1000）。 |
 | at | string | 统计时刻（ISO 8601）。 |
-| cities | array | 城池点位 [x, y, side] 数组；side 取 'own' \| 'ally' \| 'enemy' \| 'npc' \| 'famous'（ally 为 v67 新增：同联盟盟友的城池）。 |
+| cities | array | 城池点位 [x, y, side] 数组；side 取 'own' \| 'ally' \| 'friendly' \| 'hostile' \| 'enemy' \| 'npc' \| 'famous'（ally 为 v67 同联盟盟友；friendly / hostile 为 v77 友盟 / 敌对联盟成员）。 |
 
 **Agent 提示**：想找城（名城、NPC 城、他人城池）时先用它看全局方位，再用 GET_WORLD_MAP 按窗口取地块详情、GET_TILE 看驻军。它不返回野地，找野地仍用 GET_WORLD_MAP。
 
@@ -11658,7 +11941,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| alliance | object \| null | 联盟详情 { id, name, leader{accountId,username}, memberCount, maxMembers, createdAt, notice, members[], power 联盟势力（v70，现算：全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和 × 1）, rank 联盟榜名次（v70：取最近一次榜单快照；成员不足 5 人或未上榜为 null） }；没有联盟为 null。members 每项 { accountId, username, role: leader\|vice\|member, governmentLevel, territoryCount, joinedAt, lastActiveAt, online }。 |
+| alliance | object \| null | 联盟详情 { id, name, leader{accountId,username}, memberCount, maxMembers, createdAt, notice, members[], power 联盟势力（v70，现算：全体成员占领的野地数 × 1 + 名城数 × 10 + 成员主城官府等级之和 × 1）, rank 联盟榜名次（v70：取最近一次榜单快照；成员不足 5 人或未上榜为 null）, friends 友盟名单（v77：数组，元素同 GET_ALLIANCE_DIPLOMACY 的 friends）, hostiles 敌对名单（v77） }；没有联盟为 null。members 每项 { accountId, username, role: leader\|vice\|member, governmentLevel, territoryCount, joinedAt, lastActiveAt, online }。 |
 | myRole | 'leader' \| 'vice' \| 'member' \| null | 我在该联盟的职位；没有联盟或查看别人的联盟为 null。 |
 | cooldownUntil | string \| null | 冷却截止（ISO 8601）；不在冷却中为 null。冷却中不能创建也不能加入联盟。 |
 | myRequest | object \| null | 我发出的待处理申请 { alliance（联盟概要）, createdAt, expiresAt }；同一时间只有 1 条。 |
@@ -12066,6 +12349,2409 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "data": {
     "shieldUntil": null,
     "nextAvailableAt": "2026-10-10T00:00:00.000Z"
+  }
+}
+```
+
+### op 117 · CRAFT_DEFENSE — 打造城防器械（v73，AISLG-193）
+
+`C→S` 请求-响应 · 需登录后发送
+
+在城墙里打造四种一次性守城器械（陷阱（trap）：开战时对攻方步兵类兵种造成 500 点伤害（固定值，按各兵种总生命比例分摊）；单件成本 金/木/粮/石/铁 = 20/60/0/0/40，单件 5s；拒马（chevaux）：开战时对攻方骑兵类兵种造成 800 点伤害（固定值，按各兵种总生命比例分摊）；单件成本 金/木/粮/石/铁 = 40/200/0/0/80，单件 10s；滚木（rolling_log）：攻方近战部队第一次贴到城墙下时，对贴墙的近战兵种造成 400 点伤害；单件成本 金/木/粮/石/铁 = 30/200/0/0/0，单件 8s；擂石（boulder）：攻方冲车第一次贴到城墙下时，对冲车造成 1500 点伤害（正好击毁 1 辆冲车）；单件成本 金/木/粮/石/铁 = 40/0/0/380/0，单件 12s）。发起时立即从该城扣资源，入库在打造完成时（Worker 结算）。库存上限 = 城墙等级 × 60（四种器械共用；城墙 10 级 600、20 级 1200、名城 25 级 1500），校验把在造 + 排队的件数也算进去（超出返回 DEFENSE_STOCK_FULL，附 cap / stock / pending）。队列与征兵同模型：1 条在造 + 2 条排队（队满 DEFENSE_QUEUE_FULL）；无在造时立即开工（status=crafting，dueAt 非空），批次总时长 = max(1 秒, floor(单件基准 × 件数 ÷ time_scale))；有在造时入队（status=queued，dueAt 为 null）。校验顺序：城墙未建（WALL_NOT_BUILT）→ 库存上限 → 队列 → 资源。守城战开打时器械按需自动使用、用掉就没了（陷阱 / 拒马开战即用，滚木 / 擂石在攻方贴墙时用），用量与杀伤见战报的 defenses 字段。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| kind | 'trap' \| 'chevaux' \| 'rolling_log' \| 'boulder' | 必填。器械种类：trap 陷阱 / chevaux 拒马 / rolling_log 滚木 / boulder 擂石；缺失或未知返回 INVALID_PARAMS。 |
+| count | number | 必填。件数（正整数，且与库存 + 在造 + 排队合计不超过城墙等级 × 60）；成本 = 单件成本 × 件数。 |
+| cityId | string | 可选。在哪座城打造（缺省主城）；城墙等级、库存与扣资源都按该城。 |
+| cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| craft | object | 新建的打造条目 { id, cityId, kind, count, status, initiator, cost 成本快照, unitSeconds 单件基准秒数, startedAt, dueAt（排队为 null）, completedAt }。 |
+| stock | object | 发起后该城已入库的四种器械件数（不含在造 / 排队）。 |
+| cap | number | 该城库存上限（城墙等级 × 60）。 |
+
+**可能错误**：`INVALID_PARAMS`、`WALL_NOT_BUILT`、`DEFENSE_STOCK_FULL`、`DEFENSE_QUEUE_FULL`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：守城器械只在被攻打时自动消耗，不会被掠夺。被打前先补库存：城墙 10 级囤满 600 件约等于守军多两成战力。四种按威胁配比：对手步兵多造陷阱、骑兵多造拒马、带冲车必须备擂石、通用近战压力造滚木。队列满了（1 在造 + 2 排队）先等或取消。
+
+**示例**
+
+**打造 10 件陷阱（约 50s 后完成）**
+
+请求：
+
+```json
+{
+  "op": 117,
+  "seq": 21,
+  "data": {
+    "kind": "trap",
+    "count": 10
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 117,
+  "seq": 21,
+  "ok": true,
+  "data": {
+    "craft": {
+      "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "kind": "trap",
+      "count": 10,
+      "status": "crafting",
+      "initiator": "player",
+      "cost": {
+        "gold": 200,
+        "wood": 600,
+        "food": 0,
+        "stone": 0,
+        "iron": 400
+      },
+      "unitSeconds": 5,
+      "startedAt": "2026-09-25T08:00:00.000Z",
+      "dueAt": "2026-09-25T08:00:50.000Z",
+      "completedAt": null
+    },
+    "stock": {
+      "trap": 0,
+      "chevaux": 0,
+      "rolling_log": 0,
+      "boulder": 0
+    },
+    "cap": 600
+  }
+}
+```
+
+**超出库存上限（城墙 10 级、已入库 590、在造 20，再下 10 件）**
+
+请求：
+
+```json
+{
+  "op": 117,
+  "seq": 22,
+  "data": {
+    "kind": "chevaux",
+    "count": 10
+  }
+}
+```
+
+失败响应（`DEFENSE_STOCK_FULL`）：
+
+```json
+{
+  "op": 117,
+  "seq": 22,
+  "ok": false,
+  "error": {
+    "code": "DEFENSE_STOCK_FULL",
+    "message": "器械库存已达上限（城墙等级 × 60，四种器械共用），先把库存用在守城或升级城墙"
+  },
+  "data": {
+    "cap": 600,
+    "stock": 590,
+    "pending": 20
+  }
+}
+```
+
+### op 118 · CANCEL_DEFENSE_CRAFT — 取消打造（v73，AISLG-193）
+
+`C→S` 请求-响应 · 需登录后发送
+
+取消排队中（queued）或打造中（crafting）的器械条目：按发起时的成本快照全额返还到该城，库存不变；该城排队的下一条立即开工（同事务激活，推送 craft_started）。与 Worker 到点完成按条件守卫并发，先翻转状态者生效。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| craftId | string | 必填。要取消的打造条目 id（GET_STATE 的 city.defenses.queue 中条目的 id）；缺失或格式非法返回 INVALID_PARAMS。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| craft | object | 被取消的打造条目（status=cancelled，completedAt 为 null）。 |
+
+**可能错误**：`INVALID_PARAMS`、`DEFENSE_NOT_CANCELLABLE`（处置建议见第 4 节）
+
+**Agent 提示**：取消全额返还，但会丢掉这段时间的进度；只是缺资源的话优先等完成，别反复取消重下。
+
+**示例**
+
+**取消进行中的打造**
+
+请求：
+
+```json
+{
+  "op": 118,
+  "seq": 23,
+  "data": {
+    "craftId": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 118,
+  "seq": 23,
+  "ok": true,
+  "data": {
+    "craft": {
+      "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "kind": "trap",
+      "count": 10,
+      "status": "cancelled",
+      "initiator": "player",
+      "cost": {
+        "gold": 200,
+        "wood": 600,
+        "food": 0,
+        "stone": 0,
+        "iron": 400
+      },
+      "unitSeconds": 5,
+      "startedAt": "2026-09-25T08:00:00.000Z",
+      "dueAt": null,
+      "completedAt": null
+    }
+  }
+}
+```
+
+### op 119 · DISMISS_ASSIST — 召回 / 遣返协防部队（v74，AISLG-194）
+
+`C→S` 请求-响应 · 需登录后发送
+
+让一支驻扎在盟友城里的协防部队回出发城：派出方随时可以召回，城主可以遣返任意一支驻扎在自己城里的协防部队。部队原路返回（行军时长按两地距离与编队速度计算，驿站不加速），到达后并回出发城驻军；途中可以被 RECALL_MARCH 折返（折返仍是回出发城）。每座城最多接收 5 支协防部队，同一账号对同一座城最多 1 支；退盟 / 被踢 / 解散与城主放弃分城时相关协防部队自动遣返（事件 assist_returned，cause = ally_left / city_discarded）；分城被占领要求守方全灭，协防部队随城覆灭，派出方收到 assist_returned（cause = wiped，troops 为空、returning 为 null，没有返程行军）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| assistId | string | 必填。协防记录 id：派出方看 GET_STATE 的 city.assistOut，城主看 city.assistIn（盟友看 GET_TILE 详情的 assists）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| marchId | string \| null | 返程行军 id（可用 RECALL_MARCH 再折返）；部队已不在（城 / 账号被重置）为 null。 |
+| assistId | string | 被召回 / 遣返的协防记录 id。 |
+
+**可能错误**：`INVALID_PARAMS`、`ASSIST_NOT_FOUND`（处置建议见第 4 节）
+
+**Agent 提示**：协防部队占派出城的校场出征名额、耗粮由派出城按野外部队 2 倍承担；守城战时与城主驻军合并参战，伤亡按开战时各兵种数量比例分摊（余数归城主）。战斗后派出方会收到一份带 assistLosses 的战报。
+
+**示例**
+
+**城主遣返一支协防部队（或派出方召回）**
+
+请求：
+
+```json
+{
+  "op": 119,
+  "seq": 31,
+  "data": {
+    "assistId": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 119,
+  "seq": 31,
+  "ok": true,
+  "data": {
+    "assistId": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+    "marchId": "2f1e3d4c-5b6a-4978-8c9d-0a1b2c3d4e5f"
+  }
+}
+```
+
+### op 120 · GET_BATTLEFIELD — 查询剧本战场（官渡之战，v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+周期性的剧本战场，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）。每周一场，剧本按周轮换：官渡之战 → 讨伐董卓 → 赤壁之战（循环），本场剧本见 event.script、下一场见 nextScript。官渡之战（script=guandu）是阵营对阵：报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。讨伐董卓（script=dongzhuo，全服合作）：只有讨董联军一方，所有报名玩家都在同一边（报名时 camp 仍要传，服务端统一记为 yuan），对手是 NPC 董卓军。一条推进线 汜水关 → 虎牢关 → 洛阳，前一关打下后下一关才开放（strongholds[].unlocked）。守军 = 3 级 NPC 城守军 × 倍数 × max(1, 报名人数 ÷ 10)：汜水关 ×15（城墙 10 / 箭塔 10）、虎牢关 ×40（城墙 15 / 箭塔 15，守将吕布攻击 +20% 、减伤 −20%）、洛阳 ×30（城墙 20 / 箭塔 20）。守军伤亡保留不回血。攻下洛阳即结束（胜）；时间到也结束。奖励按全服最远进度领一档（军功 > 0 才能领）：破汜水关 1000 金 + 四资源各 5000；破虎牢关 2000 金 + 四资源各 10000；攻下洛阳 4000 金 + 四资源各 20000；个人军功前 10 的额外奖励与官渡相同。没有玩家对抗。 赤壁之战（script=chibi）：孙刘联军（yuan）对曹操军（cao），人数限制、人少补偿、胜负判定、奖励表与官渡相同；报名要求爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。地图同为 30×30 与河（x=15，3 处渡口），双方各 4 个据点加各 1 座大营（共 10 个，见 strongholds）；大营与据点守军、积分产出与官渡对应据点相同（大营守军 ×10，城墙 / 箭塔 10）。风向：开战时随机东南风（se）或西北风（nw），之后每 6 小时交替一次，切换前 30 分钟预告；event.wind = { direction, label, bonusCamp, nextAt, noticeAt }。顺风方（se 利孙刘、nw 利曹操）的远程兵种与床弩射程 +10%（战报可见）。火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）：孙刘方、东南风期间，花 300 军功，火攻与己方据点相邻（曼哈顿距离 ≤ 10）的曹方据点，立即对守军造成总生命 20% 的伤害；同一目标每 2 小时最多一次。连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，op 140）：曹方给己方据点花 200 军功连锁 6 小时：守军受到的伤害 −15%，但被火攻时伤害翻倍（20% → 40%）。赤壁商店另有铁骑兵 20（直接进主城，800 军功，每场限 1 次）。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**Agent 提示**：先看 event.script 与 event.status：signup 期只能报名 / 入场，active 才能行军与攻打。行军目标用 strongholds 的 id（MARCH_BATTLEFIELD_SQUAD 会按据点坐标走最短路径）；河只有 3 处渡口，先取渡口再渡河。攻打前用 garrisonPower 与自己的队伍战力对比，有城墙的据点按守城战（城墙 + 箭塔），没有把握先打渡口 / 普通据点。军功来自歼灭敌军（打 NPC 也算），首占据点 +200；乌巢（granary_wuchao）价值 30 分/小时并让敌方耗粮翻倍，适合偷袭。结束奖励自动入账，军功可立刻在战场商店换资源 / 武将经验 / 兵。讨董：只看 unlocked 为 true 的关卡，先打汜水关再虎牢关，洛阳最后；赤壁：先看 event.wind，东南风时孙刘方可以火攻，西北风时曹方可以连锁，留意预告的切换时刻。
+
+**示例**
+
+**战场进行中：我在袁绍军，一支队伍正在去延津渡口**
+
+请求：
+
+```json
+{
+  "op": 120,
+  "seq": 30,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 120,
+  "seq": 30,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "nextSignupAt": "2026-10-02T08:00:00.000Z",
+    "nextScript": "dongzhuo",
+    "strongholds": [
+      {
+        "id": "ford_yanjin",
+        "name": "延津渡口",
+        "kind": "ford",
+        "x": 15,
+        "y": 15,
+        "ownerCamp": "cao",
+        "pointsPerHour": 10,
+        "garrison": {
+          "porter": 0,
+          "militia": 120,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 40,
+          "archer": 60,
+          "cavalry": 15,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "garrisonPower": 710,
+        "wallLevel": 0,
+        "towerLevel": 0,
+        "firstCaptureAvailable": false,
+        "capturedAt": "2026-09-25T08:00:00.000Z"
+      },
+      "（其余 8 个据点同结构）"
+    ],
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    },
+    "top": [
+      {
+        "rank": 1,
+        "accountId": "…",
+        "username": "bob",
+        "camp": "cao",
+        "merit": 2200
+      },
+      {
+        "rank": 2,
+        "accountId": "…",
+        "username": "carol",
+        "camp": "yuan",
+        "merit": 1500
+      },
+      {
+        "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+        "username": "alice",
+        "camp": "yuan",
+        "merit": 1240,
+        "rank": 3,
+        "entered": true,
+        "squads": [
+          {
+            "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+            "x": 14,
+            "y": 15,
+            "status": "marching",
+            "troops": {
+              "porter": 0,
+              "militia": 300,
+              "scout": 0,
+              "pikeman": 0,
+              "swordsman": 200,
+              "archer": 150,
+              "cavalry": 50,
+              "iron_cavalry": 0,
+              "supply_wagon": 0,
+              "ballista": 0,
+              "siege_ram": 0,
+              "yulin_guard": 0,
+              "danyang_soldier": 0,
+              "baimao_soldier": 0,
+              "huwei_guard": 0,
+              "zhuge_crossbow": 0,
+              "xiandeng_warrior": 0,
+              "hubao_cavalry": 0,
+              "xiliang_cavalry": 0
+            },
+            "targetX": 15,
+            "targetY": 15,
+            "targetStrongholdId": "ford_yanjin",
+            "arriveAt": "2026-09-25T08:01:00.000Z",
+            "originX": 13,
+            "originY": 15,
+            "strongholdId": null
+          }
+        ],
+        "cumulativeMerit": 3600
+      }
+    ],
+    "shop": {
+      "cumulativeMerit": 3600,
+      "items": [
+        {
+          "item": "resources",
+          "label": "资源包",
+          "cost": 200,
+          "limit": 5,
+          "bought": 0,
+          "reward": {
+            "resources": {
+              "gold": 0,
+              "wood": 10000,
+              "food": 10000,
+              "stone": 10000,
+              "iron": 10000
+            }
+          }
+        },
+        {
+          "item": "hero_exp",
+          "label": "武将经验",
+          "cost": 300,
+          "limit": 3,
+          "bought": 0,
+          "reward": {
+            "heroExp": 5000
+          }
+        },
+        {
+          "item": "swordsman",
+          "label": "刀盾兵",
+          "cost": 600,
+          "limit": 2,
+          "bought": 0,
+          "reward": {
+            "troop": "swordsman",
+            "count": 100
+          }
+        },
+        {
+          "item": "cavalry",
+          "label": "轻骑兵",
+          "cost": 600,
+          "limit": 2,
+          "bought": 0,
+          "reward": {
+            "troop": "cavalry",
+            "count": 50
+          }
+        }
+      ]
+    },
+    "rewards": {
+      "winner": {
+        "label": "胜方每人",
+        "gold": 3000,
+        "resourcesEach": 15000
+      },
+      "loser": {
+        "label": "败方每人",
+        "gold": 1000,
+        "resourcesEach": 5000
+      },
+      "rankTiers": [
+        {
+          "label": "个人军功第 1 名",
+          "maxRank": 1,
+          "gold": 6000,
+          "resourcesEach": 30000
+        },
+        {
+          "label": "第 2–3 名",
+          "maxRank": 3,
+          "gold": 4000,
+          "resourcesEach": 20000
+        },
+        {
+          "label": "第 4–10 名",
+          "maxRank": 10,
+          "gold": 2500,
+          "resourcesEach": 12000
+        }
+      ],
+      "progressTiers": []
+    }
+  }
+}
+```
+
+### op 121 · SIGNUP_BATTLEFIELD — 报名剧本战场（v75，AISLG-198；v80 讨董 / 赤壁）
+
+`C→S` 请求-响应 · 需登录后发送
+
+在报名期（北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放））报名：主城官府 ≥ 5 级；同一场只能报一次，阵营选定后不能改。官渡 / 赤壁：一方报名人数超过另一方 1.5 倍且多出 5 人以上时，人多的一方暂停报名（返回 BATTLEFIELD_CAMP_FULL，附 count / otherCount / limit）；赤壁另需爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。讨伐董卓是单阵营合作本，所有报名玩家都记为讨董联军（yuan），不做人数失衡判断。报名只占阵营人数，不带兵；带兵用 ENTER_BATTLEFIELD（开战前）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| camp | 'yuan' \| 'cao' | 必填。袁绍军 yuan / 曹操军 cao（讨董场统一记为 yuan，此字段仍需传合法值）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_SIGNUP_CLOSED`、`BATTLEFIELD_ALREADY_JOINED`、`BATTLEFIELD_GOVERNMENT_TOO_LOW`、`BATTLEFIELD_CAMP_FULL`、`NOBILITY_TOO_LOW`（处置建议见第 4 节）
+
+**Agent 提示**：报名前先 GET_BATTLEFIELD 看双方 signups，选人少的一方通常能吃到人少补偿；报名后记得在开战前 ENTER_BATTLEFIELD 带兵入场，否则开战后无法入场。
+
+**示例**
+
+**报名袁绍军**
+
+请求：
+
+```json
+{
+  "op": 121,
+  "seq": 31,
+  "data": {
+    "camp": "yuan"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 121,
+  "seq": 31,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 0,
+      "rank": null,
+      "entered": false,
+      "squads": [],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 122 · ENTER_BATTLEFIELD — 带部队入场（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+报名后、开战前，从主城带一支部队进入战场：按人口计最多 3000（铁骑兵 3、辎重车 6……），部队从主城驻军扣除，战场结束后幸存部队回到主城。每人每场只能入场一次，开战后不能追加兵力。入场后队伍出现在自己大营旁，可用 SPLIT_BATTLEFIELD_SQUAD 拆成最多 3 队。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| troops | object | 必填。按兵种数量（非负整数，至少 1 个单位）：{ militia, swordsman, archer, cavalry, ... }，键集同 MARCH.troops；按人口合计 ≤ 3000。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_JOINED`、`BATTLEFIELD_ENTRY_CLOSED`、`BATTLEFIELD_ALREADY_ENTERED`、`BATTLEFIELD_POPULATION_LIMIT`、`INSUFFICIENT_TROOPS`（处置建议见第 4 节）
+
+**Agent 提示**：入场前用 GET_STATE 的 city.army 确认兵够，并算清人口（铁骑兵 3 / 辎重车 6 / 床弩 3 / 冲车 5）。全部兵力一次性带入即可，开战后无法追加；拆队是战术选择，不影响入场上限。
+
+**示例**
+
+**带 700 单位入场**
+
+请求：
+
+```json
+{
+  "op": 122,
+  "seq": 32,
+  "data": {
+    "troops": {
+      "militia": 300,
+      "swordsman": 200,
+      "archer": 150,
+      "cavalry": 50
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 122,
+  "seq": 32,
+  "ok": true,
+  "data": {
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "idle",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": null,
+          "targetY": null,
+          "targetStrongholdId": null,
+          "arriveAt": null,
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 123 · SPLIT_BATTLEFIELD_SQUAD — 拆分战场队伍（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+从一支队伍里分出一支新队伍（位置相同、状态待命），每人最多 3 队；行军中不能拆。新队伍与原队伍都必须至少剩 1 个单位。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| squadId | string | 必填。要拆分的队伍 id（GET_BATTLEFIELD 的 me.squads）。 |
+| troops | object | 必填。从原队伍分出的兵种数量，不能超过原队伍现有数量。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_SQUAD_NOT_FOUND`、`BATTLEFIELD_SQUAD_BUSY`、`BATTLEFIELD_SQUAD_LIMIT`、`INSUFFICIENT_TROOPS`（处置建议见第 4 节）
+
+**Agent 提示**：拆队适合「主力攻据点 + 骑兵绕后抢乌巢 / 渡口」这类分兵。行军中不能拆，先等到达。
+
+**示例**
+
+**从主力里分出 100 骑兵当机动队**
+
+请求：
+
+```json
+{
+  "op": 123,
+  "seq": 33,
+  "data": {
+    "squadId": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    "troops": {
+      "cavalry": 100
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 123,
+  "seq": 33,
+  "ok": true,
+  "data": {
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        },
+        {
+          "id": "…",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 100,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 124 · MARCH_BATTLEFIELD_SQUAD — 战场内行军 / 攻打据点（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+给一支待命 / 据守中的队伍下令：目标给 strongholdId（自动取据点坐标）或 x / y；每格 60 秒现实时间，河只能从 3 处渡口（y=5/15/25）通过。到达友方据点 = 入驻据守（合并守军）；到达敌方 / 中立据点 = 自动开战（有城墙的据点按守城战），胜方幸存部队留守、据点易手。行军中不能再次下令。讨伐董卓的关卡未解锁（unlocked 为 false）时返回 BATTLEFIELD_STRONGHOLD_LOCKED（附 unlockAfter）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| squadId | string | 必填。队伍 id。 |
+| strongholdId | string | 可选（与 x / y 二选一）。目标据点 id；同时给 x / y 时必须与据点坐标一致，否则 BATTLEFIELD_TARGET_INVALID。 |
+| x | number | 可选。目标横坐标（0..29）；只在没有 strongholdId 时使用，且必须与 y 同时给。 |
+| y | number | 可选。目标纵坐标（0..29）；只在没有 strongholdId 时使用。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SQUAD_NOT_FOUND`、`BATTLEFIELD_SQUAD_BUSY`、`BATTLEFIELD_UNREACHABLE`、`BATTLEFIELD_TARGET_INVALID`、`BATTLEFIELD_STRONGHOLD_LOCKED`（处置建议见第 4 节）
+
+**Agent 提示**：到达结算与战报由服务端在 Worker 里完成，客户端轮询 / 收 PUSH_BATTLEFIELD_STATE 后重查即可。攻打前对比 garrisonPower 与自己的队伍战力；没有把握先打渡口（10 分/小时）或普通据点。战败的幸存部队会退回出发位置。
+
+**示例**
+
+**从 (14,15) 攻打延津渡口**
+
+请求：
+
+```json
+{
+  "op": 124,
+  "seq": 34,
+  "data": {
+    "squadId": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    "strongholdId": "ford_yanjin"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 124,
+  "seq": 34,
+  "ok": true,
+  "data": {
+    "me": {
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "camp": "yuan",
+      "merit": 1240,
+      "rank": 3,
+      "entered": true,
+      "squads": [
+        {
+          "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+          "x": 14,
+          "y": 15,
+          "status": "marching",
+          "troops": {
+            "porter": 0,
+            "militia": 300,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 200,
+            "archer": 150,
+            "cavalry": 50,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "targetX": 15,
+          "targetY": 15,
+          "targetStrongholdId": "ford_yanjin",
+          "arriveAt": "2026-09-25T08:01:00.000Z",
+          "originX": 13,
+          "originY": 15,
+          "strongholdId": null
+        }
+      ],
+      "cumulativeMerit": 3600
+    }
+  }
+}
+```
+
+### op 125 · BUY_BATTLEFIELD_ITEM — 战场商店兑换（v75，AISLG-198）
+
+`C→S` 请求-响应 · 需登录后发送
+
+用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。赤壁场次另有 铁骑兵 800 军功（直接进主城，每场限 1 次）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| item | 'resources' \| 'hero_exp' \| 'swordsman' \| 'cavalry' \| 'iron_cavalry' | 必填。商品（iron_cavalry 仅赤壁场次可买）。 |
+| heroId | string | item=hero_exp 时必填：经验给这个武将（必须属于本账号）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| item | string | 商品。 |
+| cost | number | 本次扣掉的军功。 |
+| cumulativeMerit | number | 兑换后的军功余额。 |
+| bought | number | 本场该商品累计已买数量（含本次）。 |
+| reward | object | 到账内容：{ resources? } / { heroExp, level, leveledTo } / { troop, count }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SHOP_LIMIT`、`BATTLEFIELD_MERIT_INSUFFICIENT`、`HERO_NOT_FOUND`（处置建议见第 4 节）
+
+**Agent 提示**：打得多不如换得准：资源包适合补建造缺口，武将经验给主力将，刀盾 / 轻骑直接补战损。注意每场限购，军功余额跨场保留但换季清零。
+
+**示例**
+
+**换一包资源**
+
+请求：
+
+```json
+{
+  "op": 125,
+  "seq": 35,
+  "data": {
+    "item": "resources"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 125,
+  "seq": 35,
+  "ok": true,
+  "data": {
+    "item": "resources",
+    "cost": 200,
+    "cumulativeMerit": 3400,
+    "bought": 1,
+    "reward": {
+      "resources": {
+        "gold": 0,
+        "wood": 10000,
+        "food": 10000,
+        "stone": 10000,
+        "iron": 10000
+      }
+    }
+  }
+}
+```
+
+### op 126 · GET_NOBILITY — 查询声望与爵位（v76，AISLG-197）
+
+`C→S` 请求-响应 · 需登录后发送
+
+累计声望只增不减：世界地图上的每一场战斗（攻守、输赢、NPC / 玩家 / 黄巾）按歼灭敌军的参考战力 1:1 计；剧本战场的军功按 1 军功 = 1 声望再计一次。竞技场与将星塔不计。爵位共 10 级（平民 0 / 公士 100 / 簪袅 500 / 大夫 2000 / 公乘 6000 / 五大夫 15000 / 庶长 35000 / 关内侯 80000 / 列侯 160000 / 王 300000），达到门槛自动升级；升到大夫及以上会全服播报。大夫（3）起可以占领名城（之前只能打外围与掠夺）；五大夫 / 列侯各让普通武将上限 +1。每日俸禄（金币 = 爵位序号 × 200 × 全局时间缩放，当前示例 公士 10000 金、簪袅 20000 金、大夫 30000 金、公乘 40000 金）在北京时间每天 0 点后领一次，用 CLAIM_NOBILITY_SALARY。声威与爵位随赛季重置；上一季的最高爵位随名人堂留存。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| prestige | number | 累计声望。 |
+| index | number | 爵位序号（0 = 平民）。 |
+| name | string | 爵位名称。 |
+| privilege | string | 该爵位特权说明。 |
+| next | object \| null | 下一级爵位 { index, name, threshold }；已到「王」为 null。 |
+| progressPercent | number | 距离下一级的进度（0..100；满级 100）。 |
+| salaryGold | number | 每日俸禄金额（金币；平民 0；已按全局时间缩放折算）。 |
+| claimedToday | boolean | 今日（北京日）是否已领。 |
+| claimable | boolean | 现在是否可以领。 |
+| lastClaimedAt | string \| null | 最近一次领取时刻；从未领过为 null。 |
+| nextClaimAt | string | 下次可领时刻（今日已领 = 明日 0 点北京时间；否则为现在）。 |
+| heroCapBonus | number | 普通武将上限加成（五大夫 +1、列侯再 +1）。 |
+| canOccupyFamous | boolean | 能否占领名城（爵位 ≥ 大夫）。 |
+
+**Agent 提示**：声望是长期累积线：能打就打，不用刻意刷。打名城前先确认 canOccupyFamous；否则先打 NPC 城 / 野地攒到 2000 声望。俸禄每天记得领（claimable 为 true 时），金额随爵位提高。
+
+**示例**
+
+**大夫：今天还能领俸禄，距公乘还差 3650 声望**
+
+请求：
+
+```json
+{
+  "op": 126,
+  "seq": 40,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 126,
+  "seq": 40,
+  "ok": true,
+  "data": {
+    "prestige": 2350,
+    "index": 3,
+    "name": "大夫",
+    "privilege": "可占领名城；每日俸禄",
+    "next": {
+      "index": 4,
+      "name": "公乘",
+      "threshold": 6000
+    },
+    "progressPercent": 8,
+    "salaryGold": 30000,
+    "claimedToday": false,
+    "claimable": true,
+    "lastClaimedAt": null,
+    "nextClaimAt": "2026-10-27T04:00:00.000Z",
+    "heroCapBonus": 0,
+    "canOccupyFamous": true
+  }
+}
+```
+
+### op 127 · CLAIM_NOBILITY_SALARY — 领取每日爵位俸禄（v76，AISLG-197）
+
+`C→S` 请求-响应 · 需登录后发送
+
+按北京日领取一次爵位俸禄（金币），直接加到主城。平民没有俸禄（NOBILITY_SALARY_NONE）；今日已领返回 NOBILITY_SALARY_CLAIMED（附 nextClaimAt）。金额 = 爵位序号 × 200 × 全局时间缩放。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| gold | number | 本次领取的金币。 |
+| index | number | 领取后的爵位序号。 |
+| name | string | 领取后的爵位名称。 |
+| prestige | number | 领取后的累计声望。 |
+| claimedAt | string | 领取时刻（ISO 8601）。 |
+
+**可能错误**：`NOBILITY_SALARY_NONE`、`NOBILITY_SALARY_CLAIMED`（处置建议见第 4 节）
+
+**Agent 提示**：每天上线先领一次（幂等：重复领只会返回已领）。金币直接进主城，可用于建造 / 征兵 / 俸禄。
+
+**示例**
+
+**大夫领取 3 万金（示例按 50 倍缩放）**
+
+请求：
+
+```json
+{
+  "op": 127,
+  "seq": 41,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 127,
+  "seq": 41,
+  "ok": true,
+  "data": {
+    "gold": 30000,
+    "index": 3,
+    "name": "大夫",
+    "prestige": 2350,
+    "claimedAt": "2026-10-27T04:00:00.000Z"
+  }
+}
+```
+
+### op 128 · ALLIANCE_DIPLOMACY_INVITE — 发起友好邀请（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由盟主 / 副盟主向另一个联盟发出友好邀请（48 小时有效）。双方任一方的友盟已达 2 个返回 DIPLOMACY_LIMIT；已是友盟 / 敌对返回 DIPLOMACY_EXISTS；解除友好 72 小时冷却内返回 DIPLOMACY_COOLDOWN。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 目标联盟 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌（含刚发出的邀请）。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`、`ALLIANCE_NOT_FOUND`、`DIPLOMACY_LIMIT`、`DIPLOMACY_EXISTS`、`DIPLOMACY_COOLDOWN`（处置建议见第 4 节）
+
+**Agent 提示**：管理操作 Agent 不能做；由玩家的盟主 / 副盟主在联盟面板发起。
+
+**示例**
+
+**向洛阳盟发出邀请**
+
+请求：
+
+```json
+{
+  "op": 128,
+  "seq": 51,
+  "data": {
+    "allianceId": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 128,
+  "seq": 51,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "friendly",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "hostiles": [],
+    "invites": [
+      {
+        "id": "12",
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "inviter": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "bob"
+        },
+        "direction": "received",
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z"
+      }
+    ],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 129 · ALLIANCE_DIPLOMACY_RESPOND — 同意 / 拒绝友好邀请（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由收到邀请一方的盟主 / 副盟主答复（accept=true 同意 / false 拒绝）。同意时双方友盟名额、72 小时冷却都会复核（不通过返回 DIPLOMACY_LIMIT / DIPLOMACY_COOLDOWN），成功后双方联盟频道各写一条系统消息并全服播报。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| inviteId | string | 邀请 id（GET_ALLIANCE_DIPLOMACY 的 invites[].id）。 |
+| accept | boolean | true 同意 / false 拒绝。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`、`DIPLOMACY_INVITE_NOT_FOUND`、`DIPLOMACY_LIMIT`、`DIPLOMACY_EXISTS`、`DIPLOMACY_COOLDOWN`（处置建议见第 4 节）
+
+**Agent 提示**：同意后双方成员立即不能互相攻击，且可以互相协防；规划军事行动前先确认。
+
+**示例**
+
+**同意邀请，双方成为友盟**
+
+请求：
+
+```json
+{
+  "op": 129,
+  "seq": 52,
+  "data": {
+    "inviteId": "12",
+    "accept": true
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 129,
+  "seq": 52,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "friendly",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "hostiles": [],
+    "invites": [],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 130 · ALLIANCE_DIPLOMACY_END — 解除友好 / 敌对（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由盟主 / 副盟主单方面解除与目标联盟的友好或敌对，回到中立。解除友好会写入 24 小时不可攻击 + 72 小时不可再结好的冷却（防解约偷袭 / 反复横跳）。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 目标联盟 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`（处置建议见第 4 节）
+
+**Agent 提示**：解除友好不等于立刻能打：24 小时冷却内攻击仍会被拒（ALLY_NOT_ATTACKABLE）。
+
+**示例**
+
+**解除与洛阳盟的友好（24 小时内仍不能互相攻击）**
+
+请求：
+
+```json
+{
+  "op": 130,
+  "seq": 53,
+  "data": {
+    "allianceId": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 130,
+  "seq": 53,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [],
+    "hostiles": [],
+    "invites": [],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 131 · ALLIANCE_DIPLOMACY_HOSTILE — 宣布敌对（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议由盟主 / 副盟主单方面把目标联盟标为敌对（不需要对方同意，最多 5 个），地图上对方成员的城与野地标红、对方来袭时预警标出「敌对联盟」。若原是友盟，保留 24 小时不可攻击冷却。仅玩家连接。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 目标联盟 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_ALLIANCE_DIPLOMACY） | object | 返回最新外交全貌。 |
+
+**可能错误**：`INVALID_PARAMS`、`ALLIANCE_NOT_IN`、`ALLIANCE_FORBIDDEN`、`DIPLOMACY_LIMIT`、`DIPLOMACY_EXISTS`（处置建议见第 4 节）
+
+**Agent 提示**：敌对只是标记，不改变战斗与收益；可以随时单方面解除回到中立。
+
+**示例**
+
+**把洛阳盟标为敌对**
+
+请求：
+
+```json
+{
+  "op": 131,
+  "seq": 54,
+  "data": {
+    "allianceId": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 131,
+  "seq": 54,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [],
+    "hostiles": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "hostile",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "invites": [
+      {
+        "id": "12",
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "inviter": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "bob"
+        },
+        "direction": "received",
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z"
+      }
+    ],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 132 · GET_ALLIANCE_DIPLOMACY — 查询联盟外交（v77，AISLG-195）
+
+`C→S` 请求-响应 · 需登录后发送
+
+联盟之间有三种关系：**中立**（默认）/ **友好**（一方发邀请、另一方同意，邀请 48 小时过期）/ **敌对**（一方单方面宣布，不需要对方同意）。友盟双方成员互不攻击（掠夺、抢野地、占分城、侦察都返回 ALLY_NOT_ATTACKABLE），可以互相协防；地图上显示友军色。敌对只在地图上标红、来袭预警标出「敌对联盟」，不改变战斗与收益规则（不等于宣战）。上限：每个联盟最多 2 个友盟、5 个敌对。解除友好后 24 小时内双方仍不能互相攻击，72 小时内不能再次结好。管理操作仅限玩家连接的盟主 / 副盟主（Agent 返回 AGENT_FORBIDDEN）；关系变化在双方联盟频道发系统消息，结友 / 宣布敌对另发全服播报；换季关系保留、邀请清空。 本协议返回本联盟的友盟名单、敌对名单与待处理邀请（发出 / 收到）；玩家与 Agent 通用。没有联盟返回 ALLIANCE_NOT_IN。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| allianceId | string | 我的联盟 id。 |
+| friends | array | 友盟名单（最多 2 个）：{ alliance 联盟概要 { id, name, leader, memberCount, maxMembers, createdAt }, relation: friendly, since, noAttackUntil, refriendAfter }。 |
+| hostiles | array | 敌对名单（最多 5 个）：结构同 friends，relation: hostile。 |
+| invites | array | 待处理友好邀请：{ id, alliance 对方联盟, inviter 发起人, direction: sent\|received, createdAt, expiresAt }。 |
+| limits | object | 上限：{ friends: 2, hostiles: 5 }。 |
+
+**可能错误**：`ALLIANCE_NOT_IN`（处置建议见第 4 节）
+
+**Agent 提示**：外交是盟主 / 副盟主的玩家操作，Agent 只能查。友盟成员不能互相攻击，规划进攻前先查 friendships；解除友好有 24 小时不可攻击 + 72 小时不可再结好的冷却。
+
+**示例**
+
+**有一个友盟，并收到洛阳盟的邀请**
+
+请求：
+
+```json
+{
+  "op": 132,
+  "seq": 50,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 132,
+  "seq": 50,
+  "ok": true,
+  "data": {
+    "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+    "friends": [
+      {
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "relation": "friendly",
+        "since": "2026-09-25T08:00:00.000Z",
+        "noAttackUntil": null,
+        "refriendAfter": null
+      }
+    ],
+    "hostiles": [],
+    "invites": [
+      {
+        "id": "12",
+        "alliance": {
+          "id": "3c9f2a1b-4d5e-4f60-8a71-2b3c4d5e6f70",
+          "name": "洛阳盟",
+          "leader": {
+            "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+            "username": "bob"
+          },
+          "memberCount": 18,
+          "maxMembers": 30,
+          "createdAt": "2026-09-25T08:00:00.000Z"
+        },
+        "inviter": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "bob"
+        },
+        "direction": "received",
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z"
+      }
+    ],
+    "limits": {
+      "friends": 2,
+      "hostiles": 5
+    }
+  }
+}
+```
+
+### op 133 · GET_MARKET — 查询玩家交易所（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 返回可买挂单（可按卖出 / 收取资源筛选、分页）、我的挂单与成交记录、我的额度与门槛；玩家与 Agent 通用。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| sellResource | 'food' \| 'wood' \| 'stone' \| 'iron' | 可选。只看卖出该资源的挂单。 |
+| buyResource | 'food' \| 'wood' \| 'stone' \| 'iron' \| 'gold' | 可选。只看收取该资源 / 金币的挂单。 |
+| page | number | 页码，从 1 起；每页 10 条。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orders | array | 可买挂单（单价升序）：{ id, seller{accountId,username,nobility,nobilityName,allianceId,allianceName}, city{id,name,x,y}, sellResource, buyResource, total, remaining, unitPrice, allyOnly, createdAt, expiresAt, mine }。只卖给盟友的单对非盟友不返回。 |
+| page / pageSize / total | number | 分页信息，每页 10 条。 |
+| mine.orders | array | 我的挂单（进行中 + 最近结束，最多 20 条），结构同 orders。 |
+| mine.trades | array | 我的成交记录（最近 20 条）：{ id, role: buy\|sell, other{accountId,username}, sellResource, buyResource, quantity, paid, delivered（扣 5% 后实收）, fee, createdAt, deliveredAt（双方商队都送达才非 null） }。 |
+| limits | object | 我的额度与门槛：{ minAmount, maxOpenOrders, activeOrders, feePercent, government, dailyLimit, dailyUsed, dailyRemaining, locked, lockedReason: government\|newbie\|null, priceRangeResource{min,max}, priceRangeGold{min,max} }。 |
+
+**Agent 提示**：先 GET_MARKET 看 orders 与 limits：locked 为 true 时不能交易。单价范围见 limits；吃单前确认自己 buyResource 足够。成交后商队要飞一会儿，deliveredAt 为 null 表示还在路上。
+
+**示例**
+
+**看铁换粮的挂单**
+
+请求：
+
+```json
+{
+  "op": 133,
+  "seq": 60,
+  "data": {
+    "sellResource": "iron",
+    "buyResource": "food"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 133,
+  "seq": 60,
+  "ok": true,
+  "data": {
+    "orders": [
+      {
+        "id": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+        "seller": {
+          "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+          "username": "alice",
+          "nobility": 3,
+          "nobilityName": "大夫",
+          "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+          "allianceName": "卧龙盟"
+        },
+        "city": {
+          "id": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+          "name": "主城",
+          "x": 612,
+          "y": 388
+        },
+        "sellResource": "iron",
+        "buyResource": "food",
+        "total": 10000,
+        "remaining": 10000,
+        "unitPrice": 1.2,
+        "allyOnly": false,
+        "createdAt": "2026-09-25T08:00:00.000Z",
+        "expiresAt": "2026-09-27T08:00:00.000Z",
+        "mine": false
+      }
+    ],
+    "page": 1,
+    "pageSize": 10,
+    "total": 1,
+    "mine": {
+      "orders": [],
+      "trades": []
+    },
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 1,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 0,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
+### op 134 · CREATE_MARKET_ORDER — 挂单卖出资源（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 卖出资源从当前城（可带 cityId）立即冻结；挂单后可在 GET_MARKET 的 mine.orders 看到。单价超范围返回 PRICE_OUT_OF_RANGE；官府 / 保护期门槛 MARKET_LOCKED；满 5 张 ORDER_LIMIT。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| sellResource | 'food' \| 'wood' \| 'stone' \| 'iron' | 必填。卖出的资源。 |
+| buyResource | 'food' \| 'wood' \| 'stone' \| 'iron' \| 'gold' | 必填。收取的资源或金币。 |
+| amount | number | 必填。卖出总量，≥ 1000，不能超过挂单城现有数量。 |
+| unitPrice | number | 必填。每 1 个卖出资源换多少个收取物；范围见 GET_MARKET 的 limits（资源 0.5–2 / 金币 0.125–0.5，最多 4 位小数）。 |
+| allyOnly | boolean | 可选。true = 只卖给同联盟成员。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| order | object | 新挂单，结构同 GET_MARKET 的 orders。 |
+| limits | object | 挂单后的额度，结构同 GET_MARKET 的 limits。 |
+
+**可能错误**：`INVALID_PARAMS`、`MARKET_LOCKED`、`PRICE_OUT_OF_RANGE`、`ORDER_LIMIT`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：挂单前算好单价：资源之间参考价 1:1，收金币参考价 0.25。只卖给盟友可减少被陌生人吃掉，但也少买家。
+
+**示例**
+
+**卖 1 万铁，每 1 铁换 1.2 粮**
+
+请求：
+
+```json
+{
+  "op": 134,
+  "seq": 61,
+  "data": {
+    "sellResource": "iron",
+    "buyResource": "food",
+    "amount": 10000,
+    "unitPrice": 1.2
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 134,
+  "seq": 61,
+  "ok": true,
+  "data": {
+    "order": {
+      "id": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+      "seller": {
+        "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+        "username": "alice",
+        "nobility": 3,
+        "nobilityName": "大夫",
+        "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+        "allianceName": "卧龙盟"
+      },
+      "city": {
+        "id": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+        "name": "主城",
+        "x": 612,
+        "y": 388
+      },
+      "sellResource": "iron",
+      "buyResource": "food",
+      "total": 10000,
+      "remaining": 10000,
+      "unitPrice": 1.2,
+      "allyOnly": false,
+      "createdAt": "2026-09-25T08:00:00.000Z",
+      "expiresAt": "2026-09-27T08:00:00.000Z",
+      "mine": true
+    },
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 2,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 0,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
+### op 135 · BUY_MARKET_ORDER — 吃单（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 吃单可整单或部分（quantity ≤ remaining）。成交时锁挂单行、扣买家款、按 5% 手续费拆出双方实收并各派一支商队。挂单只卖给盟友时非盟友返回 MARKET_ALLY_ONLY；额度不足 DAILY_TRADE_LIMIT；挂单已被别人吃空返回 ORDER_NOT_FOUND。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orderId | string | 必填。挂单 id。 |
+| quantity | number | 必填。买入数量（正整数，≤ 挂单剩余量）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| trade | object | 成交记录（买家视角），结构同 GET_MARKET 的 mine.trades。 |
+| remaining | number | 成交后挂单剩余量（0 = 售罄）。 |
+| limits | object | 成交后的额度，结构同 GET_MARKET 的 limits。 |
+
+**可能错误**：`INVALID_PARAMS`、`MARKET_LOCKED`、`MARKET_ALLY_ONLY`、`DAILY_TRADE_LIMIT`、`ORDER_NOT_FOUND`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：部分成交可以拆单降低一次性投入；注意 5% 手续费与商队飞行时间。额度按卖出资源数量计，买卖都占额度。
+
+**示例**
+
+**买 4000 铁（付 4800 粮，实收 3800 铁）**
+
+请求：
+
+```json
+{
+  "op": 135,
+  "seq": 62,
+  "data": {
+    "orderId": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+    "quantity": 4000
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 135,
+  "seq": 62,
+  "ok": true,
+  "data": {
+    "trade": {
+      "id": "…",
+      "role": "buy",
+      "other": {
+        "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+        "username": "alice"
+      },
+      "sellResource": "iron",
+      "buyResource": "food",
+      "quantity": 4000,
+      "paid": 4800,
+      "delivered": 3800,
+      "fee": 200,
+      "createdAt": "2026-09-25T08:00:00.000Z",
+      "deliveredAt": null
+    },
+    "remaining": 6000,
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 1,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 4000,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
+### op 136 · CANCEL_MARKET_ORDER — 撤单（v78，AISLG-196）
+
+`C→S` 请求-响应 · 需登录后发送
+
+玩家之间挂单买卖粮 / 木 / 石 / 铁（可收另一种资源或金币）。挂单时卖出的资源立即从挂单城冻结；吃单可整单或部分成交，成交时买家立即扣款，双方各派一支商队送货（每格 15 秒基准 ÷ 全局缩放，出发城驿站与行军科技有效；商队不会被截击）。成交双方各扣 5% 手续费。未成交部分随时可撤，48 小时后自动撤单退还。价格：资源之间 0.5–2（每 1 个卖出资源换多少个收取资源），收金币 0.125–0.5；单张最少 1000，每账号最多 5 张。每日成交额度 = 主城官府等级 × 3000 × 全局缩放（按卖出资源数量折算、买卖合计，北京日重置）。门槛：主城官府 ≥ 5 且不在新手保护期。可勾选「只卖给盟友」（同联盟成员才可见 / 可买）。 卖家可随时撤回未成交部分，冻结资源立即退还到挂单城；已售罄 / 已过期返回 ORDER_NOT_CANCELLABLE。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orderId | string | 必填。挂单 id（只能是自己的）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orderId | string | 撤单的挂单 id。 |
+| refunded | number | 退还数量。 |
+| resource | string | 退还的资源种类。 |
+| limits | object | 撤单后的额度，结构同 GET_MARKET 的 limits。 |
+
+**可能错误**：`INVALID_PARAMS`、`ORDER_NOT_FOUND`、`ORDER_NOT_CANCELLABLE`（处置建议见第 4 节）
+
+**Agent 提示**：挂单 48 小时会自动撤单退款，不需要手动撤；急着用资源时再撤。
+
+**示例**
+
+**撤回 6000 铁**
+
+请求：
+
+```json
+{
+  "op": 136,
+  "seq": 63,
+  "data": {
+    "orderId": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 136,
+  "seq": 63,
+  "ok": true,
+  "data": {
+    "orderId": "4a9c2b1d-3e5f-4a60-8b71-2c3d4e5f6a70",
+    "refunded": 6000,
+    "resource": "iron",
+    "limits": {
+      "minAmount": 1000,
+      "maxOpenOrders": 5,
+      "activeOrders": 1,
+      "feePercent": 5,
+      "government": 10,
+      "dailyLimit": 30000,
+      "dailyUsed": 0,
+      "dailyRemaining": 30000,
+      "locked": false,
+      "lockedReason": null,
+      "priceRangeResource": {
+        "min": 0.5,
+        "max": 2
+      },
+      "priceRangeGold": {
+        "min": 0.125,
+        "max": 0.5
+      }
+    }
+  }
+}
+```
+
+### op 137 · GET_LUOYANG — 查询洛阳争夺状态（v79，AISLG-200）
+
+`C→S` 请求-响应 · 需登录后发送
+
+洛阳是 8 座名城之一，仍是占领者的分城；占领者所在联盟成为「洛阳之主」，占领者本人是「洛阳太守」。洛阳被玩家占领后，只在每周六 21:00–23:00（北京时间，现实时间）可以被攻打 / 侦察；窗口外返回 LUOYANG_CLOSED（附 nextOpenAt）。窗口内洛阳没有被动免战、城防值不回涨，每次打赢按现有规则扣城防，归零换主；窗口结束时城防回满并进入保护。洛阳可接收 10 支协防（普通城 5 支），盟友 / 友盟都能协防。洛阳之主联盟全员所有城的粮木石铁产量 +5%（与名城 / 科技 / 城守同一百分比池相加）。盟主每 7 天可以发布一道政令（三选一，持续 7 天）：征兵时长 −15% / 行军速度 +10% / 科技研究时长 −15%；洛阳易主时旧政令立即失效。赛季结束时占有洛阳的联盟进入名人堂，结算时在盟成员每人获得 10,000 金币与四资源各 50,000。窗口预告 / 开始 / 结束、洛阳易主、政令发布都有全服播报，并在相关联盟频道发系统消息。 本协议返回洛阳占领者、争夺窗口、洛阳之主联盟加成与当前政令；玩家与 Agent 通用。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| owner | object \| null | 洛阳当前占领者（玩家分城）：{ cityId, cityName, accountId, username, allianceId, allianceName, durability }；NPC 阶段为 null。 |
+| windowOpen / windowStartAt / windowEndAt / nextOpenAt | boolean / string | 当前是否在争夺窗口、本次窗口起止、下一次开放时刻（北京时间周六 21:00–23:00）。 |
+| bonusPercent | number | 洛阳之主联盟全员的四资源产量加成（当前 5）；不是洛阳之主为 0。 |
+| assistCap | number | 洛阳可接收的协防部队上限（当前 10）。 |
+| decree | object \| null | 生效中的政令：{ kind: recruit\|march\|research, until, nextAt, canPublish, leaderName }；没有为 null。 |
+| canPublishDecree / decreeNextAt / myAllianceIsHolder | boolean / string / boolean | 我是否能发政令、下次可发时刻、我所在联盟是否洛阳之主。 |
+
+**Agent 提示**：窗口外不要对洛阳发起掠夺 / 占领 / 侦察（LUOYANG_CLOSED）。窗口内洛阳无被动免战、城防不回涨；攻方要有空分城名额。洛阳之主盟员可享受 +5% 产量，盟主每 7 天可发政令。
+
+**示例**
+
+**洛阳由卧龙盟占领，本周窗口未开，征兵政令生效中**
+
+请求：
+
+```json
+{
+  "op": 137,
+  "seq": 70,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 137,
+  "seq": 70,
+  "ok": true,
+  "data": {
+    "owner": {
+      "cityId": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+      "cityName": "洛阳",
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "allianceName": "卧龙盟",
+      "durability": 65
+    },
+    "windowOpen": false,
+    "windowStartAt": "2026-10-31T13:00:00.000Z",
+    "windowEndAt": "2026-10-31T15:00:00.000Z",
+    "nextOpenAt": "2026-10-31T13:00:00.000Z",
+    "bonusPercent": 5,
+    "assistCap": 10,
+    "decree": {
+      "kind": "recruit",
+      "until": "2026-11-03T04:00:00.000Z",
+      "nextAt": "2026-11-03T04:00:00.000Z",
+      "canPublish": false,
+      "leaderName": "alice"
+    },
+    "canPublishDecree": false,
+    "decreeNextAt": "2026-11-03T04:00:00.000Z",
+    "myAllianceIsHolder": true
+  }
+}
+```
+
+### op 138 · PUBLISH_DECREE — 发布洛阳政令（v79，AISLG-200）
+
+`C→S` 请求-响应 · 需登录后发送
+
+洛阳是 8 座名城之一，仍是占领者的分城；占领者所在联盟成为「洛阳之主」，占领者本人是「洛阳太守」。洛阳被玩家占领后，只在每周六 21:00–23:00（北京时间，现实时间）可以被攻打 / 侦察；窗口外返回 LUOYANG_CLOSED（附 nextOpenAt）。窗口内洛阳没有被动免战、城防值不回涨，每次打赢按现有规则扣城防，归零换主；窗口结束时城防回满并进入保护。洛阳可接收 10 支协防（普通城 5 支），盟友 / 友盟都能协防。洛阳之主联盟全员所有城的粮木石铁产量 +5%（与名城 / 科技 / 城守同一百分比池相加）。盟主每 7 天可以发布一道政令（三选一，持续 7 天）：征兵时长 −15% / 行军速度 +10% / 科技研究时长 −15%；洛阳易主时旧政令立即失效。赛季结束时占有洛阳的联盟进入名人堂，结算时在盟成员每人获得 10,000 金币与四资源各 50,000。窗口预告 / 开始 / 结束、洛阳易主、政令发布都有全服播报，并在相关联盟频道发系统消息。 仅洛阳之主联盟的盟主（玩家连接）可发布；每 7 天一次，持续 7 天，三选一（recruit / march / research）。发布后全服播报并在联盟频道发系统消息。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| kind | 'recruit' \| 'march' \| 'research' | 政令：征兵时长 −15% / 行军速度 +10% / 科技研究时长 −15%。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| （同 GET_LUOYANG） | object | 发布后的洛阳状态（含新政令）。 |
+
+**可能错误**：`INVALID_PARAMS`、`AGENT_FORBIDDEN`、`DECREE_NOT_HOLDER`、`DECREE_COOLDOWN`（处置建议见第 4 节）
+
+**Agent 提示**：管理操作需要玩家盟主本人；Agent 只能查询 GET_LUOYANG。政令到期后自动失效，冷却按发布时刻 +7 天。
+
+**示例**
+
+**发布征兵政令**
+
+请求：
+
+```json
+{
+  "op": 138,
+  "seq": 71,
+  "data": {
+    "kind": "recruit"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 138,
+  "seq": 71,
+  "ok": true,
+  "data": {
+    "owner": {
+      "cityId": "5b1c3d2e-4f60-4a71-8c82-3d4e5f6a7b80",
+      "cityName": "洛阳",
+      "accountId": "6f1e2d3c-4b5a-4978-8c6d-5e4f3a2b1c0d",
+      "username": "alice",
+      "allianceId": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "allianceName": "卧龙盟",
+      "durability": 65
+    },
+    "windowOpen": false,
+    "windowStartAt": "2026-10-31T13:00:00.000Z",
+    "windowEndAt": "2026-10-31T15:00:00.000Z",
+    "nextOpenAt": "2026-10-31T13:00:00.000Z",
+    "bonusPercent": 5,
+    "assistCap": 10,
+    "decree": {
+      "kind": "recruit",
+      "until": "2026-11-03T04:00:00.000Z",
+      "nextAt": "2026-11-03T04:00:00.000Z",
+      "canPublish": false,
+      "leaderName": "alice"
+    },
+    "canPublishDecree": false,
+    "decreeNextAt": "2026-11-03T04:00:00.000Z",
+    "myAllianceIsHolder": true
+  }
+}
+```
+
+### op 139 · FIRE_BATTLEFIELD_STRONGHOLD — 赤壁火攻（v80，AISLG-199）
+
+`C→S` 请求-响应 · 需登录后发送
+
+仅赤壁场次、孙刘方（me.camp = yuan）、已入场，并且当前风向为东南风（event.wind.direction = se）时可用：花 300 军功，火攻一座曹方据点（ownerCamp = cao）。目标必须与己方据点相邻（曼哈顿距离 ≤ 10）。效果立即结算：对守军造成总生命 20% 的伤害（目标处于连锁战船期间为 40%）；伤害按各兵种生命比例写入据点余伤池，整单位折算阵亡，阵亡按 NPC 守军与据守队伍的占比分摊。同一目标每 2 小时最多被火攻一次（冷却 fireNextAt）。火攻不计军功，也不改变归属，要靠后续攻打夺下据点。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| strongholdId | string | 必填。目标曹方据点 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SKILL_UNAVAILABLE`、`BATTLEFIELD_NOT_JOINED`、`BATTLEFIELD_NOT_ENTERED`、`BATTLEFIELD_WIND_MISMATCH`、`BATTLEFIELD_TARGET_INVALID`、`BATTLEFIELD_FIRE_COOLDOWN`、`BATTLEFIELD_MERIT_INSUFFICIENT`（处置建议见第 4 节）
+
+**Agent 提示**：火攻前先看 event.wind：只有东南风能用，西北风要等下一次切换（event.wind.nextAt）。挑一个 ownerCamp = cao、fireNextAt 已过的相邻据点；目标处于连锁期时伤害翻倍，所以优先挑没有连锁的目标。每次 300 军功，冷却中的目标别反复尝试。
+
+**示例**
+
+**东南风期间火攻相邻的巴丘据点**
+
+请求：
+
+```json
+{
+  "op": 139,
+  "seq": 36,
+  "data": {
+    "strongholdId": "cao_2"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 139,
+  "seq": 36,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "strongholds": [
+      {
+        "id": "cao_2",
+        "name": "曹操据点·巴丘",
+        "kind": "ford",
+        "x": 23,
+        "y": 15,
+        "ownerCamp": "cao",
+        "pointsPerHour": 10,
+        "garrison": {
+          "porter": 0,
+          "militia": 96,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 40,
+          "archer": 48,
+          "cavalry": 15,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "garrisonPower": 560,
+        "wallLevel": 0,
+        "towerLevel": 0,
+        "firstCaptureAvailable": false,
+        "capturedAt": "2026-09-25T08:00:00.000Z",
+        "chainUntil": null,
+        "fireNextAt": "2026-09-25T10:00:00.000Z",
+        "unlocked": true
+      }
+    ]
+  }
+}
+```
+
+### op 140 · CHAIN_BATTLEFIELD_STRONGHOLD — 赤壁连锁战船（v80，AISLG-199）
+
+`C→S` 请求-响应 · 需登录后发送
+
+仅赤壁场次、曹操军（me.camp = cao）、已入场可用：花 200 军功，给一座己方据点（ownerCamp = cao）连锁 6 小时（chainUntil）：该据点守军受到的伤害 −15%，但被火攻时伤害翻倍。连锁期间不能重复连锁（BATTLEFIELD_CHAIN_ACTIVE）；据点易手后连锁立即失效。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| strongholdId | string | 必填。己方据点 id。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| event | object \| null | 当前 / 最近一场战场：{ id, script: guandu\|dongzhuo\|chibi, name, status: signup\|active\|finished, signupStartAt, startAt, endAt, camps: { yuan: { camp, name, signups, entered, score }, cao: 同结构 }, winner: yuan\|cao\|null, finishReason: score\|base_captured\|null, underdog: { camp, multiplier } \| null, wind: 赤壁专有 { direction: se\|nw, label, bonusCamp, nextAt, noticeAt }（其他剧本为 null） }。从未开过为 null。 |
+| nextSignupAt | string | 下一场报名开始时刻（北京时间每周二 20:00）。 |
+| nextScript | 'guandu' \| 'dongzhuo' \| 'chibi' | 下一场的剧本（轮换预告）。 |
+| strongholds | array | 本场据点（官渡 9 个 / 讨董 3 关 / 赤壁 10 个；讨董按推进线顺序）：{ id, name, kind: base\|ford\|post\|granary, x, y, ownerCamp: yuan\|cao\|null（null = 中立 NPC；讨董的董卓军也是 null）, pointsPerHour, garrison（全兵种计数，NPC + 玩家据守合计）, garrisonPower（参考战力）, wallLevel, towerLevel, firstCaptureAvailable（首占 +200 军功还没被拿过）, capturedAt, unlocked（讨董：前一关未打下为 false；其他剧本恒为 true）, chainUntil（赤壁曹方连锁截止，其他 null）, fireNextAt（赤壁火攻冷却截止，其他 null） }。 |
+| me | object \| null | 本场我的状态：{ accountId, username, camp, merit 本场军功, rank 本场名次（未入场为 null）, entered, squads: [{ id, x, y, status: marching\|idle\|garrison, troops, targetX, targetY, targetStrongholdId, arriveAt, originX, originY, strongholdId }], cumulativeMerit 跨场军功余额 }；未报名为 null。 |
+| top | array | 本场军功榜前 10：{ rank, accountId, username, camp, merit }（同分并列，军功 0 不上榜）。 |
+| shop | object | 战场商店（赤壁多一个 iron_cavalry）：{ cumulativeMerit, items: [{ item: resources\|hero_exp\|swordsman\|cavalry\|iron_cavalry, label, cost, limit, bought 本场已买, reward: { resources? , heroExp?, troop?, count? } }] }。 |
+| rewards | object | 奖励表：{ winner { label, gold, resourcesEach }, loser 同结构, rankTiers: [{ label, rank, maxRank, gold, resourcesEach }], progressTiers: [{ label, progress, gold, resourcesEach }]（讨董的全服进度档；其他剧本为空数组） }。 |
+
+**可能错误**：`INVALID_PARAMS`、`BATTLEFIELD_NOT_ACTIVE`、`BATTLEFIELD_SKILL_UNAVAILABLE`、`BATTLEFIELD_NOT_JOINED`、`BATTLEFIELD_NOT_ENTERED`、`BATTLEFIELD_TARGET_INVALID`、`BATTLEFIELD_CHAIN_ACTIVE`、`BATTLEFIELD_MERIT_INSUFFICIENT`（处置建议见第 4 节）
+
+**Agent 提示**：连锁适合在孙刘方准备火攻前先给要守的据点加一层防护：连锁期间正面战斗更耐打，但一旦被火攻伤害会翻倍，所以要结合风向和对面相邻据点判断。
+
+**示例**
+
+**给江陵据点连锁战船**
+
+请求：
+
+```json
+{
+  "op": 140,
+  "seq": 37,
+  "data": {
+    "strongholdId": "cao_1"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 140,
+  "seq": 37,
+  "ok": true,
+  "data": {
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "strongholds": [
+      {
+        "id": "cao_1",
+        "name": "曹操据点·江陵",
+        "kind": "ford",
+        "x": 23,
+        "y": 5,
+        "ownerCamp": "cao",
+        "pointsPerHour": 10,
+        "garrison": {
+          "porter": 0,
+          "militia": 96,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 40,
+          "archer": 48,
+          "cavalry": 15,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "garrisonPower": 560,
+        "wallLevel": 0,
+        "towerLevel": 0,
+        "firstCaptureAvailable": false,
+        "capturedAt": "2026-09-25T08:00:00.000Z",
+        "chainUntil": "2026-09-25T14:00:00.000Z",
+        "fireNextAt": null,
+        "unlocked": true
+      }
+    ]
   }
 }
 ```
@@ -13516,6 +16202,120 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2026 · PUSH_DEFENSE_STATE — 推送：打造状态变化（v73，AISLG-193）
+
+`S→C` 服务端推送 · 无 `seq`
+
+打造开始 / 入队 / 完成入库 / 取消时推给同账号全部在线连接（发起连接已拿到响应，不回推）。收到后建议 GET_STATE 重新对齐 city.defenses。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reason | 'craft_started' \| 'craft_queued' \| 'craft_completed' \| 'craft_cancelled' | 开工（含排队条目被激活）/ 入队 / 完成入库 / 取消返还。 |
+| craft | object | 打造条目视图（结构同 CRAFT_DEFENSE 的 craft）。 |
+| stock | object | 该城当前四种器械的已入库件数。 |
+| cap | number | 该城库存上限（城墙等级 × 60）。 |
+
+**示例**
+
+推送（`craft_completed`）：
+
+```json
+{
+  "op": 2026,
+  "push": true,
+  "data": {
+    "reason": "craft_completed",
+    "craft": {
+      "id": "3f7c9a1e-2d4b-4c6a-9e8f-1a2b3c4d5e6f",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "kind": "trap",
+      "count": 10,
+      "status": "completed",
+      "initiator": "player",
+      "cost": {
+        "gold": 200,
+        "wood": 600,
+        "food": 0,
+        "stone": 0,
+        "iron": 400
+      },
+      "unitSeconds": 5,
+      "startedAt": "2026-09-25T08:00:00.000Z",
+      "dueAt": "2026-09-25T08:00:50.000Z",
+      "completedAt": "2026-09-25T08:00:50.000Z"
+    },
+    "stock": {
+      "trap": 10,
+      "chevaux": 0,
+      "rolling_log": 0,
+      "boulder": 0
+    },
+    "cap": 600
+  }
+}
+```
+
+### op 2027 · PUSH_BATTLEFIELD_STATE — 推送：剧本战场报名 / 开战 / 据点易手 / 收场 / 赤壁风向（v75，AISLG-198；v80）
+
+`S→C` 服务端推送 · 无 `seq`
+
+报名开始、开战、据点易手（含大营被攻破、火攻 / 连锁）、战场收场，以及赤壁风向切换与切换前 30 分钟预告时推给全部在线连接；载荷里的 event 与 GET_BATTLEFIELD 的 event 同结构。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reason | 'signup' \| 'started' \| 'stronghold' \| 'finished' \| 'wind' | 报名 / 开战 / 据点易手（含火攻、连锁） / 收场 / 风向（赤壁切换或预告）。 |
+| event | object | 战场视图（结构同 GET_BATTLEFIELD 的 event）。 |
+| strongholdId | string | reason=stronghold 时易手的据点 id。 |
+
+**Agent 提示**：推送只带事件摘要与据点 id，收到后重查 GET_BATTLEFIELD 拿完整据点守军、自己的队伍与军功。漏收时定时重查即可。
+
+**示例**
+
+推送（`stronghold`）：
+
+```json
+{
+  "op": 2027,
+  "push": true,
+  "data": {
+    "reason": "stronghold",
+    "event": {
+      "id": "9b2f4c1a-6d3e-4f80-9a71-2c5e8d4b6a10",
+      "script": "guandu",
+      "name": "官渡之战",
+      "status": "active",
+      "signupStartAt": "2026-09-24T08:00:00.000Z",
+      "startAt": "2026-09-25T08:00:00.000Z",
+      "endAt": "2026-09-26T08:00:00.000Z",
+      "camps": {
+        "yuan": {
+          "camp": "yuan",
+          "name": "袁绍军",
+          "signups": 12,
+          "entered": 10,
+          "score": 180
+        },
+        "cao": {
+          "camp": "cao",
+          "name": "曹操军",
+          "signups": 15,
+          "entered": 13,
+          "score": 240
+        }
+      },
+      "winner": null,
+      "finishReason": null,
+      "underdog": null
+    },
+    "strongholdId": "ford_yanjin"
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -13620,6 +16420,52 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `ANNOUNCEMENT_NOT_FOUND` | （v60，AISLG-162）公告不存在、已撤回、尚未到生效时间，或定向到其他站点。 | 不要重试同一个 id；重新用 GET_ANNOUNCEMENTS 拉取列表确认当前可见的公告。 |
 | `AGENT_PASSWORD_FORBIDDEN` | （v47）Agent 用账号密码登录被拒：密码登录只属于玩家本人，Agent 一律用账号的永久 Agent 令牌登录（哪个站都一样）。 | 改用 LOGIN {token, asAgent: true}（token 为玩家提示词里的 sk_ 令牌）；令牌失效（SESSION_INVALID / close code 4003）时请玩家重新发一次新提示词。 |
 | `PASSWORD_LOGIN_CLOSED` | （v47）该站点不开放账号密码登录：游戏有两个站（同一套服务与数据库、账号通用），国际站 slg.yuntianyou.cc 只有 Google / GitHub 登录，国内站才有账号密码。 | 网页端改用 Google / GitHub 登录；老密码账号先在国内站登录并绑定 Google / GitHub，再来本站用绑定方式登录进同一个号。Agent 不涉及（Agent 只用令牌）。 |
+| `WALL_NOT_BUILT` | （v73，AISLG-193）城墙尚未建造：四种城防器械只能囤在城墙里，城墙 0 级时库存上限为 0，不能打造。响应的 data 附 cap（= 0）。 | 先建造并升级城墙再打造器械；城墙等级同时也是库存上限（每级 60 件，四种共用）。 |
+| `DEFENSE_STOCK_FULL` | （v73，AISLG-193）库存 + 在造 + 本次数量超过上限（城墙等级 × 60，四种器械共用）。响应的 data 附 cap / stock（已入库合计）/ pending（在造 + 排队合计）。 | 减少本次件数，或先把库存用在守城（守城战自动消耗）后再生出；升级城墙可提高上限。 |
+| `DEFENSE_QUEUE_FULL` | （v73，AISLG-193）打造队列已满：与征兵同规则，同一时间 1 条在造 + 最多 2 条排队。 | 等队首完成（或取消已有条目腾位置）后再发起。 |
+| `DEFENSE_NOT_CANCELLABLE` | （v73，AISLG-193）没有可取消的打造条目：条目不存在、不属于本账号，或已完成 / 已取消。 | 用 GET_STATE 的 city.defenses.queue 取当前条目的 craftId 再取消；已完成 / 已取消的不要重试。 |
+| `ASSIST_NOT_ALLY` | （v74，AISLG-194）协防目标不是盟友的城池：MARCH task=assist 只能派往同一联盟成员的城（自己的城请用 transfer 调兵）。 | 确认目标城的主人与你同属一个联盟；不是盟友就换目标，或先拉对方入盟。 |
+| `ASSIST_LIMIT` | （v74，AISLG-194）协防名额已满：每座城最多接收 5 支协防部队（在途部队也计入），同一账号对同一座城最多 1 支。到达时复核不通过，部队原路返回（事件 cause=ASSIST_LIMIT）。 | 换一座盟友城协防，或等该城已有部队召回 / 遣返后再派；同一座城不要重复派第二支。 |
+| `ASSIST_NOT_FOUND` | （v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 易主自动遣返），或不属于你（只有派出方与城主能召回 / 遣返）。 | 重新 GET_STATE / GET_TILE 拿最新的 assistIn / assistOut 列表后再操作。 |
+| `BATTLEFIELD_GOVERNMENT_TOO_LOW` | （v75，AISLG-198）报名剧本战场要求主城官府 ≥ 5 级；响应附 required / current。 | 先升级主城官府到 5 级；分城官府不计。 |
+| `BATTLEFIELD_SIGNUP_CLOSED` | （v75，AISLG-198）当前不在剧本战场的报名期（北京时间每周二 20:00 至周三 20:00）。 | 用 GET_BATTLEFIELD 的 nextSignupAt 等下一场报名；报名开始后 SERVER 会全服播报。 |
+| `BATTLEFIELD_ALREADY_JOINED` | （v75，AISLG-198）本场已经报过名（阵营选定后不能改）。 | 直接 GET_BATTLEFIELD 查自己的阵营与队伍，或等开战后入场。 |
+| `BATTLEFIELD_NOT_JOINED` | （v75，AISLG-198）没有报名本场战场，不能入场或操作队伍。 | 先在报名期 SIGNUP_BATTLEFIELD 选阵营。 |
+| `BATTLEFIELD_CAMP_FULL` | （v75，AISLG-198）该阵营报名人数超过另一方 1.5 倍且多出 5 人以上，暂停报名；响应附 count / otherCount / limit。 | 改选另一方；或等双方人数接近后再报名。 |
+| `BATTLEFIELD_ENTRY_CLOSED` | （v75，AISLG-198）战场已经开战，不能再带部队入场（报名期结束即锁死入场）。 | 本场只能在已入场的队伍里拆队 / 行军；下一场报名时再入场。 |
+| `BATTLEFIELD_ALREADY_ENTERED` | （v75，AISLG-198）本场已经带过部队入场（每人每场只能入场一次，开战后也不能追加）。 | 用 SPLIT_BATTLEFIELD_SQUAD 拆分已有队伍，或等下一场。 |
+| `BATTLEFIELD_POPULATION_LIMIT` | （v75，AISLG-198）带入部队的人口超过 3000；响应附 limit / current。 | 减少铁骑兵等高人口兵种的数量，或只带主力兵种。 |
+| `BATTLEFIELD_SQUAD_LIMIT` | （v75，AISLG-198）每人最多 3 支队伍。 | 把要拆出的兵力并回现有队伍，或等有队伍阵亡后再拆。 |
+| `BATTLEFIELD_SQUAD_NOT_FOUND` | （v75，AISLG-198）队伍不存在、已阵亡，或不属于本账号。 | 重新 GET_BATTLEFIELD 拿最新队伍列表。 |
+| `BATTLEFIELD_SQUAD_BUSY` | （v75，AISLG-198）队伍正在行军，不能再次下令。 | 等 arriveAt 到达后再下令。 |
+| `BATTLEFIELD_UNREACHABLE` | （v75，AISLG-198）目标不可达：30×30 地图中间的河只有 3 处渡口（y = 5 / 15 / 25）能过，或坐标越界。 | 先走到渡口再渡河，或改选同侧目标。 |
+| `BATTLEFIELD_NOT_ACTIVE` | （v75，AISLG-198）剧本战场不在进行中（报名期或已结束）。 | 报名期只做报名 / 入场；行军与攻打在开战后才能做。 |
+| `BATTLEFIELD_SHOP_LIMIT` | （v75，AISLG-198）本场该商品已达到限购数量。 | 换其他商品，或等下一场额度重置（军功余额跨场保留）。 |
+| `BATTLEFIELD_MERIT_INSUFFICIENT` | （v75，AISLG-198）战场军功余额不足；响应附 cost / balance。 | 继续在战场里歼灭敌军攒军功；军功跨场累积、换季清零。 |
+| `BATTLEFIELD_TARGET_INVALID` | （v75，AISLG-198）行军目标参数缺失或对不上：必须给 strongholdId，或给合法的 x / y。 | 用 GET_BATTLEFIELD 的 strongholds 里的 id / 坐标重发。 |
+| `BATTLEFIELD_STRONGHOLD_LOCKED` | （v80，AISLG-199）讨伐董卓的关卡按顺序解锁：汜水关 → 虎牢关 → 洛阳，前一关没被讨董联军打下时不能攻打（GET_BATTLEFIELD 的 strongholds[].unlocked 为 false）。 | 先攻下前一关（看 strongholds 里 unlocked 为 true 的据点再下令）。 |
+| `BATTLEFIELD_WIND_MISMATCH` | （v80，AISLG-199）赤壁火攻只能在东南风期间发动（event.wind.direction = se）。 | 等下一次风向切换（event.wind.nextAt）再发动，切换前 30 分钟会预告。 |
+| `BATTLEFIELD_FIRE_COOLDOWN` | （v80，AISLG-199）同一目标据点每 2 小时最多被火攻一次；响应附 nextAt。 | 换一个目标，或等 nextAt 之后再火攻。 |
+| `BATTLEFIELD_CHAIN_ACTIVE` | （v80，AISLG-199）该据点的连锁战船仍在生效（6 小时内不能重复连锁）；响应附 chainUntil。 | 等 chainUntil 之后再连锁；连锁期内被火攻伤害翻倍，留意守军。 |
+| `BATTLEFIELD_SKILL_UNAVAILABLE` | （v80，AISLG-199）本场剧本没有这个技能（只有赤壁有火攻 / 连锁），或阵营不对：火攻只给孙刘方，连锁只给曹方。 | 看 event.script 与自己的 me.camp 再发。 |
+| `BATTLEFIELD_NOT_ENTERED` | （v80，AISLG-199）报名了但还没带兵入场，不能使用战场技能。 | 本场已开战就只能等下一场；报名期内要在开战前 ENTER_BATTLEFIELD。 |
+| `LUOYANG_CLOSED` | （v79，AISLG-200）洛阳只在每周六 21:00–23:00（北京时间现实时间）开放攻打 / 侦察；响应附 nextOpenAt / retryAfterSeconds。 | 等到 nextOpenAt 再发起。窗口内洛阳没有被动免战、城防不回涨。 |
+| `DECREE_NOT_HOLDER` | （v79，AISLG-200）只有洛阳之主联盟的盟主可以发布政令。 | 先占领洛阳，且由该联盟盟主操作。 |
+| `DECREE_COOLDOWN` | （v79，AISLG-200）政令每 7 天只能发布一次；响应附 nextAt / retryAfterSeconds。 | 等 nextAt 之后再发。 |
+| `MARKET_LOCKED` | （v78，AISLG-196）交易所需要主城官府 ≥ 5 级且不在新手保护期；响应附 reason / government / required。 | 升级主城官府或等新手保护结束后再来。 |
+| `PRICE_OUT_OF_RANGE` | （v78，AISLG-196）单价超出允许范围：资源之间 0.5–2，收金币 0.125–0.5；响应附 min / max。 | 按 GET_MARKET 的 limits.priceRangeResource / priceRangeGold 调整单价。 |
+| `ORDER_LIMIT` | （v78，AISLG-196）同时挂单已达 5 张。 | 先撤单或等成交后再挂。 |
+| `DAILY_TRADE_LIMIT` | （v78，AISLG-196）今日成交额度不足（主城官府等级 × 3000 × 缩放，买卖合计）；响应附 limit / used / remaining。 | 明天（北京日）额度重置后再交易；额度按卖出资源数量折算、买卖双方都计。 |
+| `ORDER_NOT_FOUND` | （v78，AISLG-196）挂单不存在、已售罄、已过期或不属于你。 | 重新 GET_MARKET 拉最新挂单；过期挂单会自动退款。 |
+| `MARKET_ALLY_ONLY` | （v78，AISLG-196）挂单勾选了「只卖给盟友」，你与卖家不在同一个联盟。 | 换一张公开挂单，或加入卖家所在联盟。 |
+| `ORDER_NOT_CANCELLABLE` | （v78，AISLG-196）挂单已售罄或已过期，无法撤回。 | 刷新挂单列表确认状态。 |
+| `DIPLOMACY_LIMIT` | （v77，AISLG-195）友盟 / 敌对数量已达上限（每联盟最多 2 个友盟、5 个敌对），响应附 limit。 | 先解除一个现有关系，再结新友盟 / 宣布新敌对。 |
+| `DIPLOMACY_COOLDOWN` | （v77，AISLG-195）刚解除友好，72 小时内同一对联盟不能再次结好；响应附 refriendAfter / retryAfterSeconds。 | 等到 refriendAfter 之后再发邀请 / 同意邀请。 |
+| `DIPLOMACY_EXISTS` | （v77，AISLG-195）与目标联盟已经是友盟 / 敌对，或已有待处理邀请。 | 用 GET_ALLIANCE_DIPLOMACY 查当前关系与邀请，避免重复操作。 |
+| `DIPLOMACY_INVITE_NOT_FOUND` | （v77，AISLG-195）友好邀请不存在、已过期（48 小时）或已处理。 | 重新发起邀请；过期邀请不会出现在 GET_ALLIANCE_DIPLOMACY 里。 |
+| `NOBILITY_TOO_LOW` | （v76，AISLG-197）爵位不足：占领名城需要「大夫」（爵位序号 3）及以上；响应附 required / current。攻打外围与掠夺不受限。 | 先在世界地图战斗里累计声望升到大夫（2000 声望）再来占领名城。 |
+| `NOBILITY_SALARY_CLAIMED` | （v76，AISLG-197）今日（北京日）俸禄已领，响应附 nextClaimAt。 | 明天北京时间 0 点后再领；金额随爵位提高。 |
+| `NOBILITY_SALARY_NONE` | （v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。 | 打世界地图战斗或参加剧本战场攒声望。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -13718,6 +16564,11 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 2000,
         "wood": 2000,
@@ -14008,6 +16859,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -14023,9 +16875,33 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -14324,6 +17200,11 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
       "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
       "name": "主城",
       "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
       "resources": {
         "gold": 1780,
         "wood": 1910,
@@ -14614,6 +17495,7 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
       "durability": null,
       "famousName": null,
       "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
       "famousEffect": null,
       "starveAt": null,
       "mutinyNextAt": null,
@@ -14629,9 +17511,33 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
         "marching": 0,
         "storage": 0,
         "scouting": 0,
-        "defense": 0
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
       },
       "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
       "defenseBonus": 0,
       "marches": [],
       "territory": [],
@@ -14991,7 +17897,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 71。
+- 协议版本随对外协议内容的每次变化递增；当前为 80。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

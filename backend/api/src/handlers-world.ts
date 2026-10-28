@@ -52,6 +52,8 @@ import { famousMarchPercent } from '../../common/src/famous-effects';
 import { checkHeroMarchable } from './handlers-hero';
 import type { AccountHeroRow } from '../../common/src/hero-db';
 import { cargoOverCapacity } from '../../common/src/transport';
+import { loadActiveDecree } from '../../common/src/luoyang-db';
+import { decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { carryingPercent, marchingPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { resolveIntercept, resolveMarchTarget } from './march-target';
@@ -186,7 +188,7 @@ export async function handleMarch(
               retryAfterSeconds: Math.max(1, Math.ceil((target.protectedUntil.getTime() - dbNow.getTime()) / 1000)),
             }
           : undefined;
-      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft };
+      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft, ...(target.nobility ? { nobility: target.nobility } : {}), ...(target.luoyangNextOpenAt ? { nextOpenAt: target.luoyangNextOpenAt.toISOString(), retryAfterSeconds: Math.max(1, Math.ceil((target.luoyangNextOpenAt.getTime() - dbNow.getTime()) / 1000)) } : {}) };
       respondError(ctx.registry, conn, op, seq, target.reason ?? 'TARGET_NOT_ATTACKABLE', Object.keys(data).length ? data : undefined);
       return;
     }
@@ -246,7 +248,9 @@ export async function handleMarch(
     // v62（AISLG-166）：出发城为许昌时，自己城池之间的调兵 / 运输行军速度另 +20%（与驿站加算）
     const selfCityMarch = target.purpose === 'transfer' || target.purpose === 'transport';
     const selfCityBonus = selfCityMarch ? stationPercent(snap.levels.post_station) + famousMarchPercent(snap.famousName) : 0;
-    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + selfCityBonus);
+    const decree = await loadActiveDecree(client, accountId);
+    const decreeSpeed = decreeMarchSpeedPercent(decree?.kind ?? null, decree?.until ?? null, new Date());
+    const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + selfCityBonus + decreeSpeed);
     const arriveMs = dbNow.getTime() + travel * 1000;
     // v35（AISLG-112）：截击「到了先埋伏」——目标路线与时刻表固定，出发即可算出接战时刻 =
     // max(到达时刻, 目标进入选定格相邻范围的时刻)，Worker 按该时刻结算；提前到达的部队
@@ -287,7 +291,7 @@ export async function handleMarch(
     });
     // v38（AISLG-122）/ v39（AISLG-123）：打玩家的出征（掠夺城池 / 抢占野地）——给守方写
     // 来袭预警事件（提交后推送在线连接）；攻方处于新手保护期则因主动进攻立即失效
-    let warning: { accountId: string; detail: Record<string, unknown> } | null = null;
+    const warnings: Array<{ accountId: string; detail: Record<string, unknown> }> = [];
     if (target.pvp) {
       const targetCity = await client.query(
         `SELECT a.username FROM cities c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`,
@@ -300,23 +304,39 @@ export async function handleMarch(
       );
       const naming = namingRes.rows[0] as { username: string; city_name: string } | undefined;
       if (row && naming) {
-        warning = {
-          accountId: target.pvp.targetAccountId,
-          detail: await insertAttackWarning(
-            client, march, troops,
-            {
-              accountId: target.pvp.targetAccountId,
+        const detail = await insertAttackWarning(
+          client, march, troops,
+          {
+            accountId: target.pvp.targetAccountId,
+            cityId: target.pvp.targetCityId,
+            // 城池目标：x/y = 城池坐标；野地目标：x/y = 地块坐标 + 地形与等级
+            x: march.x,
+            y: march.y,
+            kind: target.pvp.kind,
+            terrain: target.pvp.terrain ?? null,
+            level: target.pvp.level ?? 0,
+          },
+          { username: naming.username, cityId: snap.cityId, cityName: naming.city_name },
+        );
+        warnings.push({ accountId: target.pvp.targetAccountId, detail });
+        // v74（AISLG-194）：城池被来袭时，驻扎在该城的协防方也收到同一份预警
+        if (target.pvp.kind === 'city') {
+          const assistRes = await client.query(
+            `SELECT account_id FROM city_assist WHERE city_id = $1 AND account_id <> $2`,
+            [target.pvp.targetCityId, target.pvp.targetAccountId],
+          );
+          for (const assist of assistRes.rows as Array<{ account_id: string }>) {
+            await insertEvent(client, {
+              accountId: assist.account_id,
               cityId: target.pvp.targetCityId,
-              // 城池目标：x/y = 城池坐标；野地目标：x/y = 地块坐标 + 地形与等级
-              x: march.x,
-              y: march.y,
-              kind: target.pvp.kind,
-              terrain: target.pvp.terrain ?? null,
-              level: target.pvp.level ?? 0,
-            },
-            { username: naming.username, cityId: snap.cityId, cityName: naming.city_name },
-          ),
-        };
+              buildId: march.id,
+              type: EventType.PLAYER_ATTACK_WARNING,
+              initiator: null,
+              detail,
+            });
+            warnings.push({ accountId: assist.account_id, detail });
+          }
+        }
       }
       await breakNewbieProtection(
         client,
@@ -335,7 +355,7 @@ export async function handleMarch(
       { op: Op.PUSH_MARCH_STATE, push: true, data: { reason: 'march_started', march: view } },
       conn,
     );
-    if (warning) {
+    for (const warning of warnings) {
       pushAttackWarning(ctx, warning.accountId, warning.detail);
     }
   } catch (err) {

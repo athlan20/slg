@@ -73,6 +73,41 @@ CREATE TABLE IF NOT EXISTS alliance_leaderboard_snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_alliance_leaderboard_rank ON alliance_leaderboard_snapshots (computed_at DESC, rank);
 
+-- 联盟外交（v77，AISLG-195）：一对联盟一行，规范化 a_id < b_id。relation = friendly / hostile / neutral；
+-- neutral 行只用于「解除友好后的 24 小时不可攻击 + 72 小时不可再结好」冷却（no_attack_until / refriend_after）。
+-- 关系跨季保留（alliance_relations 在 season-tables 的 KEEP 里），邀请换季清空。
+CREATE TABLE IF NOT EXISTS alliance_relations (
+  a_id uuid NOT NULL REFERENCES alliances(id) ON DELETE CASCADE,
+  b_id uuid NOT NULL REFERENCES alliances(id) ON DELETE CASCADE,
+  relation text NOT NULL,
+  established_at timestamptz NOT NULL DEFAULT now(),
+  no_attack_until timestamptz,
+  refriend_after timestamptz,
+  PRIMARY KEY (a_id, b_id),
+  CHECK (a_id < b_id)
+);
+CREATE INDEX IF NOT EXISTS idx_alliance_relations_b ON alliance_relations (b_id, relation);
+
+-- 友好邀请：一方发出、另一方同意；48 小时过期。同一对联盟同一时间只有一条（反向重复邀请会覆盖）。
+CREATE TABLE IF NOT EXISTS alliance_friend_invites (
+  id bigserial PRIMARY KEY,
+  from_alliance_id uuid NOT NULL REFERENCES alliances(id) ON DELETE CASCADE,
+  to_alliance_id uuid NOT NULL REFERENCES alliances(id) ON DELETE CASCADE,
+  inviter_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  CONSTRAINT alliance_friend_invites_pair_key UNIQUE (from_alliance_id, to_alliance_id),
+  CHECK (from_alliance_id <> to_alliance_id)
+);
+CREATE INDEX IF NOT EXISTS idx_alliance_friend_invites_to ON alliance_friend_invites (to_alliance_id);
+
+-- 洛阳争夺（v79，AISLG-200）：luoyang_holder = 当前是否为洛阳之主联盟（易主时整体刷新）。
+-- 政令：kind / until / next_at，同一时间只有一道；易主时旧政令立即失效。
+ALTER TABLE alliances ADD COLUMN IF NOT EXISTS luoyang_holder boolean NOT NULL DEFAULT false;
+ALTER TABLE alliances ADD COLUMN IF NOT EXISTS decree_kind text;
+ALTER TABLE alliances ADD COLUMN IF NOT EXISTS decree_until timestamptz;
+ALTER TABLE alliances ADD COLUMN IF NOT EXISTS decree_next_at timestamptz;
+
 -- 最近活跃时刻（登录、断线、在线期间每小时心跳刷新）：盟主长期不活跃自动转让的依据。
 -- 不用 last_online_at：它只在玩家全部断线时才写，盟主一直在线时是旧值
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS last_active_at timestamptz;

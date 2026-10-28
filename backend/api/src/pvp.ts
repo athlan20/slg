@@ -10,6 +10,7 @@ import { beaconLeadMultiplier, warningIntel } from '../../common/src/building-ef
 import { loadBuildingLevels } from '../../common/src/production';
 import type { PlayerAttackWarningPushData } from '../../common/src/protocol-pvp';
 import type { MarchRow } from './views';
+import { hostileAllianceFor } from '../../common/src/alliance-db';
 import type { HandlerContext } from './handlers';
 
 /** 预警载荷的公共部分（march_started 事件 detail 与 PUSH_ATTACK_WARNING data 同构；
@@ -49,6 +50,7 @@ export async function insertAttackWarning(
   attacker: { username: string; cityId: string; cityName: string },
 ): Promise<Record<string, unknown>> {
   const intel = await buildWarningIntel(client, target.cityId, troops);
+  const hostileAlliance = await hostileAllianceFor(client, march.account_id, target.accountId);
   const detail: Record<string, unknown> = {
     x: target.x,
     y: target.y,
@@ -59,6 +61,7 @@ export async function insertAttackWarning(
     attacker: { username: attacker.username, cityId: attacker.cityId, cityName: attacker.cityName },
     arriveAt: march.arrive_at.toISOString(),
     marchId: march.id,
+    ...(hostileAlliance ? { hostileAlliance } : {}),
   };
   await insertEvent(client, {
     accountId: target.accountId,

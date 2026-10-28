@@ -7,6 +7,8 @@
 import pg from 'pg';
 import type { TroopKind } from '../../common/src/protocol';
 import { armyPower, resolveBattle } from '../../common/src/battle';
+import { combatTechBonus } from '../../common/src/tech';
+import { loadTechLevels } from '../../common/src/tech-db';
 import { famousRecoversAt } from '../../common/src/famous-city';
 import { recordWinStreak } from '../../common/src/server-broadcast';
 import type { NpcCitySnapshot } from '../../common/src/world';
@@ -37,7 +39,12 @@ export async function resolveFamousOuterArrival(
   const defender = famous.outerGarrison;
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  const result = resolveBattle(troops, defender, { wallDefensePercent: 0, siege: false, attackerHero: hero?.engine ?? null });
+  const result = resolveBattle(troops, defender, {
+    wallDefensePercent: 0,
+    siege: false,
+    attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+  });
   const naming = await loadCityNaming(client, march.from_city_id);
   const attackerName = naming ? `${naming.username} · ${naming.cityName}` : '出征部队';
   const reportId = await saveBattleReport(

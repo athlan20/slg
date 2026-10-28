@@ -99,10 +99,12 @@ async function launchRaids(pool: pg.Pool): Promise<number> {
       await client.query('COMMIT');
       if (warning) {
         launched += 1;
-        await pool.query('SELECT pg_notify($1, $2)', [
-          NOTIFY_CHANNEL,
-          JSON.stringify({ reason: 'npc_warning', accountId: warning.accountId, data: warning.data }),
-        ]);
+        for (const accountId of [warning.accountId, ...warning.assistIds]) {
+          await pool.query('SELECT pg_notify($1, $2)', [
+            NOTIFY_CHANNEL,
+            JSON.stringify({ reason: 'npc_warning', accountId, data: warning.data }),
+          ]);
+        }
       }
     } catch (err) {
       await client.query('ROLLBACK').catch(() => undefined);

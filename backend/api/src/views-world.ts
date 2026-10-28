@@ -3,6 +3,7 @@
 
 import { campRowFromJson, ytTileCampView } from '../../common/src/yellow-turban-db';
 import pg from 'pg';
+import { nobilityName } from '../../common/src/nobility';
 import {
   TROOP_KINDS,
   type FamousTileView,
@@ -18,6 +19,10 @@ import {
 } from '../../common/src/protocol';
 import { armyPower } from '../../common/src/battle';
 import { settleDurability } from '../../common/src/protection';
+import { repairPercent } from '../../common/src/tech';
+import { degradeDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
+import { loadCityAssists } from '../../common/src/city-assist-db';
+import type { DefenseScoutView } from '../../common/src/protocol-defense';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { advanceTile, effectiveGatherOf, type TileReserveStep } from '../../common/src/wilderness-reserve';
 import { reserveViewFrom } from './reserve-view';
@@ -39,10 +44,14 @@ interface TileQueryRow extends TileRow {
   /** 占领者与请求账号同一联盟（v67，AISLG-182；自己不算盟友） */
   owner_is_ally?: boolean;
   owner_username: string | null;
+  owner_nobility?: number | null;
+  owner_relation?: string | null;
   owner_city_name: string | null;
   garrison: number | null;
   /** 请求账号对该地块的侦察快照（scout_intel.detail 拆列）；未侦察均为 null */
   intel_garrison: Record<TroopKind, number> | null;
+  /** 侦察快照里的城防器械（v73，AISLG-193） */
+  intel_defenses?: DefenseScoutView | null;
   intel_stock: Partial<Record<'gold' | 'wood' | 'food' | 'stone' | 'iron', number>> | null;
   intel_at: Date | null;
   /** 侦察详细度与总兵力范围（v27 AISLG-77；历史情报缺省 = exact） */
@@ -63,6 +72,8 @@ interface TileQueryRow extends TileRow {
   /** 城主的最早建城时刻（判定主城：created_at 相等即主城） */
   owner_created_at?: Date | null;
   owner_main_created_at?: Date | null;
+  /** 城主的「维修」科技等级（v72，AISLG-192；城防值与展示口径一致地回涨） */
+  owner_repair_level?: number | null;
   /** 在野名将落位（v54）：名字 / 属性；wild_claimed 为该名将已被任何人获得 */
   wild_hero?: string | null;
   wild_lead?: number | null;
@@ -74,13 +85,23 @@ interface TileQueryRow extends TileRow {
 // $1 恒为请求账号 id（NPC 城池的 garrison 掩蔽按其侦察快照判定，v17；null 匹配不到任何行）
 const TILE_SELECT = `
   SELECT wt.x, wt.y, wt.terrain, wt.kind, wt.level, wt.owner_city_id, wt.npc, wt.plundered_at,
-         c.account_id AS owner_account_id, a.username AS owner_username, c.name AS owner_city_name,
+         c.account_id AS owner_account_id, a.username AS owner_username, a.nobility AS owner_nobility, c.name AS owner_city_name,
          (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally,
+         CASE
+           WHEN c.account_id = $1 THEN 'self'
+           WHEN am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id THEN 'ally'
+           WHEN r.relation = 'friendly' THEN 'friendly'
+           WHEN r.relation = 'hostile' THEN 'hostile'
+           WHEN r.relation = 'neutral' AND r.no_attack_until > now() THEN 'friendly'
+           ELSE 'neutral'
+         END AS owner_relation,
          c.truce_until AS owner_city_truce_until, a.newbie_until AS owner_newbie_until, a.self_truce_until AS owner_shield_until,
          wt.owner_changed_until, c.durability, c.durability_settled_at,
+         at.level AS owner_repair_level,
          c.created_at AS owner_created_at, om.first_created AS owner_main_created_at,
          COALESCE(ta.total, 0)::int AS garrison,
          si.detail->'garrison' AS intel_garrison, si.detail->'npcStock' AS intel_stock, si.scouted_at AS intel_at,
+         si.detail->'defenses' AS intel_defenses,
          si.detail->>'detail' AS intel_detail, si.detail->'garrisonTotal' AS intel_total,
          row_to_json(yc) AS camp_json,
          wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit,
@@ -89,8 +110,11 @@ const TILE_SELECT = `
   FROM world_tiles wt
   LEFT JOIN cities c ON c.id = wt.owner_city_id
   LEFT JOIN accounts a ON a.id = c.account_id
+  LEFT JOIN account_techs at ON at.account_id = c.account_id AND at.tech = 'repair'
   LEFT JOIN alliance_members am_me ON am_me.account_id = $1
   LEFT JOIN alliance_members am_o ON am_o.account_id = c.account_id
+  LEFT JOIN alliance_relations r ON r.a_id = LEAST(am_me.alliance_id, am_o.alliance_id)
+    AND r.b_id = GREATEST(am_me.alliance_id, am_o.alliance_id)
   LEFT JOIN (SELECT account_id, MIN(created_at) AS first_created FROM cities GROUP BY account_id) om
     ON om.account_id = c.account_id
   LEFT JOIN (SELECT x, y, sum(count) AS total FROM tile_army GROUP BY x, y) ta
@@ -98,6 +122,13 @@ const TILE_SELECT = `
   LEFT JOIN scout_intel si ON si.account_id = $1 AND si.x = wt.x AND si.y = wt.y
   LEFT JOIN yt_camps yc ON yc.x = wt.x AND yc.y = wt.y AND yc.status = 'active'
 `;
+
+function ownerRelationOf(value: string | null | undefined, ownerAccountId: string, requesterAccountId?: string): TileOwnerView['relation'] {
+  if (value === 'self' || value === 'ally' || value === 'friendly' || value === 'hostile' || value === 'neutral') {
+    return value;
+  }
+  return requesterAccountId && ownerAccountId === requesterAccountId ? 'self' : 'neutral';
+}
 
 function emptyArmy(): Record<TroopKind, number> {
   const army = {} as Record<TroopKind, number>;
@@ -169,6 +200,7 @@ function durabilityView(row: TileQueryRow, requesterAccountId?: string): number 
     row.durability_settled_at ?? null,
     row.owner_city_truce_until ?? null,
     new Date(),
+    repairPercent({ repair: row.owner_repair_level ?? 0 }),
   );
 }
 
@@ -192,7 +224,10 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
       username: row.owner_username,
       cityId: row.owner_city_id,
       cityName: row.owner_city_name,
+      nobility: Math.max(0, Number(row.owner_nobility ?? 0)),
+      nobilityName: nobilityName(Number(row.owner_nobility ?? 0)),
       ally: row.owner_is_ally === true,
+      relation: ownerRelationOf(row.owner_relation, row.owner_account_id, requesterAccountId),
     };
   }
   // NPC 城池库存档位（v23 AISLG-55）：对全服可见（只给档位不给数值，精确值走侦察）
@@ -310,6 +345,15 @@ export async function loadTileDetail(
   // 侦察过的地块一律给出最近一次快照时间（v23，AISLG-62：此前仅 NPC 城池返回；
   // 字段原本就有，只是把 scout_intel 的联表值对非 NPC 地块也透出，无新增字段）
   const scoutedAt = row.intel_at ? row.intel_at.toISOString() : null;
+  // v73（AISLG-193）：自己的城给精确库存；他人的城只给最近一次侦察快照（按侦察科技降级）
+  let defenses: DefenseScoutView | null = null;
+  if (row.kind === 'city' && row.owner_city_id) {
+    if (accountId !== undefined && row.owner_account_id === accountId) {
+      defenses = degradeDefenses(await loadCityDefenses(q, row.owner_city_id), 'exact');
+    } else if (row.intel_defenses) {
+      defenses = row.intel_defenses;
+    }
+  }
   const reserveStep = reserveStepOf(row, garrisonTotal);
   const detail: TileDetailView = {
     ...view,
@@ -331,10 +375,26 @@ export async function loadTileDetail(
         : null,
     npc: npcView,
     scoutedAt,
+    defenses,
+    assists: await assistsOf(q, row, accountId),
     plunderedAt: row.plundered_at ? row.plundered_at.toISOString() : null,
     wildFamousIntel: wildFamousDetail(row, scoutedAt !== null),
   };
   return detail;
+}
+
+/** 城防器械 / 协防的可见性：自己的城与盟友的城给出协防明细（v74），其余为 null */
+async function assistsOf(
+  q: pg.Pool | pg.PoolClient,
+  row: TileQueryRow,
+  accountId?: string,
+): Promise<import('../../common/src/protocol-assist').AssistView[] | null> {
+  if (row.kind !== 'city' || !row.owner_city_id) {
+    return null;
+  }
+  const own = accountId !== undefined && row.owner_account_id === accountId;
+  const side = row.owner_relation === 'ally' || row.owner_relation === 'friendly' || row.owner_is_ally === true;
+  return own || side ? await loadCityAssists(q, row.owner_city_id) : null;
 }
 
 /** 在野名将详情（v54）：未被获得才给出；名字与属性只对侦察过的账号开放 */

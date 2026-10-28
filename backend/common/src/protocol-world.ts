@@ -4,6 +4,7 @@
 
 import type { InitiatorRole, Resources } from './protocol';
 import type { FamousEffectView } from './famous-effects';
+import type { DefenseScoutView } from './protocol-defense';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchPurpose, MarchTask } from './protocol-battle';
 import type { YtTileCampView } from './protocol-yt';
@@ -36,8 +37,13 @@ export interface TileOwnerView {
   username: string;
   cityId: string;
   cityName: string;
+  /** 占领者爵位（v76，AISLG-197）：序号与名称 */
+  nobility: number;
+  nobilityName: string;
   /** 占领者与请求账号同属一个联盟（v67，AISLG-182）：盟友的地块不能攻击 / 侦察，地图单独着色；自己的地块与未入盟时为 false */
   ally: boolean;
+  /** 与占领者的关系（v77，AISLG-195）：self 自己 / ally 同盟 / friendly 友盟 / hostile 敌对 / neutral 其他 */
+  relation: 'self' | 'ally' | 'friendly' | 'hostile' | 'neutral';
 }
 
 /** NPC 城池库存档位（v23，AISLG-55）：相对该城初始库存的比例分档——只给大概档位，
@@ -138,6 +144,12 @@ export interface TileDetailView extends TileView {
   plunderedAt: string | null;
   /** 在野名将情报（v54，AISLG-144）：未被获得的在野名将所在野地才有，其余为 null */
   wildFamousIntel: WildFamousDetailView | null;
+  /** 城防器械（v73，AISLG-193）：自己的城给精确库存；他人的城只在侦察过时给最近一次
+   *  侦察快照（按侦察科技三档）；野地 / NPC 城 / 未侦察为 null */
+  defenses: DefenseScoutView | null;
+  /** 协防部队（v74，AISLG-194）：自己的城或盟友的城给出 "谁在协防、带了多少兵"；
+   *  其他人 / 野地 / NPC 城为 null（外人侦察只能看到计入守军总数的兵力） */
+  assists: import('./protocol-assist').AssistView[] | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */
@@ -212,7 +224,7 @@ export interface WorldMapResponseData {
 }
 
 /** 小地图城池点位的归属：本方（主城 / 分城）、他方玩家城池、NPC 城池、名城（未被占领的名城） */
-export type MapOverviewSide = 'own' | 'ally' | 'enemy' | 'npc' | 'famous';
+export type MapOverviewSide = 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous';
 
 /** GET_MAP_OVERVIEW（op 95）响应载荷（v58）：全图城池点位，野地不返回 */
 export interface MapOverviewResponseData {

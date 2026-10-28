@@ -127,3 +127,8 @@
 2. 用该库起 API（`DATABASE_URL=… PORT=<api端口> node --import tsx api/src/index.ts`）、Worker，以及前端（`WEB_PORT=<web端口> API_PORT=<api端口> rsbuild dev`；注意前端只监听 IPv6 localhost，要用 `http://localhost:<web端口>`）。
 3. 写一个临时 Playwright 配置：`baseURL` 指向该前端、`process.env.DATABASE_URL` 指向该库、`testMatch: /alliance-.*\.spec\.ts/`、`workers: 1`；运行 `E2E_ALLIANCE=1 npx playwright test -c <临时配置>`。
 4. 结果（2026-10-24）：两份用例共 12 项全部通过；四套皮肤 × 三种宽度（1440×900、1100×800、390×844）下联盟面板、聊天联盟页签、地图盟友 / 标记、标记页签、联盟榜、名人堂联盟页签零竖向滚动违规。
+
+
+## 盟友协防（v74，AISLG-194）
+
+协防部队驻扎在盟友城里：MARCH task=assist（每城 5 支、同账号同城 1 支、占校场名额、耗粮 2 倍由出发城承担）；守城战与城主驻军合并参战、伤亡按同兵种开战数量比例分摊（余数归城主）；DISMISS_ASSIST 召回 / 遣返；退盟 / 被踢 / 解散 / 城主放弃分城自动遣返，分城被占领时协防部队随城覆灭（派出方收到 assist_returned cause=wiped）；双方收到来袭预警，协防方收到带 assistLosses 的战报。

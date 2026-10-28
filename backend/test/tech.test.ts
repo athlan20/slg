@@ -4,18 +4,32 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   MAX_TECH_LEVEL,
+  TECH_INFO,
   TECH_KINDS,
   carryingPercent,
+  combatTechBonus,
+  constructionReductionPercent,
   defenseExtraPercent,
+  drillReductionPercent,
   emptyTechLevels,
   farmingPercent,
+  lootingPercent,
   marchingPercent,
+  researchReductionPercent,
   researchSeconds,
   scoutDetailOf,
   startResearch,
   storagePercent,
+  supplyReductionPercent,
   techCost,
+  techPercent,
 } from '../common/src/tech';
+import { setTimeScaleCache } from '../common/src/time-scale';
+import { recruitBatchSeconds } from '../common/src/troops';
+import { upgradeSeconds } from '../common/src/rules';
+import { wildernessPlunderPool } from '../common/src/world';
+import { settleDurability } from '../common/src/protection';
+import { simulateBattle } from '../common/src/battle-engine';
 import { degradeGarrison } from '../common/src/scout-detail';
 import { BASE_PRODUCTION_PER_HOUR, productionPerHour, storageCaps, emptyBuildingLevels } from '../common/src/production';
 import { armyCarryCapacity } from '../common/src/troops';
@@ -121,9 +135,85 @@ test('侦察降级：rough 只给总数范围、kinds 给近似兵种且重复�
   assert.deepEqual(exact.total, { min: 50, max: 50 });
 });
 
-test('科技清单覆盖六项且每项有成本与效果说明', () => {
-  assert.equal(TECH_KINDS.length, 6);
+test('科技清单覆盖十六项、发展 / 军事各八项，且每项有成本与效果说明', () => {
+  assert.equal(TECH_KINDS.length, 16);
   for (const kind of TECH_KINDS) {
-    assert.ok(techCost(kind, 1).gold > 0);
+    assert.ok(techCost(kind, 1).gold > 0, `${kind} 1 级成本`);
+    assert.ok(TECH_INFO[kind].effect.length > 0);
   }
+  const byCategory = (category: string) => TECH_KINDS.filter((kind) => TECH_INFO[kind].category === category);
+  assert.equal(byCategory('development').length, 8);
+  assert.equal(byCategory('military').length, 8);
+  // 新增十项的 1 级成本合计落在需求表的 300~450 区间
+  const cost = (kind: (typeof TECH_KINDS)[number]) => {
+    const c = techCost(kind, 1);
+    return c.gold + c.wood + c.food + c.stone + c.iron;
+  };
+  for (const kind of ['drill', 'combat', 'protection', 'riding', 'archery', 'supply', 'construction', 'research', 'looting', 'repair'] as const) {
+    assert.ok(cost(kind) >= 300 && cost(kind) <= 450, `${kind} 1 级成本 ${cost(kind)} 应在 300~450`);
+  }
+});
+
+test('新科技效果出口：带符号百分数与战斗乘数', () => {
+  const techs = { ...emptyTechLevels(), drill: 10, construction: 3, research: 10, supply: 10, looting: 10, repair: 10 };
+  assert.equal(drillReductionPercent(techs), 30);
+  assert.equal(constructionReductionPercent(techs), 9);
+  assert.equal(researchReductionPercent(techs), 30);
+  assert.equal(supplyReductionPercent(techs), 30);
+  assert.equal(lootingPercent(techs), 40);
+  assert.equal(techPercent('repair', techs), 50);
+  assert.equal(combatTechBonus(techs), null, '没有战斗类科技时不传乘数');
+  const combat = combatTechBonus({ ...techs, combat: 10, protection: 10, riding: 10, archery: 10 });
+  assert.deepEqual(combat, { atkPercent: 15, defPercent: 15, cavalrySpeedPercent: 20, rangedRangePercent: 10 });
+});
+
+test('科技缩短征兵 / 建造 / 研究时长', () => {
+  setTimeScaleCache(1);
+  try {
+    assert.equal(recruitBatchSeconds('militia', 10), 100);
+    assert.equal(recruitBatchSeconds('militia', 10, 30), 70);
+    assert.equal(upgradeSeconds(4), 240);
+    assert.equal(upgradeSeconds(4, 30), 168);
+    assert.ok(researchSeconds(2, 10) < researchSeconds(2, 0));
+    assert.equal(researchSeconds(2, 10), Math.floor(researchSeconds(2, 0) * 0.7));
+  } finally {
+    setTimeScaleCache(50);
+  }
+});
+
+test('掠夺科技只放大野地资源池；城防回涨按维修科技加速', () => {
+  const base = wildernessPlunderPool('forest', 5);
+  const boosted = wildernessPlunderPool('forest', 5, 40);
+  assert.equal(boosted.gold, Math.floor((base.gold ?? 0) * 1.4));
+  assert.equal(boosted.wood, Math.floor((base.wood ?? 0) * 1.4));
+  setTimeScaleCache(50);
+  try {
+    const now = new Date();
+    const settled = new Date(now.getTime() - 72_000); // 1 个「缩放后小时」
+    assert.equal(settleDurability(0, settled, null, now), 10);
+    assert.equal(settleDurability(0, settled, null, now, 50), 15, '维修 10 级：10 → 15 点/小时');
+  } finally {
+    setTimeScaleCache(50);
+  }
+});
+
+test('世界地图战斗科技：攻击 / 减伤 / 驾驭 / 抛射各按预期生效', () => {
+  const rng = () => 0.5;
+  // 攻击：+15% 全军攻击 → 同回合对守方造成更多损失
+  const plain = simulateBattle({ cavalry: 100 }, { militia: 100 }, { rng, maxRounds: 2 });
+  const buffed = simulateBattle({ cavalry: 100 }, { militia: 100 }, { rng, maxRounds: 2, attackerTech: { atkPercent: 15 } });
+  assert.ok(buffed.defender.losses.militia > plain.defender.losses.militia);
+  // 防护：守方 −15% 受伤 → 同样一击打掉的守军更少（测试固定 1 回合，排除后续存活兵力反击的干扰）
+  const plainOne = simulateBattle({ cavalry: 100 }, { militia: 100 }, { rng, maxRounds: 2 });
+  const protectedRun = simulateBattle({ cavalry: 100 }, { militia: 100 }, { rng, maxRounds: 2, defenderTech: { defPercent: 15 } });
+  assert.ok(protectedRun.defender.losses.militia < plainOne.defender.losses.militia);
+  // 驾驭：骑兵更快进入更高速度档，先手削减对方输出 → 攻方损失更少
+  const ridingRun = simulateBattle({ iron_cavalry: 100 }, { iron_cavalry: 100 }, { rng, maxRounds: 2, attackerTech: { cavalrySpeedPercent: 20 } });
+  const sameSpeed = simulateBattle({ iron_cavalry: 100 }, { iron_cavalry: 100 }, { rng, maxRounds: 2 });
+  assert.ok(ridingRun.attacker.losses.iron_cavalry < sameSpeed.attacker.losses.iron_cavalry, '先手削减对方兵力后再挨打');
+  // 抛射：床弩射程 95 → 104.5，提前进入射程（3 回合内本来打不到）
+  const noRange = simulateBattle({ ballista: 10 }, { militia: 10 }, { rng, maxRounds: 3, siege: true });
+  const rangeRun = simulateBattle({ ballista: 10 }, { militia: 10 }, { rng, maxRounds: 3, siege: true, attackerTech: { rangedRangePercent: 10 } });
+  assert.equal(noRange.attacker.damage, 0);
+  assert.ok(rangeRun.attacker.damage > 0);
 });

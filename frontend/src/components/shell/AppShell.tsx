@@ -14,6 +14,8 @@ import { MapPage } from '../pages/MapPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { StarTowerPage } from '../pages/StarTowerPage';
 import { AccountDialogs, type AccountDialogMode } from './AccountDialogs';
+import { BattlefieldModal } from '../BattlefieldModal';
+import { MarketModal } from '../MarketModal';
 import { BottomBar } from './BottomBar';
 import { ChatWindow } from '../chat/ChatWindow';
 import { Sidebar, type NavBadges } from './Sidebar';
@@ -24,6 +26,8 @@ export function AppShell() {
   const { session, incoming, openWarning, openLeaderboard } = useGame();
   const { page, go, seenReportId, requestExchange } = useNav();
   const [dialog, setDialog] = useState<AccountDialogMode | null>(null);
+  const [battlefieldOpen, setBattlefieldOpen] = useState(false);
+  const [marketOpen, setMarketOpen] = useState(false);
   const city = session.city;
   const onSelectCity = (cityId: string) => void session.switchCity(cityId);
 
@@ -78,6 +82,9 @@ export function AppShell() {
         cityList={session.cityList}
         onSelectCity={onSelectCity}
         switching={city === null}
+        battlefield={session.battlefield.state?.event ?? null}
+        onOpenBattlefield={() => setBattlefieldOpen(true)}
+        onOpenMarket={() => setMarketOpen(true)}
       />
       <main role="导航-工作区" className="nav-work">
         {page === 'overview' ? <OverviewPage /> : null}
@@ -99,6 +106,8 @@ export function AppShell() {
         onOpenAlliance={session.alliance.openPanel}
       />
       <ChatWindow />
+      {battlefieldOpen ? <BattlefieldModal onClose={() => setBattlefieldOpen(false)} /> : null}
+      {marketOpen ? <MarketModal onClose={() => setMarketOpen(false)} /> : null}
       <SeasonOverlay season={session.season} />
       {dialog ? (
         <AccountDialogs

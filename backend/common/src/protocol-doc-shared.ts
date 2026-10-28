@@ -15,6 +15,7 @@ import {
   populationGrowthPerHour,
 } from './rules';
 import { emptyBuildingLevels, productionPerHour, storageCaps } from './production';
+import { emptyTechLevels } from './tech';
 import { atBaseTimeScale } from './time-scale';
 import type { ArmyCounts, CityView } from './protocol';
 import { EMPTY_ARMY } from './protocol-doc-army-consts';
@@ -124,6 +125,8 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     id: CITY_ID,
     name: '主城',
     level: 1,
+    title: '城池',
+    nobility: { index: 0, name: '平民' },
     resources: { ...INITIAL_RESOURCES },
     buildings: { ...INITIAL_BUILDINGS_VIEW },
     levels: { ...INITIAL_LEVELS },
@@ -143,14 +146,19 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     durability: null,
     famousName: null,
     productionBonusPercent: 0,
+    luoyangBonusPercent: 0,
     famousEffect: null,
     starveAt: null,
     mutinyNextAt: null,
     guard: null,
     deploy: { count: 0, limit: 1 },
     tower: null,
-    techs: { farming: 0, carrying: 0, marching: 0, storage: 0, scouting: 0, defense: 0 },
+    techs: emptyTechLevels(),
     recruitQueue: [],
+    defenses: { cap: 0, stock: { trap: 0, chevaux: 0, rolling_log: 0, boulder: 0 }, total: 0, queue: [] },
+    assistIn: [],
+    assistOut: [],
+    assistCap: 5,
     defenseBonus: 0,
     marches: [],
     territory: [],

@@ -26,6 +26,8 @@ import {
   type TechLevels,
 } from '../../common/src/tech';
 import { loadActiveResearch, loadTechLevels, researchView, type TechResearchRow } from '../../common/src/tech-db';
+import { loadActiveDecree } from '../../common/src/luoyang-db';
+import { DECREE_EFFECTS } from '../../common/src/luoyang';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
@@ -55,6 +57,7 @@ export function buildTechState(
     return {
       kind,
       label: info.label,
+      category: info.category,
       level,
       maxLevel: MAX_TECH_LEVEL,
       percentPerLevel: info.percentPerLevel,
@@ -66,7 +69,8 @@ export function buildTechState(
           : {
               level: nextLevel,
               cost: techCost(kind, nextLevel),
-              seconds: researchSeconds(nextLevel),
+              // v72：研究时长按该账号当前「研究」科技等级缩短
+              seconds: researchSeconds(nextLevel, levels.research),
               academyRequired: nextLevel,
               academyOk: academyLevel >= nextLevel,
             },
@@ -130,7 +134,10 @@ export async function handleResearchTech(
       });
       return;
     }
-    const { cost, level, seconds } = verdict;
+    // v79（AISLG-200）：洛阳之主政令「研究」缩短 15%
+    const decree = await loadActiveDecree(client, accountId);
+    const seconds = Math.max(1, Math.ceil(verdict.seconds * (decree?.kind === 'research' ? DECREE_EFFECTS.research.timeMultiplier : 1)));
+    const { cost, level } = verdict;
     await client.query(
       `UPDATE cities SET gold = gold - $2, wood = wood - $3, food = food - $4, stone = stone - $5, iron = iron - $6
        WHERE id = $1`,

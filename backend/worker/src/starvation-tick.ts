@@ -142,11 +142,31 @@ async function evaluateCity(client: pg.PoolClient, cityId: string): Promise<Noti
         }
       }
     }
+    // v74（AISLG-194）：出发城断粮时，协防部队与出发城驻军一起按断粮规则减员
+    const assistLosses: Partial<Record<TroopKind, number>> = {};
+    const assistRes = await client.query(`SELECT id, troops FROM city_assist WHERE from_city_id = $1`, [cityId]);
+    for (const assist of assistRes.rows as Array<{ id: string; troops: Partial<Record<TroopKind, number>> }>) {
+      const cut = applyMutiny(assist.troops ?? {});
+      if (cut.total <= 0) {
+        continue;
+      }
+      for (const kind of TROOP_KINDS) {
+        if (cut.losses[kind]) {
+          assistLosses[kind] = (assistLosses[kind] ?? 0) + (cut.losses[kind] ?? 0);
+        }
+      }
+      if (Object.keys(cut.remaining).length === 0) {
+        await client.query(`DELETE FROM city_assist WHERE id = $1`, [assist.id]);
+      } else {
+        await client.query(`UPDATE city_assist SET troops = $2::jsonb WHERE id = $1`, [assist.id, JSON.stringify(cut.remaining)]);
+      }
+    }
     const detail = {
       cityId,
       cityName: city.name,
       losses: result.losses,
       total: result.total,
+      ...(Object.keys(assistLosses).length > 0 ? { assistLosses } : {}),
       nextAt: new Date(next).toISOString(),
     };
     await insertEvent(client, { accountId: city.account_id, cityId, type: EventType.MUTINY, initiator: null, detail });
@@ -168,6 +188,7 @@ export async function processStarvation(pool: pg.Pool, nowMs: number = Date.now(
         OR EXISTS (SELECT 1 FROM city_army a WHERE a.city_id = c.id AND a.count > 0)
         OR EXISTS (SELECT 1 FROM marches m WHERE m.from_city_id = c.id AND m.status = 'marching')
         OR EXISTS (SELECT 1 FROM world_tiles t WHERE t.owner_city_id = c.id AND t.kind = 'wilderness')
+        OR EXISTS (SELECT 1 FROM city_assist ca WHERE ca.from_city_id = c.id)
      ORDER BY c.id LIMIT $1`,
     [SWEEP_LIMIT],
   );

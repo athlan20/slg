@@ -12,6 +12,8 @@ import type {
   Resources,
 } from './protocol';
 import type { MarchView, TerritoryView } from './protocol-world';
+import type { DefenseStockView } from './protocol-defense';
+import type { AssistOutView, AssistView } from './protocol-assist';
 import type { TechLevels } from './tech';
 
 /** BUILD（op 21）请求载荷：kind 缺失或不是已知建筑类型时返回 INVALID_PARAMS */
@@ -76,8 +78,9 @@ export interface DiscardCityResponseData {
 
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
-  /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded';
+  /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57）；
+   *  assist_changed=协防部队入驻 / 召回 / 遣返 / 自动遣返（v74，AISLG-194；收到后重新 GET_STATE / GET_TILE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -208,6 +211,34 @@ export const EventType = {
   CITY_CONQUERED: 'city_conquered',
   /** v61（AISLG-165）：名下野地储量采空（detail = { x, y, terrain, level, at }；驻军仍在时只按恢复速度采集） */
   WILDERNESS_DEPLETED: 'wilderness_depleted',
+  /** v73（AISLG-193）：开始打造城防器械（detail = { kind, count, cost, dueAt }） */
+  DEFENSE_CRAFT_STARTED: 'defense_craft_started',
+  /** v73：打造进入排队（detail = { kind, count, cost }） */
+  DEFENSE_CRAFT_QUEUED: 'defense_craft_queued',
+  /** v73：打造完成入库（detail = { kind, count, stock, cap }） */
+  DEFENSE_CRAFT_COMPLETED: 'defense_craft_completed',
+  /** v73：打造被取消（detail = { kind, count, refund }） */
+  DEFENSE_CRAFT_CANCELLED: 'defense_craft_cancelled',
+  /** v74（AISLG-194）：协防部队入驻盟友城（detail = { assistId, hostCityId, hostCityName, hostUsername, troops }） */
+  ASSIST_ARRIVED: 'assist_arrived',
+  /** v74：协防部队离开盟友城返程（detail = { assistId, hostCityId, cause, troops, returning }；cause = recall / expel / ally_left / city_discarded / wiped；wiped 时 troops 为空、returning 为 null，没有返程行军） */
+  ASSIST_RETURNED: 'assist_returned',
+  /** v75（AISLG-198）：报名剧本战场（detail = { eventId, camp }） */
+  BATTLEFIELD_SIGNED_UP: 'battlefield_signed_up',
+  /** v75：带部队入场（detail = { eventId, camp, troops, population }） */
+  BATTLEFIELD_ENTERED: 'battlefield_entered',
+  /** v75：战场结算奖励入账（detail = { eventId, camp, outcome, merit, rank, reward }） */
+  BATTLEFIELD_REWARD: 'battlefield_reward',
+  /** v75：战场商店兑换（detail = { eventId, item, cost, reward }） */
+  BATTLEFIELD_SHOP: 'battlefield_shop',
+  /** v80（AISLG-199）：赤壁据点技能（detail = { eventId, skill: fire|chain, strongholdId, cost, ... }） */
+  BATTLEFIELD_SKILL: 'battlefield_skill',
+  /** v78（AISLG-196）：交易所挂单 / 成交 / 撤单 / 过期（detail 见各接口） */
+  MARKET_ORDER_CREATED: 'market_order_created',
+  MARKET_ORDER_FILLED: 'market_order_filled',
+  MARKET_ORDER_CANCELLED: 'market_order_cancelled',
+  MARKET_ORDER_EXPIRED: 'market_order_expired',
+  MARKET_TRADE: 'market_trade',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;
@@ -241,6 +272,10 @@ export interface CityView {
   name: string;
   /** 城池数字等级（v7；提升条件与作用待设计，当前恒为 1） */
   level: number;
+  /** 城池称号（v76，AISLG-197）：按官府等级 1–4 城池 / 5–9 县城 / 10–14 郡城 / 15–19 州城 / 20+ 都城（分城最高州城） */
+  title: string;
+  /** 账号爵位（v76，AISLG-197）：{ index（0 = 平民）, name } */
+  nobility: { index: number; name: string };
   resources: Resources;
   /** 按建筑类型统计的已建数量（v3 新增；v5 单实例规则下为 0 或 1） */
   buildings: BuildingCounts;
@@ -283,6 +318,8 @@ export interface CityView {
   famousName: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
+  /** 洛阳之主联盟的全员产量加成（v79，AISLG-200；0 或 5，已计入 production） */
+  luoyangBonusPercent: number;
   /** 名城独有效果（v62，AISLG-166）：只有占领者享受，效果跟着城走；普通城为 null。守城 / 箭塔 / 仓库 / 行军 / 野地产出的口径见 FamousEffectView */
   famousEffect: FamousEffectView | null;
   /** 城守（v36，AISLG-115）：该城任命的武将（ASSIGN_HERO 任命 / 撤任）；未任为 null。
@@ -318,6 +355,14 @@ export interface CityView {
   marches: MarchView[];
   /** 本城占领的野地（v12 新增；含占领加成与驻军采集速率，production 已计入两者） */
   territory: TerritoryView[];
+  /** 城防器械（v73，AISLG-193）：库存、上限（城墙等级 × 60）与打造队列 */
+  defenses: DefenseStockView;
+  /** 协防（v74，AISLG-194）：驻扎在本城的盟友部队（城主视图；列出谁在协防、带了多少兵） */
+  assistIn: AssistView[];
+  /** 本城派出、正在盟友城里驻扎的部队（派出方视图，可召回）；占用校场出征名额 */
+  assistOut: AssistOutView[];
+  /** 本城可接收的协防部队上限（当前 5 支；洛阳 10 支留待洛阳争夺需求） */
+  assistCap: number;
   /** 建造队列（v4 新增）：第 1 项为在建（无在建时为空数组），其余为排队，按入队顺序 */
   queue: BuildView[];
   /** 兼容字段：当前在建建筑（= queue[0]，仅当其 status 为 building；无在建为 null） */

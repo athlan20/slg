@@ -17,6 +17,8 @@ import { useMapJump } from '../chat/useMapJump';
 import { Modal } from '../ui/Modal';
 import { AllianceFooter, AllianceMemberPanel } from './AllianceMemberPanel';
 import { AllianceMarkPanel } from './AllianceMarkPanel';
+import { AllianceDiplomacyPanel } from './AllianceDiplomacyPanel';
+import { LuoyangPanel } from './LuoyangPanel';
 import { AllianceNoPanel } from './AllianceNoPanel';
 import { AllianceRecruitPanel } from './AllianceRecruitPanel';
 import { RoleTag } from './allianceParts';
@@ -32,7 +34,7 @@ interface AllianceModalProps {
   onClose: () => void;
 }
 
-type AllianceTab = 'members' | 'marks' | 'recruit';
+type AllianceTab = 'members' | 'diplomacy' | 'luoyang' | 'marks' | 'recruit';
 
 const TAB_CLASS = (on: boolean) =>
   `cursor-pointer rounded border px-2.5 py-0.5 text-[13px] transition-colors ${
@@ -106,6 +108,12 @@ export function AllianceModal({ alliance, marks, myId, city, cityList, onClose }
             <button type="button" role="联盟弹窗-页签-成员" aria-pressed={activeTab === 'members'} onClick={() => setTab('members')} className={TAB_CLASS(activeTab === 'members')}>
               {COPY.tabs.members}
             </button>
+            <button type="button" role="联盟弹窗-页签-外交" aria-pressed={activeTab === 'diplomacy'} onClick={() => setTab('diplomacy')} className={TAB_CLASS(activeTab === 'diplomacy')}>
+              {COPY.diplomacy.title}
+            </button>
+            <button type="button" role="联盟弹窗-页签-洛阳" aria-pressed={activeTab === 'luoyang'} onClick={() => setTab('luoyang')} className={TAB_CLASS(activeTab === 'luoyang')}>
+              洛阳
+            </button>
             <button type="button" role="联盟弹窗-页签-标记" aria-pressed={activeTab === 'marks'} onClick={() => setTab('marks')} className={TAB_CLASS(activeTab === 'marks')}>
               {COPY.tabs.marks}
             </button>
@@ -117,6 +125,8 @@ export function AllianceModal({ alliance, marks, myId, city, cityList, onClose }
           </div>
           <div role="联盟弹窗-内容" className="flex min-h-0 flex-1 flex-col">
             {activeTab === 'members' ? <AllianceMemberPanel alliance={alliance} state={state} myId={myId} /> : null}
+            {activeTab === 'diplomacy' ? <AllianceDiplomacyPanel alliance={alliance} state={state} /> : null}
+            {activeTab === 'luoyang' ? <LuoyangPanel /> : null}
             {activeTab === 'marks' ? (
               <AllianceMarkPanel
                 marks={marks}

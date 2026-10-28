@@ -37,7 +37,7 @@ export function TargetChatActions({ x, y, detail, accountId }: { x: number; y: n
         <ChatShareButton
           role="选中详情-私聊"
           label={CHAT_COPY.share.dm}
-          onClick={() => chat.openPrivate({ accountId: owner.accountId, username: owner.username })}
+          onClick={() => chat.openPrivate({ accountId: owner.accountId, username: owner.username, nobility: owner.nobility, nobilityName: owner.nobilityName })}
         />
       ) : null}
     </div>

@@ -13,7 +13,8 @@
 // - 锁序与全栈统一：cities → world_tiles（本文件只做结算，锁由调用方持有）。
 
 import { degradeGarrison } from '../../common/src/scout-detail';
-import type { TechLevels } from '../../common/src/tech';
+import { combatTechBonus, type TechLevels } from '../../common/src/tech';
+import { loadTechLevels } from '../../common/src/tech-db';
 import pg from 'pg';
 import { EventType, RESOURCE_KEYS, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
@@ -27,6 +28,7 @@ import {
   type BattleResult,
 } from '../../common/src/battle';
 import type { ScoutIntel } from '../../common/src/protocol-battle';
+import type { DefenseScoutView } from '../../common/src/protocol-defense';
 import { famousEncounter } from '../../common/src/famous-city';
 import { clearNativeGarrison, loadNativeGarrison, saveNativeGarrison } from '../../common/src/native-garrison';
 import { grantUnlock } from '../../common/src/hero-friendship-db';
@@ -78,6 +80,8 @@ export async function resolveBattleArrival(
     wallDefensePercent: wall,
     siege: tile.kind === 'npc_city',
     attackerHero: hero?.engine ?? null,
+    // v72（AISLG-192）：世界地图战斗吃攻方科技乘数；NPC 守方不吃
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
   });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   if (!npc) {
@@ -249,7 +253,7 @@ export async function resolveNpcWildernessRaid(
   target: NpcWildernessRaidTarget,
 ): Promise<void> {
   const { tile, level, garrison, accountId, cityId } = target;
-  const raid = resolveNpcRaid(garrison, level);
+  const raid = resolveNpcRaid(garrison, level, undefined, combatTechBonus(await loadTechLevels(client, accountId)));
   const npcPower = armyPower(npcRaidArmy(level));
   const garrisonPower = armyPower(garrison);
   const reportId = await saveBattleReport(
@@ -326,6 +330,8 @@ export function buildScoutIntel(
   techs?: TechLevels,
   /** v38（AISLG-122）：玩家城目标的城墙减伤（城墙 + 守方城防科技，守城战同口径）；其余目标不传 */
   pvpWallPercent?: number,
+  /** v73（AISLG-193）：玩家城目标的城防器械（已按侦察科技降级）；野地 / NPC 城为 null */
+  defenses?: DefenseScoutView | null,
 ): ScoutIntel {
   const npc = tile.kind === 'npc_city' ? (tile.npc as NpcCitySnapshot | null) : null;
   // 名城：情报即当前阶段口径（外围 = 野战无城墙，城守 = 攻城战含城墙）
@@ -346,6 +352,7 @@ export function buildScoutIntel(
       ? pvpWallPercent
       : npc && (!encounter || encounter.siege) ? wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0) : 0,
     npcStock: npc ? npc.stock ?? null : null,
+    ...(tile.kind === 'city' ? { defenses: defenses ?? null } : {}),
     scoutedAt: at,
     ...(encounter && npc?.famous ? { famous: { name: npc.famous.name, stage: encounter.stage } } : {}),
   };

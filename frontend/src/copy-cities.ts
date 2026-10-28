@@ -65,6 +65,16 @@ export const CITY_COPY = {
     hintOuter: '名城分两阶段：先出征清理外围（打赢无战利品），外围清空后限时内再出征攻城守；外围未清时不能直接占领',
     hintKeeper: '外围已清空：限时内出征攻城守——掠夺库存或占领变分城（占领独享产量加成）；超时外围恢复满编',
   },
+  nobility: {
+    label: '称号 / 爵位',
+    meta: (title: string, name: string) => `${title} · ${name}`,
+    claim: '领取今日俸禄',
+    claimed: '今日俸禄已领',
+    noNobility: '平民暂无俸禄',
+    claimFailed: '领取俸禄失败，请稍后再试',
+    salary: (gold: number) => `今日俸禄 ${gold} 金`,
+    promoted: (actor: string, name: string) => `${actor} 晋爵为${name}`,
+  },
   errors: {
     governmentTooLow: '占领 NPC 城需要主城官府达到指定等级（见分城名额提示）',
     branchLimit: '分城名额已满（上限 = 主城官府等级 ÷ 2，向下取整，名城也计入；升级主城官府或放弃一座分城可腾出名额）',

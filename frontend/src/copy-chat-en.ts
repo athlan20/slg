@@ -34,6 +34,9 @@ export const CHAT_COPY_EN = {
     leaderTransfer: (from: string, to: string) => `${from} handed the leadership to ${to}`,
     leaderInactive: (from: string, to: string) => `Leader ${from} has been inactive for too long; leadership passed to ${to}`,
     markCreated: (name: string, kind: string, x: number, y: number) => `${name} placed a ${kind} marker at (${x},${y})`,
+    diplomacyFriendly: (name: string, other: string) => `${name} formed a friendly alliance with ${other}`,
+    diplomacyHostile: (name: string, other: string) => `${name} declared ${other} hostile`,
+    diplomacyNeutral: (name: string, other: string) => `${name} ended diplomacy with ${other}`,
   },
   world: {
     empty: 'Nobody has said anything in World yet — say hi',

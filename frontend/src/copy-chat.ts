@@ -34,6 +34,9 @@ export const CHAT_COPY = {
     leaderTransfer: (from: string, to: string) => `${from} 把盟主转给了 ${to}`,
     leaderInactive: (from: string, to: string) => `盟主 ${from} 长时间未上线，盟主转给了 ${to}`,
     markCreated: (name: string, kind: string, x: number, y: number) => `${name} 在 (${x},${y}) 打了${kind}标记`,
+    diplomacyFriendly: (name: string, other: string) => `${name} 与「${other}」结为友盟`,
+    diplomacyHostile: (name: string, other: string) => `${name} 宣布「${other}」为敌对联盟`,
+    diplomacyNeutral: (name: string, other: string) => `${name} 解除了与「${other}」的外交关系`,
   },
   world: {
     empty: '世界频道还没有消息，来打个招呼吧',

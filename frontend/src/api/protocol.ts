@@ -3,7 +3,7 @@
 
 import type { CityGuardView } from './protocol-hero';
 
-export const PROTOCOL_VERSION = 70;
+export const PROTOCOL_VERSION = 79;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -56,7 +56,7 @@ export const Op = {
   GET_SERVER_BROADCASTS: 42,
   /** 查询全服排行榜（v23 AISLG-61）：三榜快照，前 50 名 + 我的名次 */
   GET_LEADERBOARD: 43,
-  /** 查询科技状态（v27 AISLG-77）：6 项科技等级 / 下一级成本与耗时 / 进行中的研究 */
+  /** 查询科技状态（v27 AISLG-77；v72 AISLG-192 起 16 项）：等级 / 下一级成本与耗时 / 进行中的研究 */
   GET_TECHS: 44,
   /** 发起科技研究（v27 AISLG-77）：data.tech；账号同一时间只研究一项，需书院 */
   RESEARCH_TECH: 45,
@@ -176,6 +176,40 @@ export const Op = {
   CANCEL_TRAINING: 115,
   /** 提前解除主动免战（v71，AISLG-190）：本周免费次数不返还；被动免战不可解除 */
   CANCEL_TRUCE: 116,
+  CRAFT_DEFENSE: 117,
+  CANCEL_DEFENSE_CRAFT: 118,
+  DISMISS_ASSIST: 119,
+  /** 查询剧本战场（v75，AISLG-198）：当前 / 最近一场（官渡 / 讨董 / 赤壁）、据点、我的队伍与军功、军功榜、商店 */
+  GET_BATTLEFIELD: 120,
+  /** 报名剧本战场（v75）：data.camp = yuan | cao */
+  SIGNUP_BATTLEFIELD: 121,
+  /** 带部队入场（v75）：data.troops；开战前，按人口最多 3000 */
+  ENTER_BATTLEFIELD: 122,
+  /** 拆分战场队伍（v75）：data.squadId + troops；每人最多 3 队 */
+  SPLIT_BATTLEFIELD_SQUAD: 123,
+  /** 战场内行军 / 攻打据点（v75）：data.squadId + strongholdId 或 x / y */
+  MARCH_BATTLEFIELD_SQUAD: 124,
+  /** 战场商店兑换（v75）：data.item（+ hero_exp 时的 heroId） */
+  BUY_BATTLEFIELD_ITEM: 125,
+  /** 查询声望与爵位、今日俸禄状态（v76，AISLG-197） */
+  GET_NOBILITY: 126,
+  /** 领取每日爵位俸禄（v76：北京日每天一次，平民无俸禄） */
+  CLAIM_NOBILITY_SALARY: 127,
+  ALLIANCE_DIPLOMACY_INVITE: 128,
+  ALLIANCE_DIPLOMACY_RESPOND: 129,
+  ALLIANCE_DIPLOMACY_END: 130,
+  ALLIANCE_DIPLOMACY_HOSTILE: 131,
+  GET_ALLIANCE_DIPLOMACY: 132,
+  GET_MARKET: 133,
+  CREATE_MARKET_ORDER: 134,
+  BUY_MARKET_ORDER: 135,
+  CANCEL_MARKET_ORDER: 136,
+  GET_LUOYANG: 137,
+  PUBLISH_DECREE: 138,
+  /** 赤壁火攻（v80，AISLG-199）：data.strongholdId；东南风、孙刘方，花 300 军功 */
+  FIRE_BATTLEFIELD_STRONGHOLD: 139,
+  /** 赤壁连锁战船（v80，AISLG-199）：data.strongholdId；曹方己方据点，花 200 军功，持续 6 小时 */
+  CHAIN_BATTLEFIELD_STRONGHOLD: 140,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -230,6 +264,9 @@ export const Op = {
   PUSH_ALLIANCE_STATE: 2024,
   /** 联盟地图标记变化推送（v69，AISLG-184）：reason = added / removed */
   PUSH_ALLIANCE_MARK: 2025,
+  PUSH_DEFENSE_STATE: 2026,
+  /** 剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198）：全部在线连接收到 */
+  PUSH_BATTLEFIELD_STATE: 2027,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
@@ -325,6 +362,29 @@ export type ErrorCode =
   | 'PASSIVE_TRUCE_NOT_CANCELLABLE'
   | 'TILE_PROTECTED'
   | 'ALLY_NOT_ATTACKABLE'
+  | 'DIPLOMACY_LIMIT'
+  | 'DIPLOMACY_COOLDOWN'
+  | 'DIPLOMACY_EXISTS'
+  | 'DIPLOMACY_INVITE_NOT_FOUND'
+  | 'LUOYANG_CLOSED'
+  | 'DECREE_NOT_HOLDER'
+  | 'DECREE_COOLDOWN'
+  | 'BATTLEFIELD_STRONGHOLD_LOCKED'
+  | 'BATTLEFIELD_WIND_MISMATCH'
+  | 'BATTLEFIELD_FIRE_COOLDOWN'
+  | 'BATTLEFIELD_CHAIN_ACTIVE'
+  | 'BATTLEFIELD_SKILL_UNAVAILABLE'
+  | 'BATTLEFIELD_NOT_ENTERED'
+  | 'MARKET_LOCKED'
+  | 'PRICE_OUT_OF_RANGE'
+  | 'ORDER_LIMIT'
+  | 'DAILY_TRADE_LIMIT'
+  | 'ORDER_NOT_FOUND'
+  | 'MARKET_ALLY_ONLY'
+  | 'ORDER_NOT_CANCELLABLE'
+  | 'NOBILITY_TOO_LOW'
+  | 'NOBILITY_SALARY_CLAIMED'
+  | 'NOBILITY_SALARY_NONE'
   | 'ALLIANCE_MARK_LIMIT'
   | 'ALLIANCE_MARK_EXISTS'
   | 'WX_TICKET_INVALID'
@@ -639,6 +699,7 @@ export type {
 export { TERRAIN_KINDS } from './protocol-world';
 export type {
   TechKind,
+  TechCategory,
   TechLevels,
   TechEntryView,
   ResearchView,
@@ -685,6 +746,8 @@ export type {
   YellowTurbanPushData,
 } from './protocol-yt';
 import type { TechLevels } from './protocol-tech';
+import type { DefenseStockView } from './protocol-defense';
+import type { AssistOutView, AssistView } from './protocol-assist';
 import type { FamousEffectView, MarchView, TerritoryView } from './protocol-world';
 
 /**
@@ -813,10 +876,16 @@ export interface CityView {
   famousName: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
+  /** 洛阳之主联盟的全员产量加成（v79 AISLG-200；0 或 5，已计入 production） */
+  luoyangBonusPercent: number;
   /** 名城独有效果（v62，AISLG-166）：只有占领者享受、跟着城走；普通城为 null */
   famousEffect: FamousEffectView | null;
   /** 城池等级（v24 起 = 该城官府等级） */
   level: number;
+  /** 城池称号（v76，AISLG-197）：城池 / 县城 / 郡城 / 州城 / 都城（分城最高州城） */
+  title: string;
+  /** 账号爵位（v76）：{ index（0 = 平民）, name } */
+  nobility: { index: number; name: string };
   resources: Resources;
   /** 按建筑类型统计的已建数量（单实例规则下为 0 或 1） */
   buildings: BuildingCounts;
@@ -852,6 +921,14 @@ export interface CityView {
   durability: number | null;
   /** 征兵队列（v11）：第 1 项为征募中（dueAt 非空），其余为排队；已取消的条目不在其中 */
   recruitQueue: RecruitView[];
+  /** 城防器械（v73）：库存、上限（城墙等级 × 60）与打造队列 */
+  defenses: DefenseStockView;
+  /** 协防（v74）：驻扎在本城的盟友部队（城主视图） */
+  assistIn: AssistView[];
+  /** 本城派出、正在盟友城里驻扎的部队（派出方视图，可召回；占校场名额） */
+  assistOut: AssistOutView[];
+  /** 本城可接收的协防部队上限 */
+  assistCap: number;
   /** 城墙守城防御加成（v11，占位 = 城墙等级 × 5，百分数数值；战斗结算上线后由其消费） */
   defenseBonus: number;
   /** 账号科技等级（v27 AISLG-77；全账号共享，已计入 production / storage / defenseBonus；负重与行军加成由客户端折算） */
@@ -972,6 +1049,25 @@ export interface CancelRecruitResponseData {
   recruit: RecruitView;
 }
 
+// 盟友协防（v74，AISLG-194）的类型在 protocol-assist.ts
+export type { AssistView, AssistOutView, DismissAssistRequestData, DismissAssistResponseData } from './protocol-assist';
+export { ASSIST_MAX_PER_CITY } from './protocol-assist';
+
+// 城防器械（v73，AISLG-193）的类型与数值镜像在 protocol-defense.ts
+export type {
+  DefenseKind,
+  DefenseCraftView,
+  DefenseStockView,
+  DefenseUseView,
+  DefenseScoutView,
+  CraftDefenseRequestData,
+  CraftDefenseResponseData,
+  CancelDefenseCraftRequestData,
+  CancelDefenseCraftResponseData,
+  DefenseStatePushData,
+} from './protocol-defense';
+export { DEFENSE_KINDS, DEFENSE_INFO, DEFENSE_STOCK_PER_WALL_LEVEL } from './protocol-defense';
+
 /** PUSH_RECRUIT_STATE（op 2004）推送载荷 */
 export interface RecruitStatePushData {
   /** recruit_started=开始（或队首激活）；recruit_queued=入队；recruit_completed=完成（兵力入城）；recruit_cancelled=排队条目被取消 */
@@ -1046,3 +1142,58 @@ export type {
   StarTowerChallengeResponseData,
   GetStarTowerReportsResponseData,
 } from './protocol-star-tower';
+
+// 剧本战场（v75，AISLG-198）的载荷类型
+export type {
+  BattlefieldCamp,
+  BattlefieldSquadStatus,
+  BattlefieldStrongholdKind,
+  BattlefieldSquadView,
+  BattlefieldStrongholdView,
+  BattlefieldCampView,
+  BattlefieldEventView,
+  BattlefieldMeritEntryView,
+  BattlefieldMeView,
+  BattlefieldShopItem,
+  BattlefieldShopItemView,
+  BattlefieldRewardTierView,
+  BattlefieldProgressRewardView,
+  BattlefieldScript,
+  GetBattlefieldResponseData,
+  BattlefieldPushData,
+  EnterBattlefieldRequestData,
+  BuyBattlefieldItemResponseData,
+} from './protocol-battlefield';
+
+// 声望与爵位（v76，AISLG-197）
+export type { NobilityStatusView, GetNobilityResponseData, ClaimNobilitySalaryResponseData } from './protocol-nobility';
+
+// 联盟外交（v77，AISLG-195）
+export type {
+  AllianceRelationKind,
+  AllianceDiplomacyEntryView,
+  AllianceFriendInviteView,
+  GetAllianceDiplomacyResponseData,
+  AllianceDiplomacyTargetRequestData,
+  AllianceDiplomacyInviteRequestData,
+  AllianceDiplomacyRespondRequestData,
+} from './protocol-alliance';
+
+// 玩家交易所（v78，AISLG-196）
+export type {
+  MarketSellerView,
+  MarketCityView,
+  MarketOrderView,
+  MarketTradeView,
+  MarketLimitsView,
+  GetMarketResponseData,
+  CreateMarketOrderResponseData,
+  BuyMarketOrderResponseData,
+  CancelMarketOrderResponseData,
+} from './protocol-market';
+export { MARKET_RESOURCES, MARKET_BUY_KINDS } from './protocol-market';
+export type { MarketResource, MarketBuyKind } from './protocol-market';
+
+// 洛阳争夺（v79，AISLG-200）
+export type { LuoyangOwnerView, LuoyangDecreeView, LuoyangStatusView, PublishDecreeResponseData, DecreeKind } from './protocol-luoyang';
+export { DECREE_KINDS } from './protocol-luoyang';

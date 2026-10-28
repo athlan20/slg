@@ -39,6 +39,12 @@ export function systemText(system: ChatSystemView | null, lines: SystemLines, ki
         : lines.leaderTransfer(system.from.username, system.to.username);
     case 'alliance_mark_created':
       return lines.markCreated(system.player.username, kindLabel[system.markKind] ?? system.markKind, system.x, system.y);
+    case 'alliance_diplomacy_friendly':
+      return lines.diplomacyFriendly(system.player.username, system.otherAllianceName);
+    case 'alliance_diplomacy_hostile':
+      return lines.diplomacyHostile(system.player.username, system.otherAllianceName);
+    case 'alliance_diplomacy_neutral':
+      return lines.diplomacyNeutral(system.player.username, system.otherAllianceName);
     default:
       return null;
   }

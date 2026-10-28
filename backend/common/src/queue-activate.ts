@@ -5,7 +5,14 @@
 import type pg from 'pg';
 import { MAX_ACTIVE_BUILDS, buildTimeBasis } from './rules';
 import { MAX_ACTIVE_RECRUITS } from './troops';
+import { MAX_ACTIVE_DEFENSE_CRAFTS } from './city-defense';
 import { getTimeScale } from './time-scale';
+import { TECH_INFO } from './tech';
+
+/** 队列激活时按城所属账号的科技等级现算折扣（与 rules / troops 的出口同口径）：
+ *  construction 缩建造时长、drill 缩征兵时长（每级 3%，SQL 里按 level × 百分数算） */
+const CONSTRUCTION_PER_LEVEL = Math.abs(TECH_INFO.construction.percentPerLevel);
+const DRILL_PER_LEVEL = Math.abs(TECH_INFO.drill.percentPerLevel);
 
 /**
  * 把排队建造转入在建（每城最多 MAX_ACTIVE_BUILDS 条）。cityId 为 null 时覆盖全部城（Worker 用）；
@@ -20,7 +27,10 @@ export async function activateQueuedBuilds<T = Record<string, unknown>>(client: 
         due_at = clock_timestamp() + make_interval(secs => GREATEST(1, FLOOR(
           $1::float8 * (CASE
             WHEN b.level <= 10 THEN (CASE WHEN b.level > 1 THEN b.level - 1 ELSE 1 END)
-            ELSE 9 * power(1.3::float8, b.level - 10) END) / $3::float8)))
+            ELSE 9 * power(1.3::float8, b.level - 10) END)
+          * (1 - $5::float8 * COALESCE((
+              SELECT t.level FROM account_techs t JOIN cities c ON c.account_id = t.account_id
+              WHERE c.id = b.city_id AND t.tech = 'construction'), 0) / 100.0) / $3::float8)))
      WHERE b.id IN (
        SELECT id FROM (
          SELECT q.id, row_number() OVER (PARTITION BY q.city_id ORDER BY q.started_at, q.id) AS rn
@@ -33,7 +43,33 @@ export async function activateQueuedBuilds<T = Record<string, unknown>>(client: 
        ) ranked WHERE ranked.rn <= $2
      )
      RETURNING *`,
-    [buildBasis.seconds, MAX_ACTIVE_BUILDS, buildBasis.scale, cityId],
+    [buildBasis.seconds, MAX_ACTIVE_BUILDS, buildBasis.scale, cityId, CONSTRUCTION_PER_LEVEL],
+  );
+  return act.rows as T[];
+}
+
+/**
+ * 把排队打造转入打造中（每城最多 MAX_ACTIVE_DEFENSE_CRAFTS 条）。cityId 为 null 时覆盖全部城。
+ * 时长 = max(1, 单件基准快照 × 件数 ÷ time_scale)——下限作用于批次总时长。
+ */
+export async function activateQueuedDefenseCrafts<T = Record<string, unknown>>(client: pg.PoolClient, cityId: string | null): Promise<T[]> {
+  const act = await client.query(
+    `UPDATE defense_crafts r SET status = 'crafting',
+        started_at = clock_timestamp(),
+        due_at = clock_timestamp() + make_interval(secs => GREATEST(1, FLOOR(r.unit_seconds * r.count / $1::float8)))
+     WHERE r.id IN (
+       SELECT id FROM (
+         SELECT q.id, row_number() OVER (PARTITION BY q.city_id ORDER BY q.started_at, q.id) AS rn
+         FROM defense_crafts q
+         WHERE q.status = 'queued'
+           AND ($3::uuid IS NULL OR q.city_id = $3::uuid)
+           AND NOT EXISTS (
+             SELECT 1 FROM defense_crafts a WHERE a.city_id = q.city_id AND a.status = 'crafting'
+           )
+       ) ranked WHERE ranked.rn <= $2
+     )
+     RETURNING *`,
+    [getTimeScale(), MAX_ACTIVE_DEFENSE_CRAFTS, cityId],
   );
   return act.rows as T[];
 }
@@ -48,7 +84,11 @@ export async function activateQueuedRecruits<T = Record<string, unknown>>(client
   const act = await client.query(
     `UPDATE recruits r SET status = 'recruiting',
         started_at = clock_timestamp(),
-        due_at = clock_timestamp() + make_interval(secs => GREATEST(1, FLOOR(r.unit_seconds * r.count / $1::float8)))
+        due_at = clock_timestamp() + make_interval(secs => GREATEST(1, FLOOR(
+          r.unit_seconds * r.count
+          * (1 - $4::float8 * COALESCE((
+              SELECT t.level FROM account_techs t JOIN cities c ON c.account_id = t.account_id
+              WHERE c.id = r.city_id AND t.tech = 'drill'), 0) / 100.0) / $1::float8)))
      WHERE r.id IN (
        SELECT id FROM (
          SELECT q.id, row_number() OVER (PARTITION BY q.city_id ORDER BY q.started_at, q.id) AS rn
@@ -61,7 +101,7 @@ export async function activateQueuedRecruits<T = Record<string, unknown>>(client
        ) ranked WHERE ranked.rn <= $2
      )
      RETURNING *`,
-    [recruitScale, MAX_ACTIVE_RECRUITS, cityId],
+    [recruitScale, MAX_ACTIVE_RECRUITS, cityId, DRILL_PER_LEVEL],
   );
   return act.rows as T[];
 }

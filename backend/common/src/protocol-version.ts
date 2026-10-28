@@ -545,5 +545,75 @@
  *   新增 CANCEL_TRAINING（op 115）取消历练：武将立刻回家、不给经验，推送 PUSH_HERO_STATE reason=training_cancelled；无历练中的武将返回新错误码 TRAINING_NOT_CANCELLABLE。
  *   新增 CANCEL_TRUCE（op 116）提前解除主动免战：立即可被攻击、可出兵，本周免费次数不返还（事件 truce_cancelled）；无生效中的主动免战返回 TRUCE_NOT_ACTIVE；
  *   城池处于被动免战（被攻破后 4 小时）且无主动免战时返回 PASSIVE_TRUCE_NOT_CANCELLABLE（被动免战不可主动解除）。
+ * v72（科技扩到十六项，AISLG-192，只加不改）：GET_TECHS 的 techs 从 6 项扩到 16 项——新增 drill 练兵 / combat 战斗 /
+ *   protection 防护 / riding 驾驭 / archery 抛射 / supply 补给 / construction 建筑 / research 研究 / looting 掠夺 / repair 维修，
+ *   每项 10 级、账号共享、同一时间只研究一项（规则与成本 / 时长公式沿用 v27）。TechEntryView 新增 category（development 发展 /
+ *   military 军事，前端分两栏），percentPerLevel 与 currentPercent 改为带符号（时长 / 耗粮 / 受伤类为负数）。
+ *   战斗 / 防护 / 驾驭 / 抛射只在世界地图战斗中生效（攻守双方各自一套；竞技场与将星塔不传，NPC 一方不传），且与武将加成叠两层
+ *   （武将 20% 封顶不变）；征兵 / 建造 / 研究时长、部队耗粮、野地掠夺池、分城城防回涨分别按对应科技折扣 / 加成。
+ *   老账号的新科技从 0 级开始（account_techs 无行即 0），其余协议无变化。
+ * v73（城防器械，AISLG-193，只加不改）：城墙里新增四种一次性守城器械（陷阱 trap / 拒马 chevaux / 滚木 rolling_log / 擂石 boulder）：
+ *   新增 CRAFT_DEFENSE（op 117）打造（一次下单若干件，库存上限 = 城墙等级 × 60 四种共用，队列 1 在造 + 2 排队）、
+ *   CANCEL_DEFENSE_CRAFT（op 118）取消（排队中 / 打造中都可，成本全额返还）与 PUSH_DEFENSE_STATE（op 2026）；
+ *   CityView 新增 defenses（cap / stock / total / queue）。守城战（主城与分城，对手为 NPC 或玩家）自动按需使用：
+ *   陷阱 / 拒马开战时结算，滚木 / 擂石在攻方对应兵堆第一次贴墙时结算，用量与杀伤写进战报的 defenses 字段，
+ *   库存由 Worker 结算方在同一事务扣减。ScoutIntel / TileDetailView 新增 defenses（按侦察科技三档：rough 有 / 无、
+ *   kinds 种类、exact 件数）。新增错误码 WALL_NOT_BUILT / DEFENSE_STOCK_FULL / DEFENSE_QUEUE_FULL / DEFENSE_NOT_CANCELLABLE；
+ *   新表 city_defenses / defense_crafts（换季清空），事件 defense_craft_*（四类）。
+ * v74（盟友协防，AISLG-194，只加不改）：MARCH 新增 task='assist'——目标只能是盟友的主城 / 分城，部队到达后驻扎在对方城里
+ *   （每人每城最多 1 支、每城最多 5 支，在途也算；占派出城校场名额、耗粮由出发城按野外 2 倍承担）。
+ *   守城战里协防部队与城主驻军合并成守方（各方科技只作用于各自部队、城守武将只加成城主部队），
+ *   战后伤亡按同兵种开战数量比例拆分（余数归城主），协防方各收到一份带 assistLosses 的战报；协防方也收到来袭预警。
+ *   新增 DISMISS_ASSIST（op 119，派出方召回 / 城主遣返，生成返程行军）；CityView 新增 assistIn / assistOut / assistCap，
+ *   TileDetailView 新增 assists（自己的城与盟友的城可见）；PUSH_CITY_STATE 新增 reason=assist_changed。
+ *   退盟 / 被踢 / 解散与城主放弃分城时相关协防部队自动遣返，分城被占领时协防部队随城覆灭（assist_returned cause=wiped）；新增错误码 ASSIST_NOT_ALLY / ASSIST_LIMIT / ASSIST_NOT_FOUND；
+ *   新表 city_assist（换季清空），事件 assist_arrived / assist_returned。
+ * v75（剧本战场·官渡，AISLG-198，只加不改）：新增 GET_BATTLEFIELD（op 120）查询当前 / 最近一场官渡、9 个据点、
+ *   我的队伍与军功、军功榜前 10、战场商店；SIGNUP_BATTLEFIELD（121，选袁绍军 / 曹操军，主城官府 ≥ 5，
+ *   一方超过另一方 1.5 倍且多 5 人时暂停报名）、ENTER_BATTLEFIELD（122，开战前带一支部队入场，按人口最多 3000、
+ *   从主城扣兵）、SPLIT_BATTLEFIELD_SQUAD（123，每人最多 3 队）、MARCH_BATTLEFIELD_SQUAD（124，战场内行军 / 攻打据点，
+ *   每格 60 秒现实时间、不受全局缩放）与 BUY_BATTLEFIELD_ITEM（125，军功换资源包 / 武将经验 / 兵）。
+ *   日程按北京时间现实时间：每周二 20:00 报名、周三 20:00 开战、周四 20:00 结束；30×30 独立地图，中间一条河只有 3 处渡口；
+ *   军功 = 歼灭敌军参考战力 1:1（首占据点额外 200），结束按胜负与个人名次发奖；乌巢让敌方部队耗粮翻倍、人少补偿、
+ *   守军随报名人数加厚。新增 PUSH_BATTLEFIELD_STATE（op 2027）与错误码 BATTLEFIELD_*；新表 battlefield_*（换季清空）。
+ * v76（声望与爵位，AISLG-197，只加不改）：世界地图上每一场战斗（攻守 / 输赢 / NPC / 玩家 / 黄巾）按歼灭敌军参考战力 1:1
+ *   累计声望；剧本战场军功按 1 军功 = 1 声望再计一次；竞技场与将星塔不计。声望达到门槛自动升爵（10 级：平民 → 王），
+ *   升到大夫及以上全服播报；新增 GET_NOBILITY（op 126）与 CLAIM_NOBILITY_SALARY（127，北京日一次，金币 = 爵位序号 × 200 × 缩放）。
+ *   大夫起才能占领名城（否则 NOBILITY_TOO_LOW，附所需 / 当前爵位），攻打外围与掠夺不受限；五大夫 / 列侯让普通武将上限各 +1。
+ *   CityView 新增 title（城池 / 县城 / 郡城 / 州城 / 都城）与 nobility；cities[]、聊天 sender / recipient、TileView.owner 同口径带爵位；
+ *   GET_LEADERBOARD 新增 kind=nobility，个人榜条目带 nobility / nobilityName；BattleReportDetail 新增 prestigeGained。
+ *   新增错误码 NOBILITY_TOO_LOW / NOBILITY_SALARY_CLAIMED / NOBILITY_SALARY_NONE；accounts 新增 prestige / nobility，
+ *   新表 nobility_claims（换季清空）；换季时声望与爵位清零，爵位榜与其他个人榜一起进入名人堂。
+ * v77（联盟外交，AISLG-195，只加不改）：联盟之间新增中立 / 友好 / 敌对三种关系（默认中立）。友好由一方邀请、另一方同意
+ *   （48 小时过期）；友盟成员互不攻击（与盟友同口径，返回 ALLY_NOT_ATTACKABLE）并可互相协防；解除友好后 24 小时内仍不能
+ *   互相攻击、72 小时内不能再次结好。敌对单方面宣布，只在地图上标红并在来袭预警标「敌对联盟」，不改变战斗规则。
+ *   每个联盟最多 2 个友盟、5 个敌对。新增 ALLIANCE_DIPLOMACY_INVITE（128）/ RESPOND（129）/ END（130）/ HOSTILE（131）与
+ *   GET_ALLIANCE_DIPLOMACY（132，玩家与 Agent 通用；管理类仅玩家盟主 / 副盟主）。TileView.owner 新增 relation
+ *   （self / ally / friendly / hostile / neutral），GET_MAP_OVERVIEW 的 side 新增 friendly / hostile，PUSH_ATTACK_WARNING
+ *   新增 hostileAlliance；GET_ALLIANCE 的联盟详情新增 friends / hostiles。新增错误码 DIPLOMACY_LIMIT / COOLDOWN /
+ *   EXISTS / INVITE_NOT_FOUND；新表 alliance_relations（跨季保留）与 alliance_friend_invites（换季清空）。
+ * v78（玩家交易所，AISLG-196，只加不改）：集市新增挂单交易所：玩家卖出一种资源、标价收取另一种资源或金币；
+ *   新增 GET_MARKET（op 133）/ CREATE_MARKET_ORDER（134）/ BUY_MARKET_ORDER（135）/ CANCEL_MARKET_ORDER（136）。
+ *   挂单立即冻结卖出资源，48 小时未卖完自动撤单退款；吃单整单 / 部分成交，锁挂单行防超卖；双方各扣 5% 手续费，
+ *   各派一支商队（marches.purpose='caravan'，每格 15 秒基准、吃驿站与行军科技，不会被截击）送货。
+ *   单价范围资源间 0.5–2、收金币 0.125–0.5；单张 ≥ 1000、每账号最多 5 张；每日额度 = 主城官府 × 3000 × 缩放，
+ *   北京日重置。门槛主城官府 ≥ 5 且不在新手保护期；可勾选只卖给盟友。新增错误码 MARKET_* / PRICE_OUT_OF_RANGE /
+ *   ORDER_* / DAILY_TRADE_LIMIT；新表 market_orders / market_trades（换季清空），事件 market_*。
+ * v79（洛阳争夺，AISLG-200，只加不改）：洛阳仍是名城分城，占领者所在联盟成为「洛阳之主」，占领者为洛阳太守。
+ *   洛阳被玩家占领后，只在每周六 21:00–23:00（北京时间现实时间）可攻打 / 侦察，窗口外返回 LUOYANG_CLOSED（附 nextOpenAt）；
+ *   窗口内没有被动免战、城防不回涨，窗口结束回满 100 并进入保护；洛阳可接收 10 支协防（普通城 5 支）。
+ *   洛阳之主联盟全员所有城四资源产量 +5%（与名城 / 科技 / 城守同池）。盟主每 7 天可发一道政令（持续 7 天）：
+ *   征兵 −15% / 行军 +10% / 研究 −15%，洛阳易主立即失效。赛季末洛阳之主联盟进名人堂，在盟成员各得 1 万金 + 四资源各 5 万。
+ *   新增 GET_LUOYANG（op 137）/ PUBLISH_DECREE（138）与错误码 LUOYANG_CLOSED / DECREE_NOT_HOLDER / DECREE_COOLDOWN；
+ *   CityView 新增 luoyangBonusPercent；alliances 新增 luoyang_holder / decree_*（跨季重置）；推送/播报 luoyang_window。
+ * v80（剧本战场二：讨伐董卓 / 赤壁之战，AISLG-199，只加不改）：剧本每周轮换（官渡 → 讨董 → 赤壁，循环），GET_BATTLEFIELD 新增
+ *   event.script（guandu / dongzhuo / chibi）、event.wind（赤壁专有：风向、切换时刻与切换前 30 分钟预告）、nextScript、
+ *   strongholds[].unlocked / chainUntil / fireNextAt、rewards.progressTiers，商店赤壁多一个 iron_cavalry（铁骑兵 20，800 军功，每场限 1）。
+ *   讨伐董卓：单阵营合作本（报名统一记为 yuan），汜水关 → 虎牢关 → 洛阳顺序解锁，守军 ×15 / ×40 / ×30 × max(1, 报名 ÷ 10)，
+ *   虎牢关守将吕布带武将加成，全员按最远进度领一档奖励。赤壁之战：孙刘联军对曹操军，爵位大夫才能报名；风向每 6 小时交替，
+ *   顺风方远程兵种与床弩射程 +10%（走科技乘数入口）；火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）东南风期间孙刘方花 300 军功，
+ *   对相邻曹方据点立即造成总生命 20% 伤害（写入余伤池、按生命比例折算阵亡），每目标 2 小时一次；连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，
+ *   op 140）曹方花 200 军功连锁 6 小时：守军受伤 −15%、被火攻翻倍。新增错误码 BATTLEFIELD_STRONGHOLD_LOCKED / WIND_MISMATCH /
+ *   FIRE_COOLDOWN / CHAIN_ACTIVE / SKILL_UNAVAILABLE / NOT_ENTERED；事件 battlefield_skill；PUSH_BATTLEFIELD_STATE reason 新增 wind。
  */
-export const PROTOCOL_VERSION = 71;
+export const PROTOCOL_VERSION = 80;

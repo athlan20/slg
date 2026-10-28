@@ -66,6 +66,8 @@ export function settleDurability(
   settledAt: Date | string | null,
   truceUntil: Date | string | null,
   now: Date,
+  /** v72（AISLG-192）：「维修」科技的回涨加成百分数（每级 5%；10 级 10 → 15 点/小时） */
+  regenBonusPercent = 0,
 ): number {
   const value = Math.min(DURABILITY_MAX, Math.max(0, Math.floor(current ?? DURABILITY_MAX)));
   if (value >= DURABILITY_MAX) {
@@ -82,7 +84,8 @@ export function settleDurability(
   if (hours <= 0) {
     return value;
   }
-  return Math.min(DURABILITY_MAX, value + hours * DURABILITY_REGEN_PER_HOUR);
+  const hourly = DURABILITY_REGEN_PER_HOUR * (1 + Math.max(0, regenBonusPercent) / 100);
+  return Math.min(DURABILITY_MAX, value + Math.floor(hours * hourly));
 }
 
 /** 攻城胜利对城防值的伤害：基础 35 + 冲车占比加成（占比 10% 拿满 +15） */

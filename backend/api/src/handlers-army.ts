@@ -14,6 +14,9 @@ import type { ConnInfo } from './connections';
 import { loadCityState, lockCitySnapshot, recruitView, type CitySnapshot, type RecruitRow } from './views';
 import { insufficientPopulationDetail, insufficientResourcesDetail } from './handlers-city';
 import { activateQueuedRecruits } from '../../common/src/queue-activate';
+import { drillReductionPercent } from '../../common/src/tech';
+import { loadActiveDecree } from '../../common/src/luoyang-db';
+import { DECREE_EFFECTS } from '../../common/src/luoyang';
 
 /** 征兵失败响应附当前城池状态（含本次读取触发的结算），客户端据此自行刷新 */
 async function respondRecruitDenied(
@@ -71,13 +74,17 @@ export async function handleRecruit(
     const afterPopulation = snap.population - verdict.population;
     const status = verdict.mode === 'start' ? 'recruiting' : 'queued';
     // v22（AISLG-39）：缩放与 1 秒下限作用于批次总时长（unitSeconds 快照为未缩放基准）
-    const durationSeconds = recruitBatchSeconds(troop, count);
+    // v79（AISLG-200）：洛阳之主政令「征兵」缩短 15%
+    const decree = await loadActiveDecree(client, accountId);
+    const decreeMultiplier = decree?.kind === 'recruit' ? DECREE_EFFECTS.recruit.timeMultiplier : 1;
+    const durationSeconds = Math.max(1, Math.ceil(recruitBatchSeconds(troop, count, drillReductionPercent(snap.techs)) * decreeMultiplier));
+    const unitSeconds = Math.max(1, Math.round(verdict.unitSeconds * decreeMultiplier));
     const ins = await client.query(
       `INSERT INTO recruits (account_id, city_id, troop, count, status, initiator, cost, population, unit_seconds, due_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9,
                CASE WHEN $5 = 'recruiting' THEN now() + make_interval(secs => $10::int) END)
        RETURNING *`,
-      [accountId, snap.cityId, troop, count, status, role, JSON.stringify(verdict.cost), verdict.population, verdict.unitSeconds, durationSeconds],
+      [accountId, snap.cityId, troop, count, status, role, JSON.stringify(verdict.cost), verdict.population, unitSeconds, durationSeconds],
     );
     const recruit = ins.rows[0] as RecruitRow;
     await client.query(

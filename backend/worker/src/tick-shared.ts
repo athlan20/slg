@@ -21,9 +21,10 @@ import { WOUND_HOURS } from '../../common/src/hero';
 import { scaledMs } from '../../common/src/time-scale';
 import { battleBonusOf, grantHeroExp, loadHero, woundHero, type AccountHeroRow } from '../../common/src/hero-db';
 import { insertBattleReport, withSideStats, type BattleReportDetail } from '../../common/src/battle-db';
+import { addPrestige } from '../../common/src/nobility-db';
 
 /** 战报类别（BattleReportView.kind 取值；v21 新增 city_raid = NPC 袭击玩家主城；v38 新增 pvp_raid = 玩家攻打玩家城；v39 新增 pvp_wilderness = 玩家抢占玩家野地） */
-export type BattleReportKind = 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest';
+export type BattleReportKind = 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
 
 /** BattleSideSummary（引擎产出）→ 战报侧视图（battle-tick / plunder-tick / city-raid 共用；
  *  units / totalHp / avgRange 由 withSideStats 派生） */
@@ -57,7 +58,25 @@ export async function saveBattleReport(
   notifies: TileNotify[],
   attackerHero: BattleHeroView | null = null,
   defenderHero: BattleHeroView | null = null,
+  /** v74（AISLG-194）：协防方战报专用——本场自己部队的伤亡 */
+  assistLosses: import('../../common/src/protocol').ArmyCounts | null = null,
+  /** v76（AISLG-197）：本场获得的声望；缺省按歼灭敌军参考战力自动入账（剧本战场由军功入账后显式传入） */
+  prestigeGained: number | null = null,
 ): Promise<number> {
+  // v76：世界地图上的每一场战斗都按歼灭敌军参考战力计声望（竞技场 / 将星塔不走本函数）；
+  // 剧本战场由 grantMerit 按 1 军功 = 1 声望入账，这里只记录数值、不重复入账；
+  // 协防方的合并战报没有各自歼敌数，跳过自动入账，避免每人按全量敌军重复计。
+  let gained = Math.max(0, Math.floor(prestigeGained ?? 0));
+  if (prestigeGained === null && kind !== 'battlefield' && !assistLosses) {
+    const enemyLosses = role === 'attacker' ? result.defender.losses : result.attacker.losses;
+    gained = Math.max(0, Math.floor(armyPower(enemyLosses)));
+    if (gained > 0) {
+      const prestige = await addPrestige(client, accountId, gained, kind);
+      if (prestige.broadcast) {
+        notifies.push({ reason: 'server_broadcast', accountId: '', broadcast: prestige.broadcast });
+      }
+    }
+  }
   const detail: BattleReportDetail = {
     x,
     y,
@@ -71,6 +90,9 @@ export async function saveBattleReport(
     wallDefensePercent: wallPercent,
     ...(result.towerDamage > 0 ? { towerDamage: result.towerDamage } : {}),
     ...(result.wallBreak ? { wallBreak: result.wallBreak } : {}),
+    ...(result.defenseUse.length > 0 ? { defenses: result.defenseUse } : {}),
+    ...(assistLosses ? { assistLosses } : {}),
+    ...(gained > 0 ? { prestigeGained: gained } : {}),
     roundLog: result.roundLog,
   };
   const report = await insertBattleReport(client, accountId, detail);
@@ -99,6 +121,8 @@ export interface MarchRow {
   ambush_at?: Date | null;
   /** v36（AISLG-114）：随队武将 id，其余为 null */
   hero_id?: string | null;
+  /** v78（AISLG-196）：商队目的地城 */
+  to_city_id?: string | null;
 }
 
 /** 结束后经 pg_notify 发给 API 的载荷（battle_report 为 v13 新增；
@@ -287,10 +311,12 @@ export async function abortForAlly(
   troops: Partial<Record<TroopKind, number>>,
   settled: { row: { x: number | null; y: number | null } | null },
   notifies: TileNotify[],
+  /** v74（AISLG-194）：协防到达发现目标已不是盟友时用 ASSIST_NOT_ALLY；其余沿用 v67 的 ALLY_NOT_ATTACKABLE */
+  cause = 'ALLY_NOT_ATTACKABLE',
 ): Promise<void> {
   await markMarchArrived(client, march.id);
   const returning = await createReturnMarch(client, march, troops, settled, march.initiator);
-  await completeMarchEvent(client, march, 'aborted', { troops, returning, cause: 'ALLY_NOT_ATTACKABLE' });
+  await completeMarchEvent(client, march, 'aborted', { troops, returning, cause });
   notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
 }
 

@@ -117,12 +117,15 @@ export function wildernessLoot(terrain: TerrainKind, level: number): Resources {
 export function wildernessPlunderPool(
   terrain: TerrainKind,
   level: number,
+  /** v72（AISLG-192）：掠夺科技加成百分数（每级 +4%，只放大野地池；NPC 城库存不变） */
+  lootPercent = 0,
 ): Partial<Record<'gold' | 'food' | 'wood' | 'stone' | 'iron', number>> {
   const pool: Partial<Record<'gold' | 'food' | 'wood' | 'stone' | 'iron', number>> = {};
   const resource = TERRAIN_INFO[terrain].resource;
   if (resource !== 'gold') {
-    pool[resource] = Math.max(0, level) * PLUNDER_POOL_RESOURCE_PER_LEVEL;
-    pool.gold = Math.max(0, level) * PLUNDER_POOL_GOLD_PER_LEVEL;
+    const factor = 1 + Math.max(0, lootPercent) / 100;
+    pool[resource] = Math.floor(Math.max(0, level) * PLUNDER_POOL_RESOURCE_PER_LEVEL * factor);
+    pool.gold = Math.floor(Math.max(0, level) * PLUNDER_POOL_GOLD_PER_LEVEL * factor);
   }
   return pool;
 }

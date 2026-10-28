@@ -21,6 +21,7 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo, ConnectionRegistry } from './connections';
 import * as db from './chat-db';
 import { buildChatCard } from './chat-cards';
+import { loadNobilityIndexes } from '../../common/src/nobility-db';
 import { bannedWordFilter, type BannedWordFilter } from './chat-words';
 import { chatMessageView } from './chat-view';
 import { isUuid, normalizeChatText, readCardRequest, readChannel } from './chat-validate';
@@ -156,6 +157,7 @@ async function sendInTransaction(
       card,
       reportDetail,
     });
+    const nobility = await loadNobilityIndexes(client, [accountId, recipientId].filter((id): id is string => Boolean(id)));
     await client.query('COMMIT');
     const message = chatMessageView(
       {
@@ -171,6 +173,7 @@ async function sendInTransaction(
         created_at: inserted.createdAt,
       },
       filter,
+      nobility,
     );
     return { ok: true, message, recipientId, allianceId };
   } catch (err) {
@@ -252,7 +255,8 @@ export async function pushAllianceMessage(
   if (!row || row.channel !== 'alliance') {
     return;
   }
-  await deliverToAlliance(pool, registry, allianceId, chatMessageView(row, bannedWordFilter()), row.sender_id);
+  const nobility = await loadNobilityIndexes(pool, [row.sender_id].filter((id): id is string => Boolean(id)));
+  await deliverToAlliance(pool, registry, allianceId, chatMessageView(row, bannedWordFilter(), nobility), row.sender_id);
 }
 
 function maybePrune(ctx: HandlerContext): void {

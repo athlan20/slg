@@ -72,6 +72,51 @@ export interface AllianceDetailView extends AllianceBriefView {
   power: number;
   /** 联盟榜名次（最近一次快照）；成员不足或未上榜为 null */
   rank: number | null;
+  /** 友盟 / 敌对名单（v77，AISLG-195） */
+  friends: AllianceDiplomacyEntryView[];
+  hostiles: AllianceDiplomacyEntryView[];
+}
+
+export const ALLIANCE_MAX_FRIENDS = 2;
+export const ALLIANCE_MAX_HOSTILES = 5;
+export type AllianceRelationKind = 'friendly' | 'hostile' | 'neutral';
+
+export interface AllianceDiplomacyEntryView {
+  alliance: AllianceBriefView;
+  relation: AllianceRelationKind;
+  since: string;
+  noAttackUntil: string | null;
+  refriendAfter: string | null;
+}
+
+export interface AllianceFriendInviteView {
+  id: string;
+  alliance: AllianceBriefView;
+  inviter: AlliancePlayerView;
+  direction: 'sent' | 'received';
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface GetAllianceDiplomacyResponseData {
+  allianceId: string;
+  friends: AllianceDiplomacyEntryView[];
+  hostiles: AllianceDiplomacyEntryView[];
+  invites: AllianceFriendInviteView[];
+  limits: { friends: number; hostiles: number };
+}
+
+export interface AllianceDiplomacyTargetRequestData {
+  allianceId: string;
+}
+
+export interface AllianceDiplomacyInviteRequestData {
+  allianceId: string;
+}
+
+export interface AllianceDiplomacyRespondRequestData {
+  inviteId: string;
+  accept: boolean;
 }
 
 /** 联盟榜单行（GET_LEADERBOARD kind=alliance 时下发，前 50 名） */

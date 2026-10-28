@@ -9,6 +9,9 @@ import { STAR_TOWER_SCHEMA_SQL } from './star-tower-schema';
 import { HERO_SCHEMA_SQL } from './hero-schema';
 import { ANNOUNCEMENT_SCHEMA_SQL } from './announcement-schema';
 import { ALLIANCE_SCHEMA_SQL } from './alliance-schema';
+import { BATTLEFIELD_SCHEMA_SQL } from './battlefield-schema';
+import { NOBILITY_SCHEMA_SQL } from './nobility-schema';
+import { MARKET_SCHEMA_SQL } from './market-schema';
 import { SEASON_SCHEMA_SQL } from './season-schema';
 import { seedFirstSeason } from './season-seed';
 import { attachPoolDiagnostics, logConnError } from './db-diag';
@@ -624,6 +627,51 @@ CREATE TABLE IF NOT EXISTS tech_research (
 );
 CREATE INDEX IF NOT EXISTS idx_tech_research_account ON tech_research (account_id, status);
 CREATE INDEX IF NOT EXISTS idx_tech_research_due ON tech_research (due_at) WHERE status = 'researching';
+
+-- v73（AISLG-193 城防器械）：城墙里囤的四种一次性守城器械（陷阱 / 拒马 / 滚木 / 擂石）。
+-- city_defenses = 库存（城 × 器械；缺行 = 0，四种共用上限 城墙等级 × 60）；
+-- defense_crafts = 打造队列（与征兵同模型：1 条在造 + 2 条排队；cost 为发起时成本快照，
+-- 取消时全额返还；unit_seconds 为单件基准时长快照，在造期间的 due_at 按批次总时长计算）
+CREATE TABLE IF NOT EXISTS city_defenses (
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  kind text NOT NULL,
+  count integer NOT NULL DEFAULT 0,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (city_id, kind)
+);
+CREATE TABLE IF NOT EXISTS defense_crafts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  kind text NOT NULL,
+  count integer NOT NULL,
+  status text NOT NULL,
+  initiator text NOT NULL,
+  cost jsonb NOT NULL DEFAULT '{}'::jsonb,
+  unit_seconds integer NOT NULL,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  due_at timestamptz,
+  completed_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS idx_defense_crafts_city ON defense_crafts (city_id, status);
+CREATE INDEX IF NOT EXISTS idx_defense_crafts_due ON defense_crafts (due_at) WHERE status = 'crafting';
+
+-- v74（AISLG-194 盟友协防）：city_assist = 驻扎在盟友城里的协防部队（城 × 派出账号唯一：
+-- 同一账号对同一座城最多 1 支）。troops 为 jsonb 快照，守城战后按同兵种伤亡比例拆分后回写；
+-- 全灭 / 召回 / 遣返 / 退盟 / 易主时删除行。耗粮由派出方的出发城承担（2 倍），占派出城校场名额。
+CREATE TABLE IF NOT EXISTS city_assist (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  from_city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  troops jsonb NOT NULL,
+  initiator text NOT NULL,
+  arrive_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (city_id, account_id)
+);
+CREATE INDEX IF NOT EXISTS idx_city_assist_city ON city_assist (city_id);
+CREATE INDEX IF NOT EXISTS idx_city_assist_from ON city_assist (from_city_id);
+CREATE INDEX IF NOT EXISTS idx_city_assist_account ON city_assist (account_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tech_research_one_active ON tech_research (account_id) WHERE status = 'researching';
 
 -- v36（AISLG-114/115/116）：武将。account_heroes = 账号级武将（普通将从酒馆招募、名将从 PvE 获得）；
@@ -744,7 +792,7 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL + BATTLEFIELD_SCHEMA_SQL + NOBILITY_SCHEMA_SQL + MARKET_SCHEMA_SQL);
         // 赛季（AISLG-134）：seasons 为空时播种第 1 季（幂等，咨询锁内执行）
         await seedFirstSeason(client);
         return;

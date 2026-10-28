@@ -21,6 +21,63 @@ export const ALLIANCE_INVITE_TTL_MS = 48 * 3600 * 1000;
 export const ALLIANCE_LEADER_INACTIVE_MS = 7 * 24 * 3600 * 1000;
 /** 公告长度上限（按字形计） */
 export const ALLIANCE_NOTICE_MAX_CHARS = 200;
+/** 外交（v77，AISLG-195）：最多 2 个友盟、5 个敌对；友好邀请 48 小时过期 */
+export const ALLIANCE_MAX_FRIENDS = 2;
+export const ALLIANCE_MAX_HOSTILES = 5;
+export const ALLIANCE_FRIEND_INVITE_TTL_MS = 48 * 3600 * 1000;
+/** 解除友好后 24 小时内双方仍不能互相攻击（防解约偷袭） */
+export const ALLIANCE_UNFRIEND_NO_ATTACK_MS = 24 * 3600 * 1000;
+/** 解除友好后 72 小时内同一对联盟不能再次结好（防反复横跳） */
+export const ALLIANCE_REFRIEND_COOLDOWN_MS = 72 * 3600 * 1000;
+
+/** 联盟对联盟的关系（neutral 行只出现在解除友好后的冷却期） */
+export type AllianceRelationKind = 'friendly' | 'hostile' | 'neutral';
+
+/** 外交名单的一行 */
+export interface AllianceDiplomacyEntryView {
+  alliance: AllianceBriefView;
+  relation: AllianceRelationKind;
+  /** 建立 / 变更时刻 */
+  since: string;
+  /** 解除友好后的不可攻击截止（冷却中才有值） */
+  noAttackUntil: string | null;
+  /** 再次结好的最早时刻（冷却中才有值） */
+  refriendAfter: string | null;
+}
+
+/** 友好邀请（双向视角共用） */
+export interface AllianceFriendInviteView {
+  id: string;
+  alliance: AllianceBriefView;
+  inviter: AlliancePlayerView;
+  direction: 'sent' | 'received';
+  createdAt: string;
+  expiresAt: string;
+}
+
+/** GET_ALLIANCE_DIPLOMACY 响应 */
+export interface GetAllianceDiplomacyResponseData {
+  allianceId: string;
+  friends: AllianceDiplomacyEntryView[];
+  hostiles: AllianceDiplomacyEntryView[];
+  invites: AllianceFriendInviteView[];
+  limits: { friends: number; hostiles: number };
+}
+
+/** 外交操作请求 */
+export interface AllianceDiplomacyTargetRequestData {
+  allianceId: string;
+}
+
+export interface AllianceDiplomacyInviteRequestData {
+  allianceId: string;
+}
+
+export interface AllianceDiplomacyRespondRequestData {
+  inviteId: string;
+  accept: boolean;
+}
+
 /** LIST_ALLIANCES 每页条数 */
 export const ALLIANCE_LIST_PAGE_SIZE = 20;
 
@@ -73,6 +130,10 @@ export interface AllianceDetailView extends AllianceBriefView {
   power: number;
   /** 联盟榜名次（取最近一次榜单快照）；成员不足 ALLIANCE_RANK_MIN_MEMBERS 或未上榜为 null */
   rank: number | null;
+  /** 友盟名单（v77，AISLG-195；最多 2 个） */
+  friends: AllianceDiplomacyEntryView[];
+  /** 敌对名单（v77；最多 5 个） */
+  hostiles: AllianceDiplomacyEntryView[];
 }
 
 /** 联盟榜单行（GET_LEADERBOARD kind=alliance 时下发，前 50 名） */

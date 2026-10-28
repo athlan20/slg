@@ -15,6 +15,7 @@ interface OverviewRow {
   famous: boolean;
   owner_account_id: string | null;
   owner_is_ally: boolean;
+  owner_relation: string | null;
 }
 
 export async function handleGetMapOverview(
@@ -27,11 +28,21 @@ export async function handleGetMapOverview(
   // 条件与 world_tiles 的局部索引（idx_world_tiles_city_kind）保持一致，避免扫描百万野地格
   const res = await ctx.pool.query(
     `SELECT wt.x, wt.y, wt.kind, (wt.npc -> 'famous') IS NOT NULL AS famous, c.account_id AS owner_account_id,
-            (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally
+            (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally,
+            CASE
+              WHEN c.account_id = $1 THEN 'own'
+              WHEN am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id THEN 'ally'
+              WHEN r.relation = 'friendly' THEN 'friendly'
+              WHEN r.relation = 'hostile' THEN 'hostile'
+              WHEN r.relation = 'neutral' AND r.no_attack_until > now() THEN 'friendly'
+              ELSE 'enemy'
+            END AS owner_relation
      FROM world_tiles wt
      LEFT JOIN cities c ON c.id = wt.owner_city_id
      LEFT JOIN alliance_members am_me ON am_me.account_id = $1
      LEFT JOIN alliance_members am_o ON am_o.account_id = c.account_id
+     LEFT JOIN alliance_relations r ON r.a_id = LEAST(am_me.alliance_id, am_o.alliance_id)
+       AND r.b_id = GREATEST(am_me.alliance_id, am_o.alliance_id)
      WHERE wt.kind <> 'wilderness'
      ORDER BY wt.y, wt.x`,
     [accountId],
@@ -55,7 +66,10 @@ function overviewSide(row: OverviewRow, accountId: string | null): MapOverviewSi
     if (row.owner_account_id === accountId) {
       return 'own';
     }
-    // v67（AISLG-182）：盟友（同一联盟）城池单独一类，地图着色用
+    // v67（AISLG-182）：盟友（同一联盟）城池单独一类；v77（AISLG-195）再加友盟 / 敌对
+    if (row.owner_relation === 'ally' || row.owner_relation === 'friendly' || row.owner_relation === 'hostile') {
+      return row.owner_relation;
+    }
     return row.owner_is_ally ? 'ally' : 'enemy';
   }
   if (row.kind === 'npc_city') {

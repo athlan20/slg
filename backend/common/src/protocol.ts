@@ -64,7 +64,7 @@ export const Op = {
   GET_SERVER_BROADCASTS: 42,
   /** C→S 查询全服排行榜（v23，AISLG-61：三榜快照，前 50 名 + 我的名次） */
   GET_LEADERBOARD: 43,
-  /** C→S 查询科技状态（v27，AISLG-77：6 项科技等级 / 下一级成本与耗时 / 进行中的研究） */
+  /** C→S 查询科技状态（v27 AISLG-77；v72 AISLG-192 起 16 项：等级 / 下一级成本与耗时 / 进行中的研究） */
   GET_TECHS: 44,
   /** C→S 发起科技研究（v27，AISLG-77：data.tech；账号同一时间只研究一项，需书院） */
   RESEARCH_TECH: 45,
@@ -196,6 +196,54 @@ export const Op = {
   CANCEL_TRAINING: 115,
   /** C→S 提前解除主动免战（v71，AISLG-190：无参数；解除后立即可被攻击、可出兵，本周免费次数不返还；被动免战不可解除） */
   CANCEL_TRUCE: 116,
+  /** C→S 打造城防器械（v73，AISLG-193：data.kind + data.count，可选 cityId；陷阱 / 拒马 / 滚木 / 擂石，库存上限 = 城墙等级 × 60） */
+  CRAFT_DEFENSE: 117,
+  /** C→S 取消打造（v73，AISLG-193：data.craftId；排队中与打造中都可取消，成本全额返还，下一条立即开工） */
+  CANCEL_DEFENSE_CRAFT: 118,
+  /** C→S 召回 / 遣返协防部队（v74，AISLG-194：data.assistId；派出方随时召回，城主可遣返任意一支） */
+  DISMISS_ASSIST: 119,
+  /** C→S 查询剧本战场（v75，AISLG-198：当前 / 最近一场官渡、据点、我的队伍与军功、军功榜、商店） */
+  GET_BATTLEFIELD: 120,
+  /** C→S 报名剧本战场（v75：data.camp = yuan | cao；主城官府 ≥ 5，阵营人数失衡时人多一方暂停） */
+  SIGNUP_BATTLEFIELD: 121,
+  /** C→S 带部队入场（v75：data.troops；开战前，按人口最多 3000，从主城扣兵，每人一次） */
+  ENTER_BATTLEFIELD: 122,
+  /** C→S 拆队（v75：data.squadId + data.troops；每人最多 3 队） */
+  SPLIT_BATTLEFIELD_SQUAD: 123,
+  /** C→S 战场内行军 / 攻打据点（v75：data.squadId + 目标坐标或 strongholdId；每格 60 秒现实时间） */
+  MARCH_BATTLEFIELD_SQUAD: 124,
+  /** C→S 战场商店兑换（v75：data.item（+ hero_exp 时的 data.heroId）；军功跨场累积、每场限购） */
+  BUY_BATTLEFIELD_ITEM: 125,
+  /** C→S 查询声望与爵位、今日俸禄状态（v76，AISLG-197） */
+  GET_NOBILITY: 126,
+  /** C→S 领取每日爵位俸禄（v76：北京日每天一次，平民无俸禄） */
+  CLAIM_NOBILITY_SALARY: 127,
+  /** C→S 发起联盟友好邀请（v77，AISLG-195：data.allianceId；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_INVITE: 128,
+  /** C→S 同意 / 拒绝友好邀请（v77：data.inviteId + data.accept；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_RESPOND: 129,
+  /** C→S 解除友好 / 敌对，回到中立（v77：data.allianceId；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_END: 130,
+  /** C→S 单方面宣布敌对（v77：data.allianceId；盟主 / 副盟主，仅玩家连接） */
+  ALLIANCE_DIPLOMACY_HOSTILE: 131,
+  /** C→S 查询本联盟外交（v77：友盟 / 敌对 / 邀请；玩家与 Agent 通用） */
+  GET_ALLIANCE_DIPLOMACY: 132,
+  /** C→S 查询玩家交易所挂单 / 我的挂单与成交记录（v78，AISLG-196；支持卖出 / 收取资源筛选与分页） */
+  GET_MARKET: 133,
+  /** C→S 挂单卖出资源（v78：data.sellResource / buyResource / amount / unitPrice / allyOnly；资源立即冻结） */
+  CREATE_MARKET_ORDER: 134,
+  /** C→S 吃单（v78：data.orderId + quantity；整单或部分成交，双方商队送货） */
+  BUY_MARKET_ORDER: 135,
+  /** C→S 撤单（v78：data.orderId；未成交部分立即退还） */
+  CANCEL_MARKET_ORDER: 136,
+  /** C→S 查询洛阳争夺状态（v79，AISLG-200：占领者 / 窗口 / 洛阳之主 / 政令；玩家与 Agent 通用） */
+  GET_LUOYANG: 137,
+  /** C→S 洛阳之主盟主发布政令（v79：data.kind = recruit|march|research；每 7 天一次） */
+  PUBLISH_DECREE: 138,
+  /** C→S 赤壁火攻（v80，AISLG-199：data.strongholdId；孙刘方、东南风期间，花 300 军功，目标须为曹方且与己方据点相邻，每目标 2 小时一次） */
+  FIRE_BATTLEFIELD_STRONGHOLD: 139,
+  /** C→S 赤壁连锁战船（v80，AISLG-199：data.strongholdId；曹方己方据点，花 200 军功，持续 6 小时，守军受伤 −15%、被火攻翻倍） */
+  CHAIN_BATTLEFIELD_STRONGHOLD: 140,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -261,6 +309,10 @@ export const Op = {
   PUSH_ALLIANCE_STATE: 2024,
   /** S→C 推送：联盟地图标记变化（v69，AISLG-184；reason = added 新增 / removed 删除；只推给本联盟在线成员，含 Agent 连接） */
   PUSH_ALLIANCE_MARK: 2025,
+  /** S→C 推送：城防器械打造状态变化（v73，AISLG-193；reason = craft_started / craft_queued / craft_completed / craft_cancelled） */
+  PUSH_DEFENSE_STATE: 2026,
+  /** S→C 推送：剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198；全部在线连接收到） */
+  PUSH_BATTLEFIELD_STATE: 2027,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -503,6 +555,98 @@ export const ErrorCode = {
   ALLIANCE_MARK_LIMIT: 'ALLIANCE_MARK_LIMIT',
   /** 联盟：同一格子已经有一个有效标记，不能重复标记（v69，AISLG-184） */
   ALLIANCE_MARK_EXISTS: 'ALLIANCE_MARK_EXISTS',
+  /** 城防器械：城墙未建（器械只能囤在城墙里），响应附 cap（v73，AISLG-193） */
+  WALL_NOT_BUILT: 'WALL_NOT_BUILT',
+  /** 城防器械：库存 + 在造 + 本次数量超过上限（城墙等级 × 60），响应附 cap / stock / pending（v73，AISLG-193） */
+  DEFENSE_STOCK_FULL: 'DEFENSE_STOCK_FULL',
+  /** 城防器械：打造队列已满（1 条在造 + 2 条排队）（v73，AISLG-193） */
+  DEFENSE_QUEUE_FULL: 'DEFENSE_QUEUE_FULL',
+  /** 城防器械：没有可取消的打造条目（已完成 / 已取消 / 不属于本账号）（v73，AISLG-193） */
+  DEFENSE_NOT_CANCELLABLE: 'DEFENSE_NOT_CANCELLABLE',
+  /** 协防：目标城不是盟友的城（v74，AISLG-194） */
+  ASSIST_NOT_ALLY: 'ASSIST_NOT_ALLY',
+  /** 协防：目标城已接收 5 支协防部队，或本账号对同一座城已有 1 支（含在途）（v74，AISLG-194） */
+  ASSIST_LIMIT: 'ASSIST_LIMIT',
+  /** 协防：协防部队不存在、已返回，或不属于你（v74，AISLG-194） */
+  ASSIST_NOT_FOUND: 'ASSIST_NOT_FOUND',
+  /** 剧本战场：主城官府等级不足报名门槛（v75，AISLG-198；需 ≥ 5 级，附 required / current） */
+  BATTLEFIELD_GOVERNMENT_TOO_LOW: 'BATTLEFIELD_GOVERNMENT_TOO_LOW',
+  /** 剧本战场：当前不在报名期（未开始 / 已开战）（v75，AISLG-198） */
+  BATTLEFIELD_SIGNUP_CLOSED: 'BATTLEFIELD_SIGNUP_CLOSED',
+  /** 剧本战场：本场已经报过名（v75） */
+  BATTLEFIELD_ALREADY_JOINED: 'BATTLEFIELD_ALREADY_JOINED',
+  /** 剧本战场：没有报名，不能入场 / 操作队伍（v75） */
+  BATTLEFIELD_NOT_JOINED: 'BATTLEFIELD_NOT_JOINED',
+  /** 剧本战场：该阵营报名人数已达另一方 1.5 倍且多出 5 人以上，暂停报名（v75，附 limit / count） */
+  BATTLEFIELD_CAMP_FULL: 'BATTLEFIELD_CAMP_FULL',
+  /** 剧本战场：已开战，不能再入场（v75） */
+  BATTLEFIELD_ENTRY_CLOSED: 'BATTLEFIELD_ENTRY_CLOSED',
+  /** 剧本战场：本场已经入过场（v75） */
+  BATTLEFIELD_ALREADY_ENTERED: 'BATTLEFIELD_ALREADY_ENTERED',
+  /** 剧本战场：带入部队人口超过 3000（v75，附 limit / current） */
+  BATTLEFIELD_POPULATION_LIMIT: 'BATTLEFIELD_POPULATION_LIMIT',
+  /** 剧本战场：每人最多 3 支队伍（v75） */
+  BATTLEFIELD_SQUAD_LIMIT: 'BATTLEFIELD_SQUAD_LIMIT',
+  /** 剧本战场：队伍不存在、已阵亡或不属于你（v75） */
+  BATTLEFIELD_SQUAD_NOT_FOUND: 'BATTLEFIELD_SQUAD_NOT_FOUND',
+  /** 剧本战场：队伍正在行军，等到达后再下命令（v75） */
+  BATTLEFIELD_SQUAD_BUSY: 'BATTLEFIELD_SQUAD_BUSY',
+  /** 剧本战场：目标不可达（河只能从 3 处渡口过，或坐标越界）（v75） */
+  BATTLEFIELD_UNREACHABLE: 'BATTLEFIELD_UNREACHABLE',
+  /** 剧本战场：战场不在进行中（v75） */
+  BATTLEFIELD_NOT_ACTIVE: 'BATTLEFIELD_NOT_ACTIVE',
+  /** 剧本战场：本场该商品已达到限购（v75，附 limit） */
+  BATTLEFIELD_SHOP_LIMIT: 'BATTLEFIELD_SHOP_LIMIT',
+  /** 剧本战场：战场军功余额不足（v75，附 cost / balance） */
+  BATTLEFIELD_MERIT_INSUFFICIENT: 'BATTLEFIELD_MERIT_INSUFFICIENT',
+  /** 剧本战场：目标坐标与据点 id 都没给或对不上（v75） */
+  BATTLEFIELD_TARGET_INVALID: 'BATTLEFIELD_TARGET_INVALID',
+  /** 剧本战场：前置关卡还没打下，这个据点暂不能攻打（v80，讨伐董卓；附 unlockAfter 据点 id） */
+  BATTLEFIELD_STRONGHOLD_LOCKED: 'BATTLEFIELD_STRONGHOLD_LOCKED',
+  /** 剧本战场：当前风向不允许这个技能（v80，赤壁火攻需东南风；附 wind / required） */
+  BATTLEFIELD_WIND_MISMATCH: 'BATTLEFIELD_WIND_MISMATCH',
+  /** 剧本战场：火攻冷却中，同一目标 2 小时一次（v80，附 nextAt） */
+  BATTLEFIELD_FIRE_COOLDOWN: 'BATTLEFIELD_FIRE_COOLDOWN',
+  /** 剧本战场：连锁战船仍在生效，不能重复连锁（v80，附 chainUntil） */
+  BATTLEFIELD_CHAIN_ACTIVE: 'BATTLEFIELD_CHAIN_ACTIVE',
+  /** 剧本战场：本场剧本没有这个技能，或阵营不对（v80：火攻须孙刘方、连锁须曹方） */
+  BATTLEFIELD_SKILL_UNAVAILABLE: 'BATTLEFIELD_SKILL_UNAVAILABLE',
+  /** 剧本战场：未带兵入场，不能使用技能（v80） */
+  BATTLEFIELD_NOT_ENTERED: 'BATTLEFIELD_NOT_ENTERED',
+  /** 联盟外交：友盟 / 敌对数量已达上限（v77，AISLG-195；友盟 2、敌对 5） */
+  DIPLOMACY_LIMIT: 'DIPLOMACY_LIMIT',
+  /** 联盟外交：解除友好后的冷却中，暂时不能再次结好（v77，响应附 refriendAfter / retryAfterSeconds） */
+  DIPLOMACY_COOLDOWN: 'DIPLOMACY_COOLDOWN',
+  /** 联盟外交：与目标联盟已经是该关系（或已有待处理邀请）（v77） */
+  DIPLOMACY_EXISTS: 'DIPLOMACY_EXISTS',
+  /** 联盟外交：友好邀请不存在、已过期或已处理（v77） */
+  DIPLOMACY_INVITE_NOT_FOUND: 'DIPLOMACY_INVITE_NOT_FOUND',
+  /** 洛阳：不在争夺窗口内（北京时间每周六 21:00–23:00），响应附 nextOpenAt / retryAfterSeconds（v79，AISLG-200） */
+  LUOYANG_CLOSED: 'LUOYANG_CLOSED',
+  /** 洛阳：你所在联盟不是洛阳之主，不能发布政令（v79） */
+  DECREE_NOT_HOLDER: 'DECREE_NOT_HOLDER',
+  /** 洛阳：政令冷却中（每 7 天一次），响应附 nextAt / retryAfterSeconds（v79） */
+  DECREE_COOLDOWN: 'DECREE_COOLDOWN',
+  /** 交易所：主城官府不足 5 级，或账号仍在新手保护期（v78，AISLG-196） */
+  MARKET_LOCKED: 'MARKET_LOCKED',
+  /** 交易所：单价超出允许范围（资源 0.5–2、金币 0.125–0.5），响应附 min / max（v78） */
+  PRICE_OUT_OF_RANGE: 'PRICE_OUT_OF_RANGE',
+  /** 交易所：同时挂单已达 5 张（v78） */
+  ORDER_LIMIT: 'ORDER_LIMIT',
+  /** 交易所：当日成交额度不足，响应附 limit / used / remaining（v78） */
+  DAILY_TRADE_LIMIT: 'DAILY_TRADE_LIMIT',
+  /** 交易所：挂单不存在、已售罄、已过期或不属于你（v78） */
+  ORDER_NOT_FOUND: 'ORDER_NOT_FOUND',
+  /** 交易所：这张挂单只卖给盟友（v78） */
+  MARKET_ALLY_ONLY: 'MARKET_ALLY_ONLY',
+  /** 交易所：挂单不可撤回（已售罄 / 已过期）（v78） */
+  ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
+  /** 爵位：占领名城需要大夫（爵位序号 3），响应附 required / current（v76，AISLG-197） */
+  NOBILITY_TOO_LOW: 'NOBILITY_TOO_LOW',
+  /** 爵位：今日俸禄已领（v76，北京日每天一次） */
+  NOBILITY_SALARY_CLAIMED: 'NOBILITY_SALARY_CLAIMED',
+  /** 爵位：平民没有俸禄，先攒声望升爵（v76） */
+  NOBILITY_SALARY_NONE: 'NOBILITY_SALARY_NONE',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -922,7 +1066,15 @@ export type {
   AllianceMarkView,
   GetAllianceMarksResponseData,
   PushAllianceMarkData,
+  AllianceRelationKind,
+  AllianceDiplomacyEntryView,
+  AllianceFriendInviteView,
+  GetAllianceDiplomacyResponseData,
+  AllianceDiplomacyTargetRequestData,
+  AllianceDiplomacyInviteRequestData,
+  AllianceDiplomacyRespondRequestData,
 } from './protocol-alliance';
+export { ALLIANCE_MAX_FRIENDS, ALLIANCE_MAX_HOSTILES } from './protocol-alliance';
 
 // 公告（v60，AISLG-162）的载荷类型与常量在 protocol-announcement.ts
 export {
@@ -968,6 +1120,125 @@ export type {
 } from './protocol-tech';
 export { TECH_KINDS, isTechKind } from './tech';
 export type { TechKind, TechLevels } from './tech';
+
+// 城防器械（v73，AISLG-193）的载荷类型在 protocol-defense.ts，规则与数值在 city-defense.ts
+export type {
+  DefenseCraftView,
+  DefenseStockView,
+  CraftDefenseRequestData,
+  CraftDefenseResponseData,
+  CancelDefenseCraftRequestData,
+  CancelDefenseCraftResponseData,
+  DefenseStatePushData,
+  DefenseUseView,
+  DefenseScoutView,
+} from './protocol-defense';
+export { DEFENSE_KINDS, isDefenseKind, defenseCap, defenseTotal } from './city-defense';
+export type { DefenseKind, DefenseStock } from './city-defense';
+
+// 盟友协防（v74，AISLG-194）的载荷类型在 protocol-assist.ts，规则在 city-assist.ts
+export type { AssistView, AssistOutView, DismissAssistRequestData, DismissAssistResponseData } from './protocol-assist';
+export { ASSIST_MAX_PER_CITY, assistCap } from './city-assist';
+
+// 剧本战场（v75，AISLG-198）的载荷类型在 protocol-battlefield.ts，规则与数值在 battlefield.ts
+export type {
+  BattlefieldCamp,
+  BattlefieldStatus,
+  BattlefieldStrongholdKind,
+  BattlefieldSquadStatus,
+  BattlefieldSquadView,
+  BattlefieldStrongholdView,
+  BattlefieldCampView,
+  BattlefieldEventView,
+  BattlefieldMeritEntryView,
+  BattlefieldMeView,
+  BattlefieldShopItem,
+  BattlefieldShopItemView,
+  BattlefieldRewardTierView,
+  GetBattlefieldResponseData,
+  SignupBattlefieldRequestData,
+  EnterBattlefieldRequestData,
+  SplitBattlefieldSquadRequestData,
+  MarchBattlefieldSquadRequestData,
+  BuyBattlefieldItemRequestData,
+  BuyBattlefieldItemResponseData,
+  BattlefieldPushData,
+  BattlefieldScript,
+  BattlefieldProgressRewardView,
+  FireBattlefieldRequestData,
+  ChainBattlefieldRequestData,
+} from './protocol-battlefield';
+export {
+  BATTLEFIELD_CAMPS,
+  isBattlefieldCamp,
+  BATTLEFIELD_SCRIPTS,
+  isBattlefieldScript,
+  BATTLEFIELD_STATUSES,
+  BATTLEFIELD_STRONGHOLD_KINDS,
+  BATTLEFIELD_SHOP_ITEMS,
+  isBattlefieldShopItem,
+  BATTLEFIELD_SQUAD_STATUSES,
+} from './protocol-battlefield';
+
+// 洛阳争夺（v79，AISLG-200）的载荷类型在 protocol-luoyang.ts，规则在 luoyang.ts
+export type {
+  LuoyangOwnerView,
+  LuoyangDecreeView,
+  LuoyangStatusView,
+  PublishDecreeRequestData,
+  PublishDecreeResponseData,
+} from './protocol-luoyang';
+export {
+  LUOYANG_NAME,
+  DECREE_KINDS,
+  isDecreeKind,
+  luoyangWindowOpen,
+  nextLuoyangOpen,
+  currentLuoyangWindow,
+} from './luoyang';
+export type { DecreeKind } from './luoyang';
+
+// 玩家交易所（v78，AISLG-196）的载荷类型在 protocol-market.ts，规则在 market.ts
+export type {
+  MarketSellerView,
+  MarketCityView,
+  MarketOrderView,
+  MarketTradeView,
+  MarketLimitsView,
+  GetMarketRequestData,
+  GetMarketResponseData,
+  CreateMarketOrderRequestData,
+  CreateMarketOrderResponseData,
+  BuyMarketOrderRequestData,
+  BuyMarketOrderResponseData,
+  CancelMarketOrderRequestData,
+  CancelMarketOrderResponseData,
+} from './protocol-market';
+export {
+  MARKET_RESOURCES,
+  MARKET_BUY_KINDS,
+  MARKET_MIN_AMOUNT,
+  MARKET_MAX_OPEN_ORDERS,
+  MARKET_FEE_PERCENT,
+  MARKET_ORDER_TTL_MS,
+  MARKET_MIN_GOVERNMENT,
+  isMarketResource,
+  isMarketBuyKind,
+} from './market';
+export type { MarketResource, MarketBuyKind } from './market';
+
+// 声望与爵位（v76，AISLG-197）的载荷类型在 protocol-nobility.ts，规则在 nobility.ts
+export type { NobilityStatusView, GetNobilityResponseData, ClaimNobilitySalaryResponseData } from './protocol-nobility';
+export {
+  NOBILITY_TIERS,
+  FAMOUS_CITY_NOBILITY_INDEX,
+  nobilityIndexOf,
+  nobilityName,
+  nobilitySalaryGold,
+  nobilityHeroCapBonus,
+  cityTitle,
+} from './nobility';
+export type { NobilityTier } from './nobility';
 
 // 城池 / 事件 / 建造 / 生产的视图类型（v7..v12 既有形态）同样拆在 protocol-city.ts
 export type {

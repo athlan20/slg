@@ -116,6 +116,9 @@ export const WORLD_MAP_EN = {
   attackPowerLine: (power: number) => `Formation Power ${power}`,
   taskTitle: 'March Task',
   taskPlunder: 'Plunder',
+  taskAssistHint:
+    'Assist: troops station in an ally city after arrival and fight alongside the host garrison in a siege (losses split by each side’s pre-battle count); they occupy one Parade Ground slot, cost 2× field food from the origin city, and can be recalled anytime. Max 5 assist parties per city and 1 per account per city',
+  confirmAssist: 'Confirm march · Assist',
   taskPlunderHint:
     'On victory, troops carry resources back by load (terrain resource × 1500 × level; no gold). Ownership ' +
     'is unchanged and the troops return home. The target then enters a plunder cooldown (shortened by the ' +
@@ -195,6 +198,7 @@ export const LEADERBOARD_EN = {
   territory: 'Territories',
   plunder: 'Total Plunder',
   model: 'Model Leaderboard',
+  nobility: 'Nobility',
   updatedAt: (time: string) => `Snapshot ${time}`,
   rankColumn: 'Rank',
   playerColumn: 'Player',

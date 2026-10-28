@@ -21,6 +21,8 @@
     "calibrate:troops": "tsx scripts/troop-calibration.ts",
     "calibrate:tower": "tsx scripts/tower-calibration.ts",
     "calibrate:hero": "tsx scripts/hero-calibration.ts",
+    "calibrate:tech": "tsx scripts/tech-calibration.ts",
+    "calibrate:defense": "tsx scripts/defense-calibration.ts",
     "calibrate:pvp": "tsx scripts/pvp-calibration.ts",
     "calibrate:arena": "tsx scripts/arena-calibration.ts",
     "calibrate:specialties": "tsx scripts/specialty-calibration.ts",

@@ -16,8 +16,10 @@ import { EventType, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
 import { armyCarryCapacity } from '../../common/src/troops';
-import { carryingPercent, defenseExtraPercent } from '../../common/src/tech';
+import { carryingPercent, combatTechBonus, defenseExtraPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
+import { consumeCityDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
+import { applyDefenseBattle, loadDefenseSetup } from './assist-defense';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent, famousWarehousePercent } from '../../common/src/famous-effects';
@@ -49,7 +51,8 @@ import {
   type TileNotify,
   abortForAlly,
 } from './tick-shared';
-import { areAllies } from '../../common/src/alliance-db';
+import { cannotAttack } from '../../common/src/alliance-db';
+import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -85,7 +88,7 @@ export async function resolvePvpPlunderArrival(
   );
   const city = cityRes.rows[0] as
     | {
-        id: string; account_id: string; truce_until: Date | null;
+        id: string; account_id: string; truce_until: Date | null; famous_name: string | null;
         gold: number; wood: number; food: number; stone: number; iron: number;
         username: string; newbie_until: Date | null; self_truce_until: Date | null;
       }
@@ -96,8 +99,14 @@ export async function resolvePvpPlunderArrival(
     return;
   }
   // v67（AISLG-182）：出发后目标才成为盟友（同一联盟）：不开战，原路返回
-  if (await areAllies(client, march.account_id, city.account_id)) {
+  if (await cannotAttack(client, march.account_id, city.account_id)) {
     await abortForAlly(client, march, troops, settled, notifies);
+    return;
+  }
+  // v79（AISLG-200）：洛阳只在周六 21:00–23:00 可攻打；窗口关闭则扑空返程
+  const luoyang = isLuoyangName(city.famous_name);
+  if (luoyang && !luoyangWindowOpen(now)) {
+    await abortMarchToReturn(client, march, troops, settled, notifies);
     return;
   }
   // 锁内复核保护 / 免战（同一城多支部队先后到达：前一支攻破触发免战后，后到的扑空返程）
@@ -105,7 +114,11 @@ export async function resolvePvpPlunderArrival(
     await abortProtected(client, march, troops, settled, notifies, 'NEWBIE_PROTECTED', city.newbie_until);
     return;
   }
-  if (inTruce(city.truce_until, city.self_truce_until, now)) {
+  if (luoyang && city.self_truce_until && city.self_truce_until > now) {
+    await abortProtected(client, march, troops, settled, notifies, 'TARGET_IN_TRUCE', city.self_truce_until);
+    return;
+  }
+  if (!luoyang && inTruce(city.truce_until, city.self_truce_until, now)) {
     const until = city.truce_until && city.truce_until > now ? city.truce_until : city.self_truce_until;
     await abortProtected(client, march, troops, settled, notifies, 'TARGET_IN_TRUCE', until);
     return;
@@ -114,36 +127,39 @@ export async function resolvePvpPlunderArrival(
   // 守城战（引擎口径与 NPC 袭城一致）：守军贴墙，城墙 + 城防科技 + 箭塔 + 城守加成；
   // 攻方带随队武将
   const levels = await loadBuildingLevels(client, city.id);
-  const armyRes = await client.query(
-    `SELECT troop, count FROM city_army WHERE city_id = $1 AND count > 0`,
-    [city.id],
-  );
-  const garrison: Partial<Record<TroopKind, number>> = {};
-  for (const row of armyRes.rows as { troop: TroopKind; count: number }[]) {
-    garrison[row.troop] = row.count;
-  }
+  // v74（AISLG-194）：城主驻军 + 协防部队合并成守方参战（各方科技按兵力加权、城守只覆盖城主部队）
+  const setup = await loadDefenseSetup(client, city.id, city.account_id, (accountId) => loadTechLevels(client, accountId));
+  const garrison = setup.hostArmy;
   // v62（AISLG-166）：守方名城（洛阳）城墙额外减伤、长安箭塔伤害，效果跟着被攻城走
   const famousName = await loadFamousName(client, city.id);
   const wall = wallDefensePercent(levels.wall ?? 0, (await defenseBonusOfDefender(client, city.account_id)) + famousWallExtraPercent(famousName));
   const guard = await loadCityGuard(client, city.id);
   const garrisonTotal = Object.values(garrison).reduce((sum, n) => sum + (n ?? 0), 0);
-  const guardBonus = battleBonusOf(guard, garrisonTotal);
+  const guardBonus = battleBonusOf(guard, setup.hostUnits);
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  const result = resolveBattle(troops, garrison, {
+  const defenses = await loadCityDefenses(client, city.id);
+  const result = resolveBattle(troops, setup.merged, {
     wallDefensePercent: wall,
     siege: true,
     tower: towerStats(levels.arrow_tower ?? 0, famousTowerPercent(famousName)),
     attackerHero: hero?.engine ?? null,
     defenderHero: guardBonus,
+    defenderHeroScale: setup.heroScale,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+    defenderTech: setup.defenderTech,
+    defenses,
   });
+  // v73（AISLG-193）：攻守双方战报都带器械用量，库存同事务扣减
+  await consumeCityDefenses(client, city.id, result.defenseUse);
 
   // 双方战报（每账号一份，各自视角）与命名
   const attackerNaming = await loadCityNaming(client, march.from_city_id);
   const attackerName = attackerNaming ? `${attackerNaming.username} · ${attackerNaming.cityName}` : '出征部队';
   const cityNameRes = await client.query(`SELECT name FROM cities WHERE id = $1`, [city.id]);
   const targetCityName = (cityNameRes.rows[0] as { name: string } | undefined)?.name ?? '城池';
-  const defenderName = `${city.username} 的守军（${targetCityName}${guard ? ` · 城守 ${guard.name}` : ''}）`;
-  const guardView = guard ? heroBattleView(guard, garrisonTotal) : null;
+  const assistNote = setup.parties.length > 0 ? ` · 协防 ${setup.parties.length} 支` : '';
+  const defenderName = `${city.username} 的守军（${targetCityName}${guard ? ` · 城守 ${guard.name}` : ''}${assistNote}）`;
+  const guardView = guard ? heroBattleView(guard, setup.hostUnits) : null;
   const attackerReportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon, 'pvp_raid',
     tile.x, tile.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null, guardView,
@@ -152,6 +168,14 @@ export async function resolvePvpPlunderArrival(
     client, city.account_id, 'defender', !result.attackerWon, 'pvp_raid',
     tile.x, tile.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null, guardView,
   );
+  // v74：协防方各收到一份战报（assistLosses 给出自己那部分损失）
+  const assistLosses = await applyDefenseBattle(client, city.id, setup, result, notifies);
+  for (const party of assistLosses) {
+    await saveBattleReport(
+      client, party.accountId, 'defender', !result.attackerWon, 'pvp_raid',
+      tile.x, tile.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null, guardView, party.losses,
+    );
+  }
 
   // 攻方随队武将结算（经验 / 战败重伤）；守方城守获得经验（守不住减半）
   const heroSettle = await settleMarchHero(client, march, result, notifies);
@@ -171,20 +195,8 @@ export async function resolvePvpPlunderArrival(
     });
   }
 
-  // 驻军按战斗结果回写（全灭即清空；守住按幸存数）
-  await client.query(`DELETE FROM city_army WHERE city_id = $1`, [city.id]);
-  for (const kind of Object.keys(result.defender.survivors) as TroopKind[]) {
-    const count = result.defender.survivors[kind] ?? 0;
-    if (count > 0) {
-      await client.query(
-        `INSERT INTO city_army (city_id, troop, count) VALUES ($1, $2, $3)`,
-        [city.id, kind, count],
-      );
-    }
-  }
-
   const attackerPower = armyPower(troops);
-  const defenderPower = armyPower(garrison);
+  const defenderPower = armyPower(setup.merged);
 
   if (!result.attackerWon) {
     // 攻方战败：幸存部队撤回出发城；守方守住计连胜 + 播报（连胜满 5 场才出，与 NPC 袭城同口径）
@@ -253,7 +265,7 @@ export async function resolvePvpPlunderArrival(
   );
   const carry = armyCarryCapacity(result.attacker.survivors, carryingPercent(await loadTechLevels(client, march.account_id)));
   const loot = loadByCarry(carry, pool);
-  const truceUntil = new Date(now.getTime() + scaledMs(PVP_CITY_TRUCE_MS));
+  const truceUntil = luoyang ? null : new Date(now.getTime() + scaledMs(PVP_CITY_TRUCE_MS));
   await client.query(
     `UPDATE cities SET gold = gold - $2, wood = wood - $3, food = food - $4,
             stone = stone - $5, iron = iron - $6, truce_until = $7 WHERE id = $1`,
@@ -295,7 +307,7 @@ export async function resolvePvpPlunderArrival(
       outcome: 'garrison_lost',
       attacker: { username: attackerNaming?.username ?? null, cityId: march.from_city_id, cityName: attackerNaming?.cityName ?? null },
       loot,
-      truceUntil: truceUntil.toISOString(),
+      truceUntil: truceUntil ? truceUntil.toISOString() : null,
       losses: result.defender.losses,
       rounds: result.rounds,
       attackerPower, defenderPower,

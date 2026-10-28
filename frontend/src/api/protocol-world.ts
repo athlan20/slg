@@ -5,6 +5,7 @@
 import type { ArmyCounts, InitiatorRole, Resources, TroopKind } from './protocol';
 import type { YtTileCampView } from './protocol-yt';
 import type { BattleHeroView } from './protocol-hero';
+import type { DefenseScoutView, DefenseUseView } from './protocol-defense';
 
 /** 地形清单（v19 新增金矿 gold_mine）：平原 / 草原 / 森林 / 丘陵 / 荒漠 / 沼泽 / 湖泊 / 金矿 */
 export type TerrainKind = 'plain' | 'grass' | 'forest' | 'hill' | 'desert' | 'marsh' | 'lake' | 'gold_mine';
@@ -32,8 +33,13 @@ export interface TileOwnerView {
   username: string;
   cityId: string;
   cityName: string;
+  /** 占领者爵位（v76，AISLG-197） */
+  nobility: number;
+  nobilityName: string;
   /** 占领者与自己同属一个联盟（v67，AISLG-182）：盟友的地块不能攻击 / 侦察，地图单独着色；自己的地块为 false */
   ally: boolean;
+  /** v77（AISLG-195）：与占领者的关系 self / ally / friendly / hostile / neutral */
+  relation: 'self' | 'ally' | 'friendly' | 'hostile' | 'neutral';
 }
 
 /** NPC 城池库存档位（v23 AISLG-55；相对该城初始库存，不给精确数值） */
@@ -130,6 +136,10 @@ export interface TileDetailView extends TileView {
   plunderedAt: string | null;
   /** 在野名将情报（v54）：侦察后给出名字与属性 */
   wildFamousIntel: { scouted: boolean; name: string | null; attrs: { lead: number; force: number; wit: number } | null } | null;
+  /** 城防器械（v73 AISLG-193）：自己的城给精确库存，他人的城给侦察快照；其余为 null */
+  defenses: DefenseScoutView | null;
+  /** 协防部队（v74）：自己的城 / 盟友的城给 "谁在协防、带了多少兵"；其余为 null */
+  assists: import('./protocol-assist').AssistView[] | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */
@@ -153,7 +163,7 @@ export interface TerritoryView {
 }
 
 /** 出征任务（v16）：plunder 掠夺（缺省）/ occupy 占领；v26 transport 运输（目标限本账号另一座城，须带 cargo） */
-export type MarchTask = 'plunder' | 'occupy' | 'transport';
+export type MarchTask = 'plunder' | 'occupy' | 'transport' | 'assist';
 
 /** 行军视图 */
 export interface MarchView {
@@ -164,7 +174,7 @@ export interface MarchView {
   y: number;
   troops: ArmyCounts;
   /** v16 新增 plunder（掠夺）/ occupy（占领）/ reinforce（增援）；attack 仅存量在途行军 */
-  purpose: 'plunder' | 'occupy' | 'reinforce' | 'attack' | 'scout' | 'transfer' | 'transport' | 'intercept' | 'return';
+  purpose: 'plunder' | 'occupy' | 'reinforce' | 'attack' | 'scout' | 'transfer' | 'transport' | 'intercept' | 'return' | 'assist';
   status: 'marching' | 'arrived' | 'returned';
   initiator: InitiatorRole;
   startedAt: string;
@@ -223,7 +233,7 @@ export interface BattleReportView {
   id: number;
   x: number;
   y: number;
-  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest';
+  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
   role: 'attacker' | 'defender';
   won: boolean;
   rounds: number;
@@ -237,6 +247,10 @@ export interface BattleReportView {
   towerDamage?: number;
   /** 冲车破墙（v33 AISLG-86）：开战时城墙减伤原值 → 破墙后（百分数）；无冲车 / 非攻城战为缺省 */
   wallBreak?: { from: number; to: number };
+  /** 城防器械用量（v73 AISLG-193）：守城战实际用掉的器械，一种一项；无器械 / 未触发为缺省 */
+  defenses?: DefenseUseView[];
+  /** 协防方视角的自身伤亡（v74）：只有协防方的战报带本字段 */
+  assistLosses?: ArmyCounts;
   roundLog: BattleRoundLogEntryView[];
   /** Agent 点评（v23 AISLG-53）；尚无点评时为 null */
   comment: BattleReportCommentView | null;
@@ -303,6 +317,8 @@ export interface ScoutIntel {
   npcStock: Partial<Record<'gold' | 'wood' | 'food' | 'stone' | 'iron', number>> | null;
   /** 情报获取时间（ISO 8601） */
   scoutedAt: string;
+  /** 城防器械（v73 AISLG-193）：玩家城池才有；按侦察科技三档 */
+  defenses?: DefenseScoutView | null;
 }
 
 /** GET_STATE 响应的 cities 元素：账号全部城池（主城在前） */
@@ -313,6 +329,9 @@ export interface CityRefView {
   x: number | null;
   y: number | null;
   isMain: boolean;
+  /** v76（AISLG-197）：城池称号与账号爵位 */
+  title: string;
+  nobility: { index: number; name: string };
 }
 
 /** GET_STATE 响应的 branch：分城名额（v24，AISLG-58） */
@@ -336,7 +355,7 @@ export interface WorldMapResponseData {
 }
 
 /** 小地图城池点位的归属：本方 / 他方玩家城池 / NPC 城池 / 未被占领的名城 */
-export type MapOverviewSide = 'own' | 'ally' | 'enemy' | 'npc' | 'famous';
+export type MapOverviewSide = 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous';
 
 /** GET_MAP_OVERVIEW 响应（v58，AISLG-160）：城池点位 [x, y, side]，按 y 行 x 列排序；野地不返回 */
 export interface MapOverviewResponseData {

@@ -14,10 +14,19 @@ import {
   ALLIANCE_LEADER_INACTIVE_MS,
   ALLIANCE_MAX_MEMBERS,
 } from '../common/src/protocol-alliance';
-import { areAllies, getMembership, purgeExpired, transferInactiveLeaders } from '../common/src/alliance-db';
+import {
+  areAllies,
+  cannotAttack,
+  getMembership,
+  hostileAllianceFor,
+  loadDiplomacy,
+  purgeExpired,
+  transferInactiveLeaders,
+} from '../common/src/alliance-db';
 import type { ConnectionRegistry, ConnInfo } from '../api/src/connections';
 import type { HandlerContext } from '../api/src/handlers';
 import { handleAllianceOp } from '../api/src/handlers-alliance';
+import { handleAllianceDiplomacyOp } from '../api/src/handlers-alliance-diplomacy';
 import { normalizeAllianceName } from '../api/src/handlers-alliance-manage';
 import { initBannedWordFilter } from '../api/src/chat-words';
 import { createTempDatabase, type TempDatabase } from './season-test-db';
@@ -71,6 +80,12 @@ describe('联盟（需 TEST_DATABASE_URL）', { skip: baseUrl ? false : '未设�
   async function call(accountId: string, op: number, data?: Record<string, unknown>, role: 'player' | 'agent' = 'player'): Promise<Frame> {
     last = undefined;
     await handleAllianceOp(ctx, conn(accountId, role), op, (seq += 1), data);
+    assert.ok(last, `op ${op} 没有回包`);
+    return last as Frame;
+  }
+  async function callDiplomacy(accountId: string, op: number, data?: Record<string, unknown>, role: 'player' | 'agent' = 'player'): Promise<Frame> {
+    last = undefined;
+    await handleAllianceDiplomacyOp(ctx, conn(accountId, role), op, (seq += 1), data);
     assert.ok(last, `op ${op} 没有回包`);
     return last as Frame;
   }
@@ -399,6 +414,83 @@ describe('联盟（需 TEST_DATABASE_URL）', { skip: baseUrl ? false : '未设�
     assert.equal(await areAllies(pool, a.leader, m), true);
     assert.equal(await areAllies(pool, a.leader, outsider), false);
     assert.equal(await areAllies(pool, a.leader, a.leader), false);
+  });
+
+  test('外交：友盟互不攻击、敌对只标记、解除友好后冷却期仍不可攻击', async () => {
+    const a = await makeAlliance('外交甲');
+    const b = await makeAlliance('外交乙');
+    const m = await join(b.id, b.leader, 'diplo-member');
+    assert.equal(await cannotAttack(pool, a.leader, m), false, '中立可以攻击');
+
+    const [x, y] = a.id < b.id ? [a.id, b.id] : [b.id, a.id];
+    await pool.query(
+      `INSERT INTO alliance_relations (a_id, b_id, relation, established_at) VALUES ($1, $2, 'friendly', now())`,
+      [x, y],
+    );
+    assert.equal(await cannotAttack(pool, a.leader, m), true, '友盟不能攻击');
+    const diplo = await loadDiplomacy(pool, a.id);
+    assert.equal(diplo.friends.length, 1);
+    assert.equal(diplo.friends[0].alliance.id, b.id);
+    assert.equal(await hostileAllianceFor(pool, a.leader, m), null, '友盟不是敌对');
+
+    await pool.query(`UPDATE alliance_relations SET relation = 'hostile' WHERE a_id = $1 AND b_id = $2`, [x, y]);
+    assert.equal(await cannotAttack(pool, a.leader, m), false, '敌对不禁止攻击');
+    assert.deepEqual(await hostileAllianceFor(pool, a.leader, m), { id: a.id, name: '外交甲' });
+
+    await pool.query(
+      `UPDATE alliance_relations SET relation = 'neutral', no_attack_until = now() + interval '24 hours',
+              refriend_after = now() + interval '72 hours' WHERE a_id = $1 AND b_id = $2`,
+      [x, y],
+    );
+    assert.equal(await cannotAttack(pool, a.leader, m), true, '解除友好 24 小时内仍不能攻击');
+    assert.equal((await loadDiplomacy(pool, a.id)).friends.length, 0);
+    await pool.query(`UPDATE alliance_relations SET no_attack_until = now() - interval '1 second' WHERE a_id = $1 AND b_id = $2`, [x, y]);
+    assert.equal(await cannotAttack(pool, a.leader, m), false, '冷却结束恢复');
+  });
+
+  test('外交协议：邀请 / 同意 / 解除冷却 / 上限 / Agent 拦截', async () => {
+    const a = await makeAlliance('外交协议甲');
+    const b = await makeAlliance('外交协议乙');
+    const c = await makeAlliance('外交协议丙');
+    const d = await makeAlliance('外交协议丁');
+
+    // Agent 不能发起
+    expectErr(await callDiplomacy(a.leader, Op.ALLIANCE_DIPLOMACY_INVITE, { allianceId: b.id }, 'agent'), 'AGENT_FORBIDDEN');
+
+    // a → b 邀请，b 同意
+    expectOk(await callDiplomacy(a.leader, Op.ALLIANCE_DIPLOMACY_INVITE, { allianceId: b.id }));
+    const bView = expectOk(await callDiplomacy(b.leader, Op.GET_ALLIANCE_DIPLOMACY));
+    const inviteId = (bView.invites as Array<{ id: string }>)[0]?.id;
+    assert.ok(inviteId, 'b 收到邀请');
+    expectOk(await callDiplomacy(b.leader, Op.ALLIANCE_DIPLOMACY_RESPOND, { inviteId, accept: true }));
+    assert.equal(await cannotAttack(pool, a.leader, b.leader), true);
+
+    // 联盟频道各写一条系统消息
+    const sys = await pool.query(
+      `SELECT alliance_id, system_event->>'kind' AS kind FROM chat_messages
+       WHERE alliance_id = ANY($1::uuid[]) AND system_event->>'kind' = 'alliance_diplomacy_friendly'`,
+      [[a.id, b.id]],
+    );
+    assert.equal(sys.rowCount, 2, '双方联盟频道各一条系统消息');
+
+    // 再结一个友盟后用满 2 个；第三个邀请被拒
+    expectOk(await callDiplomacy(a.leader, Op.ALLIANCE_DIPLOMACY_INVITE, { allianceId: c.id }));
+    const cView = expectOk(await callDiplomacy(c.leader, Op.GET_ALLIANCE_DIPLOMACY));
+    const cInvite = (cView.invites as Array<{ id: string }>)[0]?.id;
+    expectOk(await callDiplomacy(c.leader, Op.ALLIANCE_DIPLOMACY_RESPOND, { inviteId: cInvite, accept: true }));
+    const limit = await callDiplomacy(a.leader, Op.ALLIANCE_DIPLOMACY_INVITE, { allianceId: d.id });
+    expectErr(limit, 'DIPLOMACY_LIMIT');
+
+    // 解除 a-b：24 小时内仍不能攻击，72 小时内不能再次结好
+    expectOk(await callDiplomacy(a.leader, Op.ALLIANCE_DIPLOMACY_END, { allianceId: b.id }));
+    assert.equal(await cannotAttack(pool, a.leader, b.leader), true);
+    expectErr(await callDiplomacy(a.leader, Op.ALLIANCE_DIPLOMACY_INVITE, { allianceId: b.id }), 'DIPLOMACY_COOLDOWN');
+
+    // 宣布敌对：只标记，不禁止攻击
+    expectOk(await callDiplomacy(a.leader, Op.ALLIANCE_DIPLOMACY_HOSTILE, { allianceId: b.id }));
+    assert.equal(await cannotAttack(pool, a.leader, b.leader), true, '从友好转敌对仍保留 24 小时冷却');
+    const dView = expectOk(await callDiplomacy(a.leader, Op.GET_ALLIANCE_DIPLOMACY));
+    assert.equal((dView.hostiles as unknown[]).length, 1);
   });
 
   test('推送：入盟、踢人给相关账号推 PUSH_ALLIANCE_STATE', async () => {

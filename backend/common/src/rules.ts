@@ -6,6 +6,8 @@
 import { BUILDING_KINDS, RESOURCE_KEYS, type BuildingKind, type KindActionCosts, type Resources } from './protocol';
 import { FAMOUS_THEME_LEVEL_MAX, famousThemeBuildingOf } from './famous-effects';
 import { getTimeScale, scaledRate } from './time-scale';
+import { EXCHANGE_INPUT_PER_GOLD, exchangeGoldFor } from './exchange';
+export { EXCHANGE_INPUT_PER_GOLD, exchangeGoldFor } from './exchange';
 
 /** 建筑建成后的经济产出；非生产建筑为 null（军营的征兵、城墙的守城加成属后续玩法） */
 export type ProducesKind = 'food' | 'wood' | 'stone' | 'iron' | 'gold';
@@ -289,18 +291,20 @@ export function buildTimeBasis(): { seconds: number; scale: number } {
   return { seconds: DEFAULT_BUILD_SECONDS, scale: getTimeScale() };
 }
 
-/** 新建时长（秒）= max(1, floor(基准 ÷ scale)) */
-export function buildSeconds(): number {
-  return upgradeSeconds(1);
+/** 新建时长（秒）= max(1, floor(基准 ÷ scale))；reducePercent 为「建筑」科技折扣（v72，每级 3%） */
+export function buildSeconds(reducePercent = 0): number {
+  return upgradeSeconds(1, reducePercent);
 }
 
 /**
  * 升级时长（秒）：占位公式 = 建造时长 × 升级倍数（upgradeLevelFactor：1~10 级 Lv1→2 为 2 倍时长，
- * 以此类推线性；10 级以后每级 ×1.3，v31），全局缩放作用于总时长：max(1, floor(基准 × 倍数 ÷ scale))。
+ * 以此类推线性；10 级以后每级 ×1.3，v31），再按「建筑」科技折扣缩短（v72，v72 AISLG-192），
+ * 全局缩放作用于总时长：max(1, floor(基准 × 倍数 × (1 − reducePercent/100) ÷ scale))。
  */
-export function upgradeSeconds(currentLevel: number): number {
+export function upgradeSeconds(currentLevel: number, reducePercent = 0): number {
   const { seconds, scale } = buildTimeBasis();
-  return Math.max(1, Math.floor((seconds * upgradeLevelFactor(currentLevel)) / scale));
+  const factor = 1 - Math.min(100, Math.max(0, reducePercent)) / 100;
+  return Math.max(1, Math.floor((seconds * upgradeLevelFactor(currentLevel) * factor) / scale));
 }
 
 /** 升级成本（占位公式 = 建造成本 × 升级倍数 upgradeLevelFactor，逐项取整；1~10 级线性不变，10 级以后每级 ×1.3） */
@@ -320,7 +324,11 @@ export function upgradeCost(kind: BuildingKind, currentLevel: number): Resources
  * v25（AISLG-71）另附各动作时长（秒，已按当前 timeScale 折算），null 语义与对应成本字段一致。
  * 只按等级推导，不反映队列状态（队满/在队等阻断由客户端按钮层处理）。
  */
-export function actionCosts(levels: Record<BuildingKind, number>, famousName?: string | null): Record<BuildingKind, KindActionCosts> {
+export function actionCosts(
+  levels: Record<BuildingKind, number>,
+  famousName?: string | null,
+  reducePercent = 0,
+): Record<BuildingKind, KindActionCosts> {
   const result = {} as Record<BuildingKind, KindActionCosts>;
   for (const kind of BUILDING_KINDS) {
     const level = levels[kind] ?? 0;
@@ -328,8 +336,8 @@ export function actionCosts(levels: Record<BuildingKind, number>, famousName?: s
     result[kind] = {
       build: level === 0 ? { ...BUILDING_INFO[kind].cost } : null,
       upgrade: upgradable ? upgradeCost(kind, level) : null,
-      buildSeconds: level === 0 ? buildSeconds() : null,
-      upgradeSeconds: upgradable ? upgradeSeconds(level) : null,
+      buildSeconds: level === 0 ? buildSeconds(reducePercent) : null,
+      upgradeSeconds: upgradable ? upgradeSeconds(level, reducePercent) : null,
     };
   }
   return result;
@@ -473,12 +481,6 @@ export function applyCost(resources: Resources, cost: Resources): Resources {
  * 定位是「过满资源的可持续出口」而非套利通道：四资源换金的产出比官府产金低一个量级，
  * 不构成最优策略，只为满仓资源保底变现（同时缓解储量顶满后的产出作废）。
  */
-export const EXCHANGE_INPUT_PER_GOLD = 4;
-
-/** 兑换所得金币 = floor(amount ÷ 汇率)；不足 1 金返回 0（协议层按 INVALID_PARAMS 拒绝） */
-export function exchangeGoldFor(amount: number): number {
-  return Math.floor(Math.max(0, amount) / EXCHANGE_INPUT_PER_GOLD);
-}
 
 /** 到期完成的状态推进（纯函数）：Worker 依据它的结果写库；对建筑类型不敏感 */
 export function completeBuild(build: { status: string; level: number }): {

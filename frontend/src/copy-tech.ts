@@ -1,4 +1,4 @@
-// 科技研究文案（v27，AISLG-77；与 copy.ts 分文件以控制单文件行数）
+// 科技研究文案（v27 AISLG-77；v72 AISLG-192 扩到十六项；与 copy.ts 分文件以控制单文件行数）
 
 import type { TechKind } from './api/protocol-tech';
 
@@ -15,7 +15,10 @@ export const TECH_COPY = {
     rowTech: '科技作用：',
     rowNext: (level: number) => `下一级 Lv${level}：`,
     duration: (seconds: string) => `耗时 ${seconds}`,
-    currentEffect: (percent: number) => (percent > 0 ? `+${percent}%` : '尚未生效'),
+    // 带符号：加成为 +x%、减少时长 / 耗粮 / 受伤为 −x%
+    currentEffect: (percent: number) => (percent > 0 ? `+${percent}%` : percent < 0 ? `−${Math.abs(percent)}%` : '尚未生效'),
+    category: { development: '发展', military: '军事' },
+    researchShort: '研究',
     maxed: '已满级',
     needAcademy: (required: number) => `需书院 Lv${required}`,
     research: '研究',
@@ -46,6 +49,16 @@ export const TECH_COPY = {
     storage: '储存',
     scouting: '侦察',
     defense: '城防',
+    drill: '练兵',
+    combat: '战斗',
+    protection: '防护',
+    riding: '驾驭',
+    archery: '抛射',
+    supply: '补给',
+    construction: '建筑',
+    research: '研究',
+    looting: '掠夺',
+    repair: '维修',
   } satisfies Record<TechKind, string>,
   /** 科技效果说明（AISLG-137）：协议里的 effect 是服务端中文，前端按科技维护对照（不改协议）；
    *  中文值镜像 backend/common/src/tech.ts 的 effect，界面显示以这里为准 */
@@ -56,6 +69,16 @@ export const TECH_COPY = {
     storage: '粮、木、石、铁储量上限每级 +5%',
     scouting: '侦察报告更详细：Lv3 起看到兵种明细，Lv6 起看到精确数量',
     defense: '主城守城时城墙减伤每级额外 +1%（加在城墙加成上）',
+    drill: '征兵时长每级 −3%（10 级 −30%）',
+    combat: '世界地图战斗中我方全军攻击每级 +1.5%（10 级 +15%）',
+    protection: '世界地图战斗中我方全军受到伤害每级 −1.5%（10 级 −15%）',
+    riding: '骑兵类兵种战斗速度每级 +2%（10 级 +20%）',
+    archery: '远程兵种（弓箭兵 / 床弩 / 诸葛连弩 / 先登死士）射程每级 +1%（10 级 +10%）',
+    supply: '部队耗粮（城内、行军、驻守）每级 −3%（10 级 −30%）',
+    construction: '建造、升级时长每级 −3%（10 级 −30%）',
+    research: '科技研究时长每级 −3%（10 级 −30%）',
+    looting: '掠夺野地时可抢的资源池每级 +4%（10 级 +40%）',
+    repair: '分城城防值每小时回涨每级 +5%（基础 10 点/小时，10 级 15 点/小时）',
   } satisfies Record<TechKind, string>,
   session: {
     started: (label: string, level: number) => `开始研究 ${label} Lv${level}`,

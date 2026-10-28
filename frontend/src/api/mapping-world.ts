@@ -48,6 +48,14 @@ function resourcesSuffix(resources: Partial<Resources> | undefined): string {
 }
 
 /** 科技中文名（v27 研究事件）；未知值原样显示 */
+/** 城防器械名（未知种类回落服务端原文以外的通用词，避免出现 undefined） */
+function defenseName(kind: unknown): string {
+  const { DEFENSE_COPY } = getCopy();
+  return typeof kind === 'string' && kind in DEFENSE_COPY.names
+    ? DEFENSE_COPY.names[kind as keyof typeof DEFENSE_COPY.names]
+    : String(kind ?? '');
+}
+
 function techLabel(tech: unknown): string {
   const { TECH_COPY } = getCopy();
   return (TECH_COPY.names as Record<string, string>)[String(tech)] ?? String(tech ?? '?');
@@ -143,7 +151,7 @@ export function eventText(view: EventView): string {
 }
 
 function baseEventText(view: EventView): string {
-  const { COPY, CITY_COPY, MOVING_COPY, YT_COPY, STARVE_COPY, TECH_COPY, RESOURCE_LABEL, EXTRA_STATE } = getCopy();
+  const { COPY, CITY_COPY, MOVING_COPY, YT_COPY, STARVE_COPY, TECH_COPY, RESOURCE_LABEL, EXTRA_STATE, DEFENSE_COPY } = getCopy();
   switch (view.type) {
     case 'build_started':
       return view.detail.fromQueue === true
@@ -186,6 +194,28 @@ function baseEventText(view: EventView): string {
       return TECH_COPY.event.completed(techLabel(view.detail.tech), Number(view.detail.level ?? 0));
     case 'research_cancelled':
       return TECH_COPY.event.cancelled(techLabel(view.detail.tech), Number(view.detail.level ?? 0), cargoText(view.detail.refund as Partial<Resources> | undefined));
+    case 'defense_craft_started':
+      return DEFENSE_COPY.event.started(defenseName(view.detail.kind), countOf(view.detail), formatClock(String(view.detail.dueAt ?? '')));
+    case 'defense_craft_queued':
+      return DEFENSE_COPY.event.queued(defenseName(view.detail.kind), countOf(view.detail));
+    case 'defense_craft_completed':
+      return DEFENSE_COPY.event.completed(defenseName(view.detail.kind), countOf(view.detail), Number(view.detail.total ?? 0));
+    case 'defense_craft_cancelled':
+      return DEFENSE_COPY.event.cancelled(defenseName(view.detail.kind), countOf(view.detail), cargoText(view.detail.refund as Partial<Resources> | undefined));
+    case 'assist_arrived':
+      return DEFENSE_COPY.event.assistArrived(
+        String(view.detail.hostUsername ?? ''),
+        tName(String(view.detail.hostCityName ?? '')),
+        troopsSuffix(view.detail.troops as Record<string, unknown> | undefined),
+      );
+    case 'assist_returned': {
+      const cause = typeof view.detail.cause === 'string' ? (DEFENSE_COPY.event.assistCause[view.detail.cause] ?? view.detail.cause) : '';
+      return DEFENSE_COPY.event.assistReturned(
+        String(view.detail.hostUsername ?? EXTRA_STATE.mapping.cityFallback),
+        tName(String(view.detail.hostCityName ?? EXTRA_STATE.mapping.cityFallback)),
+        cause,
+      );
+    }
     case 'city_renamed':
       return EXTRA_STATE.event.cityRenamed(String(view.detail.from ?? ''), String(view.detail.to ?? ''));
     case 'account_reset':
@@ -409,7 +439,7 @@ export function serverBroadcastText(view: {
   type: string;
   detail: Record<string, unknown>;
 }): string {
-  const { YT_COPY, HERO_COPY, EXTRA_STATE, ANNOUNCEMENT_COPY } = getCopy();
+  const { YT_COPY, HERO_COPY, EXTRA_STATE, ANNOUNCEMENT_COPY, CITY_COPY, ALLIANCE_COPY } = getCopy();
   const actor =
     typeof view.detail.username === 'string'
       ? view.detail.cityName
@@ -448,6 +478,14 @@ export function serverBroadcastText(view: {
     case 'star_tower_cleared':
       // v55 AISLG-146：将星塔 Boss 层首通（floor 为刚通过的层）
       return EXTRA_STATE.broadcast.starTowerCleared(actor, Number(view.detail.floor ?? 0));
+    case 'alliance_diplomacy':
+      return ALLIANCE_COPY.diplomacy.broadcast(
+        String(view.detail.kind ?? ''),
+        String(view.detail.actorAllianceName ?? ''),
+        String(view.detail.otherAllianceName ?? ''),
+      );
+    case 'nobility_promoted':
+      return CITY_COPY.nobility.promoted(actor, String(view.detail.name ?? ''));
     case 'yt_finished':
       return YT_COPY.broadcast.finished(String(view.detail.reason ?? ''), Number(view.detail.clearedCamps ?? 0), Number(view.detail.totalCamps ?? 0), Number(view.detail.scatteredCamps ?? 0));
     default:
