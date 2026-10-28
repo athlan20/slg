@@ -335,7 +335,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '先用 GET_TECHS 确认 research 字段；已完成的研究无法取消。',
   },
   DEPLOY_LIMIT: {
-    desc: '本城同时在外的部队数已达校场等级上限（v30，AISLG-80）：MARCH / SCOUT 发起时校验，上限 = 校场等级（未建校场按 1），计入行军中、返程中、驻守野地的部队（每块占领野地算一支），不计城内驻军；上线前已在外的部队不受影响、不强制召回，只拦新的出征，直到在外数量降到上限以下。失败 data 附 city（city.deploy = { count, limit }）。分城各算各的。',
+    desc: '本城同时在外的部队数已达校场等级上限（v30，AISLG-80）：MARCH / SCOUT 发起时校验，上限 = 校场等级（未建校场按 1），计入行军中、返程中、驻守野地的部队（每块占领野地算一支），不计城内驻军与交易所商队（不带兵）；上线前已在外的部队不受影响、不强制召回，只拦新的出征，直到在外数量降到上限以下。失败 data 附 city（city.deploy = { count, limit }）。分城各算各的。',
     action: '等在外部队回城 / 用 RECALL_GARRISON 召回驻军降到上限以下再出征，或升级本城校场（parade_ground）；GET_STATE 的 city.deploy 可提前判断。',
   },
   MOVING_TARGET_GONE: {

@@ -376,9 +376,10 @@ export async function lockCitySnapshot(
   };
 }
 
-/** 本城在外部队数（v30，AISLG-80）：进行中的行军（含返程）+ 本城占领野地的驻军（每块野地算一支） */
+/** 本城在外部队数（v30，AISLG-80）：进行中的行军（含返程）+ 本城占领野地的驻军（每块野地算一支）；交易所商队不带兵，不占名额 */
 export function deployCountOf(snap: Pick<CitySnapshot, 'marches' | 'territory'> & { assistsOut?: unknown[] }): number {
-  return snap.marches.length + snap.territory.length + (snap.assistsOut?.length ?? 0);
+  const troopMarches = snap.marches.filter((march) => march.purpose !== 'caravan').length;
+  return troopMarches + snap.territory.length + (snap.assistsOut?.length ?? 0);
 }
 
 /** 按建筑类型展开数量（0/1）与等级两张映射（v7 起为九种建筑） */
