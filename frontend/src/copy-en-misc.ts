@@ -145,6 +145,8 @@ export const ERRORS_EN = {
     targetNotAttackable: 'This target cannot be marched against yet (player cities and tiles occupied by others; PvP opens in a later phase)',
     insufficientTroops: 'Not enough troops in the city for this formation (troops on the march are not in the city)',
     tileNotOccupied: 'This tile is not occupied by your account, so its garrison cannot be recalled',
+    garrisonWouldEmpty: 'A partial recall cannot empty the tile: at least 1 troop must stay (to recall everything, use "Recall all", which abandons the occupation)',
+    insufficientGarrison: 'The number to recall exceeds the tile garrison for that troop type; check the counts per type',
     invalidParams: 'Invalid march parameters (coordinates out of bounds, empty formation, or invalid task value)',
     plunderCooldown: 'This tile was just plundered successfully and is in plunder cooldown (occupying is not limited by the cooldown)',
     taskInvalidForTarget: 'This task does not apply to that target (NPC cities support plunder only)',
@@ -184,6 +186,8 @@ export const SESSION_EN = {
   cancelRecruitRejected: (message: string) => `Recruit cancellation rejected (${message})`,
   cancelRecruitFailedFallback: 'Failed to cancel recruitment',
   marchStarted: (x: number, y: number, dueClock: string) => `Troops marching out → (${x},${y}), due ${dueClock}`,
+  recallPartialStarted: (x: number, y: number, dueClock: string) =>
+    `Part of the garrison departing (${x},${y}) for home, due ${dueClock}; occupation kept`,
   recallStarted: (x: number, y: number, dueClock: string) =>
     `Garrison departing (${x},${y}) for home, due ${dueClock}; occupation abandoned`,
   scoutStarted: (x: number, y: number, count: number, dueClock: string) =>

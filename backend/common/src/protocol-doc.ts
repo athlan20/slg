@@ -262,6 +262,14 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '该地块未被本账号占领（无主、他人占领或不是野地），无法召回驻军（v12）。',
     action: '用 GET_STATE 的 city.territory 核对本账号占领的野地坐标，只对列表中的地块发起 RECALL_GARRISON。',
   },
+  GARRISON_WOULD_EMPTY: {
+    desc: '部分撤回（RECALL_GARRISON 带 troops，v83）的撤回总数等于或超过该地块驻军总数，会把地块撤空。部分撤回不放弃占领，因此地块至少要留 1 个兵；不改任何数据。',
+    action: '减少撤回数量，使地块至少留 1 兵；若要全部撤回并放弃占领，不带 troops 重新发起 RECALL_GARRISON。',
+  },
+  INSUFFICIENT_GARRISON: {
+    desc: '部分撤回（RECALL_GARRISON 带 troops，v83）中某兵种的撤回数量超过该地块现有驻军。不改任何数据。',
+    action: '用 GET_STATE 的 city.territory 或 GET_TILE 的 tile.garrisonDetail 核对各兵种现有驻军，按实际数量重发。',
+  },
   MARCH_NOT_RECALLABLE: {
     desc: '行军不存在、不属于本账号、不在行军途中或已是返程，无法撤回（v13）。',
     action: '用 GET_STATE 的 city.marches 核对行军 id 与状态，只对 status=marching 且 purpose 不是 return 的行军发起 RECALL_MARCH。',
@@ -900,7 +908,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '行军（march）',
-    desc: `MARCH 从主城派出部队（发起时立即扣减城内驻军），时长 = Chebyshev 距离 × 每格秒数（默认 15 秒，占位）÷ 编队最慢兵种的行军速度系数（斥候 ×2、轻骑兵 ×1.5，占位），总时长再 ÷ 全局时间缩放（钳 1 秒）；到达由服务端自动结算（战斗 / 增援 / 调兵 / 侦察）。RECALL_GARRISON 撤回占领野地的全部驻军（即放弃占领）；RECALL_MARCH 把行军途中（status=marching 且非返程）的部队原地折返（同速回程）。`,
+    desc: `MARCH 从主城派出部队（发起时立即扣减城内驻军），时长 = Chebyshev 距离 × 每格秒数（默认 15 秒，占位）÷ 编队最慢兵种的行军速度系数（斥候 ×2、轻骑兵 ×1.5，占位），总时长再 ÷ 全局时间缩放（钳 1 秒）；到达由服务端自动结算（战斗 / 增援 / 调兵 / 侦察）。RECALL_GARRISON 不带 troops 时撤回占领野地的全部驻军（即放弃占领），带 troops（v83）时按兵种部分撤回（保留占领）；RECALL_MARCH 把行军途中（status=marching 且非返程）的部队原地折返（同速回程）。`,
   },
   {
     term: '战报（battle report）',

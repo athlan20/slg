@@ -44,7 +44,7 @@ export const TARGET_COPY = {
   noOps: '这块地没有可用的操作',
   ownCityHere: '当前所在城池',
   otherCityHint: '他人城池只能侦察；玩家对抗尚未开放',
-  recallHint: '驻军将返回出发城，并放弃该野地的占领。',
+  recallHint: '部分撤回不放弃占领，但地块至少要留 1 个兵；全部撤回会放弃占领。',
   verdict: {
     power: (power: number) => `战力 ${power}`,
     enemy: (power: number) => `守军约 ${power}`,

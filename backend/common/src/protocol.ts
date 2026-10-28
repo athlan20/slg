@@ -380,6 +380,10 @@ export const ErrorCode = {
   INSUFFICIENT_TROOPS: 'INSUFFICIENT_TROOPS',
   /** 该地块未被本账号占领，无法召回驻军（v12） */
   TILE_NOT_OCCUPIED: 'TILE_NOT_OCCUPIED',
+  /** 部分撤回（v83，AISLG-207）会撤空地块驻军：部分撤回须至少留 1 兵；想全部撤回请不带 troops（放弃占领） */
+  GARRISON_WOULD_EMPTY: 'GARRISON_WOULD_EMPTY',
+  /** 部分撤回（v83，AISLG-207）某兵种的撤回数量超过该地块现有驻军 */
+  INSUFFICIENT_GARRISON: 'INSUFFICIENT_GARRISON',
   /** 行军不存在、不属于本账号、不在行军中或已是返程，无法撤回（v13） */
   MARCH_NOT_RECALLABLE: 'MARCH_NOT_RECALLABLE',
   /** 目标地块处于 24 小时掠夺冷却中（v16：成功掠夺过，在途到达仍战斗但资源为零） */

@@ -453,8 +453,12 @@ const WORLD_MAP = {
   transferSubmit: '调兵',
   /** 召回 */
   recallTitle: '驻军管理',
-  recallHint: '召回将放弃占领（加成立即停止），部队返程回城',
-  recallSubmit: '召回全部驻军',
+  recallHint: '部分撤回不放弃占领，但地块至少要留 1 个兵；全部撤回会放弃占领',
+  recallSubmit: '撤回所选',
+  recallAllSubmit: '全部撤回（放弃占领）',
+  recallPickFirst: '请先填写要撤回的数量',
+  recallWouldEmptyBtn: '会撤空，请改用全部撤回',
+  recallWouldEmpty: '所选数量会撤空整块驻军：部分撤回至少要留 1 个兵；想全部撤回请用下方按钮（会放弃占领）',
   recallBusy: '召回中…',
   /** 行军与领地列表 */
   marchesTitle: '进行中行军',
@@ -815,6 +819,8 @@ const ERRORS = {
     targetNotAttackable: '该目标当前不可出征（玩家城池或他人占领的地块；玩家对抗随后续阶段开放）',
     insufficientTroops: '城内兵力不足以派出该编队（行军中的部队不在城内）',
     tileNotOccupied: '该地块未被本账号占领，无法召回驻军',
+    garrisonWouldEmpty: '部分撤回不能撤空地块驻军，地块至少要留 1 个兵（想全部撤回请用“全部撤回”，会放弃占领）',
+    insufficientGarrison: '撤回数量超过该地块的现有驻军，请按兵种核对数量',
     invalidParams: '出征参数不合法（坐标越界、编队为空或任务值非法）',
     plunderCooldown: '该地块已被成功掠夺，处于掠夺冷却（占领不受冷却限制）',
     taskInvalidForTarget: '该任务不适用于此目标（NPC 城池仅支持掠夺）',
@@ -855,6 +861,7 @@ const SESSION = {
   cancelRecruitFailedFallback: '取消征兵失败',
   marchStarted: (x: number, y: number, dueClock: string) => `部队出征 → (${x},${y})，预计 ${dueClock} 到达`,
   recallStarted: (x: number, y: number, dueClock: string) => `驻军自 (${x},${y}) 启程返城，预计 ${dueClock} 到达，占领已放弃`,
+  recallPartialStarted: (x: number, y: number, dueClock: string) => `部分驻军自 (${x},${y}) 启程返城，预计 ${dueClock} 到达，占领保留`,
   scoutStarted: (x: number, y: number, count: number, dueClock: string) =>
     `斥候 ×${count} 侦察 (${x},${y})，预计 ${dueClock} 到达（情报随事件送达）`,
   exchanged: (resourceLabel: string, amount: number, gold: number) =>

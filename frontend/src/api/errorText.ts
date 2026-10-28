@@ -221,6 +221,10 @@ export function marchErrorText(code: ErrorCode | undefined, message: string | un
       return COPY.errors.world.insufficientTroops;
     case 'TILE_NOT_OCCUPIED':
       return COPY.errors.world.tileNotOccupied;
+    case 'GARRISON_WOULD_EMPTY':
+      return COPY.errors.world.garrisonWouldEmpty;
+    case 'INSUFFICIENT_GARRISON':
+      return COPY.errors.world.insufficientGarrison;
     case 'INVALID_PARAMS':
       return COPY.errors.world.invalidParams;
     case 'PLUNDER_COOLDOWN':

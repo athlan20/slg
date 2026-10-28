@@ -343,7 +343,7 @@ awk -v s='<开始>' -v e='<结束>' '$1 >= s && $1 < e' <日志文件> | grep '\
   march_completed 事件）并返程；GET_TILE 对 NPC 城池的驻防 / 库存详情需侦察（快照语义，
   未侦察为 null）。**行军撤回 / 调兵（v13）**：`RECALL_MARCH` 把在途行军翻转为返程
   （arrive_at = now + 已走时长）；MARCH 目标为本账号分城时为调兵（不战斗，到达并入该分
-  城地块驻军）。`RECALL_GARRISON` 撤回即放弃占领，部队返程回城。占领野地给城池加持续
+  城地块驻军）。`RECALL_GARRISON` 不带 `troops` 时全撤、即放弃占领，部队返程回城；带 `troops`（v83）时按兵种部分撤回，保留占领，地块至少留 1 兵。占领野地给城池加持续
   产量（等级 × 地形速率）+ 驻军采集（等级 × 兵力 × 0.1/h），都走 `production.ts` 的
   extra 参数。
   **锁序（全栈统一 cities → world_tiles）**：API 出征/召回与 Worker 行军结算、NPC 袭击

@@ -207,7 +207,7 @@ export function TargetPanel() {
             {!blockedNow && current === 'scout' ? <ScoutForm key={`${x},${y}`} ctx={ctx} /> : null}
             {!blockedNow && current === 'intercept' ? <InterceptForm ctx={ctx} candidates={candidates} onPickCell={world.selectTile} /> : null}
             {!blockedNow && current === 'transport' ? <TransportForm key={`${x},${y}`} ctx={ctx} /> : null}
-            {!blockedNow && current === 'recall' ? <RecallForm ctx={ctx} /> : null}
+            {!blockedNow && current === 'recall' ? <RecallForm key={`${x},${y}`} ctx={ctx} /> : null}
             {!blockedNow && current === 'mark' ? (
               <MarkForm
                 key={`${x},${y}`}

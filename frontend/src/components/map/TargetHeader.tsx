@@ -52,7 +52,7 @@ function iconOf(detail: TileDetailView, mover: 'caravan' | 'bandit' | null, isOw
 
 export function TargetHeader({ world, city, x, y, detail, origin, branch, now, mover, isOwnCity, onClose }: TargetHeaderProps) {
   const copy = useCopy();
-  const { COPY, CITY_COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY, HERO_COPY, ALLIANCE_COPY } = copy;
+  const { COPY, CITY_COPY, RESOURCE_LABEL, TERRAIN_LABEL, TILE_KIND_LABEL, TARGET_COPY, TECH_COPY, HERO_COPY, ALLIANCE_COPY, TROOP_LABEL } = copy;
   const { openScoutReport } = useScoutReportModal();
   const [lookup, setLookup] = useState<'idle' | 'loading' | 'missing'>('idle');
 
@@ -94,6 +94,13 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
       : detail.kind === 'city' && detail.garrison <= 0
         ? TARGET_COPY.unknown
         : String(TROOP_KINDS.reduce((sum, kind) => sum + (detail.garrisonDetail?.[kind] ?? 0), 0) || detail.garrison);
+  /** 守军按兵种展开（GET_TILE 的 garrisonDetail，纯展示）；侦察粗略档只有总数范围，不展开 */
+  const garrisonBreakdown =
+    detail && !range
+      ? TROOP_KINDS.filter((kind) => (detail.garrisonDetail?.[kind] ?? 0) > 0)
+          .map((kind) => `${TROOP_LABEL[kind].name} ${detail.garrisonDetail[kind]}`)
+          .join(' · ')
+      : '';
   const cooldown = plunderCooldownLeft(detail?.plunderedAt ?? null, now, city.timeScale);
   /** 对方保护 / 免战状态（v38 AISLG-122）：任一截止未到即受保护，出征会被服务端拒绝 */
   const protectionLeft = protectionLeftText(detail?.protection ?? null, now);
@@ -131,7 +138,7 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
         <>
           <div role="选中详情-要点" className="grid grid-cols-3 gap-1">
             <Fact label={TARGET_COPY.factDistance} value={distance === null ? TARGET_COPY.unknown : TARGET_COPY.distance(distance)} />
-            <Fact label={TARGET_COPY.factGarrison} value={garrison} />
+            <Fact label={TARGET_COPY.factGarrison} value={garrison} sub={garrisonBreakdown} />
             <div role="世界地图详情区-上次侦察" className="min-w-0 rounded-[5px] border border-line-soft bg-panel-2 px-2 py-0.5">
               <span className="block text-[10.5px] text-faint">{TARGET_COPY.factScout}</span>
               {detail.scoutedAt ? (
@@ -233,13 +240,18 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value, sub = '' }: { label: string; value: string; sub?: string }) {
   return (
     <div className="min-w-0 rounded-[5px] border border-line-soft bg-panel-2 px-2 py-0.5">
       <span className="block text-[10.5px] text-faint">{label}</span>
       <b className="block truncate font-mono text-[12.5px] font-medium tabular-nums" title={value}>
         {value}
       </b>
+      {sub ? (
+        <small role="选中详情-守军明细" className="block truncate text-[10.5px] text-dim" title={sub}>
+          {sub}
+        </small>
+      ) : null}
     </div>
   );
 }

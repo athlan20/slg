@@ -625,5 +625,10 @@
  *   CAPITAL_SWAP_DURABILITY_LOW / BRANCH_LIMIT_EXCEEDED（附 limit 与 branchCount）。GET_STATE 新增 capitalSwap
  *   （cooldownUntil / underAttack / 逐分城 blocked）；事件 capital_changed；PUSH_CITY_STATE 新增 reason=capital_changed。
  *   新表 capital_swaps（每账号一条冷却）；对调时 cities.created_at 改写为账号最小值减 1 秒（主城判定口径，见 handlers-capital.ts）。
+ * v83（部分撤回，AISLG-207，只加不改）：RECALL_GARRISON（op 33）新增可选 troops（按兵种的正整数数量）。不带 troops 与改动前一致
+ *   （全撤、放弃占领）；带 troops 只撤指定数量、保留占领，被撤的兵走 purpose='return' 返程行军回占领城，剩余驻军继续守地，
+ *   占领加成与连片加成不变。部分撤回后地块至少留 1 兵：撤空返回 GARRISON_WOULD_EMPTY，某兵种超过驻军返回 INSUFFICIENT_GARRISON；
+ *   troops 为空对象 / 未知兵种 / 非正整数返回 INVALID_PARAMS；出错不改任何数据。响应仍为 { march }（返程行军视图）。
+ *   新错误码 GARRISON_WOULD_EMPTY / INSUFFICIENT_GARRISON。
  */
-export const PROTOCOL_VERSION = 82;
+export const PROTOCOL_VERSION = 83;

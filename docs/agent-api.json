@@ -1,5 +1,5 @@
 {
-  "version": 82,
+  "version": 83,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -794,7 +794,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 82,
+                "protocolVersion": 83,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -843,7 +843,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 82,
+                "protocolVersion": 83,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -863,14 +863,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/79 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/80 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 79,
+              "docVersion": 80,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -885,8 +885,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 82,
-                "docNotice": "接口文档已从 v79 更新到 v82：请 GET /agent-api/changes/79 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 83,
+                "docNotice": "接口文档已从 v80 更新到 v83：请 GET /agent-api/changes/80 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -5027,9 +5027,9 @@
       "op": 33,
       "kind": "request",
       "name": "RECALL_GARRISON",
-      "title": "召回野地驻军（放弃占领，v12）",
+      "title": "召回野地驻军（全部撤回放弃占领 v12；按兵种部分撤回 v83）",
       "preAuth": false,
-      "summary": "撤回本账号占领野地上的**全部**驻军：召回发起即放弃占领（地块回到无主野地、原住守军重新满编），部队作为返程行军（purpose=return）回到占领它的城池，到达后才并入城内驻军。行军时长与出征同公式。野地占领以驻军存在为前提：驻军被 NPC 袭击全灭时占领同样失效（见 NPC 袭击说明）。",
+      "summary": "撤回本账号占领野地上的驻军，有两种用法：①**不带 troops = 全部撤回（v12 行为不变）**：撤回全部驻军，召回发起即放弃占领（地块回到无主野地、原住守军重新满编），部队作为返程行军（purpose=return）回到占领它的城池，到达后才并入城内驻军；②**带 troops = 部分撤回（v83，AISLG-207）**：只撤指定兵种与数量，**保留占领**（地块仍归本账号，占领加成与连片加成不变），被撤的兵作为返程行军回到占领城，剩余驻军继续守地。返程时长按撤回编队的最慢兵种折算，与出征同公式。野地占领以驻军存在为前提：驻军被 NPC 袭击全灭时占领同样失效（见 NPC 袭击说明）。",
       "requestFields": [
         {
           "name": "x",
@@ -5040,22 +5040,29 @@
           "name": "y",
           "type": "number",
           "desc": "必填。地块 y。"
+        },
+        {
+          "name": "troops",
+          "type": "object",
+          "desc": "可选（v83，AISLG-207）。缺省（不带或 null）= 全部撤回并放弃占领。带上 = 部分撤回：键为兵种 id（如 porter、cavalry、iron_cavalry，与 GET_TILE 的 tile.garrisonDetail 键名一致），值为正整数撤回数量，只撤指定数量、保留占领。空对象、未知兵种、非正整数返回 INVALID_PARAMS；某兵种撤回数量超过该地块驻军返回 INSUFFICIENT_GARRISON；撤回总数等于或超过地块驻军总数（会撤空）返回 GARRISON_WOULD_EMPTY——部分撤回至少留 1 兵，想撤空请不带 troops。出错时不改任何数据。"
         }
       ],
       "dataFields": [
         {
           "name": "march",
           "type": "object | null",
-          "desc": "返程行军视图（结构与 MARCH 响应相同，purpose=return）；地块无驻军时为 null（占领同时清除）。"
+          "desc": "返程行军视图（结构与 MARCH 响应相同，purpose=return）。全部撤回时地块无驻军则为 null（占领同时清除）；部分撤回恒非 null，其 troops 即本次撤回的兵力。"
         }
       ],
       "errors": [
         "INVALID_PARAMS",
-        "TILE_NOT_OCCUPIED"
+        "TILE_NOT_OCCUPIED",
+        "INSUFFICIENT_GARRISON",
+        "GARRISON_WOULD_EMPTY"
       ],
       "examples": [
         {
-          "caption": "召回 (12,17) 的驻军",
+          "caption": "全部撤回 (12,17) 的驻军（放弃占领）",
           "request": {
             "op": 33,
             "seq": 9,
@@ -5112,6 +5119,91 @@
           ]
         },
         {
+          "caption": "部分撤回 (12,17) 的 4 名义兵（保留占领，返程只带撤回的兵）",
+          "request": {
+            "op": 33,
+            "seq": 11,
+            "data": {
+              "x": 12,
+              "y": 17,
+              "troops": {
+                "militia": 4
+              }
+            }
+          },
+          "responses": [
+            {
+              "op": 33,
+              "seq": 11,
+              "ok": true,
+              "data": {
+                "march": {
+                  "id": "e5f2cc35-f086-47a1-9b3c-2d4e5f6a7b8c",
+                  "fromCityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "x": 12,
+                  "y": 17,
+                  "troops": {
+                    "porter": 0,
+                    "militia": 4,
+                    "scout": 0,
+                    "pikeman": 0,
+                    "swordsman": 0,
+                    "archer": 0,
+                    "cavalry": 0,
+                    "iron_cavalry": 0,
+                    "supply_wagon": 0,
+                    "ballista": 0,
+                    "siege_ram": 0,
+                    "yulin_guard": 0,
+                    "danyang_soldier": 0,
+                    "baimao_soldier": 0,
+                    "huwei_guard": 0,
+                    "zhuge_crossbow": 0,
+                    "xiandeng_warrior": 0,
+                    "hubao_cavalry": 0,
+                    "xiliang_cavalry": 0
+                  },
+                  "purpose": "return",
+                  "status": "marching",
+                  "initiator": "player",
+                  "startedAt": "2026-09-25T08:00:00.000Z",
+                  "arriveAt": "2026-09-25T08:01:00.000Z",
+                  "resolvedAt": null,
+                  "targetId": null,
+                  "cargo": null,
+                  "ambushAt": null,
+                  "heroId": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "caption": "部分撤回会撤空地块（失败响应无 data，不改任何数据）",
+          "request": {
+            "op": 33,
+            "seq": 12,
+            "data": {
+              "x": 12,
+              "y": 17,
+              "troops": {
+                "militia": 9
+              }
+            }
+          },
+          "responses": [
+            {
+              "op": 33,
+              "seq": 12,
+              "ok": false,
+              "error": {
+                "code": "GARRISON_WOULD_EMPTY",
+                "message": "部分撤回不能撤空地块驻军，地块至少要留 1 个兵（想全部撤回请不带 troops，会放弃占领）"
+              }
+            }
+          ]
+        },
+        {
           "caption": "目标不是本账号占领的野地（失败响应无 data）",
           "request": {
             "op": 33,
@@ -5134,7 +5226,7 @@
           ]
         }
       ],
-      "agentNote": "召回即弃地：占领加成与采集立即停止（产量在归属翻转前先结算到当前时刻），地块可被他人或 NPC 夺取。返程部队到达前不在城内驻军里，无法再次派出。"
+      "agentNote": "两种用法按意图选：只想抽走一部分兵（守城吃紧、去打仗）就带 troops，地块与占领加成保留，但地块至少留 1 兵；想彻底放弃这块地就不带 troops。全部撤回时占领加成与采集立即停止（产量在归属翻转前先结算到当前时刻），地块可被他人或 NPC 夺取。部分撤回后驻军变少，采集与守备随之减弱。返程部队到达前不在城内驻军里，无法再次派出。"
     },
     {
       "op": 34,
@@ -18054,6 +18146,14 @@
       "desc": "该地块未被本账号占领（无主、他人占领或不是野地），无法召回驻军（v12）。",
       "action": "用 GET_STATE 的 city.territory 核对本账号占领的野地坐标，只对列表中的地块发起 RECALL_GARRISON。"
     },
+    "GARRISON_WOULD_EMPTY": {
+      "desc": "部分撤回（RECALL_GARRISON 带 troops，v83）的撤回总数等于或超过该地块驻军总数，会把地块撤空。部分撤回不放弃占领，因此地块至少要留 1 个兵；不改任何数据。",
+      "action": "减少撤回数量，使地块至少留 1 兵；若要全部撤回并放弃占领，不带 troops 重新发起 RECALL_GARRISON。"
+    },
+    "INSUFFICIENT_GARRISON": {
+      "desc": "部分撤回（RECALL_GARRISON 带 troops，v83）中某兵种的撤回数量超过该地块现有驻军。不改任何数据。",
+      "action": "用 GET_STATE 的 city.territory 或 GET_TILE 的 tile.garrisonDetail 核对各兵种现有驻军，按实际数量重发。"
+    },
     "MARCH_NOT_RECALLABLE": {
       "desc": "行军不存在、不属于本账号、不在行军途中或已是返程，无法撤回（v13）。",
       "action": "用 GET_STATE 的 city.marches 核对行军 id 与状态，只对 status=marching 且 purpose 不是 return 的行军发起 RECALL_MARCH。"
@@ -18626,7 +18726,7 @@
     },
     {
       "term": "行军（march）",
-      "desc": "MARCH 从主城派出部队（发起时立即扣减城内驻军），时长 = Chebyshev 距离 × 每格秒数（默认 15 秒，占位）÷ 编队最慢兵种的行军速度系数（斥候 ×2、轻骑兵 ×1.5，占位），总时长再 ÷ 全局时间缩放（钳 1 秒）；到达由服务端自动结算（战斗 / 增援 / 调兵 / 侦察）。RECALL_GARRISON 撤回占领野地的全部驻军（即放弃占领）；RECALL_MARCH 把行军途中（status=marching 且非返程）的部队原地折返（同速回程）。"
+      "desc": "MARCH 从主城派出部队（发起时立即扣减城内驻军），时长 = Chebyshev 距离 × 每格秒数（默认 15 秒，占位）÷ 编队最慢兵种的行军速度系数（斥候 ×2、轻骑兵 ×1.5，占位），总时长再 ÷ 全局时间缩放（钳 1 秒）；到达由服务端自动结算（战斗 / 增援 / 调兵 / 侦察）。RECALL_GARRISON 不带 troops 时撤回占领野地的全部驻军（即放弃占领），带 troops（v83）时按兵种部分撤回（保留占领）；RECALL_MARCH 把行军途中（status=marching 且非返程）的部队原地折返（同速回程）。"
     },
     {
       "term": "战报（battle report）",

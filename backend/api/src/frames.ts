@@ -33,6 +33,8 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   TARGET_NOT_ATTACKABLE: '该目标当前不可出征（地图外、自己的出发城或他人占领的地块等）',
   INSUFFICIENT_TROOPS: '城内兵力不足以派出该编队',
   TILE_NOT_OCCUPIED: '该地块未被本账号占领，无法召回驻军',
+  GARRISON_WOULD_EMPTY: '部分撤回不能撤空地块驻军，地块至少要留 1 个兵（想全部撤回请不带 troops，会放弃占领）',
+  INSUFFICIENT_GARRISON: '撤回数量超过该地块的现有驻军，请按兵种核对数量',
   MARCH_NOT_RECALLABLE: '该行军不存在、不属于本账号、不在途中或已是返程，无法撤回',
   PLUNDER_COOLDOWN: '该地块处于掠夺冷却中（已被成功掠夺，冷却未结束，无法再次发起掠夺）',
   TASK_INVALID_FOR_TARGET: '该任务类型不适用于此目标（NPC 城池本期仅支持掠夺）',

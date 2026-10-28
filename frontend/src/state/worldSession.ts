@@ -91,7 +91,8 @@ export interface WorldSession {
     /** v36（AISLG-114）：随队武将 id（null / 缺省 = 不带将） */
     heroId?: string | null,
   ) => Promise<boolean>;
-  recall: (x: number, y: number) => Promise<boolean>;
+  /** 召回驻军：不带 troops = 全部撤回并放弃占领；带 troops = 按兵种部分撤回，保留占领（v83） */
+  recall: (x: number, y: number, troops?: Partial<Record<TroopKind, number>>) => Promise<boolean>;
   /** 斥候侦察（SCOUT，v13）：城内扣减斥候、乐观插入侦察行军 */
   scout: (x: number, y: number, count: number, heroId?: string | null) => Promise<boolean>;
   /** 撤回行军途中的部队（RECALL_MARCH，v13）：行军翻转为返程 */
@@ -400,9 +401,9 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
     [clientRef, setCity, appendLocalEvent, scheduleSync, refresh],
   );
 
-  /** 召回驻军（RECALL_GARRISON）：撤回即放弃占领；领地与产量随按需查询对齐 */
+  /** 召回驻军（RECALL_GARRISON）：不带 troops 撤回即放弃占领；带 troops 部分撤回，保留占领（v83）；领地与产量随按需查询对齐 */
   const recall = useCallback(
-    async (x: number, y: number): Promise<boolean> => {
+    async (x: number, y: number, troops?: Partial<Record<TroopKind, number>>): Promise<boolean> => {
       const client = clientRef.current;
       if (!client?.connected) {
         return false;
@@ -410,12 +411,17 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
       setError(null);
       const { COPY, EXTRA_STATE } = getCopy();
       try {
-        const res = await client.request(Op.RECALL_GARRISON, { x, y });
+        const res = await client.request(Op.RECALL_GARRISON, troops ? { x, y, troops } : { x, y });
         if (res.ok) {
           const marchView = field<MarchView>(res.data, 'march');
           if (marchView) {
             setCity((prev) => (prev ? applyMarchResult(prev, marchView) : prev));
-            appendLocalEvent('player', COPY.session.recallStarted(x, y, formatClock(marchView.arriveAt)));
+            appendLocalEvent(
+              'player',
+              troops
+                ? COPY.session.recallPartialStarted(x, y, formatClock(marchView.arriveAt))
+                : COPY.session.recallStarted(x, y, formatClock(marchView.arriveAt)),
+            );
           } else {
             appendLocalEvent('player', EXTRA_STATE.state.recallNoGarrison(x, y));
           }

@@ -352,20 +352,21 @@ export const REQUEST_MARCH: RequestOpDoc = {
 export const REQUEST_RECALL_GARRISON: RequestOpDoc = {
   kind: 'request',
   name: 'RECALL_GARRISON',
-  title: '召回野地驻军（放弃占领，v12）',
+  title: '召回野地驻军（全部撤回放弃占领 v12；按兵种部分撤回 v83）',
   preAuth: false,
-  summary: `撤回本账号占领野地上的**全部**驻军：召回发起即放弃占领（地块回到无主野地、原住守军重新满编），部队作为返程行军（purpose=return）回到占领它的城池，到达后才并入城内驻军。行军时长与出征同公式。野地占领以驻军存在为前提：驻军被 NPC 袭击全灭时占领同样失效（见 NPC 袭击说明）。`,
+  summary: `撤回本账号占领野地上的驻军，有两种用法：①**不带 troops = 全部撤回（v12 行为不变）**：撤回全部驻军，召回发起即放弃占领（地块回到无主野地、原住守军重新满编），部队作为返程行军（purpose=return）回到占领它的城池，到达后才并入城内驻军；②**带 troops = 部分撤回（v83，AISLG-207）**：只撤指定兵种与数量，**保留占领**（地块仍归本账号，占领加成与连片加成不变），被撤的兵作为返程行军回到占领城，剩余驻军继续守地。返程时长按撤回编队的最慢兵种折算，与出征同公式。野地占领以驻军存在为前提：驻军被 NPC 袭击全灭时占领同样失效（见 NPC 袭击说明）。`,
   requestFields: [
     { name: 'x', type: 'number', desc: '必填。地块 x（须为本账号占领的野地，见 GET_STATE 的 city.territory）。' },
     { name: 'y', type: 'number', desc: '必填。地块 y。' },
+    { name: 'troops', type: 'object', desc: '可选（v83，AISLG-207）。缺省（不带或 null）= 全部撤回并放弃占领。带上 = 部分撤回：键为兵种 id（如 porter、cavalry、iron_cavalry，与 GET_TILE 的 tile.garrisonDetail 键名一致），值为正整数撤回数量，只撤指定数量、保留占领。空对象、未知兵种、非正整数返回 INVALID_PARAMS；某兵种撤回数量超过该地块驻军返回 INSUFFICIENT_GARRISON；撤回总数等于或超过地块驻军总数（会撤空）返回 GARRISON_WOULD_EMPTY——部分撤回至少留 1 兵，想撤空请不带 troops。出错时不改任何数据。' },
   ],
   dataFields: [
-    { name: 'march', type: 'object | null', desc: '返程行军视图（结构与 MARCH 响应相同，purpose=return）；地块无驻军时为 null（占领同时清除）。' },
+    { name: 'march', type: 'object | null', desc: '返程行军视图（结构与 MARCH 响应相同，purpose=return）。全部撤回时地块无驻军则为 null（占领同时清除）；部分撤回恒非 null，其 troops 即本次撤回的兵力。' },
   ],
-  errors: ['INVALID_PARAMS', 'TILE_NOT_OCCUPIED'],
+  errors: ['INVALID_PARAMS', 'TILE_NOT_OCCUPIED', 'INSUFFICIENT_GARRISON', 'GARRISON_WOULD_EMPTY'],
   examples: [
     {
-      caption: '召回 (12,17) 的驻军',
+      caption: '全部撤回 (12,17) 的驻军（放弃占领）',
       request: { op: Op.RECALL_GARRISON, seq: 9, data: { x: 12, y: 17 } },
       responses: [
         {
@@ -383,6 +384,36 @@ export const REQUEST_RECALL_GARRISON: RequestOpDoc = {
       ],
     },
     {
+      caption: '部分撤回 (12,17) 的 4 名义兵（保留占领，返程只带撤回的兵）',
+      request: { op: Op.RECALL_GARRISON, seq: 11, data: { x: 12, y: 17, troops: { militia: 4 } } },
+      responses: [
+        {
+          op: Op.RECALL_GARRISON,
+          seq: 11,
+          ok: true,
+          data: {
+            march: {
+              ...MARCH_VIEW,
+              purpose: 'return',
+              troops: { ...EMPTY_ARMY, militia: 4 },
+            },
+          },
+        },
+      ],
+    },
+    {
+      caption: '部分撤回会撤空地块（失败响应无 data，不改任何数据）',
+      request: { op: Op.RECALL_GARRISON, seq: 12, data: { x: 12, y: 17, troops: { militia: 9 } } },
+      responses: [
+        {
+          op: Op.RECALL_GARRISON,
+          seq: 12,
+          ok: false,
+          error: { code: 'GARRISON_WOULD_EMPTY', message: '部分撤回不能撤空地块驻军，地块至少要留 1 个兵（想全部撤回请不带 troops，会放弃占领）' },
+        },
+      ],
+    },
+    {
       caption: '目标不是本账号占领的野地（失败响应无 data）',
       request: { op: Op.RECALL_GARRISON, seq: 18, data: { x: 60, y: 581 } },
       responses: [
@@ -395,7 +426,7 @@ export const REQUEST_RECALL_GARRISON: RequestOpDoc = {
       ],
     },
   ],
-  agentNote: '召回即弃地：占领加成与采集立即停止（产量在归属翻转前先结算到当前时刻），地块可被他人或 NPC 夺取。返程部队到达前不在城内驻军里，无法再次派出。',
+  agentNote: '两种用法按意图选：只想抽走一部分兵（守城吃紧、去打仗）就带 troops，地块与占领加成保留，但地块至少留 1 兵；想彻底放弃这块地就不带 troops。全部撤回时占领加成与采集立即停止（产量在归属翻转前先结算到当前时刻），地块可被他人或 NPC 夺取。部分撤回后驻军变少，采集与守备随之减弱。返程部队到达前不在城内驻军里，无法再次派出。',
 };
 
 export const PUSH_MARCH_STATE: PushOpDoc = {

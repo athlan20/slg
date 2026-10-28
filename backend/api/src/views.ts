@@ -432,7 +432,7 @@ export function toCityView(snap: CitySnapshot): CityView {
     storage: storageCaps(snap.levels, snap.techs),
     army: { ...snap.army },
     // v14：军队小时耗粮（production.food 为毛产量；净粮 = production.food − 本值）
-    armyFoodUsePerHour: snap.armyFoodUsePerHour,
+    armyFoodUsePerHour: Math.round(snap.armyFoodUsePerHour),
     // v20：全局时间缩放（AISLG-38）——客户端本地折算时长（冷却剩余等）用
     timeScale: getTimeScale(),
     truceUntil: snap.truceUntil ? snap.truceUntil.toISOString() : null,

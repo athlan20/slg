@@ -51,8 +51,8 @@ import {
   handleGetTile,
   handleGetWorldMap,
   handleMarch,
-  handleRecallGarrison,
 } from './handlers-world';
+import { handleRecallGarrison, readRecallTroops } from './handlers-recall';
 import { handleGetMapOverview } from './map-overview';
 import { handleAnnouncementOp } from './handlers-announcement';
 import { handleAllianceOp } from './handlers-alliance';
@@ -264,7 +264,13 @@ async function dispatchOp(
         respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
         break;
       }
-      await handleRecallGarrison(ctx, conn, op, seq, x as number, y as number);
+      // v83（AISLG-207）：troops 缺省 = 全撤；带 troops 按兵种部分撤回，非法返回 INVALID_PARAMS
+      const recall = readRecallTroops(data);
+      if (!recall) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleRecallGarrison(ctx, conn, op, seq, x as number, y as number, recall.troops);
       break;
     }
     case Op.SCOUT: {
