@@ -4,10 +4,15 @@
 
 import { useState, type FormEvent } from 'react';
 import { useCopy } from '../../i18n/bundle';
+import { tName } from '../../i18n/names';
+import type { CityList } from '../../state/useCityList';
 import { Modal } from '../ui/Modal';
 import { AccountSettingsDialog } from '../account/AccountSettingsDialog';
 
-export type AccountDialogMode = 'switch' | 'reset' | 'rename' | 'settings' | 'discard';
+export type AccountDialogMode = 'switch' | 'reset' | 'rename' | 'settings' | 'discard' | 'capital';
+
+/** 设为主城的冷却基准（v82，AISLG-205）：24 小时，随全局时间缩放换算；与后端 common/src/capital-swap.ts 同口径 */
+const CAPITAL_SWAP_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 interface AccountDialogsProps {
   mode: AccountDialogMode;
@@ -18,9 +23,27 @@ interface AccountDialogsProps {
   onRenameCity: (name: string) => Promise<string | null>;
   /** 放弃当前选中的分城（v57，AISLG-153）；成功返回 null */
   onDiscardCity: () => Promise<string | null>;
+  /** 设为主城（v82，AISLG-205）的目标：当前选中的城（分城）、账号城池列表与全局时间缩放 */
+  cityId: string | null;
+  cityList: CityList;
+  timeScale: number;
+  /** 设为主城（v82）；成功返回 null，失败返回人读错误 */
+  onSetCapital: (cityId: string) => Promise<string | null>;
 }
 
-export function AccountDialogs({ mode, cityName, onClose, onSwitchAccount, onResetAccount, onRenameCity, onDiscardCity }: AccountDialogsProps) {
+export function AccountDialogs({
+  mode,
+  cityName,
+  onClose,
+  onSwitchAccount,
+  onResetAccount,
+  onRenameCity,
+  onDiscardCity,
+  cityId,
+  cityList,
+  timeScale,
+  onSetCapital,
+}: AccountDialogsProps) {
   const copy = useCopy();
   const { COPY } = copy;
   if (mode === 'switch') {
@@ -52,10 +75,104 @@ export function AccountDialogs({ mode, cityName, onClose, onSwitchAccount, onRes
   if (mode === 'discard') {
     return <DiscardDialog onClose={onClose} onDiscardCity={onDiscardCity} />;
   }
+  if (mode === 'capital') {
+    return <SetCapitalDialog onClose={onClose} cityId={cityId} cityList={cityList} timeScale={timeScale} onSetCapital={onSetCapital} />;
+  }
   return mode === 'reset' ? (
     <ResetDialog onClose={onClose} onResetAccount={onResetAccount} />
   ) : (
     <RenameDialog cityName={cityName} onClose={onClose} onRenameCity={onRenameCity} />
+  );
+}
+
+/**
+ * 设为主城二次确认（v82，AISLG-205）：必须点「确认」才发请求（带 confirm: true）；确认框写清四点：谁成为主城 / 谁变为分城、
+ * 原主城可被占领、24 小时内不能再换（并给出具体可再换时刻）、分城数上限的变化。不可设的原因在框内说明并置灰确认按钮。
+ * 没有表单，回车不会触发确认；取消 / 关闭不发请求。宽度 ≤ 400px。
+ */
+function SetCapitalDialog({
+  onClose,
+  cityId,
+  cityList,
+  timeScale,
+  onSetCapital,
+}: Pick<AccountDialogsProps, 'onClose' | 'cityId' | 'cityList' | 'timeScale' | 'onSetCapital'>) {
+  const copy = useCopy();
+  const { COPY } = copy;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // 确认框打开时刻算出的可再换时刻：现在 + 24 小时（按全局时间缩放换算），与服务端冷却截止口径一致
+  const [nextAt] = useState(() => new Date(Date.now() + Math.max(1000, Math.floor(CAPITAL_SWAP_COOLDOWN_MS / Math.max(1, timeScale)))).toISOString());
+
+  const target = cityList.cities.find((item) => item.id === cityId) ?? null;
+  const former = cityList.cities.find((item) => item.isMain) ?? null;
+  const swap = cityList.capitalSwap;
+  const oldLimit = cityList.branch?.limit ?? 0;
+  const branchCount = cityList.branch?.count ?? 0;
+  const newLimit = target ? Math.floor(target.level / 2) : 0;
+  const coolingUntil = swap?.cooldownUntil && Date.parse(swap.cooldownUntil) > Date.now() ? swap.cooldownUntil : null;
+  // 不可设原因，顺序与服务端一致：名城 → 冷却 → 来袭 → 城防未满 → 分城数超新上限
+  const blockedCode = target && swap ? swap.blocked[target.id] : undefined;
+  let reason: string | null = null;
+  if (target === null) {
+    reason = COPY.topbar.capitalFallback;
+  } else if (target.isMain) {
+    reason = COPY.topbar.capitalNoCapital;
+  } else if (blockedCode === 'FAMOUS_CITY_NOT_CAPITAL') {
+    reason = COPY.topbar.capitalBlockedFamous;
+  } else if (coolingUntil) {
+    reason = COPY.topbar.capitalBlockedCooldown(COPY.topbar.capitalTime(coolingUntil));
+  } else if (swap?.underAttack) {
+    reason = COPY.topbar.capitalBlockedAttack;
+  } else if (blockedCode === 'CAPITAL_SWAP_DURABILITY_LOW') {
+    reason = COPY.topbar.capitalBlockedDurability;
+  } else if (blockedCode === 'BRANCH_LIMIT_EXCEEDED') {
+    reason = COPY.topbar.capitalBlockedLimit(newLimit, branchCount);
+  }
+
+  async function submit() {
+    if (busy || reason !== null || cityId === null) {
+      return;
+    }
+    setBusy(true);
+    const failure = await onSetCapital(cityId);
+    setBusy(false);
+    if (failure === null) {
+      onClose();
+    } else {
+      setError(failure);
+    }
+  }
+
+  return (
+    <Modal role="设为主城确认框" title={COPY.topbar.capitalTitle} size="sm" accent="none" onClose={onClose}>
+      {target && former ? (
+        <>
+          <p className="text-[13px] text-dim">{COPY.topbar.capitalLine1(tName(target.name), tName(former.name))}</p>
+          <p className="text-[13px] text-dim">{COPY.topbar.capitalLine2}</p>
+          <p className="text-[13px] text-dim">{COPY.topbar.capitalLine3(COPY.topbar.capitalTime(nextAt))}</p>
+          <p className="text-[13px] text-dim">{COPY.topbar.capitalLine4(oldLimit, newLimit, branchCount)}</p>
+        </>
+      ) : null}
+      {reason ? (
+        <p role="设为主城-原因" className="rounded border border-line-soft bg-panel-2 px-2 py-1.5 text-[12px] text-dim">
+          {reason}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="设为主城-错误" className="truncate rounded border border-line-soft bg-panel-2 px-2 py-1.5 text-[12px] text-dim" title={error}>
+          {error}
+        </p>
+      ) : null}
+      <div className="flex justify-end gap-2 pt-1">
+        <button type="button" role="设为主城-返回按钮" className="btn" onClick={onClose}>
+          {COPY.topbar.capitalCancel}
+        </button>
+        <button type="button" role="设为主城-确认按钮" className="btn px-3" disabled={busy || reason !== null} onClick={() => void submit()}>
+          {busy ? COPY.topbar.capitalBusy : COPY.topbar.capitalSubmit}
+        </button>
+      </div>
+    </Modal>
   );
 }
 

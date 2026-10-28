@@ -145,7 +145,10 @@ const TOPBAR = {
   productionPrefix: '产量',
   productionEmpty: '暂无（建造资源建筑后生效）',
   /** 净粮产量（v14）：毛产量 − 全军耗粮；耗粮为 0 时退回普通格式（由调用方分支） */
-  foodNet: (label: string, net: number, upkeep: number) => `${label} ${net >= 0 ? '+' : ''}${net}/h（耗粮 ${upkeep}/h）`,
+  foodNet: (label: string, net: number, upkeep: number) => {
+    const value = Math.round(net);
+    return `${label} ${value >= 0 ? '+' : ''}${value}/h（耗粮 ${Math.round(upkeep)}/h）`;
+  },
   population: (current: number, cap: number, growthPerHour: number) =>
     `人口 ${current}/${cap}（+${growthPerHour}/h）`,
   /** 资源条目的悬浮提示：该资源的储量上限（达上限后停止生产） */
@@ -194,6 +197,27 @@ const TOPBAR = {
   discardSubmit: '确认放弃',
   discardBusy: '放弃中…',
   discardFallback: '放弃分城失败，请稍后重试',
+  capitalTitle: '设为主城',
+  capitalLine1: (next: string, former: string) => `${next} 将成为主城，${former} 将变为分城。`,
+  capitalLine2: '主城不会被占领，只会被掠夺；变为分城的原主城之后可以被他人占领。',
+  capitalLine3: (at: string) => `设为主城后 24 小时内不能再次更换（可更换时间：${at} 之后）。`,
+  capitalLine4: (from: number, to: number, count: number) => `分城数上限将由 ${from} 变为 ${to}（按新主城官府等级 ÷ 2），当前分城数 ${count}。`,
+  capitalTime: (iso: string) => {
+    // 北京时间的「X月X日 HH:mm」，与其它定时提示口径一致
+    const parts = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date(iso));
+    const pick = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
+    return `${pick('month')}月${pick('day')}日 ${pick('hour')}:${pick('minute')}`;
+  },
+  capitalCancel: '取消',
+  capitalSubmit: '确认设为主城',
+  capitalBusy: '设置中…',
+  capitalFallback: '设为主城失败，请稍后重试',
+  capitalBlockedFamous: '名城不能设为主城（名城永远可被占领，只能是分城）。',
+  capitalBlockedCooldown: (at: string) => `设为主城后 24 小时内不能再次更换，${at} 后可更换。`,
+  capitalBlockedAttack: '有他人玩家的出征正奔向你的城或野地，等来袭结束后再设为主城。',
+  capitalBlockedDurability: '该分城城防值未满 100，被打残的城不能设为主城，等城防回满后再试。',
+  capitalBlockedLimit: (limit: number, count: number) => `换完后分城数 ${count} 将超过新主城的上限 ${limit}（官府 ÷ 2）。先升级该城官府，或放弃一座分城。`,
+  capitalNoCapital: '当前选中的已是主城。',
   renameBusy: '改名中…',
   self: '本人',
   switchAccount: '切换账号',

@@ -37,6 +37,7 @@ export const NAV_COPY_EN = {
   accountShort: 'Me',
   rename: 'Rename City',
   discardBranch: 'Abandon Branch City',
+  setCapital: 'Set as capital',
   settings: 'Account Settings',
   switchAccount: 'Switch Account',
   reset: 'Reset Account',
@@ -54,7 +55,10 @@ export const TOP_COPY_EN = {
   exchange: 'Market',
   leaderboard: 'Board',
   fullTip: (percent: number) => `Storage ${percent}% full`,
-  net: (rate: number) => `${rate >= 0 ? '+' : ''}${rate}/h`,
+  net: (rate: number) => {
+    const value = Math.round(rate);
+    return `${value >= 0 ? '+' : ''}${value}/h`;
+  },
   popLabel: 'Population',
   // 中文 '人' 是紧凑人口的单位后缀；英文紧凑格只放数字（完整含义由人口悬浮模板表达），单位留空。
   popShort: '',

@@ -210,6 +210,8 @@ export const Op = {
   FIRE_BATTLEFIELD_STRONGHOLD: 139,
   /** 赤壁连锁战船（v80，AISLG-199）：data.strongholdId；曹方己方据点，花 200 军功，持续 6 小时 */
   CHAIN_BATTLEFIELD_STRONGHOLD: 140,
+  /** C→S 设为主城（v82，AISLG-205：data.cityId 必填、data.confirm 必须为 true；分城与主城对调身份，换完 24 小时内不能再换） */
+  SET_CAPITAL: 141,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -410,6 +412,11 @@ export type ErrorCode =
   | 'CITY_IN_BATTLE'
   | 'ARMY_OUTSIDE'
   | 'WILDERNESS_GARRISONED'
+  | 'FAMOUS_CITY_NOT_CAPITAL'
+  | 'CAPITAL_SWAP_COOLDOWN'
+  | 'CAPITAL_SWAP_UNDER_ATTACK'
+  | 'CAPITAL_SWAP_DURABILITY_LOW'
+  | 'BRANCH_LIMIT_EXCEEDED'
   | 'ARENA_NOT_JOINED'
   | 'ARENA_TARGET_INVALID'
   | 'ARENA_NO_CHALLENGES'
@@ -981,11 +988,37 @@ export interface BuildStatePushData {
 
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
-  /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded';
+  /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57）；capital_changed=设为主城（v82，cityId 为新主城） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
+  /** reason=capital_changed 时的原主城 id（已变为分城） */
+  formerCapitalId?: string;
+}
+
+/** SET_CAPITAL（op 141，v82，AISLG-205）请求载荷：cityId 为要设为主城的分城，confirm 必须显式为 true */
+export interface SetCapitalRequestData {
+  cityId: string;
+  confirm: boolean;
+}
+
+/** SET_CAPITAL 响应载荷：新主城、原主城（已变为分城）、下次可再换的时刻（ISO 8601）与新的分城上限 */
+export interface SetCapitalResponseData {
+  capitalId: string;
+  formerCapitalId: string;
+  cooldownUntil: string;
+  branchLimit: number;
+}
+
+/** 逐分城的不可设为主城原因（GET_STATE 的 capitalSwap.blocked） */
+export type CapitalSwapBlockCode = 'FAMOUS_CITY_NOT_CAPITAL' | 'CAPITAL_SWAP_DURABILITY_LOW' | 'BRANCH_LIMIT_EXCEEDED';
+
+/** GET_STATE 响应的 capitalSwap（v82，AISLG-205）：冷却截止（未结束才有值）、来袭状态与逐分城不可设原因 */
+export interface CapitalSwapView {
+  cooldownUntil: string | null;
+  underAttack: boolean;
+  blocked: Record<string, CapitalSwapBlockCode>;
 }
 
 /** DISCARD_CITY（op 94，v57）请求载荷：放弃分城，不可撤销，confirm 必须显式为 true */

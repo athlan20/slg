@@ -34,6 +34,7 @@ export const NAV_COPY = {
   accountShort: '我',
   rename: '城池改名',
   discardBranch: '放弃分城',
+  setCapital: '设为主城',
   settings: '账号设置',
   switchAccount: '切换账号',
   reset: '重置账号',
@@ -50,7 +51,10 @@ export const TOP_COPY = {
   exchange: '集市',
   leaderboard: '榜',
   fullTip: (percent: number) => `仓库已满 ${percent}%`,
-  net: (rate: number) => `${rate >= 0 ? '+' : ''}${rate}/h`,
+  net: (rate: number) => {
+    const value = Math.round(rate);
+    return `${value >= 0 ? '+' : ''}${value}/h`;
+  },
   popLabel: '人口',
   popShort: '人',
   popCap: (cap: number) => `上限 ${cap}`,
