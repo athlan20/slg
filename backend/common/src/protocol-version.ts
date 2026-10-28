@@ -615,5 +615,8 @@
  *   对相邻曹方据点立即造成总生命 20% 伤害（写入余伤池、按生命比例折算阵亡），每目标 2 小时一次；连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，
  *   op 140）曹方花 200 军功连锁 6 小时：守军受伤 −15%、被火攻翻倍。新增错误码 BATTLEFIELD_STRONGHOLD_LOCKED / WIND_MISMATCH /
  *   FIRE_COOLDOWN / CHAIN_ACTIVE / SKILL_UNAVAILABLE / NOT_ENTERED；事件 battlefield_skill；PUSH_BATTLEFIELD_STATE reason 新增 wind。
+ * v81（城防器械分城化，AISLG-204，只加不改）：CRAFT_DEFENSE（op 117）新增可选 cityId，缺省主城（与其他城池类协议一致）。
+ *   此前带 cityId 的打造一律记到主城（扣款、队列与库存）；现在按指定城扣款、进该城队列与库存，城墙等级与库存上限按该城算。
+ *   CANCEL_DEFENSE_CRAFT 不变（按条目所属城定位）。
  */
-export const PROTOCOL_VERSION = 80;
+export const PROTOCOL_VERSION = 81;

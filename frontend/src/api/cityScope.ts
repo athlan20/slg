@@ -11,6 +11,8 @@ const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.UPGRADE,
   Op.RENAME_CITY,
   Op.RECRUIT,
+  // v73（AISLG-193 / AISLG-204）：城防器械在选中城打造，扣该城资源、进该城队列与库存
+  Op.CRAFT_DEFENSE,
   Op.MARCH,
   Op.SCOUT,
   Op.EXCHANGE,
