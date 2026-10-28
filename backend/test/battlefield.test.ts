@@ -46,7 +46,7 @@ import {
   splitBattlefieldDefenderLosses,
 } from '../common/src/battlefield';
 import { armyPower } from '../common/src/battle';
-import { battlefieldEventView, type BattlefieldEventRow } from '../common/src/battlefield-db';
+import { battlefieldEventView, battlefieldRewardsView, type BattlefieldEventRow } from '../common/src/battlefield-db';
 
 const CST = (iso: string): Date => new Date(iso);
 
@@ -354,4 +354,21 @@ test('轮换与报名窗口对齐：锚点周的报名窗口即官渡，其余�
   assert.deepEqual(battlefieldUnderdog(10, 10), null);
   assert.equal(splitBattlefieldDefenderLosses({}, [], {}).npcLosses.militia, 0);
   assert.equal(armyPower({ militia: 1 }) > 0, true);
+});
+
+// AISLG-202：rewards.progressTiers 是讨董的全服进度档，官渡 / 赤壁按文档返回空数组
+test('奖励表：只有讨董带 progressTiers，官渡与赤壁为空数组', () => {
+  const dongzhuo = battlefieldRewardsView('dongzhuo');
+  assert.equal(dongzhuo.progressTiers.length, 3);
+  assert.deepEqual(
+    dongzhuo.progressTiers.map((tier) => tier.label),
+    ['破汜水关', '破虎牢关', '攻下洛阳'],
+  );
+  for (const script of ['guandu', 'chibi'] as const) {
+    const rewards = battlefieldRewardsView(script);
+    assert.deepEqual(rewards.progressTiers, [], `${script} 不应返回讨董进度档`);
+    // 胜负 / 名次奖励各剧本一致，不随进度档一起清空
+    assert.equal(rewards.winner.gold, dongzhuo.winner.gold);
+    assert.deepEqual(rewards.rankTiers, dongzhuo.rankTiers);
+  }
 });
