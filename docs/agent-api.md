@@ -16426,7 +16426,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `DEFENSE_NOT_CANCELLABLE` | （v73，AISLG-193）没有可取消的打造条目：条目不存在、不属于本账号，或已完成 / 已取消。 | 用 GET_STATE 的 city.defenses.queue 取当前条目的 craftId 再取消；已完成 / 已取消的不要重试。 |
 | `ASSIST_NOT_ALLY` | （v74，AISLG-194）协防目标不是盟友的城池：MARCH task=assist 只能派往同一联盟成员的城（自己的城请用 transfer 调兵）。 | 确认目标城的主人与你同属一个联盟；不是盟友就换目标，或先拉对方入盟。 |
 | `ASSIST_LIMIT` | （v74，AISLG-194）协防名额已满：每座城最多接收 5 支协防部队（在途部队也计入），同一账号对同一座城最多 1 支。到达时复核不通过，部队原路返回（事件 cause=ASSIST_LIMIT）。 | 换一座盟友城协防，或等该城已有部队召回 / 遣返后再派；同一座城不要重复派第二支。 |
-| `ASSIST_NOT_FOUND` | （v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 易主自动遣返），或不属于你（只有派出方与城主能召回 / 遣返）。 | 重新 GET_STATE / GET_TILE 拿最新的 assistIn / assistOut 列表后再操作。 |
+| `ASSIST_NOT_FOUND` | （v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 放弃分城自动遣返 / 分城被占领时随城覆灭），或不属于你（只有派出方与城主能召回 / 遣返）。 | 重新 GET_STATE / GET_TILE 拿最新的 assistIn / assistOut 列表后再操作。 |
 | `BATTLEFIELD_GOVERNMENT_TOO_LOW` | （v75，AISLG-198）报名剧本战场要求主城官府 ≥ 5 级；响应附 required / current。 | 先升级主城官府到 5 级；分城官府不计。 |
 | `BATTLEFIELD_SIGNUP_CLOSED` | （v75，AISLG-198）当前不在剧本战场的报名期（北京时间每周二 20:00 至周三 20:00）。 | 用 GET_BATTLEFIELD 的 nextSignupAt 等下一场报名；报名开始后 SERVER 会全服播报。 |
 | `BATTLEFIELD_ALREADY_JOINED` | （v75，AISLG-198）本场已经报过名（阵营选定后不能改）。 | 直接 GET_BATTLEFIELD 查自己的阵营与队伍，或等开战后入场。 |

@@ -639,7 +639,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '换一座盟友城协防，或等该城已有部队召回 / 遣返后再派；同一座城不要重复派第二支。',
   },
   ASSIST_NOT_FOUND: {
-    desc: '（v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 易主自动遣返），或不属于你（只有派出方与城主能召回 / 遣返）。',
+    desc: '（v74，AISLG-194）协防部队不存在、已经返回（战斗全灭 / 主动召回 / 退盟 / 放弃分城自动遣返 / 分城被占领时随城覆灭），或不属于你（只有派出方与城主能召回 / 遣返）。',
     action: '重新 GET_STATE / GET_TILE 拿最新的 assistIn / assistOut 列表后再操作。',
   },
   BATTLEFIELD_GOVERNMENT_TOO_LOW: {
