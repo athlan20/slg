@@ -27,11 +27,11 @@ test('并发请求各自的 cityId 不串，跨 await 仍可读', async () => {
   assert.deepEqual(seen.main, [undefined, undefined, undefined]);
 });
 
-test('支持 cityId 的协议：城池类建造 / 征兵 / 出征 / 侦察 / 兑换 / 状态 / 改名；取消类与账号类不在其内', () => {
-  for (const op of [Op.GET_STATE, Op.BUILD, Op.UPGRADE, Op.RENAME_CITY, Op.RECRUIT, Op.MARCH, Op.SCOUT, Op.EXCHANGE]) {
+test('支持 cityId 的协议：城池类建造 / 征兵 / 城防器械打造 / 出征 / 侦察 / 兑换 / 状态 / 改名；取消类与账号类不在其内', () => {
+  for (const op of [Op.GET_STATE, Op.BUILD, Op.UPGRADE, Op.RENAME_CITY, Op.RECRUIT, Op.CRAFT_DEFENSE, Op.MARCH, Op.SCOUT, Op.EXCHANGE]) {
     assert.ok(CITY_SCOPED_OPS.has(op), `op ${op} 应支持 cityId`);
   }
-  for (const op of [Op.CANCEL_BUILD, Op.CANCEL_RECRUIT, Op.RESET_ACCOUNT, Op.GET_EVENTS, Op.RECALL_GARRISON]) {
+  for (const op of [Op.CANCEL_BUILD, Op.CANCEL_RECRUIT, Op.CANCEL_DEFENSE_CRAFT, Op.RESET_ACCOUNT, Op.GET_EVENTS, Op.RECALL_GARRISON]) {
     assert.ok(!CITY_SCOPED_OPS.has(op), `op ${op} 不应按 cityId 作用域`);
   }
 });

@@ -43,11 +43,10 @@ export const REQUEST_CRAFT_DEFENSE: RequestOpDoc = {
   name: 'CRAFT_DEFENSE',
   title: '打造城防器械（v73，AISLG-193）',
   preAuth: false,
-  summary: `在城墙里打造四种一次性守城器械（${DEFENSE_TABLE}）。发起时立即从该城扣资源，入库在打造完成时（Worker 结算）。库存上限 = 城墙等级 × ${DEFENSE_STOCK_PER_WALL_LEVEL}（四种器械共用；城墙 10 级 600、20 级 1200、名城 25 级 1500），校验把在造 + 排队的件数也算进去（超出返回 DEFENSE_STOCK_FULL，附 cap / stock / pending）。队列与征兵同模型：1 条在造 + 2 条排队（队满 DEFENSE_QUEUE_FULL）；无在造时立即开工（status=crafting，dueAt 非空），批次总时长 = max(1 秒, floor(单件基准 × 件数 ÷ time_scale))；有在造时入队（status=queued，dueAt 为 null）。校验顺序：城墙未建（WALL_NOT_BUILT）→ 库存上限 → 队列 → 资源。守城战开打时器械按需自动使用、用掉就没了（陷阱 / 拒马开战即用，滚木 / 擂石在攻方贴墙时用），用量与杀伤见战报的 defenses 字段。`,
+  summary: `在城墙里打造四种一次性守城器械（${DEFENSE_TABLE}）。可选带 cityId 指定在哪座城打造，缺省主城（v81，AISLG-204）。发起时立即从该城扣资源，入库在打造完成时（Worker 结算）。库存上限 = 城墙等级 × ${DEFENSE_STOCK_PER_WALL_LEVEL}（四种器械共用；城墙 10 级 600、20 级 1200、名城 25 级 1500），校验把在造 + 排队的件数也算进去（超出返回 DEFENSE_STOCK_FULL，附 cap / stock / pending）。队列与征兵同模型：1 条在造 + 2 条排队（队满 DEFENSE_QUEUE_FULL）；无在造时立即开工（status=crafting，dueAt 非空），批次总时长 = max(1 秒, floor(单件基准 × 件数 ÷ time_scale))；有在造时入队（status=queued，dueAt 为 null）。校验顺序：城墙未建（WALL_NOT_BUILT）→ 库存上限 → 队列 → 资源。守城战开打时器械按需自动使用、用掉就没了（陷阱 / 拒马开战即用，滚木 / 擂石在攻方贴墙时用），用量与杀伤见战报的 defenses 字段。`,
   requestFields: [
     { name: 'kind', type: `'${DEFENSE_KINDS.join("' | '")}'`, desc: '必填。器械种类：trap 陷阱 / chevaux 拒马 / rolling_log 滚木 / boulder 擂石；缺失或未知返回 INVALID_PARAMS。' },
     { name: 'count', type: 'number', desc: `必填。件数（正整数，且与库存 + 在造 + 排队合计不超过城墙等级 × ${DEFENSE_STOCK_PER_WALL_LEVEL}）；成本 = 单件成本 × 件数。` },
-    { name: 'cityId', type: 'string', desc: '可选。在哪座城打造（缺省主城）；城墙等级、库存与扣资源都按该城。' },
   ],
   dataFields: [
     { name: 'craft', type: 'object', desc: '新建的打造条目 { id, cityId, kind, count, status, initiator, cost 成本快照, unitSeconds 单件基准秒数, startedAt, dueAt（排队为 null）, completedAt }。' },
