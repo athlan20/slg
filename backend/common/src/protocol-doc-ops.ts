@@ -39,6 +39,7 @@ import {
   REQUEST_RENAME_CITY,
   REQUEST_RESET_ACCOUNT,
   REQUEST_DISCARD_CITY,
+  REQUEST_SET_CAPITAL,
 } from './protocol-doc-ops-city';
 import {
   PUSH_AGENT_PLAN,
@@ -187,6 +188,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.territory', type: 'array', desc: '本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。' },
     { name: 'cities', type: 'array', desc: 'v12 新增：账号全部城池 { id, name, level, x, y, isMain, title 城池称号, nobility 爵位 }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。' },
     { name: 'branch', type: 'object', desc: 'v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。' },
+    { name: 'capitalSwap', type: 'object', desc: 'v82 新增（AISLG-205，设为主城）：{ cooldownUntil 设为主城的冷却截止（ISO 8601，冷却未结束才有值，否则 null）, underAttack 本账号任一城或野地正有他人玩家的掠夺 / 占领出征在途, blocked 逐分城的不可设原因 { [cityId]: FAMOUS_CITY_NOT_CAPITAL / CAPITAL_SWAP_DURABILITY_LOW / BRANCH_LIMIT_EXCEEDED }（未列出的分城可设） }。供前端置灰，权威判定仍在 SET_CAPITAL。' },
     { name: 'city.storage', type: 'object', desc: '储量上限（v7 新增，v8 规则确认；v22 AISLG-41 随全局缩放）：{ gold, food, wood, stone, iron }；四资源各自 = （10000 + 对应资源**建筑产量**（各生产建筑等级 × 每级速率之和，**不含**无建筑的 100/h 基础产量）× 100）× timeScale，金币 = 100 万 × timeScale——上限与产出同幅缩放，填满时长不受缩放影响：四资源恒为基准 100 小时；金币随官府等级与金矿占领加成变化（仅有官府产金时 = 10000 ÷ 官府等级 小时，官府 Lv4 时才是 2500 小时），请用 storage[k] ÷ production[k] 现算。达到上限后停止对应生产；已有超限存量不扣减。仓库不改变储量上限（v21 起防掠夺保护消费方已接入：NPC 袭击主城攻破后可掠量 = max(0, 存量 − 保护额)，保护量 4000×等级、四资源固定均分各 1000×等级；金币不受仓库保护，但 NPC 单次最多抢走存量的 5%（v41 AISLG-125）、玩家互掠为存量的 10%）。' },
     { name: 'city.queue', type: 'array', desc: '建造队列（v4 新增）：第 1 项为在建（status=building，dueAt 非空），其余为排队（status=queued，dueAt 为 null），按入队顺序；已取消的条目不在其中（CANCEL_BUILD 取消）。' },
     {
@@ -452,6 +454,7 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.RENAME_CITY]: withCityId(REQUEST_RENAME_CITY),
   [Op.RESET_ACCOUNT]: REQUEST_RESET_ACCOUNT,
   [Op.DISCARD_CITY]: REQUEST_DISCARD_CITY,
+  [Op.SET_CAPITAL]: REQUEST_SET_CAPITAL,
   [Op.AGENT_REPORT_PLAN]: REQUEST_AGENT_REPORT_PLAN,
   [Op.RECRUIT]: withCityId(REQUEST_RECRUIT),
   [Op.CANCEL_RECRUIT]: REQUEST_CANCEL_RECRUIT,

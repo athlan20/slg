@@ -39,6 +39,7 @@ export const RESET_TABLES: readonly string[] = [
   'city_discards',
   // 账号级游戏态
   'cities',
+  'capital_swaps',
   'city_buildings',
   'city_army',
   'builds',

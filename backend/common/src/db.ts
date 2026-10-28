@@ -779,6 +779,13 @@ CREATE TABLE IF NOT EXISTS city_discards (
 -- v57：分城的来源 NPC 等级（占领时的地块等级，1..3）。放弃后按它回归同等级 NPC 城；
 -- 历史分城（v57 前占领、此列为 NULL）放弃后按 1 级回归，名城恒为 3 级（登记在 famous_cities）。
 ALTER TABLE cities ADD COLUMN IF NOT EXISTS origin_level integer;
+
+-- v82（AISLG-205 设为主城）：设为主城后的冷却，每账号一条。until 为绝对时刻（已按时间缩放），
+-- 判定时带 until > now()；过期行不清理。无记录 = 从未设为主城，第一次不受冷却。
+CREATE TABLE IF NOT EXISTS capital_swaps (
+  account_id uuid PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+  until timestamptz NOT NULL
+);
 `;
 
 /**

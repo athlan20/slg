@@ -310,6 +310,26 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。',
     action: '先用 RECALL_MARCH 召回各块野地的驻军，再放弃。',
   },
+  FAMOUS_CITY_NOT_CAPITAL: {
+    desc: '名城（洛阳、长安、官渡、成都、建业、邺城、许昌、襄阳）不能设为主城（v82，AISLG-205）：名城是争夺型资源，主城不可被占领会让名城失去意义，名城效果与专属兵都跟着「可被占领」走。',
+    action: '改选普通分城；名城不能当主城。',
+  },
+  CAPITAL_SWAP_COOLDOWN: {
+    desc: '本账号距上次设为主城不满 24 小时（v82，AISLG-205；按全局时间缩放换算，不随官府等级变，新号第一次不受限）。响应 data.retryAfterSeconds 为剩余秒数。',
+    action: '等待 retryAfterSeconds 后再试（GET_STATE 的 capitalSwap.cooldownUntil 为截止时刻）。',
+  },
+  CAPITAL_SWAP_UNDER_ATTACK: {
+    desc: '本账号任一城或任一块野地正有他人玩家的掠夺 / 占领出征在途（v82，AISLG-205）：不允许在被攻击期间对调主城，避免「看到来袭的最后一刻换成不可占领主城」。',
+    action: '等来袭结算或被召回后再设为主城（GET_STATE 的 capitalSwap.underAttack 为真时即是）。',
+  },
+  CAPITAL_SWAP_DURABILITY_LOW: {
+    desc: '目标分城的城防值未满 100（v82，AISLG-205）：被打残的城不能临时换成不可占领的主城。',
+    action: '等城防回满（免战结束后每小时回涨），或改选城防满的分城。',
+  },
+  BRANCH_LIMIT_EXCEEDED: {
+    desc: '设为主城后分城数会超过新主城的分城上限（v82，AISLG-205）：上限 = floor(新主城官府等级 ÷ 2)；响应 data.limit 为新上限、data.branchCount 为当前分城数（对调前后不变）。',
+    action: '先升级目标分城的官府到能容纳当前分城数的等级，或放弃一座分城（DISCARD_CITY）后再设为主城。',
+  },
   OUTER_NOT_CLEARED: {
     desc: '名城外围驻军尚未清空时对其发起 task=occupy（v24，AISLG-56）：名城分两阶段攻打，先清外围、外围清空后才能攻城守并占领。',
     action: '先对该名城出征 task=plunder（或不带 task）清理外围；外围清空后须在限时内（GET_TILE 的 famous.recoversAt）出征 task=occupy 攻城守，超时外围恢复满编。',

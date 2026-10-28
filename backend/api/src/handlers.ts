@@ -89,6 +89,8 @@ import { loadCityState } from './views';
 import { cityTitle } from '../../common/src/nobility';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
 import { handleDiscardCity } from './handlers-discard';
+import { handleSetCapital } from './handlers-capital';
+import { loadCapitalSwapView } from '../../common/src/capital-swap-db';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
 import { handleGetHallOfFame, handleGetSeason, respondMaintenance } from './handlers-season';
 import { maintenanceActive } from './maintenance-gate';
@@ -524,6 +526,9 @@ async function dispatchOp(
     case Op.DISCARD_CITY:
       await handleDiscardCity(ctx, conn, op, seq, data);
       break;
+    case Op.SET_CAPITAL:
+      await handleSetCapital(ctx, conn, op, seq, data);
+      break;
     case Op.SET_NICKNAME:
       await handleSetNickname(ctx, conn, op, seq, data);
       break;
@@ -611,7 +616,9 @@ async function handleGetState(
     limit: branchCityLimit(mainGovernment),
     minGovernment: BRANCH_MIN_GOVERNMENT,
   };
-  respondOk(ctx.registry, conn, op, seq, { city, cities, branch });
+  // v82（AISLG-205）：设为主城的冷却 / 来袭 / 逐城不可设原因，供前端置灰
+  const capitalSwap = await loadCapitalSwapView(ctx.pool, accountId);
+  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap });
 }
 
 async function handleGetEvents(
