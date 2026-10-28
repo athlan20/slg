@@ -21,6 +21,14 @@ export function isMarketBuyKind(value: unknown): value is MarketBuyKind {
   return typeof value === 'string' && (MARKET_BUY_KINDS as readonly string[]).includes(value);
 }
 
+/**
+ * 挂单口径是「卖一种资源、收另一种资源或金币」（AISLG-196；AISLG-201 补校验）：
+ * 同资源挂单（卖铁收铁）只会产生无意义换手并污染公开列表，建单时按 INVALID_PARAMS 拒绝。
+ */
+export function isMarketOrderPair(sell: MarketBuyKind, buy: MarketBuyKind): boolean {
+  return sell !== buy;
+}
+
 /** 单张挂单最小卖出量 */
 export const MARKET_MIN_AMOUNT = 1000;
 /** 每个账号同时最多挂 5 张 */

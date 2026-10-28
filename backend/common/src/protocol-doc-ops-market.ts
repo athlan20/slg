@@ -92,10 +92,10 @@ export const REQUEST_CREATE_MARKET_ORDER: RequestOpDoc = {
   name: 'CREATE_MARKET_ORDER',
   title: '挂单卖出资源（v78，AISLG-196）',
   preAuth: false,
-  summary: `${RULES} 卖出资源从当前城（可带 cityId）立即冻结；挂单后可在 GET_MARKET 的 mine.orders 看到。单价超范围返回 PRICE_OUT_OF_RANGE；官府 / 保护期门槛 MARKET_LOCKED；满 5 张 ORDER_LIMIT。`,
+  summary: `${RULES} 卖出资源从当前城（可带 cityId）立即冻结；挂单后可在 GET_MARKET 的 mine.orders 看到。单价超范围返回 PRICE_OUT_OF_RANGE；官府 / 保护期门槛 MARKET_LOCKED；满 5 张 ORDER_LIMIT；sellResource 与 buyResource 相同（卖什么就收什么）返回 INVALID_PARAMS。`,
   requestFields: [
     { name: 'sellResource', type: "'food' | 'wood' | 'stone' | 'iron'", desc: '必填。卖出的资源。' },
-    { name: 'buyResource', type: "'food' | 'wood' | 'stone' | 'iron' | 'gold'", desc: '必填。收取的资源或金币。' },
+    { name: 'buyResource', type: "'food' | 'wood' | 'stone' | 'iron' | 'gold'", desc: '必填。收取的资源或金币；必须与 sellResource 不同（同资源挂单返回 INVALID_PARAMS）。' },
     { name: 'amount', type: 'number', desc: `必填。卖出总量，≥ ${MARKET_MIN_AMOUNT}，不能超过挂单城现有数量。` },
     { name: 'unitPrice', type: 'number', desc: '必填。每 1 个卖出资源换多少个收取物；范围见 GET_MARKET 的 limits（资源 0.5–2 / 金币 0.125–0.5，最多 4 位小数）。' },
     { name: 'allyOnly', type: 'boolean', desc: '可选。true = 只卖给同联盟成员。' },
