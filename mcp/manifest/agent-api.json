@@ -1,5 +1,5 @@
 {
-  "version": 81,
+  "version": 82,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -794,7 +794,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 81,
+                "protocolVersion": 82,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -843,7 +843,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 81,
+                "protocolVersion": 82,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -863,14 +863,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/78 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/79 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 78,
+              "docVersion": 79,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -885,8 +885,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 81,
-                "docNotice": "接口文档已从 v78 更新到 v81：请 GET /agent-api/changes/78 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 82,
+                "docNotice": "接口文档已从 v79 更新到 v82：请 GET /agent-api/changes/79 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -1201,6 +1201,11 @@
           "name": "branch",
           "type": "object",
           "desc": "v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。"
+        },
+        {
+          "name": "capitalSwap",
+          "type": "object",
+          "desc": "v82 新增（AISLG-205，设为主城）：{ cooldownUntil 设为主城的冷却截止（ISO 8601，冷却未结束才有值，否则 null）, underAttack 本账号任一城或野地正有他人玩家的掠夺 / 占领出征在途, blocked 逐分城的不可设原因 { [cityId]: FAMOUS_CITY_NOT_CAPITAL / CAPITAL_SWAP_DURABILITY_LOW / BRANCH_LIMIT_EXCEEDED }（未列出的分城可设） }。供前端置灰，权威判定仍在 SET_CAPITAL。"
         },
         {
           "name": "city.storage",
@@ -16167,6 +16172,108 @@
       "agentNote": "连锁适合在孙刘方准备火攻前先给要守的据点加一层防护：连锁期间正面战斗更耐打，但一旦被火攻伤害会翻倍，所以要结合风向和对面相邻据点判断。"
     },
     {
+      "op": 141,
+      "kind": "request",
+      "name": "SET_CAPITAL",
+      "title": "设为主城",
+      "preAuth": false,
+      "summary": "把一座分城与当前主城对调身份（v82，AISLG-205）：被选中的分城成为主城，原主城变为分城。两座城的建筑、资源、驻军、武将、队列、坐标与名字原样保留，只换身份。主城的全部特殊待遇（永不被占领、官府等级决定分城上限、竞技场 / 将星塔金币、任务、剧本战场报名、酒馆候选、联盟与排行榜显示的主城）随身份走。换完后原主城立刻变为可被占领的分城（城防值从 100 满值开始计，没有额外免战），新主城没有城防值（永不被占领，仍可被掠夺）。发起前须满足：目标是本账号的普通分城（非名城）、不是当前主城；本账号距上次设为主城已满 24 小时（冷却按全局时间缩放换算，新号第一次不受限制）；本账号任一城或任一块野地没有他人玩家的出征正奔向（掠夺 / 占领）；目标城城防值已满 100；换完后分城数不超过新主城的分城上限 = floor(新主城官府等级 ÷ 2)。没有资源消耗。必须显式携带 confirm=true 防误触。",
+      "requestFields": [
+        {
+          "name": "cityId",
+          "type": "string",
+          "desc": "必填。要设为主城的分城 UUID（GET_STATE 的 cities[].id，且 isMain 为 false）。缺失或不属于本账号返回 INVALID_PARAMS；指向当前主城也返回 INVALID_PARAMS（已是主城）。"
+        },
+        {
+          "name": "confirm",
+          "type": "boolean",
+          "desc": "必填，必须为 true；缺失或不为 true 返回 INVALID_PARAMS。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "capitalId",
+          "type": "string",
+          "desc": "新主城（即请求的 cityId）。"
+        },
+        {
+          "name": "formerCapitalId",
+          "type": "string",
+          "desc": "原主城（已变为分城）。"
+        },
+        {
+          "name": "cooldownUntil",
+          "type": "string",
+          "desc": "ISO 8601：下次可再次设为主城的时刻；之前返回 CAPITAL_SWAP_COOLDOWN。"
+        },
+        {
+          "name": "branchLimit",
+          "type": "number",
+          "desc": "换完后的分城上限 = floor(新主城官府等级 ÷ 2)；换完后分城数（总城数 − 1，不变）不超过它。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "FAMOUS_CITY_NOT_CAPITAL",
+        "CAPITAL_SWAP_COOLDOWN",
+        "CAPITAL_SWAP_UNDER_ATTACK",
+        "CAPITAL_SWAP_DURABILITY_LOW",
+        "BRANCH_LIMIT_EXCEEDED"
+      ],
+      "examples": [
+        {
+          "caption": "设为主城成功（原主城 CITY_ID 变为分城，新主城 0b7e5c1a-… 官府 6 级，分城上限 3）",
+          "request": {
+            "op": 141,
+            "seq": 1,
+            "data": {
+              "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+              "confirm": true
+            }
+          },
+          "responses": [
+            {
+              "op": 141,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "capitalId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+                "formerCapitalId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                "cooldownUntil": "2026-10-29T08:00:00.000Z",
+                "branchLimit": 3
+              }
+            }
+          ]
+        },
+        {
+          "caption": "冷却未结束（距上次设为主城不满 24 小时，retryAfterSeconds 为剩余秒数）",
+          "request": {
+            "op": 141,
+            "seq": 2,
+            "data": {
+              "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+              "confirm": true
+            }
+          },
+          "responses": [
+            {
+              "op": 141,
+              "seq": 2,
+              "ok": false,
+              "error": {
+                "code": "CAPITAL_SWAP_COOLDOWN",
+                "message": "设为主城后 24 小时内不能再次更换（冷却未结束，见 retryAfterSeconds）"
+              },
+              "data": {
+                "retryAfterSeconds": 36000
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "发起前先 GET_STATE：读 capitalSwap（cooldownUntil 未空表示冷却中；underAttack 为真表示正在被来袭；blocked[cityId] 给出该分城不可设的原因：FAMOUS_CITY_NOT_CAPITAL / CAPITAL_SWAP_DURABILITY_LOW / BRANCH_LIMIT_EXCEEDED），再对照 branch 与目标城的 level（新上限 = level ÷ 2）。成功后 GET_STATE 的 cities[] 中 isMain 对调、主城排第一。同账号其他在线连接收到 PUSH_CITY_STATE（reason=capital_changed，cityId 为新主城，formerCapitalId 为原主城）推送，事件流新增 capital_changed。设为主城是对调而非拆分，不占也不退任何资源；但它会改变「主城」相关的一切判定，向玩家说明时要讲清原主城从此可以被占领。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -16314,22 +16421,27 @@
       "kind": "push",
       "name": "PUSH_CITY_STATE",
       "title": "推送：城池级状态变化",
-      "summary": "城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。",
+      "summary": "城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。",
       "dataFields": [
         {
           "name": "reason",
-          "type": "'city_renamed' | 'account_reset' | 'city_discarded'",
+          "type": "'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed'",
           "desc": "触发本次推送的状态变化。"
         },
         {
           "name": "cityId",
           "type": "string",
-          "desc": "城池 UUID。"
+          "desc": "城池 UUID（reason=capital_changed 时为新主城）。"
         },
         {
           "name": "name",
           "type": "string",
           "desc": "reason=city_renamed 时的新城池名。"
+        },
+        {
+          "name": "formerCapitalId",
+          "type": "string",
+          "desc": "v82：reason=capital_changed 时的原主城 UUID（已变为分城）。"
         }
       ],
       "examples": [
@@ -17989,6 +18101,26 @@
     "WILDERNESS_GARRISONED": {
       "desc": "名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。",
       "action": "先用 RECALL_MARCH 召回各块野地的驻军，再放弃。"
+    },
+    "FAMOUS_CITY_NOT_CAPITAL": {
+      "desc": "名城（洛阳、长安、官渡、成都、建业、邺城、许昌、襄阳）不能设为主城（v82，AISLG-205）：名城是争夺型资源，主城不可被占领会让名城失去意义，名城效果与专属兵都跟着「可被占领」走。",
+      "action": "改选普通分城；名城不能当主城。"
+    },
+    "CAPITAL_SWAP_COOLDOWN": {
+      "desc": "本账号距上次设为主城不满 24 小时（v82，AISLG-205；按全局时间缩放换算，不随官府等级变，新号第一次不受限）。响应 data.retryAfterSeconds 为剩余秒数。",
+      "action": "等待 retryAfterSeconds 后再试（GET_STATE 的 capitalSwap.cooldownUntil 为截止时刻）。"
+    },
+    "CAPITAL_SWAP_UNDER_ATTACK": {
+      "desc": "本账号任一城或任一块野地正有他人玩家的掠夺 / 占领出征在途（v82，AISLG-205）：不允许在被攻击期间对调主城，避免「看到来袭的最后一刻换成不可占领主城」。",
+      "action": "等来袭结算或被召回后再设为主城（GET_STATE 的 capitalSwap.underAttack 为真时即是）。"
+    },
+    "CAPITAL_SWAP_DURABILITY_LOW": {
+      "desc": "目标分城的城防值未满 100（v82，AISLG-205）：被打残的城不能临时换成不可占领的主城。",
+      "action": "等城防回满（免战结束后每小时回涨），或改选城防满的分城。"
+    },
+    "BRANCH_LIMIT_EXCEEDED": {
+      "desc": "设为主城后分城数会超过新主城的分城上限（v82，AISLG-205）：上限 = floor(新主城官府等级 ÷ 2)；响应 data.limit 为新上限、data.branchCount 为当前分城数（对调前后不变）。",
+      "action": "先升级目标分城的官府到能容纳当前分城数的等级，或放弃一座分城（DISCARD_CITY）后再设为主城。"
     },
     "OUTER_NOT_CLEARED": {
       "desc": "名城外围驻军尚未清空时对其发起 task=occupy（v24，AISLG-56）：名城分两阶段攻打，先清外围、外围清空后才能攻城守并占领。",
