@@ -9,6 +9,7 @@ import {
   MARKET_MIN_AMOUNT,
   MARKET_ORDER_TTL_MS,
   isMarketBuyKind,
+  isMarketOrderPair,
   isMarketResource,
   isPriceAllowed,
   marketAfterFee,
@@ -153,6 +154,11 @@ export async function handleCreateMarketOrder(
   const buy = readString(data, 'buyResource');
   if (!isMarketResource(sell) || !isMarketBuyKind(buy)) {
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+    return;
+  }
+  // 只能「卖 A 收 B（或金币）」：卖什么就收什么属于无意义挂单，直接按参数错误拒绝（AISLG-201）
+  if (!isMarketOrderPair(sell, buy)) {
+    respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS', { sellResource: sell, buyResource: buy });
     return;
   }
   const amount = data?.amount;

@@ -7,6 +7,8 @@ import {
   MARKET_MAX_OPEN_ORDERS,
   MARKET_MIN_AMOUNT,
   MARKET_ORDER_TTL_MS,
+  MARKET_RESOURCES,
+  isMarketOrderPair,
   isPriceAllowed,
   marketAfterFee,
   marketDailyLimit,
@@ -59,4 +61,17 @@ test('常量与需求一致', () => {
   assert.equal(MARKET_MIN_AMOUNT, 1000);
   assert.equal(MARKET_MAX_OPEN_ORDERS, 5);
   assert.equal(MARKET_ORDER_TTL_MS, 48 * 3600 * 1000);
+});
+
+// AISLG-201：挂单是「卖一种资源、收另一种资源或金币」，同资源挂单必须被拒
+test('挂单收付不同物：同资源挂单非法，收金币或其他资源合法', () => {
+  for (const resource of MARKET_RESOURCES) {
+    assert.equal(isMarketOrderPair(resource, resource), false, `卖${resource}收${resource}应被拒`);
+    assert.equal(isMarketOrderPair(resource, 'gold'), true);
+    for (const other of MARKET_RESOURCES) {
+      if (other !== resource) {
+        assert.equal(isMarketOrderPair(resource, other), true);
+      }
+    }
+  }
 });

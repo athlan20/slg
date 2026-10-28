@@ -346,13 +346,20 @@ export function battlefieldShopView(
   };
 }
 
-export function battlefieldRewardsView(): GetBattlefieldResponseData['rewards'] {
-  const progressTiers: BattlefieldProgressRewardView[] = BATTLEFIELD_DONGZHUO_TIERS.map((tier) => ({
-    label: tier.label,
-    progress: tier.progress,
-    gold: tier.gold,
-    resourcesEach: tier.resourcesEach,
-  }));
+/**
+ * 奖励表。progressTiers 只属于讨董（全服进度档），其他剧本按协议文档返回空数组（AISLG-202）；
+ * 没有当前场次时用下一场的剧本（nextScript）算，客户端预览不会提前看到讨董的进度档。
+ */
+export function battlefieldRewardsView(script: BattlefieldScript): GetBattlefieldResponseData['rewards'] {
+  const progressTiers: BattlefieldProgressRewardView[] =
+    script === 'dongzhuo'
+      ? BATTLEFIELD_DONGZHUO_TIERS.map((tier) => ({
+          label: tier.label,
+          progress: tier.progress,
+          gold: tier.gold,
+          resourcesEach: tier.resourcesEach,
+        }))
+      : [];
   return {
     progressTiers,
     winner: {
@@ -432,7 +439,7 @@ export async function loadBattlefieldState(
       me: null,
       top: [],
       shop: battlefieldShopView({}, cumulativeMerit),
-      rewards: battlefieldRewardsView(),
+      rewards: battlefieldRewardsView(nextScript),
     };
   }
   const script = asScript(event.script);
@@ -480,6 +487,6 @@ export async function loadBattlefieldState(
     me,
     top: board.top,
     shop: battlefieldShopView(shopCounts, cumulativeMerit, script),
-    rewards: battlefieldRewardsView(),
+    rewards: battlefieldRewardsView(script),
   };
 }
