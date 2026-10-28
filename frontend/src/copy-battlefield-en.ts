@@ -33,7 +33,7 @@ export const BATTLEFIELD_COPY_EN = {
   },
   rules: {
     signup: 'Main city government level ≥ 5. Signup pauses when one camp exceeds the other by 1.5× and 5+ players.',
-    entry: 'Bring one army before the battle starts (max 3000 population). No reinforcements after start.',
+    entry: 'Bring one army from your main city garrison before the battle starts (max 3000 population; branch-city troops don\'t count). No reinforcements after start.',
     movement: 'One tile every 60 seconds. The river can only be crossed at 3 fords.',
     merit: 'Merit = enemy reference power destroyed; first capture +200. Spend merit in the battlefield shop (carries over, reset each season).',
     dongzhuo: 'Co-op: every signed-up player fights for the Alliance against Dong Zhuo. Sishui Pass → Hulao Pass → Luoyang, each gate opens after the previous one falls. Garrison losses persist, so you can wear them down in turns.',
@@ -47,7 +47,7 @@ export const BATTLEFIELD_COPY_EN = {
   },
   entry: {
     title: 'Bring troops',
-    hint: 'Enter troop counts; total population must not exceed 3000. Troops are deducted from your main city.',
+    hint: 'Enter troop counts; total population must not exceed 3000. Troops come only from your main city\'s garrison (branch-city troops can\'t be brought), and survivors return to the main city. To bring more, move branch-city troops to the main city first.',
     population: (n: number, limit: number) => `Population ${n} / ${limit}`,
     submit: 'Enter battlefield',
     submitted: 'Entered — waiting for the battle to start',
