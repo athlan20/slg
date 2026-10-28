@@ -30,11 +30,12 @@ export { eventText, serverBroadcastText, cargoText } from './mapping-world';
 export function costParts(
   cost: Resources,
   resources: Resources | undefined,
-): Array<{ label: string; value: number; insufficient: boolean }> {
+): Array<{ key: keyof Resources; label: string; value: number; insufficient: boolean }> {
   const { RESOURCE_LABEL } = getCopy();
   return (Object.keys(RESOURCE_LABEL) as Array<keyof Resources>)
     .filter((key) => cost[key] > 0)
     .map((key) => ({
+      key,
       label: RESOURCE_LABEL[key],
       value: cost[key],
       insufficient: resources !== undefined && resources[key] < cost[key],

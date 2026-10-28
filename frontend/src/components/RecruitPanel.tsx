@@ -14,6 +14,7 @@ import { activeMarches } from '../state/progressItems';
 import type { ConnectionStatus } from '../state/useGameSession';
 import { useNow } from '../state/useNow';
 import { Card } from './ui/Card';
+import { CostPart } from './ui/ShortfallMenu';
 
 interface RecruitPanelProps {
   city: CityView | null;
@@ -115,16 +116,19 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
         })}
       </div>
 
-      <p role="征兵面板-消耗" className="line-clamp-2 shrink-0 font-mono text-[11.5px] text-dim" title={hint ?? undefined}>
+      <div role="征兵面板-消耗" className="line-clamp-2 shrink-0 font-mono text-[11.5px] text-dim" title={hint ?? undefined}>
         {city && totalCost && info && validCount ? (
           <>
             <span className="text-faint">{COPY.recruitPanel.costLabel} </span>
             {costParts(totalCost, city.resources).map((part, index) => (
-              <span key={part.label} className={part.insufficient ? 'text-accent' : undefined}>
-                {index > 0 ? ' · ' : ''}
-                {part.label} {part.value}
-                {part.insufficient ? COPY.recruitPanel.insufficient : ''}
-              </span>
+              <CostPart
+                key={part.key}
+                part={part}
+                city={city}
+                rolePrefix="征兵面板"
+                insufficientLabel={COPY.recruitPanel.insufficient}
+                prefix={index > 0 ? ' · ' : ''}
+              />
             ))}
             {' · '}
             <span className={popShort ? 'text-accent' : undefined}>
@@ -137,7 +141,7 @@ export function RecruitPanel({ city, connection, recruitError, onStartRecruit, o
         ) : (
           <span className="font-sans text-faint">{hint ?? COPY.recruitPanel.formTitle}</span>
         )}
-      </p>
+      </div>
       <button
         type="button"
         role="征兵面板-提交"
