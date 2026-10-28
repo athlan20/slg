@@ -1,9 +1,7 @@
-// 世界地图协议的处理逻辑：GET_WORLD_MAP / GET_TILE / MARCH / RECALL_GARRISON（v12 起）。
+// 世界地图协议的处理逻辑：GET_WORLD_MAP / GET_TILE / MARCH（v12 起）。RECALL_GARRISON 见 handlers-recall.ts。
 // 协议分发见 handlers.ts。共同约定：
 // - 出征与召回在事务内先锁城池行（cities → world_tiles 的全局锁序，与 Worker 一致）、
 //   懒结算生产（产量含野地加成）后按最新状态校验；
-// - 召回 = 撤回全部驻军并**立即放弃占领**（占位规则）：野地回到无主状态，部队作为
-//   返程行军回城，到达后才并入城内驻军；
 // - 出征目标本期限野地（无主或本账号占领）与 NPC 城池；玩家城池与他人占领地块随
 //   「玩家对抗」阶段开放，当前返回 TARGET_NOT_ATTACKABLE；
 // - v16 出征任务（MARCH.task，缺省 plunder）：野地掠夺 / 占领（占领上限 = 官府等级，
@@ -24,7 +22,6 @@ import {
   type TroopKind,
 } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
-import { isEmptyArmy } from '../../common/src/battle';
 import {
   WORLD_SIZE,
   DEFAULT_MAP_WINDOW,
@@ -34,14 +31,7 @@ import {
   marchTravelSeconds,
 } from '../../common/src/world';
 import { PLUNDER_COOLDOWN_MS } from '../../common/src/plunder';
-import {
-  clearTileOccupation,
-  loadTerritory,
-  loadTile,
-  loadTileArmy,
-  type TileRow,
-} from '../../common/src/world-db';
-import { loadArmyFoodUsePerHour, loadBuildingLevels, settleCityProduction, type CityProductionRow } from '../../common/src/production';
+import type { TileRow } from '../../common/src/world-db';
 import { readIntInRange, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
@@ -55,7 +45,6 @@ import { cargoOverCapacity } from '../../common/src/transport';
 import { loadActiveDecree } from '../../common/src/luoyang-db';
 import { decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { carryingPercent, marchingPercent } from '../../common/src/tech';
-import { loadTechLevels } from '../../common/src/tech-db';
 import { resolveIntercept, resolveMarchTarget } from './march-target';
 import { breakNewbieProtection, insertAttackWarning, pushAttackWarning } from './pvp';
 
@@ -357,123 +346,6 @@ export async function handleMarch(
     );
     for (const warning of warnings) {
       pushAttackWarning(ctx, warning.accountId, warning.detail);
-    }
-  } catch (err) {
-    await client.query('ROLLBACK').catch(() => undefined);
-    throw err;
-  } finally {
-    client.release();
-  }
-}
-
-/** RECALL_GARRISON：撤回本账号占领野地的全部驻军；撤回即放弃占领，部队返程回城 */
-export async function handleRecallGarrison(
-  ctx: HandlerContext,
-  conn: ConnInfo,
-  op: number,
-  seq: number | undefined,
-  x: number,
-  y: number,
-): Promise<void> {
-  const accountId = conn.accountId as string;
-  const role = conn.role as InitiatorRole;
-  // 先无锁读地块找到占领城，确认归属本账号后再进事务（锁序与出征一致）
-  const probe = await loadTile(ctx.pool, x, y);
-  if (!probe || probe.kind !== 'wilderness' || !probe.owner_city_id) {
-    respondError(ctx.registry, conn, op, seq, 'TILE_NOT_OCCUPIED');
-    return;
-  }
-  const ownerRes = await ctx.pool.query(
-    `SELECT id FROM cities WHERE id = $1 AND account_id = $2`,
-    [probe.owner_city_id, accountId],
-  );
-  if (!ownerRes.rowCount) {
-    respondError(ctx.registry, conn, op, seq, 'TILE_NOT_OCCUPIED');
-    return;
-  }
-  const ownerCityId = probe.owner_city_id;
-
-  const client = await ctx.pool.connect();
-  try {
-    await client.query('BEGIN');
-    // 锁占领城并结算生产：野地加成在归属清除前按旧速率结到当前时刻（产量切分）
-    const cityRes = await client.query(
-      `SELECT id, name, level, x, y, gold, wood, food, stone, iron,
-              settled_at, gold_rem, food_rem, wood_rem, stone_rem, iron_rem,
-              population, population_rem, now() AS db_now
-       FROM cities WHERE id = $1 FOR UPDATE`,
-      [ownerCityId],
-    );
-    const cityRow = cityRes.rows[0] as CityProductionRow & { x: number | null; y: number | null; db_now: Date };
-    if (!cityRow || cityRow.x === null || cityRow.y === null) {
-      await client.query('ROLLBACK');
-      respondError(ctx.registry, conn, op, seq, 'INTERNAL');
-      return;
-    }
-    const levels = await loadBuildingLevels(client, ownerCityId);
-    const territory = await loadTerritory(client, ownerCityId);
-    await settleCityProduction(
-      client,
-      cityRow,
-      levels,
-      cityRow.db_now,
-      territory,
-      await loadArmyFoodUsePerHour(client, ownerCityId),
-    );
-
-    // 复核地块归属未变（并发召回 / NPC 袭击由行锁串开）
-    const tileRes = await client.query(`SELECT * FROM world_tiles WHERE x = $1 AND y = $2 FOR UPDATE`, [x, y]);
-    const tile = tileRes.rows[0] as TileRow | undefined;
-    if (!tile || tile.kind !== 'wilderness' || tile.owner_city_id !== ownerCityId) {
-      await client.query('ROLLBACK');
-      respondError(ctx.registry, conn, op, seq, 'TILE_NOT_OCCUPIED');
-      return;
-    }
-    const troops = await loadTileArmy(client, x, y);
-    await clearTileOccupation(client, x, y);
-    let march: MarchRow | null = null;
-    if (!isEmptyArmy(troops)) {
-      // 返程按撤回编队的最慢兵种折算速度
-      const travel = marchTravelSeconds(cityRow.x, cityRow.y, x, y, troops, marchingPercent(await loadTechLevels(client, accountId)));
-      const ins = await client.query(
-        `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at)
-         VALUES ($1, $2, $3, $4, $5::jsonb, 'return', 'marching', $6, now() + make_interval(secs => $7))
-         RETURNING *`,
-        [accountId, ownerCityId, x, y, JSON.stringify(troops), role, travel],
-      );
-      march = ins.rows[0] as MarchRow;
-      await insertEvent(client, {
-        accountId,
-        cityId: ownerCityId,
-        buildId: march.id,
-        type: EventType.MARCH_STARTED,
-        initiator: role,
-        detail: { x, y, troops, purpose: 'return', arriveAt: march.arrive_at.toISOString() },
-      });
-    }
-    await insertEvent(client, {
-      accountId,
-      cityId: ownerCityId,
-      type: EventType.WILDERNESS_LOST,
-      initiator: role,
-      detail: { x, y, cause: 'recall', terrain: tile.terrain, level: tile.level },
-    });
-    await client.query('COMMIT');
-
-    const view = march ? marchView(march) : null;
-    respondOk(ctx.registry, conn, op, seq, view ? { march: view } : { march: null });
-    const tileViewRow = await loadWorldWindow(ctx.pool, x, y, 1, 1, accountId);
-    ctx.registry.broadcast(
-      accountId,
-      { op: Op.PUSH_TILE_STATE, push: true, data: { reason: 'wilderness_lost', tile: tileViewRow[0] } },
-      conn,
-    );
-    if (view) {
-      ctx.registry.broadcast(
-        accountId,
-        { op: Op.PUSH_MARCH_STATE, push: true, data: { reason: 'march_started', march: view } },
-        conn,
-      );
     }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);

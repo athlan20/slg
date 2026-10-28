@@ -244,6 +244,8 @@ export const Op = {
   FIRE_BATTLEFIELD_STRONGHOLD: 139,
   /** C→S 赤壁连锁战船（v80，AISLG-199：data.strongholdId；曹方己方据点，花 200 军功，持续 6 小时，守军受伤 −15%、被火攻翻倍） */
   CHAIN_BATTLEFIELD_STRONGHOLD: 140,
+  /** C→S 设为主城（v82，AISLG-205：data.cityId 必填、data.confirm 必须为 true；分城与当前主城对调身份，换完 24 小时内不能再换；仅玩家连接） */
+  SET_CAPITAL: 141,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -378,6 +380,10 @@ export const ErrorCode = {
   INSUFFICIENT_TROOPS: 'INSUFFICIENT_TROOPS',
   /** 该地块未被本账号占领，无法召回驻军（v12） */
   TILE_NOT_OCCUPIED: 'TILE_NOT_OCCUPIED',
+  /** 部分撤回（v83，AISLG-207）会撤空地块驻军：部分撤回须至少留 1 兵；想全部撤回请不带 troops（放弃占领） */
+  GARRISON_WOULD_EMPTY: 'GARRISON_WOULD_EMPTY',
+  /** 部分撤回（v83，AISLG-207）某兵种的撤回数量超过该地块现有驻军 */
+  INSUFFICIENT_GARRISON: 'INSUFFICIENT_GARRISON',
   /** 行军不存在、不属于本账号、不在行军中或已是返程，无法撤回（v13） */
   MARCH_NOT_RECALLABLE: 'MARCH_NOT_RECALLABLE',
   /** 目标地块处于 24 小时掠夺冷却中（v16：成功掠夺过，在途到达仍战斗但资源为零） */
@@ -404,6 +410,16 @@ export const ErrorCode = {
   ARMY_OUTSIDE: 'ARMY_OUTSIDE',
   /** 放弃分城被拒：名下野地里仍有驻军，需先召回（v57，AISLG-153） */
   WILDERNESS_GARRISONED: 'WILDERNESS_GARRISONED',
+  /** 设为主城被拒：名城不能设为主城（v82，AISLG-205；名城永远可被占领，不能当主城） */
+  FAMOUS_CITY_NOT_CAPITAL: 'FAMOUS_CITY_NOT_CAPITAL',
+  /** 设为主城被拒：本账号上次设为主城后的 24 小时冷却未结束（v82；响应附 retryAfterSeconds） */
+  CAPITAL_SWAP_COOLDOWN: 'CAPITAL_SWAP_COOLDOWN',
+  /** 设为主城被拒：有他人玩家的出征正奔向本账号任一城或任一块野地（v82，AISLG-205） */
+  CAPITAL_SWAP_UNDER_ATTACK: 'CAPITAL_SWAP_UNDER_ATTACK',
+  /** 设为主城被拒：目标分城城防值未满 100（v82，AISLG-205） */
+  CAPITAL_SWAP_DURABILITY_LOW: 'CAPITAL_SWAP_DURABILITY_LOW',
+  /** 设为主城被拒：换完后分城数超过新主城官府等级 ÷ 2 的上限（v82；响应附 limit 与 branchCount） */
+  BRANCH_LIMIT_EXCEEDED: 'BRANCH_LIMIT_EXCEEDED',
   /** 运输货物总量超过所派编队的负重（v26，AISLG-79） */
   CARGO_OVER_CAPACITY: 'CARGO_OVER_CAPACITY',
   /** 该科技已满级（v27，AISLG-77） */

@@ -268,10 +268,13 @@ export interface MarchResponseData {
   march: MarchView;
 }
 
-/** RECALL_GARRISON（op 33）请求载荷：撤回本账号占领地块的全部驻军（同时放弃占领） */
+/** RECALL_GARRISON（op 33）请求载荷：缺省 troops 时撤回本账号占领地块的全部驻军（同时放弃占领）；
+ *  带 troops（v83，AISLG-207）时只撤指定兵种与数量，保留占领，地块至少留 1 兵 */
 export interface RecallGarrisonRequestData {
   x: number;
   y: number;
+  /** v83：按兵种的撤回数量（键为已知兵种、值为正整数；空对象 / 未知兵种 / 非正整数返回 INVALID_PARAMS） */
+  troops?: Partial<Record<TroopKind, number>>;
 }
 
 export interface RecallGarrisonResponseData {

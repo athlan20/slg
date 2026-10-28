@@ -50,6 +50,7 @@ export type EventType =
   | 'city_renamed'
   | 'account_reset'
   | 'city_discarded'
+  | 'capital_changed'
   | 'account_renamed'
   | 'agent_connected'
   | 'agent_disconnected';

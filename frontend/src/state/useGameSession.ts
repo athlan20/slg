@@ -146,6 +146,8 @@ export interface GameSession {
   renameCity: (name: string) => Promise<string | null>;
   /** 放弃分城（v57，AISLG-153）：成功后当前城回到主城 */
   discardCity: (cityId: string) => Promise<string | null>;
+  /** 设为主城（v82，AISLG-205）：选中的分城与主城对调身份，换完 24 小时内不能再换；成功返回 null，失败返回人读错误 */
+  setCapital: (cityId: string) => Promise<string | null>;
   /** 一键重置账号数据（v9，不可逆）；成功返回 null，失败返回人读错误（弹窗内展示） */
   resetAccount: () => Promise<string | null>;
   /** 离线日报（v23 AISLG-54）：非 null 时弹窗展示（上线自动弹出 / 手动打开） */
@@ -581,8 +583,8 @@ export function useGameSession(): GameSession {
         const data = frame.data as unknown as CityStatePushData;
         if (data.reason === 'city_renamed') {
           setCity((prev) => (prev && data.name && data.cityId === prev.id ? { ...prev, name: data.name } : prev));
-        } else if (data.reason === 'city_discarded') {
-          // 分城被放弃（可能是本账号另一连接发起）：选中的城可能已不存在，复位为主城并全量刷新
+        } else if (data.reason === 'city_discarded' || data.reason === 'capital_changed') {
+          // 分城被放弃 / 主城对调（可能是本账号另一连接发起）：选中的城可能已不存在或身份已变，复位为主城并全量刷新
           resetCityList();
           void syncAll('initial');
           return;
@@ -1181,6 +1183,29 @@ export function useGameSession(): GameSession {
 
   /** 放弃分城（v57，AISLG-153，仅玩家连接）：分城已从账号名下移除、地块转回 NPC 城池。发起连接收不到
    *  PUSH_CITY_STATE，成功后直接复位为主城并全量重拉城池列表与状态 */
+  /** 设为主城（v82，AISLG-205，仅玩家连接）：分城与当前主城对调身份。发起连接收不到自己的 PUSH_CITY_STATE，成功后复位为主城并全量重拉 */
+  const setCapital = useCallback(
+    async (cityId: string): Promise<string | null> => {
+      const { COPY } = getCopy();
+      const client = clientRef.current;
+      if (!client?.connected) {
+        return COPY.session.connectFailed;
+      }
+      try {
+        const res = await client.request(Op.SET_CAPITAL, { cityId, confirm: true });
+        if (res.ok) {
+          resetCityList();
+          await syncAll('initial');
+          return null;
+        }
+        return res.error?.message ?? COPY.topbar.capitalFallback;
+      } catch (err) {
+        return err instanceof Error ? err.message : COPY.topbar.capitalFallback;
+      }
+    },
+    [syncAll, resetCityList],
+  );
+
   const discardCity = useCallback(
     async (cityId: string): Promise<string | null> => {
       const { COPY } = getCopy();
@@ -1343,6 +1368,7 @@ export function useGameSession(): GameSession {
     cancelTruce,
     renameCity,
     discardCity,
+    setCapital,
     resetAccount,
     ...extras,
     cityList,

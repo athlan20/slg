@@ -5,11 +5,13 @@
 
 import { useCallback, useState } from 'react';
 import { getActiveCityId, setActiveCityId } from '../api/cityScope';
-import type { BranchInfoView, CityRefView, CityView } from '../api/protocol';
+import type { BranchInfoView, CapitalSwapView, CityRefView, CityView } from '../api/protocol';
 
 export interface CityList {
   cities: CityRefView[];
   branch: BranchInfoView | null;
+  /** 设为主城的账号级状态与逐分城不可设原因（v82，AISLG-205；GET_STATE 的 capitalSwap，未拉到为 null） */
+  capitalSwap: CapitalSwapView | null;
   /** 当前正在操作的城池 id（null = 尚未获取） */
   activeCityId: string | null;
   /** 吸收一次 GET_STATE 响应的 cities / branch；选中的城已不存在时复位主城 */
@@ -23,6 +25,7 @@ export interface CityList {
 export function useCityList(setCity: (city: CityView | null) => void): CityList {
   const [cities, setCities] = useState<CityRefView[]>([]);
   const [branch, setBranch] = useState<BranchInfoView | null>(null);
+  const [capitalSwap, setCapitalSwap] = useState<CapitalSwapView | null>(null);
   const [activeCityId, setActive] = useState<string | null>(null);
 
   const applyState = useCallback((data: Record<string, unknown> | undefined) => {
@@ -38,6 +41,10 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     if (info) {
       setBranch(info);
     }
+    const swap = data?.capitalSwap as CapitalSwapView | undefined;
+    if (swap) {
+      setCapitalSwap(swap);
+    }
     const city = data?.city as CityView | undefined;
     if (city) {
       setActive(city.id);
@@ -48,6 +55,7 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     setActiveCityId(null);
     setCities([]);
     setBranch(null);
+    setCapitalSwap(null);
     setActive(null);
   }, []);
 
@@ -65,5 +73,5 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     [cities, activeCityId, setCity],
   );
 
-  return { cities, branch, activeCityId, applyState, reset, select };
+  return { cities, branch, capitalSwap, activeCityId, applyState, reset, select };
 }

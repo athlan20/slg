@@ -262,6 +262,14 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '该地块未被本账号占领（无主、他人占领或不是野地），无法召回驻军（v12）。',
     action: '用 GET_STATE 的 city.territory 核对本账号占领的野地坐标，只对列表中的地块发起 RECALL_GARRISON。',
   },
+  GARRISON_WOULD_EMPTY: {
+    desc: '部分撤回（RECALL_GARRISON 带 troops，v83）的撤回总数等于或超过该地块驻军总数，会把地块撤空。部分撤回不放弃占领，因此地块至少要留 1 个兵；不改任何数据。',
+    action: '减少撤回数量，使地块至少留 1 兵；若要全部撤回并放弃占领，不带 troops 重新发起 RECALL_GARRISON。',
+  },
+  INSUFFICIENT_GARRISON: {
+    desc: '部分撤回（RECALL_GARRISON 带 troops，v83）中某兵种的撤回数量超过该地块现有驻军。不改任何数据。',
+    action: '用 GET_STATE 的 city.territory 或 GET_TILE 的 tile.garrisonDetail 核对各兵种现有驻军，按实际数量重发。',
+  },
   MARCH_NOT_RECALLABLE: {
     desc: '行军不存在、不属于本账号、不在行军途中或已是返程，无法撤回（v13）。',
     action: '用 GET_STATE 的 city.marches 核对行军 id 与状态，只对 status=marching 且 purpose 不是 return 的行军发起 RECALL_MARCH。',
@@ -309,6 +317,26 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
   WILDERNESS_GARRISONED: {
     desc: '名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。',
     action: '先用 RECALL_MARCH 召回各块野地的驻军，再放弃。',
+  },
+  FAMOUS_CITY_NOT_CAPITAL: {
+    desc: '名城（洛阳、长安、官渡、成都、建业、邺城、许昌、襄阳）不能设为主城（v82，AISLG-205）：名城是争夺型资源，主城不可被占领会让名城失去意义，名城效果与专属兵都跟着「可被占领」走。',
+    action: '改选普通分城；名城不能当主城。',
+  },
+  CAPITAL_SWAP_COOLDOWN: {
+    desc: '本账号距上次设为主城不满 24 小时（v82，AISLG-205；按全局时间缩放换算，不随官府等级变，新号第一次不受限）。响应 data.retryAfterSeconds 为剩余秒数。',
+    action: '等待 retryAfterSeconds 后再试（GET_STATE 的 capitalSwap.cooldownUntil 为截止时刻）。',
+  },
+  CAPITAL_SWAP_UNDER_ATTACK: {
+    desc: '本账号任一城或任一块野地正有他人玩家的掠夺 / 占领出征在途（v82，AISLG-205）：不允许在被攻击期间对调主城，避免「看到来袭的最后一刻换成不可占领主城」。',
+    action: '等来袭结算或被召回后再设为主城（GET_STATE 的 capitalSwap.underAttack 为真时即是）。',
+  },
+  CAPITAL_SWAP_DURABILITY_LOW: {
+    desc: '目标分城的城防值未满 100（v82，AISLG-205）：被打残的城不能临时换成不可占领的主城。',
+    action: '等城防回满（免战结束后每小时回涨），或改选城防满的分城。',
+  },
+  BRANCH_LIMIT_EXCEEDED: {
+    desc: '设为主城后分城数会超过新主城的分城上限（v82，AISLG-205）：上限 = floor(新主城官府等级 ÷ 2)；响应 data.limit 为新上限、data.branchCount 为当前分城数（对调前后不变）。',
+    action: '先升级目标分城的官府到能容纳当前分城数的等级，或放弃一座分城（DISCARD_CITY）后再设为主城。',
   },
   OUTER_NOT_CLEARED: {
     desc: '名城外围驻军尚未清空时对其发起 task=occupy（v24，AISLG-56）：名城分两阶段攻打，先清外围、外围清空后才能攻城守并占领。',
@@ -880,7 +908,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '行军（march）',
-    desc: `MARCH 从主城派出部队（发起时立即扣减城内驻军），时长 = Chebyshev 距离 × 每格秒数（默认 15 秒，占位）÷ 编队最慢兵种的行军速度系数（斥候 ×2、轻骑兵 ×1.5，占位），总时长再 ÷ 全局时间缩放（钳 1 秒）；到达由服务端自动结算（战斗 / 增援 / 调兵 / 侦察）。RECALL_GARRISON 撤回占领野地的全部驻军（即放弃占领）；RECALL_MARCH 把行军途中（status=marching 且非返程）的部队原地折返（同速回程）。`,
+    desc: `MARCH 从主城派出部队（发起时立即扣减城内驻军），时长 = Chebyshev 距离 × 每格秒数（默认 15 秒，占位）÷ 编队最慢兵种的行军速度系数（斥候 ×2、轻骑兵 ×1.5，占位），总时长再 ÷ 全局时间缩放（钳 1 秒）；到达由服务端自动结算（战斗 / 增援 / 调兵 / 侦察）。RECALL_GARRISON 不带 troops 时撤回占领野地的全部驻军（即放弃占领），带 troops（v83）时按兵种部分撤回（保留占领）；RECALL_MARCH 把行军途中（status=marching 且非返程）的部队原地折返（同速回程）。`,
   },
   {
     term: '战报（battle report）',

@@ -51,8 +51,8 @@ import {
   handleGetTile,
   handleGetWorldMap,
   handleMarch,
-  handleRecallGarrison,
 } from './handlers-world';
+import { handleRecallGarrison, readRecallTroops } from './handlers-recall';
 import { handleGetMapOverview } from './map-overview';
 import { handleAnnouncementOp } from './handlers-announcement';
 import { handleAllianceOp } from './handlers-alliance';
@@ -89,6 +89,8 @@ import { loadCityState } from './views';
 import { cityTitle } from '../../common/src/nobility';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
 import { handleDiscardCity } from './handlers-discard';
+import { handleSetCapital } from './handlers-capital';
+import { loadCapitalSwapView } from '../../common/src/capital-swap-db';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
 import { handleGetHallOfFame, handleGetSeason, respondMaintenance } from './handlers-season';
 import { maintenanceActive } from './maintenance-gate';
@@ -262,7 +264,13 @@ async function dispatchOp(
         respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
         break;
       }
-      await handleRecallGarrison(ctx, conn, op, seq, x as number, y as number);
+      // v83（AISLG-207）：troops 缺省 = 全撤；带 troops 按兵种部分撤回，非法返回 INVALID_PARAMS
+      const recall = readRecallTroops(data);
+      if (!recall) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleRecallGarrison(ctx, conn, op, seq, x as number, y as number, recall.troops);
       break;
     }
     case Op.SCOUT: {
@@ -524,6 +532,9 @@ async function dispatchOp(
     case Op.DISCARD_CITY:
       await handleDiscardCity(ctx, conn, op, seq, data);
       break;
+    case Op.SET_CAPITAL:
+      await handleSetCapital(ctx, conn, op, seq, data);
+      break;
     case Op.SET_NICKNAME:
       await handleSetNickname(ctx, conn, op, seq, data);
       break;
@@ -611,7 +622,9 @@ async function handleGetState(
     limit: branchCityLimit(mainGovernment),
     minGovernment: BRANCH_MIN_GOVERNMENT,
   };
-  respondOk(ctx.registry, conn, op, seq, { city, cities, branch });
+  // v82（AISLG-205）：设为主城的冷却 / 来袭 / 逐城不可设原因，供前端置灰
+  const capitalSwap = await loadCapitalSwapView(ctx.pool, accountId);
+  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap });
 }
 
 async function handleGetEvents(

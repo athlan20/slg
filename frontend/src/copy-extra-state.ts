@@ -61,6 +61,7 @@ export const EXTRA_STATE = {
   event: {
     cityRenamed: (from: string, to: string) => `城池改名：${from} → ${to}`,
     cityDiscarded: (pos: string) => `放弃分城（${pos}），地块已回到 NPC 城池，名额已腾出`,
+    capitalChanged: '设为主城：主城与分城对调身份，24 小时内不能再次更换',
     accountReset: '账号数据已重置，回到开号初始状态',
     accountRenamed: (from: string, to: string) => `昵称修改：${from} → ${to}`,
     marchTaskPlunder: '（掠夺）',

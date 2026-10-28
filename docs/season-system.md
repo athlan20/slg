@@ -37,7 +37,7 @@
 
 **清空（世界级）**：`world_tiles`、`tile_army`、`native_garrison_state`、`famous_cities`、`npc_attacks`、`moving_targets`、`yt_events`、`yt_camps`、`yt_contrib`、`city_discards`。
 
-**清空（账号级游戏态）**：`cities`、`city_buildings`、`city_army`、`builds`、`recruits`、`marches`、`battle_reports`、`scout_intel`、`events`、`account_techs`、`tech_research`、`account_heroes`、`tavern_candidates`、`famous_heroes`、`hero_unlocks`、`hero_friendship`、`arena_entries`、`arena_daily`、`arena_matches`、`star_tower_progress`、`star_tower_matches`、`quest_claims`、`quest_claims_once`、`signin_state`、`agent_plans`、`agent_daily_reports`、`win_streaks`、`leaderboard_snapshots`、`leaderboard_model_snapshots`、`server_broadcasts`、`chat_messages`、`chat_reads`。
+**清空（账号级游戏态）**：`cities`、`capital_swaps`、`city_buildings`、`city_army`、`builds`、`recruits`、`marches`、`battle_reports`、`scout_intel`、`events`、`account_techs`、`tech_research`、`account_heroes`、`tavern_candidates`、`famous_heroes`、`hero_unlocks`、`hero_friendship`、`arena_entries`、`arena_daily`、`arena_matches`、`star_tower_progress`、`star_tower_matches`、`quest_claims`、`quest_claims_once`、`signin_state`、`agent_plans`、`agent_daily_reports`、`win_streaks`、`leaderboard_snapshots`、`leaderboard_model_snapshots`、`server_broadcasts`、`chat_messages`、`chat_reads`。
 
 **清空后要重建**：世界地块（`generateWorldTiles`，**新种子**）、名城（`ensureFamousCities`）、野外名将（`ensureWildFamous`）、竞技场 NPC（`seedArenaNpcs`）。
 

@@ -70,7 +70,7 @@ export function MilitarySummary({ role }: { role: string }) {
   }
 
   if (city) {
-    const net = city.production.food - city.armyFoodUsePerHour;
+    const net = Math.round(city.production.food - city.armyFoodUsePerHour);
     const starveLeft = city.starveAt ? Math.max(0, Math.ceil((Date.parse(city.starveAt) - now) / 1000)) : null;
     const truceLeft = city.truceUntil ? Math.ceil((Date.parse(city.truceUntil) - now) / 1000) : 0;
     if (city.mutinyNextAt !== null || (starveLeft !== null && starveLeft * 1000 <= 3_600_000 / Math.max(1, city.timeScale)) || truceLeft > 0) {

@@ -618,5 +618,17 @@
  * v81（城防器械分城化，AISLG-204，只加不改）：CRAFT_DEFENSE（op 117）新增可选 cityId，缺省主城（与其他城池类协议一致）。
  *   此前带 cityId 的打造一律记到主城（扣款、队列与库存）；现在按指定城扣款、进该城队列与库存，城墙等级与库存上限按该城算。
  *   CANCEL_DEFENSE_CRAFT 不变（按条目所属城定位）。
+ *   v82（设为主城，AISLG-205，只加不改）：新增 SET_CAPITAL（op 141，cityId / confirm 必填）——分城与当前主城对调身份，
+ *   原主城变为分城（城防从 100 满值开始计，无额外免战），新主城无城防值；换完后的分城数不超新上限 floor(新主城官府 ÷ 2)。
+ *   冷却 24 小时（按时间缩放，不随官府等级变，新号第一次不受限）；名城不能设为主城；被来袭 / 城防未满时不能设。
+ *   新错误码 FAMOUS_CITY_NOT_CAPITAL / CAPITAL_SWAP_COOLDOWN（附 retryAfterSeconds）/ CAPITAL_SWAP_UNDER_ATTACK /
+ *   CAPITAL_SWAP_DURABILITY_LOW / BRANCH_LIMIT_EXCEEDED（附 limit 与 branchCount）。GET_STATE 新增 capitalSwap
+ *   （cooldownUntil / underAttack / 逐分城 blocked）；事件 capital_changed；PUSH_CITY_STATE 新增 reason=capital_changed。
+ *   新表 capital_swaps（每账号一条冷却）；对调时 cities.created_at 改写为账号最小值减 1 秒（主城判定口径，见 handlers-capital.ts）。
+ * v83（部分撤回，AISLG-207，只加不改）：RECALL_GARRISON（op 33）新增可选 troops（按兵种的正整数数量）。不带 troops 与改动前一致
+ *   （全撤、放弃占领）；带 troops 只撤指定数量、保留占领，被撤的兵走 purpose='return' 返程行军回占领城，剩余驻军继续守地，
+ *   占领加成与连片加成不变。部分撤回后地块至少留 1 兵：撤空返回 GARRISON_WOULD_EMPTY，某兵种超过驻军返回 INSUFFICIENT_GARRISON；
+ *   troops 为空对象 / 未知兵种 / 非正整数返回 INVALID_PARAMS；出错不改任何数据。响应仍为 { march }（返程行军视图）。
+ *   新错误码 GARRISON_WOULD_EMPTY / INSUFFICIENT_GARRISON。
  */
-export const PROTOCOL_VERSION = 81;
+export const PROTOCOL_VERSION = 83;

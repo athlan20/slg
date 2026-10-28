@@ -26,7 +26,7 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
     for (const key of KEYS) {
       const cap = city.storage[key];
       const percent = cap > 0 ? Math.floor((city.resources[key] / cap) * 100) : 0;
-      const net = key === 'food' ? city.production.food - city.armyFoodUsePerHour : city.production[key];
+      const net = Math.round(key === 'food' ? city.production.food - city.armyFoodUsePerHour : city.production[key]);
       tiles.push({
         key,
         label: RESOURCE_LABEL[key],

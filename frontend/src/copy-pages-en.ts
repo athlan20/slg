@@ -50,7 +50,7 @@ export const TARGET_COPY_EN = {
   noOps: 'No actions available on this tile',
   ownCityHere: 'Your current city',
   otherCityHint: "Other players' cities can only be scouted; PvP is not open yet",
-  recallHint: 'The garrison will return to its origin city and abandon occupation of this tile.',
+  recallHint: 'A partial recall keeps the occupation but leaves at least 1 troop on the tile; a full recall abandons the occupation.',
   verdict: {
     power: (power: number) => `Power ${power}`,
     enemy: (power: number) => `Garrison ~${power}`,

@@ -142,10 +142,12 @@ export interface GetTileResponseData {
   tile: TileDetailView;
 }
 
-/** RECALL_GARRISON（op 33）请求载荷：撤回本账号占领地块的全部驻军（同时放弃占领） */
+/** RECALL_GARRISON（op 33）请求载荷：缺省 troops 时撤回本账号占领地块的全部驻军（同时放弃占领）；
+ *  带 troops（v83）时按兵种部分撤回，保留占领，地块至少留 1 兵 */
 export interface RecallGarrisonRequestData {
   x: number;
   y: number;
+  troops?: Partial<Record<TroopKind, number>>;
 }
 
 export function isTerrainKind(value: unknown): value is TerrainKind {

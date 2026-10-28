@@ -76,14 +76,46 @@ export interface DiscardCityResponseData {
   cooldownUntil: string;
 }
 
+/** SET_CAPITAL（op 141，v82，AISLG-205）请求载荷：cityId 必填（要设为主城的分城），confirm 必须显式为 true */
+export interface SetCapitalRequestData {
+  cityId: string;
+  confirm: boolean;
+}
+
+/** SET_CAPITAL 响应载荷：新主城、原主城（已变为分城）、本账号的下次可换时刻与新主城的分城上限 */
+export interface SetCapitalResponseData {
+  capitalId: string;
+  formerCapitalId: string;
+  /** ISO 8601；冷却期内再次设为主城返回 CAPITAL_SWAP_COOLDOWN */
+  cooldownUntil: string;
+  /** 换完后的分城上限 = floor(新主城官府等级 ÷ 2) */
+  branchLimit: number;
+}
+
+/** 设为主城被拒的错误码子集（GET_STATE 的 capitalSwap.blocked 按城给出，前端据此置灰） */
+export type CapitalSwapBlockCode = 'FAMOUS_CITY_NOT_CAPITAL' | 'CAPITAL_SWAP_DURABILITY_LOW' | 'BRANCH_LIMIT_EXCEEDED';
+
+/** GET_STATE 响应的 capitalSwap（v82，AISLG-205）：设为主城的账号级状态与逐城不可设原因 */
+export interface CapitalSwapView {
+  /** ISO 8601；冷却未结束时为冷却截止时刻，否则 null */
+  cooldownUntil: string | null;
+  /** 有他人玩家的出征正奔向本账号任一城或野地 */
+  underAttack: boolean;
+  /** 逐分城给出不可设为主城的原因（未列出的分城可设）；键为 cityId */
+  blocked: Record<string, CapitalSwapBlockCode>;
+}
+
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
   /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57）；
-   *  assist_changed=协防部队入驻 / 召回 / 遣返 / 自动遣返（v74，AISLG-194；收到后重新 GET_STATE / GET_TILE） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed';
+   *  assist_changed=协防部队入驻 / 召回 / 遣返 / 自动遣返（v74，AISLG-194；收到后重新 GET_STATE / GET_TILE）；
+   *  capital_changed=设为主城（v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城；收到后重新 GET_STATE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
+  /** reason=capital_changed 时的原主城 id（已变为分城） */
+  formerCapitalId?: string;
 }
 
 /** RESET_ACCOUNT（op 26）请求载荷：重置为不可逆操作，confirm 必须显式为 true */
@@ -147,6 +179,8 @@ export const EventType = {
   CITY_RENAMED: 'city_renamed',
   /** v57（AISLG-153）：分城被放弃，地块转回 NPC 城池（detail = { x, y, cooldownUntil }） */
   CITY_DISCARDED: 'city_discarded',
+  /** v82（AISLG-205）：分城与主城对调身份（detail = { capitalId, formerCapitalId, cooldownUntil }） */
+  CAPITAL_CHANGED: 'capital_changed',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
   /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */

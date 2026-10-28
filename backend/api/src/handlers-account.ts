@@ -208,6 +208,8 @@ export async function handleResetAccount(
       // 战报与侦察情报属账号游戏数据（v13）：一并清空
       await client.query(`DELETE FROM battle_reports WHERE account_id = $1`, [accountId]);
       await client.query(`DELETE FROM scout_intel WHERE account_id = $1`, [accountId]);
+      // 设为主城的冷却（v82，AISLG-205）：重置后视同新号，第一次设为主城不受冷却
+      await client.query(`DELETE FROM capital_swaps WHERE account_id = $1`, [accountId]);
       // 竞技场席位（v53，AISLG-150）：删除本账号的榜上席位，其后名次整体前移，榜单保持连续（与 joinArena 的 max+1 口径一致）。
       // 先拿竞技场锁再碰城池行，与竞技场流程的锁序一致
       await lockArena(client);
