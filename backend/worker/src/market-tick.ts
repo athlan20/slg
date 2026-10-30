@@ -25,8 +25,17 @@ export async function settleCaravanArrival(client: pg.PoolClient, march: { id: s
   return Boolean(cargo);
 }
 
-/** 过期挂单回收（每 tick 调一次；事务内锁行、退款、写事件） */
-export async function processMarketOrders(pool: pg.Pool): Promise<number> {
+/** 过期挂单检查间隔（毫秒，真实时间）：AISLG-208 起节流，挂单 48 小时才过期，晚 10 秒无感 */
+export const MARKET_TICK_MS = 10_000;
+
+let lastRunMs = 0;
+
+/** 过期挂单回收（节流到 MARKET_TICK_MS；事务内锁行、退款、写事件） */
+export async function processMarketOrders(pool: pg.Pool, nowMs: number = Date.now()): Promise<number> {
+  if (nowMs - lastRunMs < MARKET_TICK_MS) {
+    return 0;
+  }
+  lastRunMs = nowMs;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

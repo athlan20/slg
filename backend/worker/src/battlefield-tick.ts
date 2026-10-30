@@ -291,12 +291,26 @@ function asScript(value: unknown): BattlefieldScript {
   return value === 'dongzhuo' || value === 'chibi' ? value : 'guandu';
 }
 
-/** 第五步：到点的战场行军 / 攻打据点结算 */
-export async function processBattlefield(pool: pg.Pool): Promise<void> {
-  await processBattlefieldLifecycle(pool);
-  await processBattlefieldFood(pool);
-  await processBattlefieldScores(pool);
-  await processBattlefieldWind(pool);
+/** 日程 / 耗粮 / 积分 / 风向的检查间隔（毫秒，真实时间）：AISLG-208 起节流，日程按分钟级推进 */
+export const BATTLEFIELD_SLOW_TICK_MS = 5_000;
+
+let lastSlowRunMs = 0;
+
+/**
+ * 第五步入口：慢变化的前四步节流到 BATTLEFIELD_SLOW_TICK_MS；行军结算由探针门控
+ * （movementsDue 为真才跑），保持每秒。两者互不影响：慢步骤不会因为探针为假而停摆。
+ */
+export async function processBattlefield(pool: pg.Pool, movementsDue = true, nowMs: number = Date.now()): Promise<void> {
+  if (nowMs - lastSlowRunMs >= BATTLEFIELD_SLOW_TICK_MS) {
+    lastSlowRunMs = nowMs;
+    await processBattlefieldLifecycle(pool);
+    await processBattlefieldFood(pool);
+    await processBattlefieldScores(pool);
+    await processBattlefieldWind(pool);
+  }
+  if (!movementsDue) {
+    return;
+  }
   const resolved = await processBattlefieldMovements(pool);
   if (resolved > 0) {
     console.log(`resolved ${resolved} battlefield movement(s)`);

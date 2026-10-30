@@ -12,10 +12,13 @@ import { sendDueNotice } from './season-notice';
 export const SEASON_RESET_RETRY_MS = 30_000;
 /** 连续失败达到此次数后停止自动重试（需人工处理后重启 Worker） */
 export const SEASON_RESET_MAX_FAILURES = 5;
+/** 换季检查最小间隔（毫秒，真实时间）：AISLG-208 起节流，换季时刻晚 5 秒无感 */
+export const SEASON_CHECK_MS = 5_000;
 
 let consecutiveFailures = 0;
 let nextAttemptAt = 0;
 let halted = false;
+let lastCheckMs = 0;
 /** 测试注入（生产为空）：换季的故障注入钩子 */
 let resetOptions: SeasonResetOptions = {};
 
@@ -27,6 +30,7 @@ export function resetSeasonTickStateForTest(options: SeasonResetOptions = {}): v
   consecutiveFailures = 0;
   nextAttemptAt = 0;
   halted = false;
+  lastCheckMs = 0;
   resetOptions = options;
 }
 
@@ -47,6 +51,11 @@ export async function processSeasonTick(
   if (isSeasonResetting()) {
     return 'idle';
   }
+  // AISLG-208：换季检查也节流，避免每秒都去数据库读赛季状态
+  if (nowMs - lastCheckMs < SEASON_CHECK_MS) {
+    return 'idle';
+  }
+  lastCheckMs = nowMs;
   const season = await getCurrentSeason(pool);
   if (!season) {
     return 'idle';
