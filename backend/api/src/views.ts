@@ -58,6 +58,7 @@ import { selfTruceNextAvailableAt, settleDurability } from '../../common/src/pro
 import { cityLevelOf } from '../../common/src/branch-city';
 import { FAMOUS_PRODUCTION_BONUS_PERCENT } from '../../common/src/famous-city';
 import { readCargo } from '../../common/src/transport';
+import { cityInBattle } from '../../common/src/city-battle';
 import { projectStarvation } from '../../common/src/starvation';
 import { deployLimit, towerStats } from '../../common/src/building-effects';
 import { famousEffectView, famousTowerPercent, famousWallExtraPercent } from '../../common/src/famous-effects';
@@ -254,6 +255,8 @@ export interface CitySnapshot {
   durabilitySettledAt: Date | null;
   /** 账号主城 id（v40：城防值只属于分城） */
   mainCityId: string;
+  /** 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向，或有未结的 NPC 来袭 */
+  inBattle: boolean;
 }
 
 /** 在已开启的事务内锁定城池行并结算生产；调用方负责 BEGIN / COMMIT */
@@ -302,6 +305,8 @@ export async function lockCitySnapshot(
     [row.id],
   );
   const army = await loadCityArmy(client, row.id);
+  // v84（AISLG-209）：敌情判定（行军指向本城或其名下野地 / 未结的 NPC 来袭），与遣散、放弃分城同一口径
+  const inBattle = await cityInBattle(client, row.id);
   // v38（AISLG-122）：账号级保护状态（新手保护 / 主动免战）
   const accountRes = await client.query(
     `SELECT a.newbie_until, a.self_truce_until, a.self_truce_used_at, a.nobility,
@@ -365,6 +370,7 @@ export async function lockCitySnapshot(
     population: settled.population,
     army,
     armyFoodUsePerHour,
+    inBattle,
     queue: queueRes.rows as BuildRow[],
     recruitQueue: recruitRes.rows as RecruitRow[],
     defenseStock,
@@ -433,6 +439,8 @@ export function toCityView(snap: CitySnapshot): CityView {
     army: { ...snap.army },
     // v14：军队小时耗粮（production.food 为毛产量；净粮 = production.food − 本值）
     armyFoodUsePerHour: Math.round(snap.armyFoodUsePerHour),
+    // v84（AISLG-209）：敌情（遣散按钮据此置灰；服务端仍以 CITY_IN_BATTLE 复核）
+    inBattle: snap.inBattle,
     // v20：全局时间缩放（AISLG-38）——客户端本地折算时长（冷却剩余等）用
     timeScale: getTimeScale(),
     truceUntil: snap.truceUntil ? snap.truceUntil.toISOString() : null,

@@ -261,6 +261,32 @@ export function recruitBatchSeconds(troop: TroopKind, count: number, drillPercen
   return scaledSeconds(TROOP_INFO[troop].unitSeconds * n * factor);
 }
 
+/** 遣散（DISBAND_TROOPS，v84，AISLG-209）返还比例（百分数）：按征兵成本退回，不返还人口。
+ *  协议文档用本常量拼数字，避免文档与实现不一致；上线一周后按事件统计复核是否降到 40。 */
+export const DISBAND_REFUND_PERCENT = 50;
+
+/**
+ * 遣散返还 = floor(Σ(单兵成本 × 遣散数量) × 50%)，五种资源分别累加后各取整一次
+ * （多个兵种先累加再取整，不按兵种逐个取整）。不存在的资源（石）成本为 0，返还也是 0。
+ * 人口不退：人口是征兵时消耗、随民房增长的征兵额度，退人口会绕过征兵速度上限。
+ */
+export function disbandRefund(troops: Partial<Record<TroopKind, number>>): Resources {
+  const totals: Resources = { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 };
+  for (const kind of TROOP_KINDS) {
+    const count = Math.floor(troops[kind] ?? 0);
+    if (count <= 0) {
+      continue;
+    }
+    for (const key of RESOURCE_KEYS) {
+      totals[key] += TROOP_INFO[kind].cost[key] * count;
+    }
+  }
+  for (const key of RESOURCE_KEYS) {
+    totals[key] = Math.floor((totals[key] * DISBAND_REFUND_PERCENT) / 100);
+  }
+  return totals;
+}
+
 /** 一支部队的小时耗粮合计 = Σ(单兵 foodUse × 数量)；未知兵种按 0 计 */
 export function armyFoodUsePerHour(counts: Partial<Record<TroopKind, number>>): number {
   let total = 0;

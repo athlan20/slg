@@ -115,7 +115,7 @@ export const REQUEST_SCOUT: RequestOpDoc = {
           op: Op.SCOUT,
           seq: 13,
           ok: false,
-          error: { code: 'INSUFFICIENT_TROOPS', message: '城内兵力不足以派出该编队' },
+          error: { code: 'INSUFFICIENT_TROOPS', message: '城内兵力不足以派出该编队（或要遣散的数量超过城内驻军）' },
           data: {
             city: {
               id: CITY_ID,

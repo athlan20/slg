@@ -27,6 +27,7 @@ import {
 } from './handlers-city';
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
+import { handleDisbandTroops, readDisbandTroops } from './handlers-disband';
 import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
 import { handleDismissAssist } from './handlers-assist';
 import {
@@ -415,6 +416,16 @@ async function dispatchOp(
         break;
       }
       await handleCancelRecruit(ctx, conn, op, seq, recruitId);
+      break;
+    }
+    case Op.DISBAND_TROOPS: {
+      // v84（AISLG-209）：troops 必须是非空对象、键为已知兵种、值为正整数，否则 INVALID_PARAMS
+      const params = readDisbandTroops(data);
+      if (!params) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleDisbandTroops(ctx, conn, op, seq, params.troops);
       break;
     }
     case Op.CRAFT_DEFENSE:

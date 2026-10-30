@@ -136,6 +136,13 @@ export const ERRORS_EN = {
     invalidParams: 'Invalid recruit parameters (unknown troop type or out-of-range count)',
     fallback: 'Failed to start recruitment',
   },
+  // v84 (AISLG-209): disband troops
+  disband: {
+    insufficientTroops: 'The number to disband exceeds the troops of that type currently in the city (troops away or garrisoned in the field do not count)',
+    cityInBattle: 'A march is heading for this city (or its wilderness), or an NPC attack is still open, so disbanding is unavailable for now',
+    invalidParams: 'Invalid disband parameters (unknown troop type, or a count that is not a positive integer)',
+    fallback: 'Failed to disband troops, please retry',
+  },
   exchange: {
     insufficientResources: 'Not enough of that resource for this exchange',
     invalidParams: 'The amount must be a positive integer, and at least 4 units are needed to yield 1 gold',
@@ -185,6 +192,9 @@ export const SESSION_EN = {
   recruitFailedFallback: 'Failed to start recruitment',
   cancelRecruitRejected: (message: string) => `Recruit cancellation rejected (${message})`,
   cancelRecruitFailedFallback: 'Failed to cancel recruitment',
+  // v84 (AISLG-209): disband troops
+  troopsDisbanded: (troops: string, refund: string) => `Disbanded ${troops}; refunded ${refund}`,
+  troopsDisbandedRejected: (message: string) => `Disband rejected (${message})`,
   marchStarted: (x: number, y: number, dueClock: string) => `Troops marching out → (${x},${y}), due ${dueClock}`,
   recallPartialStarted: (x: number, y: number, dueClock: string) =>
     `Part of the garrison departing (${x},${y}) for home, due ${dueClock}; occupation kept`,

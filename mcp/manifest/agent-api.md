@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**83** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**84** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 83）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 84）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -340,6 +340,7 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -497,7 +498,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 83,
+    "protocolVersion": 84,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -563,7 +564,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 83,
+    "protocolVersion": 84,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -587,7 +588,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/80 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/81 补读增量）**
 
 请求：
 
@@ -598,7 +599,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 80,
+    "docVersion": 81,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -617,8 +618,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 83,
-    "docNotice": "接口文档已从 v80 更新到 v83：请 GET /agent-api/changes/80 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 84,
+    "docNotice": "接口文档已从 v81 更新到 v84：请 GET /agent-api/changes/81 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -763,6 +764,7 @@
 | city.population | object | 人口现状（v7 新增，v8 规则确认，v19 数值修订）：{ current 当前人口, cap 上限（= 50 + 100 × 民房等级 × (民房等级 + 1)，无民房即基线 50）, growthPerHour 每小时增长（基准 = 10 × 民房等级 × (等级 + 1)，无民房为 0；实际 × 全局时间缩放） }；current ≥ cap 时停止增长（新号即 50/50 满编、增速 0，建民房后恢复增长）；征兵将消耗人口。 |
 | city.army | object | 城内驻军（v11 新增）：{ porter, militia, scout, pikeman, swordsman, archer, cavalry, iron_cavalry, supply_wagon, ballista, siege_ram }（后四种为 v33 二期兵种），按兵种统计；征兵完成（recruit_completed）时累加。v64（AISLG-168）起键集再加 yulin_guard、danyang_soldier、baimao_soldier、huwei_guard、zhuge_crossbow、xiandeng_warrior、hubao_cavalry、xiliang_cavalry 八种名城专属兵（占领对应名城才能征募，失守后已练出的兵留在原主人手里）。 |
 | city.armyFoodUsePerHour | number | 全军小时耗粮（v14 新增，实际值 × 全局时间缩放，与产出同幅）：城内驻军 1 倍 + 行军中/野地驻军 2 倍（单兵耗粮见各兵种 foodUse）。production.food 为毛产量，净粮 = production.food − 本值，可为负；结算把粮食扣到 0 为止、不记负债；**v34（AISLG-107）起断粮不再只是停止增长**：粮食为 0 且净产量为负时，每小时（缩放后）城内驻军每兵种减 10%（见 city.starveAt / city.mutinyNextAt 与 PUSH_STARVATION_STATE）。 |
+| city.inBattle | boolean | 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向（来袭 / 运输 / 占领 / 侦察），或有未结的 NPC 来袭。为 true 时 DISBAND_TROOPS 返回 CITY_IN_BATTLE（与放弃分城的判定同口径），客户端据此置灰遣散按钮。 |
 | city.starveAt | string \| null | 预计断粮时间（v34，AISLG-107；ISO 8601）：按当前粮食与净产量（粮毛产量 production.food − armyFoodUsePerHour）推算，已断粮 = 当前时刻，净产量不为负（不会断粮）为 null。距断粮不足 1 小时（缩放后）推送一次预警。 |
 | city.mutinyNextAt | string \| null | 下一次断粮哗变时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每个兵种减 10%（向上取整、至少 1 个，在外部队不受影响、不强制召回）；否则 null。 |
 | city.timeScale | number | 当前部署的全局时间缩放（v20 新增，AISLG-38）：文档时长基准 ÷ 本值 = 实际耗时（钳 1 秒）、速率基准 × 本值。客户端需本地折算时长（如掠夺冷却剩余）时用本值，不要按文档数值硬算。 |
@@ -1113,6 +1115,7 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -1484,6 +1487,7 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -1891,6 +1895,7 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -1972,7 +1977,7 @@
 | --- | --- | --- |
 | events | array | 事件数组，顺序见各游标说明。 |
 | events[].id | number | 事件自增 id，可作为 beforeId / sinceId 游标。 |
-| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）。 |
+| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）。 |
 | events[].initiator | 'player' \| 'agent' \| null | 发起事件的连接声明的登录类型。 |
 | events[].cityId | string \| null | 关联城池 id，无关联时为 null。 |
 | events[].buildId | string \| null | 关联建造 / 征兵 / 行军条目 id，无关联时为 null。 |
@@ -3319,6 +3324,7 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -4718,7 +4724,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
   "ok": false,
   "error": {
     "code": "INSUFFICIENT_TROOPS",
-    "message": "城内兵力不足以派出该编队"
+    "message": "城内兵力不足以派出该编队（或要遣散的数量超过城内驻军）"
   },
   "data": {
     "city": {
@@ -9361,6 +9367,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -10000,6 +10007,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -10739,6 +10747,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -11362,6 +11371,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -14947,6 +14957,480 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 142 · DISBAND_TROOPS — 遣散士兵（解散城内驻军并返还一半征兵资源）
+
+`C→S` 请求-响应 · 需登录后发送
+
+把指定城池（缺省主城）的**城内驻军**按兵种解散（v84，AISLG-209）：请求 troops = { 兵种: 数量 }，**立即生效、没有等待时间**，并返还当初征兵花掉的资源的 50%（金 / 木 / 铁 / 粮 / 石分别计算，石只在冲车等成本里出现，没有就是 0）。每种资源返还 = floor(Σ 单兵征募成本 × 遣散数量 × 50%)——多个兵种**先累加再取整一次**（不按兵种逐个取整）。**不返还人口**：人口是征兵时消耗、随民房自然增长的征兵额度，退人口会让「征兵 → 遣散」循环绕开征兵速度上限。返还直接入账该城，不钳储量上限（与 CANCEL_RECRUIT 同口径）。只认该城的城内驻军：在外部队（行军 / 返程 / 运输 / 侦察）、驻守野地的兵、派去盟友城的协防部队都不受影响，要遣散得先召回。该城或其名下野地正有行军在途指向、或有未结的 NPC 来袭时拒绝（CITY_IN_BATTLE，与放弃分城同一判定），否则会变成「躲战损 + 拿回一半资源」的投机；遣散**不受断粮、欠饷、免战状态限制**（断粮时遣散正好是止损手段）。遣散后 armyFoodUsePerHour 立即下降；遣散前先结算到当前时刻，断粮状态下若因此不再断粮，starveAt / mutinyNextAt 会同时清空。玩家与 Agent 都可以发起。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| troops | object | 必填。要遣散的兵种与数量，形如 { "pikeman": 40, "porter": 200 }：键为兵种（取值同 RECRUIT 的 troop），值为 1..城内该兵种现有数量的正整数。空对象 / 未知兵种 / 0 / 负数 / 小数 / 非对象一律返回 INVALID_PARAMS；某兵种超过城内数量返回 INSUFFICIENT_TROOPS；两种拒绝都不改任何数据。 |
+| cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| disbanded | object | 本次实际解散的兵种与数量（= 请求里数量大于 0 的项），如 { "pikeman": 40 }。 |
+| refunded | object | 返还的资源 { gold, wood, food, stone, iron }：每种资源 = floor(Σ 单兵成本 × 数量 × 50%)，已直接入账 city.resources。不返还人口。 |
+| city | object | 遣散后的城池状态，结构与 GET_STATE 的 city 相同（含新的 army / armyFoodUsePerHour / starveAt / mutinyNextAt）。 |
+
+**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_TROOPS`、`CITY_IN_BATTLE`（处置建议见第 4 节）
+
+**Agent 提示**：遣散是「止损与调兵种结构」的手段，不是回血：只拿回 50%，换阵容有真实代价。发起前用 GET_STATE 的 city.army 核对各兵种城内数量（city.inBattle 为 true 时先别发，会被 CITY_IN_BATTLE 拒绝）；响应直接给遣散后的 city，不必再查。同账号其他在线连接会收到 PUSH_CITY_STATE（reason=troops_disbanded），事件流新增 troops_disbanded（detail = { cityId, troops, refunded }）。
+
+**示例**
+
+**遣散 40 个长枪兵（城内 100 → 60，返还单兵成本的 50%）**
+
+请求：
+
+```json
+{
+  "op": 142,
+  "seq": 1,
+  "data": {
+    "troops": {
+      "pikeman": 40
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 142,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "disbanded": {
+      "pikeman": 40
+    },
+    "refunded": {
+      "gold": 3000,
+      "wood": 1600,
+      "food": 2000,
+      "stone": 0,
+      "iron": 1000
+    },
+    "city": {
+      "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "name": "主城",
+      "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
+      "resources": {
+        "gold": 5000,
+        "wood": 3600,
+        "food": 3500,
+        "stone": 2000,
+        "iron": 3000
+      },
+      "buildings": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "levels": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "costs": {
+        "farm": {
+          "build": {
+            "gold": 100,
+            "wood": 50,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "lumber_mill": {
+          "build": {
+            "gold": 120,
+            "wood": 40,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "quarry": {
+          "build": {
+            "gold": 150,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "iron_mine": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "house": {
+          "build": {
+            "gold": 80,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "government": {
+          "build": null,
+          "upgrade": {
+            "gold": 200,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "buildSeconds": null,
+          "upgradeSeconds": 1
+        },
+        "barracks": {
+          "build": {
+            "gold": 150,
+            "wood": 120,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "warehouse": {
+          "build": {
+            "gold": 120,
+            "wood": 100,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "wall": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "academy": {
+          "build": {
+            "gold": 180,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "parade_ground": {
+          "build": {
+            "gold": 160,
+            "wood": 100,
+            "food": 0,
+            "stone": 40,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "beacon": {
+          "build": {
+            "gold": 140,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "post_station": {
+          "build": {
+            "gold": 150,
+            "wood": 110,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "arrow_tower": {
+          "build": {
+            "gold": 220,
+            "wood": 100,
+            "food": 0,
+            "stone": 80,
+            "iron": 60
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "tavern": {
+          "build": {
+            "gold": 260,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 40
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        }
+      },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
+      "farms": 0,
+      "production": {
+        "gold": 100,
+        "food": 100,
+        "wood": 100,
+        "stone": 100,
+        "iron": 100
+      },
+      "population": {
+        "current": 50,
+        "cap": 50,
+        "growthPerHour": 0
+      },
+      "storage": {
+        "gold": 1000000,
+        "food": 10000,
+        "wood": 10000,
+        "stone": 10000,
+        "iron": 10000
+      },
+      "army": {
+        "porter": 0,
+        "militia": 0,
+        "scout": 0,
+        "pikeman": 60,
+        "swordsman": 0,
+        "archer": 0,
+        "cavalry": 0,
+        "iron_cavalry": 0,
+        "supply_wagon": 0,
+        "ballista": 0,
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
+      },
+      "armyFoodUsePerHour": 300,
+      "inBattle": false,
+      "timeScale": 1,
+      "truceUntil": null,
+      "newbieUntil": null,
+      "shieldUntil": null,
+      "shieldNextAt": null,
+      "durability": null,
+      "famousName": null,
+      "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
+      "famousEffect": null,
+      "starveAt": null,
+      "mutinyNextAt": null,
+      "guard": null,
+      "deploy": {
+        "count": 0,
+        "limit": 1
+      },
+      "tower": null,
+      "techs": {
+        "farming": 0,
+        "carrying": 0,
+        "marching": 0,
+        "storage": 0,
+        "scouting": 0,
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
+      },
+      "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
+      "defenseBonus": 0,
+      "marches": [],
+      "territory": [],
+      "queue": [],
+      "building": null
+    }
+  }
+}
+```
+
+**遣散数量超过城内驻军被拒（不改任何数据）**
+
+请求：
+
+```json
+{
+  "op": 142,
+  "seq": 2,
+  "data": {
+    "troops": {
+      "pikeman": 200
+    }
+  }
+}
+```
+
+失败响应（`INSUFFICIENT_TROOPS`）：
+
+```json
+{
+  "op": 142,
+  "seq": 2,
+  "ok": false,
+  "error": {
+    "code": "INSUFFICIENT_TROOPS",
+    "message": "城内兵力不足以派出该编队（或要遣散的数量超过城内驻军）"
+  }
+}
+```
+
+**有敌情（行军指向本城 / NPC 来袭未结）时被拒**
+
+请求：
+
+```json
+{
+  "op": 142,
+  "seq": 3,
+  "data": {
+    "troops": {
+      "pikeman": 10
+    }
+  }
+}
+```
+
+失败响应（`CITY_IN_BATTLE`）：
+
+```json
+{
+  "op": 142,
+  "seq": 3,
+  "ok": false,
+  "error": {
+    "code": "CITY_IN_BATTLE",
+    "message": "该城或其名下野地正有行军在途 / 有 NPC 来袭未结，暂不能放弃分城或遣散士兵"
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -15110,13 +15594,13 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `S→C` 服务端推送 · 无 `seq`
 
-城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。
+城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）、troops_disbanded=城内驻军被遣散（DISBAND_TROOPS，v84，AISLG-209；只带 cityId，收到后用 GET_STATE 刷新驻军与资源）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。
 
 **data 字段**
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| reason | 'city_renamed' \| 'account_reset' \| 'city_discarded' \| 'capital_changed' | 触发本次推送的状态变化。 |
+| reason | 'city_renamed' \| 'account_reset' \| 'city_discarded' \| 'capital_changed' \| 'troops_disbanded' | 触发本次推送的状态变化。 |
 | cityId | string | 城池 UUID（reason=capital_changed 时为新主城）。 |
 | name | string | reason=city_renamed 时的新城池名。 |
 | formerCapitalId | string | v82：reason=capital_changed 时的原主城 UUID（已变为分城）。 |
@@ -16537,7 +17021,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `RECRUIT_QUEUE_FULL` | 征兵队列已满（1 条征募中 + 排队上限，当前为 2 条，占位数值；v11）。征兵队列独立于建造队列。 | 等队首完成后重试，或先取消排队条目腾出位置。 |
 | `RECRUIT_NOT_CANCELLABLE` | 目标征兵不存在、不属于本账号，或已完成 / 已取消。排队中与征募中的条目都可取消（v11 起排队可取消，v71 AISLG-190 起征募中也可取消）。 | 用 GET_STATE 查看 city.recruitQueue，只对 status=queued 或 recruiting 的条目发起 CANCEL_RECRUIT。 |
 | `TARGET_NOT_ATTACKABLE` | 出征目标当前不可攻击（v12）：坐标在世界外、玩家城池地块（含自己的城），或已被其他玩家占领的野地。玩家对抗（攻城与争夺野地）随后续阶段开放，当前只能出征无主 / 本账号占领的野地与 NPC 城池。 | 用 GET_WORLD_MAP / GET_TILE 确认目标类别与归属；换一块无主野地或 NPC 城池，或先撤回对本账号地块的出征计划。 |
-| `INSUFFICIENT_TROOPS` | 城内驻军不足以派出请求的编队（v12：出征在发起时立即扣减 city.army，行军中的部队不在城内）。 | 失败响应附当前城池状态（data.city.army）；按城内驻军调整编队，或等待征兵完成 / 部队返程后再出征。 |
+| `INSUFFICIENT_TROOPS` | 城内驻军不足以派出请求的编队（v12：出征在发起时立即扣减 city.army，行军中的部队不在城内），或 DISBAND_TROOPS 要遣散的某兵种数量超过该城城内驻军（v84，AISLG-209；不改任何数据）。 | 出征：失败响应附当前城池状态（data.city.army），按城内驻军调整编队，或等待征兵完成 / 部队返程后再出征。遣散：用 GET_STATE 的 city.army 核对各兵种城内数量（在外部队与野地驻军不算），按实际数量重发。 |
 | `TILE_NOT_OCCUPIED` | 该地块未被本账号占领（无主、他人占领或不是野地），无法召回驻军（v12）。 | 用 GET_STATE 的 city.territory 核对本账号占领的野地坐标，只对列表中的地块发起 RECALL_GARRISON。 |
 | `GARRISON_WOULD_EMPTY` | 部分撤回（RECALL_GARRISON 带 troops，v83）的撤回总数等于或超过该地块驻军总数，会把地块撤空。部分撤回不放弃占领，因此地块至少要留 1 个兵；不改任何数据。 | 减少撤回数量，使地块至少留 1 兵；若要全部撤回并放弃占领，不带 troops 重新发起 RECALL_GARRISON。 |
 | `INSUFFICIENT_GARRISON` | 部分撤回（RECALL_GARRISON 带 troops，v83）中某兵种的撤回数量超过该地块现有驻军。不改任何数据。 | 用 GET_STATE 的 city.territory 或 GET_TILE 的 tile.garrisonDetail 核对各兵种现有驻军，按实际数量重发。 |
@@ -16550,7 +17034,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `TARGET_LEVEL_TOO_HIGH` | 目标 NPC 城等级高于出发城的官府等级（v24：只能占领不高于出发城官府等级的城）。 | 升级出发城的官府，或从官府更高的城出征，或先掠夺不占领。 |
 | `DISCARD_COOLDOWN` | 本账号刚放弃的分城仍在冷却中，不能再占领该 NPC 城（v57，AISLG-153）：冷却 = 放弃时的官府等级 天（按时间缩放）；MARCH task=occupy 发起时初核，Worker 到达时复核——胜利后冷却未结不建分城、幸存部队返程，事件记录 denial=DISCARD_COOLDOWN。 | 等冷却结束（冷却截止见 DISCARD_CITY 响应的 cooldownUntil），或改占其他 NPC 城；掠夺不受此限制。 |
 | `DISCARD_MAIN_CITY` | 主城不能放弃，DISCARD_CITY 只能放弃分城（v57，AISLG-153）。 | 如要放弃的是分城，请传该分城的 cityId（GET_STATE 的 cities[]，isMain 为 false）。 |
-| `CITY_IN_BATTLE` | 该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭，暂不能放弃（v57，AISLG-153）。 | 等待这些行军结算或 NPC 来袭结束后再放弃。 |
+| `CITY_IN_BATTLE` | 该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭：此时不能放弃分城（v57，AISLG-153），也不能遣散士兵（v84，AISLG-209，否则会变成「躲战损 + 拿回一半资源」的投机）。不改任何数据。 | 等这些行军结算或 NPC 来袭结束后再放弃 / 遣散；GET_STATE 的 city.inBattle 为 true 时可以先不发起。 |
 | `ARMY_OUTSIDE` | 该分城仍有部队在外（行军 / 返程 / 运输 / 侦察），不能放弃（v57，AISLG-153）。 | 等部队回城或结算后再放弃。 |
 | `WILDERNESS_GARRISONED` | 名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。 | 先用 RECALL_MARCH 召回各块野地的驻军，再放弃。 |
 | `FAMOUS_CITY_NOT_CAPITAL` | 名城（洛阳、长安、官渡、成都、建业、邺城、许昌、襄阳）不能设为主城（v82，AISLG-205）：名城是争夺型资源，主城不可被占领会让名城失去意义，名城效果与专属兵都跟着「可被占领」走。 | 改选普通分城；名城不能当主城。 |
@@ -17050,6 +17534,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -17686,6 +18171,7 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "inBattle": false,
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -18096,7 +18582,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 83。
+- 协议版本随对外协议内容的每次变化递增；当前为 84。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 
