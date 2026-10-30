@@ -35,6 +35,7 @@ import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick'
 import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
 import { startDbProbe, startLoopLagMonitor } from '../../common/src/diag-probe';
+import { ALL_DUE, probeDueWork, type DueProbe } from './due-probe';
 
 const TICK_MS = Number(process.env.WORKER_TICK_MS || 1000);
 
@@ -69,29 +70,43 @@ async function main(): Promise<void> {
     } catch (err) {
       console.error('worker season tick failed:', err instanceof Error ? err.message : err);
     }
+    // AISLG-208：一条合并探针代替逐队列空转。探针失败时取 ALL_DUE 兜底，退回改前的逐步骤自检。
+    let due: DueProbe;
     try {
-      const done = await processDueBuilds(pool);
-      if (done > 0) {
-        console.log(`completed ${done} build(s)`);
-      }
+      due = await probeDueWork(pool);
     } catch (err) {
-      console.error('worker tick failed:', err instanceof Error ? err.message : err);
+      console.error('worker due probe failed, falling back to per-step checks:', err instanceof Error ? err.message : err);
+      due = ALL_DUE;
     }
-    try {
-      const recruitsDone = await processDueRecruits(pool);
-      if (recruitsDone > 0) {
-        console.log(`completed ${recruitsDone} recruit(s)`);
+    if (due.builds) {
+      try {
+        const done = await processDueBuilds(pool);
+        if (done > 0) {
+          console.log(`completed ${done} build(s)`);
+        }
+      } catch (err) {
+        console.error('worker tick failed:', err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error('worker recruit tick failed:', err instanceof Error ? err.message : err);
     }
-    try {
-      const defenseDone = await processDueDefenseCrafts(pool);
-      if (defenseDone > 0) {
-        console.log(`completed ${defenseDone} defense craft(s)`);
+    if (due.recruits) {
+      try {
+        const recruitsDone = await processDueRecruits(pool);
+        if (recruitsDone > 0) {
+          console.log(`completed ${recruitsDone} recruit(s)`);
+        }
+      } catch (err) {
+        console.error('worker recruit tick failed:', err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error('worker defense craft tick failed:', err instanceof Error ? err.message : err);
+    }
+    if (due.defenseCrafts) {
+      try {
+        const defenseDone = await processDueDefenseCrafts(pool);
+        if (defenseDone > 0) {
+          console.log(`completed ${defenseDone} defense craft(s)`);
+        }
+      } catch (err) {
+        console.error('worker defense craft tick failed:', err instanceof Error ? err.message : err);
+      }
     }
     try {
       // v34（AISLG-107）：断粮预警 / 哗变（粮食为 0 且净产量为负时城内驻军逐小时减员）
@@ -99,11 +114,13 @@ async function main(): Promise<void> {
     } catch (err) {
       console.error('worker starvation tick failed:', err instanceof Error ? err.message : err);
     }
-    try {
-      // v61（AISLG-165）：野地储量到点采空——按预计采空时刻结算归属方城池（采空事件与推送在结算中产生）
-      await processDueReserves(pool);
-    } catch (err) {
-      console.error('worker reserve tick failed:', err instanceof Error ? err.message : err);
+    if (due.reserves) {
+      try {
+        // v61（AISLG-165）：野地储量到点采空——按预计采空时刻结算归属方城池（采空事件与推送在结算中产生）
+        await processDueReserves(pool);
+      } catch (err) {
+        console.error('worker reserve tick failed:', err instanceof Error ? err.message : err);
+      }
     }
     try {
       // v36（AISLG-114）：武将俸禄——每小时（随缩放）从主城扣，金币不足记欠饷
@@ -130,13 +147,13 @@ async function main(): Promise<void> {
       console.error('worker alliance tick failed:', err instanceof Error ? err.message : err);
     }
     try {
-      // v79（AISLG-200）：洛阳窗口回满城防 / 预告 / 开始 / 结束播报
+      // v79（AISLG-200）：洛阳窗口回满城防 / 预告 / 开始 / 结束播报（内部节流到 5 秒）
       await processLuoyang(pool);
     } catch (err) {
       console.error('worker luoyang tick failed:', err instanceof Error ? err.message : err);
     }
     try {
-      // v78（AISLG-196）：交易所 48 小时过期挂单自动撤单退款
+      // v78（AISLG-196）：交易所 48 小时过期挂单自动撤单退款（内部节流到 10 秒）
       const expired = await processMarketOrders(pool);
       if (expired > 0) {
         console.log(`expired ${expired} market order(s)`);
@@ -145,8 +162,8 @@ async function main(): Promise<void> {
       console.error('worker market tick failed:', err instanceof Error ? err.message : err);
     }
     try {
-      // v75（AISLG-198）：剧本战场——日程 / 耗粮 / 积分 / 行军与据点结算
-      await processBattlefield(pool);
+      // v75（AISLG-198）：剧本战场——日程 / 耗粮 / 积分 / 风向节流到 5 秒；行军按探针每秒结算
+      await processBattlefield(pool, due.battlefieldMovements);
     } catch (err) {
       console.error('worker battlefield tick failed:', err instanceof Error ? err.message : err);
     }
@@ -162,31 +179,37 @@ async function main(): Promise<void> {
     } catch (err) {
       console.error('worker moving target tick failed:', err instanceof Error ? err.message : err);
     }
-    try {
-      // v27（AISLG-77）：到期的科技研究结算（等级账号共享，生效前按旧等级切分各城产量）
-      const researchDone = await processDueResearch(pool);
-      if (researchDone > 0) {
-        console.log(`completed ${researchDone} research(es)`);
+    if (due.research) {
+      try {
+        // v27（AISLG-77）：到期的科技研究结算（等级账号共享，生效前按旧等级切分各城产量）
+        const researchDone = await processDueResearch(pool);
+        if (researchDone > 0) {
+          console.log(`completed ${researchDone} research(es)`);
+        }
+      } catch (err) {
+        console.error('worker research tick failed:', err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error('worker research tick failed:', err instanceof Error ? err.message : err);
     }
-    try {
-      const marchesDone = await processDueMarches(pool);
-      if (marchesDone > 0) {
-        console.log(`resolved ${marchesDone} march(es)`);
+    if (due.marches) {
+      try {
+        const marchesDone = await processDueMarches(pool);
+        if (marchesDone > 0) {
+          console.log(`resolved ${marchesDone} march(es)`);
+        }
+      } catch (err) {
+        console.error('worker march tick failed:', err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error('worker march tick failed:', err instanceof Error ? err.message : err);
     }
-    try {
-      // v23（AISLG-57）：到期的 NPC 袭击到达结算（预警期间增援的部队一并参战）
-      const attacksDone = await processDueNpcAttacks(pool);
-      if (attacksDone > 0) {
-        console.log(`resolved ${attacksDone} npc attack(s)`);
+    if (due.npcAttacks) {
+      try {
+        // v23（AISLG-57）：到期的 NPC 袭击到达结算（预警期间增援的部队一并参战）
+        const attacksDone = await processDueNpcAttacks(pool);
+        if (attacksDone > 0) {
+          console.log(`resolved ${attacksDone} npc attack(s)`);
+        }
+      } catch (err) {
+        console.error('worker npc attack tick failed:', err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error('worker npc attack tick failed:', err instanceof Error ? err.message : err);
     }
   };
 

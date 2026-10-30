@@ -28,7 +28,7 @@ Worker 到期结算、跨进程状态通知、按需查询。
 | --- | --- |
 | `common/src/` | 协议号与消息定义（protocol）、建筑规则（rules）、资源生产与懒结算（production）、世界与野地规则（world）、战斗占位结算（battle）、征兵规则（troops）、PostgreSQL 连接与建表（db）、事件存取（events）、Agent API 文档清单与渲染（protocol-doc*）。API 与 Worker 共用，不得各自另实现一套。 |
 | `api/src/` | Fastify WebSocket 接入、登录注册与会话令牌（auth）、协议分发（handlers）、世界协议（handlers-world / views-world）、连接登记（connections）、完成通知（notify）。 |
-| `worker/src/` | 独立进程：领取到期建造 / 征兵 / 行军，推进状态、写完成事件、pg_notify 通知 API；世界到期任务与 NPC 袭击在 `worker/src/world-tick.ts`。 |
+| `worker/src/` | 独立进程：领取到期建造 / 征兵 / 行军，推进状态、写完成事件、pg_notify 通知 API；世界到期任务与 NPC 袭击在 `worker/src/world-tick.ts`。tick 开头先用一条合并探针（`due-probe.ts`）检查 8 类到期队列，只有有活才进各自的处理函数；交易所挂单 / 洛阳窗口 / 战场日程 / 换季检查按 5–10 秒节流（AISLG-208）。 |
 | `scripts/smoke.ts` | 端到端冒烟，逐条验证第一期验收路径。 |
 | `scripts/smoke-world.ts` | 世界玩法冒烟（v12）：出征占领、NPC 袭击、召回、NPC 城池战败与重置清理。 |
 | `scripts/gen-agent-api.ts` | Agent API 文档一键生成与漂移检查（见「协议」一节）。 |

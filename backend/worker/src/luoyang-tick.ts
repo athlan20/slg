@@ -47,8 +47,17 @@ async function broadcast(client: pg.PoolClient, phase: string, detail: Record<st
   return insertServerBroadcast(client, 'luoyang_window', { phase, ...detail }, { force: true });
 }
 
-/** 每个 tick 调一次：窗口状态与结束回满 + 全服播报（同一条事务） */
-export async function processLuoyang(pool: pg.Pool): Promise<void> {
+/** 窗口检查间隔（毫秒，真实时间）：AISLG-208 起节流，预告 / 开始 / 结束晚 5 秒无感 */
+export const LUOYANG_TICK_MS = 5_000;
+
+let lastRunMs = 0;
+
+/** 每个 tick 调一次（节流到 LUOYANG_TICK_MS）：窗口状态与结束回满 + 全服播报（同一条事务） */
+export async function processLuoyang(pool: pg.Pool, nowMs: number = Date.now()): Promise<void> {
+  if (nowMs - lastRunMs < LUOYANG_TICK_MS) {
+    return;
+  }
+  lastRunMs = nowMs;
   const client = await pool.connect();
   const broadcasts: ServerBroadcastCreated[] = [];
   try {
@@ -58,7 +67,7 @@ export async function processLuoyang(pool: pg.Pool): Promise<void> {
       await client.query('COMMIT');
       return;
     }
-    const now = new Date();
+    const now = new Date(nowMs);
     const window = currentLuoyangWindow(now);
     const state = await readState(client);
     const next = nextLuoyangOpen(now);

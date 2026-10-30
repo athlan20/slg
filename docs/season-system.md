@@ -107,7 +107,7 @@ season_honors(              -- 荣誉称号
 
 ## 4. 预告与通知
 
-阶段（以现实时间距 `end_at`）：`T-3d`、`T-1d`、`T-1h`、`T-10m`。Worker 每个 tick 检查，到点且 `notified_stages` 里没有则：
+阶段（以现实时间距 `end_at`）：`T-3d`、`T-1d`、`T-1h`、`T-10m`。Worker 每 5 秒检查一次（AISLG-208 起节流），到点且 `notified_stages` 里没有则：
 - 用 `publishAnnouncement`（`common/src/announcement-publish.ts`）发公告，`--chat` 同步到世界频道；
 - `insertServerBroadcast(..., {force:true})` 发全服播报；
 - 推 `PUSH_SEASON{phase:'warning', stage, endsAt, remainingSec}` 给**所有在线连接含 Agent**（`broadcastAll`）；
