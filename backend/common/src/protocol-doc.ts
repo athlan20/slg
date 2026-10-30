@@ -255,8 +255,8 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '用 GET_WORLD_MAP / GET_TILE 确认目标类别与归属；换一块无主野地或 NPC 城池，或先撤回对本账号地块的出征计划。',
   },
   INSUFFICIENT_TROOPS: {
-    desc: '城内驻军不足以派出请求的编队（v12：出征在发起时立即扣减 city.army，行军中的部队不在城内）。',
-    action: '失败响应附当前城池状态（data.city.army）；按城内驻军调整编队，或等待征兵完成 / 部队返程后再出征。',
+    desc: '城内驻军不足以派出请求的编队（v12：出征在发起时立即扣减 city.army，行军中的部队不在城内），或 DISBAND_TROOPS 要遣散的某兵种数量超过该城城内驻军（v84，AISLG-209；不改任何数据）。',
+    action: '出征：失败响应附当前城池状态（data.city.army），按城内驻军调整编队，或等待征兵完成 / 部队返程后再出征。遣散：用 GET_STATE 的 city.army 核对各兵种城内数量（在外部队与野地驻军不算），按实际数量重发。',
   },
   TILE_NOT_OCCUPIED: {
     desc: '该地块未被本账号占领（无主、他人占领或不是野地），无法召回驻军（v12）。',
@@ -307,8 +307,8 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '如要放弃的是分城，请传该分城的 cityId（GET_STATE 的 cities[]，isMain 为 false）。',
   },
   CITY_IN_BATTLE: {
-    desc: '该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭，暂不能放弃（v57，AISLG-153）。',
-    action: '等待这些行军结算或 NPC 来袭结束后再放弃。',
+    desc: '该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭：此时不能放弃分城（v57，AISLG-153），也不能遣散士兵（v84，AISLG-209，否则会变成「躲战损 + 拿回一半资源」的投机）。不改任何数据。',
+    action: '等这些行军结算或 NPC 来袭结束后再放弃 / 遣散；GET_STATE 的 city.inBattle 为 true 时可以先不发起。',
   },
   ARMY_OUTSIDE: {
     desc: '该分城仍有部队在外（行军 / 返程 / 运输 / 侦察），不能放弃（v57，AISLG-153）。',

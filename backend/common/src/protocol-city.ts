@@ -109,8 +109,9 @@ export interface CapitalSwapView {
 export interface CityStatePushData {
   /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57）；
    *  assist_changed=协防部队入驻 / 召回 / 遣返 / 自动遣返（v74，AISLG-194；收到后重新 GET_STATE / GET_TILE）；
-   *  capital_changed=设为主城（v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城；收到后重新 GET_STATE） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed';
+   *  capital_changed=设为主城（v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城；收到后重新 GET_STATE）；
+   *  troops_disbanded=城内驻军被遣散（v84，AISLG-209；cityId 为遣散的城，收到后重新 GET_STATE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -181,6 +182,8 @@ export const EventType = {
   CITY_DISCARDED: 'city_discarded',
   /** v82（AISLG-205）：分城与主城对调身份（detail = { capitalId, formerCapitalId, cooldownUntil }） */
   CAPITAL_CHANGED: 'capital_changed',
+  /** v84（AISLG-209）：遣散城内驻军（detail = { cityId, troops, refunded }；返还征兵成本的 50%） */
+  TROOPS_DISBANDED: 'troops_disbanded',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
   /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */
@@ -331,6 +334,9 @@ export interface CityView {
   army: ArmyCounts;
   /** 全军小时耗粮（v14 新增）：城内驻军 1 倍 + 行军/野地驻军 2 倍；production.food 为毛产量，净粮 = production.food − 本值；粮食扣到 0 为止（断粮仅停止增长） */
   armyFoodUsePerHour: number;
+  /** 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向，或有未结的 NPC 来袭。
+   *  为 true 时 DISBAND_TROOPS 返回 CITY_IN_BATTLE（界面据此置灰遣散按钮） */
+  inBattle: boolean;
   /** 全局时间缩放（v20 新增，AISLG-38）：当前部署 time_scale——文档时长基准 ÷ 本值 = 实际耗时
    *  （钳 1 秒），速率基准 × 本值；客户端本地折算时长（如掠夺冷却剩余）时用本值，勿按文档数值硬算 */
   timeScale: number;

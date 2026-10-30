@@ -47,6 +47,8 @@ export const EXTRA_STATE_EN = {
     cityRenamed: (from: string, to: string) => `City renamed: ${from} → ${to}`,
     cityDiscarded: (pos: string) => `Abandoned Branch City at ${pos}; the tile is an NPC city again and the quota is free`,
     capitalChanged: 'Set as capital: the capital and a branch city swapped roles; no further swap for 24 hours',
+    // v84 (AISLG-209): disbanded troops
+    troopsDisbanded: (troops: string, refund: string) => `Disbanded city troops ${troops}; refunded ${refund}`,
     accountReset: 'Account data has been reset to the initial state',
     accountRenamed: (from: string, to: string) => `Nickname changed: ${from} → ${to}`,
     marchTaskPlunder: ' (plunder)',

@@ -51,6 +51,7 @@ export type EventType =
   | 'account_reset'
   | 'city_discarded'
   | 'capital_changed'
+  | 'troops_disbanded'
   | 'account_renamed'
   | 'agent_connected'
   | 'agent_disconnected';

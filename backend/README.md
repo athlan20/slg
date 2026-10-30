@@ -291,6 +291,16 @@ awk -v s='<开始>' -v e='<结束>' '$1 >= s && $1 < e' <日志文件> | grep '\
   军队耗粮已随 v14 接入：单兵小时耗粮（`troops.ts` 的 foodUse，占位）计入粮的净产量
   结算（城内驻军 ×1、行军与野地驻军 ×2，断粮钳 0 不记负债，读取时现查现算），出征与
   战斗见下文「世界与行军」。
+- **遣散（v84，AISLG-209）**：`DISBAND_TROOPS`（op 142，玩家与 Agent 通用，可选 `cityId`）把该城
+  **城内驻军**按兵种解散，立即生效，返还征兵成本的 50%（`troops.ts` 的 `DISBAND_REFUND_PERCENT`；
+  每种资源 = floor(Σ 单兵成本 × 数量 × 50%)，多兵种先累加再取整，**不返还人口**），返还直接入账该城、
+  不钳储量（与 `CANCEL_RECRUIT` 同口径）。只认 `city_army`：在外部队（行军 / 返程 / 运输 / 侦察）、
+  野地驻军与协防部队都不动。城里有行军指向本城或其名下野地、或有未结的 NPC 来袭时返回
+  `CITY_IN_BATTLE`（与放弃分城共用 `common/src/city-battle.ts` 的判定）；某兵种超过城内数量返回
+  `INSUFFICIENT_TROOPS`；`troops` 为空 / 未知兵种 / 非正整数返回 `INVALID_PARAMS`，出错都不改数据。
+  遣散后按新编成校正断粮计时（不再断粮时清空 `mutiny_next_at` / `starve_warned_at`）；事件
+  `troops_disbanded`（detail = { cityId, troops, refunded }），推送 `PUSH_CITY_STATE`
+  （reason=troops_disbanded）；`CityView` 新增 `inBattle`（客户端据此置灰遣散按钮）。
 - **守城加成（v11）**：`WALL_DEFENSE_PER_LEVEL`（每级 +5，占位）随 `city.defenseBonus`
   下发；消费方是 v13 守城战斗结算（`battle.ts` 的 wallDefensePercent，按等级整体减伤）。
 - **世界与行军（v12 起；v13 战斗结构接入）**：世界为 1000×1000 方格（首次启动幂等生成，

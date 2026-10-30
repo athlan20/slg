@@ -14,6 +14,7 @@ import { loadBuildingLevels } from '../../common/src/production';
 import { discardCooldownDays } from '../../common/src/branch-city';
 import { FAMOUS_CITY_LEVEL, famousGarrisons, newFamousState } from '../../common/src/famous-city';
 import { npcSnapshot, type NpcCitySnapshot } from '../../common/src/world';
+import { cityInBattle } from '../../common/src/city-battle';
 import { scaledMs } from '../../common/src/time-scale';
 import { currentCityId } from './city-scope';
 import { respondError, respondOk } from './frames';
@@ -119,16 +120,8 @@ async function discardCityTx(client: pg.PoolClient, accountId: string, cityId: s
   if (outside.rowCount) {
     return { ok: false, code: 'ARMY_OUTSIDE' };
   }
-  // 战斗中：有行军正指向本城或其名下野地，或本城有未结的 NPC 来袭
-  const inBattle = await client.query(
-    `SELECT 1 FROM marches m JOIN world_tiles wt ON wt.x = m.x AND wt.y = m.y
-     WHERE wt.owner_city_id = $1 AND m.status = 'marching'
-     UNION ALL
-     SELECT 1 FROM npc_attacks WHERE target_city_id = $1 AND resolved_at IS NULL
-     LIMIT 1`,
-    [cityId],
-  );
-  if (inBattle.rowCount) {
+  // 战斗中：有行军正指向本城或其名下野地，或本城有未结的 NPC 来袭（v84 起与遣散士兵共用同一判定）
+  if (await cityInBattle(client, cityId)) {
     return { ok: false, code: 'CITY_IN_BATTLE' };
   }
   // 名下野地驻军须先召回

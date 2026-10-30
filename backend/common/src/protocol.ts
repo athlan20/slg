@@ -246,6 +246,8 @@ export const Op = {
   CHAIN_BATTLEFIELD_STRONGHOLD: 140,
   /** C→S 设为主城（v82，AISLG-205：data.cityId 必填、data.confirm 必须为 true；分城与当前主城对调身份，换完 24 小时内不能再换；仅玩家连接） */
   SET_CAPITAL: 141,
+  /** C→S 遣散士兵（v84，AISLG-209：data.troops 按兵种给数量，可选 cityId；只解散该城城内驻军，返还征兵成本的 50%，不退人口） */
+  DISBAND_TROOPS: 142,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -376,7 +378,7 @@ export const ErrorCode = {
   RECRUIT_NOT_CANCELLABLE: 'RECRUIT_NOT_CANCELLABLE',
   /** 出征目标不可攻击（v12：地图外 / 玩家城池 / 他人占领的地块——玩家对抗随后续阶段开放） */
   TARGET_NOT_ATTACKABLE: 'TARGET_NOT_ATTACKABLE',
-  /** 城内兵力不足以派出该编队（v12） */
+  /** 城内兵力不足以派出该编队（v12），或要遣散的某兵种数量超过该城城内驻军（v84，AISLG-209） */
   INSUFFICIENT_TROOPS: 'INSUFFICIENT_TROOPS',
   /** 该地块未被本账号占领，无法召回驻军（v12） */
   TILE_NOT_OCCUPIED: 'TILE_NOT_OCCUPIED',
@@ -404,7 +406,7 @@ export const ErrorCode = {
   DISCARD_COOLDOWN: 'DISCARD_COOLDOWN',
   /** 放弃分城被拒：主城不能放弃（v57，AISLG-153） */
   DISCARD_MAIN_CITY: 'DISCARD_MAIN_CITY',
-  /** 放弃分城被拒：该城或其名下野地正在被攻打 / 有 NPC 来袭未结（v57，AISLG-153） */
+  /** 该城或其名下野地正有行军在途（指向本城）或有未结的 NPC 来袭：放弃分城（v57）与遣散士兵（v84，AISLG-209）都拒绝 */
   CITY_IN_BATTLE: 'CITY_IN_BATTLE',
   /** 放弃分城被拒：该城仍有部队在外（行军 / 返程 / 运输 / 侦察），需先等其结束（v57，AISLG-153） */
   ARMY_OUTSIDE: 'ARMY_OUTSIDE',
@@ -875,7 +877,13 @@ export interface NpcAttackWarningPushData {
   arriveAt: string;
 }
 
-export type { ArmyCounts, RecruitView, TroopKind } from './protocol-army';
+export type {
+  ArmyCounts,
+  RecruitView,
+  TroopKind,
+  DisbandTroopsRequestData,
+  DisbandTroopsResponseData,
+} from './protocol-army';
 export { TROOP_KINDS, isTroopKind } from './protocol-army';
 import type { ArmyCounts, RecruitView } from './protocol-army';
 export type {
