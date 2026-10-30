@@ -2,8 +2,9 @@
 // 对外文档为 docs/agent-api.md；协议调整时以后端生成文档为准同步本文件。
 
 import type { CityGuardView } from './protocol-hero';
+import { RESOURCE_KEYS } from './protocol-wire';
 
-export const PROTOCOL_VERSION = 79;
+export const PROTOCOL_VERSION = 84;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -212,6 +213,8 @@ export const Op = {
   CHAIN_BATTLEFIELD_STRONGHOLD: 140,
   /** C→S 设为主城（v82，AISLG-205：data.cityId 必填、data.confirm 必须为 true；分城与主城对调身份，换完 24 小时内不能再换） */
   SET_CAPITAL: 141,
+  /** C→S 遣散士兵（v84，AISLG-209）：data.troops 按兵种给数量，可选 cityId；返还征兵成本的 50%，不退人口 */
+  DISBAND_TROOPS: 142,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -915,6 +918,8 @@ export interface CityView {
   army: ArmyCounts;
   /** 全军小时耗粮（v14）：城内 1 倍 + 行军/野地驻军 2 倍；production.food 为毛产量，净粮 = 两者之差 */
   armyFoodUsePerHour: number;
+  /** 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向，或有未结的 NPC 来袭；为 true 时遣散会被 CITY_IN_BATTLE 拒绝 */
+  inBattle: boolean;
   /** 全局时间缩放（v20，AISLG-38）：本地折算时长（如掠夺冷却剩余）时使用，勿按文档基准硬算 */
   timeScale: number;
   /** 主城免战截止（v22，AISLG-40）：被 NPC 攻破后 2×袭击间隔（÷timeScale）内不再入袭击目标池；null = 不在免战。
@@ -990,8 +995,8 @@ export interface BuildStatePushData {
 
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
-  /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57）；capital_changed=设为主城（v82，cityId 为新主城） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed';
+  /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57）；capital_changed=设为主城（v82，cityId 为新主城）；troops_disbanded=城内驻军被遣散（v84） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed' | 'troops_disbanded';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -1082,6 +1087,43 @@ export interface CancelRecruitRequestData {
 
 export interface CancelRecruitResponseData {
   recruit: RecruitView;
+}
+
+/** 遣散返还比例（v84，AISLG-209）：镜像 backend/common/src/troops.ts 的 DISBAND_REFUND_PERCENT */
+export const DISBAND_REFUND_PERCENT = 50;
+
+/**
+ * 遣散返还预览（v84）：钱包面与服务端 disbandRefund 同一公式——floor(Σ 单兵成本 × 数量 × 50%)，
+ * 五种资源分别累加后各取整一次。仅用于确认弹窗预览，权威结果以服务端响应的 refunded 为准。
+ */
+export function disbandRefundPreview(troops: Partial<Record<TroopKind, number>>): Resources {
+  const totals: Resources = { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 };
+  for (const kind of TROOP_KINDS) {
+    const count = Math.floor(troops[kind] ?? 0);
+    if (count <= 0) {
+      continue;
+    }
+    const cost = TROOP_INFO[kind].cost;
+    for (const key of RESOURCE_KEYS) {
+      totals[key] += cost[key] * count;
+    }
+  }
+  for (const key of RESOURCE_KEYS) {
+    totals[key] = Math.floor((totals[key] * DISBAND_REFUND_PERCENT) / 100);
+  }
+  return totals;
+}
+
+/** DISBAND_TROOPS（op 142，v84）请求载荷：按兵种给出要遣散的数量（正整数，只解散城内驻军） */
+export interface DisbandTroopsRequestData {
+  troops: Partial<Record<TroopKind, number>>;
+}
+
+/** DISBAND_TROOPS 响应载荷：本次解散的兵、返还资源与遣散后的城池状态 */
+export interface DisbandTroopsResponseData {
+  disbanded: Partial<Record<TroopKind, number>>;
+  refunded: Resources;
+  city: CityView;
 }
 
 // 盟友协防（v74，AISLG-194）的类型在 protocol-assist.ts

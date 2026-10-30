@@ -138,6 +138,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     storage: INITIAL_STORAGE,
     army: { ...EMPTY_ARMY } as ArmyCounts,
     armyFoodUsePerHour: 0,
+    inBattle: false,
     timeScale: 1,
     truceUntil: null,
     newbieUntil: null,

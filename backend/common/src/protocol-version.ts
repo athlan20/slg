@@ -630,5 +630,15 @@
  *   占领加成与连片加成不变。部分撤回后地块至少留 1 兵：撤空返回 GARRISON_WOULD_EMPTY，某兵种超过驻军返回 INSUFFICIENT_GARRISON；
  *   troops 为空对象 / 未知兵种 / 非正整数返回 INVALID_PARAMS；出错不改任何数据。响应仍为 { march }（返程行军视图）。
  *   新错误码 GARRISON_WOULD_EMPTY / INSUFFICIENT_GARRISON。
+ * v84（遣散士兵，AISLG-209，只加不改）：新增 DISBAND_TROOPS（op 142，玩家与 Agent 通用，可选 cityId）——把指定城
+ *   **城内驻军**按兵种解散（troops = { 兵种: 正整数 }），立即生效，返还征兵成本的 50%（DISBAND_REFUND_PERCENT，
+ *   每种资源 = floor(Σ 单兵成本 × 数量 × 50%)，多兵种先累加再取整），**不返还人口**；返还入账该城、不钳储量
+ *   （与 CANCEL_RECRUIT 同口径）。只认城市驻军：在外部队（行军 / 返程 / 运输 / 侦察）、野地驻军与协防部队不动。
+ *   该城或其名下野地有行军指向、或有未结 NPC 来袭时返回 CITY_IN_BATTLE（与放弃分城同一判定，判定抽到
+ *   common/src/city-battle.ts）；某兵种超过城内数量返回 INSUFFICIENT_TROOPS；troops 为空 / 未知兵种 / 非正整数
+ *   → INVALID_PARAMS；以上出错都不改任何数据。不含断粮 / 欠饷 / 免战限制（断粮时遣散正是止损）。
+ *   响应 { disbanded, refunded, city }；事件 troops_disbanded（detail = { cityId, troops, refunded }）；
+ *   PUSH_CITY_STATE 新增 reason=troops_disbanded；CityView 新增 inBattle（界面据此置灰遣散按钮）。
+ *   不新增错误码（复用 CITY_IN_BATTLE / INSUFFICIENT_TROOPS）。
  */
-export const PROTOCOL_VERSION = 83;
+export const PROTOCOL_VERSION = 84;

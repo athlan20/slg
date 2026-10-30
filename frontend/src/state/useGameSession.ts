@@ -55,6 +55,7 @@ import {
 import type { Actor, SessionEvent } from '../types';
 import { applyBuildPush, applyBuildResult, applyCancelResult, applyMarchPush, applyRecruitPush } from './cityUpdates';
 import { createRecruitActions } from './recruitActions';
+import { createDisbandActions } from './disbandActions';
 import { createDefenseActions } from './defenseActions';
 import { createExchangeAction, type ExchangeResource } from './exchangeAction';
 import { createTruceAction } from './truceAction';
@@ -130,6 +131,8 @@ export interface GameSession {
   startRecruit: (troop: TroopKind, count: number) => Promise<void>;
   /** 取消征兵条目（v11 排队可取消，v71 起征募中也可取消；全额返还资源与人口） */
   cancelRecruit: (recruitId: string) => Promise<void>;
+  /** 遣散城内驻军（v84，AISLG-209）：返还征兵成本的 50%、不退人口；成功返回 null，失败返回人读错误 */
+  disbandTroops: (troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
   /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
   craftDefense: (kind: import('../api/protocol').DefenseKind, count: number) => Promise<void>;
   /** 取消打造（v73）：排队中 / 打造中都可取消，成本全额返还 */
@@ -1115,6 +1118,12 @@ export function useGameSession(): GameSession {
     [appendLocalEvent, scheduleSync],
   );
 
+  // 遣散动作（v84 AISLG-209）：成功直接用服务端返回的城池状态替换本地
+  const { disbandTroops } = useMemo(
+    () => createDisbandActions({ clientRef, setCity, appendLocalEvent, scheduleSync }),
+    [appendLocalEvent, scheduleSync],
+  );
+
   // 城防器械（v73 AISLG-193）：打造 / 取消；库存与队列按需查询对齐
   const { craftDefense, cancelDefenseCraft } = useMemo(
     () => createDefenseActions({ clientRef, setDefenseError, appendLocalEvent, scheduleSync }),
@@ -1359,6 +1368,7 @@ export function useGameSession(): GameSession {
     cancelBuild,
     startRecruit,
     cancelRecruit,
+    disbandTroops,
     craftDefense,
     cancelDefenseCraft,
     dismissAssist,

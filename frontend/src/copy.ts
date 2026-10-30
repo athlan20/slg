@@ -810,6 +810,13 @@ const ERRORS = {
     invalidParams: '征兵参数不合法（兵种未知或数量越界）',
     fallback: '发起征兵失败',
   },
+  // v84（AISLG-209）：遣散士兵
+  disband: {
+    insufficientTroops: '要遣散的数量超过城内该兵种现有驻军（在外部队与野地驻军不算）',
+    cityInBattle: '本城或其名下野地正有行军在途 / 有 NPC 来袭未结，暂不能遣散',
+    invalidParams: '遣散参数不合法（兵种未知，或数量不是正整数）',
+    fallback: '遣散失败，请重试',
+  },
   exchange: {
     insufficientResources: '持有的该资源不够这次兑换',
     invalidParams: '兑换数量需为正整数，且至少 4 单位才能换出 1 金币',
@@ -859,6 +866,9 @@ const SESSION = {
   recruitFailedFallback: '发起征兵失败',
   cancelRecruitRejected: (message: string) => `取消征兵被拒绝（${message}）`,
   cancelRecruitFailedFallback: '取消征兵失败',
+  // v84（AISLG-209）：遣散
+  troopsDisbanded: (troops: string, refund: string) => `遣散 ${troops}，返还 ${refund}`,
+  troopsDisbandedRejected: (message: string) => `遣散被拒绝（${message}）`,
   marchStarted: (x: number, y: number, dueClock: string) => `部队出征 → (${x},${y})，预计 ${dueClock} 到达`,
   recallStarted: (x: number, y: number, dueClock: string) => `驻军自 (${x},${y}) 启程返城，预计 ${dueClock} 到达，占领已放弃`,
   recallPartialStarted: (x: number, y: number, dueClock: string) => `部分驻军自 (${x},${y}) 启程返城，预计 ${dueClock} 到达，占领保留`,

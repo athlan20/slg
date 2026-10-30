@@ -18,13 +18,15 @@ export function runWithCity<T>(cityId: string | undefined, fn: () => Promise<T>)
   return storage.run({ cityId }, fn);
 }
 
-/** 支持 data.cityId 的协议（建造 / 征兵 / 城防器械打造 / 出征 / 侦察 / 兑换 / 查询状态 / 改名 / 放弃分城（v57，必填）） */
+/** 支持 data.cityId 的协议（建造 / 征兵 / 遣散（v84）/ 城防器械打造 / 出征 / 侦察 / 兑换 / 查询状态 / 改名 / 放弃分城（v57，必填）） */
 export const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.GET_STATE,
   Op.BUILD,
   Op.UPGRADE,
   Op.RENAME_CITY,
   Op.RECRUIT,
+  // v84（AISLG-209）：遣散按指定城扣兵、返还入该城
+  Op.DISBAND_TROOPS,
   Op.CRAFT_DEFENSE,
   Op.MARCH,
   Op.SCOUT,

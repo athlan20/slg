@@ -162,6 +162,21 @@ export function recruitErrorText(
   }
 }
 
+/** 遣散失败的人读提示（遣散表单 / 确认弹窗内显示，v84 AISLG-209） */
+export function disbandErrorText(code: ErrorCode | undefined, message: string | undefined): string {
+  const { COPY } = getCopy();
+  switch (code) {
+    case 'INSUFFICIENT_TROOPS':
+      return COPY.errors.disband.insufficientTroops;
+    case 'CITY_IN_BATTLE':
+      return COPY.errors.disband.cityInBattle;
+    case 'INVALID_PARAMS':
+      return COPY.errors.disband.invalidParams;
+    default:
+      return message ?? COPY.errors.disband.fallback;
+  }
+}
+
 /** 集市兑换失败的人读提示（兑换弹窗内显示，AISLG-67） */
 export function exchangeErrorText(
   code: ErrorCode | undefined,

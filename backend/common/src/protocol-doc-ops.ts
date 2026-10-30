@@ -77,7 +77,7 @@ import {
   REQUEST_GET_TECHS,
   REQUEST_RESEARCH_TECH,
 } from './protocol-doc-ops-tech';
-import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT } from './protocol-doc-ops-army';
+import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT, REQUEST_DISBAND_TROOPS } from './protocol-doc-ops-army';
 import { PUSH_DEFENSE_STATE, REQUEST_CANCEL_DEFENSE_CRAFT, REQUEST_CRAFT_DEFENSE } from './protocol-doc-ops-defense';
 import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
 import { REQUEST_CLAIM_NOBILITY_SALARY, REQUEST_GET_NOBILITY } from './protocol-doc-ops-nobility';
@@ -167,6 +167,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.population', type: 'object', desc: '人口现状（v7 新增，v8 规则确认，v19 数值修订）：{ current 当前人口, cap 上限（= 50 + 100 × 民房等级 × (民房等级 + 1)，无民房即基线 50）, growthPerHour 每小时增长（基准 = 10 × 民房等级 × (等级 + 1)，无民房为 0；实际 × 全局时间缩放） }；current ≥ cap 时停止增长（新号即 50/50 满编、增速 0，建民房后恢复增长）；征兵将消耗人口。' },
     { name: 'city.army', type: 'object', desc: '城内驻军（v11 新增）：{ porter, militia, scout, pikeman, swordsman, archer, cavalry, iron_cavalry, supply_wagon, ballista, siege_ram }（后四种为 v33 二期兵种），按兵种统计；征兵完成（recruit_completed）时累加。v64（AISLG-168）起键集再加 yulin_guard、danyang_soldier、baimao_soldier、huwei_guard、zhuge_crossbow、xiandeng_warrior、hubao_cavalry、xiliang_cavalry 八种名城专属兵（占领对应名城才能征募，失守后已练出的兵留在原主人手里）。' },
     { name: 'city.armyFoodUsePerHour', type: 'number', desc: '全军小时耗粮（v14 新增，实际值 × 全局时间缩放，与产出同幅）：城内驻军 1 倍 + 行军中/野地驻军 2 倍（单兵耗粮见各兵种 foodUse）。production.food 为毛产量，净粮 = production.food − 本值，可为负；结算把粮食扣到 0 为止、不记负债；**v34（AISLG-107）起断粮不再只是停止增长**：粮食为 0 且净产量为负时，每小时（缩放后）城内驻军每兵种减 10%（见 city.starveAt / city.mutinyNextAt 与 PUSH_STARVATION_STATE）。' },
+    { name: 'city.inBattle', type: 'boolean', desc: '是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向（来袭 / 运输 / 占领 / 侦察），或有未结的 NPC 来袭。为 true 时 DISBAND_TROOPS 返回 CITY_IN_BATTLE（与放弃分城的判定同口径），客户端据此置灰遣散按钮。' },
     { name: 'city.starveAt', type: 'string | null', desc: '预计断粮时间（v34，AISLG-107；ISO 8601）：按当前粮食与净产量（粮毛产量 production.food − armyFoodUsePerHour）推算，已断粮 = 当前时刻，净产量不为负（不会断粮）为 null。距断粮不足 1 小时（缩放后）推送一次预警。' },
     { name: 'city.mutinyNextAt', type: 'string | null', desc: '下一次断粮哗变时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每个兵种减 10%（向上取整、至少 1 个，在外部队不受影响、不强制召回）；否则 null。'  },
     { name: 'city.timeScale', type: 'number', desc: '当前部署的全局时间缩放（v20 新增，AISLG-38）：文档时长基准 ÷ 本值 = 实际耗时（钳 1 秒）、速率基准 × 本值。客户端需本地折算时长（如掠夺冷却剩余）时用本值，不要按文档数值硬算。' },
@@ -287,7 +288,7 @@ const REQUEST_GET_EVENTS: RequestOpDoc = {
     {
       name: 'events[].type',
       type: 'string',
-      desc: "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）。",
+      desc: "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）。",
     },
     { name: 'events[].initiator', type: "'player' | 'agent' | null", desc: '发起事件的连接声明的登录类型。' },
     { name: 'events[].cityId', type: 'string | null', desc: '关联城池 id，无关联时为 null。' },
@@ -458,6 +459,7 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.AGENT_REPORT_PLAN]: REQUEST_AGENT_REPORT_PLAN,
   [Op.RECRUIT]: withCityId(REQUEST_RECRUIT),
   [Op.CANCEL_RECRUIT]: REQUEST_CANCEL_RECRUIT,
+  [Op.DISBAND_TROOPS]: withCityId(REQUEST_DISBAND_TROOPS),
   [Op.CRAFT_DEFENSE]: withCityId(REQUEST_CRAFT_DEFENSE),
   [Op.CANCEL_DEFENSE_CRAFT]: REQUEST_CANCEL_DEFENSE_CRAFT,
   [Op.DISMISS_ASSIST]: REQUEST_DISMISS_ASSIST,

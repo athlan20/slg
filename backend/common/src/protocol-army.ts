@@ -2,7 +2,8 @@
 // 兵种数值（成本/人口/时长/军营等级门槛）见 common/src/troops.ts 的 TROOP_INFO。
 // 本文件只 import protocol.ts 的类型（类型导入在运行时被擦除，不构成加载环）。
 
-import type { InitiatorRole } from './protocol';
+import type { CityView } from './protocol-city';
+import type { InitiatorRole, Resources } from './protocol';
 
 /**
  * 一期兵种（docs/phase-1-launch-scope.md「征兵、行军与战斗」，旧游戏 1–7 号）：
@@ -86,4 +87,20 @@ export interface RecruitStatePushData {
   /** recruit_started=立即开始或队首被后台激活；recruit_queued=进入排队；recruit_completed=完成（兵力入城）；recruit_cancelled=条目被取消（排队或征募中） */
   reason: 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled';
   recruit: RecruitView;
+}
+
+/** DISBAND_TROOPS（op 142，v84，AISLG-209）请求载荷：按兵种给出要遣散的数量（正整数，只解散城内驻军） */
+export interface DisbandTroopsRequestData {
+  /** 兵种 → 遣散数量；空对象 / 未知兵种 / 非正整数返回 INVALID_PARAMS，某兵种超过城内数量返回 INSUFFICIENT_TROOPS */
+  troops: Partial<Record<TroopKind, number>>;
+}
+
+/** DISBAND_TROOPS 响应载荷：本次解散的兵、返还的资源（征兵成本的 50%）与遣散后的城池状态 */
+export interface DisbandTroopsResponseData {
+  /** 本次实际解散的兵种与数量（等于请求里数量大于 0 的项） */
+  disbanded: Partial<Record<TroopKind, number>>;
+  /** 返还的资源：floor(Σ 单兵成本 × 数量 × 50%)，五种资源分别取整；不返还人口 */
+  refunded: Resources;
+  /** 遣散后的城池状态（与 GET_STATE 的 city 同结构） */
+  city: CityView;
 }

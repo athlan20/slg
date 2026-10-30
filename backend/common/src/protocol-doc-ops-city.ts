@@ -238,9 +238,9 @@ export const PUSH_CITY_STATE: PushOpDoc = {
   name: 'PUSH_CITY_STATE',
   title: '推送：城池级状态变化',
   summary:
-    '城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。',
+    '城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）、troops_disbanded=城内驻军被遣散（DISBAND_TROOPS，v84，AISLG-209；只带 cityId，收到后用 GET_STATE 刷新驻军与资源）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。',
   dataFields: [
-    { name: 'reason', type: "'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed'", desc: '触发本次推送的状态变化。' },
+    { name: 'reason', type: "'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed' | 'troops_disbanded'", desc: '触发本次推送的状态变化。' },
     { name: 'cityId', type: 'string', desc: '城池 UUID（reason=capital_changed 时为新主城）。' },
     { name: 'name', type: 'string', desc: 'reason=city_renamed 时的新城池名。' },
     { name: 'formerCapitalId', type: 'string', desc: 'v82：reason=capital_changed 时的原主城 UUID（已变为分城）。' },

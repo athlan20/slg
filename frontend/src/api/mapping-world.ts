@@ -173,6 +173,12 @@ function baseEventText(view: EventView): string {
       return EXTRA_STATE.recruit.completed(troopName(view.detail.troop), countOf(view.detail));
     case 'recruit_cancelled':
       return EXTRA_STATE.recruit.cancelled(troopName(view.detail.troop), countOf(view.detail), refundSuffix(view.detail));
+    case 'troops_disbanded':
+      // v84（AISLG-209）：遣散城内驻军（detail = { cityId, troops, refunded }）
+      return EXTRA_STATE.event.troopsDisbanded(
+        troopsSuffix(view.detail.troops as Record<string, unknown> | undefined) || '—',
+        cargoText(view.detail.refunded as Partial<Resources> | undefined) || '—',
+      );
     case 'yt_reward':
       return YT_COPY.event.reward(
         String(view.detail.tier ?? ''), Number(view.detail.rank ?? 0), Number(view.detail.killed ?? 0),
