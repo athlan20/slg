@@ -63,8 +63,14 @@ stop_one() {
   pids="$(pids_for "$pattern")"
   port="$(port_for "$name")"
   if [ -n "$port" ]; then
-    # 端口兜底：cmdline 不匹配但占着端口的残留监听一并停掉
-    pids="$pids $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
+    # 端口兜底：cmdline 不匹配但占着端口的本仓库残留监听一并停掉。
+    # 必须同时校验工作目录在本仓库内——端口可能被别的项目占用（如 Metro 用 8081），
+    # 不能按端口无差别 kill 别人的进程。
+    local pid cwd
+    for pid in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
+      cwd="$(lsof -a -d cwd -Fn -p "$pid" 2>/dev/null | sed -n 's/^n//p')"
+      case "$cwd" in "$ROOT"|"$ROOT"/*) pids="$pids $pid" ;; esac
+    done
   fi
   pids="$(echo $pids | tr ' ' '\n' | sort -u | grep -v '^$' | tr '\n' ' ')"
   if [ -z "${pids// /}" ]; then
