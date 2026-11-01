@@ -22,6 +22,8 @@ import pg from 'pg';
 import { EventType, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
+import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { grantUnlock } from '../../common/src/hero-friendship-db';
 import { clearNativeGarrison, loadNativeGarrison, saveNativeGarrison } from '../../common/src/native-garrison';
 import { armyCarryCapacity } from '../../common/src/troops';
@@ -143,6 +145,13 @@ export async function resolvePlunderArrival(
     attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
   });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
+  // v85（AISLG-212）：掠夺野地 / NPC 城——攻方是玩家、守方是 NPC；伤兵与俘虏（胜时
+  // 从守军损失抓 10%）进出发城
+  const plunderCasualties = splitBattleCasualties(result, false, true);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', plunderCasualties.attacker.wounded);
+  if (plunderCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', plunderCasualties.captives);
+  }
   if (!npc) {
     // 野地原住守军战后存量落库，之后按小时恢复（v24 AISLG-48）
     await saveNativeGarrison(client, target, result.defender.survivors);
@@ -154,6 +163,7 @@ export async function resolvePlunderArrival(
     client, march.account_id, 'attacker', result.attackerWon,
     npc ? 'npc_city' : 'wilderness',
     target.x, target.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null,
+    null, null, null, plunderCasualties,
   );
 
   if (!result.attackerWon) {
@@ -317,6 +327,12 @@ export async function resolveOccupyArrival(
     attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
   });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
+  // v85（AISLG-212）：占领野地——攻方是玩家、守方是 NPC；伤兵与俘虏（胜时）进出发城
+  const occupyCasualties = splitBattleCasualties(result, false, true);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', occupyCasualties.attacker.wounded);
+  if (occupyCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', occupyCasualties.captives);
+  }
   await saveNativeGarrison(client, target, result.defender.survivors);
   const naming = await loadCityNaming(client, march.from_city_id);
   const attackerName = naming ? `${naming.username} · ${naming.cityName}` : '出征部队';
@@ -324,6 +340,7 @@ export async function resolveOccupyArrival(
   const reportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon,
     'wilderness', target.x, target.y, result, attackerName, defenderName, 0, notifies, hero?.report ?? null,
+    null, null, null, occupyCasualties,
   );
 
   if (!result.attackerWon) {

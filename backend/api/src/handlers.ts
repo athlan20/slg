@@ -28,6 +28,7 @@ import {
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
 import { handleDisbandTroops, readDisbandTroops } from './handlers-disband';
+import { handleReleaseTroops, handleRestoreTroops, readTroopPoolRequest } from './handlers-troop-pools';
 import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
 import { handleDismissAssist } from './handlers-assist';
 import {
@@ -426,6 +427,26 @@ async function dispatchOp(
         break;
       }
       await handleDisbandTroops(ctx, conn, op, seq, params.troops);
+      break;
+    }
+    case Op.RESTORE_TROOPS: {
+      // v85（AISLG-212）：pool 必须是已知池子（含逃兵），troops 解析失败 INVALID_PARAMS
+      const params = readTroopPoolRequest(data, true);
+      if (!params) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleRestoreTroops(ctx, conn, op, seq, params.pool, params.troops);
+      break;
+    }
+    case Op.RELEASE_TROOPS: {
+      // v85（AISLG-212）：只认 wounded / captive（逃兵不能释放，只能劝回或等过期）
+      const params = readTroopPoolRequest(data, false);
+      if (!params) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleReleaseTroops(ctx, conn, op, seq, params.pool, params.troops);
       break;
     }
     case Op.CRAFT_DEFENSE:

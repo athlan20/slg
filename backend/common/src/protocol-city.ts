@@ -15,6 +15,7 @@ import type { MarchView, TerritoryView } from './protocol-world';
 import type { DefenseStockView } from './protocol-defense';
 import type { AssistOutView, AssistView } from './protocol-assist';
 import type { TechLevels } from './tech';
+import type { TroopPoolView } from './protocol-army';
 
 /** BUILD（op 21）请求载荷：kind 缺失或不是已知建筑类型时返回 INVALID_PARAMS */
 export interface BuildRequestData {
@@ -110,8 +111,9 @@ export interface CityStatePushData {
   /** city_renamed=城池改名；account_reset=账号数据被重置（v8 起无拆除类 reason）；city_discarded=分城被放弃（v57）；
    *  assist_changed=协防部队入驻 / 召回 / 遣返 / 自动遣返（v74，AISLG-194；收到后重新 GET_STATE / GET_TILE）；
    *  capital_changed=设为主城（v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城；收到后重新 GET_STATE）；
-   *  troops_disbanded=城内驻军被遣散（v84，AISLG-209；cityId 为遣散的城，收到后重新 GET_STATE） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded';
+   *  troops_disbanded=城内驻军被遣散（v84，AISLG-209；cityId 为遣散的城，收到后重新 GET_STATE）；
+   *  troop_pools_changed=伤兵 / 俘虏 / 逃兵池子发生变化（v85，AISLG-212；战斗结算入账、治疗 / 招降 / 劝回、放弃 / 释放、断粮兵变与过期清理后） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -332,6 +334,12 @@ export interface CityView {
   storage: StorageCaps;
   /** 城内驻军，按兵种统计（v11 新增；征兵完成时入城） */
   army: ArmyCounts;
+  /** 伤兵营（v85，AISLG-212）：战斗中己方损失 20% 进的池子，可花征兵资源 50% 治好回城内驻军（RESTORE_TROOPS pool=wounded）；72 小时不治死亡 */
+  wounded: TroopPoolView;
+  /** 俘虏营（v85，AISLG-212）：战胜后从败方损失抓的 10%（仅基础七兵种），招降花 60% 且扣人口（pool=captive）或免费释放（RELEASE_TROOPS）；72 小时后自动释放 */
+  captives: TroopPoolView;
+  /** 逃兵营（v85，AISLG-212）：断粮兵变每小时减少的 10% 驻军进池，断粮结束后花 50% 劝回（pool=deserter）；24 小时后消失；断粮中不能劝回（CITY_STARVING） */
+  deserters: TroopPoolView;
   /** 全军小时耗粮（v14 新增）：城内驻军 1 倍 + 行军/野地驻军 2 倍；production.food 为毛产量，净粮 = production.food − 本值；粮食扣到 0 为止（断粮仅停止增长） */
   armyFoodUsePerHour: number;
   /** 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向，或有未结的 NPC 来袭。

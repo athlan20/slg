@@ -22,6 +22,7 @@ import { processDueResearch } from './tech-tick';
 import { processMovingTargets } from './moving-tick';
 import { processYellowTurban } from './yt-tick';
 import { processStarvation } from './starvation-tick';
+import { processTroopPools } from './troop-pool-tick';
 import { processDueReserves } from './reserve-tick';
 import { processHeroSalaries } from './hero-salary-tick';
 import { processHeroTraining } from './hero-training-tick';
@@ -113,6 +114,12 @@ async function main(): Promise<void> {
       await processStarvation(pool);
     } catch (err) {
       console.error('worker starvation tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵过期清理（读取侧也过滤，这里周期删行兜底）
+      await processTroopPools(pool);
+    } catch (err) {
+      console.error('worker troop pool tick failed:', err instanceof Error ? err.message : err);
     }
     if (due.reserves) {
       try {

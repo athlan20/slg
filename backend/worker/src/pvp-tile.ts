@@ -19,6 +19,8 @@ import pg from 'pg';
 import { EventType, type InitiatorRole, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle } from '../../common/src/battle';
+import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { territoryLimit } from '../../common/src/plunder';
@@ -163,13 +165,26 @@ export async function resolvePvpOccupyArrival(
   const attackerNaming = await loadAttackerNaming(client, march.from_city_id);
   const attackerName = attackerNaming ? `${attackerNaming.username} · ${attackerNaming.cityName}` : '出征部队';
   const defenderName = `${owner.username} 的驻军（${tile.level} 级野地）`;
+  // v85（AISLG-212）：双方都是玩家——攻方伤兵 / 俘虏进出发城；守方（野地驻军）的伤兵 /
+  // 俘虏进占领这块野地的那座城；全歼攻方时守方从攻方损失抓 10%（平局不抓）
+  const tileCasualties = splitBattleCasualties(result, false, false);
+  const ownerCityId = tile.owner_city_id as string;
+  await recordPoolTroops(client, march.from_city_id, 'wounded', tileCasualties.attacker.wounded);
+  await recordPoolTroops(client, ownerCityId, 'wounded', tileCasualties.defender.wounded);
+  if (tileCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', tileCasualties.captives);
+  } else if (tileCasualties.winner === 'defender') {
+    await recordPoolTroops(client, ownerCityId, 'captive', tileCasualties.captives);
+  }
   const attackerReportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon, 'pvp_wilderness',
     tile.x, tile.y, result, attackerName, defenderName, 0, notifies, hero?.report ?? null, null,
+    null, null, tileCasualties,
   );
   const defenderReportId = await saveBattleReport(
     client, owner.account_id, 'defender', !result.attackerWon, 'pvp_wilderness',
     tile.x, tile.y, result, attackerName, defenderName, 0, notifies, hero?.report ?? null, null,
+    null, null, tileCasualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
 

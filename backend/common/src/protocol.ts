@@ -248,6 +248,10 @@ export const Op = {
   SET_CAPITAL: 141,
   /** C→S 遣散士兵（v84，AISLG-209：data.troops 按兵种给数量，可选 cityId；只解散该城城内驻军，返还征兵成本的 50%，不退人口） */
   DISBAND_TROOPS: 142,
+  /** C→S 治疗 / 招降 / 劝回（v85，AISLG-212：data.cityId 可选、pool=wounded|captive|deserter、troops 按兵种；伤兵治好、俘虏招降、逃兵劝回，立即完成回城内驻军） */
+  RESTORE_TROOPS: 143,
+  /** C→S 放弃治疗 / 释放俘虏（v85，AISLG-212：data.cityId 可选、pool=wounded|captive、troops 按兵种；免费，池子消失不返还任何东西） */
+  RELEASE_TROOPS: 144,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -408,6 +412,8 @@ export const ErrorCode = {
   DISCARD_MAIN_CITY: 'DISCARD_MAIN_CITY',
   /** 该城或其名下野地正有行军在途（指向本城）或有未结的 NPC 来袭：放弃分城（v57）与遣散士兵（v84，AISLG-209）都拒绝 */
   CITY_IN_BATTLE: 'CITY_IN_BATTLE',
+  /** 劝回逃兵被拒：该城正在断粮（粮食归零且净产量为负，v85，AISLG-212）——逃兵只有不在断粮状态时才能劝回 */
+  CITY_STARVING: 'CITY_STARVING',
   /** 放弃分城被拒：该城仍有部队在外（行军 / 返程 / 运输 / 侦察），需先等其结束（v57，AISLG-153） */
   ARMY_OUTSIDE: 'ARMY_OUTSIDE',
   /** 放弃分城被拒：名下野地里仍有驻军，需先召回（v57，AISLG-153） */
@@ -883,6 +889,12 @@ export type {
   TroopKind,
   DisbandTroopsRequestData,
   DisbandTroopsResponseData,
+  RestoreTroopsRequestData,
+  RestoreTroopsResponseData,
+  ReleaseTroopsRequestData,
+  ReleaseTroopsResponseData,
+  TroopPoolKind,
+  TroopPoolView,
 } from './protocol-army';
 export { TROOP_KINDS, isTroopKind } from './protocol-army';
 import type { ArmyCounts, RecruitView } from './protocol-army';

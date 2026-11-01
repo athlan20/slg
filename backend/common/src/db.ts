@@ -786,6 +786,21 @@ CREATE TABLE IF NOT EXISTS capital_swaps (
   account_id uuid PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
   until timestamptz NOT NULL
 );
+
+-- v85（AISLG-212）：城池部队池——伤兵 / 俘虏 / 逃兵。每次入账一行（一批），
+-- 过期时刻 = 入账时数据库 now() + 时长 ÷ 全局时间缩放（写入时缩放已折算死）；
+-- 治后 / 招降 / 劝回按最早一批优先消耗（FIFO）。城池删除（放弃 / 重置）随 CASCADE 清空；
+-- 城池易主（被占 / 换主）由结算事务显式 DELETE（clearCityTroopPools）
+CREATE TABLE IF NOT EXISTS city_troop_pools (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  pool text NOT NULL,
+  troops jsonb NOT NULL DEFAULT '{}'::jsonb,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_city_troop_pools_city ON city_troop_pools (city_id, pool, expires_at);
+CREATE INDEX IF NOT EXISTS idx_city_troop_pools_expire ON city_troop_pools (expires_at);
 `;
 
 /**

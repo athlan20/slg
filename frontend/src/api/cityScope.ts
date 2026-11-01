@@ -13,6 +13,9 @@ const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.RECRUIT,
   // v84（AISLG-209）：遣散按选中城扣兵、返还入该城
   Op.DISBAND_TROOPS,
+  // v85（AISLG-212）：治疗 / 招降 / 劝回与放弃 / 释放按选中城的池子扣、回该城驻军
+  Op.RESTORE_TROOPS,
+  Op.RELEASE_TROOPS,
   // v73（AISLG-193 / AISLG-204）：城防器械在选中城打造，扣该城资源、进该城队列与库存
   Op.CRAFT_DEFENSE,
   Op.MARCH,
