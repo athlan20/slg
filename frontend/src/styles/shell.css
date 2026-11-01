@@ -44,6 +44,39 @@
     grid-template-rows: auto minmax(0, 1fr) 56px;
     grid-template-areas: 'top' 'work' 'side';
   }
+  /* 底部导航（AISLG-214）：11 个页签 + 账号共 12 个入口平分一行、等高。
+     页签行占 11 份、账号占 1 份，页签内部不留间距，12 份宽度才完全一致。 */
+  .nav-shell [role='导航-菜单'] {
+    flex: 11 1 0;
+    gap: 0;
+  }
+  .nav-shell [role='导航-菜单'] > button {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .nav-shell [role='导航-侧栏底部'] {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .nav-shell [role='导航-侧栏底部'] > button {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+  }
+}
+
+/* 手机横屏（宽 < 1024 且高 < 500）：底部导航只留图标、高度压到 44px，把高度让给工作区（AISLG-214） */
+@media (max-width: 1023px) and (max-height: 500px) {
+  .nav-shell {
+    grid-template-rows: auto minmax(0, 1fr) 44px;
+  }
+  .nav-label {
+    display: none;
+  }
 }
 
 /* 细滚动条：区块内整块滚动的容器用（如任务卡「日常」页签，AISLG-189） */
@@ -221,5 +254,42 @@
   }
   .mobile-tabs {
     display: flex;
+  }
+  /* 工作区自己裁剪（AISLG-214）：手机上一区块装不下时内部滚动，不得溢出到导航栏上方 / 下方 */
+  .work {
+    overflow: hidden;
+  }
+  /* 城池页城内视图：占满建造队列之外的剩余高度，建筑格区域内部滚动（不再把「烽火台」顶到导航栏上） */
+  .p-city > .a-grid.fit {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .p-city > .a-grid.fit > * {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .p-city > .a-grid .city-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+/* 手机横屏（宽 640–1023、高 < 500）：建筑格用与竖屏相同的紧凑格（66px），不用 92px 大格子；
+   三个分组改成每组一行、组间 4px，仍放不下就在建筑格区域内部滚动（AISLG-214）。 */
+@media (max-width: 1023px) and (max-height: 500px) {
+  .city-grid {
+    gap: 4px;
+    padding: 4px;
+  }
+  .city-grid .city-group {
+    gap: 2px;
+  }
+  .city-grid .city-group-cells {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .city-grid .city-cell {
+    height: 66px;
   }
 }
