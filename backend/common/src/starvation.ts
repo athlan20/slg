@@ -22,6 +22,39 @@ export function starveWarningLeadMs(): number {
   return scaledMs(STARVE_WARNING_LEAD_HOURS * 3_600_000);
 }
 
+/** 断粮扫描的复查间隔下限（毫秒，真实时间）；与 Worker 扫描节流同值 */
+export const STARVATION_RECHECK_MIN_MS = 10_000;
+/** 复查间隔上限（真实时间）；时间倍速很大时按预警提前量的 1/4 再收紧 */
+export const STARVATION_RECHECK_MAX_MS = 300_000;
+
+/**
+ * 断粮扫描的下次复查时刻（毫秒时间戳）。离断粮越远查得越稀，省掉对「粮食很充裕」的城每 10 秒一次的全量结算：
+ * - 不会断粮（净产量 ≥ 0）：按上限间隔复查，兜住期间补兵 / 派兵 / 卖粮把净产量拉负的情况；
+ * - 预警窗口之外：取到预警线剩余时间的一半（上限同上）；
+ * - 预警窗口之内：等到预计断粮时刻；已断粮：等到下次哗变时刻。
+ * 上限取 min(5 分钟, 预警提前量 / 4)，倍速下预警提前量按真实时间缩短，复查也随之变密。
+ */
+export function nextStarvationCheckMs(
+  nowMs: number,
+  starveAtMs: number | null,
+  starving: boolean,
+  mutinyNextMs: number | null,
+  leadMs: number,
+): number {
+  const cap = Math.max(STARVATION_RECHECK_MIN_MS, Math.min(STARVATION_RECHECK_MAX_MS, leadMs / 4));
+  let target: number;
+  if (starving) {
+    target = mutinyNextMs ?? nowMs + cap;
+  } else if (starveAtMs === null) {
+    target = nowMs + cap;
+  } else if (starveAtMs - leadMs > nowMs) {
+    target = nowMs + (starveAtMs - leadMs - nowMs) / 2;
+  } else {
+    target = starveAtMs;
+  }
+  return nowMs + Math.min(cap, Math.max(STARVATION_RECHECK_MIN_MS, target - nowMs));
+}
+
 export interface StarvationProjection {
   /** 已断粮（粮食为 0 且净产量为负）：哗变计时中 */
   starving: boolean;

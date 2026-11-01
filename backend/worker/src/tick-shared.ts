@@ -147,7 +147,7 @@ export async function settleOwnerCity(
   client: pg.PoolClient,
   cityId: string,
   target?: Date | null,
-): Promise<{ row: CityProductionRow & { x: number | null; y: number | null } | null; account?: string }> {
+): Promise<{ row: CityProductionRow & { x: number | null; y: number | null } | null; account?: string; armyFoodUsePerHour?: number }> {
   const res = await client.query(
     `SELECT c.id, c.account_id, c.x, c.y, c.gold, c.wood, c.food, c.stone, c.iron,
             c.settled_at, c.gold_rem, c.food_rem, c.wood_rem, c.stone_rem, c.iron_rem,
@@ -170,7 +170,7 @@ export async function settleOwnerCity(
   }
   const anchor = settleTo > row.settled_at ? settleTo : row.settled_at;
   await settleCityProduction(client, row, levels, anchor, territory, armyFoodUsePerHour);
-  return { row, account: row.account_id };
+  return { row, account: row.account_id, armyFoodUsePerHour };
 }
 
 /** 结算后把战利品直接累加进城池资源（不设储量上限钳制，与取消返还同规则，占位） */
