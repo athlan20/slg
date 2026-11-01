@@ -189,6 +189,18 @@
     color: var(--text-faint);
   }
 
+  /* 城池名称标签（AISLG-213）：比发起者标签再淡一档，主次分明（正文 > 发起者 > 城池） */
+  .tag.city-tag {
+    border-color: var(--line-soft);
+    color: var(--text-faint);
+  }
+
+  /* 可点的城池标签（该城仍在名下）：悬停给强调色，提示可切换 */
+  .tag.city-tag.clickable:hover {
+    border-color: var(--accent-dim);
+    color: var(--accent);
+  }
+
   .btn {
     @apply cursor-pointer rounded border border-accent-dim bg-transparent px-2 py-1 font-mono text-[10px] text-accent transition-colors;
   }

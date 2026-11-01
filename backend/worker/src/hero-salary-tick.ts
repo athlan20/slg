@@ -54,6 +54,8 @@ export async function settleHeroSalary(
   if (!hero.arrears) {
     await insertEvent(client, {
       accountId: hero.account_id,
+      // 俸禄从主城扣（AISLG-213）：断供归属主城，带上主城 id
+      cityId: capital?.id,
       type: EventType.HERO_ARREARS,
       initiator: null,
       detail: { heroId: hero.id, heroName: hero.name, cost, nextAt: next.toISOString() },

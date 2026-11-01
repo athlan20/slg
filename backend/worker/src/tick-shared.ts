@@ -427,6 +427,8 @@ export async function settleMarchHero(
   if (leveledTo) {
     await insertEvent(client, {
       accountId: march.account_id,
+      // 随队武将升级发生在从该城出发的行军上（AISLG-213）：带上出发城，多城时能看出是哪座城的部队
+      cityId: march.from_city_id,
       buildId: hero.id,
       type: EventType.HERO_LEVEL_UP,
       initiator: march.initiator as InitiatorRole,
@@ -436,6 +438,8 @@ export async function settleMarchHero(
   if (!result.attackerWon) {
     await insertEvent(client, {
       accountId: march.account_id,
+      // 同上：战败重伤跟着出发城走
+      cityId: march.from_city_id,
       buildId: hero.id,
       type: EventType.HERO_WOUNDED,
       initiator: march.initiator as InitiatorRole,

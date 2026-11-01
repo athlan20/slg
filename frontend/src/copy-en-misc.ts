@@ -60,6 +60,11 @@ export const EVENTS_PANEL_EN = {
   viewReport: 'Report',
   // Scout events carry intel: the chip opens the scout report dialog.
   viewScoutReport: 'Scout',
+  // City name tag on each row when the account owns 2+ cities: placeholder + hint when the city is gone.
+  cityGone: 'Former city',
+  cityGoneHint: 'This city is no longer yours',
+  // Hover text of the city tag: full name + click to switch
+  cityTagHint: (name: string) => `${name} (click to switch to this city)`,
 } satisfies typeof COPY['eventsPanel'];
 
 export const LOGIN_EN = {

@@ -20,4 +20,7 @@ export interface SessionEvent {
   /** 侦察情报快照（march_completed 且 outcome='scouted' 事件的 detail.intel，
    *  v23 AISLG-62；有值即可打开侦察报告弹窗） */
   scoutIntel?: import('./api/protocol').ScoutIntel;
+  /** 事件发生在哪座城（EventView.cityId，AISLG-213；账号级事件为 undefined）——
+   *  多城账号据此在行内显示城池名称标签 */
+  cityId?: string;
 }
