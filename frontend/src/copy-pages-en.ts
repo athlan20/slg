@@ -6,6 +6,7 @@ import {
   ARMY_COPY, BOARD_COPY, CITY_PAGE_COPY, INTEL_COPY, MAPUI_COPY, OVERVIEW_COPY,
   SUMMARY_COPY, TARGET_COPY, WARN_COPY,
 } from './copy-pages';
+import type { MarchView } from './api/protocol';
 
 export const MAPUI_COPY_EN = {
   title: 'World Map',
@@ -125,6 +126,44 @@ export const ARMY_COPY_EN = {
   marchStateMarching: 'Marching',
   marchStateReturn: 'Returning',
   marchStateAmbush: 'Ambushing',
+  // v87 (AISLG-215, GitHub #33): march detail modal + cargo summary in the row
+  marchDetail: {
+    button: 'Detail',
+    title: 'March Detail',
+    ended: 'This march has ended',
+    close: 'Close',
+    taskTitle: 'Task',
+    tasks: {
+      plunder: 'Plunder',
+      occupy: 'Occupy',
+      reinforce: 'Reinforce',
+      attack: 'Attack',
+      scout: 'Scout',
+      transfer: 'Transfer',
+      transport: 'Transport',
+      intercept: 'Intercept',
+      return: 'Return',
+      assist: 'Assist',
+    } as Record<MarchView['purpose'], string>,
+    routeTitle: 'Route',
+    fromUnknown: 'Original city',
+    startedAt: (clock: string) => `Departed ${clock}`,
+    arriveAt: (clock: string) => `ETA ${clock}`,
+    remaining: (text: string) => `Left ${text}`,
+    troopsTitle: 'Composition',
+    troopsTotal: (total: number) => `Total ${total}`,
+    troopsEmpty: 'No troops in this march',
+    heroTitle: 'Hero',
+    heroNone: 'None',
+    heroPending: 'Hero',
+    heroLine: (name: string, level: number) => `${name} · Lv ${level}`,
+    cargoTitle: 'Cargo',
+    cargoTitleBack: 'Cargo brought back',
+    cargoItem: (label: string, value: string) => `${label} ${value}`,
+    locate: 'Locate',
+    recall: 'Recall',
+    recallBusy: 'Recalling…',
+  },
   territoryTitle: 'Territory',
   territoryMeta: (count: number, cap: number) => `${count} / ${cap} (Government Hall level)`,
   // v84 (AISLG-209): Recruit/Disband mode switch and the disband form inside the army card
