@@ -1,11 +1,12 @@
-/** 行军卡（军队页中 / 情报页右）：在外的部队逐条显示——任务与目标 / 编成与将领 / 状态（行军·返程·埋伏中）/ 剩余时间与进度，
- *  可定位到地图、撤回（行军途中的非返程条目）。分页列表，行定高。来自城池状态（GET_STATE 轮询 + 推送对齐）。
+/** 行军卡（军队页中 / 情报页右）：在外的部队逐条显示——任务与目标 / 编成与将领（运输类行军换成物资摘要）/ 状态（行军·返程·埋伏中）/
+ *  剩余时间与进度，可定位到地图、撤回（行军途中的非返程条目）、看行军详情（AISLG-215）。
+ *  分页列表，行定高。来自城池状态（GET_STATE 轮询 + 推送对齐）。
  */
 
 import { useState } from 'react';
-import { TROOP_KINDS, type AssistOutView, type AssistView, type MarchView } from '../../api/protocol';
+import type { AssistOutView, AssistView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
-import { getCopy, useCopy } from '../../i18n/bundle';
+import { useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
@@ -15,12 +16,8 @@ import { marchLabel } from '../worldPanelText';
 import { StratagemEntry } from '../stratagem/StratagemEntry';
 import { Card } from '../ui/Card';
 import { PagedList } from '../ui/PagedList';
-
-function compositionText(march: MarchView): string {
-  const { TROOP_LABEL } = getCopy();
-  const parts = TROOP_KINDS.filter((kind) => march.troops[kind] > 0).map((kind) => `${TROOP_LABEL[kind].short}${march.troops[kind]}`);
-  return parts.join(' ') || '—';
-}
+import { MarchDetailModal } from './MarchDetailModal';
+import { cargoSummaryText, compositionText } from './marchDetailText';
 
 export function MarchesCard({ role }: { role: string }) {
   const copy = useCopy();
@@ -29,6 +26,7 @@ export function MarchesCard({ role }: { role: string }) {
   const { go } = useNav();
   const { world, city } = session;
   const [recallBusyId, setRecallBusyId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const marches = city ? activeMarches(city) : [];
   const now = useNow(marches.length > 0);
   const heroes = session.heroSession.state?.heroes ?? [];
@@ -82,6 +80,11 @@ export function MarchesCard({ role }: { role: string }) {
           const state = march.purpose === 'return' ? ARMY_COPY.marchStateReturn : ambush ? ARMY_COPY.marchStateAmbush : ARMY_COPY.marchStateMarching;
           const hero = march.heroId ? heroes.find((item) => item.id === march.heroId) : undefined;
           const title = marchLabel(march, now);
+          // 行内第二行：运输类行军列物资摘要，其余列将领名（武将列表未加载时占位「将领」）
+          const cargoSummary = cargoSummaryText(march.cargo);
+          const summary = cargoSummary
+            ? `${compositionText(march.troops)} · ${cargoSummary} · ${state}`
+            : `${compositionText(march.troops)} · ${hero ? tName(hero.name) : ARMY_COPY.marchDetail.heroPending} · ${state}`;
           return (
             <div role="行军条目" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[5px] border border-line-soft bg-panel-2 px-2 py-1">
               <span className="min-w-0">
@@ -97,10 +100,15 @@ export function MarchesCard({ role }: { role: string }) {
                 >
                   {title}
                 </button>
-                <small className="block truncate text-[11px] text-faint" title={`${compositionText(march)}${hero ? ` · ${tName(hero.name)}` : ''}`}>
-                  {compositionText(march)}
-                  {hero ? ` · ${tName(hero.name)}` : ''} · {state}
-                </small>
+                <button
+                  type="button"
+                  role="行军-详情摘要"
+                  title={summary}
+                  onClick={() => setDetailId(march.id)}
+                  className="block max-w-full cursor-pointer truncate text-left text-[11px] text-faint hover:text-accent"
+                >
+                  {summary}
+                </button>
                 <span className="mt-0.5 block h-[2px] overflow-hidden rounded bg-line">
                   <i className="block h-full bg-accent" style={{ width: `${pct}%` }} />
                 </span>
@@ -116,17 +124,27 @@ export function MarchesCard({ role }: { role: string }) {
                     target={{ marchId: march.id, label: `(${march.x},${march.y})`, only: ['golden_cicada'] }}
                   />
                 ) : null}
-                {march.status === 'marching' && march.purpose !== 'return' ? (
+                <span role="行军-行内按钮组" className="flex items-center gap-1">
                   <button
                     type="button"
-                    role="世界地图详情区-行军撤回按钮"
-                    disabled={recallBusyId === march.id}
-                    onClick={() => void recall(march.id)}
-                    className="cursor-pointer rounded border border-warn px-1.5 text-[11px] text-warn disabled:cursor-not-allowed disabled:opacity-40"
+                    role="行军-详情按钮"
+                    onClick={() => setDetailId(march.id)}
+                    className="cursor-pointer rounded border border-line px-1.5 text-[11px] text-dim transition-colors hover:border-accent hover:text-accent"
                   >
-                    {recallBusyId === march.id ? COPY.worldMap.marchRecallBusy : COPY.worldMap.marchRecallBtn}
+                    {ARMY_COPY.marchDetail.button}
                   </button>
-                ) : null}
+                  {march.status === 'marching' && march.purpose !== 'return' ? (
+                    <button
+                      type="button"
+                      role="世界地图详情区-行军撤回按钮"
+                      disabled={recallBusyId === march.id}
+                      onClick={() => void recall(march.id)}
+                      className="cursor-pointer rounded border border-warn px-1.5 text-[11px] text-warn disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {recallBusyId === march.id ? COPY.worldMap.marchRecallBusy : COPY.worldMap.marchRecallBtn}
+                    </button>
+                  ) : null}
+                </span>
               </span>
             </div>
           );
@@ -142,7 +160,7 @@ export function MarchesCard({ role }: { role: string }) {
           {assistsOut.map((item) => (
             <div key={item.id} role="军队页-协防在外条目" className="flex items-center gap-1 text-[11px]">
               <span className="min-w-0 flex-1 truncate" title={DEFENSE_COPY.assist.outLine(item.hostUsername, tName(item.hostCityName))}>
-                {DEFENSE_COPY.assist.outLine(item.hostUsername, tName(item.hostCityName))} · {armyText(item.troops)}
+                {DEFENSE_COPY.assist.outLine(item.hostUsername, tName(item.hostCityName))} · {compositionText(item.troops)}
               </span>
               <button
                 type="button"
@@ -157,8 +175,8 @@ export function MarchesCard({ role }: { role: string }) {
           ))}
           {assistsIn.map((item) => (
             <div key={item.id} role="军队页-协防进驻条目" className="flex items-center gap-1 text-[11px] text-dim">
-              <span className="min-w-0 flex-1 truncate" title={`${DEFENSE_COPY.assist.inLine(item.username, tName(item.fromCityName))} · ${armyText(item.troops)}`}>
-                {DEFENSE_COPY.assist.inLine(item.username, tName(item.fromCityName))} · {armyText(item.troops)}
+              <span className="min-w-0 flex-1 truncate" title={`${DEFENSE_COPY.assist.inLine(item.username, tName(item.fromCityName))} · ${compositionText(item.troops)}`}>
+                {DEFENSE_COPY.assist.inLine(item.username, tName(item.fromCityName))} · {compositionText(item.troops)}
               </span>
               <button
                 type="button"
@@ -174,12 +192,10 @@ export function MarchesCard({ role }: { role: string }) {
           {assistError ? <p role="军队页-协防错误" className="truncate text-[11px] text-warn" title={assistError}>{assistError}</p> : null}
         </div>
       ) : null}
+
+      {detailId ? (
+        <MarchDetailModal march={marches.find((march) => march.id === detailId) ?? null} onClose={() => setDetailId(null)} />
+      ) : null}
     </Card>
   );
-}
-
-function armyText(troops: Record<string, number>): string {
-  const { TROOP_LABEL } = getCopy();
-  const parts = TROOP_KINDS.filter((kind) => (troops[kind] ?? 0) > 0).map((kind) => `${TROOP_LABEL[kind].short}${troops[kind]}`);
-  return parts.join(' ') || '—';
 }

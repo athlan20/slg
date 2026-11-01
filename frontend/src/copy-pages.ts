@@ -1,6 +1,8 @@
 // 各页面（地图 / 城池 / 军队 / 养成 / 情报 / Agent / 总览）的页面级文案：区块标题、空态、摘要行、按钮。
 // 沿用旧面板文案的地方直接引用 copy.ts / copy-*.ts，这里只放导航重构后新增的句子。
 
+import type { MarchView } from './api/protocol';
+
 export const MAPUI_COPY = {
   title: '世界地图',
   layerMoving: '流寇·商队',
@@ -119,6 +121,49 @@ export const ARMY_COPY = {
   marchStateMarching: '行军',
   marchStateReturn: '返程',
   marchStateAmbush: '埋伏中',
+  // v87（AISLG-215，GitHub #33）：行军详情弹窗 + 行内物资摘要
+  marchDetail: {
+    /** 行内「详情」按钮 */
+    button: '详情',
+    title: '行军详情',
+    ended: '该行军已结束',
+    close: '关闭',
+    taskTitle: '任务',
+    tasks: {
+      plunder: '掠夺',
+      occupy: '占领',
+      reinforce: '增援',
+      attack: '进攻',
+      scout: '侦察',
+      transfer: '调兵',
+      transport: '运输',
+      intercept: '截击',
+      return: '返程',
+      assist: '协防',
+    } as Record<MarchView['purpose'], string>,
+    routeTitle: '路线',
+    /** 出发城查不到（已放弃等）时的占位 */
+    fromUnknown: '原城池',
+    startedAt: (clock: string) => `出发 ${clock}`,
+    arriveAt: (clock: string) => `预计到达 ${clock}`,
+    remaining: (text: string) => `剩余 ${text}`,
+    troopsTitle: '兵种组成',
+    troopsTotal: (total: number) => `合计 ${total}`,
+    troopsEmpty: '随行部队为空',
+    heroTitle: '将领',
+    heroNone: '无',
+    /** 武将列表还没加载（有 heroId 但查不到）时的占位 */
+    heroPending: '将领',
+    heroLine: (name: string, level: number) => `${name} · Lv ${level}`,
+    cargoTitle: '运送物资',
+    /** 运输返程（撤回 / 目标失效）时的标题 */
+    cargoTitleBack: '随队带回',
+    /** 行内物资摘要的一项：中文标签与数字之间不留空（如「粮5.2k」） */
+    cargoItem: (label: string, value: string) => `${label}${value}`,
+    locate: '定位',
+    recall: '撤回',
+    recallBusy: '撤回中…',
+  },
   territoryTitle: '领地',
   territoryMeta: (count: number, cap: number) => `${count} / ${cap}（官府等级）`,
   // v84（AISLG-209）：征兵卡内的「招募 / 遣散」模式切换与遣散表单
