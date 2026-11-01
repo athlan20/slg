@@ -344,6 +344,10 @@ export const BATTLE_REPORT_EN = {
     `Round ${round}: our side dealt ${mineDamage} and lost ${mineKilled}; enemy side dealt ${enemyDamage} and lost ${enemyKilled}`,
   returnNote: 'Surviving troops head back with the return march and enter the city only on arrival',
   noTroops: 'No troops',
+  // v85 (AISLG-212): pools line — our wounded / captured and the captives the winner took (shown only when non-zero; fallen = losses − wounded − captured)
+  poolWounded: (n: number) => `Wounded ${n}`,
+  poolCaptured: (n: number) => `Captured ${n}`,
+  poolCaptives: (n: number) => `Captives taken ${n}`,
   loading: 'Loading battle report…',
   loadFailed: 'Failed to load the battle report (it may have been cleared)',
 } satisfies typeof COPY['battleReport'];

@@ -83,6 +83,20 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
   const lossesTotal = totalOf(side.losses);
   const survivorsTotal = totalOf(side.survivors);
   const barTone = mine ? 'bg-accent' : 'bg-warn';
+  // v85（AISLG-212）：伤兵进池、被胜方抓走、胜方抓到的俘虏（历史战报缺省视为无）
+  const woundedTotal = side.wounded ? totalOf(side.wounded) : 0;
+  const capturedTotal = side.captured ? totalOf(side.captured) : 0;
+  const captivesTotal = side.captives ? totalOf(side.captives) : 0;
+  const poolParts: string[] = [];
+  if (woundedTotal > 0) {
+    poolParts.push(COPY.battleReport.poolWounded(woundedTotal));
+  }
+  if (capturedTotal > 0) {
+    poolParts.push(COPY.battleReport.poolCaptured(capturedTotal));
+  }
+  if (captivesTotal > 0) {
+    poolParts.push(COPY.battleReport.poolCaptives(captivesTotal));
+  }
   return (
     <div role={mine ? '战报弹窗-我方卡片' : '战报弹窗-敌方卡片'} className="flex min-w-0 flex-col gap-1">
       <p className="flex items-baseline gap-1.5">
@@ -137,6 +151,12 @@ function SideCard({ side, roleTag, mine, attacker }: { side: BattleSideView; rol
           {COPY.battleReport.statDamage} <span className={mine ? 'text-accent' : 'text-warn'}>{Math.round(side.damage)}</span>
         </span>
       </p>
+      {/* v85（AISLG-212）：伤兵 / 被俘 / 俘虏（仅非零时显示；阵亡 = 损失 − 伤兵 − 被俘） */}
+      {poolParts.length > 0 ? (
+        <p role={mine ? '战报弹窗-我方池子' : '战报弹窗-敌方池子'} className="font-mono text-[11.5px] leading-tight text-faint">
+          {poolParts.join(' · ')}
+        </p>
+      ) : null}
     </div>
   );
 }

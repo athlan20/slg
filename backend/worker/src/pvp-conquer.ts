@@ -22,7 +22,7 @@ import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/b
 import { combatTechBonus, defenseExtraPercent, repairPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { consumeCityDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
-import { applyDefenseBattle, loadDefenseSetup } from './assist-defense';
+import { applyDefenseBattle, loadDefenseSetup, recordDefensePoolCasualties } from './assist-defense';
 import { towerStats } from '../../common/src/building-effects';
 import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent } from '../../common/src/famous-effects';
@@ -60,6 +60,7 @@ import {
 import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
+import { clearCityTroopPools, recordPoolTroops } from '../../common/src/troop-pools-db';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -154,20 +155,30 @@ export async function resolvePvpConquestArrival(
     ? `${defenderNaming.username} 的守军（${defenderNaming.cityName}${guard ? ` · 城守 ${guard.name}` : ''}${assistNote}）`
     : `守军${assistNote}`;
   const guardView = guard ? heroBattleView(guard, setup.hostUnits) : null;
+  // v74：协防拆分（守方幸存者回写）；v85（AISLG-212）：伤兵 / 俘虏入账——攻方（胜时含
+  // 俘虏）进出发城；守方城主份额进本城、协防份额进派出城（共用 recordDefensePoolCasualties）
+  const assistLosses = await applyDefenseBattle(client, city.id, setup, result, notifies);
+  const conquestCasualties = await recordDefensePoolCasualties(client, city.id, setup, result, assistLosses, false);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', conquestCasualties.attacker.wounded);
+  if (conquestCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', conquestCasualties.captives);
+  }
   const attackerReportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon, 'pvp_conquest',
     tile.x, tile.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null, guardView,
+    null, null, conquestCasualties,
   );
   const defenderReportId = await saveBattleReport(
     client, city.account_id, 'defender', !result.attackerWon, 'pvp_conquest',
     tile.x, tile.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null, guardView,
+    null, null, conquestCasualties,
   );
   // v74：协防方各收到一份战报（assistLosses 给出自己那部分损失）
-  const assistLosses = await applyDefenseBattle(client, city.id, setup, result, notifies);
   for (const party of assistLosses) {
     await saveBattleReport(
       client, party.accountId, 'defender', !result.attackerWon, 'pvp_conquest',
       tile.x, tile.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null, guardView, party.losses,
+      null, conquestCasualties,
     );
   }
   const heroSettle = await settleMarchHero(client, march, result, notifies);
@@ -418,6 +429,8 @@ async function transferCityOwnership(
   );
 
   // 城行：换主 + 城守卸任（武将仍归原主人）+ 城防回满 + 6 小时保护；建筑 / 资源 / 名城名保留
+  // v85（AISLG-212）：原主人的伤兵 / 俘虏 / 逃兵池一并清空（城池易主，池子不随城移交）
+  await clearCityTroopPools(client, cityId);
   const protectedUntil = new Date(now.getTime() + scaledMs(CITY_CONQUEST_PROTECTION_MS));
   await client.query(
     `UPDATE cities SET account_id = $2, guard_hero_id = NULL, durability = $3, durability_settled_at = $4,

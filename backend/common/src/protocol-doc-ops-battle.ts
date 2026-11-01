@@ -68,6 +68,9 @@ const BATTLE_REPORT = {
     losses: { ...EMPTY_ARMY, militia: 10 },
     survivors: { ...EMPTY_ARMY, militia: 10 },
     damage: 5090,
+    // v85（AISLG-212）：玩家攻方损失 10 民兵 → 伤兵 2（floor(10 × 20%)）；胜方抓到败方损失的 10%（militia 18 × 10% = 1）
+    wounded: { ...EMPTY_ARMY, militia: 2 },
+    captives: { ...EMPTY_ARMY, militia: 1 },
   },
   defender: {
     name: '野地 Lv3（森林）',
@@ -75,6 +78,9 @@ const BATTLE_REPORT = {
     losses: { ...EMPTY_ARMY, militia: 18, archer: 1 },
     survivors: { ...EMPTY_ARMY },
     damage: 2926,
+    // NPC 一方无伤兵；captured = 被胜方抓走的部分（阵亡 = losses − wounded − captured）
+    wounded: { ...EMPTY_ARMY },
+    captured: { ...EMPTY_ARMY, militia: 1 },
   },
   wallDefensePercent: 0,
   comment: null,
@@ -176,7 +182,7 @@ export const REQUEST_GET_BATTLE_REPORTS: RequestOpDoc = {
   name: 'GET_BATTLE_REPORTS',
   title: '查询战斗战报（v13）',
   preAuth: false,
-  summary: `分页查询本账号的战斗战报（新→旧）：每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军或主城）各生成一份，账号作为攻方或守方持有。战报含双方编成与损失、逐回合伤害统计、终局原因与城墙减伤；战斗结果同时进事件流（march_completed / npc_raid），战报提供更完整的逐回合明细。v15 起战败幸存部队撤回出发城——战报的 survivors 即实际存活兵力（round_limit 终局时攻方幸存者会在返程行军结束后回到出发城）。`,
+  summary: `分页查询本账号的战斗战报（新→旧）：每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军或主城）各生成一份，账号作为攻方或守方持有。战报含双方编成与损失、逐回合伤害统计、终局原因与城墙减伤；v85（AISLG-212）起各侧还给出 wounded（伤兵）/ captured（被胜方抓走）、胜方另有 captives（抓到的俘虏）——阵亡 = losses − wounded − captured，伤兵 / 俘虏的处置见 RESTORE_TROOPS。战斗结果同时进事件流（march_completed / npc_raid），战报提供更完整的逐回合明细。v15 起战败幸存部队撤回出发城——战报的 survivors 即实际存活兵力（round_limit 终局时攻方幸存者会在返程行军结束后回到出发城）。`,
   requestFields: [
     { name: 'limit', type: 'number', desc: '可选。返回条数上限，1..50，默认 20。' },
     { name: 'beforeId', type: 'number', desc: '可选。分页游标：返回 id 小于它的最新战报（与 limit 组合）。' },
@@ -194,7 +200,7 @@ export const REQUEST_GET_BATTLE_REPORTS: RequestOpDoc = {
     { name: 'reports[].won', type: 'boolean', desc: '本账号是否获胜。' },
     { name: 'reports[].rounds', type: 'number', desc: '实际回合数。' },
     { name: 'reports[].endReason', type: "'defender_wiped' | 'attacker_wiped' | 'round_limit' | 'no_contact'", desc: '守方全灭 / 攻方全灭（含同回合同归于尽）/ 回合耗尽（攻方未能突破，v15 起幸存部队撤回出发城）/ 未接战（v28 截击扑空或目标消失，见 contact）。' },
-    { name: 'reports[].attacker / reports[].defender', type: 'object', desc: '双方汇总：{ name 展示名, troops 编成, losses 损失, survivors 幸存, damage 总输出, units 总单位数, totalHp 总血量, avgRange 平均射程（1 位小数，数量加权——会被大量近战稀释，不代表克制关系）, maxRange 编成单兵射程最大值, rangedUnits 远程单位数（射程 > 近战基准 10，当前即弓箭兵）, hero 武将（v36 新增，AISLG-114/115：{ name, lead, force, wit, atkPercent, defPercent }——攻方 = 随队武将、守方 = 城守（仅守城战 kind=city_raid），atkPercent/defPercent 为按部队规模折算后的实际生效加成；未配将 / 历史战报为 null）}。units/totalHp/avgRange 为 v21 新增、maxRange/rangedUnits 为 v23 新增（AISLG-49），hero 为 v36 新增，服务端按 troops 汇总下发，历史战报同样补齐；判断「对方有多少单位在远端输出、够多远」用 maxRange + rangedUnits，不要用 avgRange。' },
+    { name: 'reports[].attacker / reports[].defender', type: 'object', desc: '双方汇总：{ name 展示名, troops 编成, losses 损失, survivors 幸存, damage 总输出, units 总单位数, totalHp 总血量, avgRange 平均射程（1 位小数，数量加权——会被大量近战稀释，不代表克制关系）, maxRange 编成单兵射程最大值, rangedUnits 远程单位数（射程 > 近战基准 10，当前即弓箭兵）, hero 武将（v36 新增，AISLG-114/115：{ name, lead, force, wit, atkPercent, defPercent }——攻方 = 随队武将、守方 = 城守（仅守城战 kind=city_raid），atkPercent/defPercent 为按部队规模折算后的实际生效加成；未配将 / 历史战报为 null）, wounded 伤兵 / captured 被俘（v85 新增，AISLG-212：玩家一方损失 × 20% 进伤兵营；被胜方抓走的部分只含基础七兵种；NPC 一方 wounded 为全 0；历史战报缺省视为 0）, captives 抓到的俘虏（v85 新增：胜方为玩家时才有，从败方损失抓 10% 进胜方城的俘虏营；平局 / NPC 胜为缺省 0）}。阵亡 = losses − wounded − captured；伤兵 / 俘虏的后续处置用 GET_STATE 的 city.wounded / captives + RESTORE_TROOPS。units/totalHp/avgRange 为 v21 新增、maxRange/rangedUnits 为 v23 新增（AISLG-49），hero 为 v36 新增，服务端按 troops 汇总下发，历史战报同样补齐；判断「对方有多少单位在远端输出、够多远」用 maxRange + rangedUnits，不要用 avgRange。' },
     { name: 'reports[].wallDefensePercent', type: 'number', desc: '守方城墙守城减伤（百分数；非守城战斗为 0）。' },
     { name: 'reports[].roundLog', type: 'array', desc: '逐回合统计：{ round, attackerDamage, defenderDamage, attackerKilled, defenderKilled, towerDamage? }（推进回合伤害为 0；towerDamage 为该回合箭塔伤害，已含在 defenderDamage 内，v30）。' },
     { name: 'reports[].comment', type: 'object | null', desc: 'Agent 写回的战报点评（v23 新增，AISLG-53）：{ text 点评正文, updatedAt 最近写入时间 }；尚未有点评为 null。一份战报只保留最新一条（Agent 重写覆盖）。' },
@@ -227,7 +233,7 @@ export const REQUEST_GET_BATTLE_REPORTS: RequestOpDoc = {
       ],
     },
   ],
-  agentNote: '战损不进入伤兵治疗、俘虏招降或逃兵召回系统（一期确认）：损失即最终减员。roundLog 可用于复盘推进 / 接敌节奏与输出效率。读完战报可用 AGENT_COMMENT_REPORT 写一段大白话点评（为什么输 / 下次带什么兵），玩家会在战报弹窗顶部看到——建议说人话、不出现协议字段名。',
+  agentNote: '战损不再“损失即最终减员”（v85，AISLG-212）：各侧 wounded（伤兵）/ captured（被俘）与胜方 captives（抓到的俘虏）已入对应城池的池子（伤兵 20%、俘虏 10%，见 GET_STATE 的 city.wounded / captives / deserters）——读完战报应接着建议玩家治疗 / 招降（RESTORE_TROOPS），别让伤兵 / 俘虏白白过期。roundLog 可用于复盘推进 / 接敌节奏与输出效率。读完战报可用 AGENT_COMMENT_REPORT 写一段大白话点评（为什么输 / 下次带什么兵），玩家会在战报弹窗顶部看到——建议说人话、不出现协议字段名。',
 };
 
 export const REQUEST_AGENT_COMMENT_REPORT: RequestOpDoc = {

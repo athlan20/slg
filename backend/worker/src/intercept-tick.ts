@@ -12,6 +12,8 @@
 import pg from 'pg';
 import type { Resources, TroopKind } from '../../common/src/protocol';
 import { armyPower, resolveBattle, toFullArmyCounts } from '../../common/src/battle';
+import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { armyCarryCapacity } from '../../common/src/troops';
 import { loadByCarry, lootTotal, PLUNDERABLE_KEYS, type PlunderLoot } from '../../common/src/plunder';
 import { carryingPercent, combatTechBonus } from '../../common/src/tech';
@@ -123,9 +125,16 @@ export async function resolveInterceptArrival(
     attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
   });
   const naming = await loadCityNaming(client, march.from_city_id);
+  // v85（AISLG-212）：截击流寇 / 运粮商队——目标守军是 NPC；攻方伤兵与俘虏（胜时）进出发城
+  const interceptCasualties = splitBattleCasualties(result, false, true);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', interceptCasualties.attacker.wounded);
+  if (interceptCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', interceptCasualties.captives);
+  }
   const reportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon, 'intercept', march.x, march.y, result,
     naming ? `${naming.username} · ${naming.cityName}` : '出征部队', `${label} Lv${target.level}`, 0, notifies, hero?.report ?? null,
+    null, null, null, interceptCasualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   const common = {

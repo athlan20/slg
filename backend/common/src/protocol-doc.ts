@@ -314,6 +314,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '该分城仍有部队在外（行军 / 返程 / 运输 / 侦察），不能放弃（v57，AISLG-153）。',
     action: '等部队回城或结算后再放弃。',
   },
+  CITY_STARVING: {
+    desc: 'RESTORE_TROOPS 劝回逃兵被拒：该城正在断粮（粮食归零且净产量为负，v85，AISLG-212）。不改任何数据。',
+    action: '先恢复粮食净产出（运送粮食、减少驻军或提高产量），断粮结束后再劝回逃兵（注意逃兵 24 小时过期）。',
+  },
   WILDERNESS_GARRISONED: {
     desc: '名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。',
     action: '先用 RECALL_MARCH 召回各块野地的驻军，再放弃。',
@@ -912,7 +916,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '战报（battle report）',
-    desc: `每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军 / NPC 袭击主城，v21 新增 city_raid 类别）生成一份战报，账号以攻方或守方身份持有、可查询（GET_BATTLE_REPORTS）并实时推送（PUSH_BATTLE_REPORT）：含双方编成与损失、汇总口径（v21：units 总单位数、totalHp 总血量、avgRange 平均射程；v23：maxRange 单兵射程最大值、rangedUnits 远程单位数——avgRange 是数量加权平均、会被大量近战稀释，判断远程威胁用 maxRange + rangedUnits，AISLG-49；读取时按编成汇总，历史战报同样下发）、总输出 damage、逐回合伤害与损失统计、终局原因与城墙减伤。战损不进入伤兵治疗、俘虏招降或逃兵召回系统（一期确认）——损失即最终减员。`,
+    desc: `每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军 / NPC 袭击主城，v21 新增 city_raid 类别）生成一份战报，账号以攻方或守方身份持有、可查询（GET_BATTLE_REPORTS）并实时推送（PUSH_BATTLE_REPORT）：含双方编成与损失、汇总口径（v21：units 总单位数、totalHp 总血量、avgRange 平均射程；v23：maxRange 单兵射程最大值、rangedUnits 远程单位数——avgRange 是数量加权平均、会被大量近战稀释，判断远程威胁用 maxRange + rangedUnits，AISLG-49；读取时按编成汇总，历史战报同样下发）、总输出 damage、逐回合伤害与损失统计、终局原因与城墙减伤。v85（AISLG-212）起战损不再“损失即最终减员”：各侧带 wounded（伤兵）/ captured（被俘），胜方带 captives（抓到的俘虏）——阵亡 = losses − wounded − captured，伤兵 / 俘虏的处置见 RESTORE_TROOPS。`,
   },
   {
     term: '掠夺（plunder）',

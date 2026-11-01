@@ -209,6 +209,12 @@ export interface BattleSideView {
   rangedUnits: number;
   /** 该方武将（v36 AISLG-114/115）：攻方 = 随队武将、守方 = 城守（仅守城战）；未配将 / 历史战报为 null / 缺省 */
   hero?: BattleHeroView | null;
+  /** 伤兵（v85 AISLG-212）：本方损失中进入伤兵营的部分（玩家一方各兵种 floor(20%)；NPC 为全 0）；阵亡 = losses − wounded − captured；历史战报缺省视为 0 */
+  wounded?: ArmyCounts;
+  /** 被胜方抓走的部分（v85；只含基础七兵种，败方才有；胜方 / 历史战报缺省视为 0） */
+  captured?: ArmyCounts;
+  /** 抓到的俘虏（v85；胜方为玩家时才有——从败方损失抓 10% 进胜方城的俘虏营；平局 / NPC 胜为缺省 0） */
+  captives?: ArmyCounts;
 }
 
 /** 战报的逐回合统计（v13） */

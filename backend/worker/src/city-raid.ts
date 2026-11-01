@@ -17,7 +17,7 @@ import { loadFamousName } from '../../common/src/famous-effects-db';
 import { famousTowerPercent, famousWallExtraPercent, famousWarehousePercent } from '../../common/src/famous-effects';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { consumeCityDefenses, loadCityDefenses } from '../../common/src/city-defense-db';
-import { loadDefenseSetup, applyDefenseBattle } from './assist-defense';
+import { loadDefenseSetup, applyDefenseBattle, recordDefensePoolCasualties } from './assist-defense';
 import pg from 'pg';
 import { DEFAULT_NPC_RAID_INTERVAL_MS } from './world-tick';
 import { scaledMs } from '../../common/src/time-scale';
@@ -110,18 +110,23 @@ export async function resolveNpcCityRaid(
   const defenderName = naming
     ? `${naming.username} 的主城守军（${naming.cityName}${guard ? ` · 城守 ${guard.name}` : ''}${assistNote}）`
     : `主城守军${assistNote}`;
+  // v74：协防拆分（守方幸存者回写）；v85（AISLG-212）：伤兵 / 俘虏入账也在同一事务，
+  // 城主份额进本城、协防份额进派出城（recordDefensePoolCasualties 共用，先于战报落库）
+  const assistLosses = await applyDefenseBattle(client, target.cityId, setup, result, notifies);
+  const raidCasualties = await recordDefensePoolCasualties(client, target.cityId, setup, result, assistLosses, true);
   const reportId = await saveBattleReport(
     client, target.accountId, 'defender', !result.attackerWon, 'city_raid',
     target.x, target.y, result, 'NPC 袭击部队', defenderName, wall, notifies,
     null, guard ? heroBattleView(guard, garrisonTotal) : null,
+    null, null, raidCasualties,
   );
   // v74：协防方各收到一份战报（defender 为合并编成，assistLosses 给出自己那部分损失）
-  const assistLosses = await applyDefenseBattle(client, target.cityId, setup, result, notifies);
   for (const party of assistLosses) {
     await saveBattleReport(
       client, party.accountId, 'defender', !result.attackerWon, 'city_raid',
       target.x, target.y, result, 'NPC 袭击部队', defenderName, wall, notifies,
       null, guard ? heroBattleView(guard, garrisonTotal) : null, party.losses,
+      null, raidCasualties,
     );
   }
   // v36（AISLG-116）：城守守城同样获得经验 = 歼灭敌军参考战力（守不住减半）

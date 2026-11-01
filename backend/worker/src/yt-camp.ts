@@ -10,6 +10,8 @@
 import pg from 'pg';
 import type { Resources, TroopKind } from '../../common/src/protocol';
 import { armyPower, resolveBattle } from '../../common/src/battle';
+import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { armyCarryCapacity } from '../../common/src/troops';
 import { loadByCarry, lootTotal, PLUNDERABLE_KEYS, type PlunderLoot } from '../../common/src/plunder';
 import { carryingPercent, combatTechBonus } from '../../common/src/tech';
@@ -80,9 +82,16 @@ export async function resolveCampArrival(
   });
   const label = tier === 'boss' ? `${YT_TIER_INFO.boss.label} · ${stage === 'keeper' ? '城守' : '外围'}` : YT_TIER_INFO[tier].label;
   const naming = await loadCityNaming(client, march.from_city_id);
+  // v85（AISLG-212）：黄巾营地 / 老巢——守军是 NPC；攻方伤兵与俘虏（胜时从黄巾损失抓 10%）进出发城
+  const campCasualties = splitBattleCasualties(result, false, true);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', campCasualties.attacker.wounded);
+  if (campCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', campCasualties.captives);
+  }
   const reportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon, 'yellow_turban', camp.x, camp.y, result,
     naming ? `${naming.username} · ${naming.cityName}` : '出征部队', label, 0, notifies, hero?.report ?? null,
+    null, null, null, campCasualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
 

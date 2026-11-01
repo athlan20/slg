@@ -46,6 +46,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   DISCARD_COOLDOWN: '该分城刚被本账号放弃，冷却未结束前不能再占回（冷却天数 = 放弃时的官府等级）',
   DISCARD_MAIN_CITY: '主城不能放弃，只能放弃分城',
   CITY_IN_BATTLE: '该城或其名下野地正有行军在途 / 有 NPC 来袭未结，暂不能放弃分城或遣散士兵',
+  CITY_STARVING: '该城正在断粮（粮食归零且净产量为负），只有断粮结束后才能劝回逃兵',
   ARMY_OUTSIDE: '该城仍有部队在外（行军 / 返程 / 运输 / 侦察），等它们回来后再放弃',
   WILDERNESS_GARRISONED: '名下野地里仍有驻军，请先召回（RECALL_MARCH）后再放弃',
   FAMOUS_CITY_NOT_CAPITAL: '名城不能设为主城（名城永远可被占领，只能是分城）',

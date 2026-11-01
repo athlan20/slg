@@ -7,6 +7,8 @@
 import pg from 'pg';
 import type { TroopKind } from '../../common/src/protocol';
 import { armyPower, resolveBattle } from '../../common/src/battle';
+import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { famousRecoversAt } from '../../common/src/famous-city';
@@ -47,9 +49,16 @@ export async function resolveFamousOuterArrival(
   });
   const naming = await loadCityNaming(client, march.from_city_id);
   const attackerName = naming ? `${naming.username} · ${naming.cityName}` : '出征部队';
+  // v85（AISLG-212）：名城外围野战——攻方伤兵与俘虏（胜时）进出发城
+  const outerCasualties = splitBattleCasualties(result, false, true);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', outerCasualties.attacker.wounded);
+  if (outerCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', outerCasualties.captives);
+  }
   const reportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon,
     'npc_city', tile.x, tile.y, result, attackerName, `名城 ${famous.name} · 外围（Lv${tile.level}）`, 0, notifies, hero?.report ?? null,
+    null, null, null, outerCasualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   const base = {

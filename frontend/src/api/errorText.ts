@@ -177,6 +177,27 @@ export function disbandErrorText(code: ErrorCode | undefined, message: string | 
   }
 }
 
+/** 治疗 / 招降 / 劝回失败的人读提示（v85，AISLG-212，伤兵营表单内显示） */
+export function poolErrorText(
+  code: ErrorCode | undefined,
+  message: string | undefined,
+  data?: Record<string, unknown>,
+): string {
+  const { COPY } = getCopy();
+  switch (code) {
+    case 'INSUFFICIENT_RESOURCES':
+      return COPY.errors.pools.insufficientResources + shortfallSuffix(data);
+    case 'INSUFFICIENT_POPULATION':
+      return COPY.errors.pools.insufficientPopulation + populationShortfallSuffix(data);
+    case 'CITY_STARVING':
+      return COPY.errors.pools.cityStarving;
+    case 'INVALID_PARAMS':
+      return COPY.errors.pools.invalidParams;
+    default:
+      return message ?? COPY.errors.pools.fallback;
+  }
+}
+
 /** 集市兑换失败的人读提示（兑换弹窗内显示，AISLG-67） */
 export function exchangeErrorText(
   code: ErrorCode | undefined,

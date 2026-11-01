@@ -104,3 +104,47 @@ export interface DisbandTroopsResponseData {
   /** 遣散后的城池状态（与 GET_STATE 的 city 同结构） */
   city: CityView;
 }
+
+/** 池子种类（v85，AISLG-212）：wounded 伤兵 / captive 俘虏 / deserter 逃兵 */
+export type TroopPoolKind = 'wounded' | 'captive' | 'deserter';
+
+/** 一个池子的聚合视图（v85，AISLG-212；CityView.wounded / captives / deserters 同形态） */
+export interface TroopPoolView {
+  /** 各兵种现有数量（未过期批次的合计） */
+  troops: ArmyCounts;
+  /** 最早一批的过期时刻（ISO 8601）；池子为空为 null */
+  earliestExpireAt: string | null;
+}
+
+/** RESTORE_TROOPS（op 143，v85，AISLG-212）请求载荷：治疗 / 招降 / 劝回（按 pool 区分），立即完成 */
+export interface RestoreTroopsRequestData {
+  /** 池子：wounded=治疗（征兵资源 × 50%，不扣人口）/ captive=招降（× 60%，扣人口，军营等级不设限）/ deserter=劝回（× 50%，断粮中拒绝） */
+  pool: TroopPoolKind;
+  /** 兵种 → 数量（正整数）；某兵种超过池内现有返回 INVALID_PARAMS，空对象 / 未知兵种同样 INVALID_PARAMS */
+  troops: Partial<Record<TroopKind, number>>;
+}
+
+/** RESTORE_TROOPS 响应载荷：本次回城的兵、花费与扣的人口，以及操作后的城池状态 */
+export interface RestoreTroopsResponseData {
+  /** 本次回城内驻军的兵种与数量 */
+  restored: Partial<Record<TroopKind, number>>;
+  /** 花费的资源：floor(Σ 单兵成本 × 数量 × 比例%)，五种资源分别取整（先累加后取整，同遣散口径） */
+  cost: Resources;
+  /** 扣的人口：招降 = Σ 单兵人口 × 数量（与征兵同口径）；治疗 / 劝回为 0 */
+  populationCost: number;
+  /** 操作后的城池状态（与 GET_STATE 的 city 同结构） */
+  city: CityView;
+}
+
+/** RELEASE_TROOPS（op 144，v85，AISLG-212）请求载荷：放弃治疗（伤兵消失）/ 释放俘虏（免费） */
+export interface ReleaseTroopsRequestData {
+  /** 池子：wounded=放弃治疗 / captive=释放；deserter 不能释放（只能劝回或等过期） */
+  pool: Exclude<TroopPoolKind, 'deserter'>;
+  troops: Partial<Record<TroopKind, number>>;
+}
+
+/** RELEASE_TROOPS 响应载荷：本次消失的兵与操作后的城池状态（不返还任何东西） */
+export interface ReleaseTroopsResponseData {
+  released: Partial<Record<TroopKind, number>>;
+  city: CityView;
+}

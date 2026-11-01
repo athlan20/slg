@@ -640,5 +640,16 @@
  *   响应 { disbanded, refunded, city }；事件 troops_disbanded（detail = { cityId, troops, refunded }）；
  *   PUSH_CITY_STATE 新增 reason=troops_disbanded；CityView 新增 inBattle（界面据此置灰遣散按钮）。
  *   不新增错误码（复用 CITY_IN_BATTLE / INSUFFICIENT_TROOPS）。
+ * v85（伤兵、俘虏、逃兵，AISLG-212，只加不改）：世界地图战斗的战损不再是纯减员——玩家一方各兵种损失
+ *   20% 进伤兵营（WOUNDED_PERCENT，NPC 无伤兵），胜方从败方损失抓 10% 当俘虏（CAPTURED_PERCENT，
+ *   只抓基础七兵种，平局不抓，NPC 打赢玩家不抓；败方是玩家时被俘从阵亡里扣）；断粮兵变的 10%/小时
+ *   减兵改为进逃兵营。伤兵 / 俘虏 72 小时、逃兵 24 小时过期（随全局时间缩放）；三池不吃粮、不参战、
+ *   城池消失时一起清空。新增 RESTORE_TROOPS（op 143，可选 cityId，data.pool = wounded|captive|deserter
+ *   + data.troops）：治疗 50% / 招降 60% / 劝回 50% 征兵资源（先累加后取整，同遣散口径），招降另扣人口
+ *   （军营等级不设限），立即完成回城内驻军，消耗按最早一批优先；劝回逃兵在断粮中被拒（新错误码
+ *   CITY_STARVING）。RELEASE_TROOPS（op 144）：放弃治疗 / 释放俘虏（免费，不返还，deserter 不适用）。
+ *   战报各侧新增 wounded / captured，胜方新增 captives；GET_STATE 每城新增 wounded / captives /
+ *   deserters 三组（troops 合计 + earliestExpireAt）；PUSH_CITY_STATE 新增 reason=troop_pools_changed。
+ *   新表 city_troop_pools（ON DELETE CASCADE 跟随 cities，向后兼容）。
  */
-export const PROTOCOL_VERSION = 84;
+export const PROTOCOL_VERSION = 85;

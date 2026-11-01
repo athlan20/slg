@@ -12,6 +12,8 @@ import pg from 'pg';
 import { EventType, RESOURCE_KEYS, type InitiatorRole, type Resources, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
+import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { checkOccupyNpcCity } from '../../common/src/branch-city';
@@ -118,9 +120,16 @@ export async function resolveNpcOccupyArrival(
   });
   const naming = await loadCityNaming(client, march.from_city_id);
   const attackerName = naming ? `${naming.username} · ${naming.cityName}` : '出征部队';
+  // v85（AISLG-212）：占领 NPC 城（含名城城守阶段）——攻方伤兵与俘虏（胜时从守军损失抓 10%）进出发城
+  const occupyCasualties = splitBattleCasualties(result, false, true);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', occupyCasualties.attacker.wounded);
+  if (occupyCasualties.winner === 'attacker') {
+    await recordPoolTroops(client, march.from_city_id, 'captive', occupyCasualties.captives);
+  }
   const reportId = await saveBattleReport(
     client, march.account_id, 'attacker', result.attackerWon,
     'npc_city', tile.x, tile.y, result, attackerName, `NPC 城池 Lv${tile.level}`, wall, notifies, hero?.report ?? null,
+    null, null, null, occupyCasualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   const base = {

@@ -188,7 +188,7 @@ export function Sidebar(props: SidebarProps) {
               >
                 {item.icon}
               </b>
-              <span className="max-xl:hidden max-lg:inline">{item.label}</span>
+              <span className="max-xl:hidden max-lg:inline max-lg:whitespace-nowrap max-lg:tracking-tighter">{item.label}</span>
               {badge && badge.count > 0 ? (
                 <i
                   role={`导航-${NAV_COPY_ZH.pages[key].label}-角标`}

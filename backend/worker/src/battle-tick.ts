@@ -27,6 +27,8 @@ import {
   wallDefensePercent,
   type BattleResult,
 } from '../../common/src/battle';
+import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import type { ScoutIntel } from '../../common/src/protocol-battle';
 import type { DefenseScoutView } from '../../common/src/protocol-defense';
 import { famousEncounter } from '../../common/src/famous-city';
@@ -84,6 +86,11 @@ export async function resolveBattleArrival(
     attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
   });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
+  // v85（AISLG-212）：世界地图战斗统一拆分伤兵 / 俘虏——攻方是玩家、守方是 NPC；
+  // 攻方伤兵与俘虏都进出发城（战斗结算时立即入账，不用等返程）
+  const casualties = splitBattleCasualties(result, false, true);
+  await recordPoolTroops(client, march.from_city_id, 'wounded', casualties.attacker.wounded);
+  await recordPoolTroops(client, march.from_city_id, 'captive', casualties.captives);
   if (!npc) {
     await saveNativeGarrison(client, tile, result.defender.survivors);
   }
@@ -94,6 +101,7 @@ export async function resolveBattleArrival(
     client, march.account_id, 'attacker', result.attackerWon,
     tile.kind === 'npc_city' ? 'npc_city' : 'wilderness',
     tile.x, tile.y, result, attackerName, defenderName, wall, notifies, hero?.report ?? null,
+    null, null, null, casualties,
   );
 
   if (!result.attackerWon) {
@@ -254,11 +262,17 @@ export async function resolveNpcWildernessRaid(
 ): Promise<void> {
   const { tile, level, garrison, accountId, cityId } = target;
   const raid = resolveNpcRaid(garrison, level, undefined, combatTechBonus(await loadTechLevels(client, accountId)));
+  // v85（AISLG-212）：守方是玩家（野地驻军）——伤兵进占领这块野地的城；守住（含全歼
+  // NPC 部队）时玩家从 NPC 损失里抓俘虏（败方是 NPC 也抓）；NPC 打赢时不抓
+  const raidCasualties = splitBattleCasualties(raid.result, true, false);
+  await recordPoolTroops(client, cityId, 'wounded', raidCasualties.defender.wounded);
+  await recordPoolTroops(client, cityId, 'captive', raidCasualties.captives);
   const npcPower = armyPower(npcRaidArmy(level));
   const garrisonPower = armyPower(garrison);
   const reportId = await saveBattleReport(
     client, accountId, 'defender', raid.defended, 'npc_raid',
     tile.x, tile.y, raid.result, 'NPC 袭击部队', target.defenderName, 0, target.notifies,
+    null, null, null, null, raidCasualties,
   );
   // 连胜计数（v23 AISLG-60）：守方视角的胜负同样计入（击退 +1、失守清零；与主城守城同口径）
   const naming = await loadCityNaming(client, cityId);

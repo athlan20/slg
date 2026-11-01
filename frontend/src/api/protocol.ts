@@ -215,6 +215,10 @@ export const Op = {
   SET_CAPITAL: 141,
   /** C→S 遣散士兵（v84，AISLG-209）：data.troops 按兵种给数量，可选 cityId；返还征兵成本的 50%，不退人口 */
   DISBAND_TROOPS: 142,
+  /** C→S 治疗 / 招降 / 劝回（v85，AISLG-212）：data.pool = wounded|captive|deserter + data.troops，可选 cityId；治疗 50% / 招降 60%（另扣人口）/ 劝回 50% 征兵资源，立即回城内驻军 */
+  RESTORE_TROOPS: 143,
+  /** C→S 放弃治疗 / 释放俘虏（v85，AISLG-212）：data.pool = wounded|captive + data.troops，可选 cityId；免费，池子消失不返还 */
+  RELEASE_TROOPS: 144,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -415,6 +419,7 @@ export type ErrorCode =
   | 'DISCARD_COOLDOWN'
   | 'DISCARD_MAIN_CITY'
   | 'CITY_IN_BATTLE'
+  | 'CITY_STARVING'
   | 'ARMY_OUTSIDE'
   | 'WILDERNESS_GARRISONED'
   | 'FAMOUS_CITY_NOT_CAPITAL'
@@ -916,6 +921,12 @@ export interface CityView {
   storage: StorageCaps;
   /** 城内驻军，按兵种统计（v11；征兵完成时入城） */
   army: ArmyCounts;
+  /** 伤兵营（v85，AISLG-212）：战斗中己方损失 20% 进的池子，可花征兵资源 50% 治好回城内驻军（RESTORE_TROOPS pool=wounded）；72 小时不治死亡 */
+  wounded: TroopPoolView;
+  /** 俘虏营（v85）：战胜后从败方损失抓的 10%（仅基础七兵种），招降花 60% 且扣人口（pool=captive）或免费释放（RELEASE_TROOPS）；72 小时后自动释放 */
+  captives: TroopPoolView;
+  /** 逃兵营（v85）：断粮兵变每小时减少的 10% 驻军进池，断粮结束后花 50% 劝回（pool=deserter）；24 小时后消失；断粮中不能劝回 */
+  deserters: TroopPoolView;
   /** 全军小时耗粮（v14）：城内 1 倍 + 行军/野地驻军 2 倍；production.food 为毛产量，净粮 = 两者之差 */
   armyFoodUsePerHour: number;
   /** 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向，或有未结的 NPC 来袭；为 true 时遣散会被 CITY_IN_BATTLE 拒绝 */
@@ -995,8 +1006,8 @@ export interface BuildStatePushData {
 
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
-  /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57）；capital_changed=设为主城（v82，cityId 为新主城）；troops_disbanded=城内驻军被遣散（v84） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed' | 'troops_disbanded';
+  /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57）；capital_changed=设为主城（v82，cityId 为新主城）；troops_disbanded=城内驻军被遣散（v84）；troop_pools_changed=伤兵 / 俘虏 / 逃兵池子变化（v85，附 cityId 与 pool） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -1123,6 +1134,73 @@ export interface DisbandTroopsRequestData {
 export interface DisbandTroopsResponseData {
   disbanded: Partial<Record<TroopKind, number>>;
   refunded: Resources;
+  city: CityView;
+}
+
+/** 池子种类（v85，AISLG-212）：wounded 伤兵 / captive 俘虏 / deserter 逃兵 */
+export type TroopPoolKind = 'wounded' | 'captive' | 'deserter';
+
+/** 一个池子的聚合视图（v85；CityView.wounded / captives / deserters 同形态） */
+export interface TroopPoolView {
+  /** 各兵种现有数量（未过期批次的合计） */
+  troops: ArmyCounts;
+  /** 最早一批的过期时刻（ISO 8601）；池子为空为 null */
+  earliestExpireAt: string | null;
+}
+
+/** 池子费用比例（v85，AISLG-212）：镜像 backend/common/src/battle-casualties.ts 的常量 */
+export const HEAL_COST_PERCENT = 50;
+export const CAPTIVE_RECRUIT_COST_PERCENT = 60;
+export const DESERTER_RECALL_COST_PERCENT = 50;
+/** 快过期红点阈值（小时，v85）：剩不足该时长时城池界面给红点 */
+export const POOL_EXPIRE_WARN_HOURS = 6;
+
+/**
+ * 池子费用预览（v85）：与服务端 restoreCost 同一公式——floor(Σ 单兵成本 × 数量 × percent%)，
+ * 五种资源分别累加后各取整一次。仅用于确认弹窗预览，权威结果以服务端响应的 cost 为准。
+ */
+export function restoreCostPreview(troops: Partial<Record<TroopKind, number>>, percent: number): Resources {
+  const totals: Resources = { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 };
+  for (const kind of TROOP_KINDS) {
+    const count = Math.floor(troops[kind] ?? 0);
+    if (count <= 0) {
+      continue;
+    }
+    const cost = TROOP_INFO[kind].cost;
+    for (const key of RESOURCE_KEYS) {
+      totals[key] += cost[key] * count;
+    }
+  }
+  for (const key of RESOURCE_KEYS) {
+    totals[key] = Math.floor((totals[key] * percent) / 100);
+  }
+  return totals;
+}
+
+/** RESTORE_TROOPS（op 143，v85）请求载荷：治疗 / 招降 / 劝回（按 pool 区分），立即完成回城内驻军 */
+export interface RestoreTroopsRequestData {
+  pool: TroopPoolKind;
+  troops: Partial<Record<TroopKind, number>>;
+}
+
+/** RESTORE_TROOPS 响应载荷：本次回城的兵、花费与扣的人口，以及操作后的城池状态 */
+export interface RestoreTroopsResponseData {
+  restored: Partial<Record<TroopKind, number>>;
+  cost: Resources;
+  /** 招降 = Σ 单兵人口 × 数量；治疗 / 劝回为 0 */
+  populationCost: number;
+  city: CityView;
+}
+
+/** RELEASE_TROOPS（op 144，v85）请求载荷：放弃治疗（伤兵消失）/ 释放俘虏（免费不返还）；deserter 不适用 */
+export interface ReleaseTroopsRequestData {
+  pool: Exclude<TroopPoolKind, 'deserter'>;
+  troops: Partial<Record<TroopKind, number>>;
+}
+
+/** RELEASE_TROOPS 响应载荷：本次消失的兵与操作后的城池状态（不返还任何东西） */
+export interface ReleaseTroopsResponseData {
+  released: Partial<Record<TroopKind, number>>;
   city: CityView;
 }
 
