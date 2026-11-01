@@ -1,5 +1,11 @@
 // 导航外壳与公共件文案（页面标题 / 导航 / 分页 / 弹窗 / 账号菜单 / 底栏等）。
 
+import type { PageKey } from './state/usePage';
+
+/** 一个导航项的文案：label 是全尺寸文案（桌面侧栏、顶栏标题、tooltip 用）；
+ *  shortLabel 只在手机（< 1024）底部导航用（那一行要放下 12 个入口，只改显示文字，不改桌面端），缺省回落到 label。 */
+export type NavPageCopy = { label: string; icon: string; shortLabel?: string };
+
 export const PAGED_COPY = {
   total: (n: number) => `共 ${n} 条`,
   prev: '上一页',
@@ -13,16 +19,17 @@ export const MODAL_COPY = {
 };
 
 export const NAV_COPY = {
+  // AISLG-214：手机底部导航 12 个入口平分一行，「将星塔」三个字放不下 → 手机短标签「将星」
   pages: {
     overview: { label: '总览', icon: '览' },
     map: { label: '地图', icon: '图' },
     city: { label: '城池', icon: '城' },
     army: { label: '军队', icon: '兵' },
     growth: { label: '养成', icon: '养' },
-    starTower: { label: '将星塔', icon: '塔' },
+    starTower: { label: '将星塔', icon: '塔', shortLabel: '将星' },
     intel: { label: '情报', icon: '报' },
     agent: { label: 'Agent', icon: 'A' },
-  },
+  } as Record<PageKey, NavPageCopy>,
   cityLoading: '加载中…',
   cityMain: '主城',
   cityBranch: '分城',

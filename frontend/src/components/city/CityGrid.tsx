@@ -36,12 +36,12 @@ export function CityGrid({ city, selected, onPick }: CityGridProps) {
   const remaining = activeEntry?.dueAt ? Math.max(0, Math.ceil((Date.parse(activeEntry.dueAt) - now) / 1000)) : 0;
 
   return (
-    <div role="城内视图-建筑格" className="flex shrink-0 flex-col gap-3 p-3 short:gap-2 short:p-2">
+    <div role="城内视图-建筑格" className="city-grid thin-scroll flex shrink-0 flex-col gap-3 p-3 short:gap-2 short:p-2">
       {KIND_GROUPS.map((group) => (
-        <section key={group.key} role={`城内视图-分组-${group.label}`} className="flex min-w-0 flex-col gap-1.5">
+        <section key={group.key} role={`城内视图-分组-${group.label}`} className="city-group flex min-w-0 flex-col gap-1.5">
           {/* role 沿用分组的中文 label（定位约定），显示文案按界面语言取 */}
           <h3 className="text-[11.5px] text-faint">{EXTRA_PANEL.cityGrid.groupLabel[group.key] ?? group.label}</h3>
-          <div className="grid grid-cols-4 gap-2 sm:[grid-template-columns:repeat(6,minmax(0,8.5rem))]">
+          <div className="city-group-cells grid grid-cols-4 gap-2 sm:[grid-template-columns:repeat(6,minmax(0,8.5rem))]">
             {group.kinds.map((kind) => {
               const label = BUILDING_LABEL[kind];
               const level = city?.levels[kind] ?? 0;
@@ -65,7 +65,7 @@ export function CityGrid({ city, selected, onPick }: CityGridProps) {
                   aria-pressed={isSelected}
                   disabled={city === null}
                   onClick={() => onPick(kind)}
-                  className={`relative flex h-[92px] short:h-[74px] min-w-0 max-sm:h-[66px] cursor-pointer flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border px-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tone}`}
+                  className={`city-cell relative flex h-[92px] short:h-[74px] min-w-0 max-sm:h-[66px] cursor-pointer flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border px-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tone}`}
                 >
                   {entry ? <i className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-gold" /> : null}
                   <b className="text-[19px] font-semibold leading-none">{label.short}</b>

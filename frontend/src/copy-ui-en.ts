@@ -16,13 +16,14 @@ export const MODAL_COPY_EN = {
 } satisfies typeof MODAL_COPY;
 
 export const NAV_COPY_EN = {
+  // 手机（< 1024）底部导航短标签（AISLG-214）：「Star Tower」放不下，用「Tower」
   pages: {
     overview: { label: 'Overview', icon: 'O' },
     map: { label: 'Map', icon: 'M' },
     city: { label: 'City', icon: 'C' },
     army: { label: 'Army', icon: 'A' },
     growth: { label: 'Growth', icon: 'G' },
-    starTower: { label: 'Star Tower', icon: 'T' },
+    starTower: { label: 'Star Tower', icon: 'T', shortLabel: 'Tower' },
     intel: { label: 'Intel', icon: 'I' },
     agent: { label: 'Agent', icon: 'AI' },
   },
