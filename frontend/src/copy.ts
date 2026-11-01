@@ -736,6 +736,11 @@ const EVENTS_PANEL = {
   viewReport: '战报',
   /** 侦察完成事件携带 intel（v23 AISLG-62）：点击打开侦察报告弹窗 */
   viewScoutReport: '侦察',
+  /** 多城时行内的城池名称标签（AISLG-213）：查不到该城（已放弃 / 名城被占走）时的占位与悬停提示 */
+  cityGone: '原城池',
+  cityGoneHint: '该城已不在名下',
+  /** 城池标签的悬停提示：全名 + 点击切城 */
+  cityTagHint: (name: string) => `${name}（点击切换到该城）`,
 };
 
 const LOGIN = {
