@@ -230,6 +230,10 @@ export interface ScoutIntel {
   scoutedAt: string;
   /** 名城信息（v24，AISLG-56）：侦察时刻的阶段——garrison / wallDefensePercent 即该阶段的守军与城墙口径；非名城无此字段 */
   famous?: { name: string; stage: 'outer' | 'keeper' };
+  /** 欺敌识破标记（v86，AISLG-211）：目标城有生效中的草木皆兵 / 空城计且本次侦察识破时才有——
+   *  此时 garrison 为真实驻军（照常按侦察科技降级）；没识破时情报里没有任何标记，
+   *  garrison 为按倍数换算后的假驻军（先换算、再降级）。被识破不通知施计方 */
+  deception?: { stratagem: import('./stratagem').StratagemKind; name: string; seen: true };
 }
 
 /** 发起人角色（战报 / 事件的 initiator；与协议登录类型同构） */

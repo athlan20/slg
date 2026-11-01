@@ -2,9 +2,10 @@
 // 对外文档为 docs/agent-api.md；协议调整时以后端生成文档为准同步本文件。
 
 import type { CityGuardView } from './protocol-hero';
+import type { CityStratagemView } from './protocol-stratagem';
 import { RESOURCE_KEYS } from './protocol-wire';
 
-export const PROTOCOL_VERSION = 84;
+export const PROTOCOL_VERSION = 86;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -219,6 +220,10 @@ export const Op = {
   RESTORE_TROOPS: 143,
   /** C→S 放弃治疗 / 释放俘虏（v85，AISLG-212）：data.pool = wounded|captive + data.troops，可选 cityId；免费，池子消失不返还 */
   RELEASE_TROOPS: 144,
+  /** C→S 查询计谋（v86，AISLG-211）：8 个计谋定义 + 4 类计谋令持有数 + 逐武将效果预览；带 target 时附成功率 / 免疫 / 保护判定 */
+  GET_STRATAGEMS: 145,
+  /** C→S 施计（v86，AISLG-211）：data.heroId + data.stratagem + data.target = { cityId } | { marchId } | { attackId }；扣 1 张令并冷却 1 小时 */
+  CAST_STRATAGEM: 146,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -276,6 +281,8 @@ export const Op = {
   PUSH_DEFENSE_STATE: 2026,
   /** 剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198）：全部在线连接收到 */
   PUSH_BATTLEFIELD_STATE: 2027,
+  /** 被施计警报（v86，AISLG-211）：会失败的计谋不论成败都推给目标玩家（欺敌类与金蝉脱壳不推） */
+  PUSH_STRATAGEM: 2028,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
@@ -435,6 +442,15 @@ export type ErrorCode =
   | 'STAR_TOWER_CLEARED'
   | 'STAR_TOWER_NO_CITY'
   | 'STAR_TOWER_NO_LINEUP'
+  | 'HERO_STRATAGEM_COOLDOWN'
+  | 'HERO_NOT_AVAILABLE'
+  | 'TARGET_PROTECTED'
+  | 'TRUCE_ACTIVE'
+  | 'ALLY_TARGET'
+  | 'INVALID_TARGET'
+  | 'STRATAGEM_TOKEN_SHORT'
+  | 'STRATAGEM_TOKEN_FULL'
+  | 'CITY_AMBUSHED'
   /** 换季维护中（v65）：除 GET_SEASON 与登录相关协议外一律返回，响应附 retryAfterSec（秒） */
   | 'MAINTENANCE'
   | 'INTERNAL';
@@ -442,6 +458,7 @@ export type ErrorCode =
 // 协议载荷补齐（v65）：请求 / 响应类型、枚举常量与守卫，以及赛季协议（GET_SEASON / GET_HALL_OF_FAME / PUSH_SEASON）
 export * from './protocol-wire';
 export * from './protocol-season';
+export * from './protocol-stratagem';
 
 export interface Resources {
   gold: number;
@@ -931,6 +948,8 @@ export interface CityView {
   armyFoodUsePerHour: number;
   /** 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向，或有未结的 NPC 来袭；为 true 时遣散会被 CITY_IN_BATTLE 拒绝 */
   inBattle: boolean;
+  /** 生效中的计谋效果（v86，AISLG-211）：欺敌（倍数只对城主自己可见）/ 十面埋伏锁城截止 / 趁火打劫 */
+  stratagems: CityStratagemView;
   /** 全局时间缩放（v20，AISLG-38）：本地折算时长（如掠夺冷却剩余）时使用，勿按文档基准硬算 */
   timeScale: number;
   /** 主城免战截止（v22，AISLG-40）：被 NPC 攻破后 2×袭击间隔（÷timeScale）内不再入袭击目标池；null = 不在免战。
@@ -1007,7 +1026,7 @@ export interface BuildStatePushData {
 /** PUSH_CITY_STATE（op 2002）推送载荷：城池级状态变化 */
 export interface CityStatePushData {
   /** city_renamed=城池改名；account_reset=账号数据被重置（v9）；city_discarded=分城被放弃（v57）；capital_changed=设为主城（v82，cityId 为新主城）；troops_disbanded=城内驻军被遣散（v84）；troop_pools_changed=伤兵 / 俘虏 / 逃兵池子变化（v85，附 cityId 与 pool） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed';
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;

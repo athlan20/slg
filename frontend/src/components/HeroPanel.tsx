@@ -25,7 +25,7 @@ interface HeroPanelProps {
 export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
   const copy = useCopy();
   const { EXTRA_PANEL, HERO_COPY } = copy;
-  const { chat } = useGame().session;
+  const { chat, stratagem } = useGame().session;
   const { state, error, busy } = session;
   const now = useNow(state !== null && state.heroes.length > 0);
   const cityNames: Record<string, string> = Object.fromEntries(cityList.cities.map((item) => [item.id, item.name]));
@@ -74,6 +74,7 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
                 onCancelTrain={() => void session.cancelTraining(hero.id)}
                 onGift={() => void session.gift(hero.id)}
                 onReset={() => void session.reset(hero.id)}
+                onCastStratagem={() => stratagem.openPanel({ heroId: hero.id })}
               />
             )}
           />

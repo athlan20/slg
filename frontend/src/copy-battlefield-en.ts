@@ -116,6 +116,8 @@ export const BATTLEFIELD_COPY_EN = {
     heroPick: 'Pick a hero',
     heroNone: 'No hero available',
     bought: 'Redeemed',
+    tokenHold: (have: number, limit: number) => `Hold ${have}/${limit}`,
+    tokenFull: 'Hold limit reached',
   },
   merit: {
     title: 'Merit board',

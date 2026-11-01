@@ -54,6 +54,7 @@ import {
 import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 import { recordPoolTroops } from '../../common/src/troop-pools-db';
+import { lootFirePercentOf } from '../../common/src/stratagem-db';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -267,12 +268,15 @@ export async function resolvePvpPlunderArrival(
   // 再按幸存部队负重装填；一次性扣减、不改归属
   const attackerGov = await governmentLevel(client, march.from_city_id);
   const defenderGov = await governmentLevel(client, city.id);
+  // v86（AISLG-211）：目标城中了趁火打劫时，仓库防掠保护降低 min(智力 × 0.5%, 30%)——
+  // 与名城加成同池相减后再算保护额（protectionPercent 允许为负，下限 0）
+  const lootFire = await lootFirePercentOf(client, city.id, now);
   const pool = pvpPlunderPool(
     { gold: city.gold, wood: city.wood, food: city.food, stone: city.stone, iron: city.iron },
     levels.warehouse ?? 0,
     attackerGov,
     defenderGov,
-    famousWarehousePercent(famousName),
+    famousWarehousePercent(famousName) - lootFire,
   );
   const carry = armyCarryCapacity(result.attacker.survivors, carryingPercent(await loadTechLevels(client, march.account_id)));
   const loot = loadByCarry(carry, pool);

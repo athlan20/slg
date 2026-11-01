@@ -12,6 +12,7 @@ import { ChatShareButton } from '../chat/ChatShareButton';
 import { cityShareLabel } from '../chat/chatText';
 import { tName } from '../../i18n/names';
 import { famousEffectText } from '../famousEffectText';
+import { StratagemCityNote } from '../stratagem/StratagemCityNote';
 
 export function CityStatsCard({ city }: { city: CityView | null }) {
   const copy = useCopy();
@@ -118,6 +119,7 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
           {CITY_COPY.famous.title(tName(city.famousName))} · {CITY_COPY.famous.effectRow(famousEffectText(city.famousEffect, CITY_COPY.famous.effect, RESOURCE_LABEL))}
         </p>
       ) : null}
+      {city ? <StratagemCityNote city={city} /> : null}
       <PagedList
         role="城池页-概况-列表"
         items={rows}

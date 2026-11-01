@@ -112,8 +112,9 @@ export interface CityStatePushData {
    *  assist_changed=协防部队入驻 / 召回 / 遣返 / 自动遣返（v74，AISLG-194；收到后重新 GET_STATE / GET_TILE）；
    *  capital_changed=设为主城（v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城；收到后重新 GET_STATE）；
    *  troops_disbanded=城内驻军被遣散（v84，AISLG-209；cityId 为遣散的城，收到后重新 GET_STATE）；
-   *  troop_pools_changed=伤兵 / 俘虏 / 逃兵池子发生变化（v85，AISLG-212；战斗结算入账、治疗 / 招降 / 劝回、放弃 / 释放、断粮兵变与过期清理后） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed';
+   *  troop_pools_changed=伤兵 / 俘虏 / 逃兵池子发生变化（v85，AISLG-212；战斗结算入账、治疗 / 招降 / 劝回、放弃 / 释放、断粮兵变与过期清理后）；
+   *  stratagem=城池中了计谋（v86，AISLG-211；烧粮 / 十面埋伏 / 趁火打劫 / 欺敌覆盖；收到后重新 GET_STATE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -186,6 +187,10 @@ export const EventType = {
   CAPITAL_CHANGED: 'capital_changed',
   /** v84（AISLG-209）：遣散城内驻军（detail = { cityId, troops, refunded }；返还征兵成本的 50%） */
   TROOPS_DISBANDED: 'troops_disbanded',
+  /** v86（AISLG-211）：施计（施计方的事件流；detail = { stratagem, heroId, heroName, target, success, effect, tokenKind, tokensLeft }） */
+  STRATAGEM_CAST: 'stratagem_cast',
+  /** v86（AISLG-211）：被施计（目标方的事件流，与 PUSH_STRATAGEM 同构；欺敌类与金蝉脱壳不写） */
+  STRATAGEM_RECEIVED: 'stratagem_received',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
   /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */
@@ -415,6 +420,9 @@ export interface CityView {
   queue: BuildView[];
   /** 兼容字段：当前在建建筑（= queue[0]，仅当其 status 为 building；无在建为 null） */
   building: BuildView | null;
+  /** 生效中的计谋效果（v86，AISLG-211）：deception 为本城欺敌（倍数只对城主自己可见，别人只能经侦察拿到换算后的情报）；
+   *  ambushedUntil 十面埋伏锁城截止（出兵类操作被拒）；lootFire 仓库防掠保护降低 */
+  stratagems: import('./protocol-stratagem').CityStratagemView;
 }
 
 export interface EventView {

@@ -90,7 +90,7 @@ export function pushAttackWarning(ctx: HandlerContext, defenderAccountId: string
 export async function breakNewbieProtection(
   client: pg.PoolClient,
   accountId: string,
-  cause: 'scout' | 'plunder' | 'occupy',
+  cause: 'scout' | 'plunder' | 'occupy' | 'stratagem',
   target: { username: string; x: number; y: number },
   initiator: InitiatorRole,
 ): Promise<boolean> {

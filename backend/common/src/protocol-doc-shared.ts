@@ -144,6 +144,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     captives: { troops: { ...EMPTY_ARMY } as ArmyCounts, earliestExpireAt: null },
     deserters: { troops: { ...EMPTY_ARMY } as ArmyCounts, earliestExpireAt: null },
     inBattle: false,
+    stratagems: { deception: null, ambushedUntil: null, lootFireUntil: null, lootFirePercent: 0 },
     timeScale: 1,
     truceUntil: null,
     newbieUntil: null,

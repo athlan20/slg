@@ -60,6 +60,8 @@ import { ALLIANCE_COPY_EN } from '../copy-alliance-en';
 import { BATTLEFIELD_COPY_EN } from '../copy-battlefield-en';
 import { MARKET_COPY_EN } from '../copy-market-en';
 import { LUOYANG_COPY_EN } from '../copy-luoyang-en';
+import { STRATAGEM_COPY } from '../copy-stratagem';
+import { STRATAGEM_COPY_EN } from '../copy-stratagem-en';
 import { SHORTFALL_COPY } from '../copy-shortfall';
 import { SHORTFALL_COPY_EN } from '../copy-shortfall-en';
 
@@ -114,6 +116,7 @@ const ZH = {
   SEASON_COPY,
   HALL_COPY,
   SHORTFALL_COPY,
+  STRATAGEM_COPY,
 };
 
 export type Bundle = typeof ZH;
@@ -169,6 +172,7 @@ const EN: Bundle = {
   SEASON_COPY: SEASON_COPY_EN,
   HALL_COPY: HALL_COPY_EN,
   SHORTFALL_COPY: SHORTFALL_COPY_EN,
+  STRATAGEM_COPY: STRATAGEM_COPY_EN,
 };
 
 const BUNDLES: Record<Lang, Bundle> = { zh: ZH, en: EN };

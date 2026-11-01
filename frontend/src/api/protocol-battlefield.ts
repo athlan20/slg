@@ -7,7 +7,17 @@ import type { ArmyCounts, TroopKind } from './protocol';
 export const BATTLEFIELD_CAMPS = ['yuan', 'cao'] as const;
 export type BattlefieldCamp = (typeof BATTLEFIELD_CAMPS)[number];
 
-export const BATTLEFIELD_SHOP_ITEMS = ['resources', 'hero_exp', 'swordsman', 'cavalry', 'iron_cavalry'] as const;
+export const BATTLEFIELD_SHOP_ITEMS = [
+  'resources',
+  'hero_exp',
+  'swordsman',
+  'cavalry',
+  'iron_cavalry',
+  'stratagem_deception',
+  'stratagem_march',
+  'stratagem_assault',
+  'stratagem_intel',
+] as const;
 export type BattlefieldShopItem = (typeof BATTLEFIELD_SHOP_ITEMS)[number];
 
 /** 剧本：官渡之战 / 讨伐董卓（全服合作）/ 赤壁之战；每周一场轮换 */
@@ -102,7 +112,16 @@ export interface BattlefieldShopItemView {
   cost: number;
   limit: number;
   bought: number;
-  reward: { resources?: Resources; heroExp?: number; troop?: TroopKind; count?: number };
+  /** 计谋令的持有上限（v86，AISLG-211；其余商品为 null） */
+  holdLimit: number | null;
+  reward: {
+    resources?: Resources;
+    heroExp?: number;
+    troop?: TroopKind;
+    count?: number;
+    /** 计谋令（v86）：兑换后入持有数，类别同 StratagemTokenKind */
+    stratagemToken?: import('./protocol-stratagem').StratagemTokenKind;
+  };
 }
 
 export interface BattlefieldRewardTierView {

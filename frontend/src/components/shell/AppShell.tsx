@@ -1,7 +1,7 @@
 /** 已登录外壳（方案 D「导航工作区」）：侧栏 + 顶栏 + 单页工作区 + 底栏。工作区一次只放一页，每页是固定单屏网格，
  *  内容放不下就分页 / 截断，任何窗口尺寸都不出现竖向滚动条。账号相关确认框在这里挂载。 */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
 import { activeMarches } from '../../state/progressItems';
@@ -24,9 +24,17 @@ import { SeasonOverlay } from '../season/SeasonOverlay';
 
 export function AppShell() {
   const { session, incoming, openWarning, openLeaderboard } = useGame();
-  const { page, go, seenReportId, requestExchange } = useNav();
+  const { page, go, seenReportId, requestExchange, battlefieldAsk } = useNav();
   const [dialog, setDialog] = useState<AccountDialogMode | null>(null);
   const [battlefieldOpen, setBattlefieldOpen] = useState(false);
+  // 施计弹窗里的「去战场商店兑换」：请求 id 变化即打开剧本战场（商店在里面）
+  useEffect(() => {
+    if (battlefieldAsk.id > 0) {
+      setBattlefieldOpen(true);
+      void session.battlefield.fetchState();
+      void session.stratagem.fetch();
+    }
+  }, [battlefieldAsk.id, session.battlefield]);
   const [marketOpen, setMarketOpen] = useState(false);
   const city = session.city;
   const onSelectCity = (cityId: string) => void session.switchCity(cityId);
@@ -84,7 +92,13 @@ export function AppShell() {
         onSelectCity={onSelectCity}
         switching={city === null}
         battlefield={session.battlefield.state?.event ?? null}
-        onOpenBattlefield={() => setBattlefieldOpen(true)}
+        onOpenBattlefield={() => {
+          setBattlefieldOpen(true);
+          // v86（AISLG-211）：商店里的计谋令行要显示持有数 / 上限
+          if (session.stratagem.state === null) {
+            void session.stratagem.fetch();
+          }
+        }}
         onOpenMarket={() => setMarketOpen(true)}
       />
       <main role="导航-工作区" className="nav-work">

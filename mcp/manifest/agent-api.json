@@ -1,5 +1,5 @@
 {
-  "version": 85,
+  "version": 86,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -677,6 +677,12 @@
             "earliestExpireAt": null
           },
           "inBattle": false,
+          "stratagems": {
+            "deception": null,
+            "ambushedUntil": null,
+            "lootFireUntil": null,
+            "lootFirePercent": 0
+          },
           "timeScale": 1,
           "truceUntil": null,
           "newbieUntil": null,
@@ -867,7 +873,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 85,
+                "protocolVersion": 86,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -916,7 +922,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 85,
+                "protocolVersion": 86,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -936,14 +942,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/82 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/83 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 82,
+              "docVersion": 83,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -958,8 +964,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 85,
-                "docNotice": "接口文档已从 v82 更新到 v85：请 GET /agent-api/changes/82 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 86,
+                "docNotice": "接口文档已从 v83 更新到 v86：请 GET /agent-api/changes/83 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -1694,6 +1700,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -2131,6 +2143,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -2604,6 +2622,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -4159,6 +4183,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -10831,6 +10861,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -11537,6 +11573,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -12353,6 +12395,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -13042,6 +13090,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -14462,7 +14516,7 @@
       "name": "GET_BATTLEFIELD",
       "title": "查询剧本战场（官渡之战，v75，AISLG-198）",
       "preAuth": false,
-      "summary": "周期性的剧本战场，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）。每周一场，剧本按周轮换：官渡之战 → 讨伐董卓 → 赤壁之战（循环），本场剧本见 event.script、下一场见 nextScript。官渡之战（script=guandu）是阵营对阵：报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。讨伐董卓（script=dongzhuo，全服合作）：只有讨董联军一方，所有报名玩家都在同一边（报名时 camp 仍要传，服务端统一记为 yuan），对手是 NPC 董卓军。一条推进线 汜水关 → 虎牢关 → 洛阳，前一关打下后下一关才开放（strongholds[].unlocked）。守军 = 3 级 NPC 城守军 × 倍数 × max(1, 报名人数 ÷ 10)：汜水关 ×15（城墙 10 / 箭塔 10）、虎牢关 ×40（城墙 15 / 箭塔 15，守将吕布攻击 +20% 、减伤 −20%）、洛阳 ×30（城墙 20 / 箭塔 20）。守军伤亡保留不回血。攻下洛阳即结束（胜）；时间到也结束。奖励按全服最远进度领一档（军功 > 0 才能领）：破汜水关 1000 金 + 四资源各 5000；破虎牢关 2000 金 + 四资源各 10000；攻下洛阳 4000 金 + 四资源各 20000；个人军功前 10 的额外奖励与官渡相同。没有玩家对抗。 赤壁之战（script=chibi）：孙刘联军（yuan）对曹操军（cao），人数限制、人少补偿、胜负判定、奖励表与官渡相同；报名要求爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。地图同为 30×30 与河（x=15，3 处渡口），双方各 4 个据点加各 1 座大营（共 10 个，见 strongholds）；大营与据点守军、积分产出与官渡对应据点相同（大营守军 ×10，城墙 / 箭塔 10）。风向：开战时随机东南风（se）或西北风（nw），之后每 6 小时交替一次，切换前 30 分钟预告；event.wind = { direction, label, bonusCamp, nextAt, noticeAt }。顺风方（se 利孙刘、nw 利曹操）的远程兵种与床弩射程 +10%（战报可见）。火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）：孙刘方、东南风期间，花 300 军功，火攻与己方据点相邻（曼哈顿距离 ≤ 10）的曹方据点，立即对守军造成总生命 20% 的伤害；同一目标每 2 小时最多一次。连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，op 140）：曹方给己方据点花 200 军功连锁 6 小时：守军受到的伤害 −15%，但被火攻时伤害翻倍（20% → 40%）。赤壁商店另有铁骑兵 20（直接进主城，800 军功，每场限 1 次）。",
+      "summary": "周期性的剧本战场，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）。每周一场，剧本按周轮换：官渡之战 → 讨伐董卓 → 赤壁之战（循环），本场剧本见 event.script、下一场见 nextScript。官渡之战（script=guandu）是阵营对阵：报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）；欺敌令 100 军功（每场限 4）；行军令 150 军功（每场限 3）；攻心令 250 军功（每场限 2）；情报令 150 军功（每场限 2）。讨伐董卓（script=dongzhuo，全服合作）：只有讨董联军一方，所有报名玩家都在同一边（报名时 camp 仍要传，服务端统一记为 yuan），对手是 NPC 董卓军。一条推进线 汜水关 → 虎牢关 → 洛阳，前一关打下后下一关才开放（strongholds[].unlocked）。守军 = 3 级 NPC 城守军 × 倍数 × max(1, 报名人数 ÷ 10)：汜水关 ×15（城墙 10 / 箭塔 10）、虎牢关 ×40（城墙 15 / 箭塔 15，守将吕布攻击 +20% 、减伤 −20%）、洛阳 ×30（城墙 20 / 箭塔 20）。守军伤亡保留不回血。攻下洛阳即结束（胜）；时间到也结束。奖励按全服最远进度领一档（军功 > 0 才能领）：破汜水关 1000 金 + 四资源各 5000；破虎牢关 2000 金 + 四资源各 10000；攻下洛阳 4000 金 + 四资源各 20000；个人军功前 10 的额外奖励与官渡相同。没有玩家对抗。 赤壁之战（script=chibi）：孙刘联军（yuan）对曹操军（cao），人数限制、人少补偿、胜负判定、奖励表与官渡相同；报名要求爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。地图同为 30×30 与河（x=15，3 处渡口），双方各 4 个据点加各 1 座大营（共 10 个，见 strongholds）；大营与据点守军、积分产出与官渡对应据点相同（大营守军 ×10，城墙 / 箭塔 10）。风向：开战时随机东南风（se）或西北风（nw），之后每 6 小时交替一次，切换前 30 分钟预告；event.wind = { direction, label, bonusCamp, nextAt, noticeAt }。顺风方（se 利孙刘、nw 利曹操）的远程兵种与床弩射程 +10%（战报可见）。火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）：孙刘方、东南风期间，花 300 军功，火攻与己方据点相邻（曼哈顿距离 ≤ 10）的曹方据点，立即对守军造成总生命 20% 的伤害；同一目标每 2 小时最多一次。连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，op 140）：曹方给己方据点花 200 军功连锁 6 小时：守军受到的伤害 −15%，但被火攻时伤害翻倍（20% → 40%）。赤壁商店另有铁骑兵 20（直接进主城，800 军功，每场限 1 次）。",
       "requestFields": [],
       "dataFields": [
         {
@@ -14745,6 +14799,38 @@
                         "troop": "cavalry",
                         "count": 50
                       }
+                    },
+                    {
+                      "item": "stratagem_deception",
+                      "label": "欺敌令",
+                      "cost": 100,
+                      "limit": 4,
+                      "bought": 0,
+                      "reward": {}
+                    },
+                    {
+                      "item": "stratagem_march",
+                      "label": "行军令",
+                      "cost": 150,
+                      "limit": 3,
+                      "bought": 0,
+                      "reward": {}
+                    },
+                    {
+                      "item": "stratagem_assault",
+                      "label": "攻心令",
+                      "cost": 250,
+                      "limit": 2,
+                      "bought": 0,
+                      "reward": {}
+                    },
+                    {
+                      "item": "stratagem_intel",
+                      "label": "情报令",
+                      "cost": 150,
+                      "limit": 2,
+                      "bought": 0,
+                      "reward": {}
                     }
                   ]
                 },
@@ -15378,7 +15464,7 @@
       "name": "BUY_BATTLEFIELD_ITEM",
       "title": "战场商店兑换（v75，AISLG-198）",
       "preAuth": false,
-      "summary": "用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。赤壁场次另有 铁骑兵 800 军功（直接进主城，每场限 1 次）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。",
+      "summary": "用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）；欺敌令 100 军功（每场限 4）；行军令 150 军功（每场限 3）；攻心令 250 军功（每场限 2）；情报令 150 军功（每场限 2）。赤壁场次另有 铁骑兵 800 军功（直接进主城，每场限 1 次）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。",
       "requestFields": [
         {
           "name": "item",
@@ -17549,6 +17635,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -18105,6 +18197,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -18559,6 +18657,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -19072,6 +19176,12 @@
                     "earliestExpireAt": null
                   },
                   "inBattle": false,
+                  "stratagems": {
+                    "deception": null,
+                    "ambushedUntil": null,
+                    "lootFireUntil": null,
+                    "lootFirePercent": 0
+                  },
                   "timeScale": 1,
                   "truceUntil": null,
                   "newbieUntil": null,
@@ -19159,6 +19269,398 @@
         }
       ],
       "agentNote": "只在没有更优选择时用：治疗 / 招降能拿回兵，放弃 / 释放什么都拿不到。同账号其他在线连接会收到 PUSH_CITY_STATE（reason=troop_pools_changed，附 cityId 与 pool）。"
+    },
+    {
+      "op": 145,
+      "kind": "request",
+      "name": "GET_STRATAGEMS",
+      "title": "查询计谋定义、计谋令与逐武将效果预览（v86，AISLG-211）",
+      "preAuth": false,
+      "summary": "返回 8 个计谋的定义（类别、目标类型、所需计谋令、是否可失败、免疫时长）、账号 4 类计谋令的持有数与上限，以及每名武将按自身智力算好的效果预览与冷却状态；请求里再带 target 时额外返回对该目标的判定（成功率、是否免疫、是否受新手保护 / 免战 / 同盟限制）。计谋用「计谋令」施放，令**只能用战场军功在战场商店兑换**（BUY_BATTLEFIELD_ITEM 的 stratagem_* 商品：欺敌令（deception）军功价 100、每场限购 4、持有上限 6；行军令（march）军功价 150、每场限购 3、持有上限 5；攻心令（assault）军功价 250、每场限购 2、持有上限 3；情报令（intel）军功价 150、每场限购 2、持有上限 3），不退金币、不能转让；令与军功一起换季清零。施计不花金币，每次消耗 1 张对应类别的令，**成功失败都扣**；施计后该武将冷却 60 分钟（随全局时间缩放）。8 个计谋：草木皆兵 / 空城计（欺敌，别人侦察你的城时看到倍数换算后的假驻军，侦察方侦察科技每级 5% 概率识破）、焚烧粮草（烧掉对方一座城现存粮食的 min(智力 × 0.1%, 8%)）、趁火打劫（该城仓库防掠保护降 min(智力 × 0.5%, 30%) 持续 1 小时）、十面埋伏（该城 min(智力, 60) 分钟不能派任何部队）、金蝉脱壳（自己返程部队剩余时间缩短 min(智力%, 50%)，每支一次）、八门金锁（开往你城池 / 野地的敌方部队剩余行军时间延长 min(智力 × 0.5%, 30%)）、蛛丝马迹（列出目标玩家全部城池坐标与在外部队去向）。会失败的计谋成功率 = 50% + (施计武将智力 − 目标城城守智力) × 1%，钳 20%..90%（目标无城守按 0）；成功后目标对该种计免疫（6 / 24 小时，随缩放）。",
+      "requestFields": [
+        {
+          "name": "target",
+          "type": "object | 省略",
+          "desc": "可选。带上时附带对该目标的判定：{ stratagem, heroId, cityId?, marchId?, attackId? }。cityId 用于城类计谋（自己的城 / 敌方玩家的城），marchId 用于金蝉脱壳（自己的返程行军）或八门金锁（开往自己城池 / 野地的敌方玩家行军），attackId 用于八门金锁挡 NPC 袭击。省略则只返回定义、令与武将预览。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "stratagems",
+          "type": "object[]",
+          "desc": "8 个计谋的定义：kind（phantom_army / empty_fort / burn_granary / loot_fire / ambush_all_sides / golden_cicada / eight_gates / spy_trail）、name、nameEn、category（deception / assault / march / intel）、tokenKind（deception / march / assault / intel）、targetType、canFail（是否走成功率判定）、notifiesTarget（目标玩家是否收到警报；欺敌与金蝉脱壳为 false）、offensive（进攻类，受 PvP 保护与同盟限制）、immunitySeconds（成功后该目标的免疫时长，无免疫为 null）。"
+        },
+        {
+          "name": "tokens",
+          "type": "object",
+          "desc": "账号 4 类计谋令的持有数 { deception, march, assault, intel }。"
+        },
+        {
+          "name": "tokenLimits",
+          "type": "object",
+          "desc": "4 类令的持有上限（战场商店兑换到上限返回 STRATAGEM_TOKEN_FULL）。"
+        },
+        {
+          "name": "heroes",
+          "type": "object[]",
+          "desc": "账号每名武将：heroId、name、famous、wit、available、unavailableReason（training 历练中 / wounded 重伤中 / busy 随队出征中 / cooldown 冷却中 / null）、cooldownUntil、effects（按该武将智力算好的效果预览：倍数区间、烧粮比例、保护降低比例、锁城分钟数、缩短 / 延长比例、持续毫秒数）。"
+        },
+        {
+          "name": "target",
+          "type": "object | null",
+          "desc": "带 target 时的判定：stratagem、heroId、valid、invalidReason（INVALID_TARGET 等）、successPercent（不会失败的计谋恒 100）、immuneUntil（目标对该计的免疫截止，不在免疫期为 null）、guardWit（目标城城守智力）、protectedReason（TARGET_PROTECTED / TRUCE_ACTIVE / ALLY_TARGET / null）。不带 target 为 null。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS"
+      ],
+      "examples": [
+        {
+          "caption": "查询定义、令与武将预览（不带 target）",
+          "request": {
+            "op": 145,
+            "seq": 51,
+            "data": {}
+          },
+          "responses": [
+            {
+              "op": 145,
+              "seq": 51,
+              "ok": true,
+              "data": {
+                "stratagems": [
+                  {
+                    "kind": "phantom_army",
+                    "name": "草木皆兵",
+                    "nameEn": "Phantom Army",
+                    "category": "deception",
+                    "tokenKind": "deception",
+                    "targetType": "own_city",
+                    "canFail": false,
+                    "notifiesTarget": false,
+                    "offensive": false,
+                    "immunitySeconds": null
+                  },
+                  {
+                    "kind": "burn_granary",
+                    "name": "焚烧粮草",
+                    "nameEn": "Burn the Granary",
+                    "category": "assault",
+                    "tokenKind": "assault",
+                    "targetType": "enemy_city",
+                    "canFail": true,
+                    "notifiesTarget": true,
+                    "offensive": true,
+                    "immunitySeconds": 21600
+                  }
+                ],
+                "tokens": {
+                  "deception": 2,
+                  "march": 1,
+                  "assault": 1,
+                  "intel": 0
+                },
+                "tokenLimits": {
+                  "deception": 6,
+                  "march": 5,
+                  "assault": 3,
+                  "intel": 3
+                },
+                "heroes": [
+                  {
+                    "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+                    "name": "荀彧",
+                    "famous": true,
+                    "wit": 96,
+                    "available": true,
+                    "unavailableReason": null,
+                    "cooldownUntil": null,
+                    "effects": {
+                      "phantom_army": {
+                        "multiplierPercent": [
+                          300,
+                          500
+                        ],
+                        "durationMs": 57600000
+                      },
+                      "empty_fort": {
+                        "multiplierPercent": [
+                          10,
+                          20,
+                          30
+                        ],
+                        "durationMs": 57600000
+                      },
+                      "burn_granary": {
+                        "burnFoodPercent": 8
+                      },
+                      "loot_fire": {
+                        "protectionDownPercent": 30,
+                        "durationMs": 3600000
+                      },
+                      "ambush_all_sides": {
+                        "ambushMinutes": 60,
+                        "durationMs": 3600000
+                      },
+                      "golden_cicada": {
+                        "returnFasterPercent": 50
+                      },
+                      "eight_gates": {
+                        "marchSlowerPercent": 30
+                      },
+                      "spy_trail": {}
+                    }
+                  }
+                ],
+                "target": null
+              }
+            }
+          ]
+        },
+        {
+          "caption": "带 target：查询对某座敌城的成功率与保护状态",
+          "request": {
+            "op": 145,
+            "seq": 52,
+            "data": {
+              "target": {
+                "stratagem": "burn_granary",
+                "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+                "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+              }
+            }
+          },
+          "responses": [
+            {
+              "op": 145,
+              "seq": 52,
+              "ok": true,
+              "data": {
+                "stratagems": [
+                  "（同上，8 项）"
+                ],
+                "tokens": {
+                  "deception": 2,
+                  "march": 1,
+                  "assault": 1,
+                  "intel": 0
+                },
+                "tokenLimits": {
+                  "deception": 6,
+                  "march": 5,
+                  "assault": 3,
+                  "intel": 3
+                },
+                "heroes": [
+                  "（同上）"
+                ],
+                "target": {
+                  "stratagem": "burn_granary",
+                  "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+                  "valid": true,
+                  "successPercent": 90,
+                  "immuneUntil": null,
+                  "guardWit": 0,
+                  "protectedReason": null
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "先 GET_STRATAGEMS（可带 target）确认令够、武将在家且不在冷却、目标不在免疫期与保护中，再发 CAST_STRATAGEM。成功率按施计武将智力与目标城城守智力算出，已在本协议里给出，不用自己算。令只能用剧本战场军功在战场商店兑换，买满一场共 11 张（1,650 军功），要和资源包取舍。"
+    },
+    {
+      "op": 146,
+      "kind": "request",
+      "name": "CAST_STRATAGEM",
+      "title": "施放计谋（v86，AISLG-211）",
+      "preAuth": false,
+      "summary": "派一名**在家的**武将消耗 1 张对应类别的计谋令施计。武将必须在家（不在出征 / 随行、不在历练、不在重伤），施计后冷却 60 分钟（随缩放），冷却中返回 HERO_STRATAGEM_COOLDOWN（附 retryAfterSeconds）。令不够返回 STRATAGEM_TOKEN_SHORT（附 tokenKind / have），此时不扣任何东西；令一旦够就**扣令 + 冷却**，之后免疫或成功率判定失败也照扣（同老游戏）。会失败的计谋（焚烧粮草 / 趁火打劫 / 十面埋伏 / 八门金锁 / 蛛丝马迹）成功率 = 50% + (施计智力 − 目标城城守智力) × 1%，钳 20%..90%；不论成败目标玩家都收到警报（PUSH_STRATAGEM + stratagem_received 事件），欺敌类与金蝉脱壳不通知任何人。成功中计后目标对该种计免疫（焚烧粮草 / 八门金锁 6 小时，趁火打劫 / 十面埋伏 / 蛛丝马迹 24 小时；免疫期内再施直接判失败、照常扣令与冷却）。进攻类计谋（焚烧粮草 / 趁火打劫 / 十面埋伏 / 蛛丝马迹）与 PvP 规则一致：目标在新手保护或免战中返回 TARGET_PROTECTED；自己主动免战中返回 TRUCE_ACTIVE；同盟 / 友盟返回 ALLY_TARGET；自己在新手保护中施进攻类计谋会让新手保护立即失效。欺敌、金蝉脱壳、八门金锁是防守类，任何时候都能用。所有持续时长按全局时间缩放换算。",
+      "requestFields": [
+        {
+          "name": "heroId",
+          "type": "string",
+          "desc": "必填。施计武将 id，必须是本账号的武将在且在家（GET_STRATAGEMS 的 heroes[].available）。"
+        },
+        {
+          "name": "stratagem",
+          "type": "string",
+          "desc": "必填。计谋 kind：phantom_army 草木皆兵 / empty_fort 空城计（自己的城）、burn_granary 焚烧粮草 / loot_fire 趁火打劫 / ambush_all_sides 十面埋伏（敌方玩家的城）、golden_cicada 金蝉脱壳（自己的返程行军）、eight_gates 八门金锁（开往自己城池 / 野地的敌方部队）、spy_trail 蛛丝马迹（敌方玩家，用他的任意一座城指定）。"
+        },
+        {
+          "name": "target",
+          "type": "object",
+          "desc": "必填。{ cityId } | { marchId } | { attackId } 三选一：城类计谋给 cityId；金蝉脱壳给自己返程行军的 marchId；八门金锁给敌方行军的 marchId，或挡 NPC 袭击时给 attackId。不合法的组合返回 INVALID_TARGET（不扣令）。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "success",
+          "type": "boolean",
+          "desc": "是否生效。免疫期内施计与成功率判定失败都为 false（令与武将冷却照常消耗）。"
+        },
+        {
+          "name": "failedReason",
+          "type": "'immune' | 'roll' | null",
+          "desc": "success=false 的原因：immune = 目标还在免疫期；roll = 成功率判定没中。"
+        },
+        {
+          "name": "effect",
+          "type": "object",
+          "desc": "按计谋给的效果：foodBurned（烧掉的粮食）/ multiplierPercent + until（欺敌倍数与截止）/ protectionDownPercent + until（趁火打劫）/ until（十面埋伏锁城截止）/ arriveAt + reducedPercent（金蝉脱壳后的到达时刻与缩短比例）/ arriveAt + extendedPercent（八门金锁后的到达时刻与延长比例）/ intel（蛛丝马迹：{ cities: [{ cityId, name, x, y }], marches: [{ marchId, x, y, purpose, arriveAt }] }，不含兵力）。失败时为空对象。"
+        },
+        {
+          "name": "tokenKind",
+          "type": "string",
+          "desc": "本次消耗的计谋令类别。"
+        },
+        {
+          "name": "tokensLeft",
+          "type": "number",
+          "desc": "扣完这类令还剩几张。"
+        },
+        {
+          "name": "heroCooldownUntil",
+          "type": "string",
+          "desc": "施计武将的冷却截止（ISO 8601）。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "HERO_NOT_FOUND",
+        "HERO_NOT_AVAILABLE",
+        "HERO_STRATAGEM_COOLDOWN",
+        "INVALID_TARGET",
+        "TARGET_PROTECTED",
+        "TRUCE_ACTIVE",
+        "ALLY_TARGET",
+        "STRATAGEM_TOKEN_SHORT"
+      ],
+      "examples": [
+        {
+          "caption": "对敌方玩家的城施焚烧粮草成功（扣 1 张攻心令）",
+          "request": {
+            "op": 146,
+            "seq": 53,
+            "data": {
+              "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+              "stratagem": "burn_granary",
+              "target": {
+                "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+              }
+            }
+          },
+          "responses": [
+            {
+              "op": 146,
+              "seq": 53,
+              "ok": true,
+              "data": {
+                "success": true,
+                "failedReason": null,
+                "effect": {
+                  "foodBurned": 4200
+                },
+                "tokenKind": "assault",
+                "tokensLeft": 0,
+                "heroCooldownUntil": "2026-09-25T12:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "caption": "金蝉脱壳：自己的返程部队剩余时间缩短 50%",
+          "request": {
+            "op": 146,
+            "seq": 54,
+            "data": {
+              "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+              "stratagem": "golden_cicada",
+              "target": {
+                "marchId": "2f1e3d4c-5b6a-4978-8c9d-0a1b2c3d4e5f"
+              }
+            }
+          },
+          "responses": [
+            {
+              "op": 146,
+              "seq": 54,
+              "ok": true,
+              "data": {
+                "success": true,
+                "failedReason": null,
+                "effect": {
+                  "arriveAt": "2026-09-25T11:20:00.000Z",
+                  "reducedPercent": 50
+                },
+                "tokenKind": "march",
+                "tokensLeft": 1,
+                "heroCooldownUntil": "2026-09-25T12:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "caption": "计谋令不足（不扣任何东西）",
+          "request": {
+            "op": 146,
+            "seq": 55,
+            "data": {
+              "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+              "stratagem": "spy_trail",
+              "target": {
+                "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+              }
+            }
+          },
+          "responses": [
+            {
+              "op": 146,
+              "seq": 55,
+              "ok": false,
+              "error": {
+                "code": "STRATAGEM_TOKEN_SHORT",
+                "message": "计谋令不足：请用战场军功到战场商店兑换"
+              },
+              "data": {
+                "tokenKind": "intel",
+                "have": 0
+              }
+            }
+          ]
+        },
+        {
+          "caption": "成功率判定失败（照常扣令与冷却，对方收到警报）",
+          "request": {
+            "op": 146,
+            "seq": 56,
+            "data": {
+              "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+              "stratagem": "ambush_all_sides",
+              "target": {
+                "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+              }
+            }
+          },
+          "responses": [
+            {
+              "op": 146,
+              "seq": 56,
+              "ok": true,
+              "data": {
+                "success": false,
+                "failedReason": "roll",
+                "effect": {},
+                "tokenKind": "assault",
+                "tokensLeft": 1,
+                "heroCooldownUntil": "2026-09-25T12:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "施计前用 GET_STRATAGEMS（带 target）看成功率与限制，别在免疫期或保护目标上白扔令。令很贵：一场剧本战场最多买 11 张，攻心令一场只能买 2 张。焚烧粮草 / 十面埋伏是骚扰手段，真正的收益仍靠出兵掠夺——趁火打劫后 1 小时内做一次掠夺最划算。自己被施计时会收到 PUSH_STRATAGEM 与 stratagem_received 事件；中了十面埋伏期间所有出兵会返回 CITY_AMBUSHED（附 retryAfterSeconds），在外的部队仍可召回。"
     },
     {
       "op": 2000,
@@ -20922,6 +21424,66 @@
         }
       ],
       "agentNote": "推送只带事件摘要与据点 id，收到后重查 GET_BATTLEFIELD 拿完整据点守军、自己的队伍与军功。漏收时定时重查即可。"
+    },
+    {
+      "op": 2028,
+      "kind": "push",
+      "name": "PUSH_STRATAGEM",
+      "title": "推送：被施计警报（v86，AISLG-211）",
+      "summary": "目标玩家收到：谁、用哪名武将、对哪座城 / 哪支部队施了什么计、成没成。只有**会失败**的计谋推送，且不论成功失败都推（欺敌类草木皆兵 / 空城计与金蝉脱壳不通知任何人）。同一事件同时写入目标方事件流（stratagem_received），施计方自己的记录是 stratagem_cast。行军到达时刻被改写（金蝉脱壳 / 八门金锁）另走 PUSH_MARCH_STATE（reason = march_time_changed），城池中计（欺敌覆盖 / 烧粮 / 趁火打劫 / 十面埋伏）另走 PUSH_CITY_STATE（reason = stratagem），收到后重新 GET_STATE。",
+      "dataFields": [
+        {
+          "name": "stratagem / stratagemName",
+          "type": "string",
+          "desc": "计谋 kind 与中文名。"
+        },
+        {
+          "name": "caster",
+          "type": "object",
+          "desc": "{ username, heroName }：施计方账号与武将。"
+        },
+        {
+          "name": "target",
+          "type": "object",
+          "desc": "{ kind: \"city\" | \"march\" | \"npc_attack\", cityId?, cityName?, marchId?, attackId?, x?, y? }：被施加的目标。"
+        },
+        {
+          "name": "success",
+          "type": "boolean",
+          "desc": "是否生效。false = 免疫期内或成功率判定失败（施计方照常扣令与冷却）。"
+        },
+        {
+          "name": "effect",
+          "type": "object",
+          "desc": "目标方可见的效果：foodBurned（被烧掉的粮食）/ protectionDownPercent + until（仓库保护降低）/ until（锁城截止）/ arriveAt + extendedPercent（行军被延长后的到达时刻）。成功但无可见效果为空对象。"
+        }
+      ],
+      "examples": [
+        {
+          "op": 2028,
+          "push": true,
+          "data": {
+            "stratagem": "burn_granary",
+            "stratagemName": "焚烧粮草",
+            "caster": {
+              "username": "孟起",
+              "heroName": "荀彧"
+            },
+            "target": {
+              "kind": "city",
+              "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+              "cityName": "主城",
+              "x": 12,
+              "y": 34
+            },
+            "success": true,
+            "effect": {
+              "foodBurned": 4200
+            }
+          }
+        }
+      ],
+      "agentNote": "收到后按 stratagem 应对：焚烧粮草 → 检查粮食并考虑补产；趁火打劫 → 1 小时内可能被掠夺，优先把资源用掉或堆高仓库保护；十面埋伏 → 这段时间派不出兵，用在外部队召回与协防应对；八门金锁 → 自己的行军到达时间被延后（PUSH_MARCH_STATE 里有新时刻）；蛛丝马迹 → 对方已知你所有城池坐标与在外部队去向。"
     }
   ],
   "errorCodes": {
@@ -21533,6 +22095,42 @@
       "desc": "（v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。",
       "action": "打世界地图战斗或参加剧本战场攒声望。"
     },
+    "HERO_STRATAGEM_COOLDOWN": {
+      "desc": "（v86，AISLG-211）这名武将刚施过计，冷却未结束（施计后 1 小时基准，随全局时间缩放）；响应附 retryAfterSeconds。",
+      "action": "换一名在家的武将，或等到 retryAfterSeconds 之后再施。"
+    },
+    "HERO_NOT_AVAILABLE": {
+      "desc": "（v86，AISLG-211）武将不在家：历练中 / 重伤中 / 随队出征中不能施计；响应附 reason（training / wounded / busy）。",
+      "action": "用 GET_STRATAGEMS 的 heroes[].available 挑一名在家的武将；历练 / 重伤等状态结束或部队回城后再施。"
+    },
+    "TARGET_PROTECTED": {
+      "desc": "（v86，AISLG-211）目标玩家处于新手保护或免战期，不能对其施进攻类计谋（焚烧粮草 / 趁火打劫 / 十面埋伏 / 蛛丝马迹）；响应可能附 until / retryAfterSeconds。欺敌、金蝉脱壳、八门金锁是防守类，不受限。",
+      "action": "等保护结束后再施，或换其他目标。"
+    },
+    "TRUCE_ACTIVE": {
+      "desc": "（v86，AISLG-211）自己正在主动免战中，不能施进攻类计谋（与免战期间不能攻击玩家同一口径）。",
+      "action": "免战结束（响应附 until / retryAfterSeconds）后再施，或只用防守类计谋。"
+    },
+    "ALLY_TARGET": {
+      "desc": "（v86，AISLG-211）目标是同盟或友盟成员，不能对其施进攻类计谋。",
+      "action": "换非同盟 / 非友盟的目标；要打盟友先解除联盟关系。"
+    },
+    "INVALID_TARGET": {
+      "desc": "（v86，AISLG-211）施计目标不合法：城 / 行军不存在、不是本账号的城（欺敌 / 金蝉脱壳）、不是其他玩家的城（攻心 / 情报）、不是返程行军、不是开往自己城池或野地的敌方部队等。不扣令、不写冷却。",
+      "action": "按 GET_STRATAGEMS 的 target 判定重新选目标（自己的城 / 敌方玩家的城 / 行军列表里的部队）。"
+    },
+    "STRATAGEM_TOKEN_SHORT": {
+      "desc": "（v86，AISLG-211）对应类别的计谋令不足；响应附 tokenKind 与 have。此时不扣令、不写冷却、不改任何数据。",
+      "action": "用战场军功在战场商店（BUY_BATTLEFIELD_ITEM 的 stratagem_* 商品）兑换计谋令后再施。"
+    },
+    "STRATAGEM_TOKEN_FULL": {
+      "desc": "（v86，AISLG-211）该类计谋令持有数已达上限，兑换被拒且不扣军功；响应附 tokenKind / have / limit。上限防止囤到某一周集中施计，换季与军功一起清零。",
+      "action": "先把手上的令用掉一些再兑换，或改买其他商品。"
+    },
+    "CITY_AMBUSHED": {
+      "desc": "（v86，AISLG-211）这座城中了十面埋伏，期间不能派出任何部队（MARCH 的各用途、侦察、协防出发、交易所商队、剧本战场入场都被拒）；响应附 retryAfterSeconds。已经在外的部队照常行动、照常可以召回。",
+      "action": "等到 retryAfterSeconds 之后再派兵；已在外的部队用 RECALL_MARCH 召回不受影响。"
+    },
     "INTERNAL": {
       "desc": "服务端内部错误。",
       "action": "可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。"
@@ -22111,6 +22709,12 @@
                   "earliestExpireAt": null
                 },
                 "inBattle": false,
+                "stratagems": {
+                  "deception": null,
+                  "ambushedUntil": null,
+                  "lootFireUntil": null,
+                  "lootFirePercent": 0
+                },
                 "timeScale": 1,
                 "truceUntil": null,
                 "newbieUntil": null,
@@ -22812,6 +23416,12 @@
                   "earliestExpireAt": null
                 },
                 "inBattle": false,
+                "stratagems": {
+                  "deception": null,
+                  "ambushedUntil": null,
+                  "lootFireUntil": null,
+                  "lootFirePercent": 0
+                },
                 "timeScale": 1,
                 "truceUntil": null,
                 "newbieUntil": null,

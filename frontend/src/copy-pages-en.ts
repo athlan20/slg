@@ -45,6 +45,7 @@ export const TARGET_COPY_EN = {
     transfer: 'Transfer',
     transport: 'Transport',
     assist: 'Assist',
+    stratagem: 'Stratagem',
   },
   confirm: (action: string) => `Confirm ${action}`,
   noOps: 'No actions available on this tile',

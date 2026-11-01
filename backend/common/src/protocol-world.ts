@@ -202,6 +202,8 @@ export interface MarchView {
   ambushAt: string | null;
   /** 随队武将 id（v36，AISLG-114；返程行军沿用同一武将，回城后武将自然释放），其余为 null */
   heroId: string | null;
+  /** 金蝉脱壳已用过（v86，AISLG-211）：同一支返程部队只能用一次，已用的不能再施 */
+  stratagemUsed: boolean;
 }
 
 /** GET_WORLD_MAP（op 30）请求载荷：窗口左上角与尺寸，缺省以主城为中心取 DEFAULT_MAP_WINDOW */
@@ -283,8 +285,9 @@ export interface RecallGarrisonResponseData {
 
 /** PUSH_MARCH_STATE（op 2005）推送载荷 */
 export interface MarchStatePushData {
-  /** march_started=出征或召回发起；march_arrived=到达并结算；march_returned=返程部队回城 */
-  reason: 'march_started' | 'march_arrived' | 'march_returned';
+  /** march_started=出征或召回发起；march_arrived=到达并结算；march_returned=返程部队回城；
+   *  march_time_changed=行军到达时刻被计谋改写（v86，AISLG-211 金蝉脱壳 / 八门金锁；march 为改后的最新行军） */
+  reason: 'march_started' | 'march_arrived' | 'march_returned' | 'march_time_changed';
   march: MarchView;
 }
 

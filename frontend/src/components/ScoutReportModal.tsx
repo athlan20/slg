@@ -120,6 +120,11 @@ export function ScoutReportModal({ intel, city, onClose }: ScoutReportModalProps
           <span>{COPY.scoutReport.garrisonPower(garrisonPower)}</span>
           {intel.wallDefensePercent > 0 ? <span className="text-warn">{COPY.scoutReport.wallRow(intel.wallDefensePercent)}</span> : null}
         </p>
+        {intel.deception ? (
+          <p role="侦察报告弹窗-识破欺敌" className="mt-1 text-[12px] text-accent">
+            {copy.STRATAGEM_COPY.scout.deceptionSeen(intel.deception.name)}
+          </p>
+        ) : null}
         {intel.defenses ? (
           <p role="侦察报告弹窗-城防器械" className="mt-1 text-[12px] text-dim">
             {!intel.defenses.has
