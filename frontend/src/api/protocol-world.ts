@@ -188,6 +188,8 @@ export interface MarchView {
   ambushAt: string | null;
   /** 随队武将 id（v36 AISLG-114；返程沿用同一武将，回城后自然释放），其余 null */
   heroId: string | null;
+  /** 金蝉脱壳已用过（v86，AISLG-211）：同一支返程部队只能用一次 */
+  stratagemUsed: boolean;
 }
 
 /** 战报中一方的汇总（攻方 / 守方共用；v13） */
@@ -319,6 +321,9 @@ export interface ScoutIntel {
   scoutedAt: string;
   /** 城防器械（v73 AISLG-193）：玩家城池才有；按侦察科技三档 */
   defenses?: DefenseScoutView | null;
+  /** 欺敌识破标记（v86，AISLG-211）：目标城有欺敌效果且本次侦察识破时才有（此时 garrison 是真实值）；
+   *  没识破时没有任何标记，garrison 是按倍数换算后的假驻军。被识破不通知施计方 */
+  deception?: { stratagem: import('./protocol-stratagem').StratagemKind; name: string; seen: true };
 }
 
 /** GET_STATE 响应的 cities 元素：账号全部城池（主城在前） */
@@ -389,7 +394,8 @@ export interface RecallGarrisonResponseData {
 
 /** PUSH_MARCH_STATE（op 2005）推送载荷 */
 export interface MarchStatePushData {
-  reason: 'march_started' | 'march_arrived' | 'march_returned';
+  /** march_time_changed=到达时刻被计谋改写（v86，AISLG-211：金蝉脱壳 / 八门金锁），march 为改后的行军 */
+  reason: 'march_started' | 'march_arrived' | 'march_returned' | 'march_time_changed';
   march: MarchView;
 }
 

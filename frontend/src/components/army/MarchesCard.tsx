@@ -12,6 +12,7 @@ import { useNav } from '../../state/NavContext';
 import { activeMarches } from '../../state/progressItems';
 import { useNow } from '../../state/useNow';
 import { marchLabel } from '../worldPanelText';
+import { StratagemEntry } from '../stratagem/StratagemEntry';
 import { Card } from '../ui/Card';
 import { PagedList } from '../ui/PagedList';
 
@@ -108,6 +109,13 @@ export function MarchesCard({ role }: { role: string }) {
                 <span className={`font-mono text-[11.5px] tabular-nums ${ambush ? 'text-gold' : 'text-dim'}`} title={COPY.status.remainingSeconds(left)}>
                   {formatDurationText(left)}
                 </span>
+                {march.status === 'marching' && march.purpose === 'return' && !march.stratagemUsed ? (
+                  <StratagemEntry
+                    role="军队页-行军-金蝉脱壳按钮"
+                    label={copy.STRATAGEM_COPY.entry.cicada}
+                    target={{ marchId: march.id, label: `(${march.x},${march.y})`, only: ['golden_cicada'] }}
+                  />
+                ) : null}
                 {march.status === 'marching' && march.purpose !== 'return' ? (
                   <button
                     type="button"

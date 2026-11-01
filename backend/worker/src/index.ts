@@ -36,8 +36,12 @@ import { processSeasonTick } from './season-tick';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
 import { startDbProbe, startLoopLagMonitor } from '../../common/src/diag-probe';
 import { ALL_DUE, probeDueWork, type DueProbe } from './due-probe';
+import { purgeExpiredStratagems } from '../../common/src/stratagem-db';
 
 const TICK_MS = Number(process.env.WORKER_TICK_MS || 1000);
+/** 计谋过期行清理的最小间隔（读取侧惰性忽略，清理只为控表大小） */
+const STRATAGEM_PURGE_MS = 60 * 1000;
+let lastStratagemPurge = 0;
 
 async function main(): Promise<void> {
   const { host, port, database } = readDbConfig();
@@ -209,6 +213,15 @@ async function main(): Promise<void> {
         }
       } catch (err) {
         console.error('worker npc attack tick failed:', err instanceof Error ? err.message : err);
+      }
+    }
+    // v86（AISLG-211）：清理过期的计谋城效果与免疫行（每分钟最多一次）
+    if (Date.now() - lastStratagemPurge >= STRATAGEM_PURGE_MS) {
+      lastStratagemPurge = Date.now();
+      try {
+        await purgeExpiredStratagems(pool);
+      } catch (err) {
+        console.error('worker stratagem purge failed:', err instanceof Error ? err.message : err);
       }
     }
   };

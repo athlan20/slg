@@ -9,6 +9,7 @@ import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import { useNow } from '../state/useNow';
 import { Modal } from './ui/Modal';
+import { StratagemEntry } from './stratagem/StratagemEntry';
 
 interface NpcWarningModalProps {
   warning: NpcAttackWarningPushData;
@@ -74,7 +75,19 @@ export function NpcWarningModal({ warning, onDismiss, onReinforce }: NpcWarningM
         {warning.attacker ? COPY.npcWarning.advicePlayer : isCity ? COPY.npcWarning.adviceCity : COPY.npcWarning.adviceWild}
       </p>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
+        {/* v86（AISLG-211）：八门金锁快捷入口——把这支敌军的行军时间拖长（玩家出征或 NPC 袭击都能挡） */}
+        <StratagemEntry
+          role="NPC来袭预警弹窗-八门金锁按钮"
+          label={copy.STRATAGEM_COPY.entry.eightGates}
+          target={{
+            // 玩家来袭的预警把行军 id 放在 attackId 里（去重口径），NPC 袭击才是真正的 attackId
+            ...(warning.attacker ? { marchId: warning.attackId } : { attackId: warning.attackId }),
+            label: `(${warning.x},${warning.y})`,
+            only: ['eight_gates'],
+          }}
+          className="btn px-3"
+        />
         <button type="button" role="NPC来袭预警弹窗-增援按钮" className="btn px-3" onClick={onReinforce}>
           {isCity ? WARN_COPY.reinforceCity : WARN_COPY.reinforceWild}
         </button>

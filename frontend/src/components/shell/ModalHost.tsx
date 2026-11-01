@@ -13,6 +13,8 @@ import { NpcWarningModal } from '../NpcWarningModal';
 import { SeasonWarningModal } from '../season/SeasonWarningModal';
 import { OfflineReportModal } from '../OfflineReportModal';
 import { YellowTurbanModal } from '../YellowTurbanModal';
+import { StratagemAlertModal } from '../stratagem/StratagemAlertModal';
+import { StratagemPanel } from '../stratagem/StratagemPanel';
 
 interface ModalHostProps {
   leaderboardOpen: boolean;
@@ -74,6 +76,11 @@ export function ModalHost(props: ModalHostProps) {
         />
       ) : null}
       {props.ytOpen ? <YellowTurbanModal state={session.yellowTurban.state} world={world} onClose={props.onCloseYt} /> : null}
+      {/* v86（AISLG-211）：施计弹窗（地图 / 武将卡 / 行军列表 / 来袭预警共用）与被施计警报 */}
+      {session.stratagem.panel ? <StratagemPanel /> : null}
+      {session.stratagem.alerts.length > 0 ? (
+        <StratagemAlertModal data={session.stratagem.alerts[0]} onDismiss={session.stratagem.dismissAlert} />
+      ) : null}
       {session.season.warning ? <SeasonWarningModal warning={session.season.warning} onConfirm={session.season.dismissWarning} /> : null}
       {announcements.open ? <AnnouncementModal slice={announcements} onClose={announcements.closeList} /> : null}
       {session.alliance.open ? (

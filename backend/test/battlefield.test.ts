@@ -120,7 +120,7 @@ test('奖励：胜败基础 + 名次额外（前 10）', () => {
   assert.equal(battlefieldRankReward(0), null);
 });
 
-test('商店：4 种商品，价格 / 每场限购固定', () => {
+test('商店：原 4 种商品 + 4 类计谋令（v86），价格 / 每场限购固定', () => {
   assert.deepEqual(
     BATTLEFIELD_SHOP.map((item) => [item.item, item.cost, item.limit]),
     [
@@ -128,8 +128,26 @@ test('商店：4 种商品，价格 / 每场限购固定', () => {
       ['hero_exp', 300, 3],
       ['swordsman', 600, 2],
       ['cavalry', 600, 2],
+      // v86（AISLG-211）：计谋令（军功价 / 每场限购），持有上限见 holdLimit
+      ['stratagem_deception', 100, 4],
+      ['stratagem_march', 150, 3],
+      ['stratagem_assault', 250, 2],
+      ['stratagem_intel', 150, 2],
     ],
   );
+  // 三种剧本的货架都有 4 类令；赤壁额外多一个铁骑兵
+  for (const script of ['guandu', 'dongzhuo', 'chibi'] as const) {
+    const items = battlefieldShopItems(script).map((item) => item.item);
+    for (const item of ['stratagem_deception', 'stratagem_march', 'stratagem_assault', 'stratagem_intel'] as const) {
+      assert.ok(items.includes(item), `${script} 缺 ${item}`);
+    }
+  }
+  assert.ok(battlefieldShopItems('chibi').some((item) => item.item === 'iron_cavalry'));
+  assert.ok(!battlefieldShopItems('guandu').some((item) => item.item === 'iron_cavalry'));
+  // 计谋令带 token 与持有上限，其余商品不带
+  const token = battlefieldShopDef('stratagem_assault');
+  assert.deepEqual({ token: token?.token, hold: token?.holdLimit }, { token: 'assault', hold: 3 });
+  assert.equal(battlefieldShopDef('resources')?.token, undefined);
 });
 
 test('据点守军伤亡拆分：按开战数量占比，余数归 NPC，总和等于总伤亡', () => {

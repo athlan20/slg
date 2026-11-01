@@ -139,6 +139,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     army: { ...EMPTY_ARMY } as ArmyCounts,
     armyFoodUsePerHour: 0,
     inBattle: false,
+    stratagems: { deception: null, ambushedUntil: null, lootFireUntil: null, lootFirePercent: 0 },
     timeScale: 1,
     truceUntil: null,
     newbieUntil: null,

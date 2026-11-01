@@ -9,6 +9,7 @@ import type { Resources } from './protocol';
 import type { BattlefieldScript } from './protocol-battlefield';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import { TROOP_KINDS } from './protocol';
+import { STRATAGEM_TOKENS, type StratagemTokenKind } from './stratagem';
 import { armyPower, toFullArmyCounts } from './battle';
 import { TROOP_INFO } from './troops';
 import { TROOP_STATS } from './battle-engine';
@@ -575,7 +576,8 @@ export function battlefieldRewardForScript(
 // ---- 战场商店 ----
 
 export interface BattlefieldShopDef {
-  item: 'resources' | 'hero_exp' | 'swordsman' | 'cavalry' | 'iron_cavalry';
+  item: 'resources' | 'hero_exp' | 'swordsman' | 'cavalry' | 'iron_cavalry'
+    | 'stratagem_deception' | 'stratagem_march' | 'stratagem_assault' | 'stratagem_intel';
   label: string;
   /** 价格（军功） */
   cost: number;
@@ -587,14 +589,28 @@ export interface BattlefieldShopDef {
   heroExp?: number;
   troop?: TroopKind;
   count?: number;
+  /** 计谋令（v86，AISLG-211）：兑换后入 account_stratagem_tokens 的类别与持有上限 */
+  token?: StratagemTokenKind;
+  holdLimit?: number;
 }
 
-/** 军功跨场累积、换季清零；价格为占位（100 刀盾兵征募成本约 2.45 万金当量） */
+/** 军功跨场累积、换季清零；价格为占位（100 刀盾兵征募成本约 2.45 万金当量）。
+ *  v86（AISLG-211）赗上 4 类计谋令（三种剧本货架都有；数值见 common/src/stratagem.ts 的 STRATAGEM_TOKENS） */
 export const BATTLEFIELD_SHOP: readonly BattlefieldShopDef[] = [
   { item: 'resources', label: '资源包', cost: 200, limit: 5, resourcesEach: 10000 },
   { item: 'hero_exp', label: '武将经验', cost: 300, limit: 3, heroExp: 5000 },
   { item: 'swordsman', label: '刀盾兵', cost: 600, limit: 2, troop: 'swordsman', count: 100 },
   { item: 'cavalry', label: '轻骑兵', cost: 600, limit: 2, troop: 'cavalry', count: 50 },
+  ...STRATAGEM_TOKENS.map(
+    (token): BattlefieldShopDef => ({
+      item: `stratagem_${token.kind}` as BattlefieldShopDef['item'],
+      label: token.label,
+      cost: token.cost,
+      limit: token.perEventLimit,
+      token: token.kind,
+      holdLimit: token.holdLimit,
+    }),
+  ),
 ] as const;
 
 /** 赤壁场次额外开放：铁骑兵 20（直接进主城），800 军功，每场限购 1 次 */

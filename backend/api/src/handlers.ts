@@ -28,6 +28,7 @@ import {
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
 import { handleDisbandTroops, readDisbandTroops } from './handlers-disband';
+import { handleGetStratagems, handleCastStratagem } from './handlers-stratagem';
 import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
 import { handleDismissAssist } from './handlers-assist';
 import {
@@ -437,6 +438,12 @@ async function dispatchOp(
       break;
     case Op.DISMISS_ASSIST:
       await handleDismissAssist(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_STRATAGEMS:
+      await handleGetStratagems(ctx, conn, op, seq, data);
+      break;
+    case Op.CAST_STRATAGEM:
+      await handleCastStratagem(ctx, conn, op, seq, data);
       break;
     case Op.GET_BATTLEFIELD:
       await handleGetBattlefield(ctx, conn, op, seq);

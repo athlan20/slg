@@ -34,6 +34,9 @@ export interface NavState {
   exchangeAsk: ExchangeAsk;
   /** 打开集市；缺口浮层可带 neededGold，按还缺的金预填兑换数量 */
   requestExchange: (neededGold?: number) => void;
+  /** 打开剧本战场（商店）：施计弹窗里「令不够 → 去战场商店兑换」用，id 变化即打开 */
+  battlefieldAsk: { id: number };
+  requestBattlefield: () => void;
 }
 
 const NavContext = createContext<NavState | null>(null);
@@ -58,6 +61,11 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [exchangeAsk, setExchangeAsk] = useState<ExchangeAsk>({ id: 0 });
   const requestExchange = useCallback((neededGold?: number) => {
     setExchangeAsk((prev) => ({ id: prev.id + 1, neededGold }));
+  }, []);
+
+  const [battlefieldAsk, setBattlefieldAsk] = useState<{ id: number }>({ id: 0 });
+  const requestBattlefield = useCallback(() => {
+    setBattlefieldAsk((prev) => ({ id: prev.id + 1 }));
   }, []);
 
   const toggleLayer = useCallback((key: keyof MapLayers) => setLayers((prev) => ({ ...prev, [key]: !prev[key] })), []);
@@ -87,8 +95,10 @@ export function NavProvider({ children }: { children: ReactNode }) {
       markReportsSeen,
       exchangeAsk,
       requestExchange,
+      battlefieldAsk,
+      requestBattlefield,
     }),
-    [page, go, building, layers, toggleLayer, seenReportId, markReportsSeen, exchangeAsk, requestExchange],
+    [page, go, building, layers, toggleLayer, seenReportId, markReportsSeen, exchangeAsk, requestExchange, battlefieldAsk, requestBattlefield],
   );
 
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;

@@ -75,6 +75,8 @@ import { assistCap } from '../../common/src/city-assist';
 import { loadAssistsFromCity, loadCityAssists } from '../../common/src/city-assist-db';
 import type { AssistOutView, AssistView } from '../../common/src/protocol-assist';
 import { loadTechLevels } from '../../common/src/tech-db';
+import { cityStratagemView, loadActiveCityEffects } from '../../common/src/stratagem-db';
+import type { CityStratagemView } from '../../common/src/protocol-stratagem';
 import { currentCityId } from './city-scope';
 
 export interface BuildRow {
@@ -175,6 +177,8 @@ export interface MarchRow {
   ambush_at?: Date | null;
   /** v36（AISLG-114）：随队武将 id（返程行军沿用，回城后自然释放），其余为 null */
   hero_id?: string | null;
+  /** v86（AISLG-211）：金蝉脱壳已用（同一支返程部队只能用一次），其余为 false */
+  stratagem_used?: boolean;
 }
 
 export function marchView(row: MarchRow): MarchView {
@@ -194,6 +198,8 @@ export function marchView(row: MarchRow): MarchView {
     cargo: readCargo(row.cargo),
     ambushAt: row.ambush_at ? new Date(row.ambush_at).toISOString() : null,
     heroId: row.hero_id ?? null,
+    // v86（AISLG-211）：金蝉脱壳用过就置灰（同一支返程部队只能用一次）
+    stratagemUsed: row.stratagem_used === true,
   };
 }
 
@@ -257,6 +263,8 @@ export interface CitySnapshot {
   mainCityId: string;
   /** 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向，或有未结的 NPC 来袭 */
   inBattle: boolean;
+  /** 生效中的计谋效果（v86，AISLG-211）：欺敌 / 十面埋伏 / 趁火打劫 */
+  stratagems: CityStratagemView;
 }
 
 /** 在已开启的事务内锁定城池行并结算生产；调用方负责 BEGIN / COMMIT */
@@ -307,6 +315,8 @@ export async function lockCitySnapshot(
   const army = await loadCityArmy(client, row.id);
   // v84（AISLG-209）：敌情判定（行军指向本城或其名下野地 / 未结的 NPC 来袭），与遣散、放弃分城同一口径
   const inBattle = await cityInBattle(client, row.id);
+  // v86（AISLG-211）：本城生效中的计谋效果（欺敌 / 十面埋伏 / 趁火打劫；过期的行惰性忽略）
+  const stratagems = cityStratagemView(await loadActiveCityEffects(client, row.id, row.db_now));
   // v38（AISLG-122）：账号级保护状态（新手保护 / 主动免战）
   const accountRes = await client.query(
     `SELECT a.newbie_until, a.self_truce_until, a.self_truce_used_at, a.nobility,
@@ -371,6 +381,7 @@ export async function lockCitySnapshot(
     army,
     armyFoodUsePerHour,
     inBattle,
+    stratagems,
     queue: queueRes.rows as BuildRow[],
     recruitQueue: recruitRes.rows as RecruitRow[],
     defenseStock,
@@ -441,6 +452,8 @@ export function toCityView(snap: CitySnapshot): CityView {
     armyFoodUsePerHour: Math.round(snap.armyFoodUsePerHour),
     // v84（AISLG-209）：敌情（遣散按钮据此置灰；服务端仍以 CITY_IN_BATTLE 复核）
     inBattle: snap.inBattle,
+    // v86（AISLG-211）：生效中的计谋效果（欺敌 / 十面埋伏 / 趁火打劫）
+    stratagems: snap.stratagems,
     // v20：全局时间缩放（AISLG-38）——客户端本地折算时长（冷却剩余等）用
     timeScale: getTimeScale(),
     truceUntil: snap.truceUntil ? snap.truceUntil.toISOString() : null,

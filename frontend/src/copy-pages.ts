@@ -39,6 +39,7 @@ export const TARGET_COPY = {
     transfer: '调兵',
     transport: '运输',
     assist: '协防',
+    stratagem: '施计',
   },
   confirm: (action: string) => `确认${action}`,
   noOps: '这块地没有可用的操作',

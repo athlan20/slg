@@ -52,6 +52,7 @@ import { degradeDefenses, loadCityDefenses } from '../../common/src/city-defense
 import { famousWallExtraPercent } from '../../common/src/famous-effects';
 import { wallDefensePercent } from '../../common/src/battle';
 import { loadBuildingLevels } from '../../common/src/production';
+import { applyScoutDeception, withDeceptionMark } from './scout-deception';
 
 const MARCH_BATCH_LIMIT = 50;
 
@@ -346,16 +347,21 @@ async function settleScoutArrival(
     owner = naming ? { username: naming.username, cityName: naming.cityName } : null;
   }
   const nowRes = await client.query(`SELECT now() AS now`);
-  const at = (nowRes.rows[0].now as Date).toISOString();
-  const intel = buildScoutIntel(
+  const now = nowRes.rows[0].now as Date;
+  const at = now.toISOString();
+  // v86（AISLG-211）：欺敌先按倍数换算真实驻军再判识破，最后才走侦察科技降级（顺序固定；战斗仍用真实驻军）
+  const deception = tile.kind === 'city' && tile.owner_city_id
+    ? await applyScoutDeception(client, tile.owner_city_id, garrison, attackerTechs, now)
+    : { garrison, seen: null };
+  const intel = withDeceptionMark(buildScoutIntel(
     tile,
-    toFullArmyCounts(garrison),
+    toFullArmyCounts(deception.garrison),
     owner,
     at,
     attackerTechs,
     pvpWallPercent,
     defenseStock ? degradeDefenses(defenseStock, scoutDetailOf(attackerTechs)) : null,
-  );
+  ), deception.seen);
   await saveScoutIntel(client, march.account_id, intel);
   await client.query(
     `UPDATE marches SET status = 'arrived', resolved_at = clock_timestamp() WHERE id = $1 AND status = 'marching'`,

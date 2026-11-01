@@ -52,6 +52,8 @@ export type EventType =
   | 'city_discarded'
   | 'capital_changed'
   | 'troops_disbanded'
+  | 'stratagem_cast'
+  | 'stratagem_received'
   | 'account_renamed'
   | 'agent_connected'
   | 'agent_disconnected';

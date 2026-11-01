@@ -114,6 +114,9 @@ export const BATTLEFIELD_COPY = {
     heroPick: '选择武将',
     heroNone: '没有可选武将',
     bought: '已兑换',
+    /** 计谋令（v86，AISLG-211）：本场限购 + 持有 / 上限 */
+    tokenHold: (have: number, limit: number) => `持有 ${have}/${limit}`,
+    tokenFull: '已达持有上限',
   },
   merit: {
     title: '军功榜',

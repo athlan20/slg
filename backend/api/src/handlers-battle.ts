@@ -25,6 +25,7 @@ import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen, nextLuoyangOpen, decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { loadActiveDecree } from '../../common/src/luoyang-db';
 import { isAllyOfCity } from './march-target';
+import { cityDispatchBlockedSeconds } from './stratagem-target';
 
 /** 战报点评正文的长度上限（v23 AISLG-53；占位值随需求「已定」标注可调） */
 const BATTLE_COMMENT_MAX = 200;
@@ -90,6 +91,14 @@ export async function handleScout(
       await client.query('ROLLBACK');
       const cityState = await loadCityState(ctx.pool, accountId);
       respondError(ctx.registry, conn, op, seq, 'DEPLOY_LIMIT', cityState ? { city: cityState } : undefined);
+      return;
+    }
+    // v86（AISLG-211）：中了十面埋伏的城连斥候也派不出去（与 MARCH 同一道拦截）
+    const ambushNowRes = await client.query(`SELECT now() AS now`);
+    const ambushLeft = await cityDispatchBlockedSeconds(client, snap.cityId, ambushNowRes.rows[0].now as Date);
+    if (ambushLeft !== null) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'CITY_AMBUSHED', { retryAfterSeconds: ambushLeft });
       return;
     }
     if (snap.army.scout < count) {

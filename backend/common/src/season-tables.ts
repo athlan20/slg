@@ -94,6 +94,10 @@ export const RESET_TABLES: readonly string[] = [
   'market_orders',
   'market_trades',
   'nobility_claims',
+  // 计谋（v86，AISLG-211）：计谋令与军功一起换季清零；城效果与免疫行随城 / 行军（同在 RESET 表里）一并清空
+  'account_stratagem_tokens',
+  'city_stratagem_effects',
+  'stratagem_immunity',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

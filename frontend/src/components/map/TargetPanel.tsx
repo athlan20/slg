@@ -12,6 +12,7 @@ import { useHeroPick } from '../../state/heroContext';
 import { interceptCandidates } from '../../state/interceptPlan';
 import { useNow } from '../../state/useNow';
 import { tName } from '../../i18n/names';
+import { formatDurationText } from '../../api/format';
 import { getCopy, useCopy } from '../../i18n/bundle';
 // role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
 import { TARGET_COPY as TARGET_COPY_ZH } from '../../copy-pages';
@@ -26,11 +27,15 @@ import type { TargetCtx, TroopInput } from './forms/targetTypes';
 import { TargetHeader } from './TargetHeader';
 import { TargetChatActions } from './TargetChatActions';
 import { TargetMarkNote } from './TargetMarkNote';
+import { StratagemEntry } from '../stratagem/StratagemEntry';
+import { remainingSeconds } from '../stratagem/StratagemCityNote';
 
-type Act = 'plunder' | 'occupy' | 'scout' | 'clear' | 'intercept' | 'reinforce' | 'recall' | 'transfer' | 'transport' | 'mark' | 'assist';
+type Act = 'plunder' | 'occupy' | 'scout' | 'clear' | 'intercept' | 'reinforce' | 'recall' | 'transfer' | 'transport' | 'mark' | 'assist' | 'stratagem';
 
 /** 攻击类操作（AISLG-182 / F2）：目标是盟友时禁用，运输 / 增援 / 调兵 / 截击不受影响 */
 const ATTACK_ACTS: readonly Act[] = ['plunder', 'occupy', 'scout', 'clear'];
+/** 会从这座城派出部队的操作（v86 AISLG-211）：中了十面埋伏时全部置灰并显示剩余时间 */
+const DISPATCH_ACTS: readonly Act[] = ['plunder', 'occupy', 'scout', 'clear', 'intercept', 'reinforce', 'transfer', 'transport', 'assist'];
 
 export function TargetPanel() {
   const copy = useCopy();
@@ -92,6 +97,8 @@ export function TargetPanel() {
       if (transferable) {
         acts.push('transfer', 'transport');
       }
+      // v86（AISLG-211）：自己的城可以施欺敌（草木皆兵 / 空城计）
+      acts.push('stratagem');
     } else if (detail.kind === 'city' && detail.owner !== null) {
       // v74（AISLG-194）：盟友的城只能协防（掠夺 / 占领 / 侦察在 ATTACK_ACTS 里禁用）
       if (allyBlocked) {
@@ -100,6 +107,8 @@ export function TargetPanel() {
         // 他人玩家城（v38 AISLG-122）：可掠夺；分城（v40 AISLG-124，城防值非 null）另可攻占，主城不可占
         acts.push(...(detail.durability != null ? (['plunder', 'occupy', 'scout'] as const) : (['plunder', 'scout'] as const)));
       }
+      // v86（AISLG-211）：敌方玩家的城可以施攻心三计与蛛丝马迹（同盟 / 友盟会被服务端拒绝）
+      acts.push('stratagem');
     } else {
       acts.push('scout');
     }
@@ -109,6 +118,9 @@ export function TargetPanel() {
   }
   const current: Act | null = act && acts.includes(act) ? act : (acts[0] ?? null);
   const blockedNow = allyBlocked && current !== null && ATTACK_ACTS.includes(current);
+  // v86（AISLG-211）：本城中了十面埋伏时派不出兵（服务端返回 CITY_AMBUSHED，这里先置灰并显示剩余）
+  const ambushLeft = remainingSeconds(city.stratagems?.ambushedUntil ?? null, now);
+  const ambushBlocked = ambushLeft > 0 && current !== null && DISPATCH_ACTS.includes(current);
 
   const ctx: TargetCtx = {
     world,
@@ -199,14 +211,33 @@ export function TargetPanel() {
                 {ALLIANCE_COPY.ally.blocked}
               </p>
             ) : null}
+            {ambushLeft > 0 ? (
+              <p role="选中详情-十面埋伏提示" className="text-[12px] leading-relaxed text-warn">
+                {copy.STRATAGEM_COPY.city.ambushed(formatDurationText(ambushLeft))}
+              </p>
+            ) : null}
             {detail?.owner?.relation === 'hostile' ? (
               <p role="选中详情-敌对提示" className="text-[12px] leading-relaxed text-st-error">
                 {ALLIANCE_COPY.diplomacy.hostiles}
               </p>
             ) : null}
+            {current === 'stratagem' ? (
+              <StratagemEntry
+                role="选中详情-施计入口"
+                label={isOwnCity ? copy.STRATAGEM_COPY.entry.castOnCity : copy.STRATAGEM_COPY.entry.castOnPlayer}
+                target={{
+                  cityId: detail?.owner?.cityId ?? undefined,
+                  label: `${detail?.owner?.cityName ?? ''}（${x},${y}）`,
+                  only: isOwnCity
+                    ? ['phantom_army', 'empty_fort']
+                    : ['burn_granary', 'loot_fire', 'ambush_all_sides', 'spy_trail'],
+                }}
+                className="btn px-3"
+              />
+            ) : null}
             {!blockedNow && current === 'scout' ? <ScoutForm key={`${x},${y}`} ctx={ctx} /> : null}
-            {!blockedNow && current === 'intercept' ? <InterceptForm ctx={ctx} candidates={candidates} onPickCell={world.selectTile} /> : null}
-            {!blockedNow && current === 'transport' ? <TransportForm key={`${x},${y}`} ctx={ctx} /> : null}
+            {!blockedNow && !ambushBlocked && current === 'intercept' ? <InterceptForm ctx={ctx} candidates={candidates} onPickCell={world.selectTile} /> : null}
+            {!blockedNow && !ambushBlocked && current === 'transport' ? <TransportForm key={`${x},${y}`} ctx={ctx} /> : null}
             {!blockedNow && current === 'recall' ? <RecallForm key={`${x},${y}`} ctx={ctx} /> : null}
             {!blockedNow && current === 'mark' ? (
               <MarkForm
@@ -217,7 +248,7 @@ export function TargetPanel() {
                 hasMark={session.allianceMarks.marks.some((item) => item.x === x && item.y === y && Date.parse(item.expiresAt) > now)}
               />
             ) : null}
-            {!blockedNow && (current === 'plunder' || current === 'occupy' || current === 'clear' || current === 'reinforce' || current === 'transfer' || current === 'assist') ? (
+            {!blockedNow && !ambushBlocked && (current === 'plunder' || current === 'occupy' || current === 'clear' || current === 'reinforce' || current === 'transfer' || current === 'assist') ? (
               <MarchForm ctx={ctx} act={current} />
             ) : null}
           </>

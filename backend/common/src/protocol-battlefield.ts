@@ -30,7 +30,17 @@ export const BATTLEFIELD_STRONGHOLD_KINDS = ['base', 'ford', 'post', 'granary'] 
 export type BattlefieldStrongholdKind = (typeof BATTLEFIELD_STRONGHOLD_KINDS)[number];
 
 /** 战场商店商品 */
-export const BATTLEFIELD_SHOP_ITEMS = ['resources', 'hero_exp', 'swordsman', 'cavalry', 'iron_cavalry'] as const;
+export const BATTLEFIELD_SHOP_ITEMS = [
+  'resources',
+  'hero_exp',
+  'swordsman',
+  'cavalry',
+  'iron_cavalry',
+  'stratagem_deception',
+  'stratagem_march',
+  'stratagem_assault',
+  'stratagem_intel',
+] as const;
 export type BattlefieldShopItem = (typeof BATTLEFIELD_SHOP_ITEMS)[number];
 
 export function isBattlefieldShopItem(value: unknown): value is BattlefieldShopItem {
@@ -151,8 +161,10 @@ export interface BattlefieldShopItemView {
   /** 每场限购 */
   limit: number;
   bought: number;
+  /** 计谋令的持有上限（v86，AISLG-211；其余商品为 null） */
+  holdLimit: number | null;
   /** 商品说明（前端中英文案自行拼接，字段只给结构化数值） */
-  reward: { resources?: Resources; heroExp?: number; troop?: TroopKind; count?: number };
+  reward: { resources?: Resources; heroExp?: number; troop?: TroopKind; count?: number; stratagemToken?: import('./stratagem').StratagemTokenKind };
 }
 
 /** 奖励档位（文档与前端展示用） */
