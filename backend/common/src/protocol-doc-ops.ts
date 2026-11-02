@@ -78,7 +78,7 @@ import {
   REQUEST_RESEARCH_TECH,
 } from './protocol-doc-ops-tech';
 import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT, REQUEST_DISBAND_TROOPS } from './protocol-doc-ops-army';
-import { REQUEST_RELEASE_TROOPS, REQUEST_RESTORE_TROOPS } from './protocol-doc-ops-troop-pools';
+import { REQUEST_GET_TROOP_POOLS, REQUEST_RELEASE_TROOPS, REQUEST_RESTORE_TROOPS } from './protocol-doc-ops-troop-pools';
 import { PUSH_DEFENSE_STATE, REQUEST_CANCEL_DEFENSE_CRAFT, REQUEST_CRAFT_DEFENSE } from './protocol-doc-ops-defense';
 import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
 import { PUSH_STRATAGEM, REQUEST_CAST_STRATAGEM, REQUEST_GET_STRATAGEMS } from './protocol-doc-ops-stratagem';
@@ -466,6 +466,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵的治疗 / 招降 / 劝回与放弃 / 释放
   [Op.RESTORE_TROOPS]: withCityId(REQUEST_RESTORE_TROOPS),
   [Op.RELEASE_TROOPS]: withCityId(REQUEST_RELEASE_TROOPS),
+  // v88（AISLG-218）：全账号伤兵营汇总（不需要 cityId——返回的就是全部城）
+  [Op.GET_TROOP_POOLS]: REQUEST_GET_TROOP_POOLS,
   [Op.CRAFT_DEFENSE]: withCityId(REQUEST_CRAFT_DEFENSE),
   [Op.CANCEL_DEFENSE_CRAFT]: REQUEST_CANCEL_DEFENSE_CRAFT,
   [Op.DISMISS_ASSIST]: REQUEST_DISMISS_ASSIST,

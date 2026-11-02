@@ -1,5 +1,5 @@
 {
-  "version": 86,
+  "version": 88,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -873,7 +873,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 86,
+                "protocolVersion": 88,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -922,7 +922,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 86,
+                "protocolVersion": 88,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -942,14 +942,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/83 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/85 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 83,
+              "docVersion": 85,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -964,8 +964,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 86,
-                "docNotice": "接口文档已从 v83 更新到 v86：请 GET /agent-api/changes/83 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 88,
+                "docNotice": "接口文档已从 v85 更新到 v88：请 GET /agent-api/changes/85 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -19661,6 +19661,236 @@
         }
       ],
       "agentNote": "施计前用 GET_STRATAGEMS（带 target）看成功率与限制，别在免疫期或保护目标上白扔令。令很贵：一场剧本战场最多买 11 张，攻心令一场只能买 2 张。焚烧粮草 / 十面埋伏是骚扰手段，真正的收益仍靠出兵掠夺——趁火打劫后 1 小时内做一次掠夺最划算。自己被施计时会收到 PUSH_STRATAGEM 与 stratagem_received 事件；中了十面埋伏期间所有出兵会返回 CITY_AMBUSHED（附 retryAfterSeconds），在外的部队仍可召回。"
+    },
+    {
+      "op": 147,
+      "kind": "request",
+      "name": "GET_TROOP_POOLS",
+      "title": "查询全账号伤兵营（全部城池的伤兵 / 俘虏 / 逃兵一次拿全）",
+      "preAuth": false,
+      "summary": "一次拿回**账号全部城**的伤兵 / 俘虏 / 逃兵三个池子与各城断粮时刻（v88，AISLG-218）：无参数、只读、不开事务不加锁，玩家与 Agent 都可以调。cities[] 每项的结构与 GET_STATE 的 city 里那三组完全相同（troops 按兵种合计 + earliestExpireAt 最早一批的过期时刻，已过期的批次不返回），starveAt 与 city.starveAt 同口径（未断粮为 null）。主城在前、其余按创建时间；**三池全空的城也会返回**（troops 全 0、earliestExpireAt 为 null），别人账号的城不可见。本协议不处理任何东西：处理仍逐城带 cityId 调 RESTORE_TROOPS / RELEASE_TROOPS（不新增批量协议，服务端数值与规则不变）。",
+      "requestFields": [],
+      "dataFields": [
+        {
+          "name": "cities",
+          "type": "array",
+          "desc": "账号全部城的池子快照，主城在前、其余按创建时间。每项 = { cityId, name, isMain, starveAt, wounded, captives, deserters }。"
+        },
+        {
+          "name": "cities[].cityId",
+          "type": "string",
+          "desc": "城池 id：处理后要处理某城时，把它作为 RESTORE_TROOPS / RELEASE_TROOPS 的 cityId。"
+        },
+        {
+          "name": "cities[].name",
+          "type": "string",
+          "desc": "城名。"
+        },
+        {
+          "name": "cities[].isMain",
+          "type": "boolean",
+          "desc": "是否账号主城（主城 = 创建时间最早的城，与 GET_STATE 的主城口径一致）。"
+        },
+        {
+          "name": "cities[].starveAt",
+          "type": "string | null",
+          "desc": "断粮开始时刻（ISO 8601；未断粮为 null），与 GET_STATE 的 city.starveAt 同口径。已到时间的城现在就在断粮，劝回逃兵会被 CITY_STARVING 拒绝。"
+        },
+        {
+          "name": "cities[].wounded",
+          "type": "object",
+          "desc": "伤兵池：{ troops（按兵种合计）, earliestExpireAt（最早一批的过期时刻；空池为 null） }，与 GET_STATE 的 city.wounded 完全相同。"
+        },
+        {
+          "name": "cities[].captives",
+          "type": "object",
+          "desc": "俘虏池，结构同 wounded（对应 GET_STATE 的 city.captives）。"
+        },
+        {
+          "name": "cities[].deserters",
+          "type": "object",
+          "desc": "逃兵池，结构同 wounded（对应 GET_STATE 的 city.deserters）。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "账号有主城 + 1 座分城：分城伤兵营里有 12 个长枪兵，主城三池全空同样返回",
+          "request": {
+            "op": 147,
+            "seq": 1,
+            "data": {}
+          },
+          "responses": [
+            {
+              "op": 147,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "cities": [
+                  {
+                    "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                    "name": "主城",
+                    "isMain": true,
+                    "starveAt": null,
+                    "wounded": {
+                      "troops": {
+                        "porter": 0,
+                        "militia": 0,
+                        "scout": 0,
+                        "pikeman": 0,
+                        "swordsman": 0,
+                        "archer": 0,
+                        "cavalry": 0,
+                        "iron_cavalry": 0,
+                        "supply_wagon": 0,
+                        "ballista": 0,
+                        "siege_ram": 0,
+                        "yulin_guard": 0,
+                        "danyang_soldier": 0,
+                        "baimao_soldier": 0,
+                        "huwei_guard": 0,
+                        "zhuge_crossbow": 0,
+                        "xiandeng_warrior": 0,
+                        "hubao_cavalry": 0,
+                        "xiliang_cavalry": 0
+                      },
+                      "earliestExpireAt": null
+                    },
+                    "captives": {
+                      "troops": {
+                        "porter": 0,
+                        "militia": 0,
+                        "scout": 0,
+                        "pikeman": 0,
+                        "swordsman": 0,
+                        "archer": 0,
+                        "cavalry": 0,
+                        "iron_cavalry": 0,
+                        "supply_wagon": 0,
+                        "ballista": 0,
+                        "siege_ram": 0,
+                        "yulin_guard": 0,
+                        "danyang_soldier": 0,
+                        "baimao_soldier": 0,
+                        "huwei_guard": 0,
+                        "zhuge_crossbow": 0,
+                        "xiandeng_warrior": 0,
+                        "hubao_cavalry": 0,
+                        "xiliang_cavalry": 0
+                      },
+                      "earliestExpireAt": null
+                    },
+                    "deserters": {
+                      "troops": {
+                        "porter": 0,
+                        "militia": 0,
+                        "scout": 0,
+                        "pikeman": 0,
+                        "swordsman": 0,
+                        "archer": 0,
+                        "cavalry": 0,
+                        "iron_cavalry": 0,
+                        "supply_wagon": 0,
+                        "ballista": 0,
+                        "siege_ram": 0,
+                        "yulin_guard": 0,
+                        "danyang_soldier": 0,
+                        "baimao_soldier": 0,
+                        "huwei_guard": 0,
+                        "zhuge_crossbow": 0,
+                        "xiandeng_warrior": 0,
+                        "hubao_cavalry": 0,
+                        "xiliang_cavalry": 0
+                      },
+                      "earliestExpireAt": null
+                    }
+                  },
+                  {
+                    "cityId": "f1b0c0de-0000-4000-8000-000000000002",
+                    "name": "分城甲",
+                    "isMain": false,
+                    "starveAt": "2026-11-02T10:00:00.000Z",
+                    "wounded": {
+                      "troops": {
+                        "porter": 0,
+                        "militia": 0,
+                        "scout": 0,
+                        "pikeman": 12,
+                        "swordsman": 0,
+                        "archer": 0,
+                        "cavalry": 0,
+                        "iron_cavalry": 0,
+                        "supply_wagon": 0,
+                        "ballista": 0,
+                        "siege_ram": 0,
+                        "yulin_guard": 0,
+                        "danyang_soldier": 0,
+                        "baimao_soldier": 0,
+                        "huwei_guard": 0,
+                        "zhuge_crossbow": 0,
+                        "xiandeng_warrior": 0,
+                        "hubao_cavalry": 0,
+                        "xiliang_cavalry": 0
+                      },
+                      "earliestExpireAt": "2026-11-05T03:00:00.000Z"
+                    },
+                    "captives": {
+                      "troops": {
+                        "porter": 0,
+                        "militia": 0,
+                        "scout": 0,
+                        "pikeman": 0,
+                        "swordsman": 0,
+                        "archer": 0,
+                        "cavalry": 0,
+                        "iron_cavalry": 0,
+                        "supply_wagon": 0,
+                        "ballista": 0,
+                        "siege_ram": 0,
+                        "yulin_guard": 0,
+                        "danyang_soldier": 0,
+                        "baimao_soldier": 0,
+                        "huwei_guard": 0,
+                        "zhuge_crossbow": 0,
+                        "xiandeng_warrior": 0,
+                        "hubao_cavalry": 0,
+                        "xiliang_cavalry": 0
+                      },
+                      "earliestExpireAt": null
+                    },
+                    "deserters": {
+                      "troops": {
+                        "porter": 0,
+                        "militia": 0,
+                        "scout": 0,
+                        "pikeman": 0,
+                        "swordsman": 0,
+                        "archer": 0,
+                        "cavalry": 0,
+                        "iron_cavalry": 0,
+                        "supply_wagon": 0,
+                        "ballista": 0,
+                        "siege_ram": 0,
+                        "yulin_guard": 0,
+                        "danyang_soldier": 0,
+                        "baimao_soldier": 0,
+                        "huwei_guard": 0,
+                        "zhuge_crossbow": 0,
+                        "xiandeng_warrior": 0,
+                        "hubao_cavalry": 0,
+                        "xiliang_cavalry": 0
+                      },
+                      "earliestExpireAt": null
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "想看全账号的伤兵营就用这一条，**不要对每座城轮询 GET_STATE**（城多时轮次很贵）。处理仍按城发：对每座城的 cityId 调 RESTORE_TROOPS（治疗 50% / 招降 60% 另扣人口 / 劝回 50%）或 RELEASE_TROOPS（免费，放弃 / 释放）；服务端不提供批量协议，逐城调的顺序与取舍由你决定（推荐按 earliestExpireAt 从早到晚，先救快过期的）。earliestExpireAt 距现在不足 6 小时就该动手。starveAt 已到（不为 null 且已过去）的城正在断粮，劝回逃兵会返回 CITY_STARVING，先运粮。"
     },
     {
       "op": 2000,

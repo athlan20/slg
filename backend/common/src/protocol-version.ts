@@ -669,5 +669,13 @@
  *   stratagem_received；PUSH_MARCH_STATE 新增 reason=march_time_changed；PUSH_CITY_STATE 新增 reason=stratagem；
  *   CityView 新增 stratagems；ScoutIntel 新增 deception；新表 account_stratagem_tokens / city_stratagem_effects /
  *   stratagem_immunity；account_heroes 新增 stratagem_cooldown_until、marches 新增 stratagem_used。
+ * v87：由另一条需求 AISLG-217 占用（未合入本分支）；protocol-changelog 的条目连续性要求先留一条占位，
+ *   两条需求合并时以该需求的真实变更内容替换本条。
+ * v88（伤兵营全城汇总，AISLG-218，只加不改）：新增 GET_TROOP_POOLS（op 147，无参数、只读、玩家与 Agent 通用）——
+ *   一次返回账号全部城的伤兵 / 俘虏 / 逃兵三池与各城断粮时刻：cities[] 每项 { cityId, name, isMain,
+ *   starveAt, wounded, captives, deserters }，三池结构与 CityView 的 wounded / captives / deserters 完全相同
+ *   （troops 按兵种合计 + earliestExpireAt，过期行已过滤），starveAt 与 CityView.starveAt 同口径；主城在前，
+ *   其余按创建时间；三池全空的城也返回。不新增批量协议：一键处理仍由客户端逐城带 cityId 调
+ *   RESTORE_TROOPS（143）/ RELEASE_TROOPS（144），两条协议的行为与数值完全不变。
  */
-export const PROTOCOL_VERSION = 86;
+export const PROTOCOL_VERSION = 88;
