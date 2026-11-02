@@ -19,8 +19,10 @@ export const HERO_COPY = {
       `普通将 ${normal}/${normalCap} · 名将 ${famous}/${famousCap}`,
     hint: '武将账号共享：出征 / 侦察 / 截击 / 运输时可带 1 名；也可任命为城守。属性只决定战斗加成，且加成各自封顶 20%。',
     loading: '正在读取武将…',
-    noTavern: '本城还没有酒馆：建造酒馆后每 4 小时刷新 3 名候选将领，花金币招募。',
+    noTavern: '主城还没有酒馆：建造酒馆后每 4 小时刷新 3 名候选将领，花金币招募（酒馆只能建在主城）。',
     noHeroes: '还没有武将。到酒馆候选里招募一名吧。',
+    tavernMainOnly: '酒馆只能建在主城：候选武将与招募都按主城的酒馆判定，切换回主城即可查看候选并招募。',
+    goMainCity: '切回主城',
   },
   candidates: {
     title: '酒馆候选',

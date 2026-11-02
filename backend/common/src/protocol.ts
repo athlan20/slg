@@ -374,6 +374,8 @@ export const ErrorCode = {
   BUILDING_NOT_BUILT: 'BUILDING_NOT_BUILT',
   /** 建筑已达等级上限（v5） */
   BUILDING_LEVEL_MAX: 'BUILDING_LEVEL_MAX',
+  /** 该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆与书院） */
+  BUILDING_MAIN_ONLY: 'BUILDING_MAIN_ONLY',
   /** 目标建造不存在、不属于本账号或已完成 / 已取消（v7 仅排队可取消；v71 AISLG-190 起在建条目也可取消） */
   BUILD_NOT_CANCELLABLE: 'BUILD_NOT_CANCELLABLE',
   /** 协议对连接声明的登录类型有限制（基于自报 role，非安全边界）：RESET_ACCOUNT 仅玩家、AGENT_REPORT_PLAN 仅 Agent（v9/v10） */

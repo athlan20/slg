@@ -1062,7 +1062,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -1134,17 +1134,17 @@
         {
           "name": "city.buildings",
           "type": "object",
-          "desc": "**DEPRECATED（v3 遗留，勿用）**：按类型统计的已建数量，v5 单实例规则下恒为 0 或 1——切勿当作等级，解析城池建筑状态请一律读 city.levels。键集：{ farm, lumber_mill, quarry, iron_mine, house, government, barracks, warehouse, wall, academy, parade_ground, beacon, post_station, arrow_tower }（v7 起九种，v27 起加书院，v30 起再加校场 / 烽火台 / 驿站 / 箭塔共十四种）。"
+          "desc": "**DEPRECATED（v3 遗留，勿用）**：按类型统计的已建数量，v5 单实例规则下恒为 0 或 1——切勿当作等级，解析城池建筑状态请一律读 city.levels。键集：{ farm, lumber_mill, quarry, iron_mine, house, government, barracks, warehouse, wall, academy, parade_ground, beacon, post_station, arrow_tower }（v7 起九种，v27 起加书院，v30 起再加校场 / 烽火台 / 驿站 / 箭塔共十四种）；v87 起分城不含 tavern / academy。"
         },
         {
           "name": "city.levels",
           "type": "object",
-          "desc": "各建筑类型的当前等级（v5 新增）：0 = 未建造；产量、人口上限与仓储上限均按等级推导。"
+          "desc": "各建筑类型的当前等级（v5 新增）：0 = 未建造；产量、人口上限与仓储上限均按等级推导。v87（AISLG-217）：**分城不含 tavern / academy 两个键**（酒馆与书院只在主城建，分城的 city.levels / city.costs / city.buildings 都不下发这两项；主城照旧）。"
         },
         {
           "name": "city.costs",
           "type": "object",
-          "desc": "各建筑「下一步动作」成本（v6 新增，v25 起附时长）：{ build, upgrade, buildSeconds, upgradeSeconds }，按类型；未建时 build 为建造成本、upgrade 为 null，已建未满级时 upgrade 为升级成本（= 建造成本 × 当前等级）、build 为 null，满级成本均为 null；buildSeconds / upgradeSeconds（v25，AISLG-71）为对应动作的单级时长（秒，已按当前全局时间缩放折算），null 语义与对应成本字段一致。发起前可用它展示消耗与耗时并预判资源不足。"
+          "desc": "各建筑「下一步动作」成本（v6 新增，v25 起附时长）：{ build, upgrade, buildSeconds, upgradeSeconds }，按类型；未建时 build 为建造成本、upgrade 为 null，已建未满级时 upgrade 为升级成本（= 建造成本 × 当前等级）、build 为 null，满级成本均为 null；buildSeconds / upgradeSeconds（v25，AISLG-71）为对应动作的单级时长（秒，已按当前全局时间缩放折算），null 语义与对应成本字段一致。发起前可用它展示消耗与耗时并预判资源不足。v87：分城不含 tavern / academy。"
         },
         {
           "name": "city.levelMax",
@@ -2963,7 +2963,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -3128,7 +3128,7 @@
       "name": "BUILD",
       "title": "发起建筑建造",
       "preAuth": false,
-      "summary": "在当前城池发起一座指定类型建筑的建造（v3 起为统一入口，v4 起排队制，v5 起每种建筑同城唯一——已建成或已在队列中返回 BUILDING_EXISTS，成长请用 UPGRADE；一期不提供建筑拆除）：校验通过后立即扣减建造成本；无在建时立即开工（status=building，dueAt 为预计完成时间），有在建且排队未满时进入排队（status=queued，dueAt 为 null，队首完成后由后台自动激活）。由后台 Worker 在到期后完成。一期九种建筑（v27 起另加书院，v30 起另加校场 / 烽火台 / 驿站 / 箭塔）：农田/伐木场/采石场/铁矿四种资源建筑，民房（提高人口上限）、官府（自动产金，兼野地占领上限）、军营（征兵）、仓库（防掠夺保护：保护量 4000×等级、四资源固定均分；v21 起消费方接入——NPC 袭击主城攻破后按保护额结算可掠量）、城墙（守城加成：v21 起 NPC 袭击主城为守城战，defenseBonus 生效）；v27 起另有第十种书院 academy（科技研究所需：第 N 级科技要求发起研究的城书院 ≥ N 级，见 RESEARCH_TECH）；v30 起再加四种二期建筑——校场 parade_ground（每城同时在外部队数上限 = 校场等级，未建按 1，超限 MARCH / SCOUT 返回 DEPLOY_LIMIT，见 city.deploy）、烽火台 beacon（NPC 来袭预警提前量每级 +10%，敌情详细度 0–2 / 3–5 / 6+ 级分范围 / 兵种 / 精确）、驿站 post_station（从本城出发、目的地是自己另一座城的调兵与运输，行军速度每级 +10%）、箭塔 arrow_tower（守城战里城墙位上不会被消灭的远程单位，每回合固定伤害 150 × 等级、射程 45 + 5 × 等级，见 city.tower）；v36 起再加酒馆 tavern（每城限一座：每 4 小时基准随缩放刷新 3 名候选普通将、金币招募，账号普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1，见 GET_HEROES / RECRUIT_HERO）。当前成本：农田（farm）：金 100 / 木 50；伐木场（lumber_mill）：金 120 / 木 40；采石场（quarry）：金 150 / 木 60；铁矿（iron_mine）：金 200 / 木 80 / 石 60；民房（house）：金 80 / 木 60；官府（government）：金 200 / 木 100 / 石 50；军营（barracks）：金 150 / 木 120 / 石 30；仓库（warehouse）：金 120 / 木 100 / 石 30；城墙（wall）：金 200 / 木 80 / 石 50；书院（academy）：金 180 / 木 100 / 石 50；校场（parade_ground）：金 160 / 木 100 / 石 40；烽火台（beacon）：金 140 / 木 120 / 石 60；驿站（post_station）：金 150 / 木 110 / 石 30；箭塔（arrow_tower）：金 220 / 木 100 / 石 80；酒馆（tavern）：金 260 / 木 120 / 石 60。队列容量为 1 条在建 + 2 条排队（占位数值）；资源不足返回 INSUFFICIENT_RESOURCES（v22 起附 shortfall 缺口与 retryAfterSeconds——按当前净产量推导，等满后重发必然成功），队列已满返回 QUEUE_FULL，失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷）。",
+      "summary": "在当前城池发起一座指定类型建筑的建造（v3 起为统一入口，v4 起排队制，v5 起每种建筑同城唯一——已建成或已在队列中返回 BUILDING_EXISTS，成长请用 UPGRADE；一期不提供建筑拆除）：校验通过后立即扣减建造成本；无在建时立即开工（status=building，dueAt 为预计完成时间），有在建且排队未满时进入排队（status=queued，dueAt 为 null，队首完成后由后台自动激活）。由后台 Worker 在到期后完成。一期九种建筑（v27 起另加书院，v30 起另加校场 / 烽火台 / 驿站 / 箭塔）：农田/伐木场/采石场/铁矿四种资源建筑，民房（提高人口上限）、官府（自动产金，兼野地占领上限）、军营（征兵）、仓库（防掠夺保护：保护量 4000×等级、四资源固定均分；v21 起消费方接入——NPC 袭击主城攻破后按保护额结算可掠量）、城墙（守城加成：v21 起 NPC 袭击主城为守城战，defenseBonus 生效）；v27 起另有第十种书院 academy（科技研究所需：第 N 级科技要求主城书院 ≥ N 级，v87 起书院只在主城，见 RESEARCH_TECH）；v30 起再加四种二期建筑——校场 parade_ground（每城同时在外部队数上限 = 校场等级，未建按 1，超限 MARCH / SCOUT 返回 DEPLOY_LIMIT，见 city.deploy）、烽火台 beacon（NPC 来袭预警提前量每级 +10%，敌情详细度 0–2 / 3–5 / 6+ 级分范围 / 兵种 / 精确）、驿站 post_station（从本城出发、目的地是自己另一座城的调兵与运输，行军速度每级 +10%）、箭塔 arrow_tower（守城战里城墙位上不会被消灭的远程单位，每回合固定伤害 150 × 等级、射程 45 + 5 × 等级，见 city.tower）；v36 起再加酒馆 tavern（v87 起只在主城：每 4 小时基准随缩放刷新 3 名候选普通将、金币招募，账号普通将上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1，见 GET_HEROES / RECRUIT_HERO）。**v87（AISLG-217）起书院 academy 与酒馆 tavern 只能在主城建造与升级**：两者的效果本来就是账号级的（科技全账号生效、武将上限取主城酒馆等级），分城的 BUILD / UPGRADE（含连续升级 toLevel）一律返回 BUILDING_MAIN_ONLY，不扣资源、不入队，分城的 city.levels / city.costs 与建筑清单也不再下发这两项。当前成本：农田（farm）：金 100 / 木 50；伐木场（lumber_mill）：金 120 / 木 40；采石场（quarry）：金 150 / 木 60；铁矿（iron_mine）：金 200 / 木 80 / 石 60；民房（house）：金 80 / 木 60；官府（government）：金 200 / 木 100 / 石 50；军营（barracks）：金 150 / 木 120 / 石 30；仓库（warehouse）：金 120 / 木 100 / 石 30；城墙（wall）：金 200 / 木 80 / 石 50；书院（academy）：金 180 / 木 100 / 石 50；校场（parade_ground）：金 160 / 木 100 / 石 40；烽火台（beacon）：金 140 / 木 120 / 石 60；驿站（post_station）：金 150 / 木 110 / 石 30；箭塔（arrow_tower）：金 220 / 木 100 / 石 80；酒馆（tavern）：金 260 / 木 120 / 石 60。队列容量为 1 条在建 + 2 条排队（占位数值）；资源不足返回 INSUFFICIENT_RESOURCES（v22 起附 shortfall 缺口与 retryAfterSeconds——按当前净产量推导，等满后重发必然成功），队列已满返回 QUEUE_FULL，失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷）。",
       "requestFields": [
         {
           "name": "kind",
@@ -3138,7 +3138,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -3192,7 +3192,8 @@
         "INVALID_PARAMS",
         "INSUFFICIENT_RESOURCES",
         "QUEUE_FULL",
-        "BUILDING_EXISTS"
+        "BUILDING_EXISTS",
+        "BUILDING_MAIN_ONLY"
       ],
       "examples": [
         {
@@ -3413,7 +3414,7 @@
       "name": "UPGRADE",
       "title": "发起建筑升级",
       "preAuth": false,
-      "summary": "把指定类型的建筑升到下一等级（v5 新增；每种建筑同城唯一，成长走升级）。与 BUILD 共用建造队列：无在建时立即开工，有在建时入队（排队上限内），队满返回 QUEUE_FULL。该类型已在队列中（含首次建造进行中、等级仍为 0）返回 BUILDING_EXISTS（在队冲突先于未建成判定）；未建造且不在队列返回 BUILDING_NOT_BUILT；已达等级上限（普通 20 级，v31 AISLG-85 由 10 级开放到 20 级；v63 AISLG-167 占有对应名城时其主题建筑可到 25 级，见 city.levelMax；占位数值）返回 BUILDING_LEVEL_MAX。升级成本 = 建造成本 × 升级倍数，升级时长 = 建造时长 × 升级倍数（均为占位公式；全局时间缩放作用于该总时长，钳 1 秒）：第 L → L+1 级的倍数 1~9 级 = L（线性，即升到 10 级为止的前期成本与耗时不变），L ≥ 10 时 = 9 × 1.3^(L − 9)（10→11 ≈ ×11.7、14→15 ≈ ×33.4、19→20 ≈ ×124.1；10→20 合计约 499 倍基础成本），成本逐项四舍五入；CityView.costs 的 upgrade / upgradeSeconds 与 chain 都按此公式下发。城墙守城减伤前 10 级每级 +5%、11~20 级每级 +2%（20 级 70%）、21~25 级每级 +1%（v63，仅名城洛阳的主题城墙可达，25 级 75%），其他按等级线性增长的效果（人口 / 产金 / 占领上限 / 分城上限 / 仓库保护 / 校场 / 烽火台 / 驿站等）本期不改。完成后产量、人口上限或仓储上限按新等级计算。失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷；v22 起资源不足时另附 shortfall 缺口与 retryAfterSeconds，见下方错误说明）。**v22（AISLG-43）连续升级**：可选 `toLevel`（当前等级 +2 .. 该城该建筑的等级上限，普通 20、名城主题建筑 25）一次把该建筑升到目标等级——中间每一级合成**一条**队列条目：整链按各级公式价在发起时**一次性预扣**（快照即全额，取消排队条目按快照全额返还）、只占 **1 个**队列位、Worker 到达一级推进一级（build.level 为当前推进中的目标等级、build.toLevel 为整链终点），每级完成各发一条 build_completed 事件；响应另附 chain 数组给出每级 { level, cost, seconds }。边界口径：toLevel 超过该建筑等级上限返回 BUILDING_LEVEL_MAX；toLevel ≤ 当前 +1（含低于当前等级的取值）视同单级升级（等效于不带 toLevel，不报错）；发起时整链校验资源，**中间级不会出现资源不足**（资源不足整单回滚、不入队，不存在「只做到某一级」的部分完成）。",
+      "summary": "把指定类型的建筑升到下一等级（v5 新增；每种建筑同城唯一，成长走升级）。**v87（AISLG-217）：书院 academy 与酒馆 tavern 只能在主城升级——cityId 指向分城时返回 BUILDING_MAIN_ONLY，不扣资源、不入队。** 与 BUILD 共用建造队列：无在建时立即开工，有在建时入队（排队上限内），队满返回 QUEUE_FULL。该类型已在队列中（含首次建造进行中、等级仍为 0）返回 BUILDING_EXISTS（在队冲突先于未建成判定）；未建造且不在队列返回 BUILDING_NOT_BUILT；已达等级上限（普通 20 级，v31 AISLG-85 由 10 级开放到 20 级；v63 AISLG-167 占有对应名城时其主题建筑可到 25 级，见 city.levelMax；占位数值）返回 BUILDING_LEVEL_MAX。升级成本 = 建造成本 × 升级倍数，升级时长 = 建造时长 × 升级倍数（均为占位公式；全局时间缩放作用于该总时长，钳 1 秒）：第 L → L+1 级的倍数 1~9 级 = L（线性，即升到 10 级为止的前期成本与耗时不变），L ≥ 10 时 = 9 × 1.3^(L − 9)（10→11 ≈ ×11.7、14→15 ≈ ×33.4、19→20 ≈ ×124.1；10→20 合计约 499 倍基础成本），成本逐项四舍五入；CityView.costs 的 upgrade / upgradeSeconds 与 chain 都按此公式下发。城墙守城减伤前 10 级每级 +5%、11~20 级每级 +2%（20 级 70%）、21~25 级每级 +1%（v63，仅名城洛阳的主题城墙可达，25 级 75%），其他按等级线性增长的效果（人口 / 产金 / 占领上限 / 分城上限 / 仓库保护 / 校场 / 烽火台 / 驿站等）本期不改。完成后产量、人口上限或仓储上限按新等级计算。失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷；v22 起资源不足时另附 shortfall 缺口与 retryAfterSeconds，见下方错误说明）。**v22（AISLG-43）连续升级**：可选 `toLevel`（当前等级 +2 .. 该城该建筑的等级上限，普通 20、名城主题建筑 25）一次把该建筑升到目标等级——中间每一级合成**一条**队列条目：整链按各级公式价在发起时**一次性预扣**（快照即全额，取消排队条目按快照全额返还）、只占 **1 个**队列位、Worker 到达一级推进一级（build.level 为当前推进中的目标等级、build.toLevel 为整链终点），每级完成各发一条 build_completed 事件；响应另附 chain 数组给出每级 { level, cost, seconds }。边界口径：toLevel 超过该建筑等级上限返回 BUILDING_LEVEL_MAX；toLevel ≤ 当前 +1（含低于当前等级的取值）视同单级升级（等效于不带 toLevel，不报错）；发起时整链校验资源，**中间级不会出现资源不足**（资源不足整单回滚、不入队，不存在「只做到某一级」的部分完成）。",
       "requestFields": [
         {
           "name": "kind",
@@ -3428,7 +3429,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -3459,7 +3460,8 @@
         "BUILDING_LEVEL_MAX",
         "BUILDING_EXISTS",
         "INSUFFICIENT_RESOURCES",
-        "QUEUE_FULL"
+        "QUEUE_FULL",
+        "BUILDING_MAIN_ONLY"
       ],
       "examples": [
         {
@@ -3675,7 +3677,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -4398,7 +4400,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -4998,7 +5000,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -5659,7 +5661,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -6354,7 +6356,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -6934,24 +6936,24 @@
       "name": "GET_TECHS",
       "title": "查询科技状态（v27，AISLG-77）",
       "preAuth": false,
-      "summary": "查询账号的科技研究：十六项科技（农耕（farming）：粮、木、石、铁产量每级 +5%；负重（carrying）：部队负重每级 +5%（掠夺与运输共用）；行军（marching）：行军速度每级 +5%；储存（storage）：粮、木、石、铁储量上限每级 +5%；侦察（scouting）：侦察报告更详细：Lv3 起看到兵种明细，Lv6 起看到精确数量；城防（defense）：主城守城时城墙减伤每级额外 +1%（加在城墙加成上）；练兵（drill）：征兵时长每级 −3%（10 级 −30%）；战斗（combat）：世界地图战斗中我方全军攻击每级 +1.5%（10 级 +15%）；防护（protection）：世界地图战斗中我方全军受到伤害每级 −1.5%（10 级 −15%）；驾驭（riding）：骑兵类兵种战斗速度每级 +2%（10 级 +20%）；抛射（archery）：远程兵种（弓箭兵 / 床弩 / 诸葛连弩 / 先登死士）射程每级 +1%（10 级 +10%）；补给（supply）：部队耗粮（城内、行军、驻守）每级 −3%（10 级 −30%）；建筑（construction）：建造、升级时长每级 −3%（10 级 −30%）；研究（research）：科技研究时长每级 −3%（10 级 −30%）；掠夺（looting）：掠夺野地时可抢的资源池每级 +4%（10 级 +40%）；维修（repair）：分城城防值每小时回涨每级 +5%（基础 10 点/小时，10 级 15 点/小时））各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技分「发展 / 军事」两类（条目 category：development / military），前端分两栏展示；其中战斗 / 防护 / 驾驭 / 抛射四项只在世界地图战斗中生效。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 10 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。",
+      "summary": "查询账号的科技研究：十六项科技（农耕（farming）：粮、木、石、铁产量每级 +5%；负重（carrying）：部队负重每级 +5%（掠夺与运输共用）；行军（marching）：行军速度每级 +5%；储存（storage）：粮、木、石、铁储量上限每级 +5%；侦察（scouting）：侦察报告更详细：Lv3 起看到兵种明细，Lv6 起看到精确数量；城防（defense）：主城守城时城墙减伤每级额外 +1%（加在城墙加成上）；练兵（drill）：征兵时长每级 −3%（10 级 −30%）；战斗（combat）：世界地图战斗中我方全军攻击每级 +1.5%（10 级 +15%）；防护（protection）：世界地图战斗中我方全军受到伤害每级 −1.5%（10 级 −15%）；驾驭（riding）：骑兵类兵种战斗速度每级 +2%（10 级 +20%）；抛射（archery）：远程兵种（弓箭兵 / 床弩 / 诸葛连弩 / 先登死士）射程每级 +1%（10 级 +10%）；补给（supply）：部队耗粮（城内、行军、驻守）每级 −3%（10 级 −30%）；建筑（construction）：建造、升级时长每级 −3%（10 级 −30%）；研究（research）：科技研究时长每级 −3%（10 级 −30%）；掠夺（looting）：掠夺野地时可抢的资源池每级 +4%（10 级 +40%）；维修（repair）：分城城防值每小时回涨每级 +5%（基础 10 点/小时，10 级 15 点/小时））各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技分「发展 / 军事」两类（条目 category：development / military），前端分两栏展示；其中战斗 / 防护 / 驾驭 / 抛射四项只在世界地图战斗中生效。科技是**账号共享**的——全账号所有城都生效，研究统一在主城进行（v87 AISLG-217：书院只在主城建造）；同一时间账号只研究一项。每项最高 10 级，第 N 级要求**主城**的书院（academy 建筑）≥ N 级。v87 起 data.cityId 保留但忽略（academyLevel / academyOk 恒按主城）。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。",
       "requestFields": [
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选。指定城池（缺省主城），仅影响 academyLevel 与 academyOk 的判定。"
+          "desc": "可选但已忽略（v87，AISLG-217）：书院只在主城建造，academyLevel / academyOk 恒定按主城的书院判定；传什么 cityId 都不报错，结果相同。"
         },
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
         {
           "name": "academyLevel",
           "type": "number",
-          "desc": "查询城的书院等级（0 = 未建）。"
+          "desc": "主城的书院等级（0 = 未建；v87 起恒定为主城那座）。"
         },
         {
           "name": "techs",
@@ -6966,7 +6968,7 @@
         {
           "name": "research",
           "type": "object | null",
-          "desc": "账号进行中的研究 { id, cityId 扣资源的城, tech, level 完成后的目标等级, status, initiator, cost 成本快照, startedAt, dueAt, completedAt }；没有为 null。"
+          "desc": "账号进行中的研究 { id, cityId 扣资源的城（v87 起恒为主城）, tech, level 完成后的目标等级, status, initiator, cost 成本快照, startedAt, dueAt, completedAt }；没有为 null。"
         }
       ],
       "errors": [
@@ -7027,7 +7029,7 @@
       "name": "RESEARCH_TECH",
       "title": "发起科技研究（v27，AISLG-77）",
       "preAuth": false,
-      "summary": "研究某项科技的下一级：校验通过后立即从发起城扣除成本（可选 data.cityId，缺省主城；书院等级按该城判定），写入研究记录，到期由后台 Worker 完成并让等级账号共享、全城生效。校验顺序：科技已满级 → TECH_LEVEL_MAX；账号已有进行中的研究 → RESEARCH_IN_PROGRESS；发起城书院 < 目标等级 → ACADEMY_TOO_LOW（失败 data 附 academyRequired / academyLevel）；资源不足 → INSUFFICIENT_RESOURCES。失败响应附 city（当前城池状态）。研究生效瞬间，全账号所有城的产量与储量上限按旧等级结算到到期时刻、此后按新等级走（与建筑完工同口径的产量切分）。",
+      "summary": "研究某项科技的下一级：校验通过后立即从**主城**扣除成本（v87 AISLG-217 起书院只在主城，请求里的 cityId 保留但忽略；书院等级按主城那座判定），写入研究记录，到期由后台 Worker 完成并让等级账号共享、全城生效。校验顺序：科技已满级 → TECH_LEVEL_MAX；账号已有进行中的研究 → RESEARCH_IN_PROGRESS；发起城书院 < 目标等级 → ACADEMY_TOO_LOW（失败 data 附 academyRequired / academyLevel）；资源不足 → INSUFFICIENT_RESOURCES。失败响应附 city（当前城池状态）。研究生效瞬间，全账号所有城的产量与储量上限按旧等级结算到到期时刻、此后按新等级走（与建筑完工同口径的产量切分）。",
       "requestFields": [
         {
           "name": "tech",
@@ -7037,12 +7039,12 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选。发起研究 / 扣资源的城（缺省主城）；非本账号的城返回 INVALID_PARAMS。"
+          "desc": "可选但已忽略（v87，AISLG-217）：研究一伴从主城扣成本、按主城书院判定；传什么 cityId 都不报错，结果相同。"
         },
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -7388,17 +7390,17 @@
       "name": "GET_HEROES",
       "title": "查询武将（账号武将 / 酒馆候选 / 名将归属，v36，AISLG-114/115/116）",
       "preAuth": false,
-      "summary": "返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（每城一座酒馆，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限、全部 40 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null，在野名将附 wildAt 落位），以及在野名将的结交进度（friendships）与结交资格（unlocks）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从酒馆所在城扣）。**名将**（三项各 45–65）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 3、名将 5，由玩家分到三项属性，v54 起升级不再自动加属性），上限 40 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。",
+      "summary": "返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（v87 AISLG-217 起：酒馆只在主城建造、候选账号只有一份，固定为主城那座，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限、全部 40 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null，在野名将附 wildAt 落位），以及在野名将的结交进度（friendships）与结交资格（unlocks）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从主城扣）。**名将**（三项各 45–65）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 3、名将 5，由玩家分到三项属性，v54 起升级不再自动加属性），上限 40 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。",
       "requestFields": [
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选。看哪座城的酒馆候选（缺省 = 会话当前城 / 主城）。"
+          "desc": "可选但已忽略（v87，AISLG-217）：候选账号只有一份、固定在主城，传什么 cityId 都不报错，结果相同。"
         },
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -7415,12 +7417,12 @@
         {
           "name": "cityId / tavernLevel",
           "type": "string / number",
-          "desc": "查询城与其酒馆等级（0 = 未建）。"
+          "desc": "主城与其酒馆等级（0 = 未建；v87 起恒为主城）。"
         },
         {
           "name": "maxTavernLevel / normalCap / normalCount",
           "type": "number",
-          "desc": "账号酒馆最高等级；普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1；当前普通将数量。"
+          "desc": "主城的酒馆等级（v87 起只读主城）；普通将上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1；当前普通将数量。"
         },
         {
           "name": "famousCap / famousCount",
@@ -7435,7 +7437,7 @@
         {
           "name": "candidates",
           "type": "array",
-          "desc": "该城酒馆当前候选：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；酒馆未建为空数组。"
+          "desc": "主城酒馆当前候选（v87 起账号只有一份）：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；主城酒馆未建为空数组。"
         },
         {
           "name": "famousClaims",
@@ -7560,7 +7562,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -7650,7 +7652,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -7710,7 +7712,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -14284,7 +14286,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -17218,7 +17220,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -17772,7 +17774,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -18772,7 +18774,7 @@
         {
           "name": "cityId",
           "type": "string",
-          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。"
+          "desc": "可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。"
         }
       ],
       "dataFields": [
@@ -21773,6 +21775,10 @@
       "desc": "建筑已达等级上限（当前为 20 级，v31 AISLG-85 由 10 级开放；占位数值）。UPGRADE 的 toLevel 超过上限同样返回本错误码。",
       "action": "该类型已无法继续升级，转投其他建筑或系统。"
     },
+    "BUILDING_MAIN_ONLY": {
+      "desc": "该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆 tavern 与书院 academy）。两者的效果本来就是账号级的（科技全账号生效、武将上限取主城酒馆等级），分城建了无用，因此只在主城建造；分城的 BUILD / UPGRADE（含连续升级 toLevel）一律返回本错误码，不扣资源、不入队。",
+      "action": "改用主城（不带 cityId 或传 GET_STATE 的 cities[] 中 isMain 为 true 的那座）发起 BUILD / UPGRADE；分城的 city.levels / city.costs 与建筑清单里不含这两项，不要再尝试建造。"
+    },
     "BUILD_NOT_CANCELLABLE": {
       "desc": "目标建造不存在、不属于本账号，或已完成 / 已取消。排队中与建造中的条目都可取消（v7 起排队可取消，v71 AISLG-190 起建造中也可取消）。",
       "action": "用 GET_STATE 查看 city.queue，只对 status=queued 或 building 的条目发起 CANCEL_BUILD。"
@@ -21914,7 +21920,7 @@
       "action": "等待 PUSH_TECH_STATE（research_completed）后再发起，或用 CANCEL_RESEARCH 取消当前研究（全额返还）。"
     },
     "ACADEMY_TOO_LOW": {
-      "desc": "发起研究的城书院等级低于目标等级（v27，AISLG-77：第 N 级科技要求书院 ≥ N 级，未建书院按 0 级）；失败 data 附 academyRequired（要求的书院等级）与 academyLevel（该城现有）。",
+      "desc": "书院等级低于目标等级（v27，AISLG-77：第 N 级科技要求书院 ≥ N 级，未建书院按 0 级；v87 AISLG-217 起按主城的书院判定）；失败 data 附 academyRequired（要求的书院等级）与 academyLevel（主城现有）。",
       "action": "先在该城建造 / 升级书院（academy）到 academyRequired，或改用书院更高的分城发起（data.cityId）。"
     },
     "RESEARCH_NOT_CANCELLABLE": {
@@ -21938,7 +21944,7 @@
       "action": "重拉 GET_HEROES 取当前候选再招募。"
     },
     "HERO_CAP_REACHED": {
-      "desc": "（v36，AISLG-114）普通将数量已达上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1（附 normalCap）。",
+      "desc": "（v36，AISLG-114）普通将数量已达上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1（附 normalCap；v87 起只读主城酒馆）。",
       "action": "升级酒馆提高上限，或先 DISMISS_HERO 腾名额。"
     },
     "HERO_NOT_FOUND": {

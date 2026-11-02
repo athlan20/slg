@@ -51,15 +51,15 @@ export const REQUEST_GET_TECHS: RequestOpDoc = {
   name: 'GET_TECHS',
   title: '查询科技状态（v27，AISLG-77）',
   preAuth: false,
-  summary: `查询账号的科技研究：十六项科技（${TECH_TABLE}）各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技分「发展 / 军事」两类（条目 category：development / military），前端分两栏展示；其中战斗 / 防护 / 驾驭 / 抛射四项只在世界地图战斗中生效。科技是**账号共享**的——全账号所有城都生效，只需在任意一座有书院的城研究；同一时间账号只研究一项。每项最高 ${MAX_TECH_LEVEL} 级，第 N 级要求发起研究的城书院（academy 建筑）≥ N 级。可选 data.cityId（缺省主城）指定用哪座城的书院判定 academyOk。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。`,
+  summary: `查询账号的科技研究：十六项科技（${TECH_TABLE}）各自的当前等级、每级效果、下一级的成本 / 耗时 / 书院门槛，以及进行中的研究。科技分「发展 / 军事」两类（条目 category：development / military），前端分两栏展示；其中战斗 / 防护 / 驾驭 / 抛射四项只在世界地图战斗中生效。科技是**账号共享**的——全账号所有城都生效，研究统一在主城进行（v87 AISLG-217：书院只在主城建造）；同一时间账号只研究一项。每项最高 ${MAX_TECH_LEVEL} 级，第 N 级要求**主城**的书院（academy 建筑）≥ N 级。v87 起 data.cityId 保留但忽略（academyLevel / academyOk 恒按主城）。成本 = 基础 × 目标等级；耗时 = 建造基准 × 2 × 目标等级，随全局时间缩放。数值均为占位，上线后按数据调整。`,
   requestFields: [
-    { name: 'cityId', type: 'string', desc: '可选。指定城池（缺省主城），仅影响 academyLevel 与 academyOk 的判定。' },
+    { name: 'cityId', type: 'string', desc: '可选但已忽略（v87，AISLG-217）：书院只在主城建造，academyLevel / academyOk 恒定按主城的书院判定；传什么 cityId 都不报错，结果相同。' },
   ],
   dataFields: [
-    { name: 'academyLevel', type: 'number', desc: '查询城的书院等级（0 = 未建）。' },
+    { name: 'academyLevel', type: 'number', desc: '主城的书院等级（0 = 未建；v87 起恒定为主城那座）。' },
     { name: 'techs', type: 'array', desc: '十六项科技（v72 起），每项 { kind, label, category 归类 development / military, level 当前等级, maxLevel, percentPerLevel 每级效果百分数（带符号：负数为减少时长 / 耗粮 / 受伤；侦察为 0）, effect 效果说明, currentPercent 当前累计效果百分数（带符号）, next 下一级信息或 null（满级） }。' },
     { name: 'techs[].next', type: 'object | null', desc: '{ level 目标等级, cost 成本（五资源）, seconds 耗时（秒，已按全局时间缩放折算）, academyRequired 要求的书院等级（= 目标等级）, academyOk 查询城书院是否满足 }；满级为 null。' },
-    { name: 'research', type: 'object | null', desc: '账号进行中的研究 { id, cityId 扣资源的城, tech, level 完成后的目标等级, status, initiator, cost 成本快照, startedAt, dueAt, completedAt }；没有为 null。' },
+    { name: 'research', type: 'object | null', desc: '账号进行中的研究 { id, cityId 扣资源的城（v87 起恒为主城）, tech, level 完成后的目标等级, status, initiator, cost 成本快照, startedAt, dueAt, completedAt }；没有为 null。' },
   ],
   errors: ['INVALID_PARAMS'],
   examples: [
@@ -77,10 +77,10 @@ export const REQUEST_RESEARCH_TECH: RequestOpDoc = {
   name: 'RESEARCH_TECH',
   title: '发起科技研究（v27，AISLG-77）',
   preAuth: false,
-  summary: `研究某项科技的下一级：校验通过后立即从发起城扣除成本（可选 data.cityId，缺省主城；书院等级按该城判定），写入研究记录，到期由后台 Worker 完成并让等级账号共享、全城生效。校验顺序：科技已满级 → TECH_LEVEL_MAX；账号已有进行中的研究 → RESEARCH_IN_PROGRESS；发起城书院 < 目标等级 → ACADEMY_TOO_LOW（失败 data 附 academyRequired / academyLevel）；资源不足 → INSUFFICIENT_RESOURCES。失败响应附 city（当前城池状态）。研究生效瞬间，全账号所有城的产量与储量上限按旧等级结算到到期时刻、此后按新等级走（与建筑完工同口径的产量切分）。`,
+  summary: `研究某项科技的下一级：校验通过后立即从**主城**扣除成本（v87 AISLG-217 起书院只在主城，请求里的 cityId 保留但忽略；书院等级按主城那座判定），写入研究记录，到期由后台 Worker 完成并让等级账号共享、全城生效。校验顺序：科技已满级 → TECH_LEVEL_MAX；账号已有进行中的研究 → RESEARCH_IN_PROGRESS；发起城书院 < 目标等级 → ACADEMY_TOO_LOW（失败 data 附 academyRequired / academyLevel）；资源不足 → INSUFFICIENT_RESOURCES。失败响应附 city（当前城池状态）。研究生效瞬间，全账号所有城的产量与储量上限按旧等级结算到到期时刻、此后按新等级走（与建筑完工同口径的产量切分）。`,
   requestFields: [
     { name: 'tech', type: `'${TECH_KINDS.join("' | '")}'`, desc: '必填。科技类型；缺失或不是已知类型返回 INVALID_PARAMS。' },
-    { name: 'cityId', type: 'string', desc: '可选。发起研究 / 扣资源的城（缺省主城）；非本账号的城返回 INVALID_PARAMS。' },
+    { name: 'cityId', type: 'string', desc: '可选但已忽略（v87，AISLG-217）：研究一伴从主城扣成本、按主城书院判定；传什么 cityId 都不报错，结果相同。' },
   ],
   dataFields: [
     { name: 'research', type: 'object', desc: '新建的研究记录（结构同 GET_TECHS 的 research，status=researching）。' },

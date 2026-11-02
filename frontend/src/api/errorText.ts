@@ -101,6 +101,9 @@ export function buildErrorText(
       return COPY.errors.build.buildingNotBuilt;
     case 'BUILDING_LEVEL_MAX':
       return COPY.errors.build.buildingLevelMax;
+    case 'BUILDING_MAIN_ONLY':
+      // v87（AISLG-217）：酒馆 / 书院只能在主城
+      return COPY.errors.build.buildingMainOnly;
     case 'BUILD_NOT_CANCELLABLE':
       return COPY.errors.build.buildNotCancellable;
     case 'INVALID_PARAMS':

@@ -23,6 +23,7 @@ export const EXTRA_PANEL_EN = {
   },
   cityGrid: {
     groupLabel: { resource: 'Resources', civil: 'Civic', military: 'Military' } as Record<string, string>,
+    mainOnlyHint: 'The Tavern and Academy can only be built in your main city (their effects are account-wide). Switch back to the main city to build or upgrade them.',
   },
   pageTabs: {
     queue: 'Queue',

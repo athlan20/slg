@@ -304,7 +304,8 @@ async function dispatchOp(
       await handleGetMovingTargets(ctx, conn, op, seq);
       break;
     case Op.GET_HEROES:
-      await handleGetHeroes(ctx, conn, op, seq, data);
+      // v87（AISLG-217）：酒馆候选账号只有一份（主城），请求里的 cityId 忽略
+      await handleGetHeroes(ctx, conn, op, seq);
       break;
     case Op.RECRUIT_HERO:
       await handleRecruitHero(ctx, conn, op, seq, data);
