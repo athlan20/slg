@@ -42,6 +42,81 @@ export const EXTRA_MAP = {
     /** 读屏文案里标题与归属的分隔（中文全角逗号） */
     ariaSep: (owner: string) => `，${owner}`,
   },
+  /** 图层开关新增的两项（AISLG-216）：流寇·商队 / 黄巾 / 领地三条既有文案在 copy-pages 的 MAPUI_COPY */
+  layers: {
+    marches: '行军',
+    yield: '产出',
+  },
+  /** 行军图层（AISLG-216）：任务单字、倒计时、图标提示、同格合并与视野外箭头 */
+  march: {
+    /** 图标里的单字（英文用任务英文首字母，返程用 ↩） */
+    glyph: {
+      plunder: '掠',
+      occupy: '占',
+      reinforce: '援',
+      attack: '攻',
+      scout: '侦',
+      transfer: '调',
+      transport: '运',
+      intercept: '截',
+      return: '返',
+      assist: '协',
+    },
+    /** 同一格多支部队的角标 */
+    stack: (count: number) => `×${count}`,
+    /** 视野外箭头超过上限时的合并角标 */
+    overflow: (count: number) => `+${count}`,
+    /** 截击到埋伏点后的倒计时（到接战时刻） */
+    ambushLeft: (time: string) => `埋伏 ${time}`,
+    /** 图标提示：兵力 / 目标 / 剩余 */
+    tipTroops: (total: number) => `兵力 ${total}`,
+    tipTarget: (x: number, y: number) => `目标 (${x},${y})`,
+    tipLeft: (time: string) => `剩余 ${time}`,
+    /** 同格多支部队的选单标题 */
+    stackTitle: (count: number) => `同一格 ${count} 支部队`,
+    /** 视野外箭头的提示 */
+    arrowHint: '点击跳到行军所在位置',
+    /** 图标提示里的操作说明（手机上先出提示、再点一次开详情） */
+    detailHint: '再点一次查看行军详情',
+  },
+  /** 敌人来袭标记（AISLG-216）：目标格上的红标与倒计时 */
+  raid: {
+    label: (time: string) => `来袭 ${time}`,
+    /** 视野外红色箭头的提示 */
+    arrowHint: '点击跳到被袭击的格子',
+  },
+  /** 领地图例（AISLG-216）：四种关系色 + 连片加成金边 */
+  territoryLegend: {
+    own: '自己',
+    ally: '盟友',
+    hostile: '敌对',
+    other: '其他玩家',
+    cluster: '金边 = 连片加成',
+  },
+  /** 产出图层（AISLG-216）：资源图标单字、产量与储量的提示 */
+  yield: {
+    /** 资源图标单字（与顶栏资源栏同一套资源名取首字） */
+    glyph: {
+      food: '粮',
+      wood: '木',
+      stone: '石',
+      iron: '铁',
+      gold: '金',
+    },
+    rate: (amount: string) => `产出 +${amount}/小时`,
+    reserveValue: (current: string, cap: string) => `储量 ${current}/${cap}`,
+    etaEmpty: (clock: string) => `预计 ${clock} 采空`,
+    etaFull: (clock: string) => `预计 ${clock} 回满`,
+    tier: {
+      ample: '储量充足',
+      normal: '储量一般',
+      depleted: '储量枯竭',
+    },
+    /** 采空不等于没有产出：占领加成照拿，驻军采集降到恢复速度 */
+    depletedNote: '采空后占领加成照拿，驻军采集降到恢复速度',
+    /** 只给图标时的读屏文案 */
+    aria: (resource: string, amount: string) => `产出 ${resource} +${amount}/小时`,
+  },
   /** MapZoomControls：缩放控件文案 */
   zoom: {
     zoomIn: '放大',

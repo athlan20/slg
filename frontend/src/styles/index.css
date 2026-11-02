@@ -213,3 +213,15 @@
     @apply cursor-not-allowed border-line text-faint;
   }
 }
+
+/* 呼吸闪烁（AISLG-216）：地图上的行军图标（截击埋伏中，1.6 秒）与敌人来袭红标（1.2 秒）共用，
+   周期由使用处的 animate-[slg-breathe_…] 决定，这里只给关键帧 */
+@keyframes slg-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

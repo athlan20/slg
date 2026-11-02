@@ -9,8 +9,12 @@ export interface MapLayers {
   moving: boolean;
   /** 黄巾营地 / 老巢 */
   yt: boolean;
-  /** 我的领地（连片描边） */
-  mine: boolean;
+  /** 领地（四种关系的铺色与外圈边界；关掉后只剩三角旗） */
+  territory: boolean;
+  /** 行军（本方行军的线、图标与视野外箭头；敌人来袭红标不受它控制） */
+  marches: boolean;
+  /** 产出（野地的资源图标与每小时产量、自己的地储量条） */
+  yield: boolean;
 }
 
 /** 外部请求打开集市（侧栏账号菜单 / 资源缺口浮层）：id 变化即打开，neededGold 用于按缺口预填 */
@@ -56,7 +60,7 @@ function readSeen(): number {
 export function NavProvider({ children }: { children: ReactNode }) {
   const [page, go] = usePage();
   const [building, setBuilding] = useState<BuildingKind | null>(null);
-  const [layers, setLayers] = useState<MapLayers>({ moving: true, yt: true, mine: true });
+  const [layers, setLayers] = useState<MapLayers>({ moving: true, yt: true, territory: true, marches: true, yield: false });
   const [seenReportId, setSeen] = useState<number>(readSeen);
   const [exchangeAsk, setExchangeAsk] = useState<ExchangeAsk>({ id: 0 });
   const requestExchange = useCallback((neededGold?: number) => {
