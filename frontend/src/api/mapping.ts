@@ -86,7 +86,7 @@ export function buildingEffectText(kind: BuildingKind, city: CityView | null): s
   }
   if (kind === 'barracks' && city) {
     const unlocked = TROOP_KINDS.filter(
-      (troop) => TROOP_INFO[troop].barracksLevel <= city.levels.barracks,
+      (troop) => TROOP_INFO[troop].barracksLevel <= (city.levels.barracks ?? 0),
     ).length;
     return COPY.buildingModal.barracksLine(unlocked, TROOP_KINDS.length);
   }

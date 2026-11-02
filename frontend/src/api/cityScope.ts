@@ -1,10 +1,12 @@
 // 当前操作的城池（v24，AISLG-58）：城池类协议可选带 data.cityId，缺省 = 主城。
 // 选中的城是会话级单例（模块变量）——请求层在发送时统一注入，业务代码无需逐个传参；
 // 登录 / 登出 / 重置账号时由会话层复位为主城。
+// v87（AISLG-217）：酒馆 / 书院只在主城建造，招募、刷新候选与研究一律按主城判定，
+// GET_TECHS / RESEARCH_TECH / GET_HEROES 因此不再随当前城。
 
 import { Op } from './protocol';
 
-/** 支持 data.cityId 的协议（与后端 CITY_SCOPED_OPS 对齐） */
+/** 支持 data.cityId 的协议（与后端 CITY_SCOPED_OPS 对齐；v87 起不再含 GET_TECHS / RESEARCH_TECH / GET_HEROES） */
 const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.GET_STATE,
   Op.BUILD,
@@ -21,10 +23,8 @@ const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.MARCH,
   Op.SCOUT,
   Op.EXCHANGE,
-  Op.GET_TECHS,
-  Op.RESEARCH_TECH,
-  // v36（AISLG-114/115）：酒馆候选按城、城守任命按城
-  Op.GET_HEROES,
+  // v87（AISLG-217）：GET_TECHS / RESEARCH_TECH / GET_HEROES 不随当前城（书院 / 酒馆只在主城，
+  // 候选账号只有一份），不再注入 cityId
   Op.ASSIGN_HERO,
   // v57（AISLG-153）：放弃分城必须指定 cityId
   Op.DISCARD_CITY,

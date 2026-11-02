@@ -1,6 +1,7 @@
 // 科技研究协议的处理逻辑（v27，AISLG-77）：GET_TECHS / RESEARCH_TECH / CANCEL_RESEARCH。
-// 科技账号共享、同一时间只研究一项；发起时在发起城上扣成本（书院等级按该城判定），
-// 取消全额返还到同一座城；到期由 Worker 结算（worker/src/tech-tick.ts）。
+// 科技账号共享、同一时间只研究一项；v87（AISLG-217）起书院只在主城建造，所以发起研究时
+// 一律按主城的书院等级判定、从主城扣成本（请求里的 cityId 保留但忽略，兼容旧 Agent）。
+// 取消仍全额返还到发起研究的那座城（即研究记录里的 city_id，新研究总是主城）。
 // 锁序：研究行（取消路径条件翻转）→ 城池行，与 Worker 的领取顺序一致。
 
 import pg from 'pg';
@@ -31,15 +32,13 @@ import { DECREE_EFFECTS } from '../../common/src/luoyang';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { currentCityId } from './city-scope';
 import { loadCityState, lockCitySnapshot } from './views';
 
-/** 当前请求选定城的 id（scope 缺省 = 账号主城）；账号无城返回 null */
-async function scopedCityId(pool: pg.Pool | pg.PoolClient, accountId: string): Promise<string | null> {
+/** 主城 id（v87，AISLG-217）：科技的书院门槛与研究对象永远是主城（书院只在主城建造）；账号无城返回 null */
+async function mainCityId(pool: pg.Pool | pg.PoolClient, accountId: string): Promise<string | null> {
   const res = await pool.query(
-    `SELECT id FROM cities WHERE account_id = $1 AND ($2::uuid IS NULL OR id = $2::uuid)
-     ORDER BY created_at LIMIT 1`,
-    [accountId, currentCityId() ?? null],
+    `SELECT id FROM cities WHERE account_id = $1 ORDER BY created_at, id LIMIT 1`,
+    [accountId],
   );
   return res.rowCount ? (res.rows[0] as { id: string }).id : null;
 }
@@ -79,7 +78,9 @@ export function buildTechState(
   return { academyLevel, techs, research: research ? researchView(research) : null };
 }
 
-/** GET_TECHS：账号科技 + 当前（或指定）城的书院等级 + 进行中研究 */
+/** GET_TECHS：账号科技 + 主城的书院等级 + 进行中研究。
+ *  v87（AISLG-217）：请求里的 cityId 保留但忽略（书院只在主城建造，academyLevel 恒为主城的）。
+ */
 export async function handleGetTechs(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -87,7 +88,7 @@ export async function handleGetTechs(
   seq: number | undefined,
 ): Promise<void> {
   const accountId = conn.accountId as string;
-  const cityId = await scopedCityId(ctx.pool, accountId);
+  const cityId = await mainCityId(ctx.pool, accountId);
   const client = await ctx.pool.connect();
   try {
     const academy = cityId ? (await loadBuildingLevels(client, cityId)).academy : 0;
@@ -117,7 +118,14 @@ export async function handleResearchTech(
   const client = await ctx.pool.connect();
   try {
     await client.query('BEGIN');
-    const snap = await lockCitySnapshot(client, accountId);
+    // v87（AISLG-217）：研究一律按主城的书院等级判定、从主城扣资源（请求里的 cityId 忽略）
+    const cityId = await mainCityId(client, accountId);
+    if (!cityId) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'INTERNAL');
+      return;
+    }
+    const snap = await lockCitySnapshot(client, accountId, cityId);
     if (!snap) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'INTERNAL');
@@ -127,7 +135,7 @@ export async function handleResearchTech(
     const verdict = startResearch(tech, snap.techs, snap.levels.academy, snap.resources, active !== null);
     if (!verdict.ok) {
       await client.query('ROLLBACK');
-      const cityState = await loadCityState(ctx.pool, accountId);
+      const cityState = await loadCityState(ctx.pool, accountId, snap.cityId);
       respondError(ctx.registry, conn, op, seq, verdict.code, {
         ...(cityState ? { city: cityState } : {}),
         ...(verdict.academyRequired !== undefined ? { academyRequired: verdict.academyRequired, academyLevel: snap.levels.academy } : {}),

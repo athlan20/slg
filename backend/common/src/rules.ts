@@ -22,6 +22,9 @@ export interface BuildingInfo {
   produces: ProducesKind | null;
   /** 建造成本（占位数值） */
   cost: Resources;
+  /** 只在主城可建造 / 可升级（v87，AISLG-217）：酒馆（武将上限取主城那座）与书院（科技门槛按主城那座）。
+   *  分城的 BUILD / UPGRADE 返回 BUILDING_MAIN_ONLY，不扣资源、不入队；分城的 CityView 也不下发这两项 */
+  mainOnly?: boolean;
 }
 
 /**
@@ -103,6 +106,8 @@ export const BUILDING_INFO: Record<BuildingKind, BuildingInfo> = {
     short: '院',
     produces: null,
     cost: { gold: 180, wood: 100, food: 0, stone: 50, iron: 0 },
+    // v87（AISLG-217）：科技是账号级效果，书院只在主城建造
+    mainOnly: true,
   },
   parade_ground: {
     kind: 'parade_ground',
@@ -138,8 +143,22 @@ export const BUILDING_INFO: Record<BuildingKind, BuildingInfo> = {
     short: '酒',
     produces: null,
     cost: { gold: 260, wood: 120, food: 0, stone: 60, iron: 40 },
+    // v87（AISLG-217）：武将上限取主城酒馆等级、候选也只有一份，酒馆只在主城建造
+    mainOnly: true,
   },
 };
+
+/**
+ * 仅主城可建造 / 可升级的建筑（v87，AISLG-217）：酒馆与书院。两者的效果本来就是账号级的
+ * （科技全账号生效、武将上限取主城酒馆等级），分城建了无用，因此只在主城建造。
+ * 判定入口只有一处：发起建造 / 升级共用的 judgeMainCityOnly。
+ */
+export const MAIN_CITY_ONLY_KINDS: readonly BuildingKind[] = ['tavern', 'academy'];
+
+/** 该建筑是否只能在主城建造 / 升级（v87） */
+export function isMainCityOnlyBuilding(kind: BuildingKind): boolean {
+  return BUILDING_INFO[kind].mainOnly === true;
+}
 
 /** 兼容导出：农场成本（协议文档示例引用） */
 export const FARM_COST: Resources = BUILDING_INFO.farm.cost;
@@ -351,7 +370,9 @@ export type BuildDeniedCode =
   /** 该类型尚未建造，不能升级 */
   | 'BUILDING_NOT_BUILT'
   /** 已达等级上限（MAX_BUILDING_LEVEL） */
-  | 'BUILDING_LEVEL_MAX';
+  | 'BUILDING_LEVEL_MAX'
+  /** 该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆与书院） */
+  | 'BUILDING_MAIN_ONLY';
 
 export type StartBuildVerdict =
   | { ok: true; cost: Resources; /** 建造目标等级恒为 1 */ level: 1; /** start=立即开工；queued=进入排队 */ mode: 'start' | 'queued' }
@@ -463,6 +484,17 @@ function judgeQueue(
     return { ok: true, cost: { ...cost }, mode: 'queued' };
   }
   return { ok: false, code: 'QUEUE_FULL' };
+}
+
+/**
+ * 建造 / 升级共用的「仅主城」校验（v87，AISLG-217）：酒馆 / 书院在分城一律拒绝，
+ * 返回 BUILDING_MAIN_ONLY（不扣资源、不入队）。调用方只在这里判一次，不在各处散落。
+ */
+export function judgeMainCityOnly(
+  kind: BuildingKind,
+  isMainCity: boolean,
+): { ok: false; code: 'BUILDING_MAIN_ONLY' } | null {
+  return !isMainCity && isMainCityOnlyBuilding(kind) ? { ok: false, code: 'BUILDING_MAIN_ONLY' } : null;
 }
 
 /** 扣减建造成本（纯函数，不修改入参） */

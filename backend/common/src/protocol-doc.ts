@@ -218,6 +218,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '建筑已达等级上限（当前为 20 级，v31 AISLG-85 由 10 级开放；占位数值）。UPGRADE 的 toLevel 超过上限同样返回本错误码。',
     action: '该类型已无法继续升级，转投其他建筑或系统。',
   },
+  BUILDING_MAIN_ONLY: {
+    desc: '该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆 tavern 与书院 academy）。两者的效果本来就是账号级的（科技全账号生效、武将上限取主城酒馆等级），分城建了无用，因此只在主城建造；分城的 BUILD / UPGRADE（含连续升级 toLevel）一律返回本错误码，不扣资源、不入队。',
+    action: '改用主城（不带 cityId 或传 GET_STATE 的 cities[] 中 isMain 为 true 的那座）发起 BUILD / UPGRADE；分城的 city.levels / city.costs 与建筑清单里不含这两项，不要再尝试建造。',
+  },
   BUILD_NOT_CANCELLABLE: {
     desc: '目标建造不存在、不属于本账号，或已完成 / 已取消。排队中与建造中的条目都可取消（v7 起排队可取消，v71 AISLG-190 起建造中也可取消）。',
     action: '用 GET_STATE 查看 city.queue，只对 status=queued 或 building 的条目发起 CANCEL_BUILD。',
@@ -359,7 +363,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '等待 PUSH_TECH_STATE（research_completed）后再发起，或用 CANCEL_RESEARCH 取消当前研究（全额返还）。',
   },
   ACADEMY_TOO_LOW: {
-    desc: '发起研究的城书院等级低于目标等级（v27，AISLG-77：第 N 级科技要求书院 ≥ N 级，未建书院按 0 级）；失败 data 附 academyRequired（要求的书院等级）与 academyLevel（该城现有）。',
+    desc: '书院等级低于目标等级（v27，AISLG-77：第 N 级科技要求书院 ≥ N 级，未建书院按 0 级；v87 AISLG-217 起按主城的书院判定）；失败 data 附 academyRequired（要求的书院等级）与 academyLevel（主城现有）。',
     action: '先在该城建造 / 升级书院（academy）到 academyRequired，或改用书院更高的分城发起（data.cityId）。',
   },
   RESEARCH_NOT_CANCELLABLE: {
@@ -383,7 +387,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '重拉 GET_HEROES 取当前候选再招募。',
   },
   HERO_CAP_REACHED: {
-    desc: '（v36，AISLG-114）普通将数量已达上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1（附 normalCap）。',
+    desc: '（v36，AISLG-114）普通将数量已达上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1（附 normalCap；v87 起只读主城酒馆）。',
     action: '升级酒馆提高上限，或先 DISMISS_HERO 腾名额。',
   },
   HERO_NOT_FOUND: {

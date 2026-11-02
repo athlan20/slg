@@ -14,6 +14,7 @@ import { repairPercent } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { capitalCooldownFrom, capitalSwapDenial } from '../../common/src/capital-swap';
 import { loadIncomingAttack } from '../../common/src/capital-swap-db';
+import { cancelMainOnlyBuildsForSwap, clearTavernCandidates, swapMainOnlyBuildings } from '../../common/src/main-only-db';
 import { currentCityId } from './city-scope';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
@@ -81,6 +82,10 @@ export async function handleSetCapital(
 
 /** 事务内的设为主城判定与对调（调用方负责 BEGIN / COMMIT / ROLLBACK） */
 async function setCapitalTx(client: pg.PoolClient, accountId: string, targetId: string): Promise<SetCapitalOutcome> {
+  // v87（AISLG-217）：先取消两城在建 / 排队的酒馆与书院并返还（锁序 builds → cities，与 Worker 一致）：
+  // 换完身份后这两项只属于主城，在建条目不能落在一个刚变成分城的城上。判定不通过时整个事务回滚，
+  // 取消与返还一并撤销。
+  await cancelMainOnlyBuildsForSwap(client, accountId, targetId);
   // 锁序：账号名下全部城池行按 id 升序加锁，之后的判定与改写都在锁内
   const locked = await client.query(`SELECT id FROM cities WHERE account_id = $1 ORDER BY id FOR UPDATE`, [accountId]);
   const ownIds = (locked.rows as Array<{ id: string }>).map((row) => row.id);
@@ -144,6 +149,10 @@ async function setCapitalTx(client: pg.PoolClient, accountId: string, targetId: 
      ON CONFLICT (account_id) DO UPDATE SET until = EXCLUDED.until`,
     [accountId, nextCooldown],
   );
+  // v87（AISLG-217）：酒馆 / 书院的等级跟着「主城」身份走——两城记录互换（原主城的等级搬到新主城），
+  // 并清空两城的酒馆候选（账号只有一份候选，下次读主城时重新刷新一批）。
+  await swapMainOnlyBuildings(client, mainId, targetId);
+  await clearTavernCandidates(client, [mainId, targetId]);
   return {
     ok: true,
     capitalId: targetId,

@@ -9,6 +9,8 @@ export const TECH_COPY_EN = {
     title: 'Tech',
     academyMeta: (level: number) => (level > 0 ? `Academy Lv${level}` : 'Academy not built yet'),
     noAcademy: 'Tech can only be researched after the Academy is built (level-N tech requires an Academy at level N or higher). Tech is shared account-wide and applies to all cities',
+    academyMainOnly: 'The Academy can only be built in your main city: the tech requirement always uses the main city Academy and costs are paid from the main city. Switch back to the main city to research.',
+    goMainCity: 'Back to main city',
     sharedHint: 'Tech is shared account-wide and applies to all cities; only one research at a time',
     levelTag: (level: number, max: number) => `Lv${level}/${max}`,
     helpAria: (label: string) => `${label} details`,

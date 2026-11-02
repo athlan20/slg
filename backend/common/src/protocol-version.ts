@@ -669,5 +669,15 @@
  *   stratagem_received；PUSH_MARCH_STATE 新增 reason=march_time_changed；PUSH_CITY_STATE 新增 reason=stratagem；
  *   CityView 新增 stratagems；ScoutIntel 新增 deception；新表 account_stratagem_tokens / city_stratagem_effects /
  *   stratagem_immunity；account_heroes 新增 stratagem_cooldown_until、marches 新增 stratagem_used。
+ * v87（酒馆 / 书院只在主城，AISLG-217）：酒馆 tavern 与书院 academy 的效果本来就是账号级的（科技全账号生效、
+ *   武将上限取主城酒馆等级、研究门槛按主城书院），现在只在主城建。BUILD / UPGRADE（含连续升级 toLevel）对分城
+ *   的这两项返回新错误码 BUILDING_MAIN_ONLY，不扣资源、不入队；分城的 CityView.levels / costs / buildings
+ *   不再下发 tavern / academy 两个键（主城照旧）。使用侧一律按主城判定：GET_TECHS 的 academyLevel / academyOk、
+ *   RESEARCH_TECH 的门槛与扣费、GET_HEROES 的候选与 maxTavernLevel / normalCap 都取主城，请求里的 cityId 保留但
+ *   忽略（不报错，结果与不传相同）。酒馆候选账号只有一份，tavern_candidates.city_id 固定为主城（4 小时基准刷新 3 名
+ *   的常量不变）。上线存量数据一次性幂等迁移：全账号最高等级合并到主城（主城更高则不变）、分城两项记录删除、
+ *   分城在建 / 排队的这两项取消并全额返还到该城（沿用 CANCEL_BUILD 的返还规则）、分城候选清空；进行中的研究不受影响。
+ *   SET_CAPITAL（v82）对调身份时两城的酒馆 / 书院记录一并互换（等级跟着「主城」身份走），清空两城候选，
+ *   两城在建 / 排队的这两项同样取消并返还。分城被占领 / 放弃不再有任何等级损失（建筑随城，规则不变）。
  */
-export const PROTOCOL_VERSION = 86;
+export const PROTOCOL_VERSION = 87;

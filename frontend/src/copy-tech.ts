@@ -7,6 +7,8 @@ export const TECH_COPY = {
     title: '科技',
     academyMeta: (level: number) => (level > 0 ? `书院 Lv${level}` : '尚未建造书院'),
     noAcademy: '建造书院后才能研究科技（第 N 级科技要求书院 ≥ N 级）。科技账号共享，所有城都生效',
+    academyMainOnly: '书院只能建在主城：科技门槛一律按主城的书院判定、成本也从主城扣。切回主城即可研究。',
+    goMainCity: '切回主城',
     sharedHint: '科技账号共享，所有城都生效；同一时间只研究一项',
     levelTag: (level: number, max: number) => `Lv${level}/${max}`,
     /** 「？」浮窗的说明（AISLG-188）：当前效果 / 科技作用 / 下一级（成本·耗时·书院门槛） */

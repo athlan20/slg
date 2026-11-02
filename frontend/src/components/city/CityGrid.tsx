@@ -1,6 +1,7 @@
 /** 城内视图：15 座建筑按用途分三行（资源 / 内政 / 军事），每格固定的紧凑尺寸（不再撑满容器）= 简称 / 名字 / 等级或「未建」/ 一句效果；
  *  在建的有高亮并显示剩余时间，排队的描边，选中的高亮。点格子 = 选中建筑（城池页右侧出详情，在地图页「城内」视图则跳城池页）。
  *  每种建筑同城唯一（v5），等级成长；在队冲突与队满的判断在详情区。
+ *  v87（AISLG-217）：酒馆 / 书院只在主城建造，分城的格子里不出这两项（分城显示「仅主城」提示块）。
  */
 
 import { buildingEffectText } from '../../api/mapping';
@@ -9,6 +10,9 @@ import { type BuildingKind, type CityView } from '../../api/protocol';
 import { BUILDING_LABEL as BUILDING_LABEL_ZH } from '../../copy';
 import { useCopy } from '../../i18n/bundle';
 import { useNow } from '../../state/useNow';
+
+/** 只在主城出现的建筑（v87，AISLG-217：酒馆 / 书院）；分城不显示这两格 */
+const MAIN_CITY_ONLY_KINDS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['academy', 'tavern']);
 
 /** 建筑分组（城内视图按用途分三行，每行一个标签）：资源产出 / 内政民生 / 军事守备，共 15 座 */
 export const KIND_GROUPS: Array<{ key: string; label: string; kinds: BuildingKind[] }> = [
@@ -22,11 +26,13 @@ export const KIND_ORDER: BuildingKind[] = KIND_GROUPS.flatMap((group) => group.k
 
 interface CityGridProps {
   city: CityView | null;
+  /** 当前城是否为主城（v87）：false 时不显示酒馆 / 书院两格，改显示「仅主城」提示 */
+  isMain: boolean;
   selected: BuildingKind | null;
   onPick: (kind: BuildingKind) => void;
 }
 
-export function CityGrid({ city, selected, onPick }: CityGridProps) {
+export function CityGrid({ city, isMain, selected, onPick }: CityGridProps) {
   const copy = useCopy();
   const { BUILDING_LABEL, COPY, EXTRA_PANEL } = copy;
   const queue = city?.queue ?? [];
@@ -43,6 +49,10 @@ export function CityGrid({ city, selected, onPick }: CityGridProps) {
           <h3 className="text-[11.5px] text-faint">{EXTRA_PANEL.cityGrid.groupLabel[group.key] ?? group.label}</h3>
           <div className="city-group-cells grid grid-cols-4 gap-2 sm:[grid-template-columns:repeat(6,minmax(0,8.5rem))]">
             {group.kinds.map((kind) => {
+              // v87（AISLG-217）：酒馆 / 书院只在主城建造，分城的格子里不出这两项
+              if (!isMain && MAIN_CITY_ONLY_KINDS.has(kind)) {
+                return null;
+              }
               const label = BUILDING_LABEL[kind];
               const level = city?.levels[kind] ?? 0;
               const entry = queue.find((item) => item.kind === kind);
@@ -93,6 +103,12 @@ export function CityGrid({ city, selected, onPick }: CityGridProps) {
               );
             })}
           </div>
+          {/* v87（AISLG-217）：分城不提供酒馆 / 书院，提示只能在主城建造 */}
+          {!isMain && group.kinds.some((kind) => MAIN_CITY_ONLY_KINDS.has(kind)) ? (
+            <p role="城内视图-仅主城建筑提示" className="text-[11px] text-faint">
+              {EXTRA_PANEL.cityGrid.mainOnlyHint}
+            </p>
+          ) : null}
         </section>
       ))}
     </div>

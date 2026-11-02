@@ -321,12 +321,15 @@ export interface CityView {
   /** 账号爵位（v76，AISLG-197）：{ index（0 = 平民）, name } */
   nobility: { index: number; name: string };
   resources: Resources;
-  /** 按建筑类型统计的已建数量（v3 新增；v5 单实例规则下为 0 或 1） */
-  buildings: BuildingCounts;
-  /** 各建筑类型的当前等级（v5 新增；0 = 未建造，产量按等级 × 每级速率计算） */
-  levels: BuildingCounts;
-  /** 各建筑「下一步动作」成本（v6 新增）：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用 */
-  costs: Record<BuildingKind, KindActionCosts>;
+  /** 按建筑类型统计的已建数量（v3 新增；v5 单实例规则下为 0 或 1）。
+   *  v87（AISLG-217）：分城不含 tavern / academy 两个键（酒馆与书院只在主城建造） */
+  buildings: Partial<BuildingCounts>;
+  /** 各建筑类型的当前等级（v5 新增；0 = 未建造，产量按等级 × 每级速率计算）。
+   *  v87（AISLG-217）：分城不含 tavern / academy 两个键 */
+  levels: Partial<BuildingCounts>;
+  /** 各建筑「下一步动作」成本（v6 新增）：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用。
+   *  v87（AISLG-217）：分城不含 tavern / academy 两个键 */
+  costs: Partial<Record<BuildingKind, KindActionCosts>>;
   /** 各建筑的等级上限（v63 新增）：普通为 20；占有对应名城时其主题建筑为 25（见 CityView.famousEffect 与 famousName） */
   levelMax: Record<BuildingKind, number>;
   /** 兼容字段：已建成的农场数量（= buildings.farm；v2 及以前的客户端使用） */

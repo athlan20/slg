@@ -7,7 +7,7 @@ import type { FieldDoc, OpDoc } from './protocol-doc';
 export const CITY_ID_FIELD: FieldDoc = {
   name: 'cityId',
   type: 'string',
-  desc: '可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。',
+  desc: '可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。与主城绑定、会忽略本字段的协议：GET_TECHS / RESEARCH_TECH / GET_HEROES（v87，AISLG-217：书院与酒馆只在主城建造，研究、招募与候选一律按主城判定；传了也不报错，结果与不传相同）。',
 };
 
 /** 为请求协议文档附加可选 cityId 字段（返回新对象，不改动原清单） */
