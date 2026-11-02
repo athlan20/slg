@@ -1,5 +1,5 @@
-/** 地图卡（地图页左侧）：图层开关（流寇·商队 / 黄巾 / 领地）、工具条（回主城 · 缩放 · 坐标跳转 · 平移）、
- *  世界地图舞台。格数按容器算。建筑相关的操作在城池页，这里只放世界地图。
+/** 地图卡（地图页左侧）：图层开关（流寇·商队 / 黄巾 / 领地 / 行军 / 产出，AISLG-216 起后三项见 dispatch）、
+ *  工具条（回主城 · 缩放 · 坐标跳转 · 平移）、世界地图舞台。格数按容器算。建筑相关的操作在城池页，这里只放世界地图。
  */
 
 import { useCopy } from '../../i18n/bundle';
@@ -7,6 +7,7 @@ import { useGame } from '../../state/GameContext';
 import { useNav, type MapLayers } from '../../state/NavContext';
 // role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
 import { MAPUI_COPY as MAPUI_COPY_ZH } from '../../copy-pages';
+import { EXTRA_MAP as EXTRA_MAP_ZH } from '../../copy-extra-map';
 import { Card } from '../ui/Card';
 import { MapToolbar } from './MapToolbar';
 import { WorldMapStage } from './WorldMapStage';
@@ -17,15 +18,18 @@ interface MapCardProps {
 
 export function MapCard({ role }: MapCardProps) {
   const copy = useCopy();
-  const { MAPUI_COPY } = copy;
-  const { session, openYellowTurban } = useGame();
+  const { EXTRA_MAP, MAPUI_COPY } = copy;
+  const { session, openYellowTurban, incoming } = useGame();
   const { layers, toggleLayer } = useNav();
   const world = session.world;
   // 图层开关文案随语言取（原先在模块顶层取静态中文包）；role 用第三列固定中文
   const LAYER_LABELS: Array<[keyof MapLayers, string, string]> = [
     ['moving', MAPUI_COPY.layerMoving, MAPUI_COPY_ZH.layerMoving],
     ['yt', MAPUI_COPY.layerYt, MAPUI_COPY_ZH.layerYt],
-    ['mine', MAPUI_COPY.layerMine, MAPUI_COPY_ZH.layerMine],
+    ['territory', MAPUI_COPY.layerMine, MAPUI_COPY_ZH.layerMine],
+    // 新加两个图层（AISLG-216）：行军默认开、产出默认关（信息多，要的人自己打开）
+    ['marches', EXTRA_MAP.layers.marches, EXTRA_MAP_ZH.layers.marches],
+    ['yield', EXTRA_MAP.layers.yield, EXTRA_MAP_ZH.layers.yield],
   ];
 
   return (
@@ -56,6 +60,8 @@ export function MapCard({ role }: MapCardProps) {
         onSelect={world.selectTile}
         overview={session.mapOverview}
         allianceMarks={session.allianceMarks.marks}
+        cityList={session.cityList.cities}
+        npcWarnings={incoming}
       />
     </Card>
   );
