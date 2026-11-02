@@ -17,6 +17,9 @@ import { HelpTip } from './ui/HelpTip';
 interface TechPanelProps {
   city: CityView | null;
   session: TechSession;
+  /** 当前城是否主城（v87）：分城时提示书院只能建在主城，并引导切回主城 */
+  isMain: boolean;
+  onGoMain: () => void;
 }
 
 /** 服务端下发的归类；老服务端没有 category 时按已知的军事项兜底 */
@@ -28,11 +31,12 @@ function categoryOf(entry: TechEntryView): TechCategory {
 
 const CATEGORIES: TechCategory[] = ['development', 'military'];
 
-function TechRow({ entry, city, researchBusy, researching, onResearch }: { entry: TechEntryView; city: CityView; researchBusy: boolean; researching: boolean; onResearch: () => void }) {
+function TechRow({ entry, city, academyLevel, researchBusy, researching, onResearch }: { entry: TechEntryView; city: CityView; academyLevel: number; researchBusy: boolean; researching: boolean; onResearch: () => void }) {
   const copy = useCopy();
   const { TECH_COPY } = copy;
   const next = entry.next;
-  const academyOk = next !== null && city.levels.academy >= next.academyRequired;
+  // v87（AISLG-217）：书院门槛一律按主城的书院等级（服务端 GET_TECHS 的 academyLevel）判
+  const academyOk = next !== null && academyLevel >= next.academyRequired;
   const parts = next ? costParts(next.cost, city.resources) : [];
   const lacking = parts.some((part) => part.insufficient);
   const blocked =
@@ -107,23 +111,36 @@ function TechRow({ entry, city, researchBusy, researching, onResearch }: { entry
   );
 }
 
-export function TechPanel({ city, session }: TechPanelProps) {
+export function TechPanel({ city, session, isMain, onGoMain }: TechPanelProps) {
   const copy = useCopy();
   const { TECH_COPY } = copy;
   const { tech, error, busy } = session;
   const research = tech?.research ?? null;
   const now = useNow(research !== null);
-  const academy = city?.levels.academy ?? 0;
+  // v87（AISLG-217）：书院只在主城，门槛按主城那座（服务端下发 academyLevel）
+  const academy = tech?.academyLevel ?? 0;
 
   return (
     <Card role="科技面板" title={TECH_COPY.panel.title} meta={<span role="科技面板-书院等级">{TECH_COPY.panel.academyMeta(academy)}</span>}>
-      <p
-        role={academy === 0 ? '科技面板-无书院提示' : '科技面板-共享提示'}
-        className={`line-clamp-1 shrink-0 text-[11px] ${academy === 0 ? 'text-warn' : 'text-faint'}`}
-        title={academy === 0 ? TECH_COPY.panel.noAcademy : TECH_COPY.panel.sharedHint}
-      >
-        {academy === 0 ? TECH_COPY.panel.noAcademy : TECH_COPY.panel.sharedHint}
-      </p>
+      {!isMain ? (
+        // v87（AISLG-217）：分城给提示并引导回主城（研究一律按主城判定、从主城扣资源）
+        <div role="科技面板-仅主城提示" className="flex shrink-0 flex-col gap-1 rounded-[5px] border border-dashed border-line px-2 py-1">
+          <p className="text-[11.5px] text-warn" title={TECH_COPY.panel.academyMainOnly}>
+            {TECH_COPY.panel.academyMainOnly}
+          </p>
+          <button type="button" role="科技面板-切回主城按钮" onClick={onGoMain} className="btn self-start">
+            {TECH_COPY.panel.goMainCity}
+          </button>
+        </div>
+      ) : (
+        <p
+          role={academy === 0 ? '科技面板-无书院提示' : '科技面板-共享提示'}
+          className={`line-clamp-1 shrink-0 text-[11px] ${academy === 0 ? 'text-warn' : 'text-faint'}`}
+          title={academy === 0 ? TECH_COPY.panel.noAcademy : TECH_COPY.panel.sharedHint}
+        >
+          {academy === 0 ? TECH_COPY.panel.noAcademy : TECH_COPY.panel.sharedHint}
+        </p>
+      )}
 
       {research ? (
         <div role="科技面板-进行中" className="flex shrink-0 flex-col gap-1 rounded border border-accent-dim bg-accent-soft px-2 py-1">
@@ -169,6 +186,7 @@ export function TechPanel({ city, session }: TechPanelProps) {
                       key={entry.kind}
                       entry={entry}
                       city={city}
+                      academyLevel={academy}
                       researchBusy={research !== null || busy}
                       researching={research?.tech === entry.kind}
                       onResearch={() => void session.startResearch(entry.kind)}

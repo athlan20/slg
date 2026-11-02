@@ -14,6 +14,9 @@ import { combatText } from '../copy-combat';
 interface HeroTavernProps {
   state: HeroStateView;
   city: CityView | null;
+  /** 当前城是否主城（v87）：分城不再有酒馆，改显示「只能建在主城」提示 + 切回主城入口 */
+  isMain: boolean;
+  onGoMain: () => void;
   busy: boolean;
   onRecruit: (candidateId: string) => void;
 }
@@ -23,7 +26,7 @@ function nextRefreshIso(refreshedAt: string, timeScale: number): string {
   return new Date(Date.parse(refreshedAt) + (4 * 3_600_000) / Math.max(1, timeScale)).toISOString();
 }
 
-export function HeroTavern({ state, city, busy, onRecruit }: HeroTavernProps) {
+export function HeroTavern({ state, city, isMain, onGoMain, busy, onRecruit }: HeroTavernProps) {
   const copy = useCopy();
   const { HERO_COPY } = copy;
   const [famousOpen, setFamousOpen] = useState(false);
@@ -48,7 +51,15 @@ export function HeroTavern({ state, city, busy, onRecruit }: HeroTavernProps) {
       <p role="tavern-specialty-hint" className="text-[11px] text-faint">
         {combatText('普通将招募成功后随机获得一项固定专长，候选阶段不显示；名将规则不变。', 'Ordinary heroes gain one random, permanent specialty when hired; it is not shown on candidates. Famous heroes retain their existing rules.')}
       </p>
-      {state.tavernLevel <= 0 ? (
+      {/* v87（AISLG-217）：酒馆只在主城，分城给提示并引导切回主城 */}
+      {!isMain ? (
+        <div role="武将面板-酒馆仅主城提示" className="flex flex-col gap-1 rounded-[5px] border border-dashed border-line px-2 py-1">
+          <p className="text-[12px] text-warn">{HERO_COPY.panel.tavernMainOnly}</p>
+          <button type="button" role="武将面板-切回主城按钮" onClick={onGoMain} className="btn self-start">
+            {HERO_COPY.panel.goMainCity}
+          </button>
+        </div>
+      ) : state.tavernLevel <= 0 ? (
         <p role="武将面板-无酒馆提示" className="text-[12px] text-warn">
           {HERO_COPY.panel.noTavern}
         </p>

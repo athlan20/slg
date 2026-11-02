@@ -17,6 +17,9 @@ export function CityPage() {
   const { session } = useGame();
   const { building, selectBuilding } = useNav();
   const city = session.city;
+  // v87（AISLG-217）：分城不显示酒馆 / 书院，需要知道当前城是不是主城
+  const mainCityId = session.cityList.cities.find((item) => item.isMain)?.id ?? null;
+  const isMainCity = city !== null && (mainCityId === null || city.id === mainCityId);
   const built = city ? KIND_ORDER.filter((kind) => (city.levels[kind] ?? 0) > 0).length : 0;
 
   return (
@@ -55,7 +58,7 @@ export function CityPage() {
                 ) : undefined
               }
             >
-              <CityGrid city={city} selected={building} onPick={selectBuilding} />
+              <CityGrid city={city} isMain={isMainCity} selected={building} onPick={selectBuilding} />
             </Card>
           ),
         },

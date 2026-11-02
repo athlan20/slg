@@ -171,8 +171,9 @@ export function tavernRefreshMs(): number {
 }
 
 /**
- * 某座城的酒馆候选（惰性刷新）：候选不存在或已过期（refreshed_at + 4 小时基准 ≤ now）
- * 时重摇一批（3 名），同一事务内 DELETE + INSERT。未建酒馆的城返回空数组（不落库）。
+ * 酒馆候选（惰性刷新；v87 AISLG-217：账号只有一份，cityId 固定为主城 id）：候选不存在或已过期
+ * （refreshed_at + 4 小时基准 ≤ now）时重摇一批（3 名），同一事务内 DELETE + INSERT。
+ * 主城酒馆未建（tavernLevel ≤ 0）时返回空数组（不落库）。
  */
 export async function loadTavernCandidates(
   client: Writer,
@@ -365,14 +366,18 @@ export async function woundHero(client: Writer, heroId: string, until: Date): Pr
   await client.query(`UPDATE account_heroes SET wounded_until = $2 WHERE id = $1`, [heroId, until]);
 }
 
-/** 普通将上限相关：账号所有城中酒馆的最高等级 */
+/** 普通将上限相关：主城酒馆等级（v87，AISLG-217：只读主城——酒馆只在主城建造，不再取所有城的最高值） */
 export async function maxTavernLevel(q: Queryable, accountId: string): Promise<number> {
   const res = await q.query(
-    `SELECT coalesce(max(b.level), 0)::int AS lv FROM city_buildings b
-     JOIN cities c ON c.id = b.city_id WHERE c.account_id = $1 AND b.kind = 'tavern'`,
+    `SELECT coalesce(b.level, 0)::int AS lv
+     FROM cities c
+     LEFT JOIN city_buildings b ON b.city_id = c.id AND b.kind = 'tavern'
+     WHERE c.account_id = $1
+     ORDER BY c.created_at, c.id
+     LIMIT 1`,
     [accountId],
   );
-  return (res.rows[0] as { lv: number }).lv;
+  return (res.rows[0] as { lv: number } | undefined)?.lv ?? 0;
 }
 
 /** 普通将 / 名将数量、上限与酒馆最高等级（招募校验与视图共用） */

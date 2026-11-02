@@ -18,7 +18,7 @@ export function TerritoryPanel() {
   const territory = city?.territory ?? [];
 
   return (
-    <Card role="左列-领地列表" title={ARMY_COPY.territoryTitle} meta={city ? ARMY_COPY.territoryMeta(territory.length, city.levels.government) : undefined}>
+    <Card role="左列-领地列表" title={ARMY_COPY.territoryTitle} meta={city ? ARMY_COPY.territoryMeta(territory.length, (city.levels.government ?? 0)) : undefined}>
       <PagedList
         role="领地-列表"
         items={territory}

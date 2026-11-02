@@ -29,7 +29,6 @@ import {
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { currentCityId } from './city-scope';
 import { loadCityState, lockCitySnapshot } from './views';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -70,22 +69,20 @@ export async function checkHeroMarchable(
   return { ok: true, hero };
 }
 
-/** 目标城的 id：请求显式给的 cityId > 当前请求 scope > 账号主城；城不属于本账号 / 账号无城返回 null */
-async function scopedCityId(
-  pool: pg.Pool | pg.PoolClient,
-  accountId: string,
-  explicit?: unknown,
-): Promise<string | null> {
-  const wanted = typeof explicit === 'string' && UUID_RE.test(explicit) ? explicit : (currentCityId() ?? null);
+/** 主城的 id（v87，AISLG-217）：酒馆 / 书院相关操作一律按主城判定，请求里的 cityId 忽略（兼容旧 Agent）；
+ *  账号无城返回 null */
+async function mainCityId(pool: pg.Pool | pg.PoolClient, accountId: string): Promise<string | null> {
   const res = await pool.query(
-    `SELECT id FROM cities WHERE account_id = $1 AND ($2::uuid IS NULL OR id = $2::uuid)
-     ORDER BY created_at LIMIT 1`,
-    [accountId, wanted],
+    `SELECT id FROM cities WHERE account_id = $1 ORDER BY created_at, id LIMIT 1`,
+    [accountId],
   );
   return res.rowCount ? (res.rows[0] as { id: string }).id : null;
 }
 
 /** 账号武将 + 酒馆候选 + 上限 + 名将归属 → 完整状态视图（候选刷新须在事务内） */
+/** 账号武将 + 酒馆候选 + 上限 + 名将归属 → 完整状态视图（候选刷新须在事务内）。
+ *  v87（AISLG-217）：cityId 为主城 id（酒馆与候选账号只有一份，总是主城那座）。
+ */
 export async function buildHeroState(client: pg.PoolClient, accountId: string, cityId: string): Promise<HeroStateView> {
   const levels = await loadBuildingLevels(client, cityId);
   const candidates = await loadTavernCandidates(client, cityId, levels.tavern);
@@ -110,18 +107,19 @@ export async function buildHeroState(client: pg.PoolClient, accountId: string, c
   };
 }
 
-/** GET_HEROES：账号武将 + 当前（或指定）城酒馆候选 + 上限 + 名将归属 */
+/** GET_HEROES：账号武将 + 主城酒馆候选 + 上限 + 名将归属。
+ *  v87（AISLG-217）：请求里的 data.cityId 保留但对酒馆 / 候选 / 上限一律忽略（兼容旧 Agent，不报错）。
+ */
 export async function handleGetHeroes(
   ctx: HandlerContext,
   conn: ConnInfo,
   op: number,
   seq: number | undefined,
-  data?: Record<string, unknown>,
 ): Promise<void> {
   const accountId = conn.accountId as string;
   const client = await ctx.pool.connect();
   try {
-    const cityId = await scopedCityId(client, accountId, data?.cityId);
+    const cityId = await mainCityId(client, accountId);
     if (!cityId) {
       respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
       return;
@@ -191,7 +189,8 @@ export async function handleRecruitHero(
     const cost = recruitCost({ lead: cand.lead, force: cand.force, wit: cand.wit });
     if (snap.resources.gold < cost) {
       await client.query('ROLLBACK');
-      const cityState = await loadCityState(ctx.pool, accountId);
+      // v87（AISLG-217）：招募扣主城金币，失败时也回主城的当前状态（不受请求 cityId 影响）
+      const cityState = await loadCityState(ctx.pool, accountId, snap.cityId);
       respondError(ctx.registry, conn, op, seq, 'INSUFFICIENT_RESOURCES', cityState ? { city: cityState } : undefined);
       return;
     }
