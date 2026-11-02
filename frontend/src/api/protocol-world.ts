@@ -188,6 +188,8 @@ export interface MarchView {
   ambushAt: string | null;
   /** 随队武将 id（v36 AISLG-114；返程沿用同一武将，回城后自然释放），其余 null */
   heroId: string | null;
+  /** 金蝉脱壳已用过（v86，AISLG-211）：同一支返程部队只能用一次 */
+  stratagemUsed: boolean;
 }
 
 /** 战报中一方的汇总（攻方 / 守方共用；v13） */
@@ -209,6 +211,12 @@ export interface BattleSideView {
   rangedUnits: number;
   /** 该方武将（v36 AISLG-114/115）：攻方 = 随队武将、守方 = 城守（仅守城战）；未配将 / 历史战报为 null / 缺省 */
   hero?: BattleHeroView | null;
+  /** 伤兵（v85 AISLG-212）：本方损失中进入伤兵营的部分（玩家一方各兵种 floor(20%)；NPC 为全 0）；阵亡 = losses − wounded − captured；历史战报缺省视为 0 */
+  wounded?: ArmyCounts;
+  /** 被胜方抓走的部分（v85；只含基础七兵种，败方才有；胜方 / 历史战报缺省视为 0） */
+  captured?: ArmyCounts;
+  /** 抓到的俘虏（v85；胜方为玩家时才有——从败方损失抓 10% 进胜方城的俘虏营；平局 / NPC 胜为缺省 0） */
+  captives?: ArmyCounts;
 }
 
 /** 战报的逐回合统计（v13） */
@@ -319,6 +327,9 @@ export interface ScoutIntel {
   scoutedAt: string;
   /** 城防器械（v73 AISLG-193）：玩家城池才有；按侦察科技三档 */
   defenses?: DefenseScoutView | null;
+  /** 欺敌识破标记（v86，AISLG-211）：目标城有欺敌效果且本次侦察识破时才有（此时 garrison 是真实值）；
+   *  没识破时没有任何标记，garrison 是按倍数换算后的假驻军。被识破不通知施计方 */
+  deception?: { stratagem: import('./protocol-stratagem').StratagemKind; name: string; seen: true };
 }
 
 /** GET_STATE 响应的 cities 元素：账号全部城池（主城在前） */
@@ -389,7 +400,8 @@ export interface RecallGarrisonResponseData {
 
 /** PUSH_MARCH_STATE（op 2005）推送载荷 */
 export interface MarchStatePushData {
-  reason: 'march_started' | 'march_arrived' | 'march_returned';
+  /** march_time_changed=到达时刻被计谋改写（v86，AISLG-211：金蝉脱壳 / 八门金锁），march 为改后的行军 */
+  reason: 'march_started' | 'march_arrived' | 'march_returned' | 'march_time_changed';
   march: MarchView;
 }
 

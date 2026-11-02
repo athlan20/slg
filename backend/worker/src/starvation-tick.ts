@@ -26,6 +26,7 @@ import {
   projectStarvation,
   starveWarningLeadMs,
 } from '../../common/src/starvation';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { settleOwnerCity } from './tick-shared';
 
 /** 扫描最小间隔（毫秒，真实时间）与单次扫描城池上限 */
@@ -155,6 +156,9 @@ async function evaluateCity(client: pg.PoolClient, cityId: string): Promise<Eval
           }
         }
       }
+      // v85（AISLG-212）：兵变减少的兵不再直接损失，进这座城的逃兵营（断粮结束后可花征兵
+      // 资源 50% 劝回，24 小时不处理就没了）；同一事务、同一把城池行锁内入账
+      await recordPoolTroops(client, cityId, 'deserter', result.losses);
     }
     // v74（AISLG-194）：出发城断粮时，协防部队与出发城驻军一起按断粮规则减员
     const assistLosses: Partial<Record<TroopKind, number>> = {};
@@ -174,6 +178,9 @@ async function evaluateCity(client: pg.PoolClient, cityId: string): Promise<Eval
       } else {
         await client.query(`UPDATE city_assist SET troops = $2::jsonb WHERE id = $1`, [assist.id, JSON.stringify(cut.remaining)]);
       }
+      // v85（AISLG-212）：协防部队哗变减员同样进逃兵营——协防从这座城派出，逃兵也归这座城
+      // （累计后一次入账，与伤兵「协防进派出城」同口径）
+      await recordPoolTroops(client, cityId, 'deserter', cut.losses);
     }
     const detail = {
       cityId,

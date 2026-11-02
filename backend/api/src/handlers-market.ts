@@ -37,6 +37,7 @@ import { marchTravelSeconds } from '../../common/src/world';
 import { currentCityId } from './city-scope';
 import { readIntInRange, readString, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
+import { cityDispatchBlockedSeconds } from './stratagem-target';
 import type { ConnInfo } from './connections';
 
 type Client = pg.PoolClient;
@@ -334,6 +335,19 @@ export async function handleBuyMarketOrder(
     if (!buyerCity) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'INTERNAL');
+      return;
+    }
+    // v86（AISLG-211）：中了十面埋伏的城不能派出商队——买家的城与挂单的城（卖家发货）都要查，
+    // 任一被锁就拒绝，且不改任何数据（在扣资源、建商队之前判定）
+    const ambushNow = (await client.query(`SELECT now() AS now`)).rows[0].now as Date;
+    const sellerAmbush = await cityDispatchBlockedSeconds(client, order.city_id, ambushNow);
+    const buyerAmbush = await cityDispatchBlockedSeconds(client, buyerCity.id, ambushNow);
+    if (sellerAmbush !== null || buyerAmbush !== null) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'CITY_AMBUSHED', {
+        retryAfterSeconds: Math.max(sellerAmbush ?? 0, buyerAmbush ?? 0),
+        side: sellerAmbush !== null && buyerAmbush !== null ? 'both' : sellerAmbush !== null ? 'seller' : 'buyer',
+      });
       return;
     }
     const buyerMain = (await mainCityId(client, accountId)) ?? buyerCity.id;

@@ -36,6 +36,8 @@ interface HeroCardProps {
   onCancelTrain: () => void;
   onGift: () => void;
   onReset: () => void;
+  /** 施计（v86，AISLG-211）：打开了施计弹窗并带上这名武将 */
+  onCastStratagem?: () => void;
 }
 
 function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number): { text: string; tone: string } {
@@ -76,9 +78,10 @@ export function HeroCard({
   onCancelTrain,
   onGift,
   onReset,
+  onCastStratagem,
 }: HeroCardProps) {
   const copy = useCopy();
-  const { HERO_COPY, CHAT_COPY } = copy;
+  const { HERO_COPY, CHAT_COPY, STRATAGEM_COPY } = copy;
   const [confirming, setConfirming] = useState(false);
   const status = statusOf(hero, cityNames, now);
   const guardsHere = currentCityId !== null && hero.guardCityId === currentCityId;
@@ -192,6 +195,18 @@ export function HeroCard({
               className={`${smallBtn} border-warn text-warn disabled:border-line disabled:text-faint`}
             >
               {growth.cancelTraining}
+            </button>
+          ) : null}
+          {onCastStratagem ? (
+            <button
+              type="button"
+              role="武将面板-施计按钮"
+              disabled={busy || !atHome}
+              title={atHome ? STRATAGEM_COPY.panel.subtitle : HERO_COPY.card.guardDenied}
+              onClick={onCastStratagem}
+              className={`${smallBtn} border-accent text-accent disabled:border-line disabled:text-faint`}
+            >
+              {STRATAGEM_COPY.entry.cast}
             </button>
           ) : null}
           {onShare ? <ChatShareButton role="武将面板-分享按钮" label={CHAT_COPY.share.hero} onClick={onShare} /> : null}

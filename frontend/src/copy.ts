@@ -669,6 +669,10 @@ const BATTLE_REPORT = {
     `第 ${round} 回合：我方输出 ${mineDamage}、阵亡 ${mineKilled}；敌方输出 ${enemyDamage}、阵亡 ${enemyKilled}`,
   returnNote: '幸存部队随返程行军回城，到达后才入城',
   noTroops: '无兵力',
+  /** 池子行（v85，AISLG-212）：本方伤兵 / 被俘与胜方抓到的俘虏（仅非零时显示；阵亡 = 损失 − 伤兵 − 被俘） */
+  poolWounded: (n: number) => `伤兵 ${n}`,
+  poolCaptured: (n: number) => `被俘 ${n}`,
+  poolCaptives: (n: number) => `抓到俘虏 ${n}`,
   /** 按 id 反查（事件流入口）的加载态 */
   loading: '战报加载中…',
   loadFailed: '战报加载失败（可能已被清理）',
@@ -732,6 +736,11 @@ const EVENTS_PANEL = {
   viewReport: '战报',
   /** 侦察完成事件携带 intel（v23 AISLG-62）：点击打开侦察报告弹窗 */
   viewScoutReport: '侦察',
+  /** 多城时行内的城池名称标签（AISLG-213）：查不到该城（已放弃 / 名城被占走）时的占位与悬停提示 */
+  cityGone: '原城池',
+  cityGoneHint: '该城已不在名下',
+  /** 城池标签的悬停提示：全名 + 点击切城 */
+  cityTagHint: (name: string) => `${name}（点击切换到该城）`,
 };
 
 const LOGIN = {
@@ -817,6 +826,14 @@ const ERRORS = {
     invalidParams: '遣散参数不合法（兵种未知，或数量不是正整数）',
     fallback: '遣散失败，请重试',
   },
+  // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵的治疗 / 招降 / 劝回
+  pools: {
+    invalidParams: '数量超过池内现有，或参数不合法（兵种未知、数量不是正整数）',
+    insufficientResources: '资源不足以支付这次治疗 / 招降 / 劝回（当前资源见顶栏）',
+    insufficientPopulation: '人口不足以招降这么多俘虏（人口随时间增长，民房提高上限）',
+    cityStarving: '本城正在断粮，断粮结束后才能劝回逃兵',
+    fallback: '操作失败，请重试',
+  },
   exchange: {
     insufficientResources: '持有的该资源不够这次兑换',
     invalidParams: '兑换数量需为正整数，且至少 4 单位才能换出 1 金币',
@@ -869,6 +886,11 @@ const SESSION = {
   // v84（AISLG-209）：遣散
   troopsDisbanded: (troops: string, refund: string) => `遣散 ${troops}，返还 ${refund}`,
   troopsDisbandedRejected: (message: string) => `遣散被拒绝（${message}）`,
+  // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵的治疗 / 招降 / 劝回与放弃 / 释放
+  troopsRestored: (label: string, troops: string, cost: string) => `${label} ${troops}，花费 ${cost}`,
+  troopsRestoredRejected: (message: string) => `治疗 / 招降 / 劝回被拒绝（${message}）`,
+  troopsReleased: (label: string, troops: string) => `${label} ${troops}，不返还任何东西`,
+  troopsReleasedRejected: (message: string) => `放弃 / 释放被拒绝（${message}）`,
   marchStarted: (x: number, y: number, dueClock: string) => `部队出征 → (${x},${y})，预计 ${dueClock} 到达`,
   recallStarted: (x: number, y: number, dueClock: string) => `驻军自 (${x},${y}) 启程返城，预计 ${dueClock} 到达，占领已放弃`,
   recallPartialStarted: (x: number, y: number, dueClock: string) => `部分驻军自 (${x},${y}) 启程返城，预计 ${dueClock} 到达，占领保留`,

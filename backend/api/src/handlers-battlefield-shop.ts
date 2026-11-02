@@ -5,6 +5,7 @@ import { EventType, isBattlefieldShopItem } from '../../common/src/protocol';
 import { battlefieldShopDef } from '../../common/src/battlefield';
 import { insertEvent } from '../../common/src/events';
 import { grantHeroExp } from '../../common/src/hero-db';
+import { grantStratagemToken, lockStratagemTokenCount } from '../../common/src/stratagem-db';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
@@ -69,6 +70,16 @@ export async function handleBuyBattlefieldItem(
       respondError(ctx.registry, conn, op, seq, 'BATTLEFIELD_SHOP_LIMIT', { limit: def.limit, bought });
       return;
     }
+    // v86（AISLG-211）：计谋令先查持有上限（到上限不扣军功），再扣军功、再 +1；锁住令的那一行防并发超限
+    if (def.token) {
+      const have = await lockStratagemTokenCount(client, accountId, def.token);
+      const limit = def.holdLimit ?? 0;
+      if (have >= limit) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'STRATAGEM_TOKEN_FULL', { tokenKind: def.token, have, limit });
+        return;
+      }
+    }
     const balanceRes = await client.query(
       `SELECT merit FROM battlefield_merit WHERE account_id = $1 FOR UPDATE`,
       [accountId],
@@ -114,6 +125,10 @@ export async function handleBuyBattlefieldItem(
         [main.id, def.troop, def.count],
       );
       reward = { troop: def.troop, count: def.count };
+    } else if (def.token) {
+      // v86（AISLG-211）：计谋令 +1（上限已在扣军功前校验并持锁）
+      await grantStratagemToken(client, accountId, def.token, 1);
+      reward = { stratagemToken: def.token, count: 1 };
     }
     await insertEvent(client, {
       accountId,

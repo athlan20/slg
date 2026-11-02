@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**84** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**86** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 84）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 86）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -340,7 +340,85 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -498,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 84,
+    "protocolVersion": 86,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -564,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 84,
+    "protocolVersion": 86,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -588,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/81 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/83 补读增量）**
 
 请求：
 
@@ -599,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 81,
+    "docVersion": 83,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -618,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 84,
-    "docNotice": "接口文档已从 v81 更新到 v84：请 GET /agent-api/changes/81 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 86,
+    "docNotice": "接口文档已从 v83 更新到 v86：请 GET /agent-api/changes/83 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -764,9 +842,10 @@
 | city.population | object | 人口现状（v7 新增，v8 规则确认，v19 数值修订）：{ current 当前人口, cap 上限（= 50 + 100 × 民房等级 × (民房等级 + 1)，无民房即基线 50）, growthPerHour 每小时增长（基准 = 10 × 民房等级 × (等级 + 1)，无民房为 0；实际 × 全局时间缩放） }；current ≥ cap 时停止增长（新号即 50/50 满编、增速 0，建民房后恢复增长）；征兵将消耗人口。 |
 | city.army | object | 城内驻军（v11 新增）：{ porter, militia, scout, pikeman, swordsman, archer, cavalry, iron_cavalry, supply_wagon, ballista, siege_ram }（后四种为 v33 二期兵种），按兵种统计；征兵完成（recruit_completed）时累加。v64（AISLG-168）起键集再加 yulin_guard、danyang_soldier、baimao_soldier、huwei_guard、zhuge_crossbow、xiandeng_warrior、hubao_cavalry、xiliang_cavalry 八种名城专属兵（占领对应名城才能征募，失守后已练出的兵留在原主人手里）。 |
 | city.armyFoodUsePerHour | number | 全军小时耗粮（v14 新增，实际值 × 全局时间缩放，与产出同幅）：城内驻军 1 倍 + 行军中/野地驻军 2 倍（单兵耗粮见各兵种 foodUse）。production.food 为毛产量，净粮 = production.food − 本值，可为负；结算把粮食扣到 0 为止、不记负债；**v34（AISLG-107）起断粮不再只是停止增长**：粮食为 0 且净产量为负时，每小时（缩放后）城内驻军每兵种减 10%（见 city.starveAt / city.mutinyNextAt 与 PUSH_STARVATION_STATE）。 |
+| city.wounded / city.captives / city.deserters | object | 伤兵营 / 俘虏营 / 逃兵营（v85 新增，AISLG-212）：各 = { troops 按兵种合计, earliestExpireAt 最早一批的过期时刻（ISO 8601，池子为空为 null；过期行读取时已过滤，到期即视为消失）}。伤兵 = 玩家一方每场世界地图战斗各兵种损失 × 20%，俘虏 = 胜方从败方损失抓的 10%（仅基础七兵种），逃兵 = 断粮哗变每小时减掉的 10%；三池不吃粮、不参战、不能被掠夺。处置用 RESTORE_TROOPS（治疗 / 招降 / 劝回）与 RELEASE_TROOPS（放弃 / 释放，仅 wounded / captive）。 |
 | city.inBattle | boolean | 是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向（来袭 / 运输 / 占领 / 侦察），或有未结的 NPC 来袭。为 true 时 DISBAND_TROOPS 返回 CITY_IN_BATTLE（与放弃分城的判定同口径），客户端据此置灰遣散按钮。 |
 | city.starveAt | string \| null | 预计断粮时间（v34，AISLG-107；ISO 8601）：按当前粮食与净产量（粮毛产量 production.food − armyFoodUsePerHour）推算，已断粮 = 当前时刻，净产量不为负（不会断粮）为 null。距断粮不足 1 小时（缩放后）推送一次预警。 |
-| city.mutinyNextAt | string \| null | 下一次断粮哗变时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每个兵种减 10%（向上取整、至少 1 个，在外部队不受影响、不强制召回）；否则 null。 |
+| city.mutinyNextAt | string \| null | 下一次断粮哗变时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每个兵种减 10%（向上取整、至少 1 个，在外部队不受影响、不强制召回；v85 AISLG-212 起减少的进本城逃兵营 city.deserters，断粮结束后可 50% 劝回）；否则 null。 |
 | city.timeScale | number | 当前部署的全局时间缩放（v20 新增，AISLG-38）：文档时长基准 ÷ 本值 = 实际耗时（钳 1 秒）、速率基准 × 本值。客户端需本地折算时长（如掠夺冷却剩余）时用本值，不要按文档数值硬算。 |
 | city.truceUntil | string \| null | 主城免战截止（v22 新增，AISLG-40）：主城被 NPC 袭击攻破后写入，免战期内（2 × 袭击基准间隔，随 timeScale 缩放）该主城不再进入袭击目标池；从未被攻破为 null。到期自动回到目标池，无事件通知——Agent 规划重建时可据此判断安全窗口。v38（AISLG-122）起被玩家攻破 / 被抢后同样写入（4 小时基准随缩放），玩家与 NPC 共用。 |
 | city.newbieUntil | string \| null | 新手保护截止（v38，AISLG-122，账号级）：注册后 3 天或任一城官府升到 8 级（v42 校准：原 5 级在加速服几分钟即达，形同虚设），先到为准；期内别人不能侦察 / 攻击你（NEWBIE_PROTECTED），你自己侦察 / 攻击其他玩家会立即失效（事件 newbie_protection_ended，打野地 / NPC 不触发）。已出保为 null。 |
@@ -1115,7 +1194,85 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -1487,7 +1644,85 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -1895,7 +2130,85 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -3324,7 +3637,85 @@
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -4911,7 +5302,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 
 `C→S` 请求-响应 · 需登录后发送
 
-分页查询本账号的战斗战报（新→旧）：每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军或主城）各生成一份，账号作为攻方或守方持有。战报含双方编成与损失、逐回合伤害统计、终局原因与城墙减伤；战斗结果同时进事件流（march_completed / npc_raid），战报提供更完整的逐回合明细。v15 起战败幸存部队撤回出发城——战报的 survivors 即实际存活兵力（round_limit 终局时攻方幸存者会在返程行军结束后回到出发城）。
+分页查询本账号的战斗战报（新→旧）：每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军或主城）各生成一份，账号作为攻方或守方持有。战报含双方编成与损失、逐回合伤害统计、终局原因与城墙减伤；v85（AISLG-212）起各侧还给出 wounded（伤兵）/ captured（被胜方抓走）、胜方另有 captives（抓到的俘虏）——阵亡 = losses − wounded − captured，伤兵 / 俘虏的处置见 RESTORE_TROOPS。战斗结果同时进事件流（march_completed / npc_raid），战报提供更完整的逐回合明细。v15 起战败幸存部队撤回出发城——战报的 survivors 即实际存活兵力（round_limit 终局时攻方幸存者会在返程行军结束后回到出发城）。
 
 **请求字段**
 
@@ -4936,13 +5327,13 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | reports[].won | boolean | 本账号是否获胜。 |
 | reports[].rounds | number | 实际回合数。 |
 | reports[].endReason | 'defender_wiped' \| 'attacker_wiped' \| 'round_limit' \| 'no_contact' | 守方全灭 / 攻方全灭（含同回合同归于尽）/ 回合耗尽（攻方未能突破，v15 起幸存部队撤回出发城）/ 未接战（v28 截击扑空或目标消失，见 contact）。 |
-| reports[].attacker / reports[].defender | object | 双方汇总：{ name 展示名, troops 编成, losses 损失, survivors 幸存, damage 总输出, units 总单位数, totalHp 总血量, avgRange 平均射程（1 位小数，数量加权——会被大量近战稀释，不代表克制关系）, maxRange 编成单兵射程最大值, rangedUnits 远程单位数（射程 > 近战基准 10，当前即弓箭兵）, hero 武将（v36 新增，AISLG-114/115：{ name, lead, force, wit, atkPercent, defPercent }——攻方 = 随队武将、守方 = 城守（仅守城战 kind=city_raid），atkPercent/defPercent 为按部队规模折算后的实际生效加成；未配将 / 历史战报为 null）}。units/totalHp/avgRange 为 v21 新增、maxRange/rangedUnits 为 v23 新增（AISLG-49），hero 为 v36 新增，服务端按 troops 汇总下发，历史战报同样补齐；判断「对方有多少单位在远端输出、够多远」用 maxRange + rangedUnits，不要用 avgRange。 |
+| reports[].attacker / reports[].defender | object | 双方汇总：{ name 展示名, troops 编成, losses 损失, survivors 幸存, damage 总输出, units 总单位数, totalHp 总血量, avgRange 平均射程（1 位小数，数量加权——会被大量近战稀释，不代表克制关系）, maxRange 编成单兵射程最大值, rangedUnits 远程单位数（射程 > 近战基准 10，当前即弓箭兵）, hero 武将（v36 新增，AISLG-114/115：{ name, lead, force, wit, atkPercent, defPercent }——攻方 = 随队武将、守方 = 城守（仅守城战 kind=city_raid），atkPercent/defPercent 为按部队规模折算后的实际生效加成；未配将 / 历史战报为 null）, wounded 伤兵 / captured 被俘（v85 新增，AISLG-212：玩家一方损失 × 20% 进伤兵营；被胜方抓走的部分只含基础七兵种；NPC 一方 wounded 为全 0；历史战报缺省视为 0）, captives 抓到的俘虏（v85 新增：胜方为玩家时才有，从败方损失抓 10% 进胜方城的俘虏营；平局 / NPC 胜为缺省 0）}。阵亡 = losses − wounded − captured；伤兵 / 俘虏的后续处置用 GET_STATE 的 city.wounded / captives + RESTORE_TROOPS。units/totalHp/avgRange 为 v21 新增、maxRange/rangedUnits 为 v23 新增（AISLG-49），hero 为 v36 新增，服务端按 troops 汇总下发，历史战报同样补齐；判断「对方有多少单位在远端输出、够多远」用 maxRange + rangedUnits，不要用 avgRange。 |
 | reports[].wallDefensePercent | number | 守方城墙守城减伤（百分数；非守城战斗为 0）。 |
 | reports[].roundLog | array | 逐回合统计：{ round, attackerDamage, defenderDamage, attackerKilled, defenderKilled, towerDamage? }（推进回合伤害为 0；towerDamage 为该回合箭塔伤害，已含在 defenderDamage 内，v30）。 |
 | reports[].comment | object \| null | Agent 写回的战报点评（v23 新增，AISLG-53）：{ text 点评正文, updatedAt 最近写入时间 }；尚未有点评为 null。一份战报只保留最新一条（Agent 重写覆盖）。 |
 | reports[].createdAt | string | 战斗结算时间（ISO 8601）。 |
 
-**Agent 提示**：战损不进入伤兵治疗、俘虏招降或逃兵召回系统（一期确认）：损失即最终减员。roundLog 可用于复盘推进 / 接敌节奏与输出效率。读完战报可用 AGENT_COMMENT_REPORT 写一段大白话点评（为什么输 / 下次带什么兵），玩家会在战报弹窗顶部看到——建议说人话、不出现协议字段名。
+**Agent 提示**：战损不再“损失即最终减员”（v85，AISLG-212）：各侧 wounded（伤兵）/ captured（被俘）与胜方 captives（抓到的俘虏）已入对应城池的池子（伤兵 20%、俘虏 10%，见 GET_STATE 的 city.wounded / captives / deserters）——读完战报应接着建议玩家治疗 / 招降（RESTORE_TROOPS），别让伤兵 / 俘虏白白过期。roundLog 可用于复盘推进 / 接敌节奏与输出效率。读完战报可用 AGENT_COMMENT_REPORT 写一段大白话点评（为什么输 / 下次带什么兵），玩家会在战报弹窗顶部看到——建议说人话、不出现协议字段名。
 
 **示例**
 
@@ -5043,7 +5434,49 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "hubao_cavalry": 0,
             "xiliang_cavalry": 0
           },
-          "damage": 5090
+          "damage": 5090,
+          "wounded": {
+            "porter": 0,
+            "militia": 2,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "captives": {
+            "porter": 0,
+            "militia": 1,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          }
         },
         "defender": {
           "name": "野地 Lv3（森林）",
@@ -5110,7 +5543,49 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
             "hubao_cavalry": 0,
             "xiliang_cavalry": 0
           },
-          "damage": 2926
+          "damage": 2926,
+          "wounded": {
+            "porter": 0,
+            "militia": 0,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "captured": {
+            "porter": 0,
+            "militia": 1,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          }
         },
         "wallDefensePercent": 0,
         "comment": null,
@@ -9367,7 +9842,85 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -10007,7 +10560,85 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -10747,7 +11378,85 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -11371,7 +12080,85 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -12705,7 +13492,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-周期性的剧本战场，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）。每周一场，剧本按周轮换：官渡之战 → 讨伐董卓 → 赤壁之战（循环），本场剧本见 event.script、下一场见 nextScript。官渡之战（script=guandu）是阵营对阵：报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。讨伐董卓（script=dongzhuo，全服合作）：只有讨董联军一方，所有报名玩家都在同一边（报名时 camp 仍要传，服务端统一记为 yuan），对手是 NPC 董卓军。一条推进线 汜水关 → 虎牢关 → 洛阳，前一关打下后下一关才开放（strongholds[].unlocked）。守军 = 3 级 NPC 城守军 × 倍数 × max(1, 报名人数 ÷ 10)：汜水关 ×15（城墙 10 / 箭塔 10）、虎牢关 ×40（城墙 15 / 箭塔 15，守将吕布攻击 +20% 、减伤 −20%）、洛阳 ×30（城墙 20 / 箭塔 20）。守军伤亡保留不回血。攻下洛阳即结束（胜）；时间到也结束。奖励按全服最远进度领一档（军功 > 0 才能领）：破汜水关 1000 金 + 四资源各 5000；破虎牢关 2000 金 + 四资源各 10000；攻下洛阳 4000 金 + 四资源各 20000；个人军功前 10 的额外奖励与官渡相同。没有玩家对抗。 赤壁之战（script=chibi）：孙刘联军（yuan）对曹操军（cao），人数限制、人少补偿、胜负判定、奖励表与官渡相同；报名要求爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。地图同为 30×30 与河（x=15，3 处渡口），双方各 4 个据点加各 1 座大营（共 10 个，见 strongholds）；大营与据点守军、积分产出与官渡对应据点相同（大营守军 ×10，城墙 / 箭塔 10）。风向：开战时随机东南风（se）或西北风（nw），之后每 6 小时交替一次，切换前 30 分钟预告；event.wind = { direction, label, bonusCamp, nextAt, noticeAt }。顺风方（se 利孙刘、nw 利曹操）的远程兵种与床弩射程 +10%（战报可见）。火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）：孙刘方、东南风期间，花 300 军功，火攻与己方据点相邻（曼哈顿距离 ≤ 10）的曹方据点，立即对守军造成总生命 20% 的伤害；同一目标每 2 小时最多一次。连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，op 140）：曹方给己方据点花 200 军功连锁 6 小时：守军受到的伤害 −15%，但被火攻时伤害翻倍（20% → 40%）。赤壁商店另有铁骑兵 20（直接进主城，800 军功，每场限 1 次）。
+周期性的剧本战场，玩家与 Agent 通用。日程：北京时间每周二 20:00 开始报名、周三 20:00 开战、周四 20:00 结束（现实时间，不随全局时间缩放）。每周一场，剧本按周轮换：官渡之战 → 讨伐董卓 → 赤壁之战（循环），本场剧本见 event.script、下一场见 nextScript。官渡之战（script=guandu）是阵营对阵：报名要求主城官府 ≥ 5 级，选袁绍军或曹操军（一方报名人数超过另一方 1.5 倍且多 5 人以上时，人多一方暂停报名）。战场是 30×30 的独立地图，与世界地图完全隔离；中间一条河（x=15）只有 3 处渡口（y=5/15/25）能过。行军每格 60 秒现实时间，不随全局缩放。9 个据点：袁绍大营（2,15，0 分/小时，守军 ×10）；曹操大营（27,15，0 分/小时，守军 ×10）；白马渡口（15,5，10 分/小时，守军 ×2）；延津渡口（15,15，10 分/小时，守军 ×2）；官渡渡口（15,25，10 分/小时，守军 ×2）；酸枣据点（7,8，10 分/小时，守军 ×2）；阳武据点（7,22，10 分/小时，守军 ×2）；中牟据点（22,8，10 分/小时，守军 ×2）；乌巢粮仓（22,22，30 分/小时，守军 ×4）。守军 = 3 级 NPC 城守军（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12）× 表格倍数 × max(1, 报名人数 ÷ 20)；大营按守城战（城墙 10、箭塔 10），其余按野战。报名期从主城带一支部队入场（按人口最多 3000，每人一次，开战后不能追加），入场后可拆成最多 3 队。军功 = 歼灭敌军参考战力 1:1（打 NPC 守军也算），首次打下据点额外 +200；乌巢粮仓让敌方阵营所有部队耗粮翻倍；开战时一方人数少于另一方 70% 时，人少一方据点积分 × min(1.5, 多/少)。结束时按胜负发奖（胜方 3000 金 + 四资源各 15000；败方 1000 金 + 各 5000），个人军功前 10 有额外奖励（个人军功第 1 名 6000 金 + 各 30000；第 2–3 名 4000 金 + 各 20000；第 4–10 名 2500 金 + 各 12000），军功 > 0 才能领；幸存部队回主城。战场商店（军功跨场累积、换季清零）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）；欺敌令 100 军功（每场限 4）；行军令 150 军功（每场限 3）；攻心令 250 军功（每场限 2）；情报令 150 军功（每场限 2）。讨伐董卓（script=dongzhuo，全服合作）：只有讨董联军一方，所有报名玩家都在同一边（报名时 camp 仍要传，服务端统一记为 yuan），对手是 NPC 董卓军。一条推进线 汜水关 → 虎牢关 → 洛阳，前一关打下后下一关才开放（strongholds[].unlocked）。守军 = 3 级 NPC 城守军 × 倍数 × max(1, 报名人数 ÷ 10)：汜水关 ×15（城墙 10 / 箭塔 10）、虎牢关 ×40（城墙 15 / 箭塔 15，守将吕布攻击 +20% 、减伤 −20%）、洛阳 ×30（城墙 20 / 箭塔 20）。守军伤亡保留不回血。攻下洛阳即结束（胜）；时间到也结束。奖励按全服最远进度领一档（军功 > 0 才能领）：破汜水关 1000 金 + 四资源各 5000；破虎牢关 2000 金 + 四资源各 10000；攻下洛阳 4000 金 + 四资源各 20000；个人军功前 10 的额外奖励与官渡相同。没有玩家对抗。 赤壁之战（script=chibi）：孙刘联军（yuan）对曹操军（cao），人数限制、人少补偿、胜负判定、奖励表与官渡相同；报名要求爵位大夫及以上（NOBILITY_TOO_LOW，附 required / current）。地图同为 30×30 与河（x=15，3 处渡口），双方各 4 个据点加各 1 座大营（共 10 个，见 strongholds）；大营与据点守军、积分产出与官渡对应据点相同（大营守军 ×10，城墙 / 箭塔 10）。风向：开战时随机东南风（se）或西北风（nw），之后每 6 小时交替一次，切换前 30 分钟预告；event.wind = { direction, label, bonusCamp, nextAt, noticeAt }。顺风方（se 利孙刘、nw 利曹操）的远程兵种与床弩射程 +10%（战报可见）。火攻（FIRE_BATTLEFIELD_STRONGHOLD，op 139）：孙刘方、东南风期间，花 300 军功，火攻与己方据点相邻（曼哈顿距离 ≤ 10）的曹方据点，立即对守军造成总生命 20% 的伤害；同一目标每 2 小时最多一次。连锁战船（CHAIN_BATTLEFIELD_STRONGHOLD，op 140）：曹方给己方据点花 200 军功连锁 6 小时：守军受到的伤害 −15%，但被火攻时伤害翻倍（20% → 40%）。赤壁商店另有铁骑兵 20（直接进主城，800 军功，每场限 1 次）。
 
 **请求字段**
 
@@ -12972,6 +13759,38 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
             "troop": "cavalry",
             "count": 50
           }
+        },
+        {
+          "item": "stratagem_deception",
+          "label": "欺敌令",
+          "cost": 100,
+          "limit": 4,
+          "bought": 0,
+          "reward": {}
+        },
+        {
+          "item": "stratagem_march",
+          "label": "行军令",
+          "cost": 150,
+          "limit": 3,
+          "bought": 0,
+          "reward": {}
+        },
+        {
+          "item": "stratagem_assault",
+          "label": "攻心令",
+          "cost": 250,
+          "limit": 2,
+          "bought": 0,
+          "reward": {}
+        },
+        {
+          "item": "stratagem_intel",
+          "label": "情报令",
+          "cost": 150,
+          "limit": 2,
+          "bought": 0,
+          "reward": {}
         }
       ]
     },
@@ -13464,7 +14283,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）。赤壁场次另有 铁骑兵 800 军功（直接进主城，每场限 1 次）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。
+用战场军功换东西（军功跨场累积、换季清零；每场限购，见 GET_BATTLEFIELD 的 shop.items）：资源包 200 军功（每场限 5）；武将经验 300 军功（每场限 3）；刀盾兵 600 军功（每场限 2）；轻骑兵 600 军功（每场限 2）；欺敌令 100 军功（每场限 4）；行军令 150 军功（每场限 3）；攻心令 250 军功（每场限 2）；情报令 150 军功（每场限 2）。赤壁场次另有 铁骑兵 800 军功（直接进主城，每场限 1 次）。兑换即时到账（资源包进主城、兵直接进主城驻军、武将经验给指定武将），不占队列。
 
 **请求字段**
 
@@ -15309,7 +16128,85 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 300,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -15427,6 +16324,1891 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "error": {
     "code": "CITY_IN_BATTLE",
     "message": "该城或其名下野地正有行军在途 / 有 NPC 来袭未结，暂不能放弃分城或遣散士兵"
+  }
+}
+```
+
+### op 143 · RESTORE_TROOPS — 治疗伤兵 / 招降俘虏 / 劝回逃兵（立即完成，花征兵资源 × 50% 或 60%）
+
+`C→S` 请求-响应 · 需登录后发送
+
+把指定城池（缺省主城）三个部队池里的兵弄回城内驻军（v85，AISLG-212）：**立即完成、没有等待时间**，按 pool 分三种——伤兵（wounded）治疗花该兵种征兵资源的 50%（治好再遣散不赚不亏）、俘虏（captive）招降花 60% 且**扣人口**（与征兵同口径；军营等级不够征募该兵种也能招降，俘虏本来就是现成的兵）、逃兵（deserter）劝回花 50% 不扣人口。费用口径同遣散（v84）：每种资源 = floor(Σ 单兵征募成本 × 数量 × 比例%)，多个兵种**先累加再取整一次**。**伤兵 / 俘虏 72 小时、逃兵 24 小时不处理就没了**（按全局时间缩放换算，earliestExpireAt 为最早一批的过期时刻）；治疗 / 招降 / 劝回**先消耗最早的一批**。人口规则：伤兵治好回来不扣人口（征兵时已扣），逃兵同样不扣，只有招降俘虏扣（俘虏是对方的人）。劝回逃兵要求该城**不在断粮状态**（粮食归零且净产量为负时返回 CITY_STARVING）。三个池子都不吃粮、不参战、不能被掠夺、不占出征名额；城池消失（分城被占 / 放弃 / 合并）时一起消失。玩家与 Agent 都可以发起。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| pool | 'wounded' \| 'captive' \| 'deserter' | 必填。wounded=治疗伤兵（50%、不扣人口）；captive=招降俘虏（60%、扣人口、无视军营等级）；deserter=劝回逃兵（50%、断粮中拒绝）。其他值返回 INVALID_PARAMS。 |
+| troops | object | 必填。要治疗的兵种与数量，形如 { "pikeman": 20 }：键为兵种（取值同 RECRUIT 的 troop），值为正整数。某兵种超过池内现有数量、空对象、未知兵种、0 / 负数 / 小数一律返回 INVALID_PARAMS（不改任何数据）。 |
+| cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| restored | object | 本次回到城内驻军的兵种与数量（= 请求里数量大于 0 的项），已累加进 city.army。 |
+| cost | object | 花费的资源 { gold, wood, food, stone, iron }：每种 = floor(Σ 单兵成本 × 数量 × 比例%)（先累加后取整，同遣散口径）。 |
+| populationCost | number | 扣的人口：招降俘虏 = Σ 单兵人口 × 数量（与征兵同口径，人口不足返回 INSUFFICIENT_POPULATION）；治疗 / 劝回恒为 0。 |
+| city | object | 操作后的城池状态，结构与 GET_STATE 的 city 相同（含新的 wounded / captives / deserters 三池与 army）。 |
+
+**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_RESOURCES`、`INSUFFICIENT_POPULATION`、`CITY_STARVING`（处置建议见第 4 节）
+
+**Agent 提示**：发起前用 GET_STATE 的 city.wounded / captives / deserters 核对各兵种数量与 earliestExpireAt（最早一批的过期时刻，快过期就先花掉）；资源不足返回 INSUFFICIENT_RESOURCES（附 shortfall 缺口，v22 口径）。治疗与遣散资源口径互补：治好（50%）再遣散（返 50%）净变化为 0，不存在套利；招降多花的 10% 是「俘虏变自己人」的代价。同账号其他在线连接会收到 PUSH_CITY_STATE（reason=troop_pools_changed，附 cityId 与 pool）。
+
+**示例**
+
+**治疗 20 个长枪兵伤兵（花征兵资源 × 50%，不扣人口）**
+
+请求：
+
+```json
+{
+  "op": 143,
+  "seq": 1,
+  "data": {
+    "pool": "wounded",
+    "troops": {
+      "pikeman": 20
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 143,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "restored": {
+      "pikeman": 20
+    },
+    "cost": {
+      "gold": 1500,
+      "wood": 800,
+      "food": 1000,
+      "stone": 0,
+      "iron": 500
+    },
+    "populationCost": 0,
+    "city": {
+      "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "name": "主城",
+      "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
+      "resources": {
+        "gold": 500,
+        "wood": 1200,
+        "food": 1000,
+        "stone": 2000,
+        "iron": 1500
+      },
+      "buildings": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "levels": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "costs": {
+        "farm": {
+          "build": {
+            "gold": 100,
+            "wood": 50,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "lumber_mill": {
+          "build": {
+            "gold": 120,
+            "wood": 40,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "quarry": {
+          "build": {
+            "gold": 150,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "iron_mine": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "house": {
+          "build": {
+            "gold": 80,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "government": {
+          "build": null,
+          "upgrade": {
+            "gold": 200,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "buildSeconds": null,
+          "upgradeSeconds": 1
+        },
+        "barracks": {
+          "build": {
+            "gold": 150,
+            "wood": 120,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "warehouse": {
+          "build": {
+            "gold": 120,
+            "wood": 100,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "wall": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "academy": {
+          "build": {
+            "gold": 180,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "parade_ground": {
+          "build": {
+            "gold": 160,
+            "wood": 100,
+            "food": 0,
+            "stone": 40,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "beacon": {
+          "build": {
+            "gold": 140,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "post_station": {
+          "build": {
+            "gold": 150,
+            "wood": 110,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "arrow_tower": {
+          "build": {
+            "gold": 220,
+            "wood": 100,
+            "food": 0,
+            "stone": 80,
+            "iron": 60
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "tavern": {
+          "build": {
+            "gold": 260,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 40
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        }
+      },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
+      "farms": 0,
+      "production": {
+        "gold": 100,
+        "food": 100,
+        "wood": 100,
+        "stone": 100,
+        "iron": 100
+      },
+      "population": {
+        "current": 50,
+        "cap": 50,
+        "growthPerHour": 0
+      },
+      "storage": {
+        "gold": 1000000,
+        "food": 10000,
+        "wood": 10000,
+        "stone": 10000,
+        "iron": 10000
+      },
+      "army": {
+        "porter": 0,
+        "militia": 0,
+        "scout": 0,
+        "pikeman": 20,
+        "swordsman": 0,
+        "archer": 0,
+        "cavalry": 0,
+        "iron_cavalry": 0,
+        "supply_wagon": 0,
+        "ballista": 0,
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
+      },
+      "armyFoodUsePerHour": 100,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
+      "timeScale": 1,
+      "truceUntil": null,
+      "newbieUntil": null,
+      "shieldUntil": null,
+      "shieldNextAt": null,
+      "durability": null,
+      "famousName": null,
+      "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
+      "famousEffect": null,
+      "starveAt": null,
+      "mutinyNextAt": null,
+      "guard": null,
+      "deploy": {
+        "count": 0,
+        "limit": 1
+      },
+      "tower": null,
+      "techs": {
+        "farming": 0,
+        "carrying": 0,
+        "marching": 0,
+        "storage": 0,
+        "scouting": 0,
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
+      },
+      "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
+      "defenseBonus": 0,
+      "marches": [],
+      "territory": [],
+      "queue": [],
+      "building": null
+    }
+  }
+}
+```
+
+**招降 10 个剑兵俘虏（花征兵资源 × 60% + 扣人口）**
+
+请求：
+
+```json
+{
+  "op": 143,
+  "seq": 2,
+  "data": {
+    "pool": "captive",
+    "troops": {
+      "swordsman": 10
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 143,
+  "seq": 2,
+  "ok": true,
+  "data": {
+    "restored": {
+      "swordsman": 10
+    },
+    "cost": {
+      "gold": 1080,
+      "wood": 360,
+      "food": 720,
+      "stone": 0,
+      "iron": 480
+    },
+    "populationCost": 10,
+    "city": {
+      "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "name": "主城",
+      "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
+      "resources": {
+        "gold": 920,
+        "wood": 1640,
+        "food": 1280,
+        "stone": 2000,
+        "iron": 1520
+      },
+      "buildings": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "levels": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "costs": {
+        "farm": {
+          "build": {
+            "gold": 100,
+            "wood": 50,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "lumber_mill": {
+          "build": {
+            "gold": 120,
+            "wood": 40,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "quarry": {
+          "build": {
+            "gold": 150,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "iron_mine": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "house": {
+          "build": {
+            "gold": 80,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "government": {
+          "build": null,
+          "upgrade": {
+            "gold": 200,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "buildSeconds": null,
+          "upgradeSeconds": 1
+        },
+        "barracks": {
+          "build": {
+            "gold": 150,
+            "wood": 120,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "warehouse": {
+          "build": {
+            "gold": 120,
+            "wood": 100,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "wall": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "academy": {
+          "build": {
+            "gold": 180,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "parade_ground": {
+          "build": {
+            "gold": 160,
+            "wood": 100,
+            "food": 0,
+            "stone": 40,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "beacon": {
+          "build": {
+            "gold": 140,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "post_station": {
+          "build": {
+            "gold": 150,
+            "wood": 110,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "arrow_tower": {
+          "build": {
+            "gold": 220,
+            "wood": 100,
+            "food": 0,
+            "stone": 80,
+            "iron": 60
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "tavern": {
+          "build": {
+            "gold": 260,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 40
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        }
+      },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
+      "farms": 0,
+      "production": {
+        "gold": 100,
+        "food": 100,
+        "wood": 100,
+        "stone": 100,
+        "iron": 100
+      },
+      "population": {
+        "current": 50,
+        "cap": 50,
+        "growthPerHour": 0
+      },
+      "storage": {
+        "gold": 1000000,
+        "food": 10000,
+        "wood": 10000,
+        "stone": 10000,
+        "iron": 10000
+      },
+      "army": {
+        "porter": 0,
+        "militia": 0,
+        "scout": 0,
+        "pikeman": 0,
+        "swordsman": 10,
+        "archer": 0,
+        "cavalry": 0,
+        "iron_cavalry": 0,
+        "supply_wagon": 0,
+        "ballista": 0,
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
+      },
+      "armyFoodUsePerHour": 60,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
+      "timeScale": 1,
+      "truceUntil": null,
+      "newbieUntil": null,
+      "shieldUntil": null,
+      "shieldNextAt": null,
+      "durability": null,
+      "famousName": null,
+      "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
+      "famousEffect": null,
+      "starveAt": null,
+      "mutinyNextAt": null,
+      "guard": null,
+      "deploy": {
+        "count": 0,
+        "limit": 1
+      },
+      "tower": null,
+      "techs": {
+        "farming": 0,
+        "carrying": 0,
+        "marching": 0,
+        "storage": 0,
+        "scouting": 0,
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
+      },
+      "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
+      "defenseBonus": 0,
+      "marches": [],
+      "territory": [],
+      "queue": [],
+      "building": null
+    }
+  }
+}
+```
+
+**该城正在断粮时劝回逃兵被拒（不改任何数据）**
+
+请求：
+
+```json
+{
+  "op": 143,
+  "seq": 3,
+  "data": {
+    "pool": "deserter",
+    "troops": {
+      "militia": 5
+    }
+  }
+}
+```
+
+失败响应（`CITY_STARVING`）：
+
+```json
+{
+  "op": 143,
+  "seq": 3,
+  "ok": false,
+  "error": {
+    "code": "CITY_STARVING",
+    "message": "该城正在断粮（粮食归零且净产量为负），只有断粮结束后才能劝回逃兵"
+  }
+}
+```
+
+### op 144 · RELEASE_TROOPS — 放弃治疗伤兵 / 释放俘虏（免费，池子消失不返还）
+
+`C→S` 请求-响应 · 需登录后发送
+
+把指定城池（缺省主城）伤兵营 / 俘虏营里的兵直接清掉（v85，AISLG-212）：**免费、立即生效、不返还任何东西**——放弃治疗（pool=wounded）等于让这批伤兵死亡，释放俘虏（pool=captive）等于放人。池子快过期、资源不够治疗 / 招降、或兵种结构不想要时用它止损（省下抢人口的顾虑）。逃兵不能释放（deserter 只能 RESTORE_TROOPS 劝回或等 24 小时过期），传 deserter 返回 INVALID_PARAMS。消耗同样按最早一批优先。玩家与 Agent 都可以发起。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| pool | 'wounded' \| 'captive' | 必填。wounded=放弃治疗（伤兵消失）；captive=释放俘虏。deserter 不能释放（只能劝回或等过期），其他值返回 INVALID_PARAMS。 |
+| troops | object | 必填。要清掉的兵种与数量，形如 { "militia": 10 }：值为正整数；某兵种超过池内现有数量、空对象、未知兵种一律返回 INVALID_PARAMS（不改任何数据）。 |
+| cityId | string | 可选（v24，AISLG-58）。要操作的城池 id（GET_STATE 响应的 cities[].id）；缺省 = 主城（账号创建最早的城），旧客户端不受影响。非本账号名下的城或格式不对返回 INVALID_PARAMS。每座城的资源 / 人口 / 仓储 / 建造与征兵队列 / 驻军各自独立；出征、侦察从该城出发、扣减该城驻军。取消类协议（CANCEL_BUILD / CANCEL_RECRUIT）按条目所属城池定位，无需传 cityId。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| released | object | 本次消失的兵种与数量（= 请求里数量大于 0 的项），已从池子扣除。 |
+| city | object | 操作后的城池状态，结构与 GET_STATE 的 city 相同。 |
+
+**可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
+
+**Agent 提示**：只在没有更优选择时用：治疗 / 招降能拿回兵，放弃 / 释放什么都拿不到。同账号其他在线连接会收到 PUSH_CITY_STATE（reason=troop_pools_changed，附 cityId 与 pool）。
+
+**示例**
+
+**释放 10 个民兵俘虏（免费，不返还任何东西）**
+
+请求：
+
+```json
+{
+  "op": 144,
+  "seq": 1,
+  "data": {
+    "pool": "captive",
+    "troops": {
+      "militia": 10
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 144,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "released": {
+      "militia": 10
+    },
+    "city": {
+      "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "name": "主城",
+      "level": 1,
+      "title": "城池",
+      "nobility": {
+        "index": 0,
+        "name": "平民"
+      },
+      "resources": {
+        "gold": 2000,
+        "wood": 2000,
+        "food": 2000,
+        "stone": 2000,
+        "iron": 2000
+      },
+      "buildings": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "levels": {
+        "farm": 0,
+        "lumber_mill": 0,
+        "quarry": 0,
+        "iron_mine": 0,
+        "house": 0,
+        "government": 1,
+        "barracks": 0,
+        "warehouse": 0,
+        "wall": 0,
+        "academy": 0,
+        "parade_ground": 0,
+        "beacon": 0,
+        "post_station": 0,
+        "arrow_tower": 0,
+        "tavern": 0
+      },
+      "costs": {
+        "farm": {
+          "build": {
+            "gold": 100,
+            "wood": 50,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "lumber_mill": {
+          "build": {
+            "gold": 120,
+            "wood": 40,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "quarry": {
+          "build": {
+            "gold": 150,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "iron_mine": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "house": {
+          "build": {
+            "gold": 80,
+            "wood": 60,
+            "food": 0,
+            "stone": 0,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "government": {
+          "build": null,
+          "upgrade": {
+            "gold": 200,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "buildSeconds": null,
+          "upgradeSeconds": 1
+        },
+        "barracks": {
+          "build": {
+            "gold": 150,
+            "wood": 120,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "warehouse": {
+          "build": {
+            "gold": 120,
+            "wood": 100,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "wall": {
+          "build": {
+            "gold": 200,
+            "wood": 80,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "academy": {
+          "build": {
+            "gold": 180,
+            "wood": 100,
+            "food": 0,
+            "stone": 50,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "parade_ground": {
+          "build": {
+            "gold": 160,
+            "wood": 100,
+            "food": 0,
+            "stone": 40,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "beacon": {
+          "build": {
+            "gold": 140,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "post_station": {
+          "build": {
+            "gold": 150,
+            "wood": 110,
+            "food": 0,
+            "stone": 30,
+            "iron": 0
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "arrow_tower": {
+          "build": {
+            "gold": 220,
+            "wood": 100,
+            "food": 0,
+            "stone": 80,
+            "iron": 60
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        },
+        "tavern": {
+          "build": {
+            "gold": 260,
+            "wood": 120,
+            "food": 0,
+            "stone": 60,
+            "iron": 40
+          },
+          "upgrade": null,
+          "buildSeconds": 1,
+          "upgradeSeconds": null
+        }
+      },
+      "levelMax": {
+        "farm": 20,
+        "lumber_mill": 20,
+        "quarry": 20,
+        "iron_mine": 20,
+        "house": 20,
+        "government": 20,
+        "barracks": 20,
+        "warehouse": 20,
+        "wall": 20,
+        "academy": 20,
+        "parade_ground": 20,
+        "beacon": 20,
+        "post_station": 20,
+        "arrow_tower": 20,
+        "tavern": 20
+      },
+      "farms": 0,
+      "production": {
+        "gold": 100,
+        "food": 100,
+        "wood": 100,
+        "stone": 100,
+        "iron": 100
+      },
+      "population": {
+        "current": 50,
+        "cap": 50,
+        "growthPerHour": 0
+      },
+      "storage": {
+        "gold": 1000000,
+        "food": 10000,
+        "wood": 10000,
+        "stone": 10000,
+        "iron": 10000
+      },
+      "army": {
+        "porter": 0,
+        "militia": 0,
+        "scout": 0,
+        "pikeman": 0,
+        "swordsman": 0,
+        "archer": 0,
+        "cavalry": 0,
+        "iron_cavalry": 0,
+        "supply_wagon": 0,
+        "ballista": 0,
+        "siege_ram": 0,
+        "yulin_guard": 0,
+        "danyang_soldier": 0,
+        "baimao_soldier": 0,
+        "huwei_guard": 0,
+        "zhuge_crossbow": 0,
+        "xiandeng_warrior": 0,
+        "hubao_cavalry": 0,
+        "xiliang_cavalry": 0
+      },
+      "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
+      "timeScale": 1,
+      "truceUntil": null,
+      "newbieUntil": null,
+      "shieldUntil": null,
+      "shieldNextAt": null,
+      "durability": null,
+      "famousName": null,
+      "productionBonusPercent": 0,
+      "luoyangBonusPercent": 0,
+      "famousEffect": null,
+      "starveAt": null,
+      "mutinyNextAt": null,
+      "guard": null,
+      "deploy": {
+        "count": 0,
+        "limit": 1
+      },
+      "tower": null,
+      "techs": {
+        "farming": 0,
+        "carrying": 0,
+        "marching": 0,
+        "storage": 0,
+        "scouting": 0,
+        "defense": 0,
+        "drill": 0,
+        "combat": 0,
+        "protection": 0,
+        "riding": 0,
+        "archery": 0,
+        "supply": 0,
+        "construction": 0,
+        "research": 0,
+        "looting": 0,
+        "repair": 0
+      },
+      "recruitQueue": [],
+      "defenses": {
+        "cap": 0,
+        "stock": {
+          "trap": 0,
+          "chevaux": 0,
+          "rolling_log": 0,
+          "boulder": 0
+        },
+        "total": 0,
+        "queue": []
+      },
+      "assistIn": [],
+      "assistOut": [],
+      "assistCap": 5,
+      "defenseBonus": 0,
+      "marches": [],
+      "territory": [],
+      "queue": [],
+      "building": null
+    }
+  }
+}
+```
+
+**逃兵不能释放（只能 RESTORE_TROOPS 劝回或等过期）**
+
+请求：
+
+```json
+{
+  "op": 144,
+  "seq": 2,
+  "data": {
+    "pool": "deserter",
+    "troops": {
+      "militia": 5
+    }
+  }
+}
+```
+
+失败响应（`INVALID_PARAMS`）：
+
+```json
+{
+  "op": 144,
+  "seq": 2,
+  "ok": false,
+  "error": {
+    "code": "INVALID_PARAMS",
+    "message": "请求参数缺失或格式不正确"
+  }
+}
+```
+
+### op 145 · GET_STRATAGEMS — 查询计谋定义、计谋令与逐武将效果预览（v86，AISLG-211）
+
+`C→S` 请求-响应 · 需登录后发送
+
+返回 8 个计谋的定义（类别、目标类型、所需计谋令、是否可失败、免疫时长）、账号 4 类计谋令的持有数与上限，以及每名武将按自身智力算好的效果预览与冷却状态；请求里再带 target 时额外返回对该目标的判定（成功率、是否免疫、是否受新手保护 / 免战 / 同盟限制）。计谋用「计谋令」施放，令**只能用战场军功在战场商店兑换**（BUY_BATTLEFIELD_ITEM 的 stratagem_* 商品：欺敌令（deception）军功价 100、每场限购 4、持有上限 6；行军令（march）军功价 150、每场限购 3、持有上限 5；攻心令（assault）军功价 250、每场限购 2、持有上限 3；情报令（intel）军功价 150、每场限购 2、持有上限 3），不退金币、不能转让；令与军功一起换季清零。施计不花金币，每次消耗 1 张对应类别的令，**成功失败都扣**；施计后该武将冷却 60 分钟（随全局时间缩放）。8 个计谋：草木皆兵 / 空城计（欺敌，别人侦察你的城时看到倍数换算后的假驻军，侦察方侦察科技每级 5% 概率识破）、焚烧粮草（烧掉对方一座城现存粮食的 min(智力 × 0.1%, 8%)）、趁火打劫（该城仓库防掠保护降 min(智力 × 0.5%, 30%) 持续 1 小时）、十面埋伏（该城 min(智力, 60) 分钟不能派任何部队）、金蝉脱壳（自己返程部队剩余时间缩短 min(智力%, 50%)，每支一次）、八门金锁（开往你城池 / 野地的敌方部队剩余行军时间延长 min(智力 × 0.5%, 30%)）、蛛丝马迹（列出目标玩家全部城池坐标与在外部队去向）。会失败的计谋成功率 = 50% + (施计武将智力 − 目标城城守智力) × 1%，钳 20%..90%（目标无城守按 0）；成功后目标对该种计免疫（6 / 24 小时，随缩放）。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| target | object \| 省略 | 可选。带上时附带对该目标的判定：{ stratagem, heroId, cityId?, marchId?, attackId? }。cityId 用于城类计谋（自己的城 / 敌方玩家的城），marchId 用于金蝉脱壳（自己的返程行军）或八门金锁（开往自己城池 / 野地的敌方玩家行军），attackId 用于八门金锁挡 NPC 袭击。省略则只返回定义、令与武将预览。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| stratagems | object[] | 8 个计谋的定义：kind（phantom_army / empty_fort / burn_granary / loot_fire / ambush_all_sides / golden_cicada / eight_gates / spy_trail）、name、nameEn、category（deception / assault / march / intel）、tokenKind（deception / march / assault / intel）、targetType、canFail（是否走成功率判定）、notifiesTarget（目标玩家是否收到警报；欺敌与金蝉脱壳为 false）、offensive（进攻类，受 PvP 保护与同盟限制）、immunitySeconds（成功后该目标的免疫时长，无免疫为 null）。 |
+| tokens | object | 账号 4 类计谋令的持有数 { deception, march, assault, intel }。 |
+| tokenLimits | object | 4 类令的持有上限（战场商店兑换到上限返回 STRATAGEM_TOKEN_FULL）。 |
+| heroes | object[] | 账号每名武将：heroId、name、famous、wit、available、unavailableReason（training 历练中 / wounded 重伤中 / busy 随队出征中 / cooldown 冷却中 / null）、cooldownUntil、effects（按该武将智力算好的效果预览：倍数区间、烧粮比例、保护降低比例、锁城分钟数、缩短 / 延长比例、持续毫秒数）。 |
+| target | object \| null | 带 target 时的判定：stratagem、heroId、valid、invalidReason（INVALID_TARGET 等）、successPercent（不会失败的计谋恒 100）、immuneUntil（目标对该计的免疫截止，不在免疫期为 null）、guardWit（目标城城守智力）、protectedReason（TARGET_PROTECTED / TRUCE_ACTIVE / ALLY_TARGET / null）。不带 target 为 null。 |
+
+**可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
+
+**Agent 提示**：先 GET_STRATAGEMS（可带 target）确认令够、武将在家且不在冷却、目标不在免疫期与保护中，再发 CAST_STRATAGEM。成功率按施计武将智力与目标城城守智力算出，已在本协议里给出，不用自己算。令只能用剧本战场军功在战场商店兑换，买满一场共 11 张（1,650 军功），要和资源包取舍。
+
+**示例**
+
+**查询定义、令与武将预览（不带 target）**
+
+请求：
+
+```json
+{
+  "op": 145,
+  "seq": 51,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 145,
+  "seq": 51,
+  "ok": true,
+  "data": {
+    "stratagems": [
+      {
+        "kind": "phantom_army",
+        "name": "草木皆兵",
+        "nameEn": "Phantom Army",
+        "category": "deception",
+        "tokenKind": "deception",
+        "targetType": "own_city",
+        "canFail": false,
+        "notifiesTarget": false,
+        "offensive": false,
+        "immunitySeconds": null
+      },
+      {
+        "kind": "burn_granary",
+        "name": "焚烧粮草",
+        "nameEn": "Burn the Granary",
+        "category": "assault",
+        "tokenKind": "assault",
+        "targetType": "enemy_city",
+        "canFail": true,
+        "notifiesTarget": true,
+        "offensive": true,
+        "immunitySeconds": 21600
+      }
+    ],
+    "tokens": {
+      "deception": 2,
+      "march": 1,
+      "assault": 1,
+      "intel": 0
+    },
+    "tokenLimits": {
+      "deception": 6,
+      "march": 5,
+      "assault": 3,
+      "intel": 3
+    },
+    "heroes": [
+      {
+        "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+        "name": "荀彧",
+        "famous": true,
+        "wit": 96,
+        "available": true,
+        "unavailableReason": null,
+        "cooldownUntil": null,
+        "effects": {
+          "phantom_army": {
+            "multiplierPercent": [
+              300,
+              500
+            ],
+            "durationMs": 57600000
+          },
+          "empty_fort": {
+            "multiplierPercent": [
+              10,
+              20,
+              30
+            ],
+            "durationMs": 57600000
+          },
+          "burn_granary": {
+            "burnFoodPercent": 8
+          },
+          "loot_fire": {
+            "protectionDownPercent": 30,
+            "durationMs": 3600000
+          },
+          "ambush_all_sides": {
+            "ambushMinutes": 60,
+            "durationMs": 3600000
+          },
+          "golden_cicada": {
+            "returnFasterPercent": 50
+          },
+          "eight_gates": {
+            "marchSlowerPercent": 30
+          },
+          "spy_trail": {}
+        }
+      }
+    ],
+    "target": null
+  }
+}
+```
+
+**带 target：查询对某座敌城的成功率与保护状态**
+
+请求：
+
+```json
+{
+  "op": 145,
+  "seq": 52,
+  "data": {
+    "target": {
+      "stratagem": "burn_granary",
+      "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 145,
+  "seq": 52,
+  "ok": true,
+  "data": {
+    "stratagems": [
+      "（同上，8 项）"
+    ],
+    "tokens": {
+      "deception": 2,
+      "march": 1,
+      "assault": 1,
+      "intel": 0
+    },
+    "tokenLimits": {
+      "deception": 6,
+      "march": 5,
+      "assault": 3,
+      "intel": 3
+    },
+    "heroes": [
+      "（同上）"
+    ],
+    "target": {
+      "stratagem": "burn_granary",
+      "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+      "valid": true,
+      "successPercent": 90,
+      "immuneUntil": null,
+      "guardWit": 0,
+      "protectedReason": null
+    }
+  }
+}
+```
+
+### op 146 · CAST_STRATAGEM — 施放计谋（v86，AISLG-211）
+
+`C→S` 请求-响应 · 需登录后发送
+
+派一名**在家的**武将消耗 1 张对应类别的计谋令施计。武将必须在家（不在出征 / 随行、不在历练、不在重伤），施计后冷却 60 分钟（随缩放），冷却中返回 HERO_STRATAGEM_COOLDOWN（附 retryAfterSeconds）。令不够返回 STRATAGEM_TOKEN_SHORT（附 tokenKind / have），此时不扣任何东西；令一旦够就**扣令 + 冷却**，之后免疫或成功率判定失败也照扣（同老游戏）。会失败的计谋（焚烧粮草 / 趁火打劫 / 十面埋伏 / 八门金锁 / 蛛丝马迹）成功率 = 50% + (施计智力 − 目标城城守智力) × 1%，钳 20%..90%；不论成败目标玩家都收到警报（PUSH_STRATAGEM + stratagem_received 事件），欺敌类与金蝉脱壳不通知任何人。成功中计后目标对该种计免疫（焚烧粮草 / 八门金锁 6 小时，趁火打劫 / 十面埋伏 / 蛛丝马迹 24 小时；免疫期内再施直接判失败、照常扣令与冷却）。进攻类计谋（焚烧粮草 / 趁火打劫 / 十面埋伏 / 蛛丝马迹）与 PvP 规则一致：目标在新手保护或免战中返回 TARGET_PROTECTED；自己主动免战中返回 TRUCE_ACTIVE；同盟 / 友盟返回 ALLY_TARGET；自己在新手保护中施进攻类计谋会让新手保护立即失效。欺敌、金蝉脱壳、八门金锁是防守类，任何时候都能用。所有持续时长按全局时间缩放换算。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| heroId | string | 必填。施计武将 id，必须是本账号的武将在且在家（GET_STRATAGEMS 的 heroes[].available）。 |
+| stratagem | string | 必填。计谋 kind：phantom_army 草木皆兵 / empty_fort 空城计（自己的城）、burn_granary 焚烧粮草 / loot_fire 趁火打劫 / ambush_all_sides 十面埋伏（敌方玩家的城）、golden_cicada 金蝉脱壳（自己的返程行军）、eight_gates 八门金锁（开往自己城池 / 野地的敌方部队）、spy_trail 蛛丝马迹（敌方玩家，用他的任意一座城指定）。 |
+| target | object | 必填。{ cityId } \| { marchId } \| { attackId } 三选一：城类计谋给 cityId；金蝉脱壳给自己返程行军的 marchId；八门金锁给敌方行军的 marchId，或挡 NPC 袭击时给 attackId。不合法的组合返回 INVALID_TARGET（不扣令）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| success | boolean | 是否生效。免疫期内施计与成功率判定失败都为 false（令与武将冷却照常消耗）。 |
+| failedReason | 'immune' \| 'roll' \| null | success=false 的原因：immune = 目标还在免疫期；roll = 成功率判定没中。 |
+| effect | object | 按计谋给的效果：foodBurned（烧掉的粮食）/ multiplierPercent + until（欺敌倍数与截止）/ protectionDownPercent + until（趁火打劫）/ until（十面埋伏锁城截止）/ arriveAt + reducedPercent（金蝉脱壳后的到达时刻与缩短比例）/ arriveAt + extendedPercent（八门金锁后的到达时刻与延长比例）/ intel（蛛丝马迹：{ cities: [{ cityId, name, x, y }], marches: [{ marchId, x, y, purpose, arriveAt }] }，不含兵力）。失败时为空对象。 |
+| tokenKind | string | 本次消耗的计谋令类别。 |
+| tokensLeft | number | 扣完这类令还剩几张。 |
+| heroCooldownUntil | string | 施计武将的冷却截止（ISO 8601）。 |
+
+**可能错误**：`INVALID_PARAMS`、`HERO_NOT_FOUND`、`HERO_NOT_AVAILABLE`、`HERO_STRATAGEM_COOLDOWN`、`INVALID_TARGET`、`TARGET_PROTECTED`、`TRUCE_ACTIVE`、`ALLY_TARGET`、`STRATAGEM_TOKEN_SHORT`（处置建议见第 4 节）
+
+**Agent 提示**：施计前用 GET_STRATAGEMS（带 target）看成功率与限制，别在免疫期或保护目标上白扔令。令很贵：一场剧本战场最多买 11 张，攻心令一场只能买 2 张。焚烧粮草 / 十面埋伏是骚扰手段，真正的收益仍靠出兵掠夺——趁火打劫后 1 小时内做一次掠夺最划算。自己被施计时会收到 PUSH_STRATAGEM 与 stratagem_received 事件；中了十面埋伏期间所有出兵会返回 CITY_AMBUSHED（附 retryAfterSeconds），在外的部队仍可召回。
+
+**示例**
+
+**对敌方玩家的城施焚烧粮草成功（扣 1 张攻心令）**
+
+请求：
+
+```json
+{
+  "op": 146,
+  "seq": 53,
+  "data": {
+    "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+    "stratagem": "burn_granary",
+    "target": {
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 146,
+  "seq": 53,
+  "ok": true,
+  "data": {
+    "success": true,
+    "failedReason": null,
+    "effect": {
+      "foodBurned": 4200
+    },
+    "tokenKind": "assault",
+    "tokensLeft": 0,
+    "heroCooldownUntil": "2026-09-25T12:00:00.000Z"
+  }
+}
+```
+
+**金蝉脱壳：自己的返程部队剩余时间缩短 50%**
+
+请求：
+
+```json
+{
+  "op": 146,
+  "seq": 54,
+  "data": {
+    "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+    "stratagem": "golden_cicada",
+    "target": {
+      "marchId": "2f1e3d4c-5b6a-4978-8c9d-0a1b2c3d4e5f"
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 146,
+  "seq": 54,
+  "ok": true,
+  "data": {
+    "success": true,
+    "failedReason": null,
+    "effect": {
+      "arriveAt": "2026-09-25T11:20:00.000Z",
+      "reducedPercent": 50
+    },
+    "tokenKind": "march",
+    "tokensLeft": 1,
+    "heroCooldownUntil": "2026-09-25T12:00:00.000Z"
+  }
+}
+```
+
+**计谋令不足（不扣任何东西）**
+
+请求：
+
+```json
+{
+  "op": 146,
+  "seq": 55,
+  "data": {
+    "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+    "stratagem": "spy_trail",
+    "target": {
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+    }
+  }
+}
+```
+
+失败响应（`STRATAGEM_TOKEN_SHORT`）：
+
+```json
+{
+  "op": 146,
+  "seq": 55,
+  "ok": false,
+  "error": {
+    "code": "STRATAGEM_TOKEN_SHORT",
+    "message": "计谋令不足：请用战场军功到战场商店兑换"
+  },
+  "data": {
+    "tokenKind": "intel",
+    "have": 0
+  }
+}
+```
+
+**成功率判定失败（照常扣令与冷却，对方收到警报）**
+
+请求：
+
+```json
+{
+  "op": 146,
+  "seq": 56,
+  "data": {
+    "heroId": "5c2b1f4e-9d3a-4b8e-9f10-2a3b4c5d6e7f",
+    "stratagem": "ambush_all_sides",
+    "target": {
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f"
+    }
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 146,
+  "seq": 56,
+  "ok": true,
+  "data": {
+    "success": false,
+    "failedReason": "roll",
+    "effect": {},
+    "tokenKind": "assault",
+    "tokensLeft": 1,
+    "heroCooldownUntil": "2026-09-25T12:00:00.000Z"
   }
 }
 ```
@@ -15999,7 +18781,49 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "hubao_cavalry": 0,
           "xiliang_cavalry": 0
         },
-        "damage": 5090
+        "damage": 5090,
+        "wounded": {
+          "porter": 0,
+          "militia": 2,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "captives": {
+          "porter": 0,
+          "militia": 1,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        }
       },
       "defender": {
         "name": "野地 Lv3（森林）",
@@ -16066,7 +18890,49 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
           "hubao_cavalry": 0,
           "xiliang_cavalry": 0
         },
-        "damage": 2926
+        "damage": 2926,
+        "wounded": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "captured": {
+          "porter": 0,
+          "militia": 1,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        }
       },
       "wallDefensePercent": 0,
       "comment": null,
@@ -16992,6 +19858,54 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2028 · PUSH_STRATAGEM — 推送：被施计警报（v86，AISLG-211）
+
+`S→C` 服务端推送 · 无 `seq`
+
+目标玩家收到：谁、用哪名武将、对哪座城 / 哪支部队施了什么计、成没成。只有**会失败**的计谋推送，且不论成功失败都推（欺敌类草木皆兵 / 空城计与金蝉脱壳不通知任何人）。同一事件同时写入目标方事件流（stratagem_received），施计方自己的记录是 stratagem_cast。行军到达时刻被改写（金蝉脱壳 / 八门金锁）另走 PUSH_MARCH_STATE（reason = march_time_changed），城池中计（欺敌覆盖 / 烧粮 / 趁火打劫 / 十面埋伏）另走 PUSH_CITY_STATE（reason = stratagem），收到后重新 GET_STATE。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| stratagem / stratagemName | string | 计谋 kind 与中文名。 |
+| caster | object | { username, heroName }：施计方账号与武将。 |
+| target | object | { kind: "city" \| "march" \| "npc_attack", cityId?, cityName?, marchId?, attackId?, x?, y? }：被施加的目标。 |
+| success | boolean | 是否生效。false = 免疫期内或成功率判定失败（施计方照常扣令与冷却）。 |
+| effect | object | 目标方可见的效果：foodBurned（被烧掉的粮食）/ protectionDownPercent + until（仓库保护降低）/ until（锁城截止）/ arriveAt + extendedPercent（行军被延长后的到达时刻）。成功但无可见效果为空对象。 |
+
+**Agent 提示**：收到后按 stratagem 应对：焚烧粮草 → 检查粮食并考虑补产；趁火打劫 → 1 小时内可能被掠夺，优先把资源用掉或堆高仓库保护；十面埋伏 → 这段时间派不出兵，用在外部队召回与协防应对；八门金锁 → 自己的行军到达时间被延后（PUSH_MARCH_STATE 里有新时刻）；蛛丝马迹 → 对方已知你所有城池坐标与在外部队去向。
+
+**示例**
+
+推送（`online=undefined`）：
+
+```json
+{
+  "op": 2028,
+  "push": true,
+  "data": {
+    "stratagem": "burn_granary",
+    "stratagemName": "焚烧粮草",
+    "caster": {
+      "username": "孟起",
+      "heroName": "荀彧"
+    },
+    "target": {
+      "kind": "city",
+      "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "cityName": "主城",
+      "x": 12,
+      "y": 34
+    },
+    "success": true,
+    "effect": {
+      "foodBurned": 4200
+    }
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -17036,6 +19950,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `DISCARD_MAIN_CITY` | 主城不能放弃，DISCARD_CITY 只能放弃分城（v57，AISLG-153）。 | 如要放弃的是分城，请传该分城的 cityId（GET_STATE 的 cities[]，isMain 为 false）。 |
 | `CITY_IN_BATTLE` | 该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭：此时不能放弃分城（v57，AISLG-153），也不能遣散士兵（v84，AISLG-209，否则会变成「躲战损 + 拿回一半资源」的投机）。不改任何数据。 | 等这些行军结算或 NPC 来袭结束后再放弃 / 遣散；GET_STATE 的 city.inBattle 为 true 时可以先不发起。 |
 | `ARMY_OUTSIDE` | 该分城仍有部队在外（行军 / 返程 / 运输 / 侦察），不能放弃（v57，AISLG-153）。 | 等部队回城或结算后再放弃。 |
+| `CITY_STARVING` | RESTORE_TROOPS 劝回逃兵被拒：该城正在断粮（粮食归零且净产量为负，v85，AISLG-212）。不改任何数据。 | 先恢复粮食净产出（运送粮食、减少驻军或提高产量），断粮结束后再劝回逃兵（注意逃兵 24 小时过期）。 |
 | `WILDERNESS_GARRISONED` | 名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。 | 先用 RECALL_MARCH 召回各块野地的驻军，再放弃。 |
 | `FAMOUS_CITY_NOT_CAPITAL` | 名城（洛阳、长安、官渡、成都、建业、邺城、许昌、襄阳）不能设为主城（v82，AISLG-205）：名城是争夺型资源，主城不可被占领会让名城失去意义，名城效果与专属兵都跟着「可被占领」走。 | 改选普通分城；名城不能当主城。 |
 | `CAPITAL_SWAP_COOLDOWN` | 本账号距上次设为主城不满 24 小时（v82，AISLG-205；按全局时间缩放换算，不随官府等级变，新号第一次不受限）。响应 data.retryAfterSeconds 为剩余秒数。 | 等待 retryAfterSeconds 后再试（GET_STATE 的 capitalSwap.cooldownUntil 为截止时刻）。 |
@@ -17149,6 +20064,15 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `NOBILITY_TOO_LOW` | （v76，AISLG-197）爵位不足：占领名城需要「大夫」（爵位序号 3）及以上；响应附 required / current。攻打外围与掠夺不受限。 | 先在世界地图战斗里累计声望升到大夫（2000 声望）再来占领名城。 |
 | `NOBILITY_SALARY_CLAIMED` | （v76，AISLG-197）今日（北京日）俸禄已领，响应附 nextClaimAt。 | 明天北京时间 0 点后再领；金额随爵位提高。 |
 | `NOBILITY_SALARY_NONE` | （v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。 | 打世界地图战斗或参加剧本战场攒声望。 |
+| `HERO_STRATAGEM_COOLDOWN` | （v86，AISLG-211）这名武将刚施过计，冷却未结束（施计后 1 小时基准，随全局时间缩放）；响应附 retryAfterSeconds。 | 换一名在家的武将，或等到 retryAfterSeconds 之后再施。 |
+| `HERO_NOT_AVAILABLE` | （v86，AISLG-211）武将不在家：历练中 / 重伤中 / 随队出征中不能施计；响应附 reason（training / wounded / busy）。 | 用 GET_STRATAGEMS 的 heroes[].available 挑一名在家的武将；历练 / 重伤等状态结束或部队回城后再施。 |
+| `TARGET_PROTECTED` | （v86，AISLG-211）目标玩家处于新手保护或免战期，不能对其施进攻类计谋（焚烧粮草 / 趁火打劫 / 十面埋伏 / 蛛丝马迹）；响应可能附 until / retryAfterSeconds。欺敌、金蝉脱壳、八门金锁是防守类，不受限。 | 等保护结束后再施，或换其他目标。 |
+| `TRUCE_ACTIVE` | （v86，AISLG-211）自己正在主动免战中，不能施进攻类计谋（与免战期间不能攻击玩家同一口径）。 | 免战结束（响应附 until / retryAfterSeconds）后再施，或只用防守类计谋。 |
+| `ALLY_TARGET` | （v86，AISLG-211）目标是同盟或友盟成员，不能对其施进攻类计谋。 | 换非同盟 / 非友盟的目标；要打盟友先解除联盟关系。 |
+| `INVALID_TARGET` | （v86，AISLG-211）施计目标不合法：城 / 行军不存在、不是本账号的城（欺敌 / 金蝉脱壳）、不是其他玩家的城（攻心 / 情报）、不是返程行军、不是开往自己城池或野地的敌方部队等。不扣令、不写冷却。 | 按 GET_STRATAGEMS 的 target 判定重新选目标（自己的城 / 敌方玩家的城 / 行军列表里的部队）。 |
+| `STRATAGEM_TOKEN_SHORT` | （v86，AISLG-211）对应类别的计谋令不足；响应附 tokenKind 与 have。此时不扣令、不写冷却、不改任何数据。 | 用战场军功在战场商店（BUY_BATTLEFIELD_ITEM 的 stratagem_* 商品）兑换计谋令后再施。 |
+| `STRATAGEM_TOKEN_FULL` | （v86，AISLG-211）该类计谋令持有数已达上限，兑换被拒且不扣军功；响应附 tokenKind / have / limit。上限防止囤到某一周集中施计，换季与军功一起清零。 | 先把手上的令用掉一些再兑换，或改买其他商品。 |
+| `CITY_AMBUSHED` | （v86，AISLG-211）这座城中了十面埋伏，期间不能派出任何部队（MARCH 的各用途、侦察、协防出发、交易所商队、剧本战场入场都被拒）；响应附 retryAfterSeconds。已经在外的部队照常行动、照常可以召回。 | 等到 retryAfterSeconds 之后再派兵；已在外的部队用 RECALL_MARCH 召回不受影响。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -17534,7 +20458,85 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -18171,7 +21173,85 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
         "xiliang_cavalry": 0
       },
       "armyFoodUsePerHour": 0,
+      "wounded": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "captives": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
+      "deserters": {
+        "troops": {
+          "porter": 0,
+          "militia": 0,
+          "scout": 0,
+          "pikeman": 0,
+          "swordsman": 0,
+          "archer": 0,
+          "cavalry": 0,
+          "iron_cavalry": 0,
+          "supply_wagon": 0,
+          "ballista": 0,
+          "siege_ram": 0,
+          "yulin_guard": 0,
+          "danyang_soldier": 0,
+          "baimao_soldier": 0,
+          "huwei_guard": 0,
+          "zhuge_crossbow": 0,
+          "xiandeng_warrior": 0,
+          "hubao_cavalry": 0,
+          "xiliang_cavalry": 0
+        },
+        "earliestExpireAt": null
+      },
       "inBattle": false,
+      "stratagems": {
+        "deception": null,
+        "ambushedUntil": null,
+        "lootFireUntil": null,
+        "lootFirePercent": 0
+      },
       "timeScale": 1,
       "truceUntil": null,
       "newbieUntil": null,
@@ -18564,7 +21644,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - **侦察（scout）**：SCOUT 派斥候（×2 行军速度）前往目标地块：到达不战斗，产出情报快照（守军按兵种、城墙减伤、NPC 城池库存、占领者）记为 march_completed 事件（outcome=scouted）并自动返程。快照同时存为账号对该地块的最近情报——GET_TILE 对 NPC 城池的驻防 / 库存详情只对侦察过的地块开放（返回快照，不保证实时）；野地与玩家城池的驻军构成暂保持实时可见（玩家对抗阶段的情报规则另行设计）。当前侦察无对抗判定（不会被拦截，占位）。
 - **调兵（transfer）**：MARCH 的目标为本账号分城时即调兵：不战斗，编队行军到达后并入该分城的城内驻军（city.army，v24 起与该城征兵产出同位，可立即用于该城的出征），行军速度按编队最慢兵种折算。v24 起任意自有城之间都可调兵（出发城用 cityId 指定，缺省主城）。
 - **行军（march）**：MARCH 从主城派出部队（发起时立即扣减城内驻军），时长 = Chebyshev 距离 × 每格秒数（默认 15 秒，占位）÷ 编队最慢兵种的行军速度系数（斥候 ×2、轻骑兵 ×1.5，占位），总时长再 ÷ 全局时间缩放（钳 1 秒）；到达由服务端自动结算（战斗 / 增援 / 调兵 / 侦察）。RECALL_GARRISON 不带 troops 时撤回占领野地的全部驻军（即放弃占领），带 troops（v83）时按兵种部分撤回（保留占领）；RECALL_MARCH 把行军途中（status=marching 且非返程）的部队原地折返（同速回程）。
-- **战报（battle report）**：每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军 / NPC 袭击主城，v21 新增 city_raid 类别）生成一份战报，账号以攻方或守方身份持有、可查询（GET_BATTLE_REPORTS）并实时推送（PUSH_BATTLE_REPORT）：含双方编成与损失、汇总口径（v21：units 总单位数、totalHp 总血量、avgRange 平均射程；v23：maxRange 单兵射程最大值、rangedUnits 远程单位数——avgRange 是数量加权平均、会被大量近战稀释，判断远程威胁用 maxRange + rangedUnits，AISLG-49；读取时按编成汇总，历史战报同样下发）、总输出 damage、逐回合伤害与损失统计、终局原因与城墙减伤。战损不进入伤兵治疗、俘虏招降或逃兵召回系统（一期确认）——损失即最终减员。
+- **战报（battle report）**：每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军 / NPC 袭击主城，v21 新增 city_raid 类别）生成一份战报，账号以攻方或守方身份持有、可查询（GET_BATTLE_REPORTS）并实时推送（PUSH_BATTLE_REPORT）：含双方编成与损失、汇总口径（v21：units 总单位数、totalHp 总血量、avgRange 平均射程；v23：maxRange 单兵射程最大值、rangedUnits 远程单位数——avgRange 是数量加权平均、会被大量近战稀释，判断远程威胁用 maxRange + rangedUnits，AISLG-49；读取时按编成汇总，历史战报同样下发）、总输出 damage、逐回合伤害与损失统计、终局原因与城墙减伤。v85（AISLG-212）起战损不再“损失即最终减员”：各侧带 wounded（伤兵）/ captured（被俘），胜方带 captives（抓到的俘虏）——阵亡 = losses − wounded − captured，伤兵 / 俘虏的处置见 RESTORE_TROOPS。
 - **掠夺（plunder）**：MARCH task='plunder'（缺省）的出征任务（v16）。胜利后从目标奖励池按幸存部队负重（Σ 数量 × 单兵 carry，民夫 500 / 斥候·刀盾兵 80 / 轻骑兵 100 / 其余 50–60，占位）装填战利品，金→粮→木→石→铁顺序装满即止（v21 含金，AISLG-31），立即入账出发城（不钳储量上限），幸存部队返程、不改归属。野地奖励池 = 地形资源 750×等级 + 金币 250×等级（v21；金矿为空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。同一目标地块成功掠夺后进入 24 小时冷却（基准，受全局时间缩放；plundered_at；冷却内发起被拒 PLUNDER_COOLDOWN，在途到达仍战斗但资源为零）。玩家主城被 NPC 袭击攻破时按同口径结算（仓库保护 4000×等级、四资源固定均分各 1000×等级，金币不受仓库保护但单次最多抢走存量的 5%（v41，AISLG-125；v38 起玩家互掠为存量的 10%，见 MARCH 玩家对抗段）。
 - **NPC 城池（npc_city）**：地图上可掠夺的普通 NPC 城（初始约 15000 座，等级 1..3，占位）。可掠夺或占领（v24，AISLG-58）：task=plunder 掠夺——战斗 vs 其驻防（守方据墙待敌），胜利按幸存部队负重从持久化库存扣减（v21 起含金币，AISLG-31；库存不再生）；task=occupy 占领变分城——需主城官府 ≥ 3、分城数 < floor(主城官府 ÷ 2)、目标等级 ≤ 出发城官府等级，打赢后接收其建筑与剩余库存、幸存部队进城驻守。NPC 城池是有限存量（一期不做自动补充）；玩家城的占领设计随玩家对抗阶段另行接入。
 - **名城（famous city）**：全图 8 座高亮的 NPC 名城（v24，AISLG-56；官渡 / 许昌 / 洛阳 / 长安 / 成都 / 建业 / 襄阳 / 邺城，从 Lv3 NPC 城原地升格，分散在地图各区域；地块 famous 字段标识名称、阶段与独占加成）。分两阶段攻打：先清外围驻军（外围阶段，对其出征打外围），外围清空后进入城守阶段，限时内（famous.recoversAt，约 6 小时 ÷ 时间缩放）出征攻城守——占领后成为分城（名称为名城名）并带独占加成：该城产量 +20%（只对占领者生效，已计入 city.production）；另有一项独有效果（v62，AISLG-166，只对占领者生效，跟着城走）：洛阳守城城墙减伤 +5 个百分点、长安箭塔伤害 +20%、官渡 / 成都 / 建业 / 邺城辖下对应资源的野地产出 +25%、许昌自己城池之间的调兵 / 运输行军速度 +20%、襄阳仓库防掠夺保护额 +50%。超时无人攻下城守则外围恢复满编。守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。名城计入分城上限。
@@ -18582,7 +21662,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 84。
+- 协议版本随对外协议内容的每次变化递增；当前为 86。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

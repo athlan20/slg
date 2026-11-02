@@ -65,6 +65,8 @@ export interface AccountHeroRow {
   gift_count: number;
   reset_day: string | null;
   reset_count: number;
+  /** v86（AISLG-211）：施计冷却截止（施计后 1 小时基准随缩放）；从未施计为 null */
+  stratagem_cooldown_until?: Date | null;
   created_at: Date;
 }
 

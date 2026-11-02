@@ -248,6 +248,14 @@ export const Op = {
   SET_CAPITAL: 141,
   /** C→S 遣散士兵（v84，AISLG-209：data.troops 按兵种给数量，可选 cityId；只解散该城城内驻军，返还征兵成本的 50%，不退人口） */
   DISBAND_TROOPS: 142,
+  /** C→S 治疗 / 招降 / 劝回（v85，AISLG-212：data.cityId 可选、pool=wounded|captive|deserter、troops 按兵种；伤兵治好、俘虏招降、逃兵劝回，立即完成回城内驻军） */
+  RESTORE_TROOPS: 143,
+  /** C→S 放弃治疗 / 释放俘虏（v85，AISLG-212：data.cityId 可选、pool=wounded|captive、troops 按兵种；免费，池子消失不返还任何东西） */
+  RELEASE_TROOPS: 144,
+  /** C→S 查询计谋（v86，AISLG-211：8 个计谋定义、4 类计谋令持有数、逐武将的预计效果与冷却；带 target 时附成功率 / 免疫 / 保护判定） */
+  GET_STRATAGEMS: 145,
+  /** C→S 施计（v86，AISLG-211：data.heroId + data.stratagem + data.target = { cityId } | { marchId } | { attackId }；成功失败都扣 1 张对应类别的令与武将 1 小时冷却） */
+  CAST_STRATAGEM: 146,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -317,6 +325,8 @@ export const Op = {
   PUSH_DEFENSE_STATE: 2026,
   /** S→C 推送：剧本战场报名 / 开战 / 据点易手 / 收场（v75，AISLG-198；全部在线连接收到） */
   PUSH_BATTLEFIELD_STATE: 2027,
+  /** S→C 推送：被施计警报（v86，AISLG-211；会失败的计谋不论成败都推给目标玩家，欺敌类与金蝉脱壳不推） */
+  PUSH_STRATAGEM: 2028,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -408,6 +418,8 @@ export const ErrorCode = {
   DISCARD_MAIN_CITY: 'DISCARD_MAIN_CITY',
   /** 该城或其名下野地正有行军在途（指向本城）或有未结的 NPC 来袭：放弃分城（v57）与遣散士兵（v84，AISLG-209）都拒绝 */
   CITY_IN_BATTLE: 'CITY_IN_BATTLE',
+  /** 劝回逃兵被拒：该城正在断粮（粮食归零且净产量为负，v85，AISLG-212）——逃兵只有不在断粮状态时才能劝回 */
+  CITY_STARVING: 'CITY_STARVING',
   /** 放弃分城被拒：该城仍有部队在外（行军 / 返程 / 运输 / 侦察），需先等其结束（v57，AISLG-153） */
   ARMY_OUTSIDE: 'ARMY_OUTSIDE',
   /** 放弃分城被拒：名下野地里仍有驻军，需先召回（v57，AISLG-153） */
@@ -665,6 +677,24 @@ export const ErrorCode = {
   NOBILITY_SALARY_CLAIMED: 'NOBILITY_SALARY_CLAIMED',
   /** 爵位：平民没有俸禄，先攒声望升爵（v76） */
   NOBILITY_SALARY_NONE: 'NOBILITY_SALARY_NONE',
+  /** 计谋：施计武将冷却未结束（v86，AISLG-211；施计后 1 小时基准随缩放），响应附 retryAfterSeconds */
+  HERO_STRATAGEM_COOLDOWN: 'HERO_STRATAGEM_COOLDOWN',
+  /** 计谋：武将不在家（历练中 / 重伤中 / 随队出征中），不能施计（v86，AISLG-211；附 reason） */
+  HERO_NOT_AVAILABLE: 'HERO_NOT_AVAILABLE',
+  /** 计谋：目标处于新手保护或免战期，不能对其施进攻类计谋（v86，AISLG-211；附 until / retryAfterSeconds） */
+  TARGET_PROTECTED: 'TARGET_PROTECTED',
+  /** 计谋：自己的主动免战生效中，不能施进攻类计谋（v86，AISLG-211；同不能出兵打玩家） */
+  TRUCE_ACTIVE: 'TRUCE_ACTIVE',
+  /** 计谋：目标是同盟或友盟成员，不能对其施进攻类计谋（v86，AISLG-211） */
+  ALLY_TARGET: 'ALLY_TARGET',
+  /** 计谋：目标不合法（城 / 行军不存在、不属于本账号、不是敌方部队、不是返程行军等；v86，AISLG-211） */
+  INVALID_TARGET: 'INVALID_TARGET',
+  /** 计谋：对应类别的计谋令不足（v86，AISLG-211；成功失败都扣令，令只能用战场军功兑换；附 tokenKind / have） */
+  STRATAGEM_TOKEN_SHORT: 'STRATAGEM_TOKEN_SHORT',
+  /** 计谋：计谋令持有数已达上限，战场商店兑换被拒且不扣军功（v86；附 tokenKind / have / limit） */
+  STRATAGEM_TOKEN_FULL: 'STRATAGEM_TOKEN_FULL',
+  /** 计谋：这座城中了十面埋伏，不能派出任何部队（v86，AISLG-211；出征 / 调兵 / 运输 / 侦察 / 协防 / 入场均被拒；召回不受影响；附 retryAfterSeconds） */
+  CITY_AMBUSHED: 'CITY_AMBUSHED',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -883,6 +913,12 @@ export type {
   TroopKind,
   DisbandTroopsRequestData,
   DisbandTroopsResponseData,
+  RestoreTroopsRequestData,
+  RestoreTroopsResponseData,
+  ReleaseTroopsRequestData,
+  ReleaseTroopsResponseData,
+  TroopPoolKind,
+  TroopPoolView,
 } from './protocol-army';
 export { TROOP_KINDS, isTroopKind } from './protocol-army';
 import type { ArmyCounts, RecruitView } from './protocol-army';
@@ -1275,3 +1311,31 @@ export type {
   EventView,
 } from './protocol-city';
 export { EventType } from './protocol-city';
+
+// 计谋（v86，AISLG-211）的载荷类型在 protocol-stratagem.ts，规则与数值在 stratagem.ts
+export type {
+  GetStratagemsRequestData,
+  GetStratagemsResponseData,
+  StratagemDefView,
+  StratagemHeroView,
+  StratagemEffectPreview,
+  StratagemTargetView,
+  CastStratagemRequestData,
+  CastStratagemResponseData,
+  SpyTrailIntel,
+  StratagemPushData,
+  CityStratagemView,
+} from './protocol-stratagem';
+export {
+  STRATAGEM_KINDS,
+  STRATAGEM_TOKEN_KINDS,
+  STRATAGEM_TOKENS,
+  STRATAGEM_HERO_COOLDOWN_MS,
+  isStratagemKind,
+  isStratagemTokenKind,
+  stratagemDef,
+  stratagemTokenInfo,
+  stratagemSuccessPercent,
+  stratagemImmunityMs,
+} from './stratagem';
+export type { StratagemKind, StratagemTokenKind, RandomSource } from './stratagem';

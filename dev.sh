@@ -5,7 +5,7 @@
 #   ./dev.sh stop     只停止
 #   ./dev.sh status   查看运行状态
 # 开发/测试两套环境并存（各自一个 git 工作目录，见 docs/dev-test-workflow.md）：
-#   API_PORT / WEB_PORT   端口，缺省 8080 / 8424（测试目录用 8081 / 8425）
+#   API_PORT / WEB_PORT   端口，缺省 8080 / 8424（测试目录用 9091 / 8425；8081 留给其他项目，不再使用）
 #   SERVICES              要管的服务，缺省 "api worker web"
 # 进程只按「所在工作目录 + 本实例端口」识别，不会动到另一个目录的实例。
 # 两套环境共用一个库时，同一时刻只允许一个 Worker 在跑（排行榜、世界 tick 等没有行锁）。
@@ -63,8 +63,14 @@ stop_one() {
   pids="$(pids_for "$pattern")"
   port="$(port_for "$name")"
   if [ -n "$port" ]; then
-    # 端口兜底：cmdline 不匹配但占着端口的残留监听一并停掉
-    pids="$pids $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
+    # 端口兜底：cmdline 不匹配但占着端口的本仓库残留监听一并停掉。
+    # 必须同时校验工作目录在本仓库内——端口可能被别的项目占用（如 Metro 用 8081），
+    # 不能按端口无差别 kill 别人的进程。
+    local pid cwd
+    for pid in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
+      cwd="$(lsof -a -d cwd -Fn -p "$pid" 2>/dev/null | sed -n 's/^n//p')"
+      case "$cwd" in "$ROOT"|"$ROOT"/*) pids="$pids $pid" ;; esac
+    done
   fi
   pids="$(echo $pids | tr ' ' '\n' | sort -u | grep -v '^$' | tr '\n' ' ')"
   if [ -z "${pids// /}" ]; then

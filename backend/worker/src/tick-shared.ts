@@ -22,14 +22,30 @@ import { scaledMs } from '../../common/src/time-scale';
 import { battleBonusOf, grantHeroExp, loadHero, woundHero, type AccountHeroRow } from '../../common/src/hero-db';
 import { insertBattleReport, withSideStats, type BattleReportDetail } from '../../common/src/battle-db';
 import { addPrestige } from '../../common/src/nobility-db';
+import type { BattleCasualtiesSplit } from '../../common/src/battle-casualties';
 
 /** 战报类别（BattleReportView.kind 取值；v21 新增 city_raid = NPC 袭击玩家主城；v38 新增 pvp_raid = 玩家攻打玩家城；v39 新增 pvp_wilderness = 玩家抢占玩家野地） */
 export type BattleReportKind = 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
 
 /** BattleSideSummary（引擎产出）→ 战报侧视图（battle-tick / plunder-tick / city-raid 共用；
- *  units / totalHp / avgRange 由 withSideStats 派生） */
-export function sideView(name: string, side: BattleSideSummary, hero: BattleHeroView | null = null): BattleSideView {
-  return withSideStats({ name, troops: side.troops, losses: side.losses, survivors: side.survivors, damage: side.damage, hero });
+ *  units / totalHp / avgRange 由 withSideStats 派生；v85 起可带伤兵 / 被俘 / 俘虏拆分） */
+export function sideView(
+  name: string,
+  side: BattleSideSummary,
+  hero: BattleHeroView | null = null,
+  split?: BattleCasualtiesSplit['attacker'],
+  captives?: BattleCasualtiesSplit['captives'],
+): BattleSideView {
+  return withSideStats({
+    name,
+    troops: side.troops,
+    losses: side.losses,
+    survivors: side.survivors,
+    damage: side.damage,
+    hero,
+    ...(split ? { wounded: split.wounded, captured: split.captured } : {}),
+    ...(captives ? { captives } : {}),
+  });
 }
 
 /** 武将行 + 部队规模 → 战报的武将视图（v36；随队 / 城守共用） */
@@ -62,6 +78,9 @@ export async function saveBattleReport(
   assistLosses: import('../../common/src/protocol').ArmyCounts | null = null,
   /** v76（AISLG-197）：本场获得的声望；缺省按歼灭敌军参考战力自动入账（剧本战场由军功入账后显式传入） */
   prestigeGained: number | null = null,
+  /** v85（AISLG-212）：伤兵 / 被俘拆分与胜方抓到的俘虏（世界地图战斗传入；剧本战场 / 未拆分不传）。
+ *  战报的 attacker / defender 会带上各自 wounded / captured，胜方（为玩家时）带 captives */
+  casualties?: BattleCasualtiesSplit | null,
 ): Promise<number> {
   // v76：世界地图上的每一场战斗都按歼灭敌军参考战力计声望（竞技场 / 将星塔不走本函数）；
   // 剧本战场由 grantMerit 按 1 军功 = 1 声望入账，这里只记录数值、不重复入账；
@@ -85,8 +104,8 @@ export async function saveBattleReport(
     won,
     rounds: result.rounds,
     endReason: result.endReason,
-    attacker: sideView(attackerName, result.attacker, attackerHero),
-    defender: sideView(defenderName, result.defender, defenderHero),
+    attacker: sideView(attackerName, result.attacker, attackerHero, casualties?.attacker, casualties?.winner === 'attacker' ? casualties.captives : undefined),
+    defender: sideView(defenderName, result.defender, defenderHero, casualties?.defender, casualties?.winner === 'defender' ? casualties.captives : undefined),
     wallDefensePercent: wallPercent,
     ...(result.towerDamage > 0 ? { towerDamage: result.towerDamage } : {}),
     ...(result.wallBreak ? { wallBreak: result.wallBreak } : {}),
@@ -408,6 +427,8 @@ export async function settleMarchHero(
   if (leveledTo) {
     await insertEvent(client, {
       accountId: march.account_id,
+      // 随队武将升级发生在从该城出发的行军上（AISLG-213）：带上出发城，多城时能看出是哪座城的部队
+      cityId: march.from_city_id,
       buildId: hero.id,
       type: EventType.HERO_LEVEL_UP,
       initiator: march.initiator as InitiatorRole,
@@ -417,6 +438,8 @@ export async function settleMarchHero(
   if (!result.attackerWon) {
     await insertEvent(client, {
       accountId: march.account_id,
+      // 同上：战败重伤跟着出发城走
+      cityId: march.from_city_id,
       buildId: hero.id,
       type: EventType.HERO_WOUNDED,
       initiator: march.initiator as InitiatorRole,

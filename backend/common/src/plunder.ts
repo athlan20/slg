@@ -29,11 +29,12 @@ export const WAREHOUSE_PROTECTION_SPLIT = 4;
  * 单资源保护额 = 4000 × 仓库等级 ÷ 4 = 1000 × 仓库等级（粮 / 木 / 石 / 铁各自
  * 独立享有该额度）。不改变储量上限（rules.ts 既定边界）。
  * 消费方（v21，AISLG-32 方案 A）：NPC 袭击玩家主城获胜后按本额结算可掠量。
+ * v86（AISLG-211）：protectionPercent 允许为负（趁火打劫降低保护；与名城加成同池相加
+ * 后再算）——保护量 = 基础 × (100 + 加成 − 趁火打劫) / 100，最低 0。
  */
 export function warehouseProtectionPerResource(warehouseLevel: number, protectionPercent = 0): number {
   const base = Math.max(0, Math.floor(warehouseLevel)) * (WAREHOUSE_PROTECTION_TOTAL_PER_LEVEL / WAREHOUSE_PROTECTION_SPLIT);
-  // v62（AISLG-166）：名城襄阳的防掠夺保护额加成（百分比），只放大保护额，不改变储量上限
-  return Math.floor((base * (100 + Math.max(0, protectionPercent))) / 100);
+  return Math.max(0, Math.floor((base * (100 + protectionPercent)) / 100));
 }
 
 /** 可掠量 = max(0, 存量 − 保护额)；对单资源取值（金币不适用本函数） */

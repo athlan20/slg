@@ -126,5 +126,7 @@ export function toSessionEvent(view: EventView): SessionEvent {
     view.type === 'march_completed' && view.detail.outcome === 'scouted'
       ? (view.detail.intel as SessionEvent['scoutIntel'] | undefined)
       : undefined;
-  return { id: view.id, at: formatClock(view.createdAt), actor, text: eventText(view), reportId, scoutIntel };
+  // 城池 id 直接透传（AISLG-213）：界面用它在已加载的城池列表里查名字；账号级事件为 null → undefined
+  const cityId = view.cityId ?? undefined;
+  return { id: view.id, at: formatClock(view.createdAt), actor, text: eventText(view), reportId, scoutIntel, cityId };
 }

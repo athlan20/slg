@@ -154,6 +154,10 @@ export function applyMarchPush(city: CityView, reason: MarchStatePushData['reaso
   if (reason === 'march_started') {
     return applyMarchResult(city, march);
   }
+  if (reason === 'march_time_changed') {
+    // v86（AISLG-211）：计谋改写了到达时刻（金蝉脱壳缩短 / 八门金锁延长）——就地换掉这一行，不删
+    return { ...city, marches: city.marches.map((item) => (item.id === march.id ? march : item)) };
+  }
   if (reason === 'march_returned') {
     const army = { ...city.army };
     for (const kind of Object.keys(march.troops) as TroopKind[]) {

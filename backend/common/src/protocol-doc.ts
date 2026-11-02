@@ -314,6 +314,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '该分城仍有部队在外（行军 / 返程 / 运输 / 侦察），不能放弃（v57，AISLG-153）。',
     action: '等部队回城或结算后再放弃。',
   },
+  CITY_STARVING: {
+    desc: 'RESTORE_TROOPS 劝回逃兵被拒：该城正在断粮（粮食归零且净产量为负，v85，AISLG-212）。不改任何数据。',
+    action: '先恢复粮食净产出（运送粮食、减少驻军或提高产量），断粮结束后再劝回逃兵（注意逃兵 24 小时过期）。',
+  },
   WILDERNESS_GARRISONED: {
     desc: '名下野地里仍有驻军，不能放弃（v57，AISLG-153）：放弃后野地转为无主，驻军无处安放。',
     action: '先用 RECALL_MARCH 召回各块野地的驻军，再放弃。',
@@ -826,6 +830,42 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v76，AISLG-197）平民没有俸禄，需要先累计 100 声望升到公士。',
     action: '打世界地图战斗或参加剧本战场攒声望。',
   },
+  HERO_STRATAGEM_COOLDOWN: {
+    desc: '（v86，AISLG-211）这名武将刚施过计，冷却未结束（施计后 1 小时基准，随全局时间缩放）；响应附 retryAfterSeconds。',
+    action: '换一名在家的武将，或等到 retryAfterSeconds 之后再施。',
+  },
+  HERO_NOT_AVAILABLE: {
+    desc: '（v86，AISLG-211）武将不在家：历练中 / 重伤中 / 随队出征中不能施计；响应附 reason（training / wounded / busy）。',
+    action: '用 GET_STRATAGEMS 的 heroes[].available 挑一名在家的武将；历练 / 重伤等状态结束或部队回城后再施。',
+  },
+  TARGET_PROTECTED: {
+    desc: '（v86，AISLG-211）目标玩家处于新手保护或免战期，不能对其施进攻类计谋（焚烧粮草 / 趁火打劫 / 十面埋伏 / 蛛丝马迹）；响应可能附 until / retryAfterSeconds。欺敌、金蝉脱壳、八门金锁是防守类，不受限。',
+    action: '等保护结束后再施，或换其他目标。',
+  },
+  TRUCE_ACTIVE: {
+    desc: '（v86，AISLG-211）自己正在主动免战中，不能施进攻类计谋（与免战期间不能攻击玩家同一口径）。',
+    action: '免战结束（响应附 until / retryAfterSeconds）后再施，或只用防守类计谋。',
+  },
+  ALLY_TARGET: {
+    desc: '（v86，AISLG-211）目标是同盟或友盟成员，不能对其施进攻类计谋。',
+    action: '换非同盟 / 非友盟的目标；要打盟友先解除联盟关系。',
+  },
+  INVALID_TARGET: {
+    desc: '（v86，AISLG-211）施计目标不合法：城 / 行军不存在、不是本账号的城（欺敌 / 金蝉脱壳）、不是其他玩家的城（攻心 / 情报）、不是返程行军、不是开往自己城池或野地的敌方部队等。不扣令、不写冷却。',
+    action: '按 GET_STRATAGEMS 的 target 判定重新选目标（自己的城 / 敌方玩家的城 / 行军列表里的部队）。',
+  },
+  STRATAGEM_TOKEN_SHORT: {
+    desc: '（v86，AISLG-211）对应类别的计谋令不足；响应附 tokenKind 与 have。此时不扣令、不写冷却、不改任何数据。',
+    action: '用战场军功在战场商店（BUY_BATTLEFIELD_ITEM 的 stratagem_* 商品）兑换计谋令后再施。',
+  },
+  STRATAGEM_TOKEN_FULL: {
+    desc: '（v86，AISLG-211）该类计谋令持有数已达上限，兑换被拒且不扣军功；响应附 tokenKind / have / limit。上限防止囤到某一周集中施计，换季与军功一起清零。',
+    action: '先把手上的令用掉一些再兑换，或改买其他商品。',
+  },
+  CITY_AMBUSHED: {
+    desc: '（v86，AISLG-211）这座城中了十面埋伏，期间不能派出任何部队（MARCH 的各用途、侦察、协防出发、交易所商队、剧本战场入场都被拒）；响应附 retryAfterSeconds。已经在外的部队照常行动、照常可以召回。',
+    action: '等到 retryAfterSeconds 之后再派兵；已在外的部队用 RECALL_MARCH 召回不受影响。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',
@@ -912,7 +952,7 @@ export const GLOSSARY: Array<{ term: string; desc: string }> = [
   },
   {
     term: '战报（battle report）',
-    desc: `每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军 / NPC 袭击主城，v21 新增 city_raid 类别）生成一份战报，账号以攻方或守方身份持有、可查询（GET_BATTLE_REPORTS）并实时推送（PUSH_BATTLE_REPORT）：含双方编成与损失、汇总口径（v21：units 总单位数、totalHp 总血量、avgRange 平均射程；v23：maxRange 单兵射程最大值、rangedUnits 远程单位数——avgRange 是数量加权平均、会被大量近战稀释，判断远程威胁用 maxRange + rangedUnits，AISLG-49；读取时按编成汇总，历史战报同样下发）、总输出 damage、逐回合伤害与损失统计、终局原因与城墙减伤。战损不进入伤兵治疗、俘虏招降或逃兵召回系统（一期确认）——损失即最终减员。`,
+    desc: `每场战斗（出征野地 / 攻 NPC 城池 / NPC 袭击驻军 / NPC 袭击主城，v21 新增 city_raid 类别）生成一份战报，账号以攻方或守方身份持有、可查询（GET_BATTLE_REPORTS）并实时推送（PUSH_BATTLE_REPORT）：含双方编成与损失、汇总口径（v21：units 总单位数、totalHp 总血量、avgRange 平均射程；v23：maxRange 单兵射程最大值、rangedUnits 远程单位数——avgRange 是数量加权平均、会被大量近战稀释，判断远程威胁用 maxRange + rangedUnits，AISLG-49；读取时按编成汇总，历史战报同样下发）、总输出 damage、逐回合伤害与损失统计、终局原因与城墙减伤。v85（AISLG-212）起战损不再“损失即最终减员”：各侧带 wounded（伤兵）/ captured（被俘），胜方带 captives（抓到的俘虏）——阵亡 = losses − wounded − captured，伤兵 / 俘虏的处置见 RESTORE_TROOPS。`,
   },
   {
     term: '掠夺（plunder）',

@@ -138,7 +138,13 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     storage: INITIAL_STORAGE,
     army: { ...EMPTY_ARMY } as ArmyCounts,
     armyFoodUsePerHour: 0,
+    // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵三池（示例为空池；有存量时 troops 为各兵种合计，
+    // earliestExpireAt 为最早一批的过期时刻，池子为空为 null）
+    wounded: { troops: { ...EMPTY_ARMY } as ArmyCounts, earliestExpireAt: null },
+    captives: { troops: { ...EMPTY_ARMY } as ArmyCounts, earliestExpireAt: null },
+    deserters: { troops: { ...EMPTY_ARMY } as ArmyCounts, earliestExpireAt: null },
     inBattle: false,
+    stratagems: { deception: null, ambushedUntil: null, lootFireUntil: null, lootFirePercent: 0 },
     timeScale: 1,
     truceUntil: null,
     newbieUntil: null,

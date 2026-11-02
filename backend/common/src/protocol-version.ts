@@ -640,5 +640,34 @@
  *   响应 { disbanded, refunded, city }；事件 troops_disbanded（detail = { cityId, troops, refunded }）；
  *   PUSH_CITY_STATE 新增 reason=troops_disbanded；CityView 新增 inBattle（界面据此置灰遣散按钮）。
  *   不新增错误码（复用 CITY_IN_BATTLE / INSUFFICIENT_TROOPS）。
+ * v85（伤兵、俘虏、逃兵，AISLG-212，只加不改）：世界地图战斗的战损不再是纯减员——玩家一方各兵种损失
+ *   20% 进伤兵营（WOUNDED_PERCENT，NPC 无伤兵），胜方从败方损失抓 10% 当俘虏（CAPTURED_PERCENT，
+ *   只抓基础七兵种，平局不抓，NPC 打赢玩家不抓；败方是玩家时被俘从阵亡里扣）；断粮兵变的 10%/小时
+ *   减兵改为进逃兵营。伤兵 / 俘虏 72 小时、逃兵 24 小时过期（随全局时间缩放）；三池不吃粮、不参战、
+ *   城池消失时一起清空。新增 RESTORE_TROOPS（op 143，可选 cityId，data.pool = wounded|captive|deserter
+ *   + data.troops）：治疗 50% / 招降 60% / 劝回 50% 征兵资源（先累加后取整，同遣散口径），招降另扣人口
+ *   （军营等级不设限），立即完成回城内驻军，消耗按最早一批优先；劝回逃兵在断粮中被拒（新错误码
+ *   CITY_STARVING）。RELEASE_TROOPS（op 144）：放弃治疗 / 释放俘虏（免费，不返还，deserter 不适用）。
+ *   战报各侧新增 wounded / captured，胜方新增 captives；GET_STATE 每城新增 wounded / captives /
+ *   deserters 三组（troops 合计 + earliestExpireAt）；PUSH_CITY_STATE 新增 reason=troop_pools_changed。
+ *   新表 city_troop_pools（ON DELETE CASCADE 跟随 cities，向后兼容）。
+ * v86（计谋，AISLG-211，只加不改）：新增 GET_STRATAGEMS（op 145）与 CAST_STRATAGEM（op 146，请求
+ *   { heroId, stratagem, target: { cityId } | { marchId } | { attackId } }）与推送 PUSH_STRATAGEM（op 2028）；
+ *   武将在家（不在出征 / 厉练 / 重伤）且冷却结束时消耗 1 张对应类别的计谋令施计（成功失败都扣令、
+ *   不扣金币），施计后该武将冷却 1 小时（随缩放）。8 个计谋：草木皆兵 / 空城计（欺敌：别人侦察该城
+ *   看到倍数换算后的假驻军，先换算再按侦察科技降级；侦察科技 × 5% 概率识破并标 deception）、
+ *   焚烧粮草（立即烧粮，最多 8%）、趁火打劫（仓库防掠保护最多降 30%、持续 1 小时）、
+ *   十面埋伏（锁城最多 60 分钟不能派兵，出兵类 op 返回 CITY_AMBUSHED）、金蝉脱壳（自己返程部队缩短最多 50%，
+ *   每支一次）、八门金锁（开往自己城 / 野地的敌方部队最多延长 30%，含 NPC 袭击与带埋伏的截击行军）、
+ *   蛛丝马迹（列目标玩家全部城池坐标与在外部队去向）。成功率 = 50% + (施计智力 − 城守智力) × 1%，
+ *   鉗 20..90；成功中计后同种计免疫（6/24 小时随缩放）。会失败的计谋不论成败都给目标玩家推 PUSH_STRATAGEM
+ *   警报与 stratagem_received 事件；欺敌与金蝉脱壳不通知。进攻类计谋受 PvP 保护（TARGET_PROTECTED /
+ *   TRUCE_ACTIVE / ALLY_TARGET；自己新手保护中施计即失效）。计谋令只能用战场军功在 BUY_BATTLEFIELD_ITEM
+ *   （op 125）兑换（三种剧本货架都有 4 类令，每场限购、持有上限 STRATAGEM_TOKEN_FULL、换季清零）。
+ *   新错误码 HERO_STRATAGEM_COOLDOWN / HERO_NOT_AVAILABLE / TARGET_PROTECTED / TRUCE_ACTIVE / ALLY_TARGET /
+ *   INVALID_TARGET / STRATAGEM_TOKEN_SHORT / STRATAGEM_TOKEN_FULL / CITY_AMBUSHED；新事件 stratagem_cast /
+ *   stratagem_received；PUSH_MARCH_STATE 新增 reason=march_time_changed；PUSH_CITY_STATE 新增 reason=stratagem；
+ *   CityView 新增 stratagems；ScoutIntel 新增 deception；新表 account_stratagem_tokens / city_stratagem_effects /
+ *   stratagem_immunity；account_heroes 新增 stratagem_cooldown_until、marches 新增 stratagem_used。
  */
-export const PROTOCOL_VERSION = 84;
+export const PROTOCOL_VERSION = 86;

@@ -78,8 +78,10 @@ import {
   REQUEST_RESEARCH_TECH,
 } from './protocol-doc-ops-tech';
 import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT, REQUEST_DISBAND_TROOPS } from './protocol-doc-ops-army';
+import { REQUEST_RELEASE_TROOPS, REQUEST_RESTORE_TROOPS } from './protocol-doc-ops-troop-pools';
 import { PUSH_DEFENSE_STATE, REQUEST_CANCEL_DEFENSE_CRAFT, REQUEST_CRAFT_DEFENSE } from './protocol-doc-ops-defense';
 import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
+import { PUSH_STRATAGEM, REQUEST_CAST_STRATAGEM, REQUEST_GET_STRATAGEMS } from './protocol-doc-ops-stratagem';
 import { REQUEST_CLAIM_NOBILITY_SALARY, REQUEST_GET_NOBILITY } from './protocol-doc-ops-nobility';
 import { REQUEST_GET_LUOYANG, REQUEST_PUBLISH_DECREE } from './protocol-doc-ops-luoyang';
 import {
@@ -167,9 +169,10 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.population', type: 'object', desc: '人口现状（v7 新增，v8 规则确认，v19 数值修订）：{ current 当前人口, cap 上限（= 50 + 100 × 民房等级 × (民房等级 + 1)，无民房即基线 50）, growthPerHour 每小时增长（基准 = 10 × 民房等级 × (等级 + 1)，无民房为 0；实际 × 全局时间缩放） }；current ≥ cap 时停止增长（新号即 50/50 满编、增速 0，建民房后恢复增长）；征兵将消耗人口。' },
     { name: 'city.army', type: 'object', desc: '城内驻军（v11 新增）：{ porter, militia, scout, pikeman, swordsman, archer, cavalry, iron_cavalry, supply_wagon, ballista, siege_ram }（后四种为 v33 二期兵种），按兵种统计；征兵完成（recruit_completed）时累加。v64（AISLG-168）起键集再加 yulin_guard、danyang_soldier、baimao_soldier、huwei_guard、zhuge_crossbow、xiandeng_warrior、hubao_cavalry、xiliang_cavalry 八种名城专属兵（占领对应名城才能征募，失守后已练出的兵留在原主人手里）。' },
     { name: 'city.armyFoodUsePerHour', type: 'number', desc: '全军小时耗粮（v14 新增，实际值 × 全局时间缩放，与产出同幅）：城内驻军 1 倍 + 行军中/野地驻军 2 倍（单兵耗粮见各兵种 foodUse）。production.food 为毛产量，净粮 = production.food − 本值，可为负；结算把粮食扣到 0 为止、不记负债；**v34（AISLG-107）起断粮不再只是停止增长**：粮食为 0 且净产量为负时，每小时（缩放后）城内驻军每兵种减 10%（见 city.starveAt / city.mutinyNextAt 与 PUSH_STARVATION_STATE）。' },
+    { name: 'city.wounded / city.captives / city.deserters', type: 'object', desc: '伤兵营 / 俘虏营 / 逃兵营（v85 新增，AISLG-212）：各 = { troops 按兵种合计, earliestExpireAt 最早一批的过期时刻（ISO 8601，池子为空为 null；过期行读取时已过滤，到期即视为消失）}。伤兵 = 玩家一方每场世界地图战斗各兵种损失 × 20%，俘虏 = 胜方从败方损失抓的 10%（仅基础七兵种），逃兵 = 断粮哗变每小时减掉的 10%；三池不吃粮、不参战、不能被掠夺。处置用 RESTORE_TROOPS（治疗 / 招降 / 劝回）与 RELEASE_TROOPS（放弃 / 释放，仅 wounded / captive）。' },
     { name: 'city.inBattle', type: 'boolean', desc: '是否有敌情（v84，AISLG-209）：本城或其名下野地正有行军在途指向（来袭 / 运输 / 占领 / 侦察），或有未结的 NPC 来袭。为 true 时 DISBAND_TROOPS 返回 CITY_IN_BATTLE（与放弃分城的判定同口径），客户端据此置灰遣散按钮。' },
     { name: 'city.starveAt', type: 'string | null', desc: '预计断粮时间（v34，AISLG-107；ISO 8601）：按当前粮食与净产量（粮毛产量 production.food − armyFoodUsePerHour）推算，已断粮 = 当前时刻，净产量不为负（不会断粮）为 null。距断粮不足 1 小时（缩放后）推送一次预警。' },
-    { name: 'city.mutinyNextAt', type: 'string | null', desc: '下一次断粮哗变时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每个兵种减 10%（向上取整、至少 1 个，在外部队不受影响、不强制召回）；否则 null。'  },
+    { name: 'city.mutinyNextAt', type: 'string | null', desc: '下一次断粮哗变时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每个兵种减 10%（向上取整、至少 1 个，在外部队不受影响、不强制召回；v85 AISLG-212 起减少的进本城逃兵营 city.deserters，断粮结束后可 50% 劝回）；否则 null。'  },
     { name: 'city.timeScale', type: 'number', desc: '当前部署的全局时间缩放（v20 新增，AISLG-38）：文档时长基准 ÷ 本值 = 实际耗时（钳 1 秒）、速率基准 × 本值。客户端需本地折算时长（如掠夺冷却剩余）时用本值，不要按文档数值硬算。' },
     { name: 'city.truceUntil', type: 'string | null', desc: '主城免战截止（v22 新增，AISLG-40）：主城被 NPC 袭击攻破后写入，免战期内（2 × 袭击基准间隔，随 timeScale 缩放）该主城不再进入袭击目标池；从未被攻破为 null。到期自动回到目标池，无事件通知——Agent 规划重建时可据此判断安全窗口。v38（AISLG-122）起被玩家攻破 / 被抢后同样写入（4 小时基准随缩放），玩家与 NPC 共用。' },
     { name: 'city.newbieUntil', type: 'string | null', desc: '新手保护截止（v38，AISLG-122，账号级）：注册后 3 天或任一城官府升到 8 级（v42 校准：原 5 级在加速服几分钟即达，形同虚设），先到为准；期内别人不能侦察 / 攻击你（NEWBIE_PROTECTED），你自己侦察 / 攻击其他玩家会立即失效（事件 newbie_protection_ended，打野地 / NPC 不触发）。已出保为 null。' },
@@ -460,9 +463,15 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.RECRUIT]: withCityId(REQUEST_RECRUIT),
   [Op.CANCEL_RECRUIT]: REQUEST_CANCEL_RECRUIT,
   [Op.DISBAND_TROOPS]: withCityId(REQUEST_DISBAND_TROOPS),
+  // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵的治疗 / 招降 / 劝回与放弃 / 释放
+  [Op.RESTORE_TROOPS]: withCityId(REQUEST_RESTORE_TROOPS),
+  [Op.RELEASE_TROOPS]: withCityId(REQUEST_RELEASE_TROOPS),
   [Op.CRAFT_DEFENSE]: withCityId(REQUEST_CRAFT_DEFENSE),
   [Op.CANCEL_DEFENSE_CRAFT]: REQUEST_CANCEL_DEFENSE_CRAFT,
   [Op.DISMISS_ASSIST]: REQUEST_DISMISS_ASSIST,
+  [Op.GET_STRATAGEMS]: REQUEST_GET_STRATAGEMS,
+  [Op.CAST_STRATAGEM]: REQUEST_CAST_STRATAGEM,
+  [Op.PUSH_STRATAGEM]: PUSH_STRATAGEM,
   [Op.GET_BATTLEFIELD]: REQUEST_GET_BATTLEFIELD,
   [Op.SIGNUP_BATTLEFIELD]: REQUEST_SIGNUP_BATTLEFIELD,
   [Op.ENTER_BATTLEFIELD]: REQUEST_ENTER_BATTLEFIELD,

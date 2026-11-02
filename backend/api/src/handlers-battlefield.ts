@@ -28,6 +28,7 @@ import {
 import { insertEvent } from '../../common/src/events';
 import { effectiveLevelSql } from '../../common/src/production';
 import { respondError, respondOk } from './frames';
+import { cityDispatchBlockedSeconds } from './stratagem-target';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 
@@ -289,6 +290,14 @@ export async function handleEnterBattlefield(
       return;
     }
     camp = participant.camp === 'cao' ? 'cao' : 'yuan';
+    // v86（AISLG-211）：中了十面埋伏的城不能带部队进剧本战场（与出征 / 商队同一道拦截）
+    const ambushNowRes = await client.query(`SELECT now() AS now`);
+    const ambushLeft = await cityDispatchBlockedSeconds(client, participant.main_city_id, ambushNowRes.rows[0].now as Date);
+    if (ambushLeft !== null) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'CITY_AMBUSHED', { retryAfterSeconds: ambushLeft });
+      return;
+    }
     // 锁城内驻军并校验兵够不够
     const armyRes = await client.query(`SELECT troop, count FROM city_army WHERE city_id = $1 FOR UPDATE`, [
       participant.main_city_id,

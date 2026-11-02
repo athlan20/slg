@@ -177,6 +177,39 @@ export function disbandErrorText(code: ErrorCode | undefined, message: string | 
   }
 }
 
+/** 治疗 / 招降 / 劝回失败的人读提示（v85，AISLG-212，伤兵营表单内显示） */
+export function poolErrorText(
+  code: ErrorCode | undefined,
+  message: string | undefined,
+  data?: Record<string, unknown>,
+): string {
+  const { COPY } = getCopy();
+  switch (code) {
+    case 'INSUFFICIENT_RESOURCES':
+      return COPY.errors.pools.insufficientResources + shortfallSuffix(data);
+    case 'INSUFFICIENT_POPULATION':
+      return COPY.errors.pools.insufficientPopulation + populationShortfallSuffix(data);
+    case 'CITY_STARVING':
+      return COPY.errors.pools.cityStarving;
+    case 'INVALID_PARAMS':
+      return COPY.errors.pools.invalidParams;
+    default:
+      return message ?? COPY.errors.pools.fallback;
+  }
+}
+
+/** 施计 / 兑换计谋令失败的人读提示（施计弹窗与战场商店内显示，v86 AISLG-211） */
+export function stratagemErrorText(code: ErrorCode | undefined, message: string | undefined, data?: Record<string, unknown>): string {
+  const { STRATAGEM_COPY } = getCopy();
+  const byCode = STRATAGEM_COPY.errors as Record<string, string>;
+  if (code && code in byCode) {
+    const retry = typeof data?.retryAfterSeconds === 'number' ? data.retryAfterSeconds : 0;
+    const base = byCode[code];
+    return retry > 0 ? `${base}（${formatDurationText(retry)}）` : base;
+  }
+  return message ?? STRATAGEM_COPY.errors.fallback;
+}
+
 /** 集市兑换失败的人读提示（兑换弹窗内显示，AISLG-67） */
 export function exchangeErrorText(
   code: ErrorCode | undefined,

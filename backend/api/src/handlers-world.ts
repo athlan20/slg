@@ -47,6 +47,13 @@ import { decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { carryingPercent, marchingPercent } from '../../common/src/tech';
 import { resolveIntercept, resolveMarchTarget } from './march-target';
 import { breakNewbieProtection, insertAttackWarning, pushAttackWarning } from './pvp';
+import { cityDispatchBlockedSeconds } from './stratagem-target';
+
+/** 事务内取数据库 now（十面埋伏等判定的统一时钟） */
+async function dbNowOf(client: pg.PoolClient): Promise<Date> {
+  const res = await client.query(`SELECT now() AS now`);
+  return res.rows[0].now as Date;
+}
 
 /** GET_WORLD_MAP：窗口式地图查询；缺省以主城为中心 DEFAULT_MAP_WINDOW×DEFAULT_MAP_WINDOW */
 export async function handleGetWorldMap(
@@ -137,6 +144,13 @@ export async function handleMarch(
       // 主城没有地块坐标属世界分配异常（世界占满的占位边界），无法计算行军
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'INTERNAL');
+      return;
+    }
+    // v86（AISLG-211）：中了十面埋伏的城不能派出任何部队（出征 / 调兵 / 运输 / 侦察 / 协防；召回不受影响）
+    const ambushLeft = await cityDispatchBlockedSeconds(client, snap.cityId, await dbNowOf(client));
+    if (ambushLeft !== null) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'CITY_AMBUSHED', { retryAfterSeconds: ambushLeft });
       return;
     }
     // v30（AISLG-80）：本城在外部队数已达校场等级 → 拒绝新的出征（已在外的不受影响）

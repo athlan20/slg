@@ -12,6 +12,7 @@ import { ALLIANCE_SCHEMA_SQL } from './alliance-schema';
 import { BATTLEFIELD_SCHEMA_SQL } from './battlefield-schema';
 import { NOBILITY_SCHEMA_SQL } from './nobility-schema';
 import { MARKET_SCHEMA_SQL } from './market-schema';
+import { STRATAGEM_SCHEMA_SQL } from './stratagem-schema';
 import { SEASON_SCHEMA_SQL } from './season-schema';
 import { seedFirstSeason } from './season-seed';
 import { attachPoolDiagnostics, logConnError } from './db-diag';
@@ -786,6 +787,21 @@ CREATE TABLE IF NOT EXISTS capital_swaps (
   account_id uuid PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
   until timestamptz NOT NULL
 );
+
+-- v85（AISLG-212）：城池部队池——伤兵 / 俘虏 / 逃兵。每次入账一行（一批），
+-- 过期时刻 = 入账时数据库 now() + 时长 ÷ 全局时间缩放（写入时缩放已折算死）；
+-- 治后 / 招降 / 劝回按最早一批优先消耗（FIFO）。城池删除（放弃 / 重置）随 CASCADE 清空；
+-- 城池易主（被占 / 换主）由结算事务显式 DELETE（clearCityTroopPools）
+CREATE TABLE IF NOT EXISTS city_troop_pools (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  city_id uuid NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  pool text NOT NULL,
+  troops jsonb NOT NULL DEFAULT '{}'::jsonb,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_city_troop_pools_city ON city_troop_pools (city_id, pool, expires_at);
+CREATE INDEX IF NOT EXISTS idx_city_troop_pools_expire ON city_troop_pools (expires_at);
 `;
 
 /**
@@ -799,7 +815,7 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL + BATTLEFIELD_SCHEMA_SQL + NOBILITY_SCHEMA_SQL + MARKET_SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL + BATTLEFIELD_SCHEMA_SQL + NOBILITY_SCHEMA_SQL + MARKET_SCHEMA_SQL + STRATAGEM_SCHEMA_SQL);
         // 赛季（AISLG-134）：seasons 为空时播种第 1 季（幂等，咨询锁内执行）
         await seedFirstSeason(client);
         return;

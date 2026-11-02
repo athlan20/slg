@@ -55,6 +55,12 @@ export interface BattleSideView {
   damage: number;
   /** 总单位数 = Σ troops（v21 AISLG-33；服务端按 troops 汇总下发，历史战报同样补齐） */
   units: number;
+  /** 伤兵（v85，AISLG-212）：本方损失中进入伤兵营的部分（玩家一方各兵种损失 floor(20%)；NPC 为全 0 / 历史战报缺省）。阵亡 = losses − wounded − captured */
+  wounded?: import('./protocol').ArmyCounts;
+  /** 被俘（v85，AISLG-212）：本方损失中被胜方抓走当俘虏的部分（仅基础七兵种，败方才有值；平局 / 历史战报缺省为无） */
+  captured?: import('./protocol').ArmyCounts;
+  /** 抓到的俘虏（v85，AISLG-212）：胜方为玩家时从败方损失抓的 10%（败方 / 平局 / 历史战报缺省为无） */
+  captives?: import('./protocol').ArmyCounts;
   /** 总血量 = Σ troops × 单兵生命（v21 AISLG-33，按「兵种与战斗属性」表可对账） */
   totalHp: number;
   /** 编成平均射程 = Σ troops × 单兵射程 ÷ units（v21 AISLG-30，1 位小数，空编成为 0）：
@@ -224,6 +230,10 @@ export interface ScoutIntel {
   scoutedAt: string;
   /** 名城信息（v24，AISLG-56）：侦察时刻的阶段——garrison / wallDefensePercent 即该阶段的守军与城墙口径；非名城无此字段 */
   famous?: { name: string; stage: 'outer' | 'keeper' };
+  /** 欺敌识破标记（v86，AISLG-211）：目标城有生效中的草木皆兵 / 空城计且本次侦察识破时才有——
+   *  此时 garrison 为真实驻军（照常按侦察科技降级）；没识破时情报里没有任何标记，
+   *  garrison 为按倍数换算后的假驻军（先换算、再降级）。被识破不通知施计方 */
+  deception?: { stratagem: import('./stratagem').StratagemKind; name: string; seen: true };
 }
 
 /** 发起人角色（战报 / 事件的 initiator；与协议登录类型同构） */

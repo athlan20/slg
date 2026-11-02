@@ -188,7 +188,9 @@ export function Sidebar(props: SidebarProps) {
               >
                 {item.icon}
               </b>
-              <span className="max-xl:hidden max-lg:inline">{item.label}</span>
+              {/* 手机（< 1024）底部导航用短标签（"将星塔" → "将星"），≥ 1280 宽侧栏仍用全称（AISLG-214） */}
+              <span className="nav-label hidden max-lg:inline max-lg:whitespace-nowrap max-lg:tracking-tighter">{item.shortLabel ?? item.label}</span>
+              <span className="nav-label-full max-xl:hidden">{item.label}</span>
               {badge && badge.count > 0 ? (
                 <i
                   role={`导航-${NAV_COPY_ZH.pages[key].label}-角标`}
@@ -213,7 +215,8 @@ export function Sidebar(props: SidebarProps) {
           <b className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded border border-line text-[12px] font-semibold">
             {ANNOUNCEMENT_COPY.launcher.label.slice(0, 1)}
           </b>
-          <span className="max-xl:hidden max-lg:inline">{ANNOUNCEMENT_COPY.launcher.label}</span>
+          <span className="nav-label hidden max-lg:inline max-lg:whitespace-nowrap">{ANNOUNCEMENT_COPY.launcher.label}</span>
+          <span className="nav-label-full max-xl:hidden">{ANNOUNCEMENT_COPY.launcher.label}</span>
           {announcementUnread > 0 ? (
             <i
               role="导航-公告-角标"
@@ -234,7 +237,8 @@ export function Sidebar(props: SidebarProps) {
           <b className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded border border-line text-[12px] font-semibold">
             {ALLIANCE_COPY.launcher.label.slice(0, 1)}
           </b>
-          <span className="max-xl:hidden max-lg:inline">{ALLIANCE_COPY.launcher.label}</span>
+          <span className="nav-label hidden max-lg:inline max-lg:whitespace-nowrap">{ALLIANCE_COPY.launcher.label}</span>
+          <span className="nav-label-full max-xl:hidden">{ALLIANCE_COPY.launcher.label}</span>
           {allianceBadge > 0 ? (
             <i
               role="导航-联盟-角标"
@@ -256,7 +260,8 @@ export function Sidebar(props: SidebarProps) {
           <b className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded border border-line text-[12px] font-semibold">
             {CHAT_COPY.launcher.label.slice(0, 1)}
           </b>
-          <span className="max-lg:inline">{CHAT_COPY.launcher.label}</span>
+          <span className="nav-label max-lg:inline max-lg:whitespace-nowrap">{CHAT_COPY.launcher.label}</span>
+          {/* 聊天入口只在 < 1024 出现，不需要全称副本 */}
           {chatUnread > 0 ? (
             <i
               role="导航-聊天-角标"
@@ -290,7 +295,7 @@ export function Sidebar(props: SidebarProps) {
             setCityOpen(false);
             setAccountOpen((open) => !open);
           }}
-          className="flex w-full cursor-pointer items-center gap-2 rounded-[5px] border border-line bg-panel-2 px-2.5 py-1.5 text-left text-[12px] hover:border-accent-dim hover:text-accent max-xl:justify-center max-xl:px-0 max-lg:h-full max-lg:w-12 max-lg:flex-col max-lg:gap-0.5 max-lg:py-1 max-lg:text-[10.5px]"
+          className="flex w-full cursor-pointer items-center gap-2 rounded-[5px] border border-line bg-panel-2 px-2.5 py-1.5 text-left text-[12px] hover:border-accent-dim hover:text-accent max-xl:justify-center max-xl:px-0 max-lg:h-full max-lg:flex-col max-lg:gap-0.5 max-lg:py-1 max-lg:text-[10.5px]"
         >
           <i
             role="顶栏-本人在线状态"
@@ -300,7 +305,7 @@ export function Sidebar(props: SidebarProps) {
           <span role="侧栏-账号" className="min-w-0 flex-1 truncate max-xl:hidden max-lg:hidden">
             {account ?? NAV_COPY.account}
           </span>
-          <span className="hidden max-xl:inline max-lg:inline">{NAV_COPY.accountShort}</span>
+          <span className="nav-label hidden max-xl:inline max-lg:inline">{NAV_COPY.accountShort}</span>
           <span className="text-faint max-xl:hidden max-lg:hidden">▾</span>
         </button>
         {accountOpen ? (

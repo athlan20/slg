@@ -345,12 +345,21 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
         {(state?.shop.items ?? []).map((item: BattlefieldShopItemView) => {
           const soldOut = item.bought >= item.limit;
           const isHeroExp = item.item === 'hero_exp';
+          // v86（AISLG-211）：计谋令行另显持有数 / 持有上限（到上限服务端返回 STRATAGEM_TOKEN_FULL，不扣军功）
+          const tokenKind = item.reward.stratagemToken;
+          const haveToken = tokenKind ? (session.stratagem.state?.tokens[tokenKind] ?? 0) : 0;
+          const holdFull = item.holdLimit !== null && haveToken >= item.holdLimit;
           return (
             <div key={item.item} role="战场-商品条目" className="flex items-center justify-between gap-2 rounded border border-line-soft px-2 py-1 text-[12.5px]">
               <span className="min-w-0 truncate">
                 <b>{tName(item.label)}</b>
                 <span className="ml-1.5 text-faint">{B.shop.cost(item.cost)}</span>
                 <span className="ml-1.5 text-faint">{B.shop.limit(item.bought, item.limit)}</span>
+                {item.holdLimit !== null ? (
+                  <span role="战场-商品条目-持有" className={`ml-1.5 ${holdFull ? 'text-warn' : 'text-faint'}`}>
+                    {B.shop.tokenHold(haveToken, item.holdLimit)}
+                  </span>
+                ) : null}
               </span>
               <span className="flex shrink-0 items-center gap-1.5">
                 {isHeroExp ? (
@@ -369,13 +378,13 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
                 ) : null}
                 <button
                   type="button"
-                  disabled={bf.busy || soldOut || (isHeroExp && heroes.length === 0)}
+                  disabled={bf.busy || soldOut || holdFull || (isHeroExp && heroes.length === 0)}
                   onClick={() =>
                     void bf.buy(item.item as BattlefieldShopItem, isHeroExp ? heroId || undefined : undefined)
                   }
                   className="cursor-pointer rounded border border-accent-dim bg-accent-soft px-2 py-0.5 text-accent disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {soldOut ? B.shop.soldOut : B.shop.buy}
+                  {soldOut ? B.shop.soldOut : holdFull ? B.shop.tokenFull : B.shop.buy}
                 </button>
               </span>
             </div>

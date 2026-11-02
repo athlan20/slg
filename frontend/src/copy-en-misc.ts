@@ -60,6 +60,11 @@ export const EVENTS_PANEL_EN = {
   viewReport: 'Report',
   // Scout events carry intel: the chip opens the scout report dialog.
   viewScoutReport: 'Scout',
+  // City name tag on each row when the account owns 2+ cities: placeholder + hint when the city is gone.
+  cityGone: 'Former city',
+  cityGoneHint: 'This city is no longer yours',
+  // Hover text of the city tag: full name + click to switch
+  cityTagHint: (name: string) => `${name} (click to switch to this city)`,
 } satisfies typeof COPY['eventsPanel'];
 
 export const LOGIN_EN = {
@@ -143,6 +148,14 @@ export const ERRORS_EN = {
     invalidParams: 'Invalid disband parameters (unknown troop type, or a count that is not a positive integer)',
     fallback: 'Failed to disband troops, please retry',
   },
+  // v85 (AISLG-212): heal / recruit / recall for the wounded, captives and deserters
+  pools: {
+    invalidParams: 'The count exceeds what the pool holds, or invalid parameters (unknown troop type, non-integer count)',
+    insufficientResources: 'Not enough resources to pay for this heal / recruit / recall (see the top bar for current resources)',
+    insufficientPopulation: 'Not enough population to recruit this many captives (population grows over time; Houses raise the cap)',
+    cityStarving: 'This city is starving; deserters can only be recalled after the famine ends',
+    fallback: 'Operation failed, please retry',
+  },
   exchange: {
     insufficientResources: 'Not enough of that resource for this exchange',
     invalidParams: 'The amount must be a positive integer, and at least 4 units are needed to yield 1 gold',
@@ -195,6 +208,11 @@ export const SESSION_EN = {
   // v84 (AISLG-209): disband troops
   troopsDisbanded: (troops: string, refund: string) => `Disbanded ${troops}; refunded ${refund}`,
   troopsDisbandedRejected: (message: string) => `Disband rejected (${message})`,
+  // v85 (AISLG-212): heal / recruit / recall and abandon / release
+  troopsRestored: (label: string, troops: string, cost: string) => `${label} ${troops}, cost ${cost}`,
+  troopsRestoredRejected: (message: string) => `Restore rejected (${message})`,
+  troopsReleased: (label: string, troops: string) => `${label} ${troops}, nothing is refunded`,
+  troopsReleasedRejected: (message: string) => `Release rejected (${message})`,
   marchStarted: (x: number, y: number, dueClock: string) => `Troops marching out → (${x},${y}), due ${dueClock}`,
   recallPartialStarted: (x: number, y: number, dueClock: string) =>
     `Part of the garrison departing (${x},${y}) for home, due ${dueClock}; occupation kept`,

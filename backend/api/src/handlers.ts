@@ -28,6 +28,8 @@ import {
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
 import { handleDisbandTroops, readDisbandTroops } from './handlers-disband';
+import { handleReleaseTroops, handleRestoreTroops, readTroopPoolRequest } from './handlers-troop-pools';
+import { handleGetStratagems, handleCastStratagem } from './handlers-stratagem';
 import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
 import { handleDismissAssist } from './handlers-assist';
 import {
@@ -428,6 +430,26 @@ async function dispatchOp(
       await handleDisbandTroops(ctx, conn, op, seq, params.troops);
       break;
     }
+    case Op.RESTORE_TROOPS: {
+      // v85（AISLG-212）：pool 必须是已知池子（含逃兵），troops 解析失败 INVALID_PARAMS
+      const params = readTroopPoolRequest(data, true);
+      if (!params) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleRestoreTroops(ctx, conn, op, seq, params.pool, params.troops);
+      break;
+    }
+    case Op.RELEASE_TROOPS: {
+      // v85（AISLG-212）：只认 wounded / captive（逃兵不能释放，只能劝回或等过期）
+      const params = readTroopPoolRequest(data, false);
+      if (!params) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleReleaseTroops(ctx, conn, op, seq, params.pool, params.troops);
+      break;
+    }
     case Op.CRAFT_DEFENSE:
       // 参数校验在 handler 内（kind 枚举 + count 正整数），失败附当前城池状态
       await handleCraftDefense(ctx, conn, op, seq, data);
@@ -437,6 +459,12 @@ async function dispatchOp(
       break;
     case Op.DISMISS_ASSIST:
       await handleDismissAssist(ctx, conn, op, seq, data);
+      break;
+    case Op.GET_STRATAGEMS:
+      await handleGetStratagems(ctx, conn, op, seq, data);
+      break;
+    case Op.CAST_STRATAGEM:
+      await handleCastStratagem(ctx, conn, op, seq, data);
       break;
     case Op.GET_BATTLEFIELD:
       await handleGetBattlefield(ctx, conn, op, seq);

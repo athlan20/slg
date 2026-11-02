@@ -336,12 +336,15 @@ export function battlefieldShopView(
       cost: def.cost,
       limit: def.limit,
       bought: counts[def.item] ?? 0,
+      holdLimit: def.token ? (def.holdLimit ?? null) : null,
       reward:
         def.item === 'resources'
           ? { resources: { gold: 0, wood: def.resourcesEach ?? 0, food: def.resourcesEach ?? 0, stone: def.resourcesEach ?? 0, iron: def.resourcesEach ?? 0 } }
           : def.item === 'hero_exp'
             ? { heroExp: def.heroExp }
-            : { troop: def.troop, count: def.count },
+            : def.token
+              ? { stratagemToken: def.token }
+              : { troop: def.troop, count: def.count },
     })),
   };
 }

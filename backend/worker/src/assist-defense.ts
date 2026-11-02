@@ -19,6 +19,8 @@ import {
 import { loadAssistParties, saveDefenseSurvivors } from '../../common/src/city-assist-db';
 import { combatTechBonus, type TechLevels } from '../../common/src/tech';
 import type { BattleResult, CombatTechBonus } from '../../common/src/battle';
+import { splitBattleCasualties, woundedOf, type BattleCasualtiesSplit } from '../../common/src/battle-casualties';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import type { TileNotify } from './tick-shared';
 
 export interface DefenseSetup {
@@ -132,4 +134,86 @@ function survivorsOf(troops: Partial<Record<TroopKind, number>>, losses: Partial
     left[kind] = Math.max(0, left[kind] - Math.max(0, Math.floor(losses[kind] ?? 0)));
   }
   return left;
+}
+
+/** 全 0 计数 */
+function zeroCounts(): ArmyCounts {
+  return fullArmy({});
+}
+
+/** 把胜方战果（按兵种的俘虏数）按守方各方参战单位数占比拆分，取整余数归城主（与 splitAssistLosses 同口径） */
+function splitCaptivesByUnits(
+  setup: DefenseSetup,
+  captives: ArmyCounts,
+): { host: ArmyCounts; parties: Map<string, ArmyCounts> } {
+  const host = zeroCounts();
+  const parties = new Map<string, ArmyCounts>();
+  const total = Math.max(1, setup.totalUnits);
+  for (const kind of TROOP_KINDS) {
+    let count = Math.max(0, Math.floor(captives[kind] ?? 0));
+    for (const party of setup.parties) {
+      const units = armyUnits(party.troops);
+      const share = Math.min(count, Math.floor((count * units) / total));
+      if (share > 0) {
+        const entry = parties.get(party.id) ?? zeroCounts();
+        entry[kind] = share;
+        parties.set(party.id, entry);
+        count -= share;
+      }
+    }
+    host[kind] = count;
+  }
+  return { host, parties };
+}
+
+/**
+ * v85（AISLG-212）守城方（NPC 袭击主城 / 玩家攻城 / 玩家掠夺）的池子入账，
+ * 供 city-raid / pvp-raid / pvp-conquer 共用，避免三处各自实现漏掉协防：
+ * - 伤兵：城主部分（总损失 − 各协防份额）进被攻城，协防部分各自进派出城（名 20% 分别取整）；
+ * - 俘虏：守方胜（全歼攻方）且胜方是玩家时，从攻方损失抓 10%，按各方参战单位数占比拆分，
+ *   余数归城主（城主 → 被攻城，协防 → 派出城）。
+ * 调用方持有事务与城池行锁；assistLosses 为 applyDefenseBattle 的拆分结果（不含城主）。
+ */
+export async function recordDefensePoolCasualties(
+  client: pg.PoolClient,
+  hostCityId: string,
+  setup: DefenseSetup,
+  result: BattleResult,
+  assistLosses: AssistBattleLosses[],
+  attackerIsNpc: boolean,
+): Promise<BattleCasualtiesSplit> {
+  const casualties = splitBattleCasualties(result, attackerIsNpc, false);
+  // 城主份额 = 守方总损失 − 各协防份额（取整余数归城主，与 splitAssistLosses 同口径）
+  const hostLosses = zeroCounts();
+  for (const kind of TROOP_KINDS) {
+    let count = Math.max(0, Math.floor(result.defender.losses[kind] ?? 0));
+    for (const party of assistLosses) {
+      count -= Math.max(0, Math.floor(party.losses[kind] ?? 0));
+    }
+    hostLosses[kind] = Math.max(0, count);
+  }
+  await recordPoolTroops(client, hostCityId, 'wounded', woundedOf(hostLosses));
+  for (const party of assistLosses) {
+    await recordPoolTroops(client, partyOf(setup, party.assistId), 'wounded', woundedOf(party.losses));
+  }
+  if (casualties.winner === 'defender') {
+    const split = splitCaptivesByUnits(setup, casualties.captives);
+    await recordPoolTroops(client, hostCityId, 'captive', split.host);
+    for (const party of assistLosses) {
+      const share = split.parties.get(party.assistId);
+      if (share) {
+        await recordPoolTroops(client, partyOf(setup, party.assistId), 'captive', share);
+      }
+    }
+  }
+  return casualties;
+}
+
+/** 协防条目的派出城 id */
+function partyOf(setup: DefenseSetup, assistId: string): string {
+  const party = setup.parties.find((entry) => entry.id === assistId);
+  if (!party) {
+    throw new Error(`assist party not found: ${assistId}`);
+  }
+  return party.fromCityId;
 }
