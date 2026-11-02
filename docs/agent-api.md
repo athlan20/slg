@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**87** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**88** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 87）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 88）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 87,
+    "protocolVersion": 88,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 87,
+    "protocolVersion": 88,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/84 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/85 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 84,
+    "docVersion": 85,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 87,
-    "docNotice": "接口文档已从 v84 更新到 v87：请 GET /agent-api/changes/84 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 88,
+    "docNotice": "接口文档已从 v85 更新到 v88：请 GET /agent-api/changes/85 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -18213,6 +18213,215 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 147 · GET_TROOP_POOLS — 查询全账号伤兵营（全部城池的伤兵 / 俘虏 / 逃兵一次拿全）
+
+`C→S` 请求-响应 · 需登录后发送
+
+一次拿回**账号全部城**的伤兵 / 俘虏 / 逃兵三个池子与各城断粮时刻（v88，AISLG-218）：无参数、只读、不开事务不加锁，玩家与 Agent 都可以调。cities[] 每项的结构与 GET_STATE 的 city 里那三组完全相同（troops 按兵种合计 + earliestExpireAt 最早一批的过期时刻，已过期的批次不返回），starveAt 与 city.starveAt 同口径（未断粮为 null）。主城在前、其余按创建时间；**三池全空的城也会返回**（troops 全 0、earliestExpireAt 为 null），别人账号的城不可见。本协议不处理任何东西：处理仍逐城带 cityId 调 RESTORE_TROOPS / RELEASE_TROOPS（不新增批量协议，服务端数值与规则不变）。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| cities | array | 账号全部城的池子快照，主城在前、其余按创建时间。每项 = { cityId, name, isMain, starveAt, wounded, captives, deserters }。 |
+| cities[].cityId | string | 城池 id：处理后要处理某城时，把它作为 RESTORE_TROOPS / RELEASE_TROOPS 的 cityId。 |
+| cities[].name | string | 城名。 |
+| cities[].isMain | boolean | 是否账号主城（主城 = 创建时间最早的城，与 GET_STATE 的主城口径一致）。 |
+| cities[].starveAt | string \| null | 断粮开始时刻（ISO 8601；未断粮为 null），与 GET_STATE 的 city.starveAt 同口径。已到时间的城现在就在断粮，劝回逃兵会被 CITY_STARVING 拒绝。 |
+| cities[].wounded | object | 伤兵池：{ troops（按兵种合计）, earliestExpireAt（最早一批的过期时刻；空池为 null） }，与 GET_STATE 的 city.wounded 完全相同。 |
+| cities[].captives | object | 俘虏池，结构同 wounded（对应 GET_STATE 的 city.captives）。 |
+| cities[].deserters | object | 逃兵池，结构同 wounded（对应 GET_STATE 的 city.deserters）。 |
+
+**Agent 提示**：想看全账号的伤兵营就用这一条，**不要对每座城轮询 GET_STATE**（城多时轮次很贵）。处理仍按城发：对每座城的 cityId 调 RESTORE_TROOPS（治疗 50% / 招降 60% 另扣人口 / 劝回 50%）或 RELEASE_TROOPS（免费，放弃 / 释放）；服务端不提供批量协议，逐城调的顺序与取舍由你决定（推荐按 earliestExpireAt 从早到晚，先救快过期的）。earliestExpireAt 距现在不足 6 小时就该动手。starveAt 已到（不为 null 且已过去）的城正在断粮，劝回逃兵会返回 CITY_STARVING，先运粮。
+
+**示例**
+
+**账号有主城 + 1 座分城：分城伤兵营里有 12 个长枪兵，主城三池全空同样返回**
+
+请求：
+
+```json
+{
+  "op": 147,
+  "seq": 1,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 147,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "cities": [
+      {
+        "cityId": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+        "name": "主城",
+        "isMain": true,
+        "starveAt": null,
+        "wounded": {
+          "troops": {
+            "porter": 0,
+            "militia": 0,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "earliestExpireAt": null
+        },
+        "captives": {
+          "troops": {
+            "porter": 0,
+            "militia": 0,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "earliestExpireAt": null
+        },
+        "deserters": {
+          "troops": {
+            "porter": 0,
+            "militia": 0,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "earliestExpireAt": null
+        }
+      },
+      {
+        "cityId": "f1b0c0de-0000-4000-8000-000000000002",
+        "name": "分城甲",
+        "isMain": false,
+        "starveAt": "2026-11-02T10:00:00.000Z",
+        "wounded": {
+          "troops": {
+            "porter": 0,
+            "militia": 0,
+            "scout": 0,
+            "pikeman": 12,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "earliestExpireAt": "2026-11-05T03:00:00.000Z"
+        },
+        "captives": {
+          "troops": {
+            "porter": 0,
+            "militia": 0,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "earliestExpireAt": null
+        },
+        "deserters": {
+          "troops": {
+            "porter": 0,
+            "militia": 0,
+            "scout": 0,
+            "pikeman": 0,
+            "swordsman": 0,
+            "archer": 0,
+            "cavalry": 0,
+            "iron_cavalry": 0,
+            "supply_wagon": 0,
+            "ballista": 0,
+            "siege_ram": 0,
+            "yulin_guard": 0,
+            "danyang_soldier": 0,
+            "baimao_soldier": 0,
+            "huwei_guard": 0,
+            "zhuge_crossbow": 0,
+            "xiandeng_warrior": 0,
+            "hubao_cavalry": 0,
+            "xiliang_cavalry": 0
+          },
+          "earliestExpireAt": null
+        }
+      }
+    ]
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -21663,7 +21872,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 87。
+- 协议版本随对外协议内容的每次变化递增；当前为 88。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

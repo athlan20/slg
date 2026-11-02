@@ -679,5 +679,11 @@
  *   分城在建 / 排队的这两项取消并全额返还到该城（沿用 CANCEL_BUILD 的返还规则）、分城候选清空；进行中的研究不受影响。
  *   SET_CAPITAL（v82）对调身份时两城的酒馆 / 书院记录一并互换（等级跟着「主城」身份走），清空两城候选，
  *   两城在建 / 排队的这两项同样取消并返还。分城被占领 / 放弃不再有任何等级损失（建筑随城，规则不变）。
+ * v88（伤兵营全城汇总，AISLG-218，只加不改）：新增 GET_TROOP_POOLS（op 147，无参数、只读、玩家与 Agent 通用）——
+ *   一次返回账号全部城的伤兵 / 俘虏 / 逃兵三池与各城断粮时刻：cities[] 每项 { cityId, name, isMain,
+ *   starveAt, wounded, captives, deserters }，三池结构与 CityView 的 wounded / captives / deserters 完全相同
+ *   （troops 按兵种合计 + earliestExpireAt，过期行已过滤），starveAt 与 CityView.starveAt 同口径；主城在前，
+ *   其余按创建时间；三池全空的城也返回。不新增批量协议：一键处理仍由客户端逐城带 cityId 调
+ *   RESTORE_TROOPS（143）/ RELEASE_TROOPS（144），两条协议的行为与数值完全不变。
  */
-export const PROTOCOL_VERSION = 87;
+export const PROTOCOL_VERSION = 88;

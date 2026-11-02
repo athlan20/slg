@@ -256,6 +256,8 @@ export const Op = {
   GET_STRATAGEMS: 145,
   /** C→S 施计（v86，AISLG-211：data.heroId + data.stratagem + data.target = { cityId } | { marchId } | { attackId }；成功失败都扣 1 张对应类别的令与武将 1 小时冷却） */
   CAST_STRATAGEM: 146,
+  /** C→S 查询全账号伤兵营（v88，AISLG-218：账号全部城的伤兵 / 俘虏 / 逃兵三池 + 断粮时刻；无参数、只读，玩家与 Agent 通用） */
+  GET_TROOP_POOLS: 147,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -921,6 +923,8 @@ export type {
   ReleaseTroopsResponseData,
   TroopPoolKind,
   TroopPoolView,
+  AccountTroopPoolsCityView,
+  GetTroopPoolsResponseData,
 } from './protocol-army';
 export { TROOP_KINDS, isTroopKind } from './protocol-army';
 import type { ArmyCounts, RecruitView } from './protocol-army';

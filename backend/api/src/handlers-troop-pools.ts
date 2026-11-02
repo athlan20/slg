@@ -1,5 +1,6 @@
 // 伤兵 / 俘虏 / 逃兵的操作协议（v85，AISLG-212）：RESTORE_TROOPS（治疗 / 招降 / 劝回）
 // 与 RELEASE_TROOPS（放弃治疗 / 释放俘虏）。从 handlers-army.ts 独立出来，只处理这两条。
+// v88（AISLG-218）另加只读的 GET_TROOP_POOLS（全账号汇总，视图组装的细节在 views-troop-pools.ts）。
 // 规则要点（数值见 common/src/battle-casualties.ts，评审定稿不得自行更改）：
 // - 立即完成，无等待时间；治好 / 招降 / 劝回的兵直接进该城城内驻军；
 // - 治疗（wounded）花征兵资源 × 50%，不扣人口（治好再遣散不赚不亏）；
@@ -22,6 +23,7 @@ import {
 } from '../../common/src/battle-casualties';
 import type pg from 'pg';
 import { consumePoolTroops, isTroopPoolKind, loadCityTroopPools, type TroopPoolKind } from '../../common/src/troop-pools-db';
+import { loadAccountTroopPoolsView } from './views-troop-pools';
 import { loadArmyFoodUsePerHour, productionPerHour } from '../../common/src/production';
 import { territoryDisplayRates } from '../../common/src/wilderness-reserve';
 import { projectStarvation } from '../../common/src/starvation';
@@ -32,6 +34,27 @@ import { insufficientPopulationDetail, insufficientResourcesDetail } from './han
 import { loadCityState, lockCitySnapshot } from './views';
 
 type Troops = Partial<Record<TroopKind, number>>;
+
+/**
+ * GET_TROOP_POOLS（op 147，v88，AISLG-218）：账号全部城的伤兵 / 俘虏 / 逃兵三池与断粮时刻。
+ * 只读：不开事务、不加锁；不需要 cityId（不能带城市作用域——它返回的就是全部城）。
+ * 玩家与 Agent 都可调用。一键处理不新增批量协议：客户端逐城带 cityId 调 RESTORE_TROOPS / RELEASE_TROOPS。
+ */
+export async function handleGetTroopPools(
+  ctx: HandlerContext,
+  conn: ConnInfo,
+  op: number,
+  seq: number | undefined,
+): Promise<void> {
+  const accountId = conn.accountId as string;
+  const client = await ctx.pool.connect();
+  try {
+    const cities = await loadAccountTroopPoolsView(client, accountId);
+    respondOk(ctx.registry, conn, op, seq, { cities } as unknown as Record<string, unknown>);
+  } finally {
+    client.release();
+  }
+}
 
 /**
  * RESTORE_TROOPS / RELEASE_TROOPS 的请求解析（v85）：pool 必须是已知池子（RELEASE 只认

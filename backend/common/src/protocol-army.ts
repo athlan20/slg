@@ -148,3 +148,22 @@ export interface ReleaseTroopsResponseData {
   released: Partial<Record<TroopKind, number>>;
   city: CityView;
 }
+
+/** 全账号伤兵营里的一座城（GET_TROOP_POOLS，op 147，v88，AISLG-218）：三个池子结构与 CityView 的
+ *  wounded / captives / deserters 完全相同（troops 按兵种合计 + earliestExpireAt，过期行已过滤）。 */
+export interface AccountTroopPoolsCityView {
+  cityId: string;
+  name: string;
+  /** 是否账号主城（主城 = 创建时间最早的城，与 CityView 的主城口径一致） */
+  isMain: boolean;
+  /** 断粮开始时刻（ISO 8601；未断粮为 null），与 CityView.starveAt 同口径 */
+  starveAt: string | null;
+  wounded: TroopPoolView;
+  captives: TroopPoolView;
+  deserters: TroopPoolView;
+}
+
+/** GET_TROOP_POOLS（op 147，v88，AISLG-218）响应载荷：账号全部城的伤兵 / 俘虏 / 逃兵三池，主城在前 */
+export interface GetTroopPoolsResponseData {
+  cities: AccountTroopPoolsCityView[];
+}

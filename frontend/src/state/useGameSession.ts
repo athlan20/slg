@@ -68,6 +68,7 @@ import { useHeroSession, type HeroSession } from './heroSession';
 import { useQuestSession, type QuestSession } from './questSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useMapOverview, type MapOverviewSession } from './mapOverview';
+import { useTroopPoolsAllCities, type TroopPoolsAllCitiesSession } from './troopPoolsAllCities';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useBattlefieldSession, type BattlefieldSession } from './battlefield';
 import { useNobilitySession, type NobilitySession } from './nobilitySession';
@@ -135,10 +136,12 @@ export interface GameSession {
   cancelRecruit: (recruitId: string) => Promise<void>;
   /** 遣散城内驻军（v84，AISLG-209）：返还征兵成本的 50%、不退人口；成功返回 null，失败返回人读错误 */
   disbandTroops: (troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
-  /** 治疗 / 招降 / 劝回（v85，AISLG-212）：成功返回 null，失败返回人读错误 */
-  restoreTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
-  /** 放弃治疗 / 释放俘虏（v85）：免费不返还；成功返回 null，失败返回人读错误 */
-  releaseTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
+  /** 治疗 / 招降 / 劝回（v85，AISLG-212）：成功返回 null，失败返回人读错误；cityId 缺省 = 当前城（v88 全城一键处理按城传） */
+  restoreTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 放弃治疗 / 释放俘虏（v85）：免费不返还；成功返回 null，失败返回人读错误；cityId 缺省 = 当前城 */
+  releaseTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 全账号伤兵营（v88，AISLG-218）：全城池子 / 伤兵营可见时 30 秒刷新 / 立即重拉 */
+  troopPoolsAll: TroopPoolsAllCitiesSession;
   /** 计谋（v86，AISLG-211）：定义 / 令 / 武将预览 / 施计 / 被施计警报 */
   stratagem: StratagemSession;
   /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
@@ -257,6 +260,8 @@ export function useGameSession(): GameSession {
   const [recruitError, setRecruitError] = useState<string | null>(null);
   const [defenseError, setDefenseError] = useState<string | null>(null);
   const [city, setCity] = useState<CityView | null>(null);
+  // 战报推送计数（v88，AISLG-218）：伤兵营可见时据此重拉全城池子（战报可能带来新的伤兵 / 俘虏）
+  const [battleReportTick, setBattleReportTick] = useState(0);
   const cityList = useCityList(setCity);
   const { applyState: applyCityList, reset: resetCityList } = cityList;
   const [agent, setAgent] = useState<AgentInfoView | null>(null);
@@ -380,6 +385,13 @@ export function useGameSession(): GameSession {
   const { clear: worldClear, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush } = world;
   // 世界小地图（v58 AISLG-160）：全图城池点位，展开时才拉取
   const mapOverview = useMapOverview({ clientRef, connected: connection === 'online' });
+  // 全账号伤兵营（v88 AISLG-218）：全城池子，连接后拉一次 + 伤兵营可见时 30 秒刷新，
+  // 战报推送（PUSH_BATTLE_REPORT）到达时也刷新一次
+  const troopPoolsAll = useTroopPoolsAllCities({
+    clientRef,
+    connected: connection === 'online',
+    battleReportTick,
+  });
 
   // 科技研究会话切片（v27 AISLG-77）：科技表 / 研究 / 取消，推送到达时联动
   const techSession = useTechSession({
@@ -500,6 +512,8 @@ export function useGameSession(): GameSession {
         // v13：战斗战报生成 → 置顶战报列表（列表未加载时不预取，按需拉取覆盖）
         const data = frame.data as unknown as { report: BattleReportView };
         onBattleReportPush(data.report);
+        // v88（AISLG-218）：战报可能带来新的伤兵 / 俘虏——伤兵营可见时重拉全城池子
+        setBattleReportTick((tick) => tick + 1);
       } else if (frame.op === Op.PUSH_BATTLE_REPORT_COMMENT) {
         // v23（AISLG-53）：Agent 点评写入 → 更新战报列表/缓存，弹窗开着则就地补显
         const data = frame.data as unknown as BattleReportCommentPushData;
@@ -1412,6 +1426,7 @@ export function useGameSession(): GameSession {
     switchCity,
     world,
     mapOverview,
+    troopPoolsAll,
     techSession,
     arenaSession,
     starTowerSession,

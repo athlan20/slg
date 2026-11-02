@@ -1,4 +1,5 @@
-// 伤兵 / 俘虏 / 逃兵协议的对外文档（RESTORE_TROOPS / RELEASE_TROOPS，v85，AISLG-212）。
+// 伤兵 / 俘虏 / 逃兵协议的对外文档（RESTORE_TROOPS / RELEASE_TROOPS，v85，AISLG-212；
+// v88 AISLG-218 补 GET_TROOP_POOLS：全账号的伤兵营汇总，App 端「全部城池一键处理」的数据源）。
 // 费用示例直接调用实现函数（restoreCost / restorePopulationCost），文档数值与代码不漂移。
 // 规则常量见 battle-casualties.ts：伤兵率 20%、俘虏率 10%、治疗 / 劝回 50%、招降 60%、
 // 伤兵 / 俘虏 72 小时过期、逃兵 24 小时；消耗按「最早一批优先」的 FIFO。
@@ -13,7 +14,7 @@ import {
 } from './battle-casualties';
 import { TROOP_INFO } from './troops';
 import type { RequestOpDoc } from './protocol-doc';
-import { exampleCity } from './protocol-doc-shared';
+import { CITY_ID, exampleCity } from './protocol-doc-shared';
 import { EMPTY_ARMY } from './protocol-doc-army-consts';
 import { applyCost, INITIAL_RESOURCES } from './rules';
 
@@ -153,4 +154,68 @@ export const REQUEST_RELEASE_TROOPS: RequestOpDoc = {
     },
   ],
   agentNote: '只在没有更优选择时用：治疗 / 招降能拿回兵，放弃 / 释放什么都拿不到。同账号其他在线连接会收到 PUSH_CITY_STATE（reason=troop_pools_changed，附 cityId 与 pool）。',
+};
+
+// ---- 全账号汇总（GET_TROOP_POOLS，op 147，v88 AISLG-218）----
+/** 分城示例用的城池 id（与主城示例区分开） */
+const BRANCH_CITY_ID = 'f1b0c0de-0000-4000-8000-000000000002';
+
+/**
+ * GET_TROOP_POOLS（op 147，v88，AISLG-218）：账号全部城的伤兵 / 俘虏 / 逃兵三池与各城断粮时刻。
+ * 「全部城池一键处理」的只读数据源——客户端据此汇总总额、判断任何一城快过期，再逐城带 cityId 处理。
+ */
+export const REQUEST_GET_TROOP_POOLS: RequestOpDoc = {
+  kind: 'request',
+  name: 'GET_TROOP_POOLS',
+  title: '查询全账号伤兵营（全部城池的伤兵 / 俘虏 / 逃兵一次拿全）',
+  preAuth: false,
+  summary: `一次拿回**账号全部城**的伤兵 / 俘虏 / 逃兵三个池子与各城断粮时刻（v88，AISLG-218）：无参数、只读、不开事务不加锁，玩家与 Agent 都可以调。cities[] 每项的结构与 GET_STATE 的 city 里那三组完全相同（troops 按兵种合计 + earliestExpireAt 最早一批的过期时刻，已过期的批次不返回），starveAt 与 city.starveAt 同口径（未断粮为 null）。主城在前、其余按创建时间；**三池全空的城也会返回**（troops 全 0、earliestExpireAt 为 null），别人账号的城不可见。本协议不处理任何东西：处理仍逐城带 cityId 调 RESTORE_TROOPS / RELEASE_TROOPS（不新增批量协议，服务端数值与规则不变）。`,
+  requestFields: [],
+  dataFields: [
+    { name: 'cities', type: 'array', desc: '账号全部城的池子快照，主城在前、其余按创建时间。每项 = { cityId, name, isMain, starveAt, wounded, captives, deserters }。' },
+    { name: 'cities[].cityId', type: 'string', desc: '城池 id：处理后要处理某城时，把它作为 RESTORE_TROOPS / RELEASE_TROOPS 的 cityId。' },
+    { name: 'cities[].name', type: 'string', desc: '城名。' },
+    { name: 'cities[].isMain', type: 'boolean', desc: '是否账号主城（主城 = 创建时间最早的城，与 GET_STATE 的主城口径一致）。' },
+    { name: 'cities[].starveAt', type: 'string | null', desc: '断粮开始时刻（ISO 8601；未断粮为 null），与 GET_STATE 的 city.starveAt 同口径。已到时间的城现在就在断粮，劝回逃兵会被 CITY_STARVING 拒绝。' },
+    { name: 'cities[].wounded', type: 'object', desc: '伤兵池：{ troops（按兵种合计）, earliestExpireAt（最早一批的过期时刻；空池为 null） }，与 GET_STATE 的 city.wounded 完全相同。' },
+    { name: 'cities[].captives', type: 'object', desc: '俘虏池，结构同 wounded（对应 GET_STATE 的 city.captives）。' },
+    { name: 'cities[].deserters', type: 'object', desc: '逃兵池，结构同 wounded（对应 GET_STATE 的 city.deserters）。' },
+  ],
+  errors: [],
+  examples: [
+    {
+      caption: '账号有主城 + 1 座分城：分城伤兵营里有 12 个长枪兵，主城三池全空同样返回',
+      request: { op: Op.GET_TROOP_POOLS, seq: 1, data: {} },
+      responses: [
+        {
+          op: Op.GET_TROOP_POOLS,
+          seq: 1,
+          ok: true,
+          data: {
+            cities: [
+              {
+                cityId: CITY_ID,
+                name: '主城',
+                isMain: true,
+                starveAt: null,
+                wounded: poolView({}, null),
+                captives: poolView({}, null),
+                deserters: poolView({}, null),
+              },
+              {
+                cityId: BRANCH_CITY_ID,
+                name: '分城甲',
+                isMain: false,
+                starveAt: '2026-11-02T10:00:00.000Z',
+                wounded: poolView({ pikeman: 12 }, '2026-11-05T03:00:00.000Z'),
+                captives: poolView({}, null),
+                deserters: poolView({}, null),
+              },
+            ],
+          },
+        },
+      ],
+    },
+  ],
+  agentNote: `想看全账号的伤兵营就用这一条，**不要对每座城轮询 GET_STATE**（城多时轮次很贵）。处理仍按城发：对每座城的 cityId 调 RESTORE_TROOPS（治疗 ${HEAL_COST_PERCENT}% / 招降 ${CAPTIVE_RECRUIT_COST_PERCENT}% 另扣人口 / 劝回 ${DESERTER_RECALL_COST_PERCENT}%）或 RELEASE_TROOPS（免费，放弃 / 释放）；服务端不提供批量协议，逐城调的顺序与取舍由你决定（推荐按 earliestExpireAt 从早到晚，先救快过期的）。earliestExpireAt 距现在不足 6 小时就该动手。starveAt 已到（不为 null 且已过去）的城正在断粮，劝回逃兵会返回 CITY_STARVING，先运粮。`,
 };
