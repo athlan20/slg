@@ -1,8 +1,8 @@
 # 发布 slg-mcp 到 npm。
 # 触发：推送 v* 或 mcp-v* 标签（后者只发 slg-mcp、不对应服务端发版），或在 Actions 页面手动运行（workflow_dispatch）。
 # 发布内容以 mcp/package.json 的 version 为准；该版本已在 npm 上存在则直接跳过，可重复触发。
-# 需要在仓库 Settings → Secrets and variables → Actions → Repository secrets 里配置 NPM_TOKEN
-# （npm 的 Automation 类型令牌，或细粒度令牌且对 slg-mcp 有读写权限）。
+# 认证用 npm 的 Trusted Publishing（OIDC）：不需要令牌，要求在 npmjs.com 的 slg-mcp 包设置里
+# 绑定 GitHub 仓库 athlan20/slg 与本文件名 publish-mcp.yml（需 npm ≥ 11.5.1，下面一步会升级）。
 name: Publish slg-mcp
 
 on:
@@ -12,7 +12,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write # npm provenance 需要
+  id-token: write # Trusted Publishing 与 provenance 都需要
 
 concurrency:
   group: publish-mcp
@@ -54,9 +54,11 @@ jobs:
         if: steps.ver.outputs.published == 'false'
         run: npm ci
 
+      - name: 升级 npm（Trusted Publishing 需要 11.5.1 及以上）
+        if: steps.ver.outputs.published == 'false'
+        run: npm install -g npm@latest && npm --version
+
       # prepublishOnly 会依次：同步协议清单、类型检查、测试、构建，任何一步失败都不会发布
       - name: 发布到 npm
         if: steps.ver.outputs.published == 'false'
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
