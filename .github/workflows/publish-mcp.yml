@@ -1,5 +1,5 @@
 # 发布 slg-mcp 到 npm。
-# 触发：推送 v* 标签，或在 Actions 页面手动运行（workflow_dispatch）。
+# 触发：推送 v* 或 mcp-v* 标签（后者只发 slg-mcp、不对应服务端发版），或在 Actions 页面手动运行（workflow_dispatch）。
 # 发布内容以 mcp/package.json 的 version 为准；该版本已在 npm 上存在则直接跳过，可重复触发。
 # 需要在仓库 Settings → Secrets and variables → Actions 里配置 NPM_TOKEN
 # （npm 的 Automation 类型令牌，或细粒度令牌且对 slg-mcp 有读写权限）。
@@ -7,7 +7,7 @@ name: Publish slg-mcp
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v*', 'mcp-v*']
   workflow_dispatch:
 
 permissions:
