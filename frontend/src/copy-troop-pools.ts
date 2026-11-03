@@ -32,7 +32,8 @@ export const TROOP_POOL_ALL_COPY = {
   /** 结果摘要 */
   resultTitle: '处理结果',
   resultSuccess: '成功',
-  resultFailure: (reason: string) => `失败：${reason}`,
+  /** 失败短语（结果摘要第一行；原因文本单独占一行，见 AISLG-219） */
+  resultFailed: '失败',
   resultSummary: (ok: number, failed: number) => `成功 ${ok} 座 · 失败 ${failed} 座`,
   resultAllOk: (ok: number) => `${ok} 座城全部处理完成`,
   done: '知道了',

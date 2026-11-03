@@ -26,7 +26,7 @@ export const TROOP_POOL_ALL_COPY_EN = {
   busy: 'Processing…',
   resultTitle: 'Results',
   resultSuccess: 'Success',
-  resultFailure: (reason: string) => `Failed: ${reason}`,
+  resultFailed: 'Failed',
   resultSummary: (ok: number, failed: number) => `${ok} succeeded · ${failed} failed`,
   resultAllOk: (ok: number) => `${ok} ${ok === 1 ? 'city' : 'cities'} processed`,
   done: 'Got it',
