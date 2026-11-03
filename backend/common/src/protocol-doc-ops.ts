@@ -78,7 +78,7 @@ import {
   REQUEST_RESEARCH_TECH,
 } from './protocol-doc-ops-tech';
 import { PUSH_RECRUIT_STATE, REQUEST_RECRUIT, REQUEST_CANCEL_RECRUIT, REQUEST_DISBAND_TROOPS } from './protocol-doc-ops-army';
-import { REQUEST_RELEASE_TROOPS, REQUEST_RESTORE_TROOPS } from './protocol-doc-ops-troop-pools';
+import { REQUEST_GET_TROOP_POOLS, REQUEST_RELEASE_TROOPS, REQUEST_RESTORE_TROOPS } from './protocol-doc-ops-troop-pools';
 import { PUSH_DEFENSE_STATE, REQUEST_CANCEL_DEFENSE_CRAFT, REQUEST_CRAFT_DEFENSE } from './protocol-doc-ops-defense';
 import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
 import { PUSH_STRATAGEM, REQUEST_CAST_STRATAGEM, REQUEST_GET_STRATAGEMS } from './protocol-doc-ops-stratagem';
@@ -160,9 +160,9 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.deploy', type: 'object', desc: '在外部队数与上限（v30，AISLG-80）：{ count, limit }——count = 本城行军中（含返程、运输、侦察）+ 驻守野地（每块占领野地算一支）的部队数，不计城内驻军；limit = 校场等级（未建校场按 1）。count ≥ limit 时 MARCH / SCOUT 返回 DEPLOY_LIMIT；上线前已在外的部队不受影响。分城各算各的（带 cityId 查询）。' },
     { name: 'city.tower', type: 'object | null', desc: '箭塔数值（v30，AISLG-82）：{ damage 每回合固定伤害, range 射程 }；未建箭塔为 null。仅守城战（NPC 袭击主城）生效，战报 towerDamage 单独列出。' },
     { name: 'city.techs', type: 'object', desc: '账号科技等级（v27，AISLG-77；全账号所有城共享）：{ farming, carrying, marching, storage, scouting, defense }，0 = 未研究。农耕 / 储存已计入 city.production / city.storage，城防已计入 city.defenseBonus；负重与行军加成不在 city 里预计算，客户端预估时自行折算（完整科技表见 GET_TECHS）。' },
-    { name: 'city.buildings', type: 'object', desc: '**DEPRECATED（v3 遗留，勿用）**：按类型统计的已建数量，v5 单实例规则下恒为 0 或 1——切勿当作等级，解析城池建筑状态请一律读 city.levels。键集：{ farm, lumber_mill, quarry, iron_mine, house, government, barracks, warehouse, wall, academy, parade_ground, beacon, post_station, arrow_tower }（v7 起九种，v27 起加书院，v30 起再加校场 / 烽火台 / 驿站 / 箭塔共十四种）。' },
-    { name: 'city.levels', type: 'object', desc: '各建筑类型的当前等级（v5 新增）：0 = 未建造；产量、人口上限与仓储上限均按等级推导。' },
-    { name: 'city.costs', type: 'object', desc: '各建筑「下一步动作」成本（v6 新增，v25 起附时长）：{ build, upgrade, buildSeconds, upgradeSeconds }，按类型；未建时 build 为建造成本、upgrade 为 null，已建未满级时 upgrade 为升级成本（= 建造成本 × 当前等级）、build 为 null，满级成本均为 null；buildSeconds / upgradeSeconds（v25，AISLG-71）为对应动作的单级时长（秒，已按当前全局时间缩放折算），null 语义与对应成本字段一致。发起前可用它展示消耗与耗时并预判资源不足。' },
+    { name: 'city.buildings', type: 'object', desc: '**DEPRECATED（v3 遗留，勿用）**：按类型统计的已建数量，v5 单实例规则下恒为 0 或 1——切勿当作等级，解析城池建筑状态请一律读 city.levels。键集：{ farm, lumber_mill, quarry, iron_mine, house, government, barracks, warehouse, wall, academy, parade_ground, beacon, post_station, arrow_tower }（v7 起九种，v27 起加书院，v30 起再加校场 / 烽火台 / 驿站 / 箭塔共十四种）；v87 起分城不含 tavern / academy。' },
+    { name: 'city.levels', type: 'object', desc: '各建筑类型的当前等级（v5 新增）：0 = 未建造；产量、人口上限与仓储上限均按等级推导。v87（AISLG-217）：**分城不含 tavern / academy 两个键**（酒馆与书院只在主城建，分城的 city.levels / city.costs / city.buildings 都不下发这两项；主城照旧）。' },
+    { name: 'city.costs', type: 'object', desc: '各建筑「下一步动作」成本（v6 新增，v25 起附时长）：{ build, upgrade, buildSeconds, upgradeSeconds }，按类型；未建时 build 为建造成本、upgrade 为 null，已建未满级时 upgrade 为升级成本（= 建造成本 × 当前等级）、build 为 null，满级成本均为 null；buildSeconds / upgradeSeconds（v25，AISLG-71）为对应动作的单级时长（秒，已按当前全局时间缩放折算），null 语义与对应成本字段一致。发起前可用它展示消耗与耗时并预判资源不足。v87：分城不含 tavern / academy。' },
     { name: 'city.levelMax', type: 'object', desc: '各建筑的等级上限（v63 新增，AISLG-167）：{ 建筑类型: 上限 }，普通建筑 20；占有对应名城（city.famousName）时其主题建筑为 25——洛阳城墙、长安箭塔、官渡农田、成都铁矿、建业伐木场、邺城官府、许昌驿站、襄阳仓库。等级上限随城池走（换主人归新主人，与名城效果同口径）。失守后超出上限的存量等级按当前上限生效（产出、守城减伤、箭塔、仓库、升级判定一律按上限计，levelMax 与 levels 一致；库存不改，重新占领即恢复）。city.costs 的 upgrade 与连升（UPGRADE toLevel）都按此上限判定。' },
     { name: 'city.farms', type: 'number', desc: '**DEPRECATED（v3 遗留，勿用）**：兼容字段，= buildings.farm（0/1 已建标记）；等级请读 city.levels.farm。' },
     { name: 'city.production', type: 'object', desc: '当前小时产量（v3 新增，v7 起含 gold）：{ gold, food, wood, stone, iron }；四种生产资源各含 100/小时的基础产量（无对应建筑也产出），建筑产量按等级叠加；金币由官府（100×等级/小时，v19）与占领金矿生产（无基础产量）。产量随建筑建成即时生效。' },
@@ -466,6 +466,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵的治疗 / 招降 / 劝回与放弃 / 释放
   [Op.RESTORE_TROOPS]: withCityId(REQUEST_RESTORE_TROOPS),
   [Op.RELEASE_TROOPS]: withCityId(REQUEST_RELEASE_TROOPS),
+  // v88（AISLG-218）：全账号伤兵营汇总（不需要 cityId——返回的就是全部城）
+  [Op.GET_TROOP_POOLS]: REQUEST_GET_TROOP_POOLS,
   [Op.CRAFT_DEFENSE]: withCityId(REQUEST_CRAFT_DEFENSE),
   [Op.CANCEL_DEFENSE_CRAFT]: REQUEST_CANCEL_DEFENSE_CRAFT,
   [Op.DISMISS_ASSIST]: REQUEST_DISMISS_ASSIST,

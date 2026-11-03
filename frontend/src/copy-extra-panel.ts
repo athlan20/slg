@@ -36,6 +36,8 @@ export const EXTRA_PANEL = {
   /** 城内视图（CityGrid）：三行分组标签（role 沿用分组中文 label，显示用这里） */
   cityGrid: {
     groupLabel: { resource: '资源', civil: '内政', military: '军事' } as Record<string, string>,
+    /** v87（AISLG-217）：分城的酒馆 / 书院两格换成这句提示 */
+    mainOnlyHint: '酒馆 / 书院只能建在主城（效果全账号生效），切回主城即可建造与升级。',
   },
   /** 手机分段条（PageGrid 的 blocks）上没有现成文案键的短标签 */
   pageTabs: {

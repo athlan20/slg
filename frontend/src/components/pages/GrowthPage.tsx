@@ -12,13 +12,26 @@ export function GrowthPage() {
   const copy = useCopy();
   const { HERO_COPY, TECH_COPY, ARENA_COPY, QUEST_COPY } = copy;
   const { session } = useGame();
+  // v87（AISLG-217）：酒馆 / 书院只在主城，分城的这两块给提示并引导回主城
+  const mainCityId = session.cityList.cities.find((item) => item.isMain)?.id ?? null;
+  const isMainCity = session.city !== null && (mainCityId === null || session.city.id === mainCityId);
+  const goMainCity = () => {
+    if (mainCityId !== null) {
+      void session.switchCity(mainCityId);
+    }
+  };
   return (
     <PageGrid
       role="养成页"
       layout="p-growth"
       blocks={[
         { key: 'hero', label: '武将', tab: HERO_COPY.panel.title, node: <HeroPanel city={session.city} cityList={session.cityList} session={session.heroSession} /> },
-        { key: 'tech', label: '科技', tab: TECH_COPY.panel.title, node: <TechPanel city={session.city} session={session.techSession} /> },
+        {
+          key: 'tech',
+          label: '科技',
+          tab: TECH_COPY.panel.title,
+          node: <TechPanel city={session.city} session={session.techSession} isMain={isMainCity} onGoMain={goMainCity} />,
+        },
         { key: 'arena', label: '竞技场', tab: ARENA_COPY.panel.title, areaClass: 'a-arena', node: <ArenaPanel heroes={session.heroSession.state?.heroes ?? []} session={session.arenaSession} /> },
         { key: 'quest', label: QUEST_COPY.panel.title, tab: QUEST_COPY.panel.title, areaClass: 'a-quest', node: <QuestPanel session={session.questSession} /> },
       ]}

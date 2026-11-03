@@ -26,9 +26,9 @@ import {
   buildSeconds,
   buildingLevelMax,
   exchangeGoldFor,
+  judgeMainCityOnly,
   startBuild,
   startUpgrade,
-  upgradeChainCost,
   upgradeCost,
   upgradeSeconds,
   type BuildDeniedCode,
@@ -41,18 +41,21 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { buildView, loadCityState, lockCitySnapshot, type BuildRow, type CitySnapshot } from './views';
 import { activateQueuedBuilds } from '../../common/src/queue-activate';
+import { cancelRefundOf } from '../../common/src/build-cancel';
 import { constructionReductionPercent } from '../../common/src/tech';
 
 /**
  * 建造 / 升级的共用事务路径：同一事务内行锁、生产结算、校验决策、入队/开工、
  * 扣资源、写事件，提交后响应并推送。玩家与 Agent 并发提交时，后提交方基于
  * 已扣减状态重新校验（decide 在行锁内取最新快照判定）。
+ * v87（AISLG-217）：酒馆 / 书院的「仅主城」校验也在这里（BUILD 与 UPGRADE 共用的唯一入口）。
  */
 async function runBuildAction(
   ctx: HandlerContext,
   conn: ConnInfo,
   op: number,
   seq: number | undefined,
+  kind: BuildingKind,
   decide: (
     snap: CitySnapshot,
     counts: { active: number; queued: number },
@@ -72,7 +75,9 @@ async function runBuildAction(
       return;
     }
     const counts = await queueCounts(client, snap.cityId);
-    const verdict = decide(snap, counts);
+    // v87（AISLG-217）：酒馆 / 书院只能在主城建造与升级（分城返回 BUILDING_MAIN_ONLY，不扣资源、不入队）
+    const mainOnly = judgeMainCityOnly(kind, snap.cityId === snap.mainCityId);
+    const verdict = mainOnly ?? decide(snap, counts);
     if (!verdict.ok) {
       await client.query('ROLLBACK');
       // 失败时附当前状态（含本次读取触发的生产结算），客户端据此自行刷新；
@@ -148,7 +153,7 @@ export async function handleBuild(
   seq: number | undefined,
   kind: BuildingKind,
 ): Promise<void> {
-  await runBuildAction(ctx, conn, op, seq, (snap, counts) => {
+  await runBuildAction(ctx, conn, op, seq, kind, (snap, counts) => {
     const kindBusy = snap.levels[kind] > 0 || snap.queue.some((item) => item.kind === kind);
     const verdict = startBuild(kind, snap.resources, kindBusy, counts.active, counts.queued);
     if (!verdict.ok) {
@@ -167,7 +172,7 @@ export async function handleUpgrade(
   kind: BuildingKind,
   toLevel: number | null,
 ): Promise<void> {
-  await runBuildAction(ctx, conn, op, seq, (snap, counts) => {
+  await runBuildAction(ctx, conn, op, seq, kind, (snap, counts) => {
     const currentLevel = snap.levels[kind];
     const kindInQueue = snap.queue.some((item) => item.kind === kind);
     const maxLevel = buildingLevelMax(kind, snap.famousName);
@@ -315,33 +320,10 @@ export async function handleExchange(
   });
 }
 
-/** builds.cost 成本快照 → Resources（旧数据无快照时按零返还） */
-function refundOf(row: { cost?: Record<string, unknown> | null }): Resources {
-  const refund: Resources = { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 };
-  const cost = row.cost ?? {};
-  for (const key of RESOURCE_KEYS) {
-    const value = cost[key];
-    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-      refund[key] = Math.floor(value);
-    }
-  }
-  return refund;
-}
-
-/** 取消返还额（AISLG-190）：单级 / 建造 = 成本快照全额；连升（to_level）只返还未完成的级——
- *  row.level 为当前推进中的级，它起到 to_level 的各级成本才退（已完成的级保留等级、不退）。
- *  排队中的连升 row.level = 起始级，结果即整链快照，与快照一致。 */
-function cancelRefundOf(row: BuildRow & { cost: Record<string, unknown> | null }): Resources {
-  if (row.to_level === null || row.to_level === undefined) {
-    return refundOf(row);
-  }
-  return upgradeChainCost(row.kind as BuildingKind, row.level - 1, row.to_level);
-}
-
-/**
- * 取消建造条目（v7 仅排队可取消；v71 AISLG-190 起在建条目也可取消）：条件翻转守卫 builds 行
+/** 取消建造条目（v7 仅排队可取消；v71 AISLG-190 起在建条目也可取消）：条件翻转守卫 builds 行
  * （status 为 queued / building 才生效，Worker 到点完成按 status='building' 守卫，先翻转者生效），
- * 再在城池行锁内返还（见 cancelRefundOf）；建筑等级不变，同事务激活该城排队的下一条并推送 build_started。
+ * 再在城池行锁内返还（规则见 common/src/build-cancel.ts 的 cancelRefundOf，v87 起与上线迁移、
+ * 换主城共用）；建筑等级不变，同事务激活该城排队的下一条并推送 build_started。
  */
 export async function handleCancelBuild(
   ctx: HandlerContext,

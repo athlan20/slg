@@ -23,6 +23,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   BUILDING_EXISTS: '该类型建筑已存在（或已在建造/升级队列中）',
   BUILDING_NOT_BUILT: '该类型尚未建造，请先建造',
   BUILDING_LEVEL_MAX: '建筑已达等级上限',
+  BUILDING_MAIN_ONLY: '酒馆与书院只能在主城建造 / 升级（分城不再提供这两项）',
   BUILD_NOT_CANCELLABLE: '建造任务不存在、不属于本账号或已完成 / 已取消，无法取消',
   AGENT_FORBIDDEN: '该操作不允许当前连接的登录类型调用（仅限玩家或仅限 Agent，见协议说明）',
   TROOP_NOT_AVAILABLE: '该兵种需要更高等级的军营',

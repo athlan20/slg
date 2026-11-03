@@ -7,6 +7,7 @@ import {
   SUMMARY_COPY, TARGET_COPY, WARN_COPY,
 } from './copy-pages';
 import type { MarchView } from './api/protocol';
+import { TROOP_POOL_ALL_COPY_EN } from './copy-troop-pools-en';
 
 export const MAPUI_COPY_EN = {
   title: 'World Map',
@@ -231,6 +232,7 @@ export const ARMY_COPY_EN = {
     busy: 'Working…',
     cityStarving: 'This city is starving; deserters can only be recalled after the famine ends (they expire in 24 hours — ship food first)',
     hintSelect: 'Enter counts up to the amount in the pool, or press "All"',
+    poolsAll: TROOP_POOL_ALL_COPY_EN,
   },
   tag: {
     porter: 'Transport',

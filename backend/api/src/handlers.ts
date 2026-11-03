@@ -28,7 +28,7 @@ import {
 import { handleRenameCity, handleResetAccount, handleSetNickname } from './handlers-account';
 import { handleCancelRecruit, handleRecruit, readRecruitParams } from './handlers-army';
 import { handleDisbandTroops, readDisbandTroops } from './handlers-disband';
-import { handleReleaseTroops, handleRestoreTroops, readTroopPoolRequest } from './handlers-troop-pools';
+import { handleGetTroopPools, handleReleaseTroops, handleRestoreTroops, readTroopPoolRequest } from './handlers-troop-pools';
 import { handleGetStratagems, handleCastStratagem } from './handlers-stratagem';
 import { handleCancelDefenseCraft, handleCraftDefense } from './handlers-defense';
 import { handleDismissAssist } from './handlers-assist';
@@ -304,7 +304,8 @@ async function dispatchOp(
       await handleGetMovingTargets(ctx, conn, op, seq);
       break;
     case Op.GET_HEROES:
-      await handleGetHeroes(ctx, conn, op, seq, data);
+      // v87（AISLG-217）：酒馆候选账号只有一份（主城），请求里的 cityId 忽略
+      await handleGetHeroes(ctx, conn, op, seq);
       break;
     case Op.RECRUIT_HERO:
       await handleRecruitHero(ctx, conn, op, seq, data);
@@ -450,6 +451,10 @@ async function dispatchOp(
       await handleReleaseTroops(ctx, conn, op, seq, params.pool, params.troops);
       break;
     }
+    case Op.GET_TROOP_POOLS:
+      // v88（AISLG-218）：只读汇总，无参数；不开事务、不加锁、不需要 cityId
+      await handleGetTroopPools(ctx, conn, op, seq);
+      break;
     case Op.CRAFT_DEFENSE:
       // 参数校验在 handler 内（kind 枚举 + count 正整数），失败附当前城池状态
       await handleCraftDefense(ctx, conn, op, seq, data);

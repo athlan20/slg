@@ -5,7 +5,7 @@ import type { CityGuardView } from './protocol-hero';
 import type { CityStratagemView } from './protocol-stratagem';
 import { RESOURCE_KEYS } from './protocol-wire';
 
-export const PROTOCOL_VERSION = 86;
+export const PROTOCOL_VERSION = 88;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -224,6 +224,8 @@ export const Op = {
   GET_STRATAGEMS: 145,
   /** C→S 施计（v86，AISLG-211）：data.heroId + data.stratagem + data.target = { cityId } | { marchId } | { attackId }；扣 1 张令并冷却 1 小时 */
   CAST_STRATAGEM: 146,
+  /** C→S 查询全账号伤兵营（v88，AISLG-218）：无参数、只读；账号全部城的伤兵 / 俘虏 / 逃兵三池 + 各城断粮时刻 */
+  GET_TROOP_POOLS: 147,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -326,6 +328,7 @@ export type ErrorCode =
   | 'BUILDING_EXISTS'
   | 'BUILDING_NOT_BUILT'
   | 'BUILDING_LEVEL_MAX'
+  | 'BUILDING_MAIN_ONLY'
   | 'BUILD_NOT_CANCELLABLE'
   | 'TRAINING_NOT_CANCELLABLE'
   | 'AGENT_FORBIDDEN'
@@ -921,12 +924,12 @@ export interface CityView {
   /** 账号爵位（v76）：{ index（0 = 平民）, name } */
   nobility: { index: number; name: string };
   resources: Resources;
-  /** 按建筑类型统计的已建数量（单实例规则下为 0 或 1） */
-  buildings: BuildingCounts;
-  /** 各建筑类型的当前等级（0 = 未建造；产量、人口上限与储量上限均按等级推导） */
-  levels: BuildingCounts;
-  /** 各建筑「下一步动作」成本：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用 */
-  costs: Record<BuildingKind, KindActionCosts>;
+  /** 按建筑类型统计的已建数量（单实例规则下为 0 或 1）。v87：分城不含 tavern / academy */
+  buildings: Partial<BuildingCounts>;
+  /** 各建筑类型的当前等级（0 = 未建造；产量、人口上限与储量上限均按等级推导）。v87：分城不含 tavern / academy */
+  levels: Partial<BuildingCounts>;
+  /** 各建筑「下一步动作」成本：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用。v87：分城不含 tavern / academy */
+  costs: Partial<Record<BuildingKind, KindActionCosts>>;
   /** 各建筑的等级上限（v63）：普通 20；占有对应名城时其主题建筑为 25 */
   levelMax: Record<BuildingKind, number>;
   /** 兼容字段：已建成的农田数量（= buildings.farm） */
@@ -1222,6 +1225,9 @@ export interface ReleaseTroopsResponseData {
   released: Partial<Record<TroopKind, number>>;
   city: CityView;
 }
+
+// 全账号伤兵营（v88，AISLG-218）的类型在 protocol-troop-pools.ts
+export type { AccountTroopPoolsCityView, GetTroopPoolsResponseData } from './protocol-troop-pools';
 
 // 盟友协防（v74，AISLG-194）的类型在 protocol-assist.ts
 export type { AssistView, AssistOutView, DismissAssistRequestData, DismissAssistResponseData } from './protocol-assist';

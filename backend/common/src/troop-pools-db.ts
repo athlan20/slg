@@ -82,12 +82,31 @@ export async function loadCityTroopPools(
      ORDER BY expires_at, created_at, id`,
     [cityId],
   );
-  const out: Record<TroopPoolKind, TroopPoolView> = {
+  const out = emptyPoolRecord();
+  mergePoolRows(out, res.rows as PoolRow[]);
+  return out;
+}
+
+interface PoolRow {
+  city_id?: string;
+  pool: TroopPoolKind;
+  troops: Partial<Record<TroopKind, number>>;
+  expires_at: Date;
+}
+
+/** 三个池子的空记录（三池全空的城也有完整结构） */
+export function emptyPoolRecord(): Record<TroopPoolKind, TroopPoolView> {
+  return {
     wounded: emptyPoolView(),
     captive: emptyPoolView(),
     deserter: emptyPoolView(),
   };
-  for (const row of res.rows as Array<{ pool: TroopPoolKind; troops: Partial<Record<TroopKind, number>>; expires_at: Date }>) {
+}
+
+/** 把查询到的批次行并进聚合视图：troops 按兵种累加，earliestExpireAt 取最早的一批 */
+function mergePoolRows(out: Record<TroopPoolKind, TroopPoolView>, rows: PoolRow[]): void {
+  // 行已按 (expires_at, created_at, id) 排序，第一条即最早过期的一批
+  for (const row of rows) {
     const view = out[row.pool];
     if (!view) {
       continue;
@@ -98,6 +117,40 @@ export async function loadCityTroopPools(
     if (view.earliestExpireAt === null) {
       view.earliestExpireAt = row.expires_at.toISOString();
     }
+  }
+}
+
+/**
+ * 账号全部城的三个池子（v88，AISLG-218：「全部城池一键处理」的汇总数据源）。
+ * **一次查询**拿全账号的池子行（按 city_id 归并），不对每座城循环查询；过期行同样过滤。
+ * 返回的 Map 只包含「有池子行的城」——调用方给没有行的城用 emptyPoolRecord() 补空结构。
+ */
+export async function loadAccountTroopPools(
+  q: pg.Pool | pg.PoolClient,
+  accountId: string,
+): Promise<Map<string, Record<TroopPoolKind, TroopPoolView>>> {
+  const res = await q.query(
+    `SELECT p.city_id, p.pool, p.troops, p.expires_at
+     FROM city_troop_pools p JOIN cities c ON c.id = p.city_id
+     WHERE c.account_id = $1 AND p.expires_at > now()
+     ORDER BY p.city_id, p.expires_at, p.created_at, p.id`,
+    [accountId],
+  );
+  const out = new Map<string, Record<TroopPoolKind, TroopPoolView>>();
+  const rowsByCity = new Map<string, PoolRow[]>();
+  for (const row of res.rows as PoolRow[]) {
+    const cityId = row.city_id as string;
+    const bucket = rowsByCity.get(cityId);
+    if (bucket) {
+      bucket.push(row);
+    } else {
+      rowsByCity.set(cityId, [row]);
+    }
+  }
+  for (const [cityId, rows] of rowsByCity) {
+    const record = emptyPoolRecord();
+    mergePoolRows(record, rows);
+    out.set(cityId, record);
   }
   return out;
 }

@@ -256,6 +256,8 @@ export const Op = {
   GET_STRATAGEMS: 145,
   /** C→S 施计（v86，AISLG-211：data.heroId + data.stratagem + data.target = { cityId } | { marchId } | { attackId }；成功失败都扣 1 张对应类别的令与武将 1 小时冷却） */
   CAST_STRATAGEM: 146,
+  /** C→S 查询全账号伤兵营（v88，AISLG-218：账号全部城的伤兵 / 俘虏 / 逃兵三池 + 断粮时刻；无参数、只读，玩家与 Agent 通用） */
+  GET_TROOP_POOLS: 147,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -372,6 +374,8 @@ export const ErrorCode = {
   BUILDING_NOT_BUILT: 'BUILDING_NOT_BUILT',
   /** 建筑已达等级上限（v5） */
   BUILDING_LEVEL_MAX: 'BUILDING_LEVEL_MAX',
+  /** 该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆与书院） */
+  BUILDING_MAIN_ONLY: 'BUILDING_MAIN_ONLY',
   /** 目标建造不存在、不属于本账号或已完成 / 已取消（v7 仅排队可取消；v71 AISLG-190 起在建条目也可取消） */
   BUILD_NOT_CANCELLABLE: 'BUILD_NOT_CANCELLABLE',
   /** 协议对连接声明的登录类型有限制（基于自报 role，非安全边界）：RESET_ACCOUNT 仅玩家、AGENT_REPORT_PLAN 仅 Agent（v9/v10） */
@@ -919,6 +923,8 @@ export type {
   ReleaseTroopsResponseData,
   TroopPoolKind,
   TroopPoolView,
+  AccountTroopPoolsCityView,
+  GetTroopPoolsResponseData,
 } from './protocol-army';
 export { TROOP_KINDS, isTroopKind } from './protocol-army';
 import type { ArmyCounts, RecruitView } from './protocol-army';

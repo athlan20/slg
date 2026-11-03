@@ -418,7 +418,9 @@ async function transferCityOwnership(
     [cityId, prevOwnerMainCityId, march.id],
   );
 
-  // 作废：排队 / 在建的建造、征兵、该城发起的研究、酒馆候选（不退资源）；针对该城的 NPC 袭击
+  // 作废：排队 / 在建的建造、征兵、该城发起的研究、酒馆候选（不退资源）；针对该城的 NPC 袭击。
+  // v87（AISLG-217）：酒馆 / 书院已只在主城（主城永不可被占），分城的酒馆候选本已不存在；
+  // 这里的候选清理作为兼容存量 / 旧数据的兵底保留。建筑随城走（含万一存在的这两项）。
   await client.query(`DELETE FROM builds WHERE city_id = $1`, [cityId]);
   await client.query(`DELETE FROM recruits WHERE city_id = $1`, [cityId]);
   await client.query(`DELETE FROM tech_research WHERE city_id = $1`, [cityId]);
