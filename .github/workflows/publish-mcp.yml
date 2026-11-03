@@ -1,0 +1,62 @@
+# 发布 slg-mcp 到 npm。
+# 触发：推送 v* 标签，或在 Actions 页面手动运行（workflow_dispatch）。
+# 发布内容以 mcp/package.json 的 version 为准；该版本已在 npm 上存在则直接跳过，可重复触发。
+# 需要在仓库 Settings → Secrets and variables → Actions 里配置 NPM_TOKEN
+# （npm 的 Automation 类型令牌，或细粒度令牌且对 slg-mcp 有读写权限）。
+name: Publish slg-mcp
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm provenance 需要
+
+concurrency:
+  group: publish-mcp
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+
+      - name: 读取版本并检查是否已发布
+        id: ver
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "::warning::标签 ${GITHUB_REF_NAME} 与 mcp/package.json 版本 ${VERSION} 不一致，按 package.json 的版本发布"
+          fi
+          if npm view "slg-mcp@${VERSION}" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::slg-mcp@${VERSION} 已在 npm 上，跳过发布"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 安装依赖
+        if: steps.ver.outputs.published == 'false'
+        run: npm ci
+
+      # prepublishOnly 会依次：同步协议清单、类型检查、测试、构建，任何一步失败都不会发布
+      - name: 发布到 npm
+        if: steps.ver.outputs.published == 'false'
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
