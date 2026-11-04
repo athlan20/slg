@@ -7,6 +7,7 @@ import { MilitarySummary } from '../intel/MilitarySummary';
 import { MapCard } from '../map/MapCard';
 import { MovingTargetList } from '../map/MovingTargetList';
 import { TargetPanel } from '../map/TargetPanel';
+import { MoveCityPickBar } from '../map/MoveCityPick';
 import { Card } from '../ui/Card';
 import { PageGrid } from './PageGrid';
 
@@ -39,11 +40,15 @@ export function MapPage() {
           label: '详情',
           tab: EXTRA_PANEL.pageTabs.detail,
           node: hasTile ? (
-            <Card role="地图页-选中详情">
-              <TargetPanel />
-            </Card>
+            <div role="地图页-详情区" className="flex min-h-0 flex-col gap-2">
+              <MoveCityPickBar />
+              <Card role="地图页-选中详情">
+                <TargetPanel />
+              </Card>
+            </div>
           ) : (
             <div role="地图页-军情" className="flex min-h-0 flex-col gap-2">
+              <MoveCityPickBar />
               <Card role="地图页-军情摘要" title={SUMMARY_COPY.title} meta={TARGET_COPY.summaryHint}>
                 <MilitarySummary role="地图页-军情摘要-列表" />
               </Card>

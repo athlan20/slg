@@ -58,6 +58,7 @@ export type EventType =
   | 'item_granted'
   | 'item_used'
   | 'item_bought'
+  | 'city_moved'
   | 'account_renamed'
   | 'agent_connected'
   | 'agent_disconnected';
