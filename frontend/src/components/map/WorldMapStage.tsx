@@ -26,6 +26,7 @@ import { WorldMapLegend } from '../WorldMapLegend';
 import type { MapOverviewSession } from '../../state/mapOverview';
 import { MarchDetailModal } from '../army/MarchDetailModal';
 import { WorldMinimap } from './WorldMinimap';
+import { WorldExplorationReport } from './WorldExplorationReport';
 import { WorldMapOverlay } from './WorldMapOverlay';
 import { territoryCells } from './territoryBorders';
 import { showYieldNumber } from './YieldLayer';
@@ -231,6 +232,17 @@ export function WorldMapStage({
       ) : null}
 
       {win ? <WorldMinimap overview={overview} win={win} onPanTo={world.panTo} /> : null}
+
+      {/* 探索简报（AISLG-224）：去程新探索了区块时弹出 */}
+      <WorldExplorationReport onCenter={world.centerOn} />
+
+      {/* 迷雾中的选中格（窗口里没有这一格）：只提示坐标与情况未知 */}
+      {world.selected && win && !win.tiles.some((tile) => tile.x === world.selected?.x && tile.y === world.selected?.y) &&
+      world.selected.x >= win.x && world.selected.x < win.x + win.w && world.selected.y >= win.y && world.selected.y < win.y + win.h ? (
+        <p role="世界地图-迷雾目标" className="pointer-events-none absolute bottom-3 left-3 rounded bg-panel/90 px-2 py-1 text-[12px]">
+          {copy.EXTRA_MAP.fog.unknownNotice(world.selected.x, world.selected.y)}
+        </p>
+      ) : null}
 
       {detailId ? (
         <MarchDetailModal march={city?.marches.find((march) => march.id === detailId) ?? null} onClose={() => setDetailId(null)} />
