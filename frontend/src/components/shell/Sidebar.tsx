@@ -50,6 +50,8 @@ interface SidebarProps {
   /** 联盟入口（v66 起，AISLG-186）：红点数为盟主 / 副盟主的待审批数 + 自己待处理的邀请数；点开联盟面板 */
   allianceBadge: number;
   onOpenAlliance: () => void;
+  /** 账号菜单「背包 / 商店」（v90，AISLG-222）：打开背包与商店弹窗 */
+  onOpenItems: () => void;
 }
 
 /** 连接状态灯样式与文字（文字用户可见，按当前语言取文案包，不能放模块常量） */
@@ -67,7 +69,7 @@ function connectionLamp(connection: ConnectionStatus): { lamp: string; label: st
 export function Sidebar(props: SidebarProps) {
   const copy = useCopy();
   const lang = useLang();
-  const { COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY, ANNOUNCEMENT_COPY, ALLIANCE_COPY } = copy;
+  const { COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY, ANNOUNCEMENT_COPY, ALLIANCE_COPY, ITEM_COPY } = copy;
   const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded, chatOpen, chatUnread, onToggleChat, announcementUnread, onOpenAnnouncements, allianceBadge, onOpenAlliance } = props;
   const [cityOpen, setCityOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -318,6 +320,7 @@ export function Sidebar(props: SidebarProps) {
             {cityLoaded ? menuItem('账号菜单-城池改名', NAV_COPY.rename, props.onRename) : null}
             {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-设为主城', NAV_COPY.setCapital, props.onSetCapital) : null}
             {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-放弃分城', NAV_COPY.discardBranch, props.onDiscardBranch, 'text-st-error') : null}
+            {menuItem('账号菜单-背包商店', ITEM_COPY.menu, props.onOpenItems)}
             {menuItem('账号菜单-账号设置', NAV_COPY.settings, props.onSettings)}
             {menuItem('账号菜单-切换账号', NAV_COPY.switchAccount, props.onSwitchAccount)}
             {menuItem('账号菜单-重置账号', NAV_COPY.reset, props.onReset, 'text-st-error')}

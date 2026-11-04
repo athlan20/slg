@@ -226,6 +226,10 @@ export const Op = {
   CAST_STRATAGEM: 146,
   /** C→S 查询全账号伤兵营（v88，AISLG-218）：无参数、只读；账号全部城的伤兵 / 俘虏 / 逃兵三池 + 各城断粮时刻 */
   GET_TROOP_POOLS: 147,
+  /** C→S 查询道具背包 / 目录 / 礼金（v90，AISLG-222） */
+  GET_ITEMS: 148,
+  /** C→S 礼金买道具（v90，AISLG-222：itemId / count / expectedPrice 必填） */
+  BUY_ITEM: 149,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -456,6 +460,12 @@ export type ErrorCode =
   | 'CITY_AMBUSHED'
   /** 礼金不足（v89，AISLG-221；响应附 balance） */
   | 'INSUFFICIENT_GIFT'
+  /** 道具不足（v90，AISLG-222；响应附 itemId、count） */
+  | 'INSUFFICIENT_ITEM'
+  /** 道具堆叠上限（v90，AISLG-222；响应附 stackMax、have、canBuy） */
+  | 'ITEM_STACK_FULL'
+  /** 道具单价已变（v90，AISLG-222；响应附 price） */
+  | 'ITEM_PRICE_CHANGED'
   /** 换季维护中（v65）：除 GET_SEASON 与登录相关协议外一律返回，响应附 retryAfterSec（秒） */
   | 'MAINTENANCE'
   | 'INTERNAL';
@@ -464,6 +474,7 @@ export type ErrorCode =
 export * from './protocol-wire';
 export * from './protocol-season';
 export * from './protocol-stratagem';
+export * from './protocol-items';
 
 export interface Resources {
   gold: number;
@@ -1094,10 +1105,10 @@ export interface SetNicknameResponseData {
 
 /** PUSH_ACCOUNT_STATE（op 2020）推送载荷：账号级状态变化（v52） */
 export interface AccountStatePushData {
-  /** account_renamed=昵称被修改 */
-  reason: 'account_renamed';
-  /** 新昵称 */
-  username: string;
+  /** account_renamed=昵称被修改；items_changed=道具背包 / 礼金变化（v90，带 items 与 gift） */
+  reason: 'account_renamed' | 'items_changed';
+  /** 新昵称（account_renamed 时有） */
+  username?: string;
 }
 
 /** RESET_ACCOUNT 响应载荷：重置完成后的城池现状（即开号初始状态） */
