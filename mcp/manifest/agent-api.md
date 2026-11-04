@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**91** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**92** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 91）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 92）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 91,
+    "protocolVersion": 92,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 91,
+    "protocolVersion": 92,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/88 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/89 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 88,
+    "docVersion": 89,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 91,
-    "docNotice": "接口文档已从 v88 更新到 v91：请 GET /agent-api/changes/88 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 92,
+    "docNotice": "接口文档已从 v89 更新到 v92：请 GET /agent-api/changes/89 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -4142,7 +4142,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 
 `C→S` 请求-响应 · 需登录后发送
 
-以窗口方式查询世界地图（世界为 1000×1000 的方格，服务端启动时一次性生成）。请求给窗口左上角 (x, y) 与宽高 (w, h)；缺省以账号主城为中心取 10×10。窗口起点 (x, y) 按世界边界钳制；w/h 须为 1..20 的整数，非法或越界（0、负数、超过上限、非整数）视为未提供、取缺省 10，不做钳制放大（v17 明确）。每个地块返回地形（plain 平原 / grass 草原 / forest 森林 / hill 丘陵 / desert 荒漠 / marsh 沼泽 / lake 湖泊 / gold_mine 金矿——v19 新增，占领产金、不可掠夺）、类别（wilderness 野地 / npc_city NPC 城池 / city 玩家城池）、野地或 NPC 城池等级、占领者（玩家名与城池）与驻军总数。大地图用多次窗口拼接；服务端不推送整图变化，地块级变化走 PUSH_TILE_STATE（漏推由按需重查覆盖）。
+以窗口方式查询世界地图（世界为 1000×1000 的方格，服务端启动时一次性生成）。请求给窗口左上角 (x, y) 与宽高 (w, h)；缺省以账号主城为中心取 10×10。窗口起点 (x, y) 按世界边界钳制；w/h 须为 1..20 的整数，非法或越界（0、负数、超过上限、非整数）视为未提供、取缺省 10，不做钳制放大（v17 明确）。每个地块返回地形（plain 平原 / grass 草原 / forest 森林 / hill 丘陵 / desert 荒漠 / marsh 沼泽 / lake 湖泊 / gold_mine 金矿——v19 新增，占领产金、不可掠夺）、类别（wilderness 野地 / npc_city NPC 城池 / city 玩家城池）、野地或 NPC 城池等级、占领者（玩家名与城池）与驻军总数。大地图用多次窗口拼接；服务端不推送整图变化，地块级变化走 PUSH_TILE_STATE（漏推由按需重查覆盖）。 迷雾（v92，AISLG-224）：开关 fog_enabled 开启时，本协议只返回实时视野与已探索区块内的地块；未探索的格不出现在 tiles[] 里（前端按缺失格画黑雾）。已探索的格 fog = explored，只给地形、等级与上次看到的占领者（seenAt 为看到的时间），驻军、库存 / 储量档位、保护、城防、协防、掠夺冷却等动态字段为 null 或 0；实时视野格 fog = visible，与开启前完全一致。关闭时所有格 fog = visible。
 
 **请求字段**
 
@@ -4163,6 +4163,8 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].x / tiles[].y | number | 地块坐标。 |
 | tiles[].terrain | 'plain' \| 'grass' \| 'forest' \| 'hill' \| 'desert' \| 'marsh' \| 'lake' \| 'gold_mine' | 地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。 |
 | tiles[].kind | 'wilderness' \| 'npc_city' \| 'city' | 地块类别：野地 / NPC 城池 / 玩家城池（主城与分城）。 |
+| tiles[].fog | 'explored' \| 'visible' | 战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾一致）；explored = 已探索但不在视野内（动态字段清空，见 summary）。未探索的格不返回。 |
+| tiles[].seenAt | string \| null | 已探索的格为上次看到的时间（ISO）；实时视野为 null。 |
 | tiles[].level | number | 野地等级（1..10）或 NPC 城池等级（1..3）；玩家城池为 0。 |
 | tiles[].owner | object \| null | 占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally, relation }；relation（v77）= self / ally / friendly / hostile / neutral；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。 |
 | tiles[].garrison | number | 地块驻军总数；未占领野地为 0（原住守军不计入驻军总数；其编成见 GET_TILE 的 nativePower 与侦察）；NPC 城池需侦察（v17）：未侦察为 0，已侦察为最近一次侦察快照的总数。 |
@@ -4288,7 +4290,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tile.wildFamousIntel | object \| null | 在野名将情报（v54，AISLG-144）：未被获得的在野名将所在野地才有 { scouted, name, attrs { lead, force, wit } }；未侦察过时 scouted=false、name / attrs 为 null，侦察后（SCOUT 完成）给出名字与三项属性。其余为 null。 |
 | tile.plunderedAt | string \| null | 最近一次成功掠夺（攻方胜利）的时间（v16，ISO 8601）：距其 24 小时内该地块处于掠夺冷却（基准值，实际受全局时间缩放等比缩短；MARCH task='plunder' 被拒，PLUNDER_COOLDOWN）；从未被掠为 null。 |
 
-**可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`TILE_UNEXPLORED`（处置建议见第 4 节）
 
 **Agent 提示**：出征评估（v18 起改道）：参考战力只作规模粗估，不能用来预测胜负——它完全抹平了射程与速度克制（纯近战打守城远程可能全场 0 输出）。正确路径：① 对照「兵种与战斗属性」评估编队结构（前排承伤 + 远程输出 + 高速反远程，射程与速度见属性表）；② 野地守军编成按等级推导（见术语表「野地」），NPC 城池先 SCOUT 拿驻防快照（含 wallDefensePercent）；③ 战后用战报（GET_BATTLE_REPORTS）的逐回合统计复盘。参考战力数值（TROOP_POWER，含二期与 v64 名城专属兵）：民夫 1 / 义兵 2 / 斥候 2 / 长枪兵 4 / 刀盾兵 5 / 弓箭兵 5 / 轻骑兵 8 / 铁骑兵 14 / 辎重车 1 / 床弩 8 / 冲车 3 / 羽林卫 7 / 丹阳兵 7 / 白毦兵 5 / 虎卫军 5 / 诸葛连弩兵 7 / 先登死士 7 / 虎豹骑 10 / 西凉铁骑 10。
 
@@ -4373,7 +4375,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 
 `C→S` 请求-响应 · 需登录后发送
 
-从账号主城派出部队前往目标地块，到达后由服务端自动结算。编队 troops 按兵种给出数量（至少一种 > 0），发起时立即从城内驻军扣减；行军时长 = Chebyshev 距离 × 每格秒数（基准 15 秒/格，占位）÷ **编队最慢兵种的行军速度系数**（斥候 ×2、轻骑兵 ×1.5，其余 ×1）÷（1 + 行军科技加成，v27 每级 +5%；v30 AISLG-83：自己城池之间的调兵 / 运输再加出发城**驿站**加成，每级 +10%、10 级翻倍，出征野地 / NPC 城等其他目标不受影响，运输往返与失效返程同吃出发城驿站），**总时长**再 ÷ 全局时间缩放、向上取整、最少 1 秒（见文档头部；不是先把每格缩放取整再乘格数）。以响应里的 arriveAt 为准。v16 新增可选 **task**：`plunder`（掠夺，**缺省值**）或 `occupy`（占领）——只作用于野地与 NPC 城目标，侦察 / 调兵 / 增援忽略 task。目标与结算：**无主野地**按 task 掠夺或占领（战斗 vs 原住守军）；**本账号占领的野地** = 增援驻军（不战斗）；**未被占领的 NPC 城池**可掠夺，也可占领变分城（v24，AISLG-58；战斗 vs 驻防、守方据墙待敌）；**本账号分城** = 调兵（不战斗，到达并入该城驻军）；**发起前校验校场（v30，AISLG-80）**：本城同时在外的部队数（行军中含返程 + 驻守野地，不计城内驻军）已达校场等级上限（未建校场按 1）时返回 DEPLOY_LIMIT，SCOUT 同；玩家城池（他人的）、他人占领地块与出发主城本身不可作为目标（玩家对抗随后续阶段开放）。**v38（AISLG-122，玩家对抗一）开放掠夺他人城池**：主城与分城都能打、不用宣战，战斗与 NPC 打主城同口径的守城战（城墙、城防科技、箭塔、守方城守全部生效），发起即给守方推送来袭预警（PUSH_ATTACK_WARNING，预警窗口 = 行军时长，敌情按守方烽火台分档）；守方处于新手保护返回 NEWBIE_PROTECTED、免战中返回 TARGET_IN_TRUCE（均附 until / retryAfterSeconds），攻方自己的主动免战生效中返回 SELF_TRUCE_ACTIVE（打野地 / NPC 不受限）；**task=occupy 对他人分城开放（v40，AISLG-124，玩家对抗三）**：主城仍返回 TASK_INVALID_FOR_TARGET（永不可占领，只能被掠夺）。分城占领资格与占 NPC 城同口径（GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH，目标等级 = 该城官府等级），发起时初核、到达复核（名额没了照打、只降城防值不换主，事件 battle_won 记 occupied=false 与 denial）。守城战打赢一次（守军全灭）城防值 −35，攻方幸存冲车占比每 1% 再 +1.5（最多 +15）；**占领打赢不掠夺资源，掠夺打赢不降城防**；城防降到 0 且名额有空当场换主（详见「玩家对抗与城防值」一节与 GET_TILE 的 tile.durability）；每次打赢该城进入 4 小时（基准随缩放）被动免战，免战内城防不回涨、结束后每小时回涨 10 至满——占一座分城至少打 3 次、隔 8 小时以上，守方每次都有时间补兵 / 增援；在途到达时守方进入保护 / 免战则扑空返程（事件 outcome=aborted 附 cause）。**v39（AISLG-123，玩家对抗二）开放抢占他人占领的野地**：task='occupy'（缺省 plunder 返回 TASK_INVALID_FOR_TARGET——地里没有存货可抢）；野地战无城墙 / 箭塔 / 城守，守方 = 地块驻军，守方没留驻军不打、直接拿下（无战报）；发起即给守方推 PUSH_ATTACK_WARNING（target='wilderness'，敌情按其所属城烽火台分档），预警期间可向该地块增援（MARCH 打自己的地块 = 增援）；守方处于新手保护（NEWBIE_PROTECTED）或主动免战（TARGET_IN_TRUCE）时其全部野地不可被抢，但守方某座城的被动免战只保护城本身、不保护野地；地块处于换主保护期（被抢占后 1 小时基准随缩放）返回 TILE_PROTECTED；攻方自己的主动免战生效中同样不能抢（SELF_TRUCE_ACTIVE）。**抢占结算**：打赢且出发城占领名额（官府等级）有空 → 地块易主、幸存部队驻守并获得加成、地块进入换主保护（1 小时基准随缩放，玩家与 NPC 都不能再抢）；名额已满 → 守方照样失地（wilderness_lost cause=conquest）、地块变无主（不设保护）、攻方幸存返程（事件 battle_won 记 occupied=false / denial=TERRITORY_LIMIT）；打输 → 守方继续占领，攻方残部返程；战报 kind='pvp_wilderness' 攻守双方各一份。**到达复核口径（v39）**：到达时地块已无主（对方召回等）→ 扑空返程（aborted，cause=target_gone）；已易主第三人 → 扑空返程（aborted，cause=owner_changed）；已归本账号 → 转增援并入驻军。战斗为多回合推进结构（速度与射程影响接敌、城墙为守方提供受击减免；具体算法不对外公开，机制概览见术语表「战斗」、兵种数值见「兵种与战斗属性」）；攻方歼灭守方获胜、胜方幸存 ≥ 1，攻方战败（全灭或回合耗尽）时幸存部队撤回出发城。**掠夺结算（task=plunder）**：野地奖励池 = 地形对应资源 × 750 × 等级 + 金币 × 250 × 等级（v21 掠夺含金，AISLG-31；金矿 gold_mine 保持空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。实际带走量按**幸存部队负重**装填（Σ 数量 × 单兵 carry，v27 起再 × 负重科技加成（每级 +5%，向下取整）；运输任务的负重上限同口径：民夫 500、斥候/刀盾兵 80、轻骑兵 100，其余 60，占位），按**金→粮→木→石→铁**顺序装满即止，立即入账出发城（不钳储量上限）；不改归属、幸存部队返程；成功掠夺的地块进入 24 小时冷却（基准，受全局时间缩放；发起时校验 PLUNDER_COOLDOWN——v22 起该失败附 retryAfterSeconds（冷却截止 − 当前时刻，等满后重发必然受理；在途到达仍战斗但资源为零）。**掠夺玩家城（v38，AISLG-122）**：可抢池 = 城内资源先扣仓库保护（粮/木/石/铁 各保护 1000×仓库等级，金币不受保护），再乘单次比例上限（四资源 45%、金币 15%，v42 AISLG-126 校准拍板）与等级差衰减（出发城官府比目标城官府高 5 级起每多 1 级收益 −15%、最低 25%——大号打小号不禁止但收益递减），最后仍按幸存部队负重装填；攻破（守军全灭）后该城进入 4 小时（基准，随缩放）被动免战，玩家与 NPC 都不能再打它（GET_TILE 的 tile.protection 可查）；战报 kind='pvp_raid'，攻守双方各得一份；玩家城不受地块掠夺冷却限制（免战即冷却）。**名城（v24，AISLG-56，GET_TILE / 地图的 famous 字段标识，全图 8 座）分两阶段**：外围阶段对其出征（掠夺 / 占领都一样）打的是外围驻军（野战无城墙），打赢 = 外围清空、名城进入城守阶段（事件 battle_won 含 stage='outer'、outerCleared=true、recoversAt），无战利品；城守阶段（限时，超时外围恢复满编）再出征攻城守——task=plunder 掠夺其库存，task=occupy 占领并变分城（以名城命名、产量 +20%，名城计入分城上限）；外围未清时对其 task=occupy 返回 OUTER_NOT_CLEARED。名城守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。**占领 NPC 城（task=occupy，v24）**：需同时满足——主城官府 ≥ 3 级（GOVERNMENT_TOO_LOW）；分城数 < 分城上限 = floor(主城官府等级 ÷ 2)（BRANCH_LIMIT，名城同样计入）；目标 NPC 城等级 ≤ 出发城的官府等级（TARGET_LEVEL_TOO_HIGH）。发起时初核，Worker 到达时复核（不满足则胜利后不建分城、幸存部队返程，事件 battle_won 记录 occupied=false 与 denial）。打赢后该城成为分城：接收 NPC 城的建筑与**剩余库存**，幸存部队进城驻守，分城可独立建造 / 征兵 / 出征（城池类协议带 cityId）；占领不受掠夺冷却限制，不另行掠夺（库存随城移交）。**占领野地结算（task=occupy 目标为野地）**：无一次性战利品；该城占领野地数低于官府等级（上限 = 官府等级，随官府升级提高）时改归属、幸存部队驻守并获得持续加成；发起时初核 TERRITORY_LIMIT，到达复核（超限则胜利后不改归属、幸存部队返程，事件记录 occupied=false / denial=TERRITORY_LIMIT）。**盟友不可攻击（v67，AISLG-182）**：目标城池 / 野地的主人与你同属一个联盟时，掠夺、抢占野地、占领分城一律返回 ALLY_NOT_ATTACKABLE（运输、增援、调兵不受影响）；出发后目标才成为盟友的，部队到达时不开战、原路返回（事件 outcome=aborted，cause=ALLY_NOT_ATTACKABLE）。**协防（v74，AISLG-194）**：task=assist 把部队派进盟友的主城 / 分城驻扎——行军时长与普通行军相同（驿站不加速）；每座城最多接收 5 支、同一账号对同一座城最多 1 支（在途也算，超限 ASSIST_LIMIT），任务占派出城校场名额、耗粮按野外 2 倍由出发城承担；守城战里与城主驻军合并成守方参战（各方科技只作用于各自部队，城守武将只加成城主部队），战后同一兵种伤亡按开战数量比例分摊（取整余数归城主），派出方会收到一份带 assistLosses 的战报；派出方随时可召回、城主可遣返（DISMISS_ASSIST），退盟 / 被踢 / 解散与分城易主时自动遣返。出发后才退盟的，到达按 ASSIST_NOT_ALLY 原路返回。每场战斗生成一份战报（GET_BATTLE_REPORTS 可查、PUSH_BATTLE_REPORT 推送）。
+从账号主城派出部队前往目标地块，到达后由服务端自动结算。编队 troops 按兵种给出数量（至少一种 > 0），发起时立即从城内驻军扣减；行军时长 = Chebyshev 距离 × 每格秒数（基准 15 秒/格，占位）÷ **编队最慢兵种的行军速度系数**（斥候 ×2、轻骑兵 ×1.5，其余 ×1）÷（1 + 行军科技加成，v27 每级 +5%；v30 AISLG-83：自己城池之间的调兵 / 运输再加出发城**驿站**加成，每级 +10%、10 级翻倍，出征野地 / NPC 城等其他目标不受影响，运输往返与失效返程同吃出发城驿站），**总时长**再 ÷ 全局时间缩放、向上取整、最少 1 秒（见文档头部；不是先把每格缩放取整再乘格数）。以响应里的 arriveAt 为准。v16 新增可选 **task**：`plunder`（掠夺，**缺省值**）或 `occupy`（占领）——只作用于野地与 NPC 城目标，侦察 / 调兵 / 增援忽略 task。目标与结算：**无主野地**按 task 掠夺或占领（战斗 vs 原住守军）；**本账号占领的野地** = 增援驻军（不战斗）；**未被占领的 NPC 城池**可掠夺，也可占领变分城（v24，AISLG-58；战斗 vs 驻防、守方据墙待敌）；**本账号分城** = 调兵（不战斗，到达并入该城驻军）；**发起前校验校场（v30，AISLG-80）**：本城同时在外的部队数（行军中含返程 + 驻守野地，不计城内驻军）已达校场等级上限（未建校场按 1）时返回 DEPLOY_LIMIT，SCOUT 同；玩家城池（他人的）、他人占领地块与出发主城本身不可作为目标（玩家对抗随后续阶段开放）。**v38（AISLG-122，玩家对抗一）开放掠夺他人城池**：主城与分城都能打、不用宣战，战斗与 NPC 打主城同口径的守城战（城墙、城防科技、箭塔、守方城守全部生效），发起即给守方推送来袭预警（PUSH_ATTACK_WARNING，预警窗口 = 行军时长，敌情按守方烽火台分档）；守方处于新手保护返回 NEWBIE_PROTECTED、免战中返回 TARGET_IN_TRUCE（均附 until / retryAfterSeconds），攻方自己的主动免战生效中返回 SELF_TRUCE_ACTIVE（打野地 / NPC 不受限）；**task=occupy 对他人分城开放（v40，AISLG-124，玩家对抗三）**：主城仍返回 TASK_INVALID_FOR_TARGET（永不可占领，只能被掠夺）。分城占领资格与占 NPC 城同口径（GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH，目标等级 = 该城官府等级），发起时初核、到达复核（名额没了照打、只降城防值不换主，事件 battle_won 记 occupied=false 与 denial）。守城战打赢一次（守军全灭）城防值 −35，攻方幸存冲车占比每 1% 再 +1.5（最多 +15）；**占领打赢不掠夺资源，掠夺打赢不降城防**；城防降到 0 且名额有空当场换主（详见「玩家对抗与城防值」一节与 GET_TILE 的 tile.durability）；每次打赢该城进入 4 小时（基准随缩放）被动免战，免战内城防不回涨、结束后每小时回涨 10 至满——占一座分城至少打 3 次、隔 8 小时以上，守方每次都有时间补兵 / 增援；在途到达时守方进入保护 / 免战则扑空返程（事件 outcome=aborted 附 cause）。**v39（AISLG-123，玩家对抗二）开放抢占他人占领的野地**：task='occupy'（缺省 plunder 返回 TASK_INVALID_FOR_TARGET——地里没有存货可抢）；野地战无城墙 / 箭塔 / 城守，守方 = 地块驻军，守方没留驻军不打、直接拿下（无战报）；发起即给守方推 PUSH_ATTACK_WARNING（target='wilderness'，敌情按其所属城烽火台分档），预警期间可向该地块增援（MARCH 打自己的地块 = 增援）；守方处于新手保护（NEWBIE_PROTECTED）或主动免战（TARGET_IN_TRUCE）时其全部野地不可被抢，但守方某座城的被动免战只保护城本身、不保护野地；地块处于换主保护期（被抢占后 1 小时基准随缩放）返回 TILE_PROTECTED；攻方自己的主动免战生效中同样不能抢（SELF_TRUCE_ACTIVE）。**抢占结算**：打赢且出发城占领名额（官府等级）有空 → 地块易主、幸存部队驻守并获得加成、地块进入换主保护（1 小时基准随缩放，玩家与 NPC 都不能再抢）；名额已满 → 守方照样失地（wilderness_lost cause=conquest）、地块变无主（不设保护）、攻方幸存返程（事件 battle_won 记 occupied=false / denial=TERRITORY_LIMIT）；打输 → 守方继续占领，攻方残部返程；战报 kind='pvp_wilderness' 攻守双方各一份。**到达复核口径（v39）**：到达时地块已无主（对方召回等）→ 扑空返程（aborted，cause=target_gone）；已易主第三人 → 扑空返程（aborted，cause=owner_changed）；已归本账号 → 转增援并入驻军。战斗为多回合推进结构（速度与射程影响接敌、城墙为守方提供受击减免；具体算法不对外公开，机制概览见术语表「战斗」、兵种数值见「兵种与战斗属性」）；攻方歼灭守方获胜、胜方幸存 ≥ 1，攻方战败（全灭或回合耗尽）时幸存部队撤回出发城。**掠夺结算（task=plunder）**：野地奖励池 = 地形对应资源 × 750 × 等级 + 金币 × 250 × 等级（v21 掠夺含金，AISLG-31；金矿 gold_mine 保持空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。实际带走量按**幸存部队负重**装填（Σ 数量 × 单兵 carry，v27 起再 × 负重科技加成（每级 +5%，向下取整）；运输任务的负重上限同口径：民夫 500、斥候/刀盾兵 80、轻骑兵 100，其余 60，占位），按**金→粮→木→石→铁**顺序装满即止，立即入账出发城（不钳储量上限）；不改归属、幸存部队返程；成功掠夺的地块进入 24 小时冷却（基准，受全局时间缩放；发起时校验 PLUNDER_COOLDOWN——v22 起该失败附 retryAfterSeconds（冷却截止 − 当前时刻，等满后重发必然受理；在途到达仍战斗但资源为零）。**掠夺玩家城（v38，AISLG-122）**：可抢池 = 城内资源先扣仓库保护（粮/木/石/铁 各保护 1000×仓库等级，金币不受保护），再乘单次比例上限（四资源 45%、金币 15%，v42 AISLG-126 校准拍板）与等级差衰减（出发城官府比目标城官府高 5 级起每多 1 级收益 −15%、最低 25%——大号打小号不禁止但收益递减），最后仍按幸存部队负重装填；攻破（守军全灭）后该城进入 4 小时（基准，随缩放）被动免战，玩家与 NPC 都不能再打它（GET_TILE 的 tile.protection 可查）；战报 kind='pvp_raid'，攻守双方各得一份；玩家城不受地块掠夺冷却限制（免战即冷却）。**名城（v24，AISLG-56，GET_TILE / 地图的 famous 字段标识，全图 8 座）分两阶段**：外围阶段对其出征（掠夺 / 占领都一样）打的是外围驻军（野战无城墙），打赢 = 外围清空、名城进入城守阶段（事件 battle_won 含 stage='outer'、outerCleared=true、recoversAt），无战利品；城守阶段（限时，超时外围恢复满编）再出征攻城守——task=plunder 掠夺其库存，task=occupy 占领并变分城（以名城命名、产量 +20%，名城计入分城上限）；外围未清时对其 task=occupy 返回 OUTER_NOT_CLEARED。名城守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。**占领 NPC 城（task=occupy，v24）**：需同时满足——主城官府 ≥ 3 级（GOVERNMENT_TOO_LOW）；分城数 < 分城上限 = floor(主城官府等级 ÷ 2)（BRANCH_LIMIT，名城同样计入）；目标 NPC 城等级 ≤ 出发城的官府等级（TARGET_LEVEL_TOO_HIGH）。发起时初核，Worker 到达时复核（不满足则胜利后不建分城、幸存部队返程，事件 battle_won 记录 occupied=false 与 denial）。打赢后该城成为分城：接收 NPC 城的建筑与**剩余库存**，幸存部队进城驻守，分城可独立建造 / 征兵 / 出征（城池类协议带 cityId）；占领不受掠夺冷却限制，不另行掠夺（库存随城移交）。**占领野地结算（task=occupy 目标为野地）**：无一次性战利品；该城占领野地数低于官府等级（上限 = 官府等级，随官府升级提高）时改归属、幸存部队驻守并获得持续加成；发起时初核 TERRITORY_LIMIT，到达复核（超限则胜利后不改归属、幸存部队返程，事件记录 occupied=false / denial=TERRITORY_LIMIT）。**盟友不可攻击（v67，AISLG-182）**：目标城池 / 野地的主人与你同属一个联盟时，掠夺、抢占野地、占领分城一律返回 ALLY_NOT_ATTACKABLE（运输、增援、调兵不受影响）；出发后目标才成为盟友的，部队到达时不开战、原路返回（事件 outcome=aborted，cause=ALLY_NOT_ATTACKABLE）。**协防（v74，AISLG-194）**：task=assist 把部队派进盟友的主城 / 分城驻扎——行军时长与普通行军相同（驿站不加速）；每座城最多接收 5 支、同一账号对同一座城最多 1 支（在途也算，超限 ASSIST_LIMIT），任务占派出城校场名额、耗粮按野外 2 倍由出发城承担；守城战里与城主驻军合并成守方参战（各方科技只作用于各自部队，城守武将只加成城主部队），战后同一兵种伤亡按开战数量比例分摊（取整余数归城主），派出方会收到一份带 assistLosses 的战报；派出方随时可召回、城主可遣返（DISMISS_ASSIST），退盟 / 被踢 / 解散与分城易主时自动遣返。出发后才退盟的，到达按 ASSIST_NOT_ALLY 原路返回。每场战斗生成一份战报（GET_BATTLE_REPORTS 可查、PUSH_BATTLE_REPORT 推送）。 迷雾（v92，AISLG-224）：目标未探索且不在视野内时（只限 task = plunder / occupy），目标相关的校验（保护、免战、占领资格等）被拒绝也不报错：照常建立行军，响应结构与校验通过时完全一致，且不会向守方发来袭预警、不破除新手保护；到达后由服务端复核——守方仍受保护或目标已不是可打的对象时原路返回（aborted），否则按现有规则结算。兵力不足、出征上限、迁城后的攻击限制（MOVE_CITY_ATTACK_LOCK）等与目标无关的校验照旧报错。
 
 **请求字段**
 
@@ -12343,7 +12345,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-返回全图的城池点位，供小地图一次看全局（AISLG-160）。无请求参数。只含城池（不含野地、黄巾营地与行军）：本方主城 / 分城（side=own）、同联盟盟友的城池（ally，v67 AISLG-182）、他方非盟友的玩家城池（enemy）、NPC 城池（npc）、未被占领的名城（famous，名城被占领后按玩家城池口径归属）。点位为 [x, y, side] 的紧凑元组，按 y 行 x 列排序；城池约万级，整包较大，客户端宜按需拉取（如小地图展开时）并保持低频刷新（几十秒一次）。归属按请求账号区分本方 / 他方，地图数据全服公开，不做侦察门控。
+返回全图的城池点位，供小地图一次看全局（AISLG-160）。无请求参数。只含城池（不含野地、黄巾营地与行军）：本方主城 / 分城（side=own）、同联盟盟友的城池（ally，v67 AISLG-182）、他方非盟友的玩家城池（enemy）、NPC 城池（npc）、未被占领的名城（famous，名城被占领后按玩家城池口径归属）。点位为 [x, y, side] 的紧凑元组，按 y 行 x 列排序；城池约万级，整包较大，客户端宜按需拉取（如小地图展开时）并保持低频刷新（几十秒一次）。归属按请求账号区分本方 / 他方，地图数据全服公开，不做侦察门控。 迷雾开启时（v92）：实时视野内的城与战力榜前 20 名的主城始终显示；已探索的城按上次看到的归属显示；未探索的城不显示，8 座名城未探索时在锚点显示 side = famous_rumor（大致方位，不是真实坐标）。响应多出 exploredChunks（10,000 位 base64，1250 字节，区块下标 floor(y/10)*100+floor(x/10)，第 i 位在字节 i>>3、掩码 1<<(i&7)）与 exploredPercent（探索进度 %）。关闭时响应与之前完全一致（无这两个字段，全图城池）。
 
 **请求字段**
 
@@ -12355,6 +12357,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | --- | --- | --- |
 | size | number | 世界边长（世界为 size×size 方格，当前 1000）。 |
 | at | string | 统计时刻（ISO 8601）。 |
+| exploredChunks | string | 迷雾开启时才有（v92）：已探索区块位图，base64（1250 字节）。 |
+| exploredPercent | number | 迷雾开启时才有（v92）：已探索区块占全图的百分比，保留 1 位小数。 |
 | cities | array | 城池点位 [x, y, side] 数组；side 取 'own' \| 'ally' \| 'friendly' \| 'hostile' \| 'enemy' \| 'npc' \| 'famous'（ally 为 v67 同联盟盟友；friendly / hostile 为 v77 友盟 / 敌对联盟成员）。 |
 
 **Agent 提示**：想找城（名城、NPC 城、他人城池）时先用它看全局方位，再用 GET_WORLD_MAP 按窗口取地块详情、GET_TILE 看驻军。它不返回野地，找野地仍用 GET_WORLD_MAP。
@@ -18635,9 +18639,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | oldTile | string | 旧格去向：wilderness（主城，变空野地）或 npc_city（分城，回归 NPC 城）。 |
 | moveLockUntil | string \| null | pointing 迁后的出征限制截止时刻（ISO 8601）；random 为 null。 |
 
-**可能错误**：`INVALID_PARAMS`、`MOVE_CITY_FAMOUS`、`MOVE_CITY_ARMY_OUTSIDE`、`MOVE_CITY_HAS_ALLY_FORCE`、`MOVE_CITY_IN_BATTLE`、`MOVE_CITY_TILE_INVALID`、`MOVE_CITY_TILE_TAKEN`、`MOVE_CITY_TOO_CLOSE`、`MOVE_CITY_NO_SPACE`、`INSUFFICIENT_ITEM`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`MOVE_CITY_FAMOUS`、`MOVE_CITY_ARMY_OUTSIDE`、`MOVE_CITY_HAS_ALLY_FORCE`、`MOVE_CITY_IN_BATTLE`、`MOVE_CITY_TILE_UNEXPLORED`、`MOVE_CITY_TILE_INVALID`、`MOVE_CITY_TILE_TAKEN`、`MOVE_CITY_TOO_CLOSE`、`MOVE_CITY_NO_SPACE`、`INSUFFICIENT_ITEM`（处置建议见第 4 节）
 
-**Agent 提示**：先 GET_STATE 看 moveCity：reasons 为空且对应道具持有数 ≥ 1 才可迁。指定坐标前先 GET_WORLD_MAP 找空野地，再用 preview = true 预览（看 to、distance、attackLockSeconds），玩家确认后才带 confirm = true 执行。收到 INSUFFICIENT_ITEM 时先 GET_ITEMS，由玩家决定是否 BUY_ITEM。pointing 迁后 12 小时内不要派攻击类部队（会返回 MOVE_CITY_ATTACK_LOCK）；运输、调兵与增援自己的野地不受限。
+**Agent 提示**：先 GET_STATE 看 moveCity：reasons 为空且对应道具持有数 ≥ 1 才可迁。指定坐标前先 GET_WORLD_MAP 找空野地（迷雾开启时须是已探索或实时视野内的格，否则返回 MOVE_CITY_TILE_UNEXPLORED），再用 preview = true 预览（看 to、distance、attackLockSeconds），玩家确认后才带 confirm = true 执行。收到 INSUFFICIENT_ITEM 时先 GET_ITEMS，由玩家决定是否 BUY_ITEM。pointing 迁后 12 小时内不要派攻击类部队（会返回 MOVE_CITY_ATTACK_LOCK）；运输、调兵与增援自己的野地不受限。
 
 **示例**
 
@@ -20456,6 +20460,58 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 }
 ```
 
+### op 2029 · PUSH_EXPLORATION_REPORT — 推送：探索简报（v92，AISLG-224）
+
+`S→C` 服务端推送 · 无 `seq`
+
+部队去程结束（到达或撤回）后，如果这一趟新探索了区块，推给本账号一份简报：新探索的区块数、新区块里的东西按类计数（NPC 城分等级、金矿、Lv5 及以上野地、在野名将、其他玩家的城、名城），以及最多 10 个坐标（优先级：名城 > 在野名将 > 金矿 > 玩家城 > NPC 城 > 高级野地）。内容与事件 exploration_report 的 detail 一致，可随时用 GET_EVENTS 回看。存量初始化、开局与城池 / 领地带来的新区块不生成简报；返程不生成。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| report | object | { eventId, marchId, chunks, npcCities: { total, byLevel }, goldMines, highWilderness, wildHeroes, playerCities, famous, cells: [{ x, y, kind, level? }] }。kind = famous / wild_hero / gold_mine / player_city / npc_city / high_wilderness。 |
+
+**Agent 提示**：收到后可按 cells 坐标用 GET_TILE 查看（已探索的地块返回上次看到的情况，带 seenAt）。
+
+**示例**
+
+推送（`online=undefined`）：
+
+```json
+{
+  "op": 2029,
+  "push": true,
+  "data": {
+    "report": {
+      "eventId": 1024,
+      "marchId": "6f1d2c3e-0000-4000-8000-000000000001",
+      "chunks": 3,
+      "npcCities": {
+        "total": 2,
+        "byLevel": {
+          "3": 1,
+          "5": 1
+        }
+      },
+      "goldMines": 1,
+      "highWilderness": 0,
+      "wildHeroes": 0,
+      "playerCities": 0,
+      "famous": 0,
+      "cells": [
+        {
+          "x": 512,
+          "y": 340,
+          "kind": "gold_mine",
+          "level": 2
+        }
+      ]
+    }
+  }
+}
+```
+
 ## 4. 错误码参考
 
 所有错误响应的 `error.message` 为人读文案（中文），程序逻辑应依据 `error.code` 判断。
@@ -20636,6 +20692,8 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `MOVE_CITY_TILE_TAKEN` | （v91，AISLG-220）目标格在判定与落库之间被别人抢先占走（并发）。令与坐标都未改动。 | 重新 GET_WORLD_MAP 选一块空野地后再发起迁城。 |
 | `MOVE_CITY_TOO_CLOSE` | （v91，AISLG-220）目标离其他账号的城池格（分城、名城含在内）不足 3 格（Chebyshev 距离）。自己的城不受此限。 | 选离他人城池至少 3 格的空野地；随机迁不受此限。 |
 | `MOVE_CITY_NO_SPACE` | （v91，AISLG-220）随机迁城时世界中已没有可选的空野地。 | 改用指定坐标迁城（高级迁城令）选一块空野地，或等世界有空地后再试。 |
+| `TILE_UNEXPLORED` | 该地块在战争迷雾中未探索，且不在任何视野来源（城池 / 领地 / 行军 / 盟友城池格）覆盖内，服务端不返回它的任何信息（v92，AISLG-224）。仅在 fog_enabled 开启时出现。 | 先派斥候或部队去这个方向探索（派去未探索坐标的出征本身允许，盲打时前端应提示“目标在迷雾中”）。也可以改查已探索的格子。 |
+| `MOVE_CITY_TILE_UNEXPLORED` | 高级迁城令（指定坐标）的目标格未探索，也不在实时视野内，无法指定为迁城目标（v92，AISLG-224）。随机迁城令不受影响。 | 先探索目标区域（派斥候或部队去那里），或改用随机迁城令。 |
 | `MOVE_CITY_ATTACK_LOCK` | （v91，AISLG-220）指定坐标迁城后 12 小时内，这座城的掠夺 / 占领 / 侦察 / 派协防（以及其他攻击类出征）被拒；响应附 retryAfterSeconds。运输、调兵、增援自己名下野地与召回不受限。 | 等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
@@ -22226,7 +22284,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 91。
+- 协议版本随对外协议内容的每次变化递增；当前为 92。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

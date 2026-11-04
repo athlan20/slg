@@ -49,6 +49,7 @@ export const REQUEST_MOVE_CITY: RequestOpDoc = {
     'MOVE_CITY_ARMY_OUTSIDE',
     'MOVE_CITY_HAS_ALLY_FORCE',
     'MOVE_CITY_IN_BATTLE',
+    'MOVE_CITY_TILE_UNEXPLORED',
     'MOVE_CITY_TILE_INVALID',
     'MOVE_CITY_TILE_TAKEN',
     'MOVE_CITY_TOO_CLOSE',
@@ -111,5 +112,5 @@ export const REQUEST_MOVE_CITY: RequestOpDoc = {
     },
   ],
   agentNote:
-    '先 GET_STATE 看 moveCity：reasons 为空且对应道具持有数 ≥ 1 才可迁。指定坐标前先 GET_WORLD_MAP 找空野地，再用 preview = true 预览（看 to、distance、attackLockSeconds），玩家确认后才带 confirm = true 执行。收到 INSUFFICIENT_ITEM 时先 GET_ITEMS，由玩家决定是否 BUY_ITEM。pointing 迁后 12 小时内不要派攻击类部队（会返回 MOVE_CITY_ATTACK_LOCK）；运输、调兵与增援自己的野地不受限。',
+    '先 GET_STATE 看 moveCity：reasons 为空且对应道具持有数 ≥ 1 才可迁。指定坐标前先 GET_WORLD_MAP 找空野地（迷雾开启时须是已探索或实时视野内的格，否则返回 MOVE_CITY_TILE_UNEXPLORED），再用 preview = true 预览（看 to、distance、attackLockSeconds），玩家确认后才带 confirm = true 执行。收到 INSUFFICIENT_ITEM 时先 GET_ITEMS，由玩家决定是否 BUY_ITEM。pointing 迁后 12 小时内不要派攻击类部队（会返回 MOVE_CITY_ATTACK_LOCK）；运输、调兵与增援自己的野地不受限。',
 };
