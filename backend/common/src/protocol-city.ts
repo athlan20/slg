@@ -113,13 +113,17 @@ export interface CityStatePushData {
    *  capital_changed=设为主城（v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城；收到后重新 GET_STATE）；
    *  troops_disbanded=城内驻军被遣散（v84，AISLG-209；cityId 为遣散的城，收到后重新 GET_STATE）；
    *  troop_pools_changed=伤兵 / 俘虏 / 逃兵池子发生变化（v85，AISLG-212；战斗结算入账、治疗 / 招降 / 劝回、放弃 / 释放、断粮兵变与过期清理后）；
-   *  stratagem=城池中了计谋（v86，AISLG-211；烧粮 / 十面埋伏 / 趁火打劫 / 欺敌覆盖；收到后重新 GET_STATE） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem';
+   *  stratagem=城池中了计谋（v86，AISLG-211；烧粮 / 十面埋伏 / 趁火打劫 / 欺敌覆盖；收到后重新 GET_STATE）；
+   *  city_moved=城池迁移（v91，AISLG-220；cityId 为迁走的城，from / to 为新旧坐标，收到后重新 GET_STATE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem' | 'city_moved';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
   /** reason=capital_changed 时的原主城 id（已变为分城） */
   formerCapitalId?: string;
+  /** reason=city_moved 时的新旧坐标（v91） */
+  from?: { x: number; y: number };
+  to?: { x: number; y: number };
 }
 
 /** RESET_ACCOUNT（op 26）请求载荷：重置为不可逆操作，confirm 必须显式为 true */
@@ -191,6 +195,16 @@ export const EventType = {
   STRATAGEM_CAST: 'stratagem_cast',
   /** v86（AISLG-211）：被施计（目标方的事件流，与 PUSH_STRATAGEM 同构；欺敌类与金蝉脱壳不写） */
   STRATAGEM_RECEIVED: 'stratagem_received',
+  /** v89（AISLG-221）：礼金扣除（detail = { reason, amount, balance }；扣除失败不写事件） */
+  GIFT_SPENT: 'gift_spent',
+  /** v90（AISLG-222）：道具发放（detail = { itemId, requested, granted, reason }；超出堆叠上限的部分作废） */
+  ITEM_GRANTED: 'item_granted',
+  /** v90（AISLG-222）：道具消耗（detail = { itemId, amount, left, reason }；数量不足不写） */
+  ITEM_USED: 'item_used',
+  /** v90（AISLG-222）：礼金购买道具（detail = { itemId, count, price, cost, owned, gift }） */
+  ITEM_BOUGHT: 'item_bought',
+  /** v91（AISLG-220）：城池迁移（detail = { cityId, mode, from, to, distance, item, oldTile }） */
+  CITY_MOVED: 'city_moved',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
   /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */

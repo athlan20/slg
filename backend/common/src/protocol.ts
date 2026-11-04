@@ -258,6 +258,12 @@ export const Op = {
   CAST_STRATAGEM: 146,
   /** C→S 查询全账号伤兵营（v88，AISLG-218：账号全部城的伤兵 / 俘虏 / 逃兵三池 + 断粮时刻；无参数、只读，玩家与 Agent 通用） */
   GET_TROOP_POOLS: 147,
+  /** C→S 查询道具背包、道具目录与礼金余额（v90，AISLG-222：items 为每种道具的数量，catalog 为全部道具定义；玩家与 Agent 通用，只读） */
+  GET_ITEMS: 148,
+  /** C→S 礼金购买道具（v90，AISLG-222：data.itemId + data.count（1..99）+ data.expectedPrice 必填；玩家与 Agent 通用） */
+  BUY_ITEM: 149,
+  /** C→S 迁城（v91，AISLG-220：data.cityId + data.mode = random|pointing；pointing 必带 x / y；执行须 confirm=true，preview=true 只预览；消耗迁城令 / 高级迁城令；主城与分城都能迁，名城不能迁） */
+  MOVE_CITY: 150,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -699,6 +705,32 @@ export const ErrorCode = {
   STRATAGEM_TOKEN_FULL: 'STRATAGEM_TOKEN_FULL',
   /** 计谋：这座城中了十面埋伏，不能派出任何部队（v86，AISLG-211；出征 / 调兵 / 运输 / 侦察 / 协防 / 入场均被拒；召回不受影响；附 retryAfterSeconds） */
   CITY_AMBUSHED: 'CITY_AMBUSHED',
+  /** 礼金不足（v89，AISLG-221）：扣除失败，余额与其他数据都不变（响应附 balance） */
+  INSUFFICIENT_GIFT: 'INSUFFICIENT_GIFT',
+  /** 道具不足（v90，AISLG-222）：消耗失败，数量不变（附 itemId、count） */
+  INSUFFICIENT_ITEM: 'INSUFFICIENT_ITEM',
+  /** 道具堆叠上限（v90，AISLG-222）：购买后会超过 stackMax，不扣礼金（附 stackMax、have、canBuy） */
+  ITEM_STACK_FULL: 'ITEM_STACK_FULL',
+  /** 道具单价已变（v90，AISLG-222）：expectedPrice 与当前单价不一致，不扣不改（附 price 当前单价） */
+  ITEM_PRICE_CHANGED: 'ITEM_PRICE_CHANGED',
+  /** 迁城：名城不能迁（v91，AISLG-220） */
+  MOVE_CITY_FAMOUS: 'MOVE_CITY_FAMOUS',
+  /** 迁城：本城有军队在外（出征 / 返程 / 运输 / 调兵行军，或派去别人城里的协防）（v91；附 count） */
+  MOVE_CITY_ARMY_OUTSIDE: 'MOVE_CITY_ARMY_OUTSIDE',
+  /** 迁城：本城有盟友驻军协防（v91；附 count，须对方先召回或城主用 DISMISS_ASSIST 遣返） */
+  MOVE_CITY_HAS_ALLY_FORCE: 'MOVE_CITY_HAS_ALLY_FORCE',
+  /** 迁城：本城或其名下野地有敌情（行军指向、未结 NPC 来袭）（v91） */
+  MOVE_CITY_IN_BATTLE: 'MOVE_CITY_IN_BATTLE',
+  /** 迁城：目标格不是无主空野地（NPC 城、他人城池、已被占领的野地、主城 / 分城格等）（v91） */
+  MOVE_CITY_TILE_INVALID: 'MOVE_CITY_TILE_INVALID',
+  /** 迁城：目标格刚被别人抢先占走（并发），令未扣（v91） */
+  MOVE_CITY_TILE_TAKEN: 'MOVE_CITY_TILE_TAKEN',
+  /** 迁城：离他人城池格不足 3 格（v91） */
+  MOVE_CITY_TOO_CLOSE: 'MOVE_CITY_TOO_CLOSE',
+  /** 迁城：随机选址时世界已无可用空野地（v91） */
+  MOVE_CITY_NO_SPACE: 'MOVE_CITY_NO_SPACE',
+  /** 迁城后出征受限：指定坐标迁城后 12 小时内，这座城不能掠夺 / 占领 / 侦察 / 派协防（v91；附 retryAfterSeconds；由 MARCH / SCOUT 等出征入口返回） */
+  MOVE_CITY_ATTACK_LOCK: 'MOVE_CITY_ATTACK_LOCK',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -1345,3 +1377,18 @@ export {
   stratagemImmunityMs,
 } from './stratagem';
 export type { StratagemKind, StratagemTokenKind, RandomSource } from './stratagem';
+export type {
+  ItemDefView,
+  GetItemsResponseData,
+  BuyItemRequestData,
+  BuyItemResponseData,
+  ItemsStatePushData,
+} from './protocol-items';
+export type {
+  MoveCityRequestData,
+  MoveCityResponseData,
+  MoveCityPreviewData,
+  MoveCityView,
+  MoveCityOldTile,
+  CityMovedPushMeta,
+} from './protocol-move-city';

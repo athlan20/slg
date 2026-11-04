@@ -64,6 +64,12 @@ import { STRATAGEM_COPY } from '../copy-stratagem';
 import { STRATAGEM_COPY_EN } from '../copy-stratagem-en';
 import { SHORTFALL_COPY } from '../copy-shortfall';
 import { SHORTFALL_COPY_EN } from '../copy-shortfall-en';
+import { GIFT_COPY } from '../copy-gift';
+import { GIFT_COPY_EN } from '../copy-gift-en';
+import { ITEM_COPY } from '../copy-items';
+import { ITEM_COPY_EN } from '../copy-items-en';
+import { MOVE_CITY_COPY } from '../copy-move-city';
+import { MOVE_CITY_COPY_EN } from '../copy-move-city-en';
 
 /** 中文文案全集（结构基准）：英文 Bundle 必须与之同构 */
 const ZH = {
@@ -116,7 +122,10 @@ const ZH = {
   SEASON_COPY,
   HALL_COPY,
   SHORTFALL_COPY,
+  GIFT_COPY,
   STRATAGEM_COPY,
+  ITEM_COPY,
+  MOVE_CITY_COPY,
 };
 
 export type Bundle = typeof ZH;
@@ -172,7 +181,10 @@ const EN: Bundle = {
   SEASON_COPY: SEASON_COPY_EN,
   HALL_COPY: HALL_COPY_EN,
   SHORTFALL_COPY: SHORTFALL_COPY_EN,
+  GIFT_COPY: GIFT_COPY_EN,
   STRATAGEM_COPY: STRATAGEM_COPY_EN,
+  ITEM_COPY: ITEM_COPY_EN,
+  MOVE_CITY_COPY: MOVE_CITY_COPY_EN,
 };
 
 const BUNDLES: Record<Lang, Bundle> = { zh: ZH, en: EN };

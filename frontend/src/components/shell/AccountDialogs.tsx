@@ -6,10 +6,13 @@ import { useState, type FormEvent } from 'react';
 import { useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
 import type { CityList } from '../../state/useCityList';
+import type { ItemCounts, MoveCityView } from '../../api/protocol';
+import type { MoveCitySession } from '../../state/moveCitySession';
+import { MoveCityDialog } from './MoveCityDialog';
 import { Modal } from '../ui/Modal';
 import { AccountSettingsDialog } from '../account/AccountSettingsDialog';
 
-export type AccountDialogMode = 'switch' | 'reset' | 'rename' | 'settings' | 'discard' | 'capital';
+export type AccountDialogMode = 'switch' | 'reset' | 'rename' | 'settings' | 'discard' | 'capital' | 'move';
 
 /** 设为主城的冷却基准（v82，AISLG-205）：24 小时，随全局时间缩放换算；与后端 common/src/capital-swap.ts 同口径 */
 const CAPITAL_SWAP_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -29,6 +32,12 @@ interface AccountDialogsProps {
   timeScale: number;
   /** 设为主城（v82）；成功返回 null，失败返回人读错误 */
   onSetCapital: (cityId: string) => Promise<string | null>;
+  /** 城池迁移（v91，AISLG-220）：当前城的迁城视图、背包、切片；指定坐标迁切到地图选点，购买跳到背包商店 */
+  moveCityView: MoveCityView | null;
+  items: ItemCounts | null;
+  moveCity: MoveCitySession;
+  onPickMoveOnMap: (cityId: string) => void;
+  onBuyItems: () => void;
 }
 
 export function AccountDialogs({
@@ -43,6 +52,11 @@ export function AccountDialogs({
   cityList,
   timeScale,
   onSetCapital,
+  moveCityView,
+  items,
+  moveCity,
+  onPickMoveOnMap,
+  onBuyItems,
 }: AccountDialogsProps) {
   const copy = useCopy();
   const { COPY } = copy;
@@ -74,6 +88,20 @@ export function AccountDialogs({
   }
   if (mode === 'discard') {
     return <DiscardDialog onClose={onClose} onDiscardCity={onDiscardCity} />;
+  }
+  if (mode === 'move') {
+    return (
+      <MoveCityDialog
+        cityId={cityId}
+        cityName={cityName}
+        view={moveCityView}
+        items={items}
+        moveCity={moveCity}
+        onClose={onClose}
+        onPickOnMap={onPickMoveOnMap}
+        onBuyItems={onBuyItems}
+      />
+    );
   }
   if (mode === 'capital') {
     return <SetCapitalDialog onClose={onClose} cityId={cityId} cityList={cityList} timeScale={timeScale} onSetCapital={onSetCapital} />;

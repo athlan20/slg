@@ -685,5 +685,27 @@
  *   （troops 按兵种合计 + earliestExpireAt，过期行已过滤），starveAt 与 CityView.starveAt 同口径；主城在前，
  *   其余按创建时间；三池全空的城也返回。不新增批量协议：一键处理仍由客户端逐城带 cityId 调
  *   RESTORE_TROOPS（143）/ RELEASE_TROOPS（144），两条协议的行为与数值完全不变。
+ * v89（礼金，AISLG-221，只加不改）：账号新增礼金余额 accounts.gift。每个赛季开始固定发 1000（SEASON_GIFT），
+ *   新号归入当前赛季时、老号进入新赛季的惰性加入时置为 1000（同赛季重复登录不回弹），换季清零；存量账号在
+ *   v89 迁移里按当前赛季一次性补发（列不存在时才建，幂等）。重置账号不动礼金。GET_STATE 新增账号级
+ *   gift（当前余额）与 giftSeasonGrant（= 1000）。新增错误码 INSUFFICIENT_GIFT（扣除失败、余额不变，附 balance）
+ *   与事件 gift_spent（detail = { reason, amount, balance }）。本版本不新增 op，礼金暂无消耗方（用途见 AISLG-222）。
+ * v90（道具，AISLG-222，只加不改）：新增道具背包 user_items（每账号每种道具一行数量，换季随 RESET 表清空）、
+ *   道具配置 ITEM_DEFS（迁城令 200 礼金 / 高级迁城令 500 礼金，堆叠上限 99；代码常量，不进数据库）。新增 GET_ITEMS（op 148，
+ *   背包 items、目录 catalog、礼金 gift）与 BUY_ITEM（op 149，礼金买道具，必须带 expectedPrice；单价不一致返回 ITEM_PRICE_CHANGED）；
+ *   GET_STATE 新增 items；PUSH_ACCOUNT_STATE（op 2020）新增 reason = items_changed（带 items 与 gift）。新增错误码
+ *   INSUFFICIENT_ITEM / ITEM_STACK_FULL / ITEM_PRICE_CHANGED 与事件 item_granted / item_used / item_bought。
+ *   公共函数 grantItem / consumeItem 在 common/src/items-db.ts（仅事务内调用）；消耗由各玩法 op 自己调用（迁城令由 AISLG-220 的 MOVE_CITY 消耗）。
+ * v91（城池迁移，AISLG-220，只加不改）：新增 MOVE_CITY（op 150）：把账号名下的一座城（主城或分城，名城除外）迁到空野地。
+ *   mode = random（消耗 1 张迁城令 city_order，系统按注册落位同一算法选址）或 pointing（消耗 1 张高级迁城令 city_order_adv，
+ *   指定 x / y，目标须为无主空野地，离他人城池格 ≥ 3）；执行须 confirm = true，preview = true 只预览（条件不满足同样返回错误码）。
+ *   拦截顺序：名城 MOVE_CITY_FAMOUS → 本城军队在外 MOVE_CITY_ARMY_OUTSIDE → 盟友驻军 MOVE_CITY_HAS_ALLY_FORCE → 战乱 MOVE_CITY_IN_BATTLE
+ *   → 目标格 MOVE_CITY_TILE_INVALID / MOVE_CITY_TOO_CLOSE / MOVE_CITY_NO_SPACE → 令不足 INSUFFICIENT_ITEM → 并发抢格 MOVE_CITY_TILE_TAKEN。
+ *   旧格：主城 → 空野地（地形保留、等级重抽）；分城 → 回归 NPC 城（等级 = origin_level，并写放弃冷却 city_discards）。
+ *   pointing 迁后 12 小时（随时间缩放）内这座城的掠夺 / 占领 / 侦察 / 派协防返回 MOVE_CITY_ATTACK_LOCK（附 retryAfterSeconds），
+ *   运输、调兵、增援自己名下野地不受限；random 迁城无此限制。城池行新增 move_lock_until。
+ *   GET_STATE 新增 moveCity（逐城 reasons / moveLockUntil，与 random / pointing 两种令的持有数）。
+ *   事件 city_moved；PUSH_CITY_STATE reason = city_moved（带 from / to）与 PUSH_TILE_STATE reason = city_moved（新旧两格）。
+ *   新增 9 个错误码 MOVE_CITY_*（FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK）。
  */
-export const PROTOCOL_VERSION = 88;
+export const PROTOCOL_VERSION = 91;

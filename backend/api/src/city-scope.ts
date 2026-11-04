@@ -40,6 +40,8 @@ export const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   // 保留但忽略（不再进本作用域，也就不会因非本账号而报 INVALID_PARAMS）
   Op.BUILD_FARM,
   Op.DISCARD_CITY,
+  // v91（AISLG-220）：迁城的 cityId 必填，按指定城校验归属并迁走它
+  Op.MOVE_CITY,
   // v82（AISLG-205）：设为主城必须指定 cityId（分城），与放弃分城同口径
   Op.SET_CAPITAL,
 ]);

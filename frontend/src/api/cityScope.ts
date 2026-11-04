@@ -30,6 +30,8 @@ const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.DISCARD_CITY,
   // v82（AISLG-205）：设为主城必须指定 cityId（分城），与放弃分城同口径
   Op.SET_CAPITAL,
+  // v91（AISLG-220）：迁城必须指定 cityId（要迁的城）
+  Op.MOVE_CITY,
 ]);
 
 let activeCityId: string | null = null;

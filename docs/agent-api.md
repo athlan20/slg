@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**88** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**91** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 88）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 91）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 88,
+    "protocolVersion": 91,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 88,
+    "protocolVersion": 91,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/85 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/88 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 85,
+    "docVersion": 88,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 88,
-    "docNotice": "接口文档已从 v85 更新到 v88：请 GET /agent-api/changes/85 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 91,
+    "docNotice": "接口文档已从 v88 更新到 v91：请 GET /agent-api/changes/88 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -863,6 +863,10 @@
 | city.defenseBonus | number | 城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。 |
 | city.marches | array | 本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。 |
 | city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
+| gift | number | （v89，AISLG-221）账号礼金当前余额（账号级，不分城）。每个赛季开始固定发 1000（登录时惰性发放，同赛季不重复发），换季清零；不能转让、赠送、兑换成金币或任何资源。只用于服务端标明的便利功能，扣除时事件流写 gift_spent（detail = { reason, amount, balance }）。 |
+| giftSeasonGrant | number | （v89）每个赛季每个账号发放的礼金额度（当前为 1000）。界面与 Agent 用它显示“礼金 gift / giftSeasonGrant”，不要写死数值。 |
+| items | object | （v90，AISLG-222）账号道具背包：{ [itemId]: count }，每种已定义道具都有键（缺省 0）。与 GET_ITEMS 的 items 同口径。道具随换季清空。 |
+| moveCity | object | （v91，AISLG-220）城池迁移视图：cities[] 逐城给出 { cityId, reasons（不可迁原因，全部列出：MOVE_CITY_FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE，空数组 = 前四条都通过）, moveLockUntil（指定坐标迁后的出征限制截止时刻，仅未结束时给出） }；items.random = { itemId: 'city_order', count }（迁城令持有数），items.pointing = { itemId: 'city_order_adv', count }（高级迁城令持有数）。目标格与近邻条件不在此视图内，以 MOVE_CITY 的 preview 为准。 |
 | cities | array | v12 新增：账号全部城池 { id, name, level, x, y, isMain, title 城池称号, nobility 爵位 }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。 |
 | branch | object | v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。 |
 | capitalSwap | object | v82 新增（AISLG-205，设为主城）：{ cooldownUntil 设为主城的冷却截止（ISO 8601，冷却未结束才有值，否则 null）, underAttack 本账号任一城或野地正有他人玩家的掠夺 / 占领出征在途, blocked 逐分城的不可设原因 { [cityId]: FAMOUS_CITY_NOT_CAPITAL / CAPITAL_SWAP_DURABILITY_LOW / BRANCH_LIMIT_EXCEEDED }（未列出的分城可设） }。供前端置灰，权威判定仍在 SET_CAPITAL。 |
@@ -2290,7 +2294,7 @@
 | --- | --- | --- |
 | events | array | 事件数组，顺序见各游标说明。 |
 | events[].id | number | 事件自增 id，可作为 beforeId / sinceId 游标。 |
-| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）。 |
+| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）。 |
 | events[].initiator | 'player' \| 'agent' \| null | 发起事件的连接声明的登录类型。 |
 | events[].cityId | string \| null | 关联城池 id，无关联时为 null。 |
 | events[].buildId | string \| null | 关联建造 / 征兵 / 行军条目 id，无关联时为 null。 |
@@ -18422,6 +18426,343 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 148 · GET_ITEMS — 查询道具背包、道具目录与礼金余额（v90，AISLG-222）
+
+`C→S` 请求-响应 · 需登录后发送
+
+返回账号的道具背包 items（每种道具的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice，null 表示不卖，堆叠上限 stackMax）与礼金余额 gift。商店出售的是 shopPrice 非 null 的道具：迁城令（city_order，礼金 200，堆叠上限 99）；高级迁城令（city_order_adv，礼金 500，堆叠上限 99）。道具随换季清空，礼金见 GET_STATE 的 gift。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| items | object | 背包：{ [itemId]: count }，每种已定义道具都有键（缺省 0）。 |
+| catalog | object[] | 道具定义：id、name、nameEn、desc、descEn、kind（目前只有 order）、shopPrice（礼金单价，null = 不卖）、stackMax（堆叠上限）。 |
+| gift | number | 礼金余额（见 GET_STATE 的 gift）。 |
+
+**Agent 提示**：买道具前先用本协议看 shopPrice 与 gift，BUY_ITEM 必须带上你看到的单价（expectedPrice）。
+
+**示例**
+
+**查询背包与商店目录**
+
+请求：
+
+```json
+{
+  "op": 148,
+  "seq": 61,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 148,
+  "seq": 61,
+  "ok": true,
+  "data": {
+    "items": {
+      "city_order": 2,
+      "city_order_adv": 0
+    },
+    "catalog": [
+      {
+        "id": "city_order",
+        "name": "迁城令",
+        "nameEn": "City Move Order",
+        "desc": "消耗 1 张，随机迁城一次。",
+        "descEn": "Uses 1 order to relocate the city once to a random spot.",
+        "kind": "order",
+        "shopPrice": 200,
+        "stackMax": 99
+      },
+      {
+        "id": "city_order_adv",
+        "name": "高级迁城令",
+        "nameEn": "Advanced City Move Order",
+        "desc": "消耗 1 张，指定坐标迁城一次。",
+        "descEn": "Uses 1 order to relocate the city once to chosen coordinates.",
+        "kind": "order",
+        "shopPrice": 500,
+        "stackMax": 99
+      }
+    ],
+    "gift": 600
+  }
+}
+```
+
+### op 149 · BUY_ITEM — 礼金购买道具（v90，AISLG-222）
+
+`C→S` 请求-响应 · 需登录后发送
+
+用礼金购买道具：礼金按 单价 × 数量 扣除，道具数量按数量增加，写事件 item_bought。校验顺序：itemId 必须在目录里且可卖（未知或 shopPrice 为 null → INVALID_PARAMS）→ count 为 1..99 的整数 → expectedPrice 必填（缺失或非整数 → INVALID_PARAMS）→ expectedPrice 必须等于当前 shopPrice（不等 → ITEM_PRICE_CHANGED，附当前 price，不扣不改，客户端刷新目录后让玩家重新确认，不自动重试）→ 购买后不超过 stackMax（超出 → ITEM_STACK_FULL，附 stackMax / have / canBuy）→ 礼金不足 → INSUFFICIENT_GIFT（附 balance / cost）。全部在一个事务里，任何一步失败都不扣礼金、不加道具。成功后向该账号其他在线连接推送 PUSH_ACCOUNT_STATE（reason = items_changed）。已买到的道具不因调价而补差价或退款。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| itemId | string | 必填。道具 id（见 GET_ITEMS 的 catalog）。 |
+| count | number | 必填。购买数量，1..99 的整数。购买后不能超过该道具的堆叠上限。 |
+| expectedPrice | number | 必填。你看到的单价（礼金），必须等于当前 shopPrice；不一致返回 ITEM_PRICE_CHANGED。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| itemId | string | 购买的道具 id。 |
+| bought | number | 本次买入数量。 |
+| count | number | 购买后该道具的总数量。 |
+| price | number | 本次单价（礼金）。 |
+| cost | number | 本次花费的礼金（price × bought）。 |
+| gift | number | 购买后的礼金余额。 |
+
+**可能错误**：`INVALID_PARAMS`、`ITEM_PRICE_CHANGED`、`ITEM_STACK_FULL`、`INSUFFICIENT_GIFT`（处置建议见第 4 节）
+
+**Agent 提示**：只在玩家明确要买时调用。收到 ITEM_PRICE_CHANGED 时先 GET_ITEMS 刷新目录，把新单价告诉玩家，等他确认后再带新单价重发，不要用旧价自动重试。
+
+**示例**
+
+**买 2 张迁城令（单价 200）**
+
+请求：
+
+```json
+{
+  "op": 149,
+  "seq": 62,
+  "data": {
+    "itemId": "city_order",
+    "count": 2,
+    "expectedPrice": 200
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 149,
+  "seq": 62,
+  "ok": true,
+  "data": {
+    "itemId": "city_order",
+    "bought": 2,
+    "count": 4,
+    "price": 200,
+    "cost": 400,
+    "gift": 200
+  }
+}
+```
+
+**单价已变：返回当前单价，不扣不改**
+
+请求：
+
+```json
+{
+  "op": 149,
+  "seq": 63,
+  "data": {
+    "itemId": "city_order",
+    "count": 1,
+    "expectedPrice": 200
+  }
+}
+```
+
+失败响应（`ITEM_PRICE_CHANGED`）：
+
+```json
+{
+  "op": 149,
+  "seq": 63,
+  "ok": false,
+  "error": {
+    "code": "ITEM_PRICE_CHANGED",
+    "message": "道具单价已变化，请刷新后重新确认"
+  },
+  "data": {
+    "price": 250
+  }
+}
+```
+
+### op 150 · MOVE_CITY — 迁城（v91，AISLG-220）
+
+`C→S` 请求-响应 · 需登录后发送
+
+把账号名下的一座城（主城或分城，名城除外）迁到地图上的一块空野地。mode = random 随机迁：消耗 1 张迁城令（city_order），系统按注册落位同一算法选址，不需要坐标；mode = pointing 指定坐标迁：消耗 1 张高级迁城令（city_order_adv），x / y 必填，目标须为无主、无 NPC 的空野地，且离其他账号的城池格（分城、名城含在内）至少 3 格（Chebyshev 距离）。道具用 BUY_ITEM 以礼金购买，GET_ITEMS 查看持有数。
+
+拦截顺序（前四条即 GET_STATE moveCity 的 reasons）：名城 MOVE_CITY_FAMOUS → 本城有部队在外（本城发出的行军含返程 / 运输 / 调兵，或派去别人城里的协防）MOVE_CITY_ARMY_OUTSIDE（附 count）→ 盟友协防本城 MOVE_CITY_HAS_ALLY_FORCE（附 count；迁城不会自动遣返，须对方召回或城主 DISMISS_ASSIST）→ 本城或其名下野地有敌情 MOVE_CITY_IN_BATTLE（只看这一座城）→ 目标格不合法 MOVE_CITY_TILE_INVALID / 太近 MOVE_CITY_TOO_CLOSE / 随机选址无空地 MOVE_CITY_NO_SPACE → 道具不足 INSUFFICIENT_ITEM（附 itemId、count）→ 执行时目标被抢先 MOVE_CITY_TILE_TAKEN。以上任何一条失败都不扣道具、不改任何数据。
+
+迁后：新格变成本城（等级 0，同注册落位）；城的建筑、驻军、资源、武将、科技、队列、名下野地与城防 / 免战、联盟、爵位、保护状态全部保留。旧格：主城变回空野地（地形不变，等级按世界生成同口径重新抽取）；分城回归 NPC 城池（等级 = 来源等级，并写入与放弃分城同口径的占回冷却，冷却内不能再占这一格的 NPC 城）。
+
+指定坐标迁（pointing）后 12 小时内（按时间缩放），这座城只能运输、调兵、召回、增援自己名下的野地；掠夺、占领、侦察、派协防以及其他攻击类出征都返回 MOVE_CITY_ATTACK_LOCK（附 retryAfterSeconds）。随机迁没有这个限制。迁城不中断也不延长新手保护 / 免战，迁后没有额外保护期。
+
+预览：preview = true 时不改任何数据，返回要消耗的道具、已有数量、目标格、距离、旧格去向与出征限制时长；条件不满足时预览同样返回对应错误码（附原因数据），不会只返回 ok。执行必须携带 confirm = true。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| cityId | string | 必填。要迁的城 UUID（GET_STATE 的 cities[].id，主城或分城，名城除外）。非本账号名下的城或格式不对返回 INVALID_PARAMS。 |
+| mode | string | 必填。random（随机迁，消耗迁城令）或 pointing（指定坐标迁，消耗高级迁城令）；其他值返回 INVALID_PARAMS。 |
+| x | number | mode = pointing 时必填的目标 x 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。 |
+| y | number | mode = pointing 时必填的目标 y 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。 |
+| confirm | boolean | 执行时必填，必须为 true（缺失或不为 true 返回 INVALID_PARAMS）；preview = true 时不需要。 |
+| preview | boolean | 可选。true = 只预览，不改任何数据（见 summary）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| cityId | string | 迁走的城 UUID。 |
+| mode | string | random 或 pointing。 |
+| from / to | object | 旧坐标与新坐标 { x, y }。 |
+| distance | number | 旧坐标到新坐标的 Chebyshev 距离（不影响消耗，供参考）。 |
+| itemId | string | 消耗的道具 id（city_order 或 city_order_adv）。 |
+| left | number | 消耗后该道具的剩余数量。 |
+| oldTile | string | 旧格去向：wilderness（主城，变空野地）或 npc_city（分城，回归 NPC 城）。 |
+| moveLockUntil | string \| null | pointing 迁后的出征限制截止时刻（ISO 8601）；random 为 null。 |
+
+**可能错误**：`INVALID_PARAMS`、`MOVE_CITY_FAMOUS`、`MOVE_CITY_ARMY_OUTSIDE`、`MOVE_CITY_HAS_ALLY_FORCE`、`MOVE_CITY_IN_BATTLE`、`MOVE_CITY_TILE_INVALID`、`MOVE_CITY_TILE_TAKEN`、`MOVE_CITY_TOO_CLOSE`、`MOVE_CITY_NO_SPACE`、`INSUFFICIENT_ITEM`（处置建议见第 4 节）
+
+**Agent 提示**：先 GET_STATE 看 moveCity：reasons 为空且对应道具持有数 ≥ 1 才可迁。指定坐标前先 GET_WORLD_MAP 找空野地，再用 preview = true 预览（看 to、distance、attackLockSeconds），玩家确认后才带 confirm = true 执行。收到 INSUFFICIENT_ITEM 时先 GET_ITEMS，由玩家决定是否 BUY_ITEM。pointing 迁后 12 小时内不要派攻击类部队（会返回 MOVE_CITY_ATTACK_LOCK）；运输、调兵与增援自己的野地不受限。
+
+**示例**
+
+**预览指定坐标迁城（主城迁到 (420, 388)，有 1 张高级迁城令）**
+
+请求：
+
+```json
+{
+  "op": 150,
+  "seq": 70,
+  "data": {
+    "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+    "mode": "pointing",
+    "x": 420,
+    "y": 388,
+    "preview": true
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 150,
+  "seq": 70,
+  "ok": true,
+  "data": {
+    "preview": true,
+    "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+    "mode": "pointing",
+    "itemId": "city_order_adv",
+    "count": 1,
+    "need": 1,
+    "from": {
+      "x": 512,
+      "y": 300
+    },
+    "to": {
+      "x": 420,
+      "y": 388
+    },
+    "distance": 92,
+    "oldTile": "wilderness",
+    "attackLockSeconds": 43200
+  }
+}
+```
+
+**执行随机迁城（分城回归 NPC 城）**
+
+请求：
+
+```json
+{
+  "op": 150,
+  "seq": 71,
+  "data": {
+    "cityId": "5d1f0c2e-8a6b-4f3d-b7e9-0c2a1d4e6f81",
+    "mode": "random",
+    "confirm": true
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 150,
+  "seq": 71,
+  "ok": true,
+  "data": {
+    "cityId": "5d1f0c2e-8a6b-4f3d-b7e9-0c2a1d4e6f81",
+    "mode": "random",
+    "from": {
+      "x": 300,
+      "y": 512
+    },
+    "to": {
+      "x": 745,
+      "y": 129
+    },
+    "distance": 445,
+    "itemId": "city_order",
+    "left": 4,
+    "oldTile": "npc_city",
+    "moveLockUntil": null
+  }
+}
+```
+
+**离他人城池太近：拒绝，不扣令**
+
+请求：
+
+```json
+{
+  "op": 150,
+  "seq": 72,
+  "data": {
+    "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+    "mode": "pointing",
+    "x": 421,
+    "y": 390,
+    "confirm": true
+  }
+}
+```
+
+失败响应（`MOVE_CITY_TOO_CLOSE`）：
+
+```json
+{
+  "op": 150,
+  "seq": 72,
+  "ok": false,
+  "error": {
+    "code": "MOVE_CITY_TOO_CLOSE",
+    "message": "离其他玩家城池太近（需至少间隔 3 格）"
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -18585,7 +18926,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `S→C` 服务端推送 · 无 `seq`
 
-城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）、troops_disbanded=城内驻军被遣散（DISBAND_TROOPS，v84，AISLG-209；只带 cityId，收到后用 GET_STATE 刷新驻军与资源）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。
+城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）、troops_disbanded=城内驻军被遣散（DISBAND_TROOPS，v84，AISLG-209；只带 cityId，收到后用 GET_STATE 刷新驻军与资源）。city_moved=城池迁移（MOVE_CITY，v91，AISLG-220；带 cityId 与 from / to 新旧坐标，收到后用 GET_STATE 刷新，新旧两格另有 PUSH_TILE_STATE reason = city_moved）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。
 
 **data 字段**
 
@@ -19712,8 +20053,8 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| reason | 'account_renamed' | 触发本次推送的状态变化。 |
-| username | string | 账号的新昵称（即新 username）。 |
+| reason | 'account_renamed' \| 'items_changed' | 触发本次推送的状态变化。items_changed（v90，AISLG-222）：道具背包或礼金余额变化，data 另带 items（每种道具的数量）与 gift（礼金余额）。 |
+| username | string | 账号的新昵称（即新 username）；reason = items_changed 时无此字段。 |
 
 **Agent 提示**：收到 account_renamed 后，本地缓存的 username 已过期：后续展示（聊天、地图归属、排行榜）与对外称呼一律用新昵称。
 
@@ -20283,6 +20624,19 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `STRATAGEM_TOKEN_SHORT` | （v86，AISLG-211）对应类别的计谋令不足；响应附 tokenKind 与 have。此时不扣令、不写冷却、不改任何数据。 | 用战场军功在战场商店（BUY_BATTLEFIELD_ITEM 的 stratagem_* 商品）兑换计谋令后再施。 |
 | `STRATAGEM_TOKEN_FULL` | （v86，AISLG-211）该类计谋令持有数已达上限，兑换被拒且不扣军功；响应附 tokenKind / have / limit。上限防止囤到某一周集中施计，换季与军功一起清零。 | 先把手上的令用掉一些再兑换，或改买其他商品。 |
 | `CITY_AMBUSHED` | （v86，AISLG-211）这座城中了十面埋伏，期间不能派出任何部队（MARCH 的各用途、侦察、协防出发、交易所商队、剧本战场入场都被拒）；响应附 retryAfterSeconds。已经在外的部队照常行动、照常可以召回。 | 等到 retryAfterSeconds 之后再派兵；已在外的部队用 RECALL_MARCH 召回不受影响。 |
+| `INSUFFICIENT_GIFT` | （v89，AISLG-221）礼金余额不足，扣除被拒；响应附 balance（当前余额）。不扣、不写事件，其他数据不变。礼金每赛季固定发 1000，换季清零，不能转让或兑换。 | 等下一个赛季（换季后重新登录即回到 1000）或改用金币等其他方式；用 GET_STATE 的 gift 查看当前余额。 |
+| `INSUFFICIENT_ITEM` | （v90，AISLG-222）道具数量不足，消耗被拒；响应附 itemId 与 count（当前数量）。不扣、不写事件，其他数据不变。 | 先用 GET_ITEMS 确认数量；不够时用 BUY_ITEM 用礼金买，或等获得途径（任务 / 活动）发放。 |
+| `ITEM_STACK_FULL` | （v90，AISLG-222）购买后会超过该道具的堆叠上限，购买被拒；响应附 stackMax、have（当前数量）、canBuy（还能买几张，已满为 0）。礼金与道具都不变。 | 把购买数量降到 canBuy 以内；已满时先用掉道具再买。 |
+| `ITEM_PRICE_CHANGED` | （v90，AISLG-222）BUY_ITEM 的 expectedPrice 与当前单价不一致（道具调价过）；响应附 price（当前单价）。不扣礼金、不加道具。 | 用 GET_ITEMS 刷新目录，把新单价告诉玩家，让玩家重新确认后带新单价重发；不要自动用新价重试。 |
+| `MOVE_CITY_FAMOUS` | （v91，AISLG-220）名城（特殊城池）不能迁移；不扣令、不改任何数据。 | 换一座非名城的城迁移；名城只能靠攻占 / 经营保有。 |
+| `MOVE_CITY_ARMY_OUTSIDE` | （v91，AISLG-220）这座城有部队在外：本城发出的行军（出征 / 返程 / 运输 / 调兵）或派去别人城里的协防。响应附 count。 | 等部队回到本城（或用 RECALL_MARCH 召回、DISMISS_ASSIST 撤回协防）后再迁。驻守自己野地的部队不算在外。 |
+| `MOVE_CITY_HAS_ALLY_FORCE` | （v91，AISLG-220）盟友的部队正在协防这座城；响应附 count。迁城时不会自动遣返。 | 请盟友召回协防，或城主用 DISMISS_ASSIST 遣返后再迁。 |
+| `MOVE_CITY_IN_BATTLE` | （v91，AISLG-220）这座城或其名下野地正有行军指向，或有未结的 NPC 来袭（与放弃分城、遣散士兵同一口径）。只看这一座城。 | 等战斗结算或来袭结束后再迁；若是自己的行军，可用 RECALL_MARCH 撤回。 |
+| `MOVE_CITY_TILE_INVALID` | （v91，AISLG-220）指定坐标不是无主、无 NPC 的空野地（NPC 城、他人城池、已被占领的野地、城池格等一切非空野地的格都算）。不扣令。 | 用 GET_MAP_OVERVIEW / GET_WORLD_MAP 找一块空野地（kind=wilderness 且无归属）后重试。 |
+| `MOVE_CITY_TILE_TAKEN` | （v91，AISLG-220）目标格在判定与落库之间被别人抢先占走（并发）。令与坐标都未改动。 | 重新 GET_WORLD_MAP 选一块空野地后再发起迁城。 |
+| `MOVE_CITY_TOO_CLOSE` | （v91，AISLG-220）目标离其他账号的城池格（分城、名城含在内）不足 3 格（Chebyshev 距离）。自己的城不受此限。 | 选离他人城池至少 3 格的空野地；随机迁不受此限。 |
+| `MOVE_CITY_NO_SPACE` | （v91，AISLG-220）随机迁城时世界中已没有可选的空野地。 | 改用指定坐标迁城（高级迁城令）选一块空野地，或等世界有空地后再试。 |
+| `MOVE_CITY_ATTACK_LOCK` | （v91，AISLG-220）指定坐标迁城后 12 小时内，这座城的掠夺 / 占领 / 侦察 / 派协防（以及其他攻击类出征）被拒；响应附 retryAfterSeconds。运输、调兵、增援自己名下野地与召回不受限。 | 等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -21872,7 +22226,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 88。
+- 协议版本随对外协议内容的每次变化递增；当前为 91。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 
