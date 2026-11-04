@@ -258,6 +258,10 @@ export const Op = {
   CAST_STRATAGEM: 146,
   /** C→S 查询全账号伤兵营（v88，AISLG-218：账号全部城的伤兵 / 俘虏 / 逃兵三池 + 断粮时刻；无参数、只读，玩家与 Agent 通用） */
   GET_TROOP_POOLS: 147,
+  /** C→S 查询道具背包、道具目录与礼金余额（v90，AISLG-222：items 为每种道具的数量，catalog 为全部道具定义；玩家与 Agent 通用，只读） */
+  GET_ITEMS: 148,
+  /** C→S 礼金购买道具（v90，AISLG-222：data.itemId + data.count（1..99）+ data.expectedPrice 必填；玩家与 Agent 通用） */
+  BUY_ITEM: 149,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -701,6 +705,12 @@ export const ErrorCode = {
   CITY_AMBUSHED: 'CITY_AMBUSHED',
   /** 礼金不足（v89，AISLG-221）：扣除失败，余额与其他数据都不变（响应附 balance） */
   INSUFFICIENT_GIFT: 'INSUFFICIENT_GIFT',
+  /** 道具不足（v90，AISLG-222）：消耗失败，数量不变（附 itemId、count） */
+  INSUFFICIENT_ITEM: 'INSUFFICIENT_ITEM',
+  /** 道具堆叠上限（v90，AISLG-222）：购买后会超过 stackMax，不扣礼金（附 stackMax、have、canBuy） */
+  ITEM_STACK_FULL: 'ITEM_STACK_FULL',
+  /** 道具单价已变（v90，AISLG-222）：expectedPrice 与当前单价不一致，不扣不改（附 price 当前单价） */
+  ITEM_PRICE_CHANGED: 'ITEM_PRICE_CHANGED',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -1347,3 +1357,10 @@ export {
   stratagemImmunityMs,
 } from './stratagem';
 export type { StratagemKind, StratagemTokenKind, RandomSource } from './stratagem';
+export type {
+  ItemDefView,
+  GetItemsResponseData,
+  BuyItemRequestData,
+  BuyItemResponseData,
+  ItemsStatePushData,
+} from './protocol-items';

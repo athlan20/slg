@@ -77,6 +77,7 @@ export function AppShell() {
         onOpenAnnouncements={session.announcements.openList}
         allianceBadge={session.alliance.badge}
         onOpenAlliance={session.alliance.openPanel}
+        onOpenItems={session.items.openPanel}
       />
       <TopBar
         page={page}

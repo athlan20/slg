@@ -15,6 +15,7 @@ import { OfflineReportModal } from '../OfflineReportModal';
 import { YellowTurbanModal } from '../YellowTurbanModal';
 import { StratagemAlertModal } from '../stratagem/StratagemAlertModal';
 import { StratagemPanel } from '../stratagem/StratagemPanel';
+import { ItemsModal } from '../items/ItemsModal';
 
 interface ModalHostProps {
   leaderboardOpen: boolean;
@@ -81,6 +82,8 @@ export function ModalHost(props: ModalHostProps) {
       {session.stratagem.alerts.length > 0 ? (
         <StratagemAlertModal data={session.stratagem.alerts[0]} onDismiss={session.stratagem.dismissAlert} />
       ) : null}
+      {/* v90（AISLG-222）：背包与商店（账号菜单打开） */}
+      {session.items.open ? <ItemsModal session={session.items} counts={session.cityList.items} gift={session.cityList.gift} /> : null}
       {session.season.warning ? <SeasonWarningModal warning={session.season.warning} onConfirm={session.season.dismissWarning} /> : null}
       {announcements.open ? <AnnouncementModal slice={announcements} onClose={announcements.closeList} /> : null}
       {session.alliance.open ? (

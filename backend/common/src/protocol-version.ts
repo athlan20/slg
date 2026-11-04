@@ -690,5 +690,11 @@
  *   v89 迁移里按当前赛季一次性补发（列不存在时才建，幂等）。重置账号不动礼金。GET_STATE 新增账号级
  *   gift（当前余额）与 giftSeasonGrant（= 1000）。新增错误码 INSUFFICIENT_GIFT（扣除失败、余额不变，附 balance）
  *   与事件 gift_spent（detail = { reason, amount, balance }）。本版本不新增 op，礼金暂无消耗方（用途见 AISLG-222）。
+ * v90（道具，AISLG-222，只加不改）：新增道具背包 user_items（每账号每种道具一行数量，换季随 RESET 表清空）、
+ *   道具配置 ITEM_DEFS（迁城令 200 礼金 / 高级迁城令 500 礼金，堆叠上限 99；代码常量，不进数据库）。新增 GET_ITEMS（op 148，
+ *   背包 items、目录 catalog、礼金 gift）与 BUY_ITEM（op 149，礼金买道具，必须带 expectedPrice；单价不一致返回 ITEM_PRICE_CHANGED）；
+ *   GET_STATE 新增 items；PUSH_ACCOUNT_STATE（op 2020）新增 reason = items_changed（带 items 与 gift）。新增错误码
+ *   INSUFFICIENT_ITEM / ITEM_STACK_FULL / ITEM_PRICE_CHANGED 与事件 item_granted / item_used / item_bought。
+ *   公共函数 grantItem / consumeItem 在 common/src/items-db.ts（仅事务内调用）；消耗由各玩法 op 自己调用（迁城令由 AISLG-220 的 MOVE_CITY 消耗）。
  */
-export const PROTOCOL_VERSION = 89;
+export const PROTOCOL_VERSION = 90;

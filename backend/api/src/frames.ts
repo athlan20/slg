@@ -183,6 +183,9 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   STRATAGEM_TOKEN_FULL: '该类计谋令已达到持有上限（换季后与军功一起清零）',
   CITY_AMBUSHED: '这座城中了十面埋伏，暂时不能派出任何部队',
   INSUFFICIENT_GIFT: '礼金不足（每个赛季发 1000，换季清零）',
+  INSUFFICIENT_ITEM: '道具数量不足',
+  ITEM_STACK_FULL: '该道具已达堆叠上限，不能再买这么多',
+  ITEM_PRICE_CHANGED: '道具单价已变化，请刷新后重新确认',
   ANNOUNCEMENT_NOT_FOUND: '公告不存在、已撤回或尚未生效',
   MAINTENANCE: '服务器正在换季维护，请稍后再试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除

@@ -12,6 +12,7 @@ import { formatClock } from './format';
 import { heroEventText, heroExpSuffix } from './heroEventText';
 import { stratagemEventText } from './stratagemText';
 import { giftEventText } from './giftText';
+import { itemEventText } from './itemText';
 
 function buildingName(kind: unknown): string {
   const { BUILDING_LABEL, EXTRA_STATE } = getCopy();
@@ -149,7 +150,7 @@ function scoutCompletedText(detail: Record<string, unknown>): string {
 }
 
 export function eventText(view: EventView): string {
-  return heroEventText(view) ?? stratagemEventText(view) ?? giftEventText(view) ?? baseEventText(view) + heroExpSuffix(view);
+  return heroEventText(view) ?? stratagemEventText(view) ?? giftEventText(view) ?? itemEventText(view) ?? baseEventText(view) + heroExpSuffix(view);
 }
 
 function baseEventText(view: EventView): string {

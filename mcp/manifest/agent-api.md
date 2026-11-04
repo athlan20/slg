@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**89** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**90** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 89）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 90）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 89,
+    "protocolVersion": 90,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 89,
+    "protocolVersion": 90,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/86 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/87 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 86,
+    "docVersion": 87,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 89,
-    "docNotice": "接口文档已从 v86 更新到 v89：请 GET /agent-api/changes/86 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 90,
+    "docNotice": "接口文档已从 v87 更新到 v90：请 GET /agent-api/changes/87 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -865,6 +865,7 @@
 | city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
 | gift | number | （v89，AISLG-221）账号礼金当前余额（账号级，不分城）。每个赛季开始固定发 1000（登录时惰性发放，同赛季不重复发），换季清零；不能转让、赠送、兑换成金币或任何资源。只用于服务端标明的便利功能，扣除时事件流写 gift_spent（detail = { reason, amount, balance }）。 |
 | giftSeasonGrant | number | （v89）每个赛季每个账号发放的礼金额度（当前为 1000）。界面与 Agent 用它显示“礼金 gift / giftSeasonGrant”，不要写死数值。 |
+| items | object | （v90，AISLG-222）账号道具背包：{ [itemId]: count }，每种已定义道具都有键（缺省 0）。与 GET_ITEMS 的 items 同口径。道具随换季清空。 |
 | cities | array | v12 新增：账号全部城池 { id, name, level, x, y, isMain, title 城池称号, nobility 爵位 }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。 |
 | branch | object | v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。 |
 | capitalSwap | object | v82 新增（AISLG-205，设为主城）：{ cooldownUntil 设为主城的冷却截止（ISO 8601，冷却未结束才有值，否则 null）, underAttack 本账号任一城或野地正有他人玩家的掠夺 / 占领出征在途, blocked 逐分城的不可设原因 { [cityId]: FAMOUS_CITY_NOT_CAPITAL / CAPITAL_SWAP_DURABILITY_LOW / BRANCH_LIMIT_EXCEEDED }（未列出的分城可设） }。供前端置灰，权威判定仍在 SET_CAPITAL。 |
@@ -2292,7 +2293,7 @@
 | --- | --- | --- |
 | events | array | 事件数组，顺序见各游标说明。 |
 | events[].id | number | 事件自增 id，可作为 beforeId / sinceId 游标。 |
-| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }） \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）。 |
+| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）。 |
 | events[].initiator | 'player' \| 'agent' \| null | 发起事件的连接声明的登录类型。 |
 | events[].cityId | string \| null | 关联城池 id，无关联时为 null。 |
 | events[].buildId | string \| null | 关联建造 / 征兵 / 行军条目 id，无关联时为 null。 |
@@ -18424,6 +18425,177 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 148 · GET_ITEMS — 查询道具背包、道具目录与礼金余额（v90，AISLG-222）
+
+`C→S` 请求-响应 · 需登录后发送
+
+返回账号的道具背包 items（每种道具的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice，null 表示不卖，堆叠上限 stackMax）与礼金余额 gift。商店出售的是 shopPrice 非 null 的道具：迁城令（city_order，礼金 200，堆叠上限 99）；高级迁城令（city_order_adv，礼金 500，堆叠上限 99）。道具随换季清空，礼金见 GET_STATE 的 gift。
+
+**请求字段**
+
+无请求字段（`data` 可省略）。
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| items | object | 背包：{ [itemId]: count }，每种已定义道具都有键（缺省 0）。 |
+| catalog | object[] | 道具定义：id、name、nameEn、desc、descEn、kind（目前只有 order）、shopPrice（礼金单价，null = 不卖）、stackMax（堆叠上限）。 |
+| gift | number | 礼金余额（见 GET_STATE 的 gift）。 |
+
+**Agent 提示**：买道具前先用本协议看 shopPrice 与 gift，BUY_ITEM 必须带上你看到的单价（expectedPrice）。
+
+**示例**
+
+**查询背包与商店目录**
+
+请求：
+
+```json
+{
+  "op": 148,
+  "seq": 61,
+  "data": {}
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 148,
+  "seq": 61,
+  "ok": true,
+  "data": {
+    "items": {
+      "city_order": 2,
+      "city_order_adv": 0
+    },
+    "catalog": [
+      {
+        "id": "city_order",
+        "name": "迁城令",
+        "nameEn": "City Move Order",
+        "desc": "消耗 1 张，随机迁城一次。",
+        "descEn": "Uses 1 order to relocate the city once to a random spot.",
+        "kind": "order",
+        "shopPrice": 200,
+        "stackMax": 99
+      },
+      {
+        "id": "city_order_adv",
+        "name": "高级迁城令",
+        "nameEn": "Advanced City Move Order",
+        "desc": "消耗 1 张，指定坐标迁城一次。",
+        "descEn": "Uses 1 order to relocate the city once to chosen coordinates.",
+        "kind": "order",
+        "shopPrice": 500,
+        "stackMax": 99
+      }
+    ],
+    "gift": 600
+  }
+}
+```
+
+### op 149 · BUY_ITEM — 礼金购买道具（v90，AISLG-222）
+
+`C→S` 请求-响应 · 需登录后发送
+
+用礼金购买道具：礼金按 单价 × 数量 扣除，道具数量按数量增加，写事件 item_bought。校验顺序：itemId 必须在目录里且可卖（未知或 shopPrice 为 null → INVALID_PARAMS）→ count 为 1..99 的整数 → expectedPrice 必填（缺失或非整数 → INVALID_PARAMS）→ expectedPrice 必须等于当前 shopPrice（不等 → ITEM_PRICE_CHANGED，附当前 price，不扣不改，客户端刷新目录后让玩家重新确认，不自动重试）→ 购买后不超过 stackMax（超出 → ITEM_STACK_FULL，附 stackMax / have / canBuy）→ 礼金不足 → INSUFFICIENT_GIFT（附 balance / cost）。全部在一个事务里，任何一步失败都不扣礼金、不加道具。成功后向该账号其他在线连接推送 PUSH_ACCOUNT_STATE（reason = items_changed）。已买到的道具不因调价而补差价或退款。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| itemId | string | 必填。道具 id（见 GET_ITEMS 的 catalog）。 |
+| count | number | 必填。购买数量，1..99 的整数。购买后不能超过该道具的堆叠上限。 |
+| expectedPrice | number | 必填。你看到的单价（礼金），必须等于当前 shopPrice；不一致返回 ITEM_PRICE_CHANGED。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| itemId | string | 购买的道具 id。 |
+| bought | number | 本次买入数量。 |
+| count | number | 购买后该道具的总数量。 |
+| price | number | 本次单价（礼金）。 |
+| cost | number | 本次花费的礼金（price × bought）。 |
+| gift | number | 购买后的礼金余额。 |
+
+**可能错误**：`INVALID_PARAMS`、`ITEM_PRICE_CHANGED`、`ITEM_STACK_FULL`、`INSUFFICIENT_GIFT`（处置建议见第 4 节）
+
+**Agent 提示**：只在玩家明确要买时调用。收到 ITEM_PRICE_CHANGED 时先 GET_ITEMS 刷新目录，把新单价告诉玩家，等他确认后再带新单价重发，不要用旧价自动重试。
+
+**示例**
+
+**买 2 张迁城令（单价 200）**
+
+请求：
+
+```json
+{
+  "op": 149,
+  "seq": 62,
+  "data": {
+    "itemId": "city_order",
+    "count": 2,
+    "expectedPrice": 200
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 149,
+  "seq": 62,
+  "ok": true,
+  "data": {
+    "itemId": "city_order",
+    "bought": 2,
+    "count": 4,
+    "price": 200,
+    "cost": 400,
+    "gift": 200
+  }
+}
+```
+
+**单价已变：返回当前单价，不扣不改**
+
+请求：
+
+```json
+{
+  "op": 149,
+  "seq": 63,
+  "data": {
+    "itemId": "city_order",
+    "count": 1,
+    "expectedPrice": 200
+  }
+}
+```
+
+失败响应（`ITEM_PRICE_CHANGED`）：
+
+```json
+{
+  "op": 149,
+  "seq": 63,
+  "ok": false,
+  "error": {
+    "code": "ITEM_PRICE_CHANGED",
+    "message": "道具单价已变化，请刷新后重新确认"
+  },
+  "data": {
+    "price": 250
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -19714,8 +19886,8 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| reason | 'account_renamed' | 触发本次推送的状态变化。 |
-| username | string | 账号的新昵称（即新 username）。 |
+| reason | 'account_renamed' \| 'items_changed' | 触发本次推送的状态变化。items_changed（v90，AISLG-222）：道具背包或礼金余额变化，data 另带 items（每种道具的数量）与 gift（礼金余额）。 |
+| username | string | 账号的新昵称（即新 username）；reason = items_changed 时无此字段。 |
 
 **Agent 提示**：收到 account_renamed 后，本地缓存的 username 已过期：后续展示（聊天、地图归属、排行榜）与对外称呼一律用新昵称。
 
@@ -20286,6 +20458,9 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `STRATAGEM_TOKEN_FULL` | （v86，AISLG-211）该类计谋令持有数已达上限，兑换被拒且不扣军功；响应附 tokenKind / have / limit。上限防止囤到某一周集中施计，换季与军功一起清零。 | 先把手上的令用掉一些再兑换，或改买其他商品。 |
 | `CITY_AMBUSHED` | （v86，AISLG-211）这座城中了十面埋伏，期间不能派出任何部队（MARCH 的各用途、侦察、协防出发、交易所商队、剧本战场入场都被拒）；响应附 retryAfterSeconds。已经在外的部队照常行动、照常可以召回。 | 等到 retryAfterSeconds 之后再派兵；已在外的部队用 RECALL_MARCH 召回不受影响。 |
 | `INSUFFICIENT_GIFT` | （v89，AISLG-221）礼金余额不足，扣除被拒；响应附 balance（当前余额）。不扣、不写事件，其他数据不变。礼金每赛季固定发 1000，换季清零，不能转让或兑换。 | 等下一个赛季（换季后重新登录即回到 1000）或改用金币等其他方式；用 GET_STATE 的 gift 查看当前余额。 |
+| `INSUFFICIENT_ITEM` | （v90，AISLG-222）道具数量不足，消耗被拒；响应附 itemId 与 count（当前数量）。不扣、不写事件，其他数据不变。 | 先用 GET_ITEMS 确认数量；不够时用 BUY_ITEM 用礼金买，或等获得途径（任务 / 活动）发放。 |
+| `ITEM_STACK_FULL` | （v90，AISLG-222）购买后会超过该道具的堆叠上限，购买被拒；响应附 stackMax、have（当前数量）、canBuy（还能买几张，已满为 0）。礼金与道具都不变。 | 把购买数量降到 canBuy 以内；已满时先用掉道具再买。 |
+| `ITEM_PRICE_CHANGED` | （v90，AISLG-222）BUY_ITEM 的 expectedPrice 与当前单价不一致（道具调价过）；响应附 price（当前单价）。不扣礼金、不加道具。 | 用 GET_ITEMS 刷新目录，把新单价告诉玩家，让玩家重新确认后带新单价重发；不要自动用新价重试。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -21875,7 +22050,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 89。
+- 协议版本随对外协议内容的每次变化递增；当前为 90。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

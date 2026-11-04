@@ -7,6 +7,7 @@ import { ApiClient, ConnectionError } from '../api/client';
 import {
   Op,
   type AccountStatePushData,
+  type ItemsStatePushData,
   type AgentInfoView,
   type AgentPlanPushData,
   type BattleReportCommentPushData,
@@ -84,6 +85,7 @@ import { useAllianceSession, type AllianceSession } from './allianceSession';
 import { useAllianceMarks, type AllianceMarksSession } from './allianceMarks';
 import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 import { useStratagemSession, type StratagemSession } from './stratagemSession';
+import { useItemsSession, type ItemsSession } from './itemsSession';
 
 /** 断线自动重连间隔（毫秒） */
 const RECONNECT_DELAY_MS = 3000;
@@ -144,6 +146,8 @@ export interface GameSession {
   troopPoolsAll: TroopPoolsAllCitiesSession;
   /** 计谋（v86，AISLG-211）：定义 / 令 / 武将预览 / 施计 / 被施计警报 */
   stratagem: StratagemSession;
+  /** 背包与商店（v90，AISLG-222）：弹窗、目录、礼金购买 */
+  items: ItemsSession;
   /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
   craftDefense: (kind: import('../api/protocol').DefenseKind, count: number) => Promise<void>;
   /** 取消打造（v73）：排队中 / 打造中都可取消，成本全额返还 */
@@ -263,7 +267,7 @@ export function useGameSession(): GameSession {
   // 战报推送计数（v88，AISLG-218）：伤兵营可见时据此重拉全城池子（战报可能带来新的伤兵 / 俘虏）
   const [battleReportTick, setBattleReportTick] = useState(0);
   const cityList = useCityList(setCity);
-  const { applyState: applyCityList, reset: resetCityList } = cityList;
+  const { applyState: applyCityList, applyItems: applyCityItems, reset: resetCityList } = cityList;
   const [agent, setAgent] = useState<AgentInfoView | null>(null);
   const [events, setEvents] = useState<SessionEvent[]>([]);
   const [eventsExhausted, setEventsExhausted] = useState(false);
@@ -435,6 +439,8 @@ export function useGameSession(): GameSession {
   // 计谋切片（v86 AISLG-211）：定义 / 计谋令 / 逐武将预览 / 施计动作 / 被施计警报
   const stratagem = useStratagemSession(clientRef, { scheduleSync });
   const { clear: stratagemClear, onPush: onStratagemPush } = stratagem;
+  const items = useItemsSession(clientRef, { applyItems: applyCityItems });
+  const { clear: itemsClear } = items;
 
   // 移动目标会话切片（v28 AISLG-78）：流寇 / 运粮商队列表，推送增量合并
   const moving = useMovingTargets({ clientRef, connected: connection === 'online' });
@@ -606,7 +612,12 @@ export function useGameSession(): GameSession {
         // account_renamed 事件由下方防抖增量查询补进事件流
         const data = frame.data as unknown as AccountStatePushData;
         if (data.reason === 'account_renamed' && typeof data.username === 'string') {
-          setAccount((prev) => (prev ? { ...prev, username: data.username } : prev));
+          const renamed = data.username;
+          setAccount((prev) => (prev ? { ...prev, username: renamed } : prev));
+        } else if (data.reason === 'items_changed') {
+          // v90（AISLG-222）：道具背包 / 礼金变化（其他连接买了道具、或消耗方扣了道具）：按推送直接更新，不重拉
+          const push = frame.data as unknown as ItemsStatePushData;
+          applyCityItems({ items: push.items, gift: push.gift });
         }
       } else if (frame.op === Op.PUSH_STRATAGEM) {
         // v86（AISLG-211）：被施计警报——目标方即时弹窗；等价文案由服务端 stratagem_received
@@ -633,7 +644,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
+    [scheduleSync, syncAll, applyCityItems, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {
@@ -692,12 +703,13 @@ export function useGameSession(): GameSession {
       seasonClear();
       hallClear();
       stratagemClear();
+      itemsClear();
       allianceClear();
       allianceMarksClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -725,6 +737,7 @@ export function useGameSession(): GameSession {
     questClear();
     hallClear();
     stratagemClear();
+    itemsClear();
     allianceClear();
     allianceMarksClear();
   }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear]);
@@ -1410,6 +1423,7 @@ export function useGameSession(): GameSession {
     restoreTroops,
     releaseTroops,
     stratagem,
+    items,
     craftDefense,
     cancelDefenseCraft,
     dismissAssist,
