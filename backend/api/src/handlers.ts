@@ -94,6 +94,8 @@ import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
 import { handleDiscardCity } from './handlers-discard';
 import { handleSetCapital } from './handlers-capital';
 import { loadCapitalSwapView } from '../../common/src/capital-swap-db';
+import { loadGift } from '../../common/src/gift-db';
+import { SEASON_GIFT } from '../../common/src/gift';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
 import { handleGetHallOfFame, handleGetSeason, respondMaintenance } from './handlers-season';
 import { maintenanceActive } from './maintenance-gate';
@@ -668,7 +670,9 @@ async function handleGetState(
   };
   // v82（AISLG-205）：设为主城的冷却 / 来袭 / 逐城不可设原因，供前端置灰
   const capitalSwap = await loadCapitalSwapView(ctx.pool, accountId);
-  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap });
+  // v89（AISLG-221）：账号级礼金余额与每季发放额度（前端 / Agent 不写死 1000）
+  const gift = await loadGift(ctx.pool, accountId);
+  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap, gift, giftSeasonGrant: SEASON_GIFT });
 }
 
 async function handleGetEvents(

@@ -699,6 +699,8 @@ export const ErrorCode = {
   STRATAGEM_TOKEN_FULL: 'STRATAGEM_TOKEN_FULL',
   /** 计谋：这座城中了十面埋伏，不能派出任何部队（v86，AISLG-211；出征 / 调兵 / 运输 / 侦察 / 协防 / 入场均被拒；召回不受影响；附 retryAfterSeconds） */
   CITY_AMBUSHED: 'CITY_AMBUSHED',
+  /** 礼金不足（v89，AISLG-221）：扣除失败，余额与其他数据都不变（响应附 balance） */
+  INSUFFICIENT_GIFT: 'INSUFFICIENT_GIFT',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;

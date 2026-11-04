@@ -18,6 +18,7 @@ import pg from 'pg';
 import { newbieUntilFrom } from '../../common/src/protection';
 import { insertInitialCity } from '../../common/src/main-city';
 import { CURRENT_SEASON_ID_SQL } from '../../common/src/season-db';
+import { SEASON_GIFT } from '../../common/src/gift';
 import { generateAgentToken, hashAgentToken } from './agent-token';
 import { verifyPassword } from './password';
 
@@ -62,9 +63,11 @@ export async function insertAccountWithCity(
   input: { username: string; passwordHash: string | null; signupIp: string | null },
 ): Promise<{ id: string; username: string }> {
   // AISLG-134：新号直接归入当前赛季（season_id 取 active 赛季；无赛季时为 NULL，登录时惰性补）
+  // AISLG-221（v89）：已归入当前赛季则礼金直接发本季额度，无赛季时为 0（登录惰性加入时补）
   const ins = await client.query(
-    `INSERT INTO accounts (username, password_hash, signup_ip, newbie_until, season_id)
-     VALUES ($1, $2, $3::inet, $4, ${CURRENT_SEASON_ID_SQL})
+    `INSERT INTO accounts (username, password_hash, signup_ip, newbie_until, season_id, gift)
+     VALUES ($1, $2, $3::inet, $4, ${CURRENT_SEASON_ID_SQL},
+       CASE WHEN ${CURRENT_SEASON_ID_SQL} IS NULL THEN 0 ELSE ${SEASON_GIFT} END)
      RETURNING id, username`,
     [input.username, input.passwordHash, input.signupIp, newbieUntilFrom(new Date())],
   );

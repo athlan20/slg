@@ -182,6 +182,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   STRATAGEM_TOKEN_SHORT: '计谋令不足：请用战场军功到战场商店兑换',
   STRATAGEM_TOKEN_FULL: '该类计谋令已达到持有上限（换季后与军功一起清零）',
   CITY_AMBUSHED: '这座城中了十面埋伏，暂时不能派出任何部队',
+  INSUFFICIENT_GIFT: '礼金不足（每个赛季发 1000，换季清零）',
   ANNOUNCEMENT_NOT_FOUND: '公告不存在、已撤回或尚未生效',
   MAINTENANCE: '服务器正在换季维护，请稍后再试',
   // AGENT_TOKEN_LIMIT（v43 多令牌上限）已随 v46 移除

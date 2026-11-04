@@ -870,6 +870,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v86，AISLG-211）这座城中了十面埋伏，期间不能派出任何部队（MARCH 的各用途、侦察、协防出发、交易所商队、剧本战场入场都被拒）；响应附 retryAfterSeconds。已经在外的部队照常行动、照常可以召回。',
     action: '等到 retryAfterSeconds 之后再派兵；已在外的部队用 RECALL_MARCH 召回不受影响。',
   },
+  INSUFFICIENT_GIFT: {
+    desc: '（v89，AISLG-221）礼金余额不足，扣除被拒；响应附 balance（当前余额）。不扣、不写事件，其他数据不变。礼金每赛季固定发 1000，换季清零，不能转让或兑换。',
+    action: '等下一个赛季（换季后重新登录即回到 1000）或改用金币等其他方式；用 GET_STATE 的 gift 查看当前余额。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',
