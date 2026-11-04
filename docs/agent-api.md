@@ -18617,7 +18617,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | --- | --- | --- |
 | cityId | string | 必填。要迁的城 UUID（GET_STATE 的 cities[].id，主城或分城，名城除外）。非本账号名下的城或格式不对返回 INVALID_PARAMS。 |
 | mode | string | 必填。random（随机迁，消耗迁城令）或 pointing（指定坐标迁，消耗高级迁城令）；其他值返回 INVALID_PARAMS。 |
-| x / y | number | mode = pointing 时必填的整数坐标（0..999 范围内，越界返回 INVALID_PARAMS）；random 时忽略。 |
+| x | number | mode = pointing 时必填的目标 x 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。 |
+| y | number | mode = pointing 时必填的目标 y 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。 |
 | confirm | boolean | 执行时必填，必须为 true（缺失或不为 true 返回 INVALID_PARAMS）；preview = true 时不需要。 |
 | preview | boolean | 可选。true = 只预览，不改任何数据（见 summary）。 |
 

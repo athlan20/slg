@@ -28,7 +28,8 @@ export const REQUEST_MOVE_CITY: RequestOpDoc = {
   requestFields: [
     { name: 'cityId', type: 'string', desc: '必填。要迁的城 UUID（GET_STATE 的 cities[].id，主城或分城，名城除外）。非本账号名下的城或格式不对返回 INVALID_PARAMS。' },
     { name: 'mode', type: 'string', desc: '必填。random（随机迁，消耗迁城令）或 pointing（指定坐标迁，消耗高级迁城令）；其他值返回 INVALID_PARAMS。' },
-    { name: 'x / y', type: 'number', desc: 'mode = pointing 时必填的整数坐标（0..999 范围内，越界返回 INVALID_PARAMS）；random 时忽略。' },
+    { name: 'x', type: 'number', desc: 'mode = pointing 时必填的目标 x 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。' },
+    { name: 'y', type: 'number', desc: 'mode = pointing 时必填的目标 y 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。' },
     { name: 'confirm', type: 'boolean', desc: '执行时必填，必须为 true（缺失或不为 true 返回 INVALID_PARAMS）；preview = true 时不需要。' },
     { name: 'preview', type: 'boolean', desc: '可选。true = 只预览，不改任何数据（见 summary）。' },
   ],

@@ -20126,9 +20126,14 @@
           "desc": "必填。random（随机迁，消耗迁城令）或 pointing（指定坐标迁，消耗高级迁城令）；其他值返回 INVALID_PARAMS。"
         },
         {
-          "name": "x / y",
+          "name": "x",
           "type": "number",
-          "desc": "mode = pointing 时必填的整数坐标（0..999 范围内，越界返回 INVALID_PARAMS）；random 时忽略。"
+          "desc": "mode = pointing 时必填的目标 x 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。"
+        },
+        {
+          "name": "y",
+          "type": "number",
+          "desc": "mode = pointing 时必填的目标 y 坐标（整数，0..999，越界返回 INVALID_PARAMS）；random 时忽略。"
         },
         {
           "name": "confirm",
