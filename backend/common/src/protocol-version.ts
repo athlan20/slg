@@ -480,7 +480,7 @@
  * 等级上限 20 → 40。名将扩到 40 名，其中 29 名在野（Lv3+ 野地，开服分配，地图标记 wildFamous，
  * 侦察后 wildFamousIntel 给出名字与属性），打赢该野地守军即获结交资格（GET_HEROES.unlocks），
  * 好感满 100 招揽（全服唯一）。HeroView 新增 freePoints / training / dailyLeft，GET_HEROES 新增
- * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt。推送 PUSH_HERO_STATE 新增
+ * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt（口径：在野名将未被获得时为 null，被获得后才给出落位；AISLG-223 收紧，字段与类型不变，未升版本号）。推送 PUSH_HERO_STATE 新增
  * reason。新表 hero_unlocks / hero_friendship；account_heroes 新增 base_* / free_points / train_* /
  * gift_* / reset_*；world_tiles 新增 wild_*。
  * v55（将星塔，AISLG-146，只加不改）：新增 GET_STAR_TOWER（op 83）、STAR_TOWER_CHALLENGE（op 84，无参数，挑战

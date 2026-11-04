@@ -86,7 +86,7 @@ export const REQUEST_GET_HEROES: RequestOpDoc = {
   name: 'GET_HEROES',
   title: '查询武将（账号武将 / 酒馆候选 / 名将归属，v36，AISLG-114/115/116）',
   preAuth: false,
-  summary: `返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（v87 AISLG-217 起：酒馆只在主城建造、候选账号只有一份，固定为主城那座，每 ${TAVERN_REFRESH_HOURS} 小时基准随时间缩放刷新 ${TAVERN_CANDIDATE_COUNT} 名）、普通将 / 名将数量与上限、全部 ${ALL_FAMOUS_HEROES.length} 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null，在野名将附 wildAt 落位），以及在野名将的结交进度（friendships）与结交资格（unlocks）。${HERO_RULES}`,
+  summary: `返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（v87 AISLG-217 起：酒馆只在主城建造、候选账号只有一份，固定为主城那座，每 ${TAVERN_REFRESH_HOURS} 小时基准随时间缩放刷新 ${TAVERN_CANDIDATE_COUNT} 名）、普通将 / 名将数量与上限、全部 ${ALL_FAMOUS_HEROES.length} 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null；在野名将未被获得时 wildAt 为 null，被获得后才给出落位 wildAt），以及在野名将的结交进度（friendships）与结交资格（unlocks）。${HERO_RULES}`,
   requestFields: [
     { name: 'cityId', type: 'string', desc: '可选但已忽略（v87，AISLG-217）：候选账号只有一份、固定在主城，传什么 cityId 都不报错，结果相同。' },
   ],
@@ -98,7 +98,7 @@ export const REQUEST_GET_HEROES: RequestOpDoc = {
     { name: 'famousCap / famousCount', type: 'number', desc: `名将上限（固定 ${FAMOUS_HERO_CAP}，不占普通将上限）与当前数量。` },
     { name: 'heroes', type: 'array', desc: `账号全部武将：{ id, name, famous, lead, force, wit, level, exp, expNext 距下一级, salaryPerHour 已随时间缩放, arrears 欠饷, woundedUntil 重伤恢复时刻或 null, guardCityId 正在城守的城或 null, marchingMarchId 正在随行的行军或 null, bonus { atkPercent, defPercent, leadCap }（满编口径）, guardProductionPercent 城守产量加成 }。` },
     { name: 'candidates', type: 'array', desc: `主城酒馆当前候选（v87 起账号只有一份）：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；主城酒馆未建为空数组。` },
-    { name: 'famousClaims', type: 'array', desc: '全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将的落位 { x, y, level } 或 null }。' },
+    { name: 'famousClaims', type: 'array', desc: '全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将被获得后的落位 { x, y, level }；未被获得的在野名将与名城 / 黄巾名将为 null（未被获得时不泄露藏身位置）}。' },
     { name: 'friendships', type: 'array', desc: `结交进度（v54）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 已被他人招揽（作废）}。` },
     { name: 'unlocks', type: 'string[]', desc: '结交资格（v54）：打赢过其野地守军、且尚未被他人获得的在野名将名。' },
     { name: 'friendshipCap', type: 'number', desc: `同时结交上限（v54，固定 ${BEFRIEND_ACTIVE_CAP}）。` },
