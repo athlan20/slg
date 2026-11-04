@@ -205,8 +205,8 @@ export const PUSH_ACCOUNT_STATE: PushOpDoc = {
   summary:
     '账号级状态变化时推送给该账号全部在线连接（发起连接除外，含 Agent 连接）：account_renamed=昵称被 SET_NICKNAME 修改（v52）。推送只携带变化摘要，完整现状按需查询。',
   dataFields: [
-    { name: 'reason', type: "'account_renamed'", desc: '触发本次推送的状态变化。' },
-    { name: 'username', type: 'string', desc: '账号的新昵称（即新 username）。' },
+    { name: 'reason', type: "'account_renamed' | 'items_changed'", desc: '触发本次推送的状态变化。items_changed（v90，AISLG-222）：道具背包或礼金余额变化，data 另带 items（每种道具的数量）与 gift（礼金余额）。' },
+    { name: 'username', type: 'string', desc: '账号的新昵称（即新 username）；reason = items_changed 时无此字段。' },
   ],
   examples: [
     {

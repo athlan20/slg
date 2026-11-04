@@ -100,6 +100,8 @@ export const RESET_TABLES: readonly string[] = [
   'account_stratagem_tokens',
   'city_stratagem_effects',
   'stratagem_immunity',
+  // 道具背包（v90，AISLG-222）：数量随换季清空，与礼金同口径
+  'user_items',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

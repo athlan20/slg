@@ -95,6 +95,8 @@ import { handleDiscardCity } from './handlers-discard';
 import { handleSetCapital } from './handlers-capital';
 import { loadCapitalSwapView } from '../../common/src/capital-swap-db';
 import { loadGift } from '../../common/src/gift-db';
+import { loadItems } from '../../common/src/items-db';
+import { handleBuyItem, handleGetItems } from './handlers-items';
 import { SEASON_GIFT } from '../../common/src/gift';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
 import { handleGetHallOfFame, handleGetSeason, respondMaintenance } from './handlers-season';
@@ -467,6 +469,14 @@ async function dispatchOp(
     case Op.DISMISS_ASSIST:
       await handleDismissAssist(ctx, conn, op, seq, data);
       break;
+    case Op.GET_ITEMS:
+      // v90（AISLG-222）：道具背包 / 目录 / 礼金余额，只读
+      await handleGetItems(ctx, conn, op, seq);
+      break;
+    case Op.BUY_ITEM:
+      // v90（AISLG-222）：礼金买道具
+      await handleBuyItem(ctx, conn, op, seq, data);
+      break;
     case Op.GET_STRATAGEMS:
       await handleGetStratagems(ctx, conn, op, seq, data);
       break;
@@ -672,7 +682,9 @@ async function handleGetState(
   const capitalSwap = await loadCapitalSwapView(ctx.pool, accountId);
   // v89（AISLG-221）：账号级礼金余额与每季发放额度（前端 / Agent 不写死 1000）
   const gift = await loadGift(ctx.pool, accountId);
-  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap, gift, giftSeasonGrant: SEASON_GIFT });
+  // v90（AISLG-222）：道具背包数量（与 GET_ITEMS 的 items 同口径）
+  const items = await loadItems(ctx.pool, accountId);
+  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap, gift, giftSeasonGrant: SEASON_GIFT, items });
 }
 
 async function handleGetEvents(
