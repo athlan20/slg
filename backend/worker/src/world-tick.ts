@@ -18,8 +18,6 @@ import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { toFullArmyCounts } from '../../common/src/battle';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { famousEncounter } from '../../common/src/famous-city';
-import { inNewbieProtection } from '../../common/src/protection';
-import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 import type { NpcCitySnapshot } from '../../common/src/world';
 import { saveScoutIntel } from '../../common/src/battle-db';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
