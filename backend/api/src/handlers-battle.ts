@@ -8,6 +8,7 @@
 //   不构成死锁环；
 // - GET_BATTLE_REPORTS 按账号倒序分页（beforeId 游标）。
 
+import { moveAttackLockRetry } from '../../common/src/move-city-db';
 import { marchingPercent } from '../../common/src/tech';
 import { Op, EventType, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
@@ -123,6 +124,13 @@ export async function handleScout(
     const tile = (tileRes.rowCount ? tileRes.rows[0] : null) as
       | { kind: string; owner_city_id: string | null; npc: unknown }
       | null;
+    // v91（AISLG-220）：指定坐标迁城后 12 小时内，这座城不能侦察他人城池 / 野地（侦察属于攻击类出征）
+    const scoutLockLeft = await moveAttackLockRetry(client, accountId, snap.cityId, tile, 'plunder', null, ambushNowRes.rows[0].now as Date);
+    if (scoutLockLeft !== null) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'MOVE_CITY_ATTACK_LOCK', { retryAfterSeconds: scoutLockLeft });
+      return;
+    }
     // v38（AISLG-122）：侦察其他玩家的城池——守方新手保护期内不可被侦察（免战只拦攻击不拦侦察）；
     // 攻方处于新手保护期则因主动侦察立即失效。记录目标账号供下方破保使用
     let pvpTarget: { accountId: string; username: string } | null = null;

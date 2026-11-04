@@ -86,6 +86,7 @@ import { useAllianceMarks, type AllianceMarksSession } from './allianceMarks';
 import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 import { useStratagemSession, type StratagemSession } from './stratagemSession';
 import { useItemsSession, type ItemsSession } from './itemsSession';
+import { useMoveCitySession, type MoveCitySession } from './moveCitySession';
 
 /** 断线自动重连间隔（毫秒） */
 const RECONNECT_DELAY_MS = 3000;
@@ -148,6 +149,8 @@ export interface GameSession {
   stratagem: StratagemSession;
   /** 背包与商店（v90，AISLG-222）：弹窗、目录、礼金购买 */
   items: ItemsSession;
+  /** 城池迁移（v91，AISLG-220）：指定坐标迁的选点、预览与执行 */
+  moveCity: MoveCitySession;
   /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
   craftDefense: (kind: import('../api/protocol').DefenseKind, count: number) => Promise<void>;
   /** 取消打造（v73）：排队中 / 打造中都可取消，成本全额返还 */
@@ -441,6 +444,9 @@ export function useGameSession(): GameSession {
   const { clear: stratagemClear, onPush: onStratagemPush } = stratagem;
   const items = useItemsSession(clientRef, { applyItems: applyCityItems });
   const { clear: itemsClear } = items;
+  // 城池迁移切片（v91）：迁城后重拉城池列表与状态
+  const moveCity = useMoveCitySession(clientRef, { onMoved: () => void syncAll('initial') });
+  const { cancelPick: moveCityCancelPick } = moveCity;
 
   // 移动目标会话切片（v28 AISLG-78）：流寇 / 运粮商队列表，推送增量合并
   const moving = useMovingTargets({ clientRef, connected: connection === 'online' });
@@ -704,12 +710,13 @@ export function useGameSession(): GameSession {
       hallClear();
       stratagemClear();
       itemsClear();
+      moveCityCancelPick();
       allianceClear();
       allianceMarksClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, moveCityCancelPick],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -738,9 +745,10 @@ export function useGameSession(): GameSession {
     hallClear();
     stratagemClear();
     itemsClear();
+    moveCityCancelPick();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, moveCityCancelPick]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1424,6 +1432,7 @@ export function useGameSession(): GameSession {
     releaseTroops,
     stratagem,
     items,
+    moveCity,
     craftDefense,
     cancelDefenseCraft,
     dismissAssist,

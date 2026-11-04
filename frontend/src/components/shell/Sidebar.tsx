@@ -36,6 +36,8 @@ interface SidebarProps {
   onReset: () => void;
   /** 放弃当前选中的分城（v57，AISLG-153）；菜单项只在选中分城时出现 */
   onDiscardBranch: () => void;
+  /** 迁城（v91，AISLG-220）：当前选中的城（主城或分城）迁到空野地，菜单项在选中城池时出现 */
+  onMoveCity: () => void;
   /** 把当前选中的分城设为主城（v82，AISLG-205）；菜单项只在选中分城时出现，不可设原因在确认框内说明 */
   onSetCapital: () => void;
   onExchange: () => void;
@@ -69,7 +71,7 @@ function connectionLamp(connection: ConnectionStatus): { lamp: string; label: st
 export function Sidebar(props: SidebarProps) {
   const copy = useCopy();
   const lang = useLang();
-  const { COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY, ANNOUNCEMENT_COPY, ALLIANCE_COPY, ITEM_COPY } = copy;
+  const { COPY, NAV_COPY, EXTRA_AUTH, CHAT_COPY, ANNOUNCEMENT_COPY, ALLIANCE_COPY, ITEM_COPY, MOVE_CITY_COPY } = copy;
   const { page, onNavigate, badges, cityList, switching, onSelectCity, account, connection, cityLoaded, chatOpen, chatUnread, onToggleChat, announcementUnread, onOpenAnnouncements, allianceBadge, onOpenAlliance } = props;
   const [cityOpen, setCityOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -320,6 +322,7 @@ export function Sidebar(props: SidebarProps) {
             {cityLoaded ? menuItem('账号菜单-城池改名', NAV_COPY.rename, props.onRename) : null}
             {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-设为主城', NAV_COPY.setCapital, props.onSetCapital) : null}
             {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-放弃分城', NAV_COPY.discardBranch, props.onDiscardBranch, 'text-st-error') : null}
+            {cityLoaded && current !== null ? menuItem('账号菜单-迁城', MOVE_CITY_COPY.menu, props.onMoveCity) : null}
             {menuItem('账号菜单-背包商店', ITEM_COPY.menu, props.onOpenItems)}
             {menuItem('账号菜单-账号设置', NAV_COPY.settings, props.onSettings)}
             {menuItem('账号菜单-切换账号', NAV_COPY.switchAccount, props.onSwitchAccount)}

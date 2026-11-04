@@ -230,6 +230,8 @@ export const Op = {
   GET_ITEMS: 148,
   /** C→S 礼金买道具（v90，AISLG-222：itemId / count / expectedPrice 必填） */
   BUY_ITEM: 149,
+  /** 城池迁移（v91，AISLG-220）：随机迁（迁城令）/ 指定坐标迁（高级迁城令），preview 只预览 */
+  MOVE_CITY: 150,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -466,6 +468,16 @@ export type ErrorCode =
   | 'ITEM_STACK_FULL'
   /** 道具单价已变（v90，AISLG-222；响应附 price） */
   | 'ITEM_PRICE_CHANGED'
+  /** 城池迁移（v91，AISLG-220）：名城不能迁 / 本城有部队在外 / 盟友驻军 / 战乱 / 目标格不合法 / 太近 / 无空地 / 抢先占格 / 出征限制 */
+  | 'MOVE_CITY_FAMOUS'
+  | 'MOVE_CITY_ARMY_OUTSIDE'
+  | 'MOVE_CITY_HAS_ALLY_FORCE'
+  | 'MOVE_CITY_IN_BATTLE'
+  | 'MOVE_CITY_TILE_INVALID'
+  | 'MOVE_CITY_TILE_TAKEN'
+  | 'MOVE_CITY_TOO_CLOSE'
+  | 'MOVE_CITY_NO_SPACE'
+  | 'MOVE_CITY_ATTACK_LOCK'
   /** 换季维护中（v65）：除 GET_SEASON 与登录相关协议外一律返回，响应附 retryAfterSec（秒） */
   | 'MAINTENANCE'
   | 'INTERNAL';
@@ -475,6 +487,7 @@ export * from './protocol-wire';
 export * from './protocol-season';
 export * from './protocol-stratagem';
 export * from './protocol-items';
+export * from './protocol-move-city';
 
 export interface Resources {
   gold: number;
