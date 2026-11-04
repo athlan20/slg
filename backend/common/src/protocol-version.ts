@@ -707,5 +707,6 @@
  *   GET_STATE 新增 moveCity（逐城 reasons / moveLockUntil，与 random / pointing 两种令的持有数）。
  *   事件 city_moved；PUSH_CITY_STATE reason = city_moved（带 from / to）与 PUSH_TILE_STATE reason = city_moved（新旧两格）。
  *   新增 9 个错误码 MOVE_CITY_*（FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK）。
+ * v92（AISLG-224，战争迷雾）：未探索的地块对玩家与 Agent 不可见（开关 fog_enabled 默认关闭）。新增推送 PUSH_EXPLORATION_REPORT（op 2029）与事件 exploration_report；新错误码 TILE_UNEXPLORED / CHAT_COORD_UNEXPLORED / MOVE_CITY_TILE_UNEXPLORED（随各协议落地）。
  */
-export const PROTOCOL_VERSION = 91;
+export const PROTOCOL_VERSION = 92;

@@ -166,6 +166,11 @@ export interface MarchRow {
   account_id: string;
   from_city_id: string;
   x: number;
+  /** 迷雾（AISLG-224 复核）：盲打校验被拒（到达原路返回）；撤回时的实际位置与时刻 */
+  fog_denied?: boolean;
+  fog_turn_x?: number | null;
+  fog_turn_y?: number | null;
+  fog_turn_at?: Date | null;
   y: number;
   troops: Partial<Record<TroopKind, number>> | null;
   purpose: string;

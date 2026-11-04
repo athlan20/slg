@@ -330,7 +330,8 @@ export function WorldMapGrid({
             cols.map((x) => {
               const tile = tileAt.get(`${x},${y}`);
               if (!tile) {
-                return <span key={`${x}-${y}`} role="世界地图视野-空格" className="rounded bg-panel" />;
+                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾（迷雾开启时才会缺格）
+                return <span key={`${x}-${y}`} role="世界地图-迷雾层" title={copy.EXTRA_MAP.fog.unknownTitle} aria-label={copy.EXTRA_MAP.fog.unknownTitle} className="rounded bg-[#05070b]" />;
               }
               const isOwn = tile.owner !== null && tile.owner.accountId === accountId;
               const isSelected = selected !== null && selected.x === x && selected.y === y;
@@ -341,9 +342,11 @@ export function WorldMapGrid({
               const hostile = !isOwn && tile.owner?.relation === 'hostile';
               const mark = marks?.get(`${x},${y}`);
               // 领地色块（AISLG-216）：关系色 20% 铺在地形底色上，图标 / 等级 / 徽章仍在上层
-              const territory = territoryCells?.get(`${x},${y}`);
+              // 已探索但不在视野内的格子不画领地色块与产出（只画实时视野内的地块，AISLG-224）
+              const explored = tile.fog === 'explored';
+              const territory = explored ? undefined : territoryCells?.get(`${x},${y}`);
               // 产出（AISLG-216）：资源图标 + 每小时产量（自己的地含驻军采集）+ 储量条
-              const yieldInfo = yieldMap?.get(`${x},${y}`);
+              const yieldInfo = explored ? undefined : yieldMap?.get(`${x},${y}`);
               return (
                 <button
                   key={`${x}-${y}`}
@@ -367,6 +370,8 @@ export function WorldMapGrid({
                   onFocus={(e) => showTip(tile, isOwn, e.currentTarget)}
                   onBlur={hideTip}
                   className={`group relative grid cursor-pointer place-items-center overflow-hidden rounded transition-[filter,box-shadow] duration-100 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
+                    explored ? 'brightness-[.6] saturate-50' : ''
+                  } ${
                     TERRAIN_CLASS[tile.terrain] ?? TERRAIN_CLASS.plain
                   } ${
                     // 已掠空的 NPC 城：整格变暗（v23 AISLG-55）

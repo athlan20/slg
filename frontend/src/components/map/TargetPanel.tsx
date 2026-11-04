@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { TROOP_KINDS, type AssistView } from '../../api/protocol';
+import { TROOP_KINDS, type ArmyCounts, type AssistView, type TileDetailView } from '../../api/protocol';
 import { DeployContext } from '../../state/deployContext';
 import { useGame } from '../../state/GameContext';
 import { useHeroPick } from '../../state/heroContext';
@@ -38,6 +38,38 @@ const ATTACK_ACTS: readonly Act[] = ['plunder', 'occupy', 'scout', 'clear'];
 /** 会从这座城派出部队的操作（v86 AISLG-211）：中了十面埋伏时全部置灰并显示剩余时间 */
 const DISPATCH_ACTS: readonly Act[] = ['plunder', 'occupy', 'scout', 'clear', 'intercept', 'reinforce', 'transfer', 'transport', 'assist'];
 
+/** 迷雾中未知格的占位详情（AISLG-224 复核）：只用于启用派斥候 / 盲打，不带任何真实地块信息 */
+function unknownDetailAt(x: number, y: number): TileDetailView {
+  const zeros = Object.fromEntries(TROOP_KINDS.map((kind) => [kind, 0])) as ArmyCounts;
+  return {
+    x,
+    y,
+    terrain: 'plain',
+    kind: 'wilderness',
+    level: 0,
+    owner: null,
+    garrison: 0,
+    npcStockTier: null,
+    famous: null,
+    camp: null,
+    protection: null,
+    durability: null,
+    wildFamous: false,
+    reserve: null,
+    fog: 'explored',
+    seenAt: null,
+    garrisonDetail: zeros,
+    nativePower: 0,
+    wilderness: null,
+    npc: null,
+    scoutedAt: null,
+    defenses: null,
+    assists: null,
+    plunderedAt: null,
+    wildFamousIntel: null,
+  } as TileDetailView;
+}
+
 export function TargetPanel() {
   const copy = useCopy();
   const { TARGET_COPY, ALLIANCE_COPY, DEFENSE_COPY } = copy;
@@ -46,7 +78,7 @@ export function TargetPanel() {
   const branch = session.cityList.branch;
   const hero = useHeroPick();
   const selected = world.selected;
-  const detail = world.detail;
+  const detailRaw = world.detail;
   const accountId = session.account?.accountId ?? null;
   const [troops, setTroops] = useState<TroopInput>({});
   const [act, setAct] = useState<Act | null>(null);
@@ -68,9 +100,14 @@ export function TargetPanel() {
     return null;
   }
   const { x, y } = selected;
+  // 迷雾（AISLG-224 复核）：窗口里没有这一格（且没有详情）即未探索：只给派斥候 / 盲打入口，不显示任何地块信息
+  const win = world.window;
+  const inWindow = win !== null && x >= win.x && x < win.x + win.w && y >= win.y && y < win.y + win.h;
+  const unknownCell = detailRaw === null && inWindow && win !== null && !win.tiles.some((tile) => tile.x === x && tile.y === y);
+  const detail = detailRaw ?? (unknownCell ? unknownDetailAt(x, y) : null);
   const isOwn = detail !== null && detail.owner !== null && detail.owner.accountId === accountId;
   // 迁城选点（v91）：只有无归属、无营地的空野地才能迁入
-  const isEmptyWilderness = detail !== null && detail.x === x && detail.y === y && detail.kind === 'wilderness' && detail.owner === null && detail.camp === null;
+  const isEmptyWilderness = !unknownCell && detail !== null && detail.x === x && detail.y === y && detail.kind === 'wilderness' && detail.owner === null && detail.camp === null;
   const isOwnCity = detail?.kind === 'city' && isOwn;
   /** 调兵 / 运输目标：本账号的分城（非出发主城） */
   const transferable = isOwnCity && detail?.owner?.cityId !== city.id;
@@ -155,6 +192,11 @@ export function TargetPanel() {
     <DeployContext.Provider value={city.deploy}>
       <div role="世界地图详情区" className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
         <MoveCityPickAction x={x} y={y} empty={isEmptyWilderness} />
+        {unknownCell ? (
+          <p role="世界地图-迷雾目标" className="shrink-0 text-[12px] text-warn">
+            {copy.EXTRA_MAP.fog.unknownNotice(x, y)}
+          </p>
+        ) : (
         <TargetHeader
           world={world}
           city={city}
@@ -168,7 +210,8 @@ export function TargetPanel() {
           isOwnCity={isOwnCity}
           onClose={world.deselectTile}
         />
-        <TargetChatActions x={x} y={y} detail={detail} accountId={accountId} />
+        )}
+        {unknownCell ? null : <TargetChatActions x={x} y={y} detail={detail} accountId={accountId} />}
         {detail?.assists && detail.assists.length > 0 ? (
           <div role="选中详情-协防列表" className="flex max-h-[4.5rem] shrink-0 flex-col gap-0.5 overflow-hidden rounded border border-line-soft bg-panel-2 px-2 py-1">
             <span className="text-[11px] font-semibold text-faint" title={DEFENSE_COPY.assist.capHint(5)}>

@@ -9,6 +9,7 @@ import { createPool, ensureSchema, readDbConfig } from '../../common/src/db';
 import { ensureWorld } from '../../common/src/world-db';
 import { seedArenaNpcs } from '../../common/src/arena-db';
 import { getTimeScale, refreshTimeScale, timeScaleStale } from '../../common/src/time-scale';
+import { fogConfigStale, refreshFogEnabled } from '../../common/src/fog-config';
 import { registerCors } from './cors';
 import { handleMessage, handleConnectionClosed, type HandlerContext } from './handlers';
 import { createWxService, sweepWxTickets } from './handlers-wechat';
@@ -77,6 +78,13 @@ async function main(): Promise<void> {
   setInterval(() => {
     if (timeScaleStale()) {
       void refreshTimeScale(pool).catch(() => undefined);
+    }
+  }, 5_000);
+  // v92（AISLG-224）：战争迷雾开关预热；默认关闭，切换 10 秒内生效
+  await refreshFogEnabled(pool).catch(() => undefined);
+  setInterval(() => {
+    if (fogConfigStale()) {
+      void refreshFogEnabled(pool).catch(() => undefined);
     }
   }, 5_000);
   console.log(`slg-api time_scale=${getTimeScale()}`);

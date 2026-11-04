@@ -335,6 +335,8 @@ export const Op = {
   PUSH_BATTLEFIELD_STATE: 2027,
   /** S→C 推送：被施计警报（v86，AISLG-211；会失败的计谋不论成败都推给目标玩家，欺敌类与金蝉脱壳不推） */
   PUSH_STRATAGEM: 2028,
+  /** S→C 推送：探索简报（v92，AISLG-224；部队去程新探索了区块时推给本账号，载荷 { report } = exploration_report 事件，见 fog-record.ts） */
+  PUSH_EXPLORATION_REPORT: 2029,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -731,6 +733,12 @@ export const ErrorCode = {
   MOVE_CITY_NO_SPACE: 'MOVE_CITY_NO_SPACE',
   /** 迁城后出征受限：指定坐标迁城后 12 小时内，这座城不能掠夺 / 占领 / 侦察 / 派协防（v91；附 retryAfterSeconds；由 MARCH / SCOUT 等出征入口返回） */
   MOVE_CITY_ATTACK_LOCK: 'MOVE_CITY_ATTACK_LOCK',
+  /** v92（AISLG-224）：查询未探索的地块（迷雾未开放该格；GET_TILE 用） */
+  TILE_UNEXPLORED: 'TILE_UNEXPLORED',
+  /** v92（AISLG-224）：聊天坐标卡片指向未探索的格 */
+  CHAT_COORD_UNEXPLORED: 'CHAT_COORD_UNEXPLORED',
+  /** v92（AISLG-224）：高级迁城令指定的坐标未探索（也不在实时视野内） */
+  MOVE_CITY_TILE_UNEXPLORED: 'MOVE_CITY_TILE_UNEXPLORED',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;

@@ -6,6 +6,9 @@ import type { ErrorCode as ErrorCodeType, ResponseFrame } from '../../common/src
 
 export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   INVALID_MESSAGE: '消息不是合法的协议帧',
+  TILE_UNEXPLORED: '该地块尚未探索，暂无信息',
+  CHAT_COORD_UNEXPLORED: '该坐标尚未探索，无法发送坐标卡片',
+  MOVE_CITY_TILE_UNEXPLORED: '目标格尚未探索，不能作为指定迁城的目标',
   UNKNOWN_OP: '协议号不存在',
   NOT_LOGGED_IN: '登录前只能发送登录协议',
   ALREADY_LOGGED_IN: '连接已登录，不能重复登录',
