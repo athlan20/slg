@@ -454,6 +454,8 @@ export type ErrorCode =
   | 'STRATAGEM_TOKEN_SHORT'
   | 'STRATAGEM_TOKEN_FULL'
   | 'CITY_AMBUSHED'
+  /** 礼金不足（v89，AISLG-221；响应附 balance） */
+  | 'INSUFFICIENT_GIFT'
   /** 换季维护中（v65）：除 GET_SEASON 与登录相关协议外一律返回，响应附 retryAfterSec（秒） */
   | 'MAINTENANCE'
   | 'INTERNAL';

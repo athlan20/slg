@@ -99,7 +99,7 @@ export const SEASON_COPY_EN = {
     title: 'Season ending soon',
     stage: { 'T-1d': '1 day left', 'T-1h': '1 hour left', 'T-10m': '10 minutes left' } as Record<string, string>,
     body: (id: number, endsAt: string) =>
-      `Season ${id} ends at ${endsAt}. The server will pause briefly and reset the world (map, cities, armies, heroes). Accounts, tokens and linked logins are kept, and the top of each board goes into the Hall of Fame.`,
+      `Season ${id} ends at ${endsAt}. The server will pause briefly and reset the world (map, cities, armies, heroes). Accounts, tokens and linked logins are kept, and the top of each board goes into the Hall of Fame. Gift credits reset with the season change.`,
     hint: 'Plan your marches, builds and recruits before the reset',
     confirm: 'Got it',
   },
