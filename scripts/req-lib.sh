@@ -15,8 +15,7 @@ LINKED_PATHS="backend/.env frontend/.env.local backend/config/chat-banned-words.
 MAIN_DIR="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
 [ -n "$MAIN_DIR" ] || { echo "错误：请在 slg 仓库内运行" >&2; exit 1; }
 PARENT_DIR="$(dirname "$MAIN_DIR")"
-MAIN_NAME="$(basename "$MAIN_DIR")"
-TEST_DIR="$PARENT_DIR/$MAIN_NAME-test"
+TEST_DIR="$PARENT_DIR/test"
 
 die() { echo "错误：$*" >&2; exit 1; }
 info() { echo "== $*"; }

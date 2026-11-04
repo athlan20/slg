@@ -3,25 +3,27 @@
 一个需求或缺陷对应一个分支和一个 worktree。`test` 只用来集成测试，不往 `develop` 合。测试通过的是需求分支本身，由它合进 `develop`。
 
 ```text
-develop ──start──▶ AISLG-229-短标题（worktree ../slg-AISLG-229）
+develop ──start──▶ AISLG-229-短标题（worktree ../AISLG-229）
                         │ to-test                 │ finish（测试通过后）
                         ▼                         ▼
-                   test（worktree ../slg-test）   develop ──（发布时）──▶ main
+                   test（worktree ../test）       develop ──（发布时）──▶ main
 ```
 
 | 目录 | 分支 | API / 前端端口 | 用途 |
 |---|---|---|---|
-| `slg/` | `develop` | 8080 / 8424 | 主目录，不在这里开发 |
-| `slg-AISLG-229/` | `AISLG-229-短标题` | 见“隔离自测” | 开发和自测 |
-| `slg-test/` | `test` | 9091 / 8425 | 集成测试，不改业务代码 |
+| `slg/develop/` | `develop` | 8080 / 8424 | 主目录，不在这里开发 |
+| `slg/AISLG-229/` | `AISLG-229-短标题` | 见“隔离自测” | 开发和自测 |
+| `slg/test/` | `test` | 9091 / 8425 | 集成测试，不改业务代码 |
+
+这些目录都放在同一个 `slg/` 下，`slg/` 本身不是 git 仓库。编辑器和终端打开 `slg/develop/` 或具体的需求目录。
 
 ## 四个步骤
 
 | 步骤 | 做什么 | 命令 |
 |---|---|---|
 | 1. 开工 | 从 `develop` 拉分支，建同名 worktree，软链运行文件 | `scripts/req-start.sh AISLG-229 短标题` |
-| 2. 开发 | 在 `../slg-AISLG-229` 开发、自测、提交 | |
-| 3. 提测 | 需求分支先同步 `develop`，再合进 `test`，然后到 `slg-test/` 重启并测试 | `scripts/req-to-test.sh AISLG-229` |
+| 2. 开发 | 在 `../AISLG-229` 开发、自测、提交 | |
+| 3. 提测 | 需求分支先同步 `develop`，再合进 `test`，然后到 `slg/test/` 重启并测试 | `scripts/req-to-test.sh AISLG-229` |
 | 4a. 不通过 | 回需求分支改，再重复第 3 步 | |
 | 4b. 通过 | 需求分支合进 `develop`，删 worktree 和分支 | `scripts/req-finish.sh AISLG-229` |
 
@@ -85,12 +87,12 @@ pg_ctl -D "$PGDIR" -m fast -w stop
 
 ## 共用资源
 
-- **同一时刻只跑一个 Worker。** `slg/` 和 `slg-test/` 共用一个库，Worker 里排行榜、世界 tick 等没有行锁，跑两个会重复结算。`./dev.sh` 默认会起 Worker，切换前先在另一边跑 `SERVICES=worker ./dev.sh stop`。
-- **`test` 上的需求可能被退回，但迁移退不回。** 重启 `slg-test/` 时迁移立刻作用到共用库，`slg/` 上的 `develop` 代码也要面对新表结构。改表结构要向后兼容；删数据、改数据的迁移先在临时库验证，提测前说明。
+- **同一时刻只跑一个 Worker。** `slg/develop/` 和 `slg/test/` 共用一个库，Worker 里排行榜、世界 tick 等没有行锁，跑两个会重复结算。`./dev.sh` 默认会起 Worker，切换前先在另一边跑 `SERVICES=worker ./dev.sh stop`。
+- **`test` 上的需求可能被退回，但迁移退不回。** 重启 `slg/test/` 时迁移立刻作用到共用库，`slg/develop/` 上的 `develop` 代码也要面对新表结构。改表结构要向后兼容；删数据、改数据的迁移先在临时库验证，提测前说明。
 - **`dev.sh` / `stop.sh` 只管本目录的进程**（按工作目录识别）。不要用 `pkill`、`kill` 按进程名清理。
-- **运行文件是软链。** `backend/.env`、`frontend/.env.local`、`CLAUDE.local.md`、屏蔽词表和各处 `node_modules` 都指向 `slg/`，不要单独维护。
-- **改依赖要先断开软链。** 改 `package.json` 的需求，先删掉 worktree 里对应的 `node_modules` 软链再 `npm install`，否则会写到 `slg/`。合进 `test` 后，`slg-test/` 也要同样处理。
-- **`slg/` 合入后要重启。** `req-finish.sh` 会改动 `slg/` 的文件，正在运行的服务按需重启。
+- **运行文件是软链。** `backend/.env`、`frontend/.env.local`、`CLAUDE.local.md`、屏蔽词表和各处 `node_modules` 都指向 `slg/develop/`，不要单独维护。
+- **改依赖要先断开软链。** 改 `package.json` 的需求，先删掉 worktree 里对应的 `node_modules` 软链再 `npm install`，否则会写到 `slg/develop/`。合进 `test` 后，`slg/test/` 也要同样处理。
+- **`slg/develop/` 合入后要重启。** `req-finish.sh` 会改动 `slg/develop/` 的文件，正在运行的服务按需重启。
 - 测试环境 API 固定用 **9091**（8081 留给其他项目，不要再用）。
 
 ## 完成定义
@@ -110,4 +112,4 @@ pg_ctl -D "$PGDIR" -m fast -w stop
 
 ## 搭建测试目录
 
-第一次运行 `req-to-test.sh` 时，如果 `test` 或 `slg-test/` 不存在，脚本会自动建好并软链运行文件。`develop` 固定在 `slg/` 检出，`test` 固定在 `slg-test/` 检出。
+第一次运行 `req-to-test.sh` 时，如果 `test` 或 `slg/test/` 不存在，脚本会自动建好并软链运行文件。`develop` 固定在 `slg/develop/` 检出，`test` 固定在 `slg/test/` 检出。

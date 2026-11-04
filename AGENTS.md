@@ -32,13 +32,13 @@
 
 一个需求或缺陷对应一个分支和一个 worktree。`test` 只用来集成测试，不往 `develop` 合，测试通过的是需求分支本身。完整说明见 `docs/dev-test-workflow.md`，包括固定冲突文件的解法。
 
-- 开工：`scripts/req-start.sh AISLG-229 短标题`，在 `../slg-AISLG-229` 开发，不要直接在 `develop` 上开发。
-- 提测：`scripts/req-to-test.sh AISLG-229`，然后到 `slg-test/`（端口 API 9091 / 前端 8425）重启并测试。缺陷回需求分支修，再提测一次。
+- 开工：`scripts/req-start.sh AISLG-229 短标题`，在 `../AISLG-229` 开发，不要直接在 `develop` 上开发。
+- 提测：`scripts/req-to-test.sh AISLG-229`，然后到 `slg/test/`（端口 API 9091 / 前端 8425）重启并测试。缺陷回需求分支修，再提测一次。
 - 测试通过：`scripts/req-finish.sh AISLG-229`，合进 `develop` 并清理。纯文档、脚本类改动可加 `--force`。
 - 脚本遇到冲突就停，解决并提交后重跑。脚本不推送，也不改工作项状态。`develop` 合 `main` 由人决定。
 - 提交信息以需求号开头，如 `AISLG-229 feat: 说明`。
 - 需求分支的自测用临时库（做法见流程文档），**不要在需求目录直接 `./dev.sh`**：`backend/.env` 指向共用库，API 启动就会跑迁移。
-- `slg/` 和 `slg-test/` 共用一个库，**同一时刻只能跑一个 Worker**。`./dev.sh` 默认会起 Worker，切换前先在另一边跑 `SERVICES=worker ./dev.sh stop`。
+- `slg/develop/` 和 `slg/test/` 共用一个库，**同一时刻只能跑一个 Worker**。`./dev.sh` 默认会起 Worker，切换前先在另一边跑 `SERVICES=worker ./dev.sh stop`。
 - 合进 `test` 的迁移在测试目录重启时立刻生效，需求退回也不会回滚：改表结构要向后兼容，删数据、改数据的迁移提测前说明。
 - `dev.sh` / `stop.sh` 只管本目录的进程，不要用 `pkill`、`kill` 按进程名清理，以免误杀另一个目录的实例。
 - 如果有云效权限，当开始测试某个需求的时候，把需求改成”测试中“，测试通过，改成”已完成“，测试不通过，改成”未通过“

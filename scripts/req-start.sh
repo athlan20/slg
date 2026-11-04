@@ -11,7 +11,7 @@ check_req "$req"
 check_title "$title"
 
 branch="$req-$title"
-dir="$PARENT_DIR/$MAIN_NAME-$req"
+dir="$PARENT_DIR/$req"
 [ -z "$(req_branches "$req")" ] || die "$req 已有分支：$(req_branches "$req")"
 [ ! -e "$dir" ] || die "目录已存在：$dir"
 
