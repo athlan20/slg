@@ -278,25 +278,31 @@ export async function grantFamousHero(
   return hero;
 }
 
-/** 全部名将的归属视图（未被获得的也列出，ownerUsername 为 null；在野名将附落位坐标） */
-export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]> {
-  const res = await q.query(
-    `SELECT f.name, f.source, f.granted_at, a.username
-     FROM famous_heroes f JOIN accounts a ON a.id = f.owner_account_id`,
-  );
-  const owned = new Map(
-    (res.rows as Array<{ name: string; source: string; granted_at: Date; username: string }>).map((row) => [
-      row.name,
-      row,
-    ]),
-  );
-  const wild = await q.query(`SELECT wild_hero, x, y, level FROM world_tiles WHERE wild_hero IS NOT NULL`);
-  const wildAt = new Map(
-    (wild.rows as Array<{ wild_hero: string; x: number; y: number; level: number }>).map((row) => [row.wild_hero, row]),
-  );
+/** famous_heroes JOIN accounts 的一行（已被获得的名将） */
+export interface FamousClaimRow {
+  name: string;
+  granted_at: Date;
+  username: string;
+}
+
+/** world_tiles 上带在野名将的一行（落位野地） */
+export interface WildTileRow {
+  wild_hero: string;
+  x: number;
+  y: number;
+  level: number;
+}
+
+/**
+ * 名将归属视图的纯组装（loadFamousClaims 与单测共用）。在野名将只有被获得之后才给落位坐标：
+ * 未被获得时 wildAt 为 null，避免一次接口调用就拿到全部藏身位置；名城 / 黄巾名将没有落位，恒为 null。
+ */
+export function buildFamousClaims(claims: FamousClaimRow[], wildTiles: WildTileRow[]): FamousClaimView[] {
+  const owned = new Map(claims.map((row) => [row.name, row]));
+  const wildAt = new Map(wildTiles.map((row) => [row.wild_hero, row]));
   return ALL_FAMOUS_HEROES.map((def) => {
     const claim = owned.get(def.name);
-    const tile = wildAt.get(def.name);
+    const tile = claim && def.source.kind === 'wild' ? wildAt.get(def.name) : undefined;
     return {
       name: def.name,
       sourceLabel: famousSourceLabel(def.source),
@@ -305,6 +311,16 @@ export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]>
       wildAt: tile ? { x: tile.x, y: tile.y, level: tile.level } : null,
     };
   });
+}
+
+/** 全部名将的归属视图（未被获得的也列出，ownerUsername 为 null；在野名将仅被获得后附落位坐标） */
+export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]> {
+  const res = await q.query(
+    `SELECT f.name, f.granted_at, a.username
+     FROM famous_heroes f JOIN accounts a ON a.id = f.owner_account_id`,
+  );
+  const wild = await q.query(`SELECT wild_hero, x, y, level FROM world_tiles WHERE wild_hero IS NOT NULL`);
+  return buildFamousClaims(res.rows as FamousClaimRow[], wild.rows as WildTileRow[]);
 }
 
 /** 某座城的城守（未任命返回 null） */
