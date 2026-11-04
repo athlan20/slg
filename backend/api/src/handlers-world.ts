@@ -49,6 +49,7 @@ import { resolveIntercept, resolveMarchTarget } from './march-target';
 import { breakNewbieProtection, insertAttackWarning, pushAttackWarning } from './pvp';
 import { blindEligibleTask, isUnknownTarget } from './fog-march';
 import { ensureFogState } from '../../common/src/fog-db';
+import { getFogEnabled } from '../../common/src/fog-config';
 import { cityDispatchBlockedSeconds } from './stratagem-target';
 import { moveAttackLockRetry } from '../../common/src/move-city-db';
 
@@ -182,13 +183,19 @@ export async function handleMarch(
     }
     // v28（AISLG-78）：带 targetId = 截击移动目标（目标格内容无关，只核对目标与路线）
     // v92（AISLG-224）：探索状态并入（每次用到迷雾都先维护）；盲打时校验被拒绝不报错，改为正常建行军
-    await ensureFogState(client, accountId, dbNow);
+    // 关闭迷雾时不碰探索状态（零影响）
+    if (getFogEnabled()) {
+      await ensureFogState(client, accountId, dbNow);
+    }
+    let fogDenied = false;
     let target = targetId
       ? await resolveIntercept(client, targetId, x, y, dbNow)
       : await resolveMarchTarget(client, accountId, snap.cityId, tile, task, snap.levels.government, dbNow);
     if (!target.purpose && !targetId && blindEligibleTask(task) && (await isUnknownTarget(client, accountId, x, y, dbNow))) {
-      // 盲打（迷雾中）：不带 pvp，因此不发来袭预警、不破除新手保护；到达后由 Worker 到达复核
+      // 盲打（迷雾中）：校验被拒绝不报错，照常建行军；不带 pvp（不发预警、不破保护），
+      // 并写 fog_denied：到达一律原路返回（Worker resolveArrival），不因目标此后变得可打而开战
       target = { purpose: task };
+      fogDenied = true;
     }
     if (!target.purpose) {
       await client.query('ROLLBACK');
@@ -287,13 +294,13 @@ export async function handleMarch(
       ambushMs = arriveMs < target.interceptWindow.from ? arriveMs : null;
     }
     const ins = await client.query(
-      `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at, cargo, target_id, ambush_at, hero_id)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'marching', $7, $8, $9::jsonb, $10, $11, $12)
+      `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at, cargo, target_id, ambush_at, hero_id, fog_denied)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'marching', $7, $8, $9::jsonb, $10, $11, $12, $13)
        RETURNING *`,
       [
         accountId, snap.cityId, x, y, JSON.stringify(troops), target.purpose, role,
         new Date(engageMs).toISOString(), cargo ? JSON.stringify(cargo) : null, targetId,
-        ambushMs !== null ? new Date(ambushMs).toISOString() : null, marchHero ? marchHero.id : null,
+        ambushMs !== null ? new Date(ambushMs).toISOString() : null, marchHero ? marchHero.id : null, fogDenied,
       ],
     );
     const march = ins.rows[0] as MarchRow;

@@ -15,6 +15,8 @@ import { Op, EventType, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { recordMarchExploration } from '../../common/src/fog-record';
 import { ensureFogState } from '../../common/src/fog-db';
+import { getFogEnabled } from '../../common/src/fog-config';
+import type { ErrorCode } from '../../common/src/protocol';
 import { isUnknownTarget } from './fog-march';
 import { walkedFractionOf } from '../../common/src/fog';
 import { listBattleReports, saveBattleReportComment } from '../../common/src/battle-db';
@@ -129,11 +131,6 @@ export async function handleScout(
     const tile = (tileRes.rowCount ? tileRes.rows[0] : null) as
       | { kind: string; owner_city_id: string | null; npc: unknown }
       | null;
-    // v92（AISLG-224）：迷雾中的未知格（与盲打同口径）：目标相关的拒绝不报错、不带 pvpTarget（不破保护、不发预警），
-    // 照常派出侦察；到达后由 Worker 复核守方保护与盟友关系（world-tick.ts settleScoutArrival）
-    const scoutNow = ambushNowRes.rows[0].now as Date;
-    await ensureFogState(client, accountId, scoutNow);
-    const unknown = await isUnknownTarget(client, accountId, x, y, scoutNow);
     // v91（AISLG-220）：指定坐标迁城后 12 小时内，这座城不能侦察他人城池 / 野地（侦察属于攻击类出征）
     const scoutLockLeft = await moveAttackLockRetry(client, accountId, snap.cityId, tile, 'plunder', null, ambushNowRes.rows[0].now as Date);
     if (scoutLockLeft !== null) {
@@ -141,57 +138,25 @@ export async function handleScout(
       respondError(ctx.registry, conn, op, seq, 'MOVE_CITY_ATTACK_LOCK', { retryAfterSeconds: scoutLockLeft });
       return;
     }
-    // v38（AISLG-122）：侦察其他玩家的城池——守方新手保护期内不可被侦察（免战只拦攻击不拦侦察）；
-    // 攻方处于新手保护期则因主动侦察立即失效。记录目标账号供下方破保使用
-    let pvpTarget: { accountId: string; username: string } | null = null;
-    if (tile && tile.kind === 'city' && tile.owner_city_id) {
-      const ownerRes = await client.query(
-        `SELECT c.account_id, c.famous_name, a.username, a.newbie_until
-         FROM cities c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`,
-        [tile.owner_city_id],
-      );
-      const owner = ownerRes.rows[0] as { account_id: string; famous_name: string | null; username: string; newbie_until: Date | null } | undefined;
-      if (owner && owner.account_id === accountId) {
-        await client.query('ROLLBACK');
-        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
-        return;
-      }
-      // v67（AISLG-182）：盟友（同一联盟）的城池不能侦察
-      if (!unknown && owner && (await cannotAttack(client, accountId, owner.account_id))) {
-        await client.query('ROLLBACK');
-        respondError(ctx.registry, conn, op, seq, 'ALLY_NOT_ATTACKABLE');
-        return;
-      }
-      if (owner && !unknown) {
-        const nowRes = await client.query(`SELECT now() AS now`);
-        const dbNow = nowRes.rows[0].now as Date;
-        // v79（AISLG-200）：洛阳只在周六 21:00–23:00 可侦察
-        if (isLuoyangName(owner.famous_name) && !luoyangWindowOpen(dbNow)) {
-          const next = nextLuoyangOpen(dbNow);
-          await client.query('ROLLBACK');
-          respondError(ctx.registry, conn, op, seq, 'LUOYANG_CLOSED', {
-            nextOpenAt: next.toISOString(),
-            retryAfterSeconds: Math.max(1, Math.ceil((next.getTime() - dbNow.getTime()) / 1000)),
-          });
-          return;
-        }
-        if (inNewbieProtection(owner.newbie_until, dbNow)) {
-          const until = activeAt(owner.newbie_until, dbNow);
-          await client.query('ROLLBACK');
-          respondError(ctx.registry, conn, op, seq, 'NEWBIE_PROTECTED', {
-            until: until ? until.toISOString() : null,
-            retryAfterSeconds: until ? Math.max(1, Math.ceil((until.getTime() - dbNow.getTime()) / 1000)) : undefined,
-          });
-          return;
-        }
-        pvpTarget = { accountId: owner.account_id, username: owner.username };
-      }
+    // v92（AISLG-224 复核）：校验照跑。目标相关的拒绝：迷雾中的未知格不报错，照常出发并写 fog_denied
+    // （到达原路返回、不产出情报）；已探索 / 视野内的照旧报错。通过时走完整流程（含 pvpTarget 破保护）
+    const scoutNow = ambushNowRes.rows[0].now as Date;
+    const fogOn = getFogEnabled();
+    if (fogOn) {
+      await ensureFogState(client, accountId, scoutNow);
     }
-    // v67（AISLG-182）：盟友占领的野地同样不能侦察
-    if (!unknown && tile && tile.kind === 'wilderness' && tile.owner_city_id && (await isAllyOfCity(client, accountId, tile.owner_city_id))) {
-      await client.query('ROLLBACK');
-      respondError(ctx.registry, conn, op, seq, 'ALLY_NOT_ATTACKABLE');
-      return;
+    const unknown = fogOn && (await isUnknownTarget(client, accountId, x, y, scoutNow));
+    const verdict = await scoutTargetVerdict(client, accountId, tile, scoutNow);
+    let fogDenied = false;
+    let pvpTarget = verdict.pvpTarget;
+    if (verdict.code) {
+      if (!unknown) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, verdict.code, verdict.data);
+        return;
+      }
+      fogDenied = true;
+      pvpTarget = null;
     }
     // 扣减城内斥候（与出征同一规则：发起时立即扣减）
     await client.query(
@@ -203,10 +168,10 @@ export async function handleScout(
     const decree = await loadActiveDecree(client, accountId);
     const travel = marchTravelSeconds(snap.x, snap.y, x, y, troops, marchingPercent(snap.techs) + decreeMarchSpeedPercent(decree?.kind ?? null, decree?.until ?? null, new Date()));
     const ins = await client.query(
-      `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at, hero_id)
-       VALUES ($1, $2, $3, $4, $5::jsonb, 'scout', 'marching', $6, now() + make_interval(secs => $7), $8)
+      `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at, hero_id, fog_denied)
+       VALUES ($1, $2, $3, $4, $5::jsonb, 'scout', 'marching', $6, now() + make_interval(secs => $7), $8, $9)
        RETURNING *`,
-      [accountId, snap.cityId, x, y, JSON.stringify(troops), role, travel, scoutHero ? scoutHero.id : null],
+      [accountId, snap.cityId, x, y, JSON.stringify(troops), role, travel, scoutHero ? scoutHero.id : null, fogDenied],
     );
     const march = ins.rows[0] as MarchRow;
     await insertEvent(client, {
@@ -244,12 +209,12 @@ export async function handleScout(
  * 与 Worker 的领取锁序一致；若 Worker 已在结算（状态已变）则拒绝。
  */
 /** 撤回去程时的探索写入（AISLG-224）：撤回时已走过的比例；出发城坐标缺失则跳过 */
-async function recordRecalledExploration(client: pg.PoolClient, march: MarchRow, now: Date): Promise<void> {
+async function recordRecalledExploration(client: pg.PoolClient, march: MarchRow, now: Date): Promise<{ x: number; y: number } | null> {
   const home = (await client.query(`SELECT x, y FROM cities WHERE id = $1`, [march.from_city_id])).rows[0] as
     | { x: number | null; y: number | null }
     | undefined;
   if (!home || home.x === null || home.y === null) {
-    return;
+    return null;
   }
   const arriveAt = march.ambush_at ?? march.arrive_at;
   const fraction = walkedFractionOf(march.started_at.getTime(), arriveAt.getTime(), now.getTime());
@@ -268,6 +233,7 @@ async function recordRecalledExploration(client: pg.PoolClient, march: MarchRow,
     fraction,
     now,
   );
+  return { x: home.x, y: home.y };
 }
 
 export async function handleRecallMarch(
@@ -305,11 +271,16 @@ export async function handleRecallMarch(
     const elapsedMs = Math.min(Math.max(0, now.getTime() - march.started_at.getTime()), Math.max(0, totalMs));
     const returnSeconds = Math.max(1, Math.round(elapsedMs / 1000));
     // v92（AISLG-224）：撤回前把已走过的去程写入探索（只算到撤回时的位置），并生成探索简报（如有新区块）
-    await recordRecalledExploration(client, march, now);
+    const homeCoords = await recordRecalledExploration(client, march, now);
+    // 复核修复（AISLG-224）：记下撤回瞬间部队的实际位置与时刻，撤回后的实时视野从这里往回算
+    const turnFraction = totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 1;
+    const turnX = homeCoords ? homeCoords.x + (march.x - homeCoords.x) * turnFraction : null;
+    const turnY = homeCoords ? homeCoords.y + (march.y - homeCoords.y) * turnFraction : null;
     const upd = await client.query(
-      `UPDATE marches SET purpose = 'return', ambush_at = NULL, arrive_at = now() + make_interval(secs => $2)
+      `UPDATE marches SET purpose = 'return', ambush_at = NULL, arrive_at = now() + make_interval(secs => $2),
+         fog_turn_x = $3, fog_turn_y = $4, fog_turn_at = CASE WHEN $3::double precision IS NULL THEN NULL ELSE now() END
        WHERE id = $1 AND status = 'marching' RETURNING *`,
-      [marchId, returnSeconds],
+      [marchId, returnSeconds, turnX, turnY],
     );
     if (!upd.rowCount) {
       // 并发窗口：Worker 恰好在锁释放前结算（理论不可达，FOR UPDATE 已串行化）
@@ -401,4 +372,58 @@ export async function handleAgentCommentReport(
     push: true,
     data: { reportId: saved.reportId, comment: saved.comment },
   });
+}
+
+/**
+ * 侦察目标的校验（v92 起与出征同口径，抽成函数）：自己的城、盟友的城 / 野地、洛阳窗口、守方新手保护。
+ * 返回拒绝码（附数据）与通过时的 pvpTarget（破除攻方新手保护用）。
+ */
+async function scoutTargetVerdict(
+  client: pg.PoolClient,
+  accountId: string,
+  tile: { kind: string; owner_city_id: string | null } | null,
+  now: Date,
+): Promise<{ code: ErrorCode | null; data?: Record<string, unknown>; pvpTarget: { accountId: string; username: string } | null }> {
+  const none: { code: null; pvpTarget: null } = { code: null, pvpTarget: null };
+  if (tile && tile.kind === 'city' && tile.owner_city_id) {
+    const ownerRes = await client.query(
+      `SELECT c.account_id, c.famous_name, a.username, a.newbie_until
+       FROM cities c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`,
+      [tile.owner_city_id],
+    );
+    const owner = ownerRes.rows[0] as { account_id: string; famous_name: string | null; username: string; newbie_until: Date | null } | undefined;
+    if (!owner) {
+      return none;
+    }
+    if (owner.account_id === accountId) {
+      return { code: 'INVALID_PARAMS', pvpTarget: null };
+    }
+    if (await cannotAttack(client, accountId, owner.account_id)) {
+      return { code: 'ALLY_NOT_ATTACKABLE', pvpTarget: null };
+    }
+    if (isLuoyangName(owner.famous_name) && !luoyangWindowOpen(now)) {
+      const next = nextLuoyangOpen(now);
+      return {
+        code: 'LUOYANG_CLOSED',
+        data: { nextOpenAt: next.toISOString(), retryAfterSeconds: Math.max(1, Math.ceil((next.getTime() - now.getTime()) / 1000)) },
+        pvpTarget: null,
+      };
+    }
+    if (inNewbieProtection(owner.newbie_until, now)) {
+      const until = activeAt(owner.newbie_until, now);
+      return {
+        code: 'NEWBIE_PROTECTED',
+        data: {
+          until: until ? until.toISOString() : null,
+          retryAfterSeconds: until ? Math.max(1, Math.ceil((until.getTime() - now.getTime()) / 1000)) : undefined,
+        },
+        pvpTarget: null,
+      };
+    }
+    return { code: null, pvpTarget: { accountId: owner.account_id, username: owner.username } };
+  }
+  if (tile && tile.kind === 'wilderness' && tile.owner_city_id && (await isAllyOfCity(client, accountId, tile.owner_city_id))) {
+    return { code: 'ALLY_NOT_ATTACKABLE', pvpTarget: null };
+  }
+  return none;
 }

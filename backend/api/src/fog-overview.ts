@@ -78,41 +78,42 @@ export async function fogOverview(req: FogRequest, rows: readonly OverviewRow[])
     .map((row) => row.ownerAccountId as string);
   const relations = await relationsOf(req.client, req.accountId, seenOwners);
   const hqCityIds = await powerTopCityIds(req);
+  const famousRegistered = new Set<string>();
+  const registered = await req.client.query(`SELECT x, y FROM famous_cities`);
+  for (const famous of registered.rows as Array<{ x: number; y: number }>) {
+    famousRegistered.add(`${famous.x},${famous.y}`);
+  }
   const live = (x: number, y: number, row?: OverviewRow): boolean =>
     inAnyVision(req.sources, x, y) || (row !== undefined && row.kind === 'city' && row.owner_is_ally === true);
   const points: Array<[number, number, MapOverviewSide]> = [];
+  const emitted = new Set<string>();
+  // 1. 实时视野内的城、战力榜前 20 的主城：按当前状态（它们始终可见）
   for (const row of rows) {
-    const explored = isCellExplored(req.bits, row.x, row.y);
-    const known = live(row.x, row.y, row);
-    if (row.kind === 'npc_city' && row.famous && !known && !explored) {
-      // 未探索的名城只以锚点的 famous_rumor 出现（见下方）
-      continue;
-    }
-    if (known || (row.owner_city_id !== null && hqCityIds.has(row.owner_city_id))) {
+    if (live(row.x, row.y, row) || (row.owner_city_id !== null && hqCityIds.has(row.owner_city_id))) {
       const side = liveSide(row, req.accountId);
       if (side) {
         points.push([row.x, row.y, side]);
+        emitted.add(`${row.x},${row.y}`);
       }
-      continue;
     }
-    if (!explored) {
-      continue;
-    }
-    const snapshot = seen.get(`${row.x},${row.y}`);
-    if (!snapshot) {
+  }
+  // 2. 其余已探索的城：以上次看到的快照为准（迁走、易主、变成城池都不外露，直到再次进入视野）
+  for (const snapshot of seen.values()) {
+    const key = `${snapshot.x},${snapshot.y}`;
+    if (emitted.has(key) || live(snapshot.x, snapshot.y)) {
       continue;
     }
     if (snapshot.kind === 'npc_city') {
-      points.push([row.x, row.y, row.famous ? 'famous' : 'npc']);
+      points.push([snapshot.x, snapshot.y, famousRegistered.has(key) ? 'famous' : 'npc']);
     } else if (snapshot.kind === 'city' && snapshot.ownerAccountId) {
       const rel = relations.get(snapshot.ownerAccountId);
-      points.push([row.x, row.y, RELATION_SIDE[rel?.relation ?? 'neutral'] ?? 'enemy']);
+      points.push([snapshot.x, snapshot.y, RELATION_SIDE[rel?.relation ?? 'neutral'] ?? 'enemy']);
     }
   }
-  // 名城锚点：未探索（真实位置不知道）时显示大致方位
+  // 3. 名城锚点：未探索（真实位置不知道）时显示大致方位；探索后由第 2 步的快照显示真实位置
   const anchors = famousAnchors(WORLD_SIZE);
-  const registered = await req.client.query(`SELECT name, x, y FROM famous_cities`);
-  for (const famous of registered.rows as Array<{ name: string; x: number; y: number }>) {
+  const names = await req.client.query(`SELECT name, x, y FROM famous_cities`);
+  for (const famous of names.rows as Array<{ name: string; x: number; y: number }>) {
     const index = (FAMOUS_CITY_NAMES as readonly string[]).indexOf(famous.name);
     const anchor = index >= 0 ? anchors[index] : undefined;
     if (!anchor) {

@@ -5,6 +5,7 @@ import type pg from 'pg';
 import {
   FOG_OPENING_RADIUS,
   FOG_VISION,
+  scoutVisionRadius,
   fogBitsFrom,
   markSquare,
   newFogBits,
@@ -185,7 +186,7 @@ export async function marchVisionSources(
 ): Promise<VisionSource[]> {
   const res = await q.query(
     `SELECT m.x AS tx, m.y AS ty, m.purpose, m.troops, m.started_at, m.arrive_at, m.ambush_at,
-            c.x AS hx, c.y AS hy
+            m.fog_turn_x, m.fog_turn_y, m.fog_turn_at, c.x AS hx, c.y AS hy
      FROM marches m JOIN cities c ON c.id = m.from_city_id
      WHERE m.account_id = $1 AND m.status = 'marching' AND c.x IS NOT NULL AND c.y IS NOT NULL`,
     [accountId],
@@ -193,6 +194,21 @@ export async function marchVisionSources(
   const sources: VisionSource[] = [];
   for (const row of res.rows as Array<Record<string, unknown>>) {
     const troops = (row.troops ?? {}) as Record<string, number>;
+    const hasScout = (troops.scout ?? 0) > 0;
+    if (row.fog_turn_at) {
+      // 撤回后：从撤回瞬间的实际位置，沿直线回出发城，时刻从撤回时刻到 arrive_at（与撤回时写入的返程时长一致）
+      const t0 = (row.fog_turn_at as Date).getTime();
+      const t1 = (row.arrive_at as Date).getTime();
+      const t = t1 <= t0 ? 1 : Math.min(1, Math.max(0, (now.getTime() - t0) / (t1 - t0)));
+      const tx = Number(row.fog_turn_x);
+      const ty = Number(row.fog_turn_y);
+      sources.push({
+        x: Math.round(tx + ((row.hx as number) - tx) * t),
+        y: Math.round(ty + ((row.hy as number) - ty) * t),
+        radius: hasScout ? scoutVisionRadius(scoutingLevel) : FOG_VISION.march,
+      });
+      continue;
+    }
     const endAt = row.purpose === 'intercept' && row.ambush_at ? (row.ambush_at as Date) : (row.arrive_at as Date);
     const geometry: MarchGeometry = {
       homeX: row.hx as number,
@@ -203,7 +219,7 @@ export async function marchVisionSources(
       startMs: (row.started_at as Date).getTime(),
       endMs: endAt.getTime(),
     };
-    sources.push(marchVisionSource(geometry, now.getTime(), (troops.scout ?? 0) > 0, scoutingLevel));
+    sources.push(marchVisionSource(geometry, now.getTime(), hasScout, scoutingLevel));
   }
   return sources;
 }

@@ -42,7 +42,7 @@ export async function handleGetMapOverview(
   );
   const rows = res.rows as OverviewRow[];
   // v92（AISLG-224）：开启战争迷雾时按探索状态裁剪（同时维护探索位图）；关闭时与原来完全一致
-  if (accountId !== null) {
+  if (accountId !== null && getFogEnabled()) {
     const fog = await withFogRequest(ctx.pool, accountId, (req) =>
       req.enabled ? fogOverview(req, rows) : Promise.resolve(null),
     );

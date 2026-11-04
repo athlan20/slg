@@ -24,5 +24,10 @@ CREATE TABLE IF NOT EXISTS fog_seen (
   PRIMARY KEY (account_id, x, y)
 );
 ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_recorded_at timestamptz;
+-- 复核修复（AISLG-224）：盲打的校验曾被拒绝（到达一律原路返回）；撤回时部队所在的实际位置与时刻（撤回后的视野按它算）
+ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_denied boolean NOT NULL DEFAULT false;
+ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_turn_x double precision;
+ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_turn_y double precision;
+ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_turn_at timestamptz;
 CREATE INDEX IF NOT EXISTS idx_marches_fog_pending ON marches (resolved_at) WHERE resolved_at IS NOT NULL AND fog_recorded_at IS NULL;
 `;

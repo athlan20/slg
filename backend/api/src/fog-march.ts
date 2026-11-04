@@ -18,11 +18,11 @@ export function blindEligibleTask(task: MarchTask): boolean {
 export type CellVisibility = 'visible' | 'explored' | 'unknown';
 
 export async function cellVisibility(client: pg.PoolClient, accountId: string, x: number, y: number, now: Date): Promise<CellVisibility> {
-  // 入口先维护探索状态（关闭期间照常记录，重新打开时不丢数据）
-  const state = await ensureFogState(client, accountId, now);
+  // 关闭时零影响：不碰探索状态、不写任何迷雾表
   if (!getFogEnabled()) {
     return 'visible';
   }
+  const state = await ensureFogState(client, accountId, now);
   const scouting = (await loadTechLevels(client, accountId)).scouting ?? 0;
   const sources = [
     ...(await ownVisionSources(client, accountId)),

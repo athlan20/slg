@@ -55,7 +55,8 @@ export interface FamousTileView {
   /** 名城名，如「官渡」 */
   name: string;
   /** outer=外围阶段（须先清外围）；keeper=外围已清、可攻城守并占领 */
-  stage: 'outer' | 'keeper';
+  /** 探索快照（AISLG-224 复核）：已探索的名城阶段是动态信息，给 null */
+  stage: 'outer' | 'keeper' | null;
   /** 占领后的独占加成：该城产量 +N% */
   bonusPercent: number;
   /** 城守阶段：外围恢复满编的时刻（ISO 8601，超时无人攻下城守则恢复）；外围阶段为 null */

@@ -174,14 +174,15 @@ describe('战争迷雾的盲打（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
     assert.equal(row.rows[0].purpose, 'plunder');
   });
 
-  test('盲侦察受保护的玩家城：到达后复核保护，不产出情报，aborted（NEWBIE_PROTECTED）', async () => {
+  test('盲侦察受保护的玩家城：到达原路返回（fog_denied），不产出情报，不回报保护原因', async () => {
     const { res } = await send(A, Op.SCOUT, { x: 900, y: 900, count: 5 });
     assert.equal(res.ok, true, JSON.stringify(res.error));
     await pool.query(`UPDATE marches SET arrive_at = now() - interval '1 second', started_at = now() - interval '2 seconds' WHERE account_id = $1 AND purpose = 'scout'`, [A]);
     await processDueMarches(pool);
     const done = await pool.query(`SELECT detail FROM events WHERE account_id = $1 AND type = $2 ORDER BY id DESC LIMIT 1`, [A, EventType.MARCH_COMPLETED]);
     assert.equal(done.rows[0].detail.outcome, 'aborted');
-    assert.equal(done.rows[0].detail.cause, 'NEWBIE_PROTECTED');
+    // 复核修复：不回报守方的保护原因（那会泄露未探索城的状态），只给通用的 aborted
+    assert.equal(done.rows[0].detail.cause, undefined);
     const intel = await pool.query(`SELECT count(*)::int AS n FROM scout_intel WHERE account_id = $1 AND x = 900 AND y = 900`, [A]);
     assert.equal(intel.rows[0].n, 0, '未产出情报');
   });
