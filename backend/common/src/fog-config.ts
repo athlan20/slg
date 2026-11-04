@@ -1,10 +1,11 @@
 // 战争迷雾总开关 fog_enabled（AISLG-224）：存 settings 表（key='fog_enabled'，value={enabled}），换季保留。
-// 默认关闭：库中无记录即 false。API 与 Worker 各自进程内缓存，TTL 10 秒（与 time-scale 同口径），
+// 默认关闭：库中无记录即 false。API 与 Worker 各自进程内缓存，TTL 4 秒，
 // 切换后 10 秒内全服生效、无需重启。getFogEnabled() 为同步读，未加载时返回 false（即关闭）。
 import type pg from 'pg';
 
 const SETTINGS_KEY = 'fog_enabled';
-const CACHE_TTL_MS = 10_000;
+/** 比 API 的 5 秒刷新间隔短，保证每轮都刷新：切换后最慢约 5 秒生效（10 秒 TTL 实测会到 11.6 秒） */
+const CACHE_TTL_MS = 4_000;
 
 let cachedEnabled = false;
 let cachedAt = 0;

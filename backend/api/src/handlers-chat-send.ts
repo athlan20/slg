@@ -89,11 +89,11 @@ async function sendInTransaction(
 
     const sender = await db.lockSender(client, accountId);
     if (!sender) {
-      return reject('INTERNAL');
+      return await reject('INTERNAL');
     }
     const now = Date.now();
     if (sender.chat_muted_until && sender.chat_muted_until.getTime() > now) {
-      return reject('CHAT_MUTED', { until: sender.chat_muted_until.toISOString() });
+      return await reject('CHAT_MUTED', { until: sender.chat_muted_until.toISOString() });
     }
 
     let recipientId: string | null = null;
@@ -101,30 +101,30 @@ async function sendInTransaction(
     let allianceId: string | null = null;
     if (req.channel === 'world') {
       if ((await db.mainGovernmentLevel(client, accountId)) < CHAT_WORLD_MIN_GOVERNMENT) {
-        return reject('CHAT_GOVERNMENT_TOO_LOW');
+        return await reject('CHAT_GOVERNMENT_TOO_LOW');
       }
     } else if (req.channel === 'alliance') {
       const membership = await getMembership(client, accountId);
       if (!membership) {
-        return reject('ALLIANCE_NOT_IN');
+        return await reject('ALLIANCE_NOT_IN');
       }
       // 锁住联盟行后重新确认成员资格：踢人只锁联盟行，不锁被踢者的账号行
       await lockAlliance(client, membership.allianceId);
       const current = await getMembership(client, accountId);
       if (!current || current.allianceId !== membership.allianceId) {
-        return reject('ALLIANCE_NOT_IN');
+        return await reject('ALLIANCE_NOT_IN');
       }
       allianceId = current.allianceId;
     } else {
       if (!isUuid(req.peerId) || req.peerId === accountId) {
-        return reject('INVALID_PARAMS');
+        return await reject('INVALID_PARAMS');
       }
       const recipient = await db.findAccount(client, req.peerId);
       if (!recipient) {
-        return reject('INVALID_PARAMS');
+        return await reject('INVALID_PARAMS');
       }
       if (await db.isBlockedBy(client, recipient.id, accountId)) {
-        return reject('CHAT_BLOCKED');
+        return await reject('CHAT_BLOCKED');
       }
       recipientId = recipient.id;
       recipientName = recipient.username;
@@ -133,7 +133,7 @@ async function sendInTransaction(
     const last = await db.lastSentAt(client, req.channel, accountId);
     if (last && now - last.getTime() < CHAT_RATE_LIMIT_MS) {
       const retryAfterSeconds = Math.ceil((CHAT_RATE_LIMIT_MS - (now - last.getTime())) / 1000);
-      return reject('CHAT_RATE_LIMITED', { retryAfterSeconds });
+      return await reject('CHAT_RATE_LIMITED', { retryAfterSeconds });
     }
 
     let card: ChatCardView | null = null;
@@ -142,10 +142,10 @@ async function sendInTransaction(
       const built = await buildChatCard(client, accountId, req.card, filter);
       if (built === CHAT_CARD_UNEXPLORED) {
         // v92（AISLG-224）：迷雾中未探索的坐标不能发卡片
-        return reject('CHAT_COORD_UNEXPLORED');
+        return await reject('CHAT_COORD_UNEXPLORED');
       }
       if (!built) {
-        return reject('INVALID_PARAMS');
+        return await reject('INVALID_PARAMS');
       }
       card = built.card;
       reportDetail = built.reportDetail;
