@@ -56,6 +56,8 @@ if [ "$keep" = 1 ]; then
 fi
 
 "$dir/dev.sh" stop >/dev/null
+# 脚本可能在需求目录里运行，删目录前先离开，否则后面的 git 命令找不到当前目录
+cd "$develop_dir"
 git worktree remove "$dir" \
   || die "已合入 develop，但 $dir 没删掉：查看上方提示，确认未跟踪文件不要后手动清理"
 git branch -d "$branch"
