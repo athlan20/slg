@@ -20,7 +20,7 @@ import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo, ConnectionRegistry } from './connections';
 import * as db from './chat-db';
-import { buildChatCard } from './chat-cards';
+import { CHAT_CARD_UNEXPLORED, buildChatCard } from './chat-cards';
 import { loadNobilityIndexes } from '../../common/src/nobility-db';
 import { bannedWordFilter, type BannedWordFilter } from './chat-words';
 import { chatMessageView } from './chat-view';
@@ -140,6 +140,10 @@ async function sendInTransaction(
     let reportDetail: unknown | null = null;
     if (req.card) {
       const built = await buildChatCard(client, accountId, req.card, filter);
+      if (built === CHAT_CARD_UNEXPLORED) {
+        // v92（AISLG-224）：迷雾中未探索的坐标不能发卡片
+        return reject('CHAT_COORD_UNEXPLORED');
+      }
       if (!built) {
         return reject('INVALID_PARAMS');
       }

@@ -14,17 +14,14 @@ export function blindEligibleTask(task: MarchTask): boolean {
   return task === 'plunder' || task === 'occupy';
 }
 
-/**
- * 格子是否为迷雾中的未知格：迷雾开启、区块未探索、不在任何视野来源内，且不是盟友的城池格。
- * 调用方须已在事务内（会维护探索状态）。
- */
-export async function isUnknownTarget(client: pg.PoolClient, accountId: string, x: number, y: number, now: Date): Promise<boolean> {
-  if (!getFogEnabled()) {
-    return false;
-  }
+/** 格子的可见性（迷雾开启时）：实时视野 / 已探索 / 未知；迷雾关闭恒为 visible。调用方须已在事务内 */
+export type CellVisibility = 'visible' | 'explored' | 'unknown';
+
+export async function cellVisibility(client: pg.PoolClient, accountId: string, x: number, y: number, now: Date): Promise<CellVisibility> {
+  // 入口先维护探索状态（关闭期间照常记录，重新打开时不丢数据）
   const state = await ensureFogState(client, accountId, now);
-  if (isCellExplored(state.bits, x, y)) {
-    return false;
+  if (!getFogEnabled()) {
+    return 'visible';
   }
   const scouting = (await loadTechLevels(client, accountId)).scouting ?? 0;
   const sources = [
@@ -32,13 +29,18 @@ export async function isUnknownTarget(client: pg.PoolClient, accountId: string, 
     ...(await marchVisionSources(client, accountId, now, scouting)),
   ];
   if (inAnyVision(sources, x, y)) {
-    return false;
+    return 'visible';
   }
   const tile = await client.query(`SELECT kind, owner_city_id FROM world_tiles WHERE x = $1 AND y = $2`, [x, y]);
   const row = tile.rows[0] as { kind: string; owner_city_id: string | null } | undefined;
   if (row && row.kind === 'city' && row.owner_city_id && (await isAllyOfCity(client, accountId, row.owner_city_id))) {
     // 盟友城池格始终实时可见（只这一格）
-    return false;
+    return 'visible';
   }
-  return true;
+  return isCellExplored(state.bits, x, y) ? 'explored' : 'unknown';
+}
+
+/** 格子是否为迷雾中的未知格（未探索且不在视野内）：盲打的判定依据；迷雾关闭时恒为 false */
+export async function isUnknownTarget(client: pg.PoolClient, accountId: string, x: number, y: number, now: Date): Promise<boolean> {
+  return (await cellVisibility(client, accountId, x, y, now)) === 'unknown';
 }
