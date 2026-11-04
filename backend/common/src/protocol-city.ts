@@ -193,6 +193,12 @@ export const EventType = {
   STRATAGEM_RECEIVED: 'stratagem_received',
   /** v89（AISLG-221）：礼金扣除（detail = { reason, amount, balance }；扣除失败不写事件） */
   GIFT_SPENT: 'gift_spent',
+  /** v90（AISLG-222）：道具发放（detail = { itemId, requested, granted, reason }；超出堆叠上限的部分作废） */
+  ITEM_GRANTED: 'item_granted',
+  /** v90（AISLG-222）：道具消耗（detail = { itemId, amount, left, reason }；数量不足不写） */
+  ITEM_USED: 'item_used',
+  /** v90（AISLG-222）：礼金购买道具（detail = { itemId, count, price, cost, owned, gift }） */
+  ITEM_BOUGHT: 'item_bought',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
   /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */

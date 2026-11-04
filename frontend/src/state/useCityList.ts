@@ -5,7 +5,7 @@
 
 import { useCallback, useState } from 'react';
 import { getActiveCityId, setActiveCityId } from '../api/cityScope';
-import type { BranchInfoView, CapitalSwapView, CityRefView, CityView } from '../api/protocol';
+import type { BranchInfoView, CapitalSwapView, CityRefView, CityView, ItemCounts } from '../api/protocol';
 
 /** 账号礼金（v89，AISLG-221）：余额与每季发放额度（GET_STATE 的 gift / giftSeasonGrant，未拉到为 null） */
 export interface GiftView {
@@ -20,10 +20,14 @@ export interface CityList {
   capitalSwap: CapitalSwapView | null;
   /** 账号礼金（账号级，不分城；账号菜单显示） */
   gift: GiftView | null;
+  /** 道具背包数量（v90，AISLG-222；GET_STATE 的 items，未拉到为 null） */
+  items: ItemCounts | null;
   /** 当前正在操作的城池 id（null = 尚未获取） */
   activeCityId: string | null;
   /** 吸收一次 GET_STATE 响应的 cities / branch；选中的城已不存在时复位主城 */
   applyState: (data: Record<string, unknown> | undefined) => void;
+  /** 吸收道具变化（BUY_ITEM 响应、PUSH_ACCOUNT_STATE items_changed）：只改给出的字段，礼金余额保留每季额度 */
+  applyItems: (update: { items?: Partial<ItemCounts>; gift?: number }) => void;
   /** 登录 / 登出 / 重置时复位 */
   reset: () => void;
   /** 切换操作城池：改请求注入、清掉旧城状态，随后由调用方重拉 */
@@ -35,6 +39,7 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
   const [branch, setBranch] = useState<BranchInfoView | null>(null);
   const [capitalSwap, setCapitalSwap] = useState<CapitalSwapView | null>(null);
   const [gift, setGift] = useState<GiftView | null>(null);
+  const [items, setItems] = useState<ItemCounts | null>(null);
   const [activeCityId, setActive] = useState<string | null>(null);
 
   const applyState = useCallback((data: Record<string, unknown> | undefined) => {
@@ -57,9 +62,25 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     if (typeof data?.gift === 'number' && typeof data?.giftSeasonGrant === 'number') {
       setGift({ balance: data.gift, seasonGrant: data.giftSeasonGrant });
     }
+    const bag = data?.items as ItemCounts | undefined;
+    if (bag && typeof bag === 'object') {
+      setItems(bag);
+    }
     const city = data?.city as CityView | undefined;
     if (city) {
       setActive(city.id);
+    }
+  }, []);
+
+  const applyItems = useCallback((update: { items?: Partial<ItemCounts>; gift?: number }) => {
+    if (update.items) {
+      const patch = update.items;
+      setItems((prev) => ({ ...(prev ?? ({} as ItemCounts)), ...patch }) as ItemCounts);
+    }
+    if (typeof update.gift === 'number') {
+      const balance = update.gift;
+      // 每季额度来自 GET_STATE（giftSeasonGrant）；还没拉到时不凭空造数
+      setGift((prev) => (prev ? { balance, seasonGrant: prev.seasonGrant } : prev));
     }
   }, []);
 
@@ -69,6 +90,7 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     setBranch(null);
     setCapitalSwap(null);
     setGift(null);
+    setItems(null);
     setActive(null);
   }, []);
 
@@ -86,5 +108,5 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     [cities, activeCityId, setCity],
   );
 
-  return { cities, branch, capitalSwap, gift, activeCityId, applyState, reset, select };
+  return { cities, branch, capitalSwap, gift, items, activeCityId, applyState, applyItems, reset, select };
 }
