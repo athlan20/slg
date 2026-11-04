@@ -209,6 +209,22 @@ describe('战争迷雾的地图裁剪（需 TEST_DATABASE_URL）', { skip: dbUrl
     assert.equal((await loadFogTileDetail(pool, A, 1, 1)).kind, 'unexplored');
   });
 
+  test('已探索的格子保留侦察快照（驻军 / 城防按快照给，实时数值不给）', async () => {
+    setFogEnabledCache(true);
+    await pool.query(
+      `INSERT INTO scout_intel (account_id, x, y, detail, scouted_at) VALUES ($1, 733, 690, $2::jsonb, now())
+       ON CONFLICT (account_id, x, y) DO UPDATE SET detail = EXCLUDED.detail`,
+      [A, JSON.stringify({ garrison: { militia: 7 }, detail: 'exact' })],
+    );
+    const out = await loadFogTileDetail(pool, A, 733, 690);
+    assert.equal(out.kind, 'ok');
+    if (out.kind === 'ok') {
+      assert.equal(out.detail.fog, 'explored');
+      assert.equal(out.detail.garrisonDetail.militia, 7, '侦察快照的驻军照旧可看');
+      assert.ok(out.detail.scoutedAt, '带侦察时间');
+    }
+  });
+
   test('小地图：未探索的名城在锚点上显示 famous_rumor；已探索的城按上次看到的样子给；远处未探索的城不出现', async () => {
     setFogEnabledCache(true);
     const ov = await overview(A);

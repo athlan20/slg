@@ -8,6 +8,7 @@
 import type pg from 'pg';
 import { nobilityName } from '../../common/src/nobility';
 import { TROOP_KINDS, type ArmyCounts, type TileDetailView, type TileOwnerView, type TileView } from '../../common/src/protocol';
+import type { DefenseScoutView } from '../../common/src/protocol-defense';
 import { getFogEnabled } from '../../common/src/fog-config';
 import {
   ensureFogState,
@@ -236,15 +237,18 @@ export async function loadFogTileDetail(pool: pg.Pool, accountId: string, x: num
     const relations = await relationsOf(req.client, accountId, seen?.ownerAccountId ? [seen.ownerAccountId] : []);
     const base = exploredTileView(detail, seen, relations);
     const emptyArmy = Object.fromEntries(TROOP_KINDS.map((kind) => [kind, 0])) as ArmyCounts;
+    // 侦察快照照旧可看（需求第三节）：驻军与城防只取账号自己的侦察快照，不取实时数值
+    const intelRes = await req.client.query(`SELECT detail FROM scout_intel WHERE account_id = $1 AND x = $2 AND y = $3`, [accountId, x, y]);
+    const intel = (intelRes.rows[0]?.detail ?? null) as { garrison?: ArmyCounts; defenses?: DefenseScoutView | null } | null;
     return {
       kind: 'ok',
       detail: {
         ...detail,
         ...base,
-        garrisonDetail: detail.kind === 'npc_city' ? detail.garrisonDetail : emptyArmy,
+        garrisonDetail: detail.kind === 'npc_city' ? detail.garrisonDetail : (intel?.garrison ?? emptyArmy),
         nativePower: 0,
         wilderness: detail.wilderness ? { ...detail.wilderness, gatherRate: 0 } : null,
-        defenses: null,
+        defenses: intel?.defenses ?? null,
         assists: null,
         plunderedAt: null,
         wildFamousIntel: seen?.wildFamous ? detail.wildFamousIntel : null,
