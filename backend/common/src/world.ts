@@ -65,7 +65,7 @@ export const TERRAIN_INFO: Record<TerrainKind, TerrainInfo> = {
 /** 野地等级上限（占位决策，对齐旧游戏 10 级野地） */
 export const WILDERNESS_LEVEL_MAX = 10;
 /** 野地等级分布权重（Lv1..Lv10，低级多、高级少；占位） */
-const LEVEL_WEIGHTS = [20, 17, 14, 12, 10, 8, 7, 5, 4, 3];
+export const LEVEL_WEIGHTS = [20, 17, 14, 12, 10, 8, 7, 5, 4, 3];
 
 // ---- 野地战斗与收益（战斗编成在 battle.ts；此处为收益侧） ----
 

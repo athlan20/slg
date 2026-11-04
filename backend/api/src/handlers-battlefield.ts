@@ -4,6 +4,7 @@
 // （worker/src/battlefield-tick.ts），API 只校验并写入行军意图。
 // 规则与数值见 common/src/battlefield.ts；报名 / 入场 / 行军 / 兑换 Agent 都能做。
 
+import { moveLockRemaining } from '../../common/src/move-city-db';
 import pg from 'pg';
 import { Op, EventType, TROOP_KINDS, isBattlefieldCamp, type TroopKind } from '../../common/src/protocol';
 import {
@@ -296,6 +297,13 @@ export async function handleEnterBattlefield(
     if (ambushLeft !== null) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'CITY_AMBUSHED', { retryAfterSeconds: ambushLeft });
+      return;
+    }
+    // v91（AISLG-220）：指定坐标迁城后 12 小时内，主城不能派兵入场（入场即出征打据点）
+    const moveLockLeft = await moveLockRemaining(client, participant.main_city_id, ambushNowRes.rows[0].now as Date);
+    if (moveLockLeft !== null) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'MOVE_CITY_ATTACK_LOCK', { retryAfterSeconds: moveLockLeft });
       return;
     }
     // 锁城内驻军并校验兵够不够

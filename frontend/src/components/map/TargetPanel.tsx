@@ -26,6 +26,7 @@ import { TransportForm } from './forms/TransportForm';
 import type { TargetCtx, TroopInput } from './forms/targetTypes';
 import { TargetHeader } from './TargetHeader';
 import { TargetChatActions } from './TargetChatActions';
+import { MoveCityPickAction } from './MoveCityPick';
 import { TargetMarkNote } from './TargetMarkNote';
 import { StratagemEntry } from '../stratagem/StratagemEntry';
 import { remainingSeconds } from '../stratagem/StratagemCityNote';
@@ -68,6 +69,8 @@ export function TargetPanel() {
   }
   const { x, y } = selected;
   const isOwn = detail !== null && detail.owner !== null && detail.owner.accountId === accountId;
+  // 迁城选点（v91）：只有无归属、无营地的空野地才能迁入
+  const isEmptyWilderness = detail !== null && detail.x === x && detail.y === y && detail.kind === 'wilderness' && detail.owner === null && detail.camp === null;
   const isOwnCity = detail?.kind === 'city' && isOwn;
   /** 调兵 / 运输目标：本账号的分城（非出发主城） */
   const transferable = isOwnCity && detail?.owner?.cityId !== city.id;
@@ -151,6 +154,7 @@ export function TargetPanel() {
   return (
     <DeployContext.Provider value={city.deploy}>
       <div role="世界地图详情区" className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+        <MoveCityPickAction x={x} y={y} empty={isEmptyWilderness} />
         <TargetHeader
           world={world}
           city={city}

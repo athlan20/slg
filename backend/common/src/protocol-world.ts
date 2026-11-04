@@ -304,6 +304,8 @@ export interface TileStatePushData {
     /** v40（AISLG-124）：分城被玩家占领易主 */
     | 'city_conquered'
     /** v40（AISLG-124）：分城城防值被打掉一截（守方视角刷新城防 / 免战） */
-    | 'city_durability_hit';
+    | 'city_durability_hit'
+    /** v91（AISLG-220）：城池迁移，新旧两格各推一次（归属方视角） */
+    | 'city_moved';
   tile: TileView;
 }

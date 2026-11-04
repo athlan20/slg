@@ -3,6 +3,10 @@
 
 import type pg from 'pg';
 import { effectiveLevelSql } from './production';
+import { discardCooldownDays } from './branch-city';
+import { scaledMs } from './time-scale';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface BranchStanding {
   /** 主城（账号名下创建最早的城）官府等级 */
@@ -39,4 +43,14 @@ export async function loadDiscardCooldownActive(
     [x, y, accountId],
   );
   return (res.rowCount ?? 0) > 0;
+}
+
+/**
+ * 放弃分城同口径的占回冷却截止时刻（v57 放弃分城 / v91 迁城回归 NPC 城共用）：
+ * 冷却 = 官府等级 天（按时间缩放），时刻取数据库 now() 为基准。
+ */
+export async function discardCooldownUntil(q: pg.Pool | pg.PoolClient, governmentLevel: number): Promise<Date> {
+  const res = await q.query(`SELECT now() AS db_now`);
+  const now = (res.rows[0] as { db_now: Date }).db_now;
+  return new Date(new Date(now).getTime() + scaledMs(discardCooldownDays(governmentLevel) * DAY_MS));
 }

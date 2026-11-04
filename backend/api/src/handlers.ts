@@ -97,6 +97,8 @@ import { loadCapitalSwapView } from '../../common/src/capital-swap-db';
 import { loadGift } from '../../common/src/gift-db';
 import { loadItems } from '../../common/src/items-db';
 import { handleBuyItem, handleGetItems } from './handlers-items';
+import { handleMoveCity } from './handlers-move-city';
+import { loadMoveCityView } from '../../common/src/move-city-db';
 import { SEASON_GIFT } from '../../common/src/gift';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
 import { handleGetHallOfFame, handleGetSeason, respondMaintenance } from './handlers-season';
@@ -477,6 +479,10 @@ async function dispatchOp(
       // v90（AISLG-222）：礼金买道具
       await handleBuyItem(ctx, conn, op, seq, data);
       break;
+    case Op.MOVE_CITY:
+      // v91（AISLG-220）：城池迁移（随机迁 / 指定坐标迁，支持 preview）
+      await handleMoveCity(ctx, conn, op, seq, data);
+      break;
     case Op.GET_STRATAGEMS:
       await handleGetStratagems(ctx, conn, op, seq, data);
       break;
@@ -684,7 +690,9 @@ async function handleGetState(
   const gift = await loadGift(ctx.pool, accountId);
   // v90（AISLG-222）：道具背包数量（与 GET_ITEMS 的 items 同口径）
   const items = await loadItems(ctx.pool, accountId);
-  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap, gift, giftSeasonGrant: SEASON_GIFT, items });
+  // v91（AISLG-220）：逐城迁城不可迁原因、出限截止时刻与两种令的持有数
+  const moveCity = await loadMoveCityView(ctx.pool, accountId, items);
+  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap, gift, giftSeasonGrant: SEASON_GIFT, items, moveCity });
 }
 
 async function handleGetEvents(

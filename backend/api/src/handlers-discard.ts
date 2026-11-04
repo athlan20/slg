@@ -11,7 +11,8 @@ import { EventType, Op, type ErrorCode, type InitiatorRole } from '../../common/
 import { insertEvent } from '../../common/src/events';
 import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { loadBuildingLevels } from '../../common/src/production';
-import { discardCooldownDays } from '../../common/src/branch-city';
+import { discardCooldownUntil } from '../../common/src/branch-city-db';
+import { moveNpcLevelOf } from '../../common/src/move-city';
 import { FAMOUS_CITY_LEVEL, famousGarrisons, newFamousState } from '../../common/src/famous-city';
 import { npcSnapshot, type NpcCitySnapshot } from '../../common/src/world';
 import { cityInBattle } from '../../common/src/city-battle';
@@ -22,8 +23,6 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { lockCitySnapshot } from './views';
 import { returnAssistsForCity } from '../../common/src/city-assist-db';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 type DiscardOutcome =
   | { ok: true; cityId: string; x: number; y: number; cooldownUntil: Date; assistProviders: string[] }
@@ -137,10 +136,10 @@ async function discardCityTx(client: pg.PoolClient, accountId: string, cityId: s
   const originRes = await client.query(`SELECT origin_level, famous_name FROM cities WHERE id = $1`, [cityId]);
   const origin = originRes.rows[0] as { origin_level: number | null; famous_name: string | null };
   const levels = await loadBuildingLevels(client, cityId);
-  const cooldownUntil = await cooldownFrom(client, discardCooldownDays(levels.government) * DAY_MS);
+  const cooldownUntil = await discardCooldownUntil(client, levels.government);
 
   // 地块回到 NPC 城池：名城按登记恢复为未攻破的名城（城守阶段守军、外围满编）；普通城按来源等级
-  const level = origin.famous_name ? FAMOUS_CITY_LEVEL : clampNpcLevel(origin.origin_level ?? 1);
+  const level = origin.famous_name ? FAMOUS_CITY_LEVEL : moveNpcLevelOf(origin.origin_level);
   const base = npcSnapshot(level);
   const npc: NpcCitySnapshot = origin.famous_name
     ? { ...base, garrison: famousGarrisons(level).keeper, famous: newFamousState(origin.famous_name, level) }
@@ -162,14 +161,4 @@ async function discardCityTx(client: pg.PoolClient, accountId: string, cityId: s
   return { ok: true, cityId, x: tile.x, y: tile.y, cooldownUntil, assistProviders: returned.map((row) => row.providerAccountId) };
 }
 
-/** 冷却截止 = 数据库当前时刻 + 基准时长（按时间缩放） */
-async function cooldownFrom(client: pg.PoolClient, baseMs: number): Promise<Date> {
-  const res = await client.query(`SELECT now() AS db_now`);
-  const now = (res.rows[0] as { db_now: Date }).db_now;
-  return new Date(new Date(now).getTime() + scaledMs(baseMs));
-}
-
-function clampNpcLevel(level: number): number {
-  return Math.min(FAMOUS_CITY_LEVEL, Math.max(1, Math.floor(level)));
-}
 

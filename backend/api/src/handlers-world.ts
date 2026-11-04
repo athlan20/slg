@@ -48,6 +48,7 @@ import { carryingPercent, marchingPercent } from '../../common/src/tech';
 import { resolveIntercept, resolveMarchTarget } from './march-target';
 import { breakNewbieProtection, insertAttackWarning, pushAttackWarning } from './pvp';
 import { cityDispatchBlockedSeconds } from './stratagem-target';
+import { moveAttackLockRetry } from '../../common/src/move-city-db';
 
 /** 事务内取数据库 now（十面埋伏等判定的统一时钟） */
 async function dbNowOf(client: pg.PoolClient): Promise<Date> {
@@ -164,6 +165,13 @@ export async function handleMarch(
     const tile = (tileRes.rowCount ? tileRes.rows[0] : null) as TileRow | null;
     const nowRes = await client.query(`SELECT now() AS now`);
     const dbNow = nowRes.rows[0].now as Date;
+    // v91（AISLG-220）：指定坐标迁城后 12 小时内，这座城不能发起攻击类出征（运输 / 调兵 / 增援自己野地不受限）
+    const moveLockLeft = await moveAttackLockRetry(client, accountId, snap.cityId, tile, task, targetId, dbNow);
+    if (moveLockLeft !== null) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'MOVE_CITY_ATTACK_LOCK', { retryAfterSeconds: moveLockLeft });
+      return;
+    }
     // v28（AISLG-78）：带 targetId = 截击移动目标（目标格内容无关，只核对目标与路线）
     const target = targetId
       ? await resolveIntercept(client, targetId, x, y, dbNow)
