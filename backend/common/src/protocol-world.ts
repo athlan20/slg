@@ -108,6 +108,11 @@ export interface TileView {
   wildFamous: boolean;
   /** 野地储量（v61，AISLG-165）：仅野地有值（有主或无主），其余地块为 null */
   reserve: ReserveView | null;
+  /** 战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾时一致）；explored = 已探索但不在视野内，
+   *  只给上次看到的地形 / 等级 / 占领者，动态字段（驻军、库存 / 储量档位、保护、城防）为 null 或 0；未探索的地块不返回 */
+  fog: 'explored' | 'visible';
+  /** 已探索时为上次看到的时间（ISO）；实时视野为 null */
+  seenAt: string | null;
 }
 
 /** 在野名将的地块详情（v54，AISLG-144）：标记公开，名字与属性只对侦察过该地块的账号给出 */
@@ -226,7 +231,8 @@ export interface WorldMapResponseData {
 }
 
 /** 小地图城池点位的归属：本方（主城 / 分城）、他方玩家城池、NPC 城池、名城（未被占领的名城） */
-export type MapOverviewSide = 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous';
+/** famous_rumor（v92，AISLG-224）：未探索的名城在锚点上的大致方位（锚点不是真实坐标） */
+export type MapOverviewSide = 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous' | 'famous_rumor';
 
 /** GET_MAP_OVERVIEW（op 95）响应载荷（v58）：全图城池点位，野地不返回 */
 export interface MapOverviewResponseData {
@@ -236,6 +242,9 @@ export interface MapOverviewResponseData {
   at: string;
   /** 城池点位 [x, y, side]，按 y 行 x 列排序 */
   cities: Array<[number, number, MapOverviewSide]>;
+  /** 战争迷雾开启时才有（v92，AISLG-224）：已探索区块位图（10000 位，base64，1250 字节；区块下标 floor(y/10)*100+floor(x/10)，第 i 位在字节 i>>3、掩码 1<<(i&7)）与探索进度（%，1 位小数） */
+  exploredChunks?: string;
+  exploredPercent?: number;
 }
 
 /** GET_TILE（op 31）请求载荷 */

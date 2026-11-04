@@ -12,6 +12,7 @@ import { defenseCraftView, loadCityDefenses, loadDefenseCraft } from '../../comm
 import type { ConnectionRegistry } from './connections';
 import { buildView, marchView, recruitView, type BuildRow, type MarchRow, type RecruitRow } from './views';
 import { loadWorldWindow } from './views-world';
+import { loadFogWindow } from './fog-view';
 import { handleSeasonNotice } from './notify-season';
 import { pushExplorationReport } from './notify-fog';
 import { pushAllianceMessage } from './handlers-chat-send';
@@ -333,7 +334,8 @@ export class CompletionNotifier {
       return;
     }
     try {
-      const tiles = await loadWorldWindow(this.pool, x, y, 1, 1, accountId);
+      // v92（AISLG-224）：经迷雾裁剪的视图（未探索的格不推送）
+      const tiles = await loadFogWindow(this.pool, accountId, x, y, 1, 1);
       if (tiles.length > 0) {
         this.registry.broadcast(accountId, {
           op: Op.PUSH_TILE_STATE,

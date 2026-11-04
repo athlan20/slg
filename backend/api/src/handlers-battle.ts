@@ -14,6 +14,8 @@ import { marchingPercent } from '../../common/src/tech';
 import { Op, EventType, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { recordMarchExploration } from '../../common/src/fog-record';
+import { ensureFogState } from '../../common/src/fog-db';
+import { isUnknownTarget } from './fog-march';
 import { walkedFractionOf } from '../../common/src/fog';
 import { listBattleReports, saveBattleReportComment } from '../../common/src/battle-db';
 import { inWorld, marchTravelSeconds } from '../../common/src/world';
@@ -127,6 +129,11 @@ export async function handleScout(
     const tile = (tileRes.rowCount ? tileRes.rows[0] : null) as
       | { kind: string; owner_city_id: string | null; npc: unknown }
       | null;
+    // v92（AISLG-224）：迷雾中的未知格（与盲打同口径）：目标相关的拒绝不报错、不带 pvpTarget（不破保护、不发预警），
+    // 照常派出侦察；到达后由 Worker 复核守方保护与盟友关系（world-tick.ts settleScoutArrival）
+    const scoutNow = ambushNowRes.rows[0].now as Date;
+    await ensureFogState(client, accountId, scoutNow);
+    const unknown = await isUnknownTarget(client, accountId, x, y, scoutNow);
     // v91（AISLG-220）：指定坐标迁城后 12 小时内，这座城不能侦察他人城池 / 野地（侦察属于攻击类出征）
     const scoutLockLeft = await moveAttackLockRetry(client, accountId, snap.cityId, tile, 'plunder', null, ambushNowRes.rows[0].now as Date);
     if (scoutLockLeft !== null) {
@@ -150,12 +157,12 @@ export async function handleScout(
         return;
       }
       // v67（AISLG-182）：盟友（同一联盟）的城池不能侦察
-      if (owner && (await cannotAttack(client, accountId, owner.account_id))) {
+      if (!unknown && owner && (await cannotAttack(client, accountId, owner.account_id))) {
         await client.query('ROLLBACK');
         respondError(ctx.registry, conn, op, seq, 'ALLY_NOT_ATTACKABLE');
         return;
       }
-      if (owner) {
+      if (owner && !unknown) {
         const nowRes = await client.query(`SELECT now() AS now`);
         const dbNow = nowRes.rows[0].now as Date;
         // v79（AISLG-200）：洛阳只在周六 21:00–23:00 可侦察
@@ -181,7 +188,7 @@ export async function handleScout(
       }
     }
     // v67（AISLG-182）：盟友占领的野地同样不能侦察
-    if (tile && tile.kind === 'wilderness' && tile.owner_city_id && (await isAllyOfCity(client, accountId, tile.owner_city_id))) {
+    if (!unknown && tile && tile.kind === 'wilderness' && tile.owner_city_id && (await isAllyOfCity(client, accountId, tile.owner_city_id))) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'ALLY_NOT_ATTACKABLE');
       return;

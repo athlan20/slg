@@ -18,6 +18,8 @@ import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { toFullArmyCounts } from '../../common/src/battle';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { famousEncounter } from '../../common/src/famous-city';
+import { inNewbieProtection } from '../../common/src/protection';
+import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 import type { NpcCitySnapshot } from '../../common/src/world';
 import { saveScoutIntel } from '../../common/src/battle-db';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
@@ -271,6 +273,21 @@ async function settleReinforceArrival(
   await reinforceTile(client, march, troops, tile as TileRow, notifies);
 }
 
+/** 侦察到达被守方保护 / 窗口拒绝（v92）：不产出情报，部队原路返回，事件 outcome=aborted 并记原因 */
+async function abortScoutCause(
+  client: pg.PoolClient,
+  march: MarchRow,
+  troops: Partial<Record<TroopKind, number>>,
+  settled: { row: { x: number | null; y: number | null } | null },
+  notifies: TileNotify[],
+  cause: 'NEWBIE_PROTECTED' | 'LUOYANG_CLOSED',
+): Promise<void> {
+  await markMarchArrived(client, march.id);
+  const returning = await createReturnMarch(client, march, troops, settled, march.initiator);
+  await completeMarchEvent(client, march, 'aborted', { troops, returning, cause });
+  notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
+}
+
 /** 侦察到达：不战斗，产出情报快照（事件 + scout_intel）后原地返程 */
 async function settleScoutArrival(
   client: pg.PoolClient,
@@ -290,6 +307,22 @@ async function settleScoutArrival(
     const ownerRow = await client.query(`SELECT account_id FROM cities WHERE id = $1`, [tile.owner_city_id]);
     if (ownerRow.rowCount && (await cannotAttack(client, march.account_id, (ownerRow.rows[0] as { account_id: string }).account_id))) {
       await abortForAlly(client, march, troops, settled, notifies);
+      return;
+    }
+  }
+  // v92（AISLG-224）：侦察到达时复核守方城的新手保护与洛阳窗口（盲侦察可能发起时未被拒绝即出发）：不侦察，原路返回
+  if (tile.owner_city_id) {
+    const guard = await client.query(
+      `SELECT a.newbie_until, c.famous_name, now() AS now FROM cities c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`,
+      [tile.owner_city_id],
+    );
+    const row = guard.rows[0] as { newbie_until: Date | null; famous_name: string | null; now: Date } | undefined;
+    if (row && inNewbieProtection(row.newbie_until, row.now)) {
+      await abortScoutCause(client, march, troops, settled, notifies, 'NEWBIE_PROTECTED');
+      return;
+    }
+    if (row && isLuoyangName(row.famous_name) && !luoyangWindowOpen(row.now)) {
+      await abortScoutCause(client, march, troops, settled, notifies, 'LUOYANG_CLOSED');
       return;
     }
   }
