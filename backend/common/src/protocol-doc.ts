@@ -918,6 +918,18 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v91，AISLG-220）随机迁城时世界中已没有可选的空野地。',
     action: '改用指定坐标迁城（高级迁城令）选一块空野地，或等世界有空地后再试。',
   },
+  TILE_UNEXPLORED: {
+    desc: '该地块在战争迷雾中未探索，且不在任何视野来源（城池 / 领地 / 行军 / 盟友城池格）覆盖内，服务端不返回它的任何信息（v92，AISLG-224）。仅在 fog_enabled 开启时出现。',
+    action: '先派斥候或部队去这个方向探索（派去未探索坐标的出征本身允许，盲打时前端应提示“目标在迷雾中”）。也可以改查已探索的格子。',
+  },
+  CHAT_COORD_UNEXPLORED: {
+    desc: '聊天坐标卡片指向未探索的格子；服务端不会把这个格子的地形、等级等信息填进卡片（v92，AISLG-224）。',
+    action: '先探索该坐标再发送卡片，或只发送文字坐标。',
+  },
+  MOVE_CITY_TILE_UNEXPLORED: {
+    desc: '高级迁城令（指定坐标）的目标格未探索，也不在实时视野内，无法指定为迁城目标（v92，AISLG-224）。随机迁城令不受影响。',
+    action: '先探索目标区域（派斥候或部队去那里），或改用随机迁城令。',
+  },
   MOVE_CITY_ATTACK_LOCK: {
     desc: '（v91，AISLG-220）指定坐标迁城后 12 小时内，这座城的掠夺 / 占领 / 侦察 / 派协防（以及其他攻击类出征）被拒；响应附 retryAfterSeconds。运输、调兵、增援自己名下野地与召回不受限。',
     action: '等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。',

@@ -691,7 +691,7 @@
  *   gift（当前余额）与 giftSeasonGrant（= 1000）。新增错误码 INSUFFICIENT_GIFT（扣除失败、余额不变，附 balance）
  *   与事件 gift_spent（detail = { reason, amount, balance }）。本版本不新增 op，礼金暂无消耗方（用途见 AISLG-222）。
  * v90（道具，AISLG-222，只加不改）：新增道具背包 user_items（每账号每种道具一行数量，换季随 RESET 表清空）、
- *   道具配置 ITEM_DEFS（迁城令 200 礼金 / 高级迁城令 500 礼金，堆叠上限 99；代码常量，不进数据库）。新增 GET_ITEMS（op 148，
+ *   道具配置 ITEM_DEFS（迁城令 50 礼金 / 高级迁城令 100 礼金，堆叠上限 99；代码常量，不进数据库）。新增 GET_ITEMS（op 148，
  *   背包 items、目录 catalog、礼金 gift）与 BUY_ITEM（op 149，礼金买道具，必须带 expectedPrice；单价不一致返回 ITEM_PRICE_CHANGED）；
  *   GET_STATE 新增 items；PUSH_ACCOUNT_STATE（op 2020）新增 reason = items_changed（带 items 与 gift）。新增错误码
  *   INSUFFICIENT_ITEM / ITEM_STACK_FULL / ITEM_PRICE_CHANGED 与事件 item_granted / item_used / item_bought。
@@ -707,5 +707,6 @@
  *   GET_STATE 新增 moveCity（逐城 reasons / moveLockUntil，与 random / pointing 两种令的持有数）。
  *   事件 city_moved；PUSH_CITY_STATE reason = city_moved（带 from / to）与 PUSH_TILE_STATE reason = city_moved（新旧两格）。
  *   新增 9 个错误码 MOVE_CITY_*（FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK）。
+ * v92（AISLG-224，战争迷雾）：未探索的地块对玩家与 Agent 不可见（开关 fog_enabled 默认关闭）。新增推送 PUSH_EXPLORATION_REPORT（op 2029）与事件 exploration_report；新错误码 TILE_UNEXPLORED / CHAT_COORD_UNEXPLORED / MOVE_CITY_TILE_UNEXPLORED（随各协议落地）。
  */
-export const PROTOCOL_VERSION = 91;
+export const PROTOCOL_VERSION = 92;

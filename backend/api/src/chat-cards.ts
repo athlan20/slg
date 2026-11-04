@@ -8,9 +8,14 @@ import type { BattleReportView } from '../../common/src/protocol-battle';
 import type { ChatCardRequest, ChatCardView } from '../../common/src/protocol-chat';
 import type { TerrainKind, TileKind } from '../../common/src/protocol-world';
 import { inWorld } from '../../common/src/world';
+import { loadSeenWindow } from '../../common/src/fog-db';
+import { cellVisibility } from './fog-march';
 import type { BannedWordFilter } from './chat-words';
 
 type Q = pg.Pool | pg.PoolClient;
+
+/** 坐标卡片指向未探索的格（v92，AISLG-224）：调用方转 CHAT_COORD_UNEXPLORED */
+export const CHAT_CARD_UNEXPLORED = 'unexplored' as const;
 
 export interface BuiltChatCard {
   card: ChatCardView;
@@ -24,10 +29,10 @@ export async function buildChatCard(
   accountId: string,
   request: ChatCardRequest,
   filter: BannedWordFilter,
-): Promise<BuiltChatCard | null> {
+): Promise<BuiltChatCard | typeof CHAT_CARD_UNEXPLORED | null> {
   switch (request.kind) {
     case 'coord':
-      return coordCard(q, request.x, request.y);
+      return coordCard(q, accountId, request.x, request.y);
     case 'hero':
       return heroCard(q, accountId, request.heroId);
     case 'report':
@@ -37,7 +42,12 @@ export async function buildChatCard(
   }
 }
 
-async function coordCard(q: Q, x: number, y: number): Promise<BuiltChatCard | null> {
+/**
+ * 坐标卡片（v92，AISLG-224）：迷雾中未探索的格返回 unexplored（不泄露任何内容）；
+ * 实时视野内按现状；已探索但不在视野内的，内容只取发送者上次看到的快照（同 GET_WORLD_MAP 的已探索口径）。
+ * 只能在事务内调用（会维护探索状态）。
+ */
+async function coordCard(q: Q, accountId: string, x: number, y: number): Promise<BuiltChatCard | typeof CHAT_CARD_UNEXPLORED | null> {
   if (!inWorld(x, y)) {
     return null;
   }
@@ -46,6 +56,17 @@ async function coordCard(q: Q, x: number, y: number): Promise<BuiltChatCard | nu
     return null;
   }
   const row = res.rows[0] as { terrain: TerrainKind; kind: TileKind; level: number };
+  const visibility = await cellVisibility(q as pg.PoolClient, accountId, x, y, new Date());
+  if (visibility === 'unknown') {
+    return CHAT_CARD_UNEXPLORED;
+  }
+  if (visibility === 'explored') {
+    const seen = (await loadSeenWindow(q, accountId, x, y, 1, 1)).get(`${x},${y}`);
+    const kind: TileKind = seen ? (seen.kind === 'city' || seen.kind === 'npc_city' ? (seen.kind as TileKind) : 'wilderness') : row.kind === 'npc_city' ? 'npc_city' : 'wilderness';
+    const level = kind === 'city' ? 0 : seen ? seen.level : row.kind === 'npc_city' ? row.level : Math.max(1, row.level);
+    const card: ChatCardView = { kind: 'coord', x, y, terrain: row.terrain, tileKind: kind, level };
+    return { card, reportDetail: null };
+  }
   // 玩家城池没有野地等级，统一按 0 展示
   const card: ChatCardView = {
     kind: 'coord',

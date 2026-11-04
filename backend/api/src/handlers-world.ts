@@ -35,7 +35,7 @@ import type { TileRow } from '../../common/src/world-db';
 import { readIntInRange, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { loadTileDetail, loadWorldWindow } from './views-world';
+import { loadFogTileDetail, loadFogWindow } from './fog-view';
 import { deployCountOf, loadCityState, lockCitySnapshot, marchView, type MarchRow } from './views';
 import { canDeployMore, stationPercent } from '../../common/src/building-effects';
 import { famousMarchPercent } from '../../common/src/famous-effects';
@@ -47,6 +47,9 @@ import { decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { carryingPercent, marchingPercent } from '../../common/src/tech';
 import { resolveIntercept, resolveMarchTarget } from './march-target';
 import { breakNewbieProtection, insertAttackWarning, pushAttackWarning } from './pvp';
+import { blindEligibleTask, isUnknownTarget } from './fog-march';
+import { ensureFogState } from '../../common/src/fog-db';
+import { getFogEnabled } from '../../common/src/fog-config';
 import { cityDispatchBlockedSeconds } from './stratagem-target';
 import { moveAttackLockRetry } from '../../common/src/move-city-db';
 
@@ -82,7 +85,8 @@ export async function handleGetWorldMap(
     originY = cy - Math.floor(height / 2);
   }
   const window = clampMapWindow(originX, originY, width, height);
-  const tiles = await loadWorldWindow(ctx.pool, window.x, window.y, window.w, window.h, conn.accountId as string);
+  // v92（AISLG-224）：战争迷雾裁剪（开关关闭时原样返回，fog = visible）
+  const tiles = await loadFogWindow(ctx.pool, conn.accountId as string, window.x, window.y, window.w, window.h);
   respondOk(ctx.registry, conn, op, seq, {
     size: WORLD_SIZE,
     x: window.x,
@@ -107,12 +111,17 @@ export async function handleGetTile(
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }
-  const tile = await loadTileDetail(ctx.pool, x as number, y as number, conn.accountId as string);
-  if (!tile) {
+  // v92（AISLG-224）：未探索的格返回 TILE_UNEXPLORED（不泄露任何地块信息）
+  const result = await loadFogTileDetail(ctx.pool, conn.accountId as string, x as number, y as number);
+  if (result.kind === 'missing') {
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }
-  respondOk(ctx.registry, conn, op, seq, { tile });
+  if (result.kind === 'unexplored') {
+    respondError(ctx.registry, conn, op, seq, 'TILE_UNEXPLORED');
+    return;
+  }
+  respondOk(ctx.registry, conn, op, seq, { tile: result.detail });
 }
 
 /** MARCH：从主城派出部队（扣减城内驻军），到达后由 Worker 结算（v16：task 缺省 plunder） */
@@ -173,9 +182,21 @@ export async function handleMarch(
       return;
     }
     // v28（AISLG-78）：带 targetId = 截击移动目标（目标格内容无关，只核对目标与路线）
-    const target = targetId
+    // v92（AISLG-224）：探索状态并入（每次用到迷雾都先维护）；盲打时校验被拒绝不报错，改为正常建行军
+    // 关闭迷雾时不碰探索状态（零影响）
+    if (getFogEnabled()) {
+      await ensureFogState(client, accountId, dbNow);
+    }
+    let fogDenied = false;
+    let target = targetId
       ? await resolveIntercept(client, targetId, x, y, dbNow)
       : await resolveMarchTarget(client, accountId, snap.cityId, tile, task, snap.levels.government, dbNow);
+    if (!target.purpose && !targetId && blindEligibleTask(task) && (await isUnknownTarget(client, accountId, x, y, dbNow))) {
+      // 盲打（迷雾中）：校验被拒绝不报错，照常建行军；不带 pvp（不发预警、不破保护），
+      // 并写 fog_denied：到达一律原路返回（Worker resolveArrival），不因目标此后变得可打而开战
+      target = { purpose: task };
+      fogDenied = true;
+    }
     if (!target.purpose) {
       await client.query('ROLLBACK');
       const cityState = await loadCityState(ctx.pool, accountId);
@@ -273,13 +294,13 @@ export async function handleMarch(
       ambushMs = arriveMs < target.interceptWindow.from ? arriveMs : null;
     }
     const ins = await client.query(
-      `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at, cargo, target_id, ambush_at, hero_id)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'marching', $7, $8, $9::jsonb, $10, $11, $12)
+      `INSERT INTO marches (account_id, from_city_id, x, y, troops, purpose, status, initiator, arrive_at, cargo, target_id, ambush_at, hero_id, fog_denied)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'marching', $7, $8, $9::jsonb, $10, $11, $12, $13)
        RETURNING *`,
       [
         accountId, snap.cityId, x, y, JSON.stringify(troops), target.purpose, role,
         new Date(engageMs).toISOString(), cargo ? JSON.stringify(cargo) : null, targetId,
-        ambushMs !== null ? new Date(ambushMs).toISOString() : null, marchHero ? marchHero.id : null,
+        ambushMs !== null ? new Date(ambushMs).toISOString() : null, marchHero ? marchHero.id : null, fogDenied,
       ],
     );
     const march = ins.rows[0] as MarchRow;

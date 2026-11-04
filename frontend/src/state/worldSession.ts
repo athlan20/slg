@@ -225,6 +225,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
     [clientRef],
   );
 
+
   const fetchDetail = useCallback(
     async (x: number, y: number) => {
       const client = clientRef.current;

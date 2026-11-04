@@ -87,6 +87,7 @@ import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 import { useStratagemSession, type StratagemSession } from './stratagemSession';
 import { useItemsSession, type ItemsSession } from './itemsSession';
 import { useMoveCitySession, type MoveCitySession } from './moveCitySession';
+import { clearExplorationReports, pushExplorationReport, type ExplorationReport } from './explorationReport';
 
 /** 断线自动重连间隔（毫秒） */
 const RECONNECT_DELAY_MS = 3000;
@@ -520,6 +521,9 @@ export function useGameSession(): GameSession {
         // v12：地块归属 / 驻军变化 → 更新地图窗口并刷新选中详情
         const data = frame.data as unknown as TileStatePushData;
         onTilePush(data.tile);
+      } else if (frame.op === Op.PUSH_EXPLORATION_REPORT) {
+        // v92（AISLG-224）：探索简报 → 地图页简报卡片
+        pushExplorationReport((frame.data as unknown as { report: ExplorationReport }).report);
       } else if (frame.op === Op.PUSH_BATTLE_REPORT) {
         // v13：战斗战报生成 → 置顶战报列表（列表未加载时不预取，按需拉取覆盖）
         const data = frame.data as unknown as { report: BattleReportView };
@@ -1051,6 +1055,8 @@ export function useGameSession(): GameSession {
 
   const logout = useCallback(async () => {
     logoutIntentRef.current = true;
+    // 退出登录：探索简报不串到下一个账号（AISLG-224 复核）
+    clearExplorationReports();
     const client = clientRef.current;
     try {
       if (client?.connected) {

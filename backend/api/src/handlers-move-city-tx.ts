@@ -28,6 +28,7 @@ import {
   tooCloseToOtherCities,
 } from '../../common/src/move-city-db';
 import type { MoveCityPreviewData, MoveCityResponseData } from '../../common/src/protocol-move-city';
+import { isUnknownTarget } from './fog-march';
 
 export interface Point {
   x: number;
@@ -77,6 +78,10 @@ export async function moveCityTx(
   // 目标格：指定坐标须为无主空野地且不贴近他人城池；随机迁只需世界里还有空地
   let to: Point | null = null;
   if (mode === 'pointing' && target) {
+    // v92（AISLG-224）：指定坐标须已探索或在实时视野内（先于地块内容判定，不泄露格子信息）
+    if (await isUnknownTarget(client, accountId, target.x, target.y, dbNow)) {
+      return { ok: false, code: 'MOVE_CITY_TILE_UNEXPLORED' };
+    }
     const tile = await loadTileBrief(client, target.x, target.y);
     if (!moveTileUsable(tile)) {
       return { ok: false, code: 'MOVE_CITY_TILE_INVALID' };

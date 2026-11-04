@@ -80,6 +80,26 @@ export const EXTRA_MAP = {
     detailHint: '再点一次查看行军详情',
   },
   /** 敌人来袭标记（AISLG-216）：目标格上的红标与倒计时 */
+  /** 战争迷雾（AISLG-224）：未探索的黑雾、已探索的角标、探索简报与小地图进度 */
+  fog: {
+    unknownTitle: '未探索：这里是黑雾，派斥候或部队过去才能看到',
+    exploredTitle: (time: string) => `已探索 · 上次看到 ${time}`,
+    unknownNotice: (x: number, y: number) => `目标 (${x}, ${y}) 在迷雾中，情况未知`,
+    exploredPercent: (pct: number) => `已探索 ${pct}%`,
+    reportTitle: '探索简报',
+    reportSummary: (chunks: number) => `新探索 ${chunks} 个区块`,
+    reportCells: '发现的坐标（点击跳转）',
+    reportClose: '关闭',
+    reportKind: {
+      famous: '名城',
+      wild_hero: '在野名将',
+      gold_mine: '金矿',
+      player_city: '玩家城',
+      npc_city: 'NPC 城',
+      high_wilderness: '高级野地',
+    } as Record<string, string>,
+    rumor: '名城大致方位',
+  },
   raid: {
     label: (time: string) => `来袭 ${time}`,
     /** 视野外红色箭头的提示 */

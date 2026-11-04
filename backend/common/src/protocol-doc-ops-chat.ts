@@ -85,7 +85,7 @@ export const REQUEST_CHAT_SEND: RequestOpDoc = {
   dataFields: [
     { name: 'message', type: 'object', desc: '发出的消息视图（见 PUSH_CHAT_MESSAGE）。' },
   ],
-  errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN', 'CHAT_MUTED', 'CHAT_GOVERNMENT_TOO_LOW', 'CHAT_BLOCKED', 'CHAT_RATE_LIMITED', 'ALLIANCE_NOT_IN'],
+  errors: ['INVALID_PARAMS', 'AGENT_FORBIDDEN', 'CHAT_MUTED', 'CHAT_GOVERNMENT_TOO_LOW', 'CHAT_BLOCKED', 'CHAT_RATE_LIMITED', 'ALLIANCE_NOT_IN', 'CHAT_COORD_UNEXPLORED'],
   examples: [
     {
       caption: '世界频道发文字',
@@ -234,4 +234,6 @@ export const AGENT_HIDDEN_ERROR_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCod
   'CHAT_MUTED',
   'CHAT_BLOCKED',
   'CHAT_RATE_LIMITED',
+  // 迷雾（v92，AISLG-224）：聊天仅限玩家，坐标卡片指向未探索格的拒绝同样不对 Agent 文档公开
+  'CHAT_COORD_UNEXPLORED',
 ]);

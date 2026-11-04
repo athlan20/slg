@@ -291,6 +291,8 @@ export const Op = {
   PUSH_BATTLEFIELD_STATE: 2027,
   /** 被施计警报（v86，AISLG-211）：会失败的计谋不论成败都推给目标玩家（欺敌类与金蝉脱壳不推） */
   PUSH_STRATAGEM: 2028,
+  /** S→C 探索简报（v92，AISLG-224） */
+  PUSH_EXPLORATION_REPORT: 2029,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
