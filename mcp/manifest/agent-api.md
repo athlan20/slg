@@ -18430,7 +18430,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-返回账号的道具背包 items（每种道具的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice，null 表示不卖，堆叠上限 stackMax）与礼金余额 gift。商店出售的是 shopPrice 非 null 的道具：迁城令（city_order，礼金 200，堆叠上限 99）；高级迁城令（city_order_adv，礼金 500，堆叠上限 99）。道具随换季清空，礼金见 GET_STATE 的 gift。
+返回账号的道具背包 items（每种道具的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice，null 表示不卖，堆叠上限 stackMax）与礼金余额 gift。商店出售的是 shopPrice 非 null 的道具：迁城令（city_order，礼金 50，堆叠上限 99）；高级迁城令（city_order_adv，礼金 100，堆叠上限 99）。道具随换季清空，礼金见 GET_STATE 的 gift。
 
 **请求字段**
 
@@ -18530,7 +18530,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 **示例**
 
-**买 2 张迁城令（单价 200）**
+**买 2 张迁城令（单价 50）**
 
 请求：
 
@@ -18541,7 +18541,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "data": {
     "itemId": "city_order",
     "count": 2,
-    "expectedPrice": 200
+    "expectedPrice": 50
   }
 }
 ```
@@ -18557,9 +18557,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
     "itemId": "city_order",
     "bought": 2,
     "count": 4,
-    "price": 200,
-    "cost": 400,
-    "gift": 200
+    "price": 50,
+    "cost": 100,
+    "gift": 900
   }
 }
 ```
@@ -18575,7 +18575,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "data": {
     "itemId": "city_order",
     "count": 1,
-    "expectedPrice": 200
+    "expectedPrice": 50
   }
 }
 ```

@@ -19920,7 +19920,7 @@
       "name": "GET_ITEMS",
       "title": "查询道具背包、道具目录与礼金余额（v90，AISLG-222）",
       "preAuth": false,
-      "summary": "返回账号的道具背包 items（每种道具的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice，null 表示不卖，堆叠上限 stackMax）与礼金余额 gift。商店出售的是 shopPrice 非 null 的道具：迁城令（city_order，礼金 200，堆叠上限 99）；高级迁城令（city_order_adv，礼金 500，堆叠上限 99）。道具随换季清空，礼金见 GET_STATE 的 gift。",
+      "summary": "返回账号的道具背包 items（每种道具的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice，null 表示不卖，堆叠上限 stackMax）与礼金余额 gift。商店出售的是 shopPrice 非 null 的道具：迁城令（city_order，礼金 50，堆叠上限 99）；高级迁城令（city_order_adv，礼金 100，堆叠上限 99）。道具随换季清空，礼金见 GET_STATE 的 gift。",
       "requestFields": [],
       "dataFields": [
         {
@@ -20052,14 +20052,14 @@
       ],
       "examples": [
         {
-          "caption": "买 2 张迁城令（单价 200）",
+          "caption": "买 2 张迁城令（单价 50）",
           "request": {
             "op": 149,
             "seq": 62,
             "data": {
               "itemId": "city_order",
               "count": 2,
-              "expectedPrice": 200
+              "expectedPrice": 50
             }
           },
           "responses": [
@@ -20071,9 +20071,9 @@
                 "itemId": "city_order",
                 "bought": 2,
                 "count": 4,
-                "price": 200,
-                "cost": 400,
-                "gift": 200
+                "price": 50,
+                "cost": 100,
+                "gift": 900
               }
             }
           ]
@@ -20086,7 +20086,7 @@
             "data": {
               "itemId": "city_order",
               "count": 1,
-              "expectedPrice": 200
+              "expectedPrice": 50
             }
           },
           "responses": [

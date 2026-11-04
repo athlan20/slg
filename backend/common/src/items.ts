@@ -31,7 +31,7 @@ export const ITEM_DEFS: ItemDef[] = [
     desc: '消耗 1 张，随机迁城一次。',
     descEn: 'Uses 1 order to relocate the city once to a random spot.',
     kind: 'order',
-    shopPrice: 200,
+    shopPrice: 50,
     stackMax: 99,
   },
   {
@@ -41,7 +41,7 @@ export const ITEM_DEFS: ItemDef[] = [
     desc: '消耗 1 张，指定坐标迁城一次。',
     descEn: 'Uses 1 order to relocate the city once to chosen coordinates.',
     kind: 'order',
-    shopPrice: 500,
+    shopPrice: 100,
     stackMax: 99,
   },
 ];

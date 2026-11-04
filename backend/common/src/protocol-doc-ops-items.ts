@@ -77,20 +77,20 @@ export const REQUEST_BUY_ITEM: RequestOpDoc = {
   errors: ['INVALID_PARAMS', 'ITEM_PRICE_CHANGED', 'ITEM_STACK_FULL', 'INSUFFICIENT_GIFT'],
   examples: [
     {
-      caption: '买 2 张迁城令（单价 200）',
-      request: { op: Op.BUY_ITEM, seq: 62, data: { itemId: 'city_order', count: 2, expectedPrice: 200 } },
+      caption: '买 2 张迁城令（单价 50）',
+      request: { op: Op.BUY_ITEM, seq: 62, data: { itemId: 'city_order', count: 2, expectedPrice: 50 } },
       responses: [
         {
           op: Op.BUY_ITEM,
           seq: 62,
           ok: true,
-          data: { itemId: 'city_order', bought: 2, count: 4, price: 200, cost: 400, gift: 200 },
+          data: { itemId: 'city_order', bought: 2, count: 4, price: 50, cost: 100, gift: 900 },
         },
       ],
     },
     {
       caption: '单价已变：返回当前单价，不扣不改',
-      request: { op: Op.BUY_ITEM, seq: 63, data: { itemId: 'city_order', count: 1, expectedPrice: 200 } },
+      request: { op: Op.BUY_ITEM, seq: 63, data: { itemId: 'city_order', count: 1, expectedPrice: 50 } },
       responses: [
         {
           op: Op.BUY_ITEM,
