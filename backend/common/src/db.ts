@@ -17,6 +17,7 @@ import { SEASON_SCHEMA_SQL } from './season-schema';
 import { seedFirstSeason } from './season-seed';
 import { attachPoolDiagnostics, logConnError } from './db-diag';
 import { migrateMainOnlyBuildings } from './main-only-db';
+import { migrateGiftColumn } from './gift-schema';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -822,6 +823,8 @@ async function migrateDataOnce(client: pg.PoolClient): Promise<void> {
     // v87（AISLG-217）：酒馆 / 书院只在主城——存量数据取最高等级合并到主城、分城两项删除、
     // 分城在建 / 排队的两项取消并全额返还（幂等，跑过一次后无操作）
     await migrateMainOnlyBuildings(client);
+    // v89（AISLG-221）：礼金列（accounts.gift）；列不存在时才建并给当前赛季账号补发 1000（同一事务，幂等）
+    await migrateGiftColumn(client);
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
