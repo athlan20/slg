@@ -1,5 +1,5 @@
 {
-  "version": 90,
+  "version": 91,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -873,7 +873,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 90,
+                "protocolVersion": 91,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -922,7 +922,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 90,
+                "protocolVersion": 91,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -942,14 +942,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/87 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/88 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 87,
+              "docVersion": 88,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -964,8 +964,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 90,
-                "docNotice": "接口文档已从 v87 更新到 v90：请 GET /agent-api/changes/87 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 91,
+                "docNotice": "接口文档已从 v88 更新到 v91：请 GET /agent-api/changes/88 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -1295,6 +1295,11 @@
           "name": "items",
           "type": "object",
           "desc": "（v90，AISLG-222）账号道具背包：{ [itemId]: count }，每种已定义道具都有键（缺省 0）。与 GET_ITEMS 的 items 同口径。道具随换季清空。"
+        },
+        {
+          "name": "moveCity",
+          "type": "object",
+          "desc": "（v91，AISLG-220）城池迁移视图：cities[] 逐城给出 { cityId, reasons（不可迁原因，全部列出：MOVE_CITY_FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE，空数组 = 前四条都通过）, moveLockUntil（指定坐标迁后的出征限制截止时刻，仅未结束时给出） }；items.random = { itemId: 'city_order', count }（迁城令持有数），items.pointing = { itemId: 'city_order_adv', count }（高级迁城令持有数）。目标格与近邻条件不在此视图内，以 MOVE_CITY 的 preview 为准。"
         },
         {
           "name": "cities",
@@ -20103,6 +20108,199 @@
       "agentNote": "只在玩家明确要买时调用。收到 ITEM_PRICE_CHANGED 时先 GET_ITEMS 刷新目录，把新单价告诉玩家，等他确认后再带新单价重发，不要用旧价自动重试。"
     },
     {
+      "op": 150,
+      "kind": "request",
+      "name": "MOVE_CITY",
+      "title": "迁城（v91，AISLG-220）",
+      "preAuth": false,
+      "summary": "把账号名下的一座城（主城或分城，名城除外）迁到地图上的一块空野地。mode = random 随机迁：消耗 1 张迁城令（city_order），系统按注册落位同一算法选址，不需要坐标；mode = pointing 指定坐标迁：消耗 1 张高级迁城令（city_order_adv），x / y 必填，目标须为无主、无 NPC 的空野地，且离其他账号的城池格（分城、名城含在内）至少 3 格（Chebyshev 距离）。道具用 BUY_ITEM 以礼金购买，GET_ITEMS 查看持有数。\n\n拦截顺序（前四条即 GET_STATE moveCity 的 reasons）：名城 MOVE_CITY_FAMOUS → 本城有部队在外（本城发出的行军含返程 / 运输 / 调兵，或派去别人城里的协防）MOVE_CITY_ARMY_OUTSIDE（附 count）→ 盟友协防本城 MOVE_CITY_HAS_ALLY_FORCE（附 count；迁城不会自动遣返，须对方召回或城主 DISMISS_ASSIST）→ 本城或其名下野地有敌情 MOVE_CITY_IN_BATTLE（只看这一座城）→ 目标格不合法 MOVE_CITY_TILE_INVALID / 太近 MOVE_CITY_TOO_CLOSE / 随机选址无空地 MOVE_CITY_NO_SPACE → 道具不足 INSUFFICIENT_ITEM（附 itemId、count）→ 执行时目标被抢先 MOVE_CITY_TILE_TAKEN。以上任何一条失败都不扣道具、不改任何数据。\n\n迁后：新格变成本城（等级 0，同注册落位）；城的建筑、驻军、资源、武将、科技、队列、名下野地与城防 / 免战、联盟、爵位、保护状态全部保留。旧格：主城变回空野地（地形不变，等级按世界生成同口径重新抽取）；分城回归 NPC 城池（等级 = 来源等级，并写入与放弃分城同口径的占回冷却，冷却内不能再占这一格的 NPC 城）。\n\n指定坐标迁（pointing）后 12 小时内（按时间缩放），这座城只能运输、调兵、召回、增援自己名下的野地；掠夺、占领、侦察、派协防以及其他攻击类出征都返回 MOVE_CITY_ATTACK_LOCK（附 retryAfterSeconds）。随机迁没有这个限制。迁城不中断也不延长新手保护 / 免战，迁后没有额外保护期。\n\n预览：preview = true 时不改任何数据，返回要消耗的道具、已有数量、目标格、距离、旧格去向与出征限制时长；条件不满足时预览同样返回对应错误码（附原因数据），不会只返回 ok。执行必须携带 confirm = true。",
+      "requestFields": [
+        {
+          "name": "cityId",
+          "type": "string",
+          "desc": "必填。要迁的城 UUID（GET_STATE 的 cities[].id，主城或分城，名城除外）。非本账号名下的城或格式不对返回 INVALID_PARAMS。"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "desc": "必填。random（随机迁，消耗迁城令）或 pointing（指定坐标迁，消耗高级迁城令）；其他值返回 INVALID_PARAMS。"
+        },
+        {
+          "name": "x / y",
+          "type": "number",
+          "desc": "mode = pointing 时必填的整数坐标（0..999 范围内，越界返回 INVALID_PARAMS）；random 时忽略。"
+        },
+        {
+          "name": "confirm",
+          "type": "boolean",
+          "desc": "执行时必填，必须为 true（缺失或不为 true 返回 INVALID_PARAMS）；preview = true 时不需要。"
+        },
+        {
+          "name": "preview",
+          "type": "boolean",
+          "desc": "可选。true = 只预览，不改任何数据（见 summary）。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "cityId",
+          "type": "string",
+          "desc": "迁走的城 UUID。"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "desc": "random 或 pointing。"
+        },
+        {
+          "name": "from / to",
+          "type": "object",
+          "desc": "旧坐标与新坐标 { x, y }。"
+        },
+        {
+          "name": "distance",
+          "type": "number",
+          "desc": "旧坐标到新坐标的 Chebyshev 距离（不影响消耗，供参考）。"
+        },
+        {
+          "name": "itemId",
+          "type": "string",
+          "desc": "消耗的道具 id（city_order 或 city_order_adv）。"
+        },
+        {
+          "name": "left",
+          "type": "number",
+          "desc": "消耗后该道具的剩余数量。"
+        },
+        {
+          "name": "oldTile",
+          "type": "string",
+          "desc": "旧格去向：wilderness（主城，变空野地）或 npc_city（分城，回归 NPC 城）。"
+        },
+        {
+          "name": "moveLockUntil",
+          "type": "string | null",
+          "desc": "pointing 迁后的出征限制截止时刻（ISO 8601）；random 为 null。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "MOVE_CITY_FAMOUS",
+        "MOVE_CITY_ARMY_OUTSIDE",
+        "MOVE_CITY_HAS_ALLY_FORCE",
+        "MOVE_CITY_IN_BATTLE",
+        "MOVE_CITY_TILE_INVALID",
+        "MOVE_CITY_TILE_TAKEN",
+        "MOVE_CITY_TOO_CLOSE",
+        "MOVE_CITY_NO_SPACE",
+        "INSUFFICIENT_ITEM"
+      ],
+      "examples": [
+        {
+          "caption": "预览指定坐标迁城（主城迁到 (420, 388)，有 1 张高级迁城令）",
+          "request": {
+            "op": 150,
+            "seq": 70,
+            "data": {
+              "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+              "mode": "pointing",
+              "x": 420,
+              "y": 388,
+              "preview": true
+            }
+          },
+          "responses": [
+            {
+              "op": 150,
+              "seq": 70,
+              "ok": true,
+              "data": {
+                "preview": true,
+                "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+                "mode": "pointing",
+                "itemId": "city_order_adv",
+                "count": 1,
+                "need": 1,
+                "from": {
+                  "x": 512,
+                  "y": 300
+                },
+                "to": {
+                  "x": 420,
+                  "y": 388
+                },
+                "distance": 92,
+                "oldTile": "wilderness",
+                "attackLockSeconds": 43200
+              }
+            }
+          ]
+        },
+        {
+          "caption": "执行随机迁城（分城回归 NPC 城）",
+          "request": {
+            "op": 150,
+            "seq": 71,
+            "data": {
+              "cityId": "5d1f0c2e-8a6b-4f3d-b7e9-0c2a1d4e6f81",
+              "mode": "random",
+              "confirm": true
+            }
+          },
+          "responses": [
+            {
+              "op": 150,
+              "seq": 71,
+              "ok": true,
+              "data": {
+                "cityId": "5d1f0c2e-8a6b-4f3d-b7e9-0c2a1d4e6f81",
+                "mode": "random",
+                "from": {
+                  "x": 300,
+                  "y": 512
+                },
+                "to": {
+                  "x": 745,
+                  "y": 129
+                },
+                "distance": 445,
+                "itemId": "city_order",
+                "left": 4,
+                "oldTile": "npc_city",
+                "moveLockUntil": null
+              }
+            }
+          ]
+        },
+        {
+          "caption": "离他人城池太近：拒绝，不扣令",
+          "request": {
+            "op": 150,
+            "seq": 72,
+            "data": {
+              "cityId": "0b7e5c1a-3d2f-4e8a-9c61-2f4a8d9e1b07",
+              "mode": "pointing",
+              "x": 421,
+              "y": 390,
+              "confirm": true
+            }
+          },
+          "responses": [
+            {
+              "op": 150,
+              "seq": 72,
+              "ok": false,
+              "error": {
+                "code": "MOVE_CITY_TOO_CLOSE",
+                "message": "离其他玩家城池太近（需至少间隔 3 格）"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "先 GET_STATE 看 moveCity：reasons 为空且对应道具持有数 ≥ 1 才可迁。指定坐标前先 GET_WORLD_MAP 找空野地，再用 preview = true 预览（看 to、distance、attackLockSeconds），玩家确认后才带 confirm = true 执行。收到 INSUFFICIENT_ITEM 时先 GET_ITEMS，由玩家决定是否 BUY_ITEM。pointing 迁后 12 小时内不要派攻击类部队（会返回 MOVE_CITY_ATTACK_LOCK）；运输、调兵与增援自己的野地不受限。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -20250,7 +20448,7 @@
       "kind": "push",
       "name": "PUSH_CITY_STATE",
       "title": "推送：城池级状态变化",
-      "summary": "城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）、troops_disbanded=城内驻军被遣散（DISBAND_TROOPS，v84，AISLG-209；只带 cityId，收到后用 GET_STATE 刷新驻军与资源）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。",
+      "summary": "城池级状态变化时推送给该账号所有在线连接（发起连接除外）：city_renamed=城池改名（RENAME_CITY）、account_reset=账号数据被 RESET_ACCOUNT 重置（v9，重置后全部游戏数据回到开号初始状态）、city_discarded=分城被放弃（DISCARD_CITY，v57；推送只带 cityId，收到后用 GET_STATE 刷新城池列表）、capital_changed=设为主城（SET_CAPITAL，v82，AISLG-205；cityId 为新主城，formerCapitalId 为原主城，收到后用 GET_STATE 刷新）、troops_disbanded=城内驻军被遣散（DISBAND_TROOPS，v84，AISLG-209；只带 cityId，收到后用 GET_STATE 刷新驻军与资源）。city_moved=城池迁移（MOVE_CITY，v91，AISLG-220；带 cityId 与 from / to 新旧坐标，收到后用 GET_STATE 刷新，新旧两格另有 PUSH_TILE_STATE reason = city_moved）。建造队列相关变化走 PUSH_BUILD_STATE。推送只携带变化摘要，完整现状用 GET_STATE 查询。",
       "dataFields": [
         {
           "name": "reason",
@@ -22590,6 +22788,42 @@
     "ITEM_PRICE_CHANGED": {
       "desc": "（v90，AISLG-222）BUY_ITEM 的 expectedPrice 与当前单价不一致（道具调价过）；响应附 price（当前单价）。不扣礼金、不加道具。",
       "action": "用 GET_ITEMS 刷新目录，把新单价告诉玩家，让玩家重新确认后带新单价重发；不要自动用新价重试。"
+    },
+    "MOVE_CITY_FAMOUS": {
+      "desc": "（v91，AISLG-220）名城（特殊城池）不能迁移；不扣令、不改任何数据。",
+      "action": "换一座非名城的城迁移；名城只能靠攻占 / 经营保有。"
+    },
+    "MOVE_CITY_ARMY_OUTSIDE": {
+      "desc": "（v91，AISLG-220）这座城有部队在外：本城发出的行军（出征 / 返程 / 运输 / 调兵）或派去别人城里的协防。响应附 count。",
+      "action": "等部队回到本城（或用 RECALL_MARCH 召回、DISMISS_ASSIST 撤回协防）后再迁。驻守自己野地的部队不算在外。"
+    },
+    "MOVE_CITY_HAS_ALLY_FORCE": {
+      "desc": "（v91，AISLG-220）盟友的部队正在协防这座城；响应附 count。迁城时不会自动遣返。",
+      "action": "请盟友召回协防，或城主用 DISMISS_ASSIST 遣返后再迁。"
+    },
+    "MOVE_CITY_IN_BATTLE": {
+      "desc": "（v91，AISLG-220）这座城或其名下野地正有行军指向，或有未结的 NPC 来袭（与放弃分城、遣散士兵同一口径）。只看这一座城。",
+      "action": "等战斗结算或来袭结束后再迁；若是自己的行军，可用 RECALL_MARCH 撤回。"
+    },
+    "MOVE_CITY_TILE_INVALID": {
+      "desc": "（v91，AISLG-220）指定坐标不是无主、无 NPC 的空野地（NPC 城、他人城池、已被占领的野地、城池格等一切非空野地的格都算）。不扣令。",
+      "action": "用 GET_MAP_OVERVIEW / GET_WORLD_MAP 找一块空野地（kind=wilderness 且无归属）后重试。"
+    },
+    "MOVE_CITY_TILE_TAKEN": {
+      "desc": "（v91，AISLG-220）目标格在判定与落库之间被别人抢先占走（并发）。令与坐标都未改动。",
+      "action": "重新 GET_WORLD_MAP 选一块空野地后再发起迁城。"
+    },
+    "MOVE_CITY_TOO_CLOSE": {
+      "desc": "（v91，AISLG-220）目标离其他账号的城池格（分城、名城含在内）不足 3 格（Chebyshev 距离）。自己的城不受此限。",
+      "action": "选离他人城池至少 3 格的空野地；随机迁不受此限。"
+    },
+    "MOVE_CITY_NO_SPACE": {
+      "desc": "（v91，AISLG-220）随机迁城时世界中已没有可选的空野地。",
+      "action": "改用指定坐标迁城（高级迁城令）选一块空野地，或等世界有空地后再试。"
+    },
+    "MOVE_CITY_ATTACK_LOCK": {
+      "desc": "（v91，AISLG-220）指定坐标迁城后 12 小时内，这座城的掠夺 / 占领 / 侦察 / 派协防（以及其他攻击类出征）被拒；响应附 retryAfterSeconds。运输、调兵、增援自己名下野地与召回不受限。",
+      "action": "等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。"
     },
     "INTERNAL": {
       "desc": "服务端内部错误。",

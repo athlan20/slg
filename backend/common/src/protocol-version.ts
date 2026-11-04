@@ -696,5 +696,16 @@
  *   GET_STATE 新增 items；PUSH_ACCOUNT_STATE（op 2020）新增 reason = items_changed（带 items 与 gift）。新增错误码
  *   INSUFFICIENT_ITEM / ITEM_STACK_FULL / ITEM_PRICE_CHANGED 与事件 item_granted / item_used / item_bought。
  *   公共函数 grantItem / consumeItem 在 common/src/items-db.ts（仅事务内调用）；消耗由各玩法 op 自己调用（迁城令由 AISLG-220 的 MOVE_CITY 消耗）。
+ * v91（城池迁移，AISLG-220，只加不改）：新增 MOVE_CITY（op 150）：把账号名下的一座城（主城或分城，名城除外）迁到空野地。
+ *   mode = random（消耗 1 张迁城令 city_order，系统按注册落位同一算法选址）或 pointing（消耗 1 张高级迁城令 city_order_adv，
+ *   指定 x / y，目标须为无主空野地，离他人城池格 ≥ 3）；执行须 confirm = true，preview = true 只预览（条件不满足同样返回错误码）。
+ *   拦截顺序：名城 MOVE_CITY_FAMOUS → 本城军队在外 MOVE_CITY_ARMY_OUTSIDE → 盟友驻军 MOVE_CITY_HAS_ALLY_FORCE → 战乱 MOVE_CITY_IN_BATTLE
+ *   → 目标格 MOVE_CITY_TILE_INVALID / MOVE_CITY_TOO_CLOSE / MOVE_CITY_NO_SPACE → 令不足 INSUFFICIENT_ITEM → 并发抢格 MOVE_CITY_TILE_TAKEN。
+ *   旧格：主城 → 空野地（地形保留、等级重抽）；分城 → 回归 NPC 城（等级 = origin_level，并写放弃冷却 city_discards）。
+ *   pointing 迁后 12 小时（随时间缩放）内这座城的掠夺 / 占领 / 侦察 / 派协防返回 MOVE_CITY_ATTACK_LOCK（附 retryAfterSeconds），
+ *   运输、调兵、增援自己名下野地不受限；random 迁城无此限制。城池行新增 move_lock_until。
+ *   GET_STATE 新增 moveCity（逐城 reasons / moveLockUntil，与 random / pointing 两种令的持有数）。
+ *   事件 city_moved；PUSH_CITY_STATE reason = city_moved（带 from / to）与 PUSH_TILE_STATE reason = city_moved（新旧两格）。
+ *   新增 9 个错误码 MOVE_CITY_*（FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK）。
  */
-export const PROTOCOL_VERSION = 90;
+export const PROTOCOL_VERSION = 91;
