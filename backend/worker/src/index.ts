@@ -16,6 +16,8 @@ import { ensureWorld } from '../../common/src/world-db';
 import { getTimeScale, refreshTimeScale, timeScaleStale } from '../../common/src/time-scale';
 import { processDueBuilds, processDueDefenseCrafts, processDueRecruits } from './queue-tick';
 import { processDueMarches } from './world-tick';
+import { processFogExploration } from './fog-tick';
+import { fogConfigStale, refreshFogEnabled } from '../../common/src/fog-config';
 import { processDueNpcAttacks } from './npc-attack';
 import { startNpcRaidTimer } from './npc-raid-timer';
 import { processDueResearch } from './tech-tick';
@@ -66,6 +68,10 @@ async function main(): Promise<void> {
     // 全局时间缩放缓存过期则后台刷新（失败保旧值，下个 tick 再试）
     if (timeScaleStale()) {
       void refreshTimeScale(pool).catch(() => undefined);
+    }
+    // 战争迷雾开关缓存过期则后台刷新（AISLG-224）
+    if (fogConfigStale()) {
+      void refreshFogEnabled(pool).catch(() => undefined);
     }
     try {
       // AISLG-134：换季（到点重置 / 预告）。换季在本 tick 内串行执行；换季完成则结束本 tick
@@ -210,6 +216,12 @@ async function main(): Promise<void> {
       } catch (err) {
         console.error('worker march tick failed:', err instanceof Error ? err.message : err);
       }
+    }
+    try {
+      // v92（AISLG-224）：行军去程结算后的探索写入与探索简报（开关关闭时同样记录，不丢数据）
+      await processFogExploration(pool);
+    } catch (err) {
+      console.error('worker fog tick failed:', err instanceof Error ? err.message : err);
     }
     if (due.npcAttacks) {
       try {

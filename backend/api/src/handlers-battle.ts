@@ -8,10 +8,13 @@
 //   不构成死锁环；
 // - GET_BATTLE_REPORTS 按账号倒序分页（beforeId 游标）。
 
+import type pg from 'pg';
 import { moveAttackLockRetry } from '../../common/src/move-city-db';
 import { marchingPercent } from '../../common/src/tech';
 import { Op, EventType, type InitiatorRole } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
+import { recordMarchExploration } from '../../common/src/fog-record';
+import { walkedFractionOf } from '../../common/src/fog';
 import { listBattleReports, saveBattleReportComment } from '../../common/src/battle-db';
 import { inWorld, marchTravelSeconds } from '../../common/src/world';
 import { activeAt, inNewbieProtection } from '../../common/src/protection';
@@ -233,6 +236,33 @@ export async function handleScout(
  * 已走时长按出发时间推算、按剩余不超过全程封顶）。行军行先 FOR UPDATE 锁定——
  * 与 Worker 的领取锁序一致；若 Worker 已在结算（状态已变）则拒绝。
  */
+/** 撤回去程时的探索写入（AISLG-224）：撤回时已走过的比例；出发城坐标缺失则跳过 */
+async function recordRecalledExploration(client: pg.PoolClient, march: MarchRow, now: Date): Promise<void> {
+  const home = (await client.query(`SELECT x, y FROM cities WHERE id = $1`, [march.from_city_id])).rows[0] as
+    | { x: number | null; y: number | null }
+    | undefined;
+  if (!home || home.x === null || home.y === null) {
+    return;
+  }
+  const arriveAt = march.ambush_at ?? march.arrive_at;
+  const fraction = walkedFractionOf(march.started_at.getTime(), arriveAt.getTime(), now.getTime());
+  await recordMarchExploration(
+    client,
+    {
+      marchId: march.id,
+      accountId: march.account_id,
+      fromCityId: march.from_city_id,
+      homeX: home.x,
+      homeY: home.y,
+      targetX: march.x,
+      targetY: march.y,
+      troops: (march.troops ?? {}) as Record<string, number>,
+    },
+    fraction,
+    now,
+  );
+}
+
 export async function handleRecallMarch(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -267,6 +297,8 @@ export async function handleRecallMarch(
     const totalMs = arrivedMs - march.started_at.getTime();
     const elapsedMs = Math.min(Math.max(0, now.getTime() - march.started_at.getTime()), Math.max(0, totalMs));
     const returnSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    // v92（AISLG-224）：撤回前把已走过的去程写入探索（只算到撤回时的位置），并生成探索简报（如有新区块）
+    await recordRecalledExploration(client, march, now);
     const upd = await client.query(
       `UPDATE marches SET purpose = 'return', ambush_at = NULL, arrive_at = now() + make_interval(secs => $2)
        WHERE id = $1 AND status = 'marching' RETURNING *`,

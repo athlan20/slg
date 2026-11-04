@@ -335,6 +335,8 @@ export const Op = {
   PUSH_BATTLEFIELD_STATE: 2027,
   /** S→C 推送：被施计警报（v86，AISLG-211；会失败的计谋不论成败都推给目标玩家，欺敌类与金蝉脱壳不推） */
   PUSH_STRATAGEM: 2028,
+  /** S→C 推送：探索简报（v92，AISLG-224；部队去程新探索了区块时推给本账号，载荷 { report } = exploration_report 事件，见 fog-record.ts） */
+  PUSH_EXPLORATION_REPORT: 2029,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];

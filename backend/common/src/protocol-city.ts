@@ -221,6 +221,8 @@ export const EventType = {
   MARCH_STARTED: 'march_started',
   /** v12：行军到达并结算（含战斗胜负、掠夺与占领结果，见 detail.outcome） */
   MARCH_COMPLETED: 'march_completed',
+  /** v92（AISLG-224）：探索简报（去程新探索了区块才生成；detail = 新区块计数、按类计数与最多 10 个坐标，见 fog-record.ts） */
+  EXPLORATION_REPORT: 'exploration_report',
   /** v12：野地被占领（detail.terrain / level / 加成） */
   WILDERNESS_OCCUPIED: 'wilderness_occupied',
   /** v12：野地占领失效（detail.cause = npc_attack / recall / conquest） */

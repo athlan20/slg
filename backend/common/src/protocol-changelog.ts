@@ -102,6 +102,7 @@ export const PROTOCOL_CHANGELOG: readonly ProtocolChange[] = [
   { version: 89, summary: '礼金（AISLG-221，只加不改）：账号新增礼金余额，每赛季开始固定发 1000、换季清零、不能转让兑换；GET_STATE 新增 gift（余额）与 giftSeasonGrant（= 1000）；新增错误码 INSUFFICIENT_GIFT 与事件 gift_spent（扣除入口由后续需求提供，本版本无 op 消耗礼金）。' },
   { version: 90, summary: '道具（AISLG-222，只加不改）：新增道具背包 user_items（每账号每种道具一行数量，换季清空）与代码配置的道具定义 ITEM_DEFS（迁城令 礼金 50、高级迁城令 礼金 100，堆叠上限 99）。新增 GET_ITEMS（op 148，背包 / 目录 / 礼金余额）与 BUY_ITEM（op 149，礼金买道具，必填 expectedPrice，单价不一致返回 ITEM_PRICE_CHANGED）；GET_STATE 新增 items；PUSH_ACCOUNT_STATE（op 2020）新增 reason = items_changed。新错误码 INSUFFICIENT_ITEM / ITEM_STACK_FULL / ITEM_PRICE_CHANGED；新事件 item_granted / item_used / item_bought。' },
   { version: 91, summary: '城池迁移（AISLG-220，只加不改）：新增 MOVE_CITY（op 150，data.cityId + mode = random|pointing，pointing 带 x / y；执行须 confirm=true，preview=true 只预览）。random 消耗迁城令、pointing 消耗高级迁城令（均由 GET_ITEMS 道具背包提供），主城与分城都能迁，名城不能迁；本城军队在外 / 盟友驻军 / 战乱时拒绝。旧格：主城变空野地，分城回归 NPC 城并写放弃冷却。pointing 迁后 12 小时内这座城的掠夺 / 占领 / 侦察 / 派协防返回 MOVE_CITY_ATTACK_LOCK。GET_STATE 新增 moveCity；事件 city_moved；PUSH_CITY_STATE / PUSH_TILE_STATE reason = city_moved。新错误码 MOVE_CITY_FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK。' },
+  { version: 92, summary: '战争迷雾（AISLG-224，待补全）：探索位图与上次看到的快照，PUSH_EXPLORATION_REPORT（op 2029）与事件 exploration_report。' },
 ];
 
 /** 增量变更的 HTTP 路径（与 /agent-api.md 同域名；since 为调用方手上文档的版本号） */

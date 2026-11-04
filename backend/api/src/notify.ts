@@ -13,6 +13,7 @@ import type { ConnectionRegistry } from './connections';
 import { buildView, marchView, recruitView, type BuildRow, type MarchRow, type RecruitRow } from './views';
 import { loadWorldWindow } from './views-world';
 import { handleSeasonNotice } from './notify-season';
+import { pushExplorationReport } from './notify-fog';
 import { pushAllianceMessage } from './handlers-chat-send';
 
 /** 兜底轮询周期；第一期望延迟与 DB 压力的折中，未做负载评估 */
@@ -86,6 +87,7 @@ export class CompletionNotifier {
         recruitId?: string;
         marchId?: string;
         reportId?: number;
+        eventId?: number;
         x?: number;
         y?: number;
         tileReason?: string;
@@ -235,6 +237,14 @@ export class CompletionNotifier {
       if (payload.reason === 'march_resolved' && payload.accountId && payload.marchId) {
         void this.pushResolvedMarch(payload.accountId, payload.marchId);
         return;
+      }
+      if (payload.reason === 'exploration_report' && payload.accountId) {
+        // v92（AISLG-224）：探索简报直推（事件已由 Worker / 撤回事务写入；漏收由 GET_EVENTS 覆盖）
+        const eventId = Number(payload.eventId);
+        if (Number.isInteger(eventId) && eventId > 0) {
+          void pushExplorationReport(this.pool, this.registry, this.stopped, payload.accountId, eventId);
+          return;
+        }
       }
       if (payload.reason === 'battle_report' && payload.accountId) {
         // reportId 在 JSON 里可能是数字或数字字符串（历史 bigserial 序列化差异），统一归一化

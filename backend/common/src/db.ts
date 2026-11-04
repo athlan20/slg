@@ -20,6 +20,7 @@ import { seedFirstSeason } from './season-seed';
 import { attachPoolDiagnostics, logConnError } from './db-diag';
 import { migrateMainOnlyBuildings } from './main-only-db';
 import { migrateGiftColumn } from './gift-schema';
+import { FOG_SCHEMA_SQL } from './fog-schema';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -827,6 +828,12 @@ async function migrateDataOnce(client: pg.PoolClient): Promise<void> {
     await migrateMainOnlyBuildings(client);
     // v89（AISLG-221）：礼金列（accounts.gift）；列不存在时才建并给当前赛季账号补发 1000（同一事务，幂等）
     await migrateGiftColumn(client);
+    // v92（AISLG-224）：迷雾上线前已结束的行军不再重放探索——一次性把 fog_recorded_at 补齐（settings 标记防重复）
+    const fogBackfill = await client.query(`SELECT 1 FROM settings WHERE key = 'fog_backfill_v92'`);
+    if (!fogBackfill.rowCount) {
+      await client.query(`UPDATE marches SET fog_recorded_at = now() WHERE resolved_at IS NOT NULL AND fog_recorded_at IS NULL`);
+      await client.query(`INSERT INTO settings (key, value) VALUES ('fog_backfill_v92', '{"done": true}'::jsonb)`);
+    }
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
@@ -840,7 +847,7 @@ export async function ensureSchema(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL + BATTLEFIELD_SCHEMA_SQL + NOBILITY_SCHEMA_SQL + MARKET_SCHEMA_SQL + STRATAGEM_SCHEMA_SQL + ITEMS_SCHEMA_SQL + MOVE_CITY_SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL + BATTLEFIELD_SCHEMA_SQL + NOBILITY_SCHEMA_SQL + MARKET_SCHEMA_SQL + STRATAGEM_SCHEMA_SQL + ITEMS_SCHEMA_SQL + MOVE_CITY_SCHEMA_SQL + FOG_SCHEMA_SQL);
         // 赛季（AISLG-134）：seasons 为空时播种第 1 季（幂等，咨询锁内执行）
         await seedFirstSeason(client);
         // 数据迁移（幂等，咨询锁内、独立事务）
