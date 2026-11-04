@@ -87,7 +87,7 @@ import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 import { useStratagemSession, type StratagemSession } from './stratagemSession';
 import { useItemsSession, type ItemsSession } from './itemsSession';
 import { useMoveCitySession, type MoveCitySession } from './moveCitySession';
-import { pushExplorationReport, type ExplorationReport } from './explorationReport';
+import { clearExplorationReports, pushExplorationReport, type ExplorationReport } from './explorationReport';
 
 /** 断线自动重连间隔（毫秒） */
 const RECONNECT_DELAY_MS = 3000;
@@ -1055,6 +1055,8 @@ export function useGameSession(): GameSession {
 
   const logout = useCallback(async () => {
     logoutIntentRef.current = true;
+    // 退出登录：探索简报不串到下一个账号（AISLG-224 复核）
+    clearExplorationReports();
     const client = clientRef.current;
     try {
       if (client?.connected) {

@@ -134,11 +134,6 @@ function field<T>(data: Record<string, unknown> | undefined, key: string): T | u
 export function useWorldSession(deps: WorldSessionDeps): WorldSession {
   const { clientRef, connected, setCity, appendLocalEvent, scheduleSync } = deps;
   const [window, setWindow] = useState<WorldMapResponseData | null>(null);
-  // 迷雾（AISLG-224）：窗口里有已探索的格或缺格（黑雾）时，每 15 秒重拉一次，让途经行军带来的视野变化显示出来
-  const fogStaleRef = useRef(false);
-  useEffect(() => {
-    fogStaleRef.current = window !== null && (window.tiles.some((tile) => tile.fog === 'explored') || window.tiles.length < window.w * window.h);
-  }, [window]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<{ x: number; y: number } | null>(null);
   const [detail, setDetail] = useState<TileDetailView | null>(null);
@@ -230,17 +225,6 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
     [clientRef],
   );
 
-  useEffect(() => {
-    if (!connected) {
-      return undefined;
-    }
-    const timer = globalThis.setInterval(() => {
-      if (fogStaleRef.current) {
-        void fetchWindow();
-      }
-    }, 15_000);
-    return () => globalThis.clearInterval(timer);
-  }, [connected, fetchWindow]);
 
   const fetchDetail = useCallback(
     async (x: number, y: number) => {
