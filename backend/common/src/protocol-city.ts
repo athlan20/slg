@@ -191,6 +191,8 @@ export const EventType = {
   STRATAGEM_CAST: 'stratagem_cast',
   /** v86（AISLG-211）：被施计（目标方的事件流，与 PUSH_STRATAGEM 同构；欺敌类与金蝉脱壳不写） */
   STRATAGEM_RECEIVED: 'stratagem_received',
+  /** v89（AISLG-221）：礼金扣除（detail = { reason, amount, balance }；扣除失败不写事件） */
+  GIFT_SPENT: 'gift_spent',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */
   ACCOUNT_RESET: 'account_reset',
   /** v52：账号昵称被修改（AISLG-142，detail = { from, to }；昵称即账号 username） */

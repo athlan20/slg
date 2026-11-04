@@ -685,5 +685,10 @@
  *   （troops 按兵种合计 + earliestExpireAt，过期行已过滤），starveAt 与 CityView.starveAt 同口径；主城在前，
  *   其余按创建时间；三池全空的城也返回。不新增批量协议：一键处理仍由客户端逐城带 cityId 调
  *   RESTORE_TROOPS（143）/ RELEASE_TROOPS（144），两条协议的行为与数值完全不变。
+ * v89（礼金，AISLG-221，只加不改）：账号新增礼金余额 accounts.gift。每个赛季开始固定发 1000（SEASON_GIFT），
+ *   新号归入当前赛季时、老号进入新赛季的惰性加入时置为 1000（同赛季重复登录不回弹），换季清零；存量账号在
+ *   v89 迁移里按当前赛季一次性补发（列不存在时才建，幂等）。重置账号不动礼金。GET_STATE 新增账号级
+ *   gift（当前余额）与 giftSeasonGrant（= 1000）。新增错误码 INSUFFICIENT_GIFT（扣除失败、余额不变，附 balance）
+ *   与事件 gift_spent（detail = { reason, amount, balance }）。本版本不新增 op，礼金暂无消耗方（用途见 AISLG-222）。
  */
-export const PROTOCOL_VERSION = 88;
+export const PROTOCOL_VERSION = 89;

@@ -14,6 +14,7 @@ import { PAGE_KEYS, type PageKey } from '../../state/usePage';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { ThemeSwitcher } from '../ThemeSwitcher';
 import { CityMenu } from './CityMenu';
+import { GiftRow } from './GiftRow';
 
 /** 各导航项的角标：count = 数字；hot = 红色（总览的 NPC 来袭） */
 export type NavBadges = Partial<Record<PageKey, { count: number; hot?: boolean }>>;
@@ -313,6 +314,7 @@ export function Sidebar(props: SidebarProps) {
             role="账号菜单"
             className="absolute bottom-[calc(100%+4px)] left-0 z-30 flex w-[220px] flex-col rounded-md border border-line bg-panel-2 p-1 shadow-2xl max-lg:bottom-[calc(100%+8px)] max-lg:left-auto max-lg:right-0"
           >
+            <GiftRow gift={cityList.gift} />
             {cityLoaded ? menuItem('账号菜单-城池改名', NAV_COPY.rename, props.onRename) : null}
             {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-设为主城', NAV_COPY.setCapital, props.onSetCapital) : null}
             {cityLoaded && current !== null && !current.isMain ? menuItem('账号菜单-放弃分城', NAV_COPY.discardBranch, props.onDiscardBranch, 'text-st-error') : null}

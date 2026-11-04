@@ -54,6 +54,7 @@ export type EventType =
   | 'troops_disbanded'
   | 'stratagem_cast'
   | 'stratagem_received'
+  | 'gift_spent'
   | 'account_renamed'
   | 'agent_connected'
   | 'agent_disconnected';

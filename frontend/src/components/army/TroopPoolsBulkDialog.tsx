@@ -3,7 +3,8 @@
  *  「全部劝回」里断粮中的城标「跳过：断粮中」且不列入处理），最下面合计花费；最多 11 行（账号上限
  *  1 主城 + 10 分城，共 11 座城），单行不换行、不出现滚动条，手机宽度下溢出省略。
  *  确认后按最早过期时间从早到晚、一座城一座城地串行发 RESTORE_TROOPS / RELEASE_TROOPS（整池 + cityId），
- *  每城独立成败；结束后同一弹窗变成逐城「成功 / 失败：人读原因（资源不足带缺口）」的结果摘要。
+ *  每城独立成败；结束后同一弹窗变成逐城结果摘要：成功 / 跳过仍是一行，失败拆两行（第一行「城名（主）· 失败」，
+ *  第二行缩进放完整的人读原因，含资源缺口数字，允许换行，不看悬停也能读到，v88 AISLG-219）。
  *  资源与人口仍是各城用各城的（不跨城调资源，服务端规则不变）。
  */
 
@@ -97,12 +98,15 @@ export function TroopPoolsBulkDialog({ pool, mode, rows, onRestore, onRelease, o
     return `${head}${A.rowJoin}${poolTroopsText(row.troops)}${A.rowJoin}${costText}`;
   };
 
+  /** 结果行第一行：只写城名与成败（失败原因单独一行，不挤进这里，v88 AISLG-219） */
   const resultLine = (result: BulkResult): string =>
     `${A.rowHost(result.name, result.isMain)}${A.rowJoin}${
-      result.skipped ? A.rowSkippedStarving : result.ok ? A.resultSuccess : A.resultFailure(result.reason ?? '')
+      result.skipped ? A.rowSkippedStarving : result.ok ? A.resultSuccess : A.resultFailed
     }`;
 
   const rowClass = 'truncate text-[12px] leading-tight';
+  /** 每城的行块 role（确认阶段与结果摘要沿用同一个，e2e 靠它定位城池） */
+  const rowRole = (name: string): string => `伤兵营-全城确认框-行-${name}`;
 
   return (
     <Modal
@@ -116,7 +120,7 @@ export function TroopPoolsBulkDialog({ pool, mode, rows, onRestore, onRelease, o
         <>
           <div role="伤兵营-全城确认框-城池列表" className="flex min-w-0 flex-col gap-0.5">
             {rows.map((row) => (
-              <p key={row.cityId} role={`伤兵营-全城确认框-行-${row.name}`} className={`${rowClass} text-dim`} title={confirmLine(row)}>
+              <p key={row.cityId} role={rowRole(row.name)} className={`${rowClass} text-dim`} title={confirmLine(row)}>
                 {confirmLine(row)}
               </p>
             ))}
@@ -137,17 +141,27 @@ export function TroopPoolsBulkDialog({ pool, mode, rows, onRestore, onRelease, o
         </>
       ) : (
         <>
-          <div role="伤兵营-全城结果摘要" className="flex min-w-0 flex-col gap-0.5">
-            {results.map((result) => (
-              <p
-                key={result.cityId}
-                role={`伤兵营-全城确认框-行-${result.name}`}
-                className={`${rowClass} ${result.ok ? 'text-dim' : 'text-st-error'}`}
-                title={resultLine(result)}
-              >
-                {resultLine(result)}
-              </p>
-            ))}
+          <div role="伤兵营-全城结果摘要" className="flex max-h-[calc(100dvh-240px)] min-w-0 flex-col gap-0.5 overflow-y-auto">
+            {results.map((result) =>
+              result.ok || result.skipped ? (
+                <p key={result.cityId} role={rowRole(result.name)} className={`${rowClass} text-dim`} title={resultLine(result)}>
+                  {resultLine(result)}
+                </p>
+              ) : (
+                <div key={result.cityId} role={rowRole(result.name)} className="flex min-w-0 flex-col text-st-error">
+                  <p className={rowClass} title={resultLine(result)}>
+                    {resultLine(result)}
+                  </p>
+                  {/* 失败原因完整换行显示（含资源缺口数字），触屏也能看到，不靠 title 悬停 */}
+                  <p
+                    role={`伤兵营-全城结果摘要-原因-${result.name}`}
+                    className="whitespace-normal break-words pl-3 text-[11px] leading-snug"
+                  >
+                    {result.reason ?? ''}
+                  </p>
+                </div>
+              ),
+            )}
           </div>
           <div role="伤兵营-全城结果摘要-统计" className="mt-1 border-t border-line-soft pt-1 text-[12px] text-dim">
             {results.every((result) => result.ok)

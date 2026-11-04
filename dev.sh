@@ -4,7 +4,7 @@
 #   ./dev.sh          重启语义：在运行则先停后启，未运行则直接启动（缺省）
 #   ./dev.sh stop     只停止
 #   ./dev.sh status   查看运行状态
-# 开发/测试两套环境并存（各自一个 git 工作目录，见 docs/dev-test-workflow.md）：
+# 多个 git 工作目录并存（见 docs/dev-test-workflow.md）：
 #   API_PORT / WEB_PORT   端口，缺省 8080 / 8424（测试目录用 9091 / 8425；8081 留给其他项目，不再使用）
 #   SERVICES              要管的服务，缺省 "api worker web"
 # 进程只按「所在工作目录 + 本实例端口」识别，不会动到另一个目录的实例。

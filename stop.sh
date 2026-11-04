@@ -43,12 +43,16 @@ pids_for() {
 }
 
 collect_pids() {
-  local name="$1" pattern pids port
+  local name="$1" pattern pids port pid cwd
   pattern="$(pattern_for "$name")"
   pids="$(pids_for "$pattern")"
   for port in $(ports_for "$name"); do
-    # 端口兜底：cmdline 不匹配但占着端口的残留监听一并算上
-    pids="$pids $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
+    # 端口兜底：cmdline 不匹配但占着端口的残留监听一并算上。
+    # 同样要校验工作目录，其他 worktree 也可能占着这些端口
+    for pid in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
+      cwd="$(lsof -a -d cwd -Fn -p "$pid" 2>/dev/null | sed -n 's/^n//p')"
+      case "$cwd" in "$ROOT"|"$ROOT"/*) pids="$pids $pid" ;; esac
+    done
   done
   echo $pids | tr ' ' '\n' | sort -u | grep -v '^$' || true
 }

@@ -7,6 +7,7 @@ import type pg from 'pg';
 import { newbieUntilFrom } from './protection';
 import { NOTIFY_CHANNEL } from './db';
 import { insertInitialCity } from './main-city';
+import { SEASON_GIFT } from './gift';
 import type { HallEntryView, HallKind, HallModelEntryView } from './protocol-season';
 
 type Db = pg.Pool | pg.PoolClient;
@@ -206,12 +207,13 @@ export async function joinCurrentSeason(
   if (acc.rows[0].season_id !== null && Number(acc.rows[0].season_id) === season.id) {
     return { season, joined: false };
   }
+  // v89（AISLG-221）：礼金“置为”本季额度（不是加上），同赛季重复登录不会多发
   await client.query(
     `UPDATE accounts
      SET plunder_total = 0, newbie_until = $2, self_truce_until = NULL, self_truce_used_at = NULL,
-         last_online_at = NULL, season_id = $3
+         last_online_at = NULL, season_id = $3, gift = $4
      WHERE id = $1`,
-    [accountId, newbieUntilFrom(new Date()), season.id],
+    [accountId, newbieUntilFrom(new Date()), season.id, SEASON_GIFT],
   );
   const cities = await client.query(`SELECT count(*)::int AS n FROM cities WHERE account_id = $1`, [accountId]);
   if (Number(cities.rows[0].n) === 0) {

@@ -64,6 +64,8 @@ import { STRATAGEM_COPY } from '../copy-stratagem';
 import { STRATAGEM_COPY_EN } from '../copy-stratagem-en';
 import { SHORTFALL_COPY } from '../copy-shortfall';
 import { SHORTFALL_COPY_EN } from '../copy-shortfall-en';
+import { GIFT_COPY } from '../copy-gift';
+import { GIFT_COPY_EN } from '../copy-gift-en';
 
 /** 中文文案全集（结构基准）：英文 Bundle 必须与之同构 */
 const ZH = {
@@ -116,6 +118,7 @@ const ZH = {
   SEASON_COPY,
   HALL_COPY,
   SHORTFALL_COPY,
+  GIFT_COPY,
   STRATAGEM_COPY,
 };
 
@@ -172,6 +175,7 @@ const EN: Bundle = {
   SEASON_COPY: SEASON_COPY_EN,
   HALL_COPY: HALL_COPY_EN,
   SHORTFALL_COPY: SHORTFALL_COPY_EN,
+  GIFT_COPY: GIFT_COPY_EN,
   STRATAGEM_COPY: STRATAGEM_COPY_EN,
 };
 
