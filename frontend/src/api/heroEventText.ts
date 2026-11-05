@@ -29,6 +29,22 @@ export function heroEventText(view: EventView): string | null {
       return HERO_COPY.event.granted(name, tHeroSource(String(d.source ?? '')));
     case 'guard_changed':
       return d.heroId ? HERO_COPY.event.guardAssigned(name) : HERO_COPY.event.guardRemoved();
+    case 'hero_left':
+      // v93（AISLG-228）：胜方的一条带 qualified（囚禁超时后获得结交资格）
+      if (d.qualified) {
+        return HERO_COPY.event.heroLeftQualified(name, String(d.ownerUsername ?? ''));
+      }
+      return d.cause === 'captive_expired' ? HERO_COPY.event.heroLeftCaptive(name) : HERO_COPY.event.heroLeftLoyalty(name);
+    case 'hero_captured':
+      return d.side === 'captor'
+        ? HERO_COPY.event.capturedBy(name, String(d.ownerUsername ?? ''))
+        : HERO_COPY.event.captured(name, String(d.captorUsername ?? ''), Number(d.ransomGold ?? 0));
+    case 'hero_ransomed':
+      return d.side === 'captor'
+        ? HERO_COPY.event.ransomedBy(name, String(d.ownerUsername ?? ''), Number(d.taxShare ?? 0))
+        : HERO_COPY.event.ransomed(name, Number(d.ransomGold ?? 0));
+    case 'hero_loyalty_low':
+      return HERO_COPY.event.loyaltyLow(name, Number(d.loyalty ?? 0));
     default:
       return null;
   }

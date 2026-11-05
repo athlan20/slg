@@ -479,6 +479,16 @@ export function serverBroadcastText(view: {
     case 'hero_granted':
       // 名将名与来源标签是后端固定词，英文界面按码表翻译
       return HERO_COPY.broadcast.granted(String(view.detail.username ?? EXTRA_STATE.mapping.unknownPlayer), tName(String(view.detail.heroName ?? '')), tHeroSource(String(view.detail.source ?? '')));
+    case 'hero_left':
+      // v93（AISLG-228）：名将下野（不带坐标）
+      return HERO_COPY.broadcast.left(tName(String(view.detail.heroName ?? '')), String(view.detail.username ?? EXTRA_STATE.mapping.unknownPlayer));
+    case 'hero_captured':
+      // v93（AISLG-228）：玩家俘虏了玩家的名将
+      return HERO_COPY.broadcast.captured(
+        String(view.detail.captorUsername ?? EXTRA_STATE.mapping.unknownPlayer),
+        String(view.detail.ownerUsername ?? EXTRA_STATE.mapping.unknownPlayer),
+        tName(String(view.detail.heroName ?? '')),
+      );
     case 'city_conquered':
       return EXTRA_STATE.broadcast.cityConquered(actor, String(view.detail.from ?? ''), tName(String(view.detail.cityName ?? '?')), pos);
     case 'arena_champion':
