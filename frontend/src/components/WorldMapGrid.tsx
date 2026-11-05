@@ -7,6 +7,7 @@
  *  只负责渲染与悬浮 / 选中态；地图数据与动作在 worldSession，组装在 WorldMapView。
  */
 
+import { WorldSiteMarker } from './map/WorldSiteMarker';
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import type { AllianceMarkView, TileView, WorldMapResponseData } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
@@ -370,7 +371,7 @@ export function WorldMapGrid({
                   onFocus={(e) => showTip(tile, isOwn, e.currentTarget)}
                   onBlur={hideTip}
                   className={`group relative grid cursor-pointer place-items-center overflow-hidden rounded transition-[filter,box-shadow] duration-100 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
-                    explored ? 'brightness-[.6] saturate-50' : ''
+                    explored ? 'brightness-[.4] saturate-50' : ''
                   } ${
                     TERRAIN_CLASS[tile.terrain] ?? TERRAIN_CLASS.plain
                   } ${
@@ -416,6 +417,8 @@ export function WorldMapGrid({
                           ★
                         </span>
                       ) : null}
+                      {/* 遗迹 / 名将处所图标（v93，AISLG-227）：独立组件，见 WorldSiteMarker.tsx */}
+                      <WorldSiteMarker tile={tile} />
                       {/* 等级数字：默认隐藏，悬停 / 选中显示；满级（10 级）金色常显（docs 第 6 节） */}
                       <span
                         role="世界地图视野-等级"

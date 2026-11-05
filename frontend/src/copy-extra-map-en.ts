@@ -71,8 +71,22 @@ export const EXTRA_MAP_EN = {
       player_city: 'Player city',
       npc_city: 'NPC city',
       high_wilderness: 'High-level wilderness',
+      relic: 'Relic',
     } as Record<string, string>,
     rumor: 'Famous city (approximate location)',
+    relicTier: { common: 'Common relic', rare: 'Rare relic', legendary: 'Legendary relic' } as Record<string, string>,
+    relicKind: {
+      granary: 'Abandoned Granary', lumberyard: 'Deserted Lumberyard', quarry: 'Old Quarry', ironworks: 'Abandoned Ironworks', caravan: 'Caravan Wreck',
+      battlefield: 'Ancient Battlefield', treasury: 'Old Dynasty Treasury', mausoleum: 'Imperial Mausoleum',
+    } as Record<string, string>,
+    siteName: {
+      茅庐: 'Thatched Cottage', 关公庙: 'Temple of Guan Yu', 子龙庙: 'Temple of Zilong', 桃园: 'Peach Garden', 铜雀台: 'Bronze Sparrow Terrace',
+      甘露寺: 'Ganlu Temple', 点将台: 'Muster Platform', 司马故里: 'Sima Homestead',
+    } as Record<string, string>,
+    heroSiteLabel: (site: string, hero: string, claimed: boolean) => (claimed ? `${site} (${hero}) · Joined the cause` : `${site} (${hero}) · Hidden lair`),
+    firstExplorer: (name: string) => `First explored by ${name}`,
+    noFirstExplorer: 'Not yet explored first',
+    reportRelics: (n: number) => `${n} relic(s) found`,
   },
   raid: {
     label: (time: string) => `Raid ${time}`,
