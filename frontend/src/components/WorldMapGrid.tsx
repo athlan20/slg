@@ -288,7 +288,7 @@ export function WorldMapGrid({
     }
   };
 
-  /** 选中（地块与带标记的迷雾格共用）：拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分） */
+  /** 选中（地块与迷雾格共用）：拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分） */
   const selectCell = (x: number, y: number) => {
     if (lastDragMovedRef.current) {
       lastDragMovedRef.current = false;
@@ -339,8 +339,8 @@ export function WorldMapGrid({
             cols.map((x) => {
               const tile = tileAt.get(`${x},${y}`);
               if (!tile) {
-                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾；带本盟标记的黑雾格可点选，只画角标（AISLG-226）
-                return <FogCell key={`${x}-${y}`} x={x} y={y} mark={marks?.get(`${x},${y}`)} onSelect={selectCell} />;
+                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾；都可点选，带本盟标记时画角标（AISLG-226）
+                return <FogCell key={`${x}-${y}`} x={x} y={y} mark={marks?.get(`${x},${y}`)} selected={selected?.x === x && selected?.y === y} onSelect={selectCell} />;
               }
               const isOwn = tile.owner !== null && tile.owner.accountId === accountId;
               const isSelected = selected !== null && selected.x === x && selected.y === y;
