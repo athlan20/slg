@@ -9,7 +9,9 @@ import { EventType } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { scaledMs, scaledRate } from '../../common/src/time-scale';
 import { salaryPerHour } from '../../common/src/hero';
-import type { AccountHeroRow } from '../../common/src/hero-db';
+import { isCaptive, type AccountHeroRow } from '../../common/src/hero-db';
+import { LOYALTY_ARREARS_PER_HOUR } from '../../common/src/hero-loyalty';
+import { setLoyalty } from '../../common/src/hero-loyalty-db';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
 
 /** tick 节流（毫秒）：俸禄按小时结算，10 秒扫一次足够 */
@@ -24,6 +26,30 @@ export interface SalaryNotice {
   data: { reason: 'arrears' | 'salary_paid'; heroId: string; heroName: string };
 }
 
+/**
+ * 欠饷期间的忠诚度损失（v93，AISLG-228）：只有带忠诚度的武将；欠饷开始时起算锚点，之后每满 1 小时（基准，
+ * 随缩放）−1，由本函数在俸禄结算里按小时结清（不是每次 tick 都扣）。
+ */
+async function settleArrearsLoyalty(client: pg.PoolClient, hero: AccountHeroRow, nowMs: number): Promise<void> {
+  if (hero.loyalty === null) {
+    return;
+  }
+  const intervalMs = scaledMs(3_600_000);
+  const anchor = hero.loyalty_arrears_at?.getTime() ?? null;
+  if (anchor === null) {
+    // 欠饷刚开始（或迁移前已欠饷）：从现在起算第一小时
+    await client.query(`UPDATE account_heroes SET loyalty_arrears_at = to_timestamp($2 / 1000.0) WHERE id = $1`, [hero.id, nowMs]);
+    hero.loyalty_arrears_at = new Date(nowMs);
+    return;
+  }
+  if (nowMs - anchor < intervalMs) {
+    return;
+  }
+  await setLoyalty(client, hero, hero.loyalty - LOYALTY_ARREARS_PER_HOUR);
+  await client.query(`UPDATE account_heroes SET loyalty_arrears_at = $2 WHERE id = $1`, [hero.id, new Date(anchor + intervalMs)]);
+  hero.loyalty_arrears_at = new Date(anchor + intervalMs);
+}
+
 /** 结算一名武将的一小时俸禄（调用方事务内；hero FOR UPDATE 已锁） */
 export async function settleHeroSalary(
   client: pg.PoolClient,
@@ -32,6 +58,10 @@ export async function settleHeroSalary(
   nowMs: number,
 ): Promise<SalaryNotice | null> {
   const intervalMs = scaledMs(3_600_000);
+  // 囚禁中不扣俸禄、不计欠饷（v93，AISLG-228）
+  if (isCaptive(hero)) {
+    return null;
+  }
   // 未到期且未欠饷：无事可做；欠饷中每次 tick 都重试（主城金币补足即恢复，不必等下个小时）
   if (hero.salary_at.getTime() > nowMs && !hero.arrears) {
     return null;
@@ -44,13 +74,14 @@ export async function settleHeroSalary(
       `UPDATE cities SET gold = gold - $2 WHERE id = $1`,
       [capital!.id, cost],
     );
-    await client.query(`UPDATE account_heroes SET arrears = false, salary_at = $2 WHERE id = $1`, [hero.id, next]);
+    await client.query(`UPDATE account_heroes SET arrears = false, salary_at = $2, loyalty_arrears_at = NULL WHERE id = $1`, [hero.id, next]);
     if (hero.arrears) {
       return { accountId: hero.account_id, data: { reason: 'salary_paid', heroId: hero.id, heroName: hero.name } };
     }
     return null;
   }
   await client.query(`UPDATE account_heroes SET arrears = true, salary_at = $2 WHERE id = $1`, [hero.id, next]);
+  await settleArrearsLoyalty(client, hero, nowMs);
   if (!hero.arrears) {
     await insertEvent(client, {
       accountId: hero.account_id,
@@ -72,7 +103,7 @@ export async function processHeroSalaries(pool: pg.Pool, nowMs: number = Date.no
   }
   lastRunMs = nowMs;
   const candidates = await pool.query(
-    `SELECT * FROM account_heroes WHERE salary_at <= now() OR arrears ORDER BY salary_at LIMIT $1`,
+    `SELECT * FROM account_heroes WHERE (salary_at <= now() OR arrears) AND captured_by IS NULL ORDER BY salary_at LIMIT $1`,
     [SWEEP_LIMIT],
   );
   let sent = 0;

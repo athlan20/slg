@@ -708,5 +708,6 @@
  *   事件 city_moved；PUSH_CITY_STATE reason = city_moved（带 from / to）与 PUSH_TILE_STATE reason = city_moved（新旧两格）。
  *   新增 9 个错误码 MOVE_CITY_*（FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK）。
  * v92（AISLG-224，战争迷雾）：未探索的地块对玩家与 Agent 不可见（开关 fog_enabled 默认关闭）。新增推送 PUSH_EXPLORATION_REPORT（op 2029）与事件 exploration_report；新错误码 TILE_UNEXPLORED / CHAT_COORD_UNEXPLORED / MOVE_CITY_TILE_UNEXPLORED（随各协议落地）。
+ * v93（名将忠诚度与被俘，AISLG-228，只加不改；协议号为暂定，合入 develop 时按当时的号调整）：只有 29 位在野名将有忠诚度（招揽 / 上线迁移时为 100，每 24 小时 −10 从招揽时刻起算，赏赐 +10，欠饷每小时 −1，忠诚度 0 下野，30 及以下提醒一次）。玩家打玩家战败时：攻方随队名将 / 守城失守的城守名将可能被俘（概率 5% + (100 − 忠诚度) × 0.25%，每账号 7 天最多 1 名），囚禁 24 小时，期间不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计（新错误码 HERO_CAPTURED）。主人用新增 RANSOM_HERO（op 151）赎回：赎金 2000 × 等级从主城扣，胜方主城收 50%；超时未赎回则下野，胜方得结交资格。GET_HEROES 的 heroes[] 新增 loyalty 与 captive；新错误码 HERO_NOT_CAPTURED；新事件 hero_left / hero_captured / hero_ransomed / hero_loyalty_low；全服播报新增 hero_left / hero_captured；PUSH_HERO_STATE reason 新增 loyalty_changed / captured / ransomed / left。新表 hero_capture_limits（换季清空）；account_heroes 新增 loyalty / loyalty_at / loyalty_warned / loyalty_arrears_at / captured_by / captured_until。
  */
-export const PROTOCOL_VERSION = 92;
+export const PROTOCOL_VERSION = 93;

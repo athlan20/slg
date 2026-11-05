@@ -44,6 +44,7 @@ import {
   abortForAlly,
 } from './tick-shared';
 import { cannotAttack } from '../../common/src/alliance-db';
+import { captureAfterPvpBattle } from './pvp-capture';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -187,6 +188,11 @@ export async function resolvePvpOccupyArrival(
     null, null, tileCasualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
+  // v93（AISLG-228）：玩家打玩家的被俘判定（野地战只有攻方随队名将可能被俘）
+  await captureAfterPvpBattle(client, {
+    march, attackerWon: result.attackerWon, defenderAccountId: owner.account_id,
+    cityId: null, guardHeroId: null, notifies,
+  });
 
   if (!result.attackerWon) {
     // 攻方战败：守方继续占领（驻军按幸存回写），攻方残部返程

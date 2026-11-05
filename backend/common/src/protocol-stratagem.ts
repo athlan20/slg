@@ -43,7 +43,8 @@ export interface StratagemHeroView {
   /** 是否可施计（不在家 / 冷却中为 false，见 unavailableReason） */
   available: boolean;
   /** 不可施计原因：training 历练中 / wounded 重伤中 / busy 随队出征中 / cooldown 冷却中 */
-  unavailableReason: 'training' | 'wounded' | 'busy' | 'cooldown' | null;
+  /** v93（AISLG-228）：captive = 被俘囚禁中 */
+  unavailableReason: 'training' | 'wounded' | 'busy' | 'captive' | 'cooldown' | null;
   cooldownUntil: string | null;
   /** 按计谋给的效果预览（数值均按该武将智力算好；时长为已折算的毫秒数） */
   effects: Record<StratagemKind, StratagemEffectPreview>;

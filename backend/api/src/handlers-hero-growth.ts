@@ -15,7 +15,9 @@ import {
   startTraining,
   usedDailyCount,
 } from '../../common/src/hero-growth-db';
-import { heroBusyMarchMap, heroGuardMaps } from '../../common/src/hero-db';
+import { heroBusyMarchMap, heroGuardMaps, isCaptive } from '../../common/src/hero-db';
+import { loyaltyAfterGift } from '../../common/src/hero-loyalty';
+import { setLoyalty } from '../../common/src/hero-loyalty-db';
 import type { HeroOnlyResponseData, HeroView } from '../../common/src/protocol-hero';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
@@ -248,6 +250,10 @@ export async function handleGiftHero(
     if (!hero) {
       return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
     }
+    // v93（AISLG-228）：囚禁中不能赏赐；在野名将的赏赐同时 +10 忠诚度（上限 100）
+    if (isCaptive(hero)) {
+      return fail(ctx, conn, client, op, seq, 'HERO_CAPTURED');
+    }
     if (usedDailyCount(hero, 'gift') >= GIFT_DAILY_LIMIT) {
       return fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: GIFT_DAILY_LIMIT });
     }
@@ -258,6 +264,9 @@ export async function handleGiftHero(
     await client.query(`UPDATE cities SET gold = gold - $2 WHERE id = $1`, [snap.cityId, GIFT_GOLD]);
     await bumpDailyCount(client, hero, 'gift');
     await grantHeroExp(client, hero.id, GIFT_EXP);
+    if (hero.loyalty !== null) {
+      await setLoyalty(client, hero, loyaltyAfterGift(hero.loyalty));
+    }
     const res = await client.query(`SELECT * FROM account_heroes WHERE id = $1`, [hero.id]);
     const view = await viewAfter(client, accountId, res.rows[0] as AccountHeroRow);
     await client.query('COMMIT');
@@ -295,6 +304,9 @@ export async function handleCancelTraining(
     const hero = await lockOwnHero(client, accountId, heroId);
     if (!hero) {
       return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+    }
+    if (isCaptive(hero)) {
+      return fail(ctx, conn, client, op, seq, 'HERO_CAPTURED');
     }
     const upd = await client.query(
       `UPDATE account_heroes SET train_until = NULL, train_tier = NULL, train_exp = NULL

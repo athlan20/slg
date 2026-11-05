@@ -48,7 +48,7 @@ import {
   saveLineup,
   swapRanks,
 } from '../../common/src/arena-db';
-import { loadHero } from '../../common/src/hero-db';
+import { isCaptive, loadHero } from '../../common/src/hero-db';
 import { insertServerBroadcast } from '../../common/src/server-broadcast';
 import type { ArenaFighterView } from '../../common/src/protocol-arena';
 import { readLimitOrNull, readOptionalNonNegativeInt, respondError, respondOk } from './frames';
@@ -221,6 +221,10 @@ export async function handleSetArenaLineup(
         const hero = await loadHero(client, id, true);
         if (!hero || hero.account_id !== accountId) {
           throw new ArenaReject('HERO_NOT_FOUND');
+        }
+        // v93（AISLG-228）：被俘囚禁中的武将不能上阵
+        if (isCaptive(hero)) {
+          throw new ArenaReject('HERO_CAPTURED');
         }
       }
       const now = new Date();

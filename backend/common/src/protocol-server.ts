@@ -40,6 +40,9 @@ export const SERVER_BROADCAST_TYPES = [
   'alliance_diplomacy',
   // v79（AISLG-200）洛阳：窗口预告 / 开始 / 结束，必达
   'luoyang_window',
+  // v93（AISLG-228）名将离开主人（下野 / 被俘超时）与被俘：走普通限频（不带坐标）
+  'hero_left',
+  'hero_captured',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

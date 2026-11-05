@@ -255,6 +255,14 @@ export const EventType = {
   HERO_LEVEL_UP: 'hero_level_up',
   HERO_GRANTED: 'hero_granted',
   GUARD_CHANGED: 'guard_changed',
+  /** v93（AISLG-228）：名将离开主人（忠诚度 0 下野，或被俘超 24 小时未赎回）；detail = { heroName, cause = loyalty / captive_expired, ... } */
+  HERO_LEFT: 'hero_left',
+  /** v93（AISLG-228）：名将被俘（主人与胜方各一条；detail = { heroId, heroName, captorUsername / ownerUsername, capturedUntil, ransomGold }） */
+  HERO_CAPTURED: 'hero_captured',
+  /** v93（AISLG-228）：名将被赎回（主人与胜方各一条；detail = { heroId, heroName, ransomGold, taxShare, destroyed }） */
+  HERO_RANSOMED: 'hero_ransomed',
+  /** v93（AISLG-228）：忠诚度降到 30 及以下（每次跌破只提醒一次；detail = { heroId, heroName, loyalty }） */
+  HERO_LOYALTY_LOW: 'hero_loyalty_low',
   /** v29：黄巾之乱结算奖励（AISLG-76，detail = { rank, killed, tier, reward, reason }） */
   YT_REWARD: 'yt_reward',
   /** v38：玩家部队来袭预警（AISLG-122，detail = { x, y, target, 敌情（烽火台分档）, attacker, arriveAt, marchId }） */
