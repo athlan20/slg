@@ -173,7 +173,7 @@ describe('遗迹（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     assert.ok(byTier.get('common')!.value.every((v) => v === 5000));
     assert.ok(byTier.get('rare')!.value.every((v) => v === 10000));
     assert.ok(byTier.get('legendary')!.value.every((v) => v === 25000));
-    assert.equal(relicDef('mausoleum')?.items.city_order_adv, 1, '传说遗迹附高级迁城令');
+    assert.equal(relicDef('mausoleum')?.items.city_order, 1, '传说遗迹附迁城令');
   });
 
   test('挑点纯函数：200 处、种类数量正确、间距不小于 30、合规判定生效、同种子同结果', async () => {

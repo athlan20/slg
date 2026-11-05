@@ -11,7 +11,7 @@ export function WorldSiteNote({ relic, heroSite }: { relic: RelicTileView | null
   const R = copy.RESOURCE_LABEL;
   if (relic) {
     const rewardText = relicRewardParts(relic.kind)
-      .map((part) => (part.key === 'advMoveCity' ? `${F.advMoveCity} ×${part.amount}` : `${R[part.key]} ${part.amount}`))
+      .map((part) => (part.key === 'moveCity' ? `${F.moveCity} ×${part.amount}` : `${R[part.key]} ${part.amount}`))
       .join(' · ');
     return (
       <section role="世界地图详情区-遗迹" className="flex flex-col gap-0.5 rounded border border-accent/50 px-2 py-1 text-[11.5px]">

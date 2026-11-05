@@ -14,7 +14,7 @@ export interface RelicDef {
   count: number;
   /** 领取奖励（发到主城，可超过仓库上限） */
   reward: Resources;
-  /** 附加道具（传说遗迹的高级迁城令） */
+  /** 附加道具（传说遗迹的迁城令） */
   items: Partial<Record<ItemId, number>>;
 }
 
@@ -27,7 +27,7 @@ export const RELIC_DEFS: readonly RelicDef[] = [
   { kind: 'caravan', tier: 'common', count: 32, reward: { gold: 3000, wood: 500, food: 500, stone: 500, iron: 500 }, items: {} },
   { kind: 'battlefield', tier: 'rare', count: 18, reward: { gold: 3500, wood: 1000, food: 1000, stone: 1000, iron: 3500 }, items: {} },
   { kind: 'treasury', tier: 'rare', count: 17, reward: { gold: 2000, wood: 2000, food: 2000, stone: 2000, iron: 2000 }, items: {} },
-  { kind: 'mausoleum', tier: 'legendary', count: 5, reward: { gold: 5000, wood: 5000, food: 5000, stone: 5000, iron: 5000 }, items: { city_order_adv: 1 } },
+  { kind: 'mausoleum', tier: 'legendary', count: 5, reward: { gold: 5000, wood: 5000, food: 5000, stone: 5000, iron: 5000 }, items: { city_order: 1 } },
 ];
 
 /** 遗迹总数（200 处） */

@@ -113,7 +113,7 @@ export const EXTRA_MAP = {
     heroSiteTag: '名将处所',
     detailReward: '领取奖励',
     claimHint: '派一支部队到达即可领取，全服先到先得，每天最多 2 处',
-    advMoveCity: '高级迁城令',
+    moveCity: '迁城令',
     heroLabel: (hero: string) => `名将：${hero}`,
     heroClaimed: '名将已出山：处所与名字保留，首探只发资源，不再给结交资格',
     heroNotClaimed: '名将未出山：首探者不打守军即可结交，其他人打赢守军也可结交',

@@ -17,18 +17,18 @@ export const RELIC_REWARD: Record<RelicKind, Reward> = {
   mausoleum: { gold: 5000, wood: 5000, food: 5000, stone: 5000, iron: 5000 },
 };
 
-/** 附加道具的数量（传说遗迹：高级迁城令 1 张） */
-export const RELIC_ADV_MOVE_CITY: Partial<Record<RelicKind, number>> = { mausoleum: 1 };
+/** 附加道具的数量（传说遗迹：迁城令 1 张） */
+export const RELIC_MOVE_CITY: Partial<Record<RelicKind, number>> = { mausoleum: 1 };
 
 /** 奖励行的组成（按资源顺序，数量为 0 的不列） */
-export function relicRewardParts(kind: RelicKind): Array<{ key: RelicRewardKey | 'advMoveCity'; amount: number }> {
+export function relicRewardParts(kind: RelicKind): Array<{ key: RelicRewardKey | 'moveCity'; amount: number }> {
   const reward = RELIC_REWARD[kind];
-  const parts: Array<{ key: RelicRewardKey | 'advMoveCity'; amount: number }> = (['gold', 'wood', 'food', 'stone', 'iron'] as const)
+  const parts: Array<{ key: RelicRewardKey | 'moveCity'; amount: number }> = (['gold', 'wood', 'food', 'stone', 'iron'] as const)
     .map((key) => ({ key, amount: reward[key] }))
     .filter((part) => part.amount > 0);
-  const items = RELIC_ADV_MOVE_CITY[kind] ?? 0;
+  const items = RELIC_MOVE_CITY[kind] ?? 0;
   if (items > 0) {
-    parts.push({ key: 'advMoveCity', amount: items });
+    parts.push({ key: 'moveCity', amount: items });
   }
   return parts;
 }

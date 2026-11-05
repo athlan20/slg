@@ -90,7 +90,7 @@ export const EXTRA_MAP_EN = {
     heroSiteTag: 'Hidden lair',
     detailReward: 'Rewards',
     claimHint: 'Send any army here to claim it. First come, first served server-wide; up to 2 per day.',
-    advMoveCity: 'Advanced Relocation Order',
+    moveCity: 'City Move Order',
     heroLabel: (hero: string) => `General: ${hero}`,
     heroClaimed: 'The general has joined the cause: the lair and name are kept, first exploration only gives resources',
     heroNotClaimed: 'The general has not joined yet: the first explorer can befriend them without fighting, others can after beating the garrison',
