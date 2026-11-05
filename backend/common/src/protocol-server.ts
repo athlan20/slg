@@ -44,6 +44,9 @@ export const SERVER_BROADCAST_TYPES = [
   'famous_first_explored',
   'hero_site_first_explored',
   'legendary_relic_claimed',
+  // v94（AISLG-228）名将离开主人（下野 / 被俘超时）与被俘：走普通限频（不带坐标）
+  'hero_left',
+  'hero_captured',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

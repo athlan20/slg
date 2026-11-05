@@ -406,6 +406,14 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v36，AISLG-114）武将欠饷中（主城金币不足以支付俸禄），不能出征。',
     action: '给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。',
   },
+  HERO_CAPTURED: {
+    desc: '（v93，AISLG-228）武将被俘囚禁中（24 小时基准），不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计。',
+    action: '主人用 RANSOM_HERO 在囚禁截止前赎回；超时则名将下野，不必再操作。',
+  },
+  HERO_NOT_CAPTURED: {
+    desc: '（v93，AISLG-228）武将未被俘，或囚禁已到期（即将下野），不能赎回。',
+    action: '用 GET_HEROES 查看 heroes[].captive；为 null 即无需赎回。',
+  },
   HERO_TRAINING: {
     desc: '（v54，AISLG-144）武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）。',
     action: '等历练结束（train_until 过去，经验到账并收到 reason=training_done 推送）后再操作。',

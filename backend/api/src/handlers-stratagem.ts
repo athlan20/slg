@@ -36,7 +36,7 @@ import {
 } from '../../common/src/protocol';
 import { scaledMs } from '../../common/src/time-scale';
 import { insertEvent } from '../../common/src/events';
-import { heroBusyMarchMap, loadHeroes } from '../../common/src/hero-db';
+import { heroBusyMarchMap, isCaptive, loadHeroes } from '../../common/src/hero-db';
 import {
   loadStratagemTokens,
   lockStratagemTarget,
@@ -122,9 +122,11 @@ async function heroViews(q: Parameters<typeof loadHeroes>[0], accountId: string,
           ? ('wounded' as const)
           : busy.has(hero.id)
             ? ('busy' as const)
-            : cooldownUntil && cooldownUntil.getTime() > now.getTime()
-              ? ('cooldown' as const)
-              : null;
+            : hero.captured_by
+              ? ('captive' as const)
+              : cooldownUntil && cooldownUntil.getTime() > now.getTime()
+                ? ('cooldown' as const)
+                : null;
     const effects = {} as Record<StratagemKind, StratagemEffectPreview>;
     for (const def of STRATAGEM_DEFS) {
       effects[def.kind] = effectPreviewOf(def.kind, hero.wit);
@@ -278,11 +280,17 @@ export async function handleCastStratagem(
     // 2) 锁施计武将 → 在家 / 冷却校验
     const heroRes = await client.query(`SELECT * FROM account_heroes WHERE id = $1 AND account_id = $2 FOR UPDATE`, [heroId, accountId]);
     const hero = heroRes.rows[0] as
-      | { id: string; name: string; wit: number; train_until: Date | null; wounded_until: Date | null; stratagem_cooldown_until: Date | null }
+      | { id: string; name: string; wit: number; train_until: Date | null; wounded_until: Date | null; stratagem_cooldown_until: Date | null; captured_by: string | null; captured_until: Date | null }
       | undefined;
     if (!hero) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'HERO_NOT_FOUND');
+      return;
+    }
+    // v93（AISLG-228）：被俘囚禁中的武将不能施计
+    if (isCaptive(hero)) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'HERO_CAPTURED');
       return;
     }
     const unavailable = hero.train_until

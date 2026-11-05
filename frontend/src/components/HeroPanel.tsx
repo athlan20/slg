@@ -34,6 +34,8 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
   const now = useNow(state !== null && state.heroes.length > 0);
   const cityNames: Record<string, string> = Object.fromEntries(cityList.cities.map((item) => [item.id, item.name]));
   const guard = city?.guard ?? null;
+  const captiveCount = state ? state.heroes.filter((hero) => hero.captive !== null).length : 0;
+  const lowLoyaltyCount = state ? state.heroes.filter((hero) => hero.loyalty !== null && hero.loyalty <= 30).length : 0;
   const guardText = guard
     ? HERO_COPY.guard.row(tName(guard.name), Math.min(20, Math.round(guard.force * 0.3 * 10) / 10), Math.min(20, Math.round(guard.wit * 0.3 * 10) / 10), guard.bonusPercent)
     : HERO_COPY.guard.none;
@@ -57,6 +59,11 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
         <p className="text-[12px] text-faint">{HERO_COPY.panel.loading}</p>
       ) : (
         <>
+          {captiveCount + lowLoyaltyCount > 0 ? (
+            <p role="武将面板-提醒" className="shrink-0 truncate text-[12px] text-warn">
+              {HERO_COPY.panel.alert(captiveCount, lowLoyaltyCount)}
+            </p>
+          ) : null}
           <PagedList
             role="武将面板-武将列表"
             items={state.heroes}
@@ -77,6 +84,7 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
                 onTrain={(tier) => void session.train(hero.id, tier)}
                 onCancelTrain={() => void session.cancelTraining(hero.id)}
                 onGift={() => void session.gift(hero.id)}
+                onRansom={() => void session.ransom(hero.id)}
                 onReset={() => void session.reset(hero.id)}
                 onCastStratagem={() => stratagem.openPanel({ heroId: hero.id })}
               />

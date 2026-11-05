@@ -72,6 +72,8 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   HERO_BUSY: '该武将正在随队出征（含返程），不能出征 / 解雇 / 任命城守',
   HERO_WOUNDED: '该武将重伤未愈，不能出征',
   HERO_ARREARS: '该武将欠饷中（主城金币不足以支付俸禄），补足金币后自动恢复',
+  HERO_CAPTURED: '该武将被俘囚禁中，不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计，需主人赎回',
+  HERO_NOT_CAPTURED: '该武将未被俘（或囚禁已到期），不能赎回',
   GUARD_ASSIGN_DENIED: '城守不能同时出征；城守只能任命未随行出征的本账号武将',
   HERO_TRAINING: '该武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）',
   HERO_POINTS_INSUFFICIENT: '自由点数不足（附 freePoints），先升级获得更多点数',
