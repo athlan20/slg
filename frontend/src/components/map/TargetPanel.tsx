@@ -265,7 +265,7 @@ export function TargetPanel() {
                 {ALLIANCE_COPY.ally.blocked}
               </p>
             ) : null}
-            {allyBlocked && detail.owner && !detail.owner.canAssist ? (
+            {detail?.kind === 'city' && allyBlocked && detail.owner && !detail.owner.canAssist ? (
               <p role="世界地图详情区-协防冷却提示" className="text-[12px] leading-relaxed text-warn">
                 {ALLIANCE_COPY.diplomacy.assistCooldown}
               </p>
