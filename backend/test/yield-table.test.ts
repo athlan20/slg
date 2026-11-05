@@ -90,7 +90,7 @@ test('格子产出：野地给数字、自己的地含驻军采集、营地与�
     clusterSize: 3,
     clusterBonusPercent: 10,
   };
-  const mine = yieldOfTile(tileBase({ x: 1, y: 1, terrain: 'forest', level: 5, owner: { accountId: 'me', username: 'me', cityId: 'c1', cityName: '城', nobility: 0, nobilityName: '平民', ally: false, relation: 'self' }, reserve: ownTile.reserve }), ownTile, 'me');
+  const mine = yieldOfTile(tileBase({ x: 1, y: 1, terrain: 'forest', level: 5, owner: { accountId: 'me', username: 'me', cityId: 'c1', cityName: '城', nobility: 0, nobilityName: '平民', ally: false, relation: 'self', canAssist: false }, reserve: ownTile.reserve }), ownTile, 'me');
   assert.ok(mine);
   assert.equal(mine.rate, 500);
   assert.equal(mine.own, true);

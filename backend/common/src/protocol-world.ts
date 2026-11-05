@@ -44,6 +44,9 @@ export interface TileOwnerView {
   ally: boolean;
   /** 与占领者的关系（v77，AISLG-195）：self 自己 / ally 同盟 / friendly 友盟 / hostile 敌对 / neutral 其他 */
   relation: 'self' | 'ally' | 'friendly' | 'hostile' | 'neutral';
+  /** 本账号现在能否向这位占领者协防（v95，AISLG-226）：同联盟或友盟为 true；自己、解除友好的 24 小时冷却期、中立、敌对为 false。
+   *  与 MARCH task=assist 的校验（canAssist）口径一致；冷却期内 relation 仍为 friendly（只为不能互打），但这里为 false */
+  canAssist: boolean;
 }
 
 /** NPC 城池库存档位（v23，AISLG-55）：相对该城初始库存的比例分档——只给大概档位，

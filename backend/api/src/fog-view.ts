@@ -83,6 +83,8 @@ export async function withFogRequest<T>(
 export interface OwnerRelation {
   relation: TileOwnerView['relation'];
   ally: boolean;
+  /** 能否协防（v95，AISLG-226）：同联盟或 relation 行为 friendly（不含冷却期）；自己为 false */
+  canAssist: boolean;
 }
 
 export async function relationsOf(q: pg.PoolClient | pg.Pool, accountId: string, ownerIds: readonly string[]): Promise<Map<string, OwnerRelation>> {
@@ -93,6 +95,7 @@ export async function relationsOf(q: pg.PoolClient | pg.Pool, accountId: string,
   const res = await q.query(
     `SELECT o.id AS account_id,
             (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND o.id <> $1) AS ally,
+            (o.id <> $1 AND ((am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id) OR r.relation = 'friendly')) AS can_assist,
             CASE
               WHEN o.id = $1 THEN 'self'
               WHEN am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id THEN 'ally'
@@ -108,8 +111,8 @@ export async function relationsOf(q: pg.PoolClient | pg.Pool, accountId: string,
        AND r.b_id = GREATEST(am_me.alliance_id, am_o.alliance_id)`,
     [accountId, [...new Set(ownerIds)]],
   );
-  for (const row of res.rows as Array<{ account_id: string; ally: boolean; relation: TileOwnerView['relation'] }>) {
-    out.set(row.account_id, { relation: row.relation, ally: row.ally === true });
+  for (const row of res.rows as Array<{ account_id: string; ally: boolean; can_assist: boolean; relation: TileOwnerView['relation'] }>) {
+    out.set(row.account_id, { relation: row.relation, ally: row.ally === true, canAssist: row.can_assist === true });
   }
   return out;
 }
@@ -187,6 +190,7 @@ function seenOwnerView(seen: SeenRow, rel: OwnerRelation | undefined): TileOwner
     nobilityName: nobilityName(0),
     ally: rel?.ally ?? false,
     relation: rel?.relation ?? 'neutral',
+    canAssist: rel?.canAssist ?? false,
   };
 }
 
@@ -277,12 +281,20 @@ function factsOf(tile: TileView): TileFacts {
   return { x: tile.x, y: tile.y, terrain: tile.terrain, realKind: tile.kind, realLevel: tile.level, camp: tile.camp };
 }
 
-/** 实时视野判定：视野来源覆盖，或盟友的城池格（只这一格，不带半径） */
+/**
+ * 城池格“实时可见”的关系口径（AISLG-226，全部地方共用）：占领者与请求账号的 relation 为 ally（同盟）或 friendly（友盟，
+ * 含解除友好后的 24 小时冷却）。只这一格，不带半径；敌对（含敌对冷却）不算。
+ */
+export function isFriendlyRelation(relation: string | null | undefined): boolean {
+  return relation === 'ally' || relation === 'friendly';
+}
+
+/** 实时视野判定：视野来源覆盖，或友盟 / 同盟的城池格（只这一格，不带半径） */
 export function isLiveTile(req: FogRequest, tile: { x: number; y: number; kind: string; owner: TileOwnerView | null }): boolean {
   if (!req.enabled) {
     return true;
   }
-  if (tile.kind === 'city' && tile.owner?.ally === true) {
+  if (tile.kind === 'city' && isFriendlyRelation(tile.owner?.relation)) {
     return true;
   }
   return inAnyVision(req.sources, tile.x, tile.y);

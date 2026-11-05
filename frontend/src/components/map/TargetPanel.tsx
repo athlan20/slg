@@ -25,6 +25,7 @@ import { ScoutForm } from './forms/ScoutForm';
 import { TransportForm } from './forms/TransportForm';
 import type { TargetCtx, TroopInput } from './forms/targetTypes';
 import { TargetHeader } from './TargetHeader';
+import { TargetCloseButton } from './TargetCloseButton';
 import { TargetChatActions } from './TargetChatActions';
 import { MoveCityPickAction } from './MoveCityPick';
 import { TargetMarkNote } from './TargetMarkNote';
@@ -142,7 +143,10 @@ export function TargetPanel() {
     } else if (detail.kind === 'city' && detail.owner !== null) {
       // v74（AISLG-194）：盟友的城只能协防（掠夺 / 占领 / 侦察在 ATTACK_ACTS 里禁用）
       if (allyBlocked) {
-        acts.push('assist');
+        // 解除友好的冷却期内 relation 仍为 friendly，但不能协防（v95，AISLG-226）：以服务端给出的 canAssist 为准
+        if (detail.owner.canAssist) {
+          acts.push('assist');
+        }
       } else {
         // 他人玩家城（v38 AISLG-122）：可掠夺；分城（v40 AISLG-124，城防值非 null）另可攻占，主城不可占
         acts.push(...(detail.durability != null ? (['plunder', 'occupy', 'scout'] as const) : (['plunder', 'scout'] as const)));
@@ -193,9 +197,12 @@ export function TargetPanel() {
       <div role="世界地图详情区" className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
         <MoveCityPickAction x={x} y={y} empty={isEmptyWilderness} />
         {unknownCell ? (
-          <p role="世界地图-迷雾目标" className="shrink-0 text-[12px] text-warn">
-            {copy.EXTRA_MAP.fog.unknownNotice(x, y)}
-          </p>
+          <div role="世界地图-迷雾目标-头部" className="flex shrink-0 items-start gap-2">
+            <p role="世界地图-迷雾目标" className="min-w-0 flex-1 text-[12px] text-warn">
+              {copy.EXTRA_MAP.fog.unknownNotice(x, y)}
+            </p>
+            <TargetCloseButton onClose={world.deselectTile} />
+          </div>
         ) : (
         <TargetHeader
           world={world}
@@ -256,6 +263,11 @@ export function TargetPanel() {
             {blockedNow ? (
               <p role="选中详情-盟友提示" className="text-[12px] leading-relaxed text-st-online">
                 {ALLIANCE_COPY.ally.blocked}
+              </p>
+            ) : null}
+            {detail?.kind === 'city' && allyBlocked && detail.owner && !detail.owner.canAssist ? (
+              <p role="世界地图详情区-协防冷却提示" className="text-[12px] leading-relaxed text-warn">
+                {ALLIANCE_COPY.diplomacy.assistCooldown}
               </p>
             ) : null}
             {ambushLeft > 0 ? (

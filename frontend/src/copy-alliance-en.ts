@@ -66,6 +66,7 @@ export const ALLIANCE_COPY_EN = {
     end: 'End',
     declare: 'Declare hostile',
     limit: (friends: number, hostiles: number) => `Max ${friends} friendly / ${hostiles} hostile`,
+    assistCooldown: 'Friendship recently ended; assisting is unavailable for now',
     note: 'Friendly alliances cannot attack each other and can assist each other. After ending friendship, attacks stay blocked for 24h and re-friending is blocked for 72h. Hostile is only a red map marker; combat rules are unchanged.',
     managerOnly: 'Only the leader / vice leaders can manage diplomacy',
     directionSent: 'Sent',
