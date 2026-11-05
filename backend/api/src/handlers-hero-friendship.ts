@@ -70,11 +70,11 @@ export async function handleBefriendHero(
       [accountId, def.name],
     );
     if (!tile || !unlocked.rowCount) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOT_UNLOCKED');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOT_UNLOCKED');
     }
     const claimed = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1`, [def.name]);
     if (claimed.rowCount) {
-      return fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
+      return await fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
     }
     const row = await client.query(
       `SELECT favor, day, day_count FROM hero_friendship WHERE account_id = $1 AND hero_name = $2 FOR UPDATE`,
@@ -82,20 +82,20 @@ export async function handleBefriendHero(
     );
     const existing = row.rowCount ? (row.rows[0] as { favor: number; day: string | null; day_count: number }) : null;
     if (existing && existing.favor >= RECRUIT_FAVOR_REQUIRED) {
-      return fail(ctx, conn, client, op, seq, 'HERO_FAVOR_FULL');
+      return await fail(ctx, conn, client, op, seq, 'HERO_FAVOR_FULL');
     }
     if (!existing && (await activeFriendshipCount(client, accountId)) >= BEFRIEND_ACTIVE_CAP) {
-      return fail(ctx, conn, client, op, seq, 'HERO_FRIENDSHIP_LIMIT', { cap: BEFRIEND_ACTIVE_CAP });
+      return await fail(ctx, conn, client, op, seq, 'HERO_FRIENDSHIP_LIMIT', { cap: BEFRIEND_ACTIVE_CAP });
     }
     const today = heroDayIndex(new Date());
     const usedToday = existing && existing.day !== null && Number(existing.day) === today ? existing.day_count : 0;
     if (usedToday >= BEFRIEND_DAILY_LIMIT) {
-      return fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: BEFRIEND_DAILY_LIMIT });
+      return await fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: BEFRIEND_DAILY_LIMIT });
     }
     const cost = befriendCost(tile.level);
     if (!snap || snap.resources.gold < cost) {
       // 同 GIFT_HERO：用本事务已锁住的快照回包，不另开连接读城池（会自锁死）
-      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
+      return await fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
     }
     await client.query(`UPDATE cities SET gold = gold - $2 WHERE id = $1`, [snap.cityId, cost]);
     const saved = await client.query(
@@ -164,23 +164,23 @@ export async function handleRecruitFamousHero(
     );
     const favor = row.rowCount ? (row.rows[0] as { favor: number }).favor : 0;
     if (favor < RECRUIT_FAVOR_REQUIRED) {
-      return fail(ctx, conn, client, op, seq, 'HERO_FAVOR_INSUFFICIENT', { favor });
+      return await fail(ctx, conn, client, op, seq, 'HERO_FAVOR_INSUFFICIENT', { favor });
     }
     const attrs = await loadWildHeroAttrs(client, def.name);
     if (!attrs) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOT_UNLOCKED');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOT_UNLOCKED');
     }
     const claimed = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1`, [def.name]);
     if (claimed.rowCount) {
-      return fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
+      return await fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
     }
     const counts = await heroCounts(client, accountId);
     if (counts.famousCount >= FAMOUS_HERO_CAP) {
-      return fail(ctx, conn, client, op, seq, 'HERO_CAP_REACHED', { famousCap: FAMOUS_HERO_CAP });
+      return await fail(ctx, conn, client, op, seq, 'HERO_CAP_REACHED', { famousCap: FAMOUS_HERO_CAP });
     }
     const hero = await grantFamousHero(client, accountId, def, attrs);
     if (!hero) {
-      return fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
+      return await fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
     }
     await dropFriendship(client, accountId, def.name);
     const who = await client.query(`SELECT username FROM accounts WHERE id = $1`, [accountId]);
