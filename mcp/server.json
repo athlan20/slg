@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.athlan20/slg-mcp",
+  "description": "Let your AI agent play a Three Kingdoms strategy game: query cities, build, recruit, march, scout and read battle reports.",
+  "repository": {
+    "url": "https://github.com/athlan20/slg",
+    "source": "github",
+    "subfolder": "mcp"
+  },
+  "websiteUrl": "https://slg.yuntianyou.cc",
+  "version": "0.2.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "slg-mcp",
+      "version": "0.2.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "SLG_TOKEN",
+          "description": "Your permanent agent token (starts with sk_). Copy it from the game: Agent panel > Copy MCP config. Stays on your machine and is only sent to the game server.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "SLG_SERVER",
+          "description": "Game WebSocket URL. Defaults to the public server wss://slg.yuntianyou.cc/ws; set it to connect to a self-hosted server.",
+          "isRequired": false,
+          "format": "string",
+          "default": "wss://slg.yuntianyou.cc/ws"
+        },
+        {
+          "name": "SLG_AGENT_MODEL",
+          "description": "Optional name of the model driving the agent (for example claude-opus-5-5); shown on the in-game model leaderboard.",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
