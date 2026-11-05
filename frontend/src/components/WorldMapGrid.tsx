@@ -16,6 +16,7 @@ import { zoomStep } from '../state/mapZoom';
 import { WorldTileBadges } from './WorldTileBadges';
 import { TERRITORY_FILL_CLASS } from './map/TerritoryOverlay';
 import { TileYield } from './map/YieldLayer';
+import { FogCell } from './map/FogCell';
 import type { TerritoryCell } from './map/territoryBorders';
 import type { YieldInfo } from './map/yieldTable';
 import { AllianceMarkBadge, CityMark, TERRAIN_CLASS, TerrainIcon, levelTone } from './worldMapMarks';
@@ -287,6 +288,14 @@ export function WorldMapGrid({
     }
   };
 
+  /** 选中（地块与带标记的迷雾格共用）：拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分） */
+  const selectCell = (x: number, y: number) => {
+    if (lastDragMovedRef.current) {
+      lastDragMovedRef.current = false;
+      return;
+    }
+    onSelect(x, y);
+  };
   const tileAt = new Map(win.tiles.map((tile) => [`${tile.x},${tile.y}`, tile]));
   const cols = Array.from({ length: win.w }, (_, i) => win.x + i);
   const rows = Array.from({ length: win.h }, (_, i) => win.y + i);
@@ -330,8 +339,8 @@ export function WorldMapGrid({
             cols.map((x) => {
               const tile = tileAt.get(`${x},${y}`);
               if (!tile) {
-                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾（迷雾开启时才会缺格）
-                return <span key={`${x}-${y}`} role="世界地图-迷雾层" title={copy.EXTRA_MAP.fog.unknownTitle} aria-label={copy.EXTRA_MAP.fog.unknownTitle} className="rounded bg-[#05070b]" />;
+                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾；带本盟标记的黑雾格可点选，只画角标（AISLG-226）
+                return <FogCell key={`${x}-${y}`} x={x} y={y} mark={marks?.get(`${x},${y}`)} onSelect={selectCell} />;
               }
               const isOwn = tile.owner !== null && tile.owner.accountId === accountId;
               const isSelected = selected !== null && selected.x === x && selected.y === y;
@@ -357,14 +366,7 @@ export function WorldMapGrid({
                   tabIndex={tile === tabTarget ? 0 : -1}
                   aria-label={tileAria(tile, isOwn)}
                   aria-pressed={isSelected}
-                  onClick={() => {
-                    // 拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分）
-                    if (lastDragMovedRef.current) {
-                      lastDragMovedRef.current = false;
-                      return;
-                    }
-                    onSelect(x, y);
-                  }}
+                  onClick={() => selectCell(x, y)}
                   onKeyDown={(e) => onTileKey(e, tile)}
                   onMouseEnter={(e) => showTip(tile, isOwn, e.currentTarget)}
                   onFocus={(e) => showTip(tile, isOwn, e.currentTarget)}
