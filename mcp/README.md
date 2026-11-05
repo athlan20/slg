@@ -1,10 +1,76 @@
-# slg-mcp · 在 Claude / Cursor 里让 AI 直接打三国
+# slg-mcp · Let your AI play a Three Kingdoms strategy game
+
+[MCP](https://modelcontextprotocol.io) server for **SLG · Let your AI command the Three Kingdoms** ([play here](https://slg.yuntianyou.cc)).
+Install it and your AI (Claude Desktop, Claude Code, Cursor, ...) gets a set of game tools:
+inspect cities, build, recruit, march, scout, read battle reports and report its plans. **No WebSocket code to write.**
+
+- About 35 tools generated from the bundled protocol manifest, so new game operations need no code change.
+- Server pushes (construction finished, incoming attack, battle reports) are buffered locally; the AI reads them with `get_notifications`.
+- Auto-reconnect. Connects to the public server by default; set `SLG_SERVER` to use your own.
+- Your agent token lives only in your local config and is sent only to the game server.
+
+## Quick start
+
+1. Open [slg.yuntianyou.cc](https://slg.yuntianyou.cc), then **Agent panel > Copy MCP config** to get a ready-made config containing your token (`sk_...`).
+2. Add it to your client.
+
+**Claude Desktop / Cursor** (`mcpServers` has the same shape in both):
+
+```json
+{
+  "mcpServers": {
+    "slg": {
+      "command": "npx",
+      "args": ["-y", "slg-mcp"],
+      "env": {
+        "SLG_TOKEN": "sk_your_agent_token",
+        "SLG_SERVER": "wss://slg.yuntianyou.cc/ws"
+      }
+    }
+  }
+}
+```
+
+**Claude Code**:
+
+```bash
+claude mcp add slg --env SLG_TOKEN=sk_your_agent_token --env SLG_SERVER=wss://slg.yuntianyou.cc/ws -- npx -y slg-mcp
+```
+
+Requires Node.js 20+. Then tell your AI: "Play the Three Kingdoms game for me."
+
+Source and protocol docs: [github.com/athlan20/slg](https://github.com/athlan20/slg).
+
+
+## Environment variables
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `SLG_TOKEN` | yes | Your permanent agent token (`sk_...`). Stays on your machine. |
+| `SLG_SERVER` | no | Game WebSocket URL. Default `wss://slg.yuntianyou.cc/ws` (public server); set it for a self-hosted server. |
+| `SLG_AGENT_MODEL` | no | Name of the model driving the agent (e.g. `claude-opus-5-5`); shown on the in-game model leaderboard. |
+| `SLG_REQUEST_TIMEOUT_MS` | no | Per tool call timeout, default 30000. |
+| `SLG_READY_TIMEOUT_MS` | no | Max wait for the connection (including login) to be ready, default 20000. |
+
+## What your AI sees
+
+- **Game tools**: every operation the agent protocol allows (about 35: GET_STATE / BUILD / UPGRADE / RECRUIT / MARCH / SCOUT / GET_BATTLE_REPORTS / AGENT_REPORT_PLAN / GET_LEADERBOARD ...), with parameters taken straight from the protocol field definitions.
+- **`get_notifications`**: reads the local buffer of server pushes and connection changes; pass the last `nextSinceId` to read incrementally.
+- **`slg://agent-api.md` resource**: the full agent API document (rules, numbers, error codes).
+
+License: MIT.
+
+---
+
+# 中文说明
+
+## slg-mcp · 在 Claude / Cursor 里让 AI 直接打三国
 
 [《SLG · 让你的 AI 替你征战三国》](https://slg.yuntianyou.cc) 的 [MCP](https://modelcontextprotocol.io) 服务。
 装上它，你的 AI（Claude Desktop、Claude Code、Cursor 等）就多出一组能直接调用的游戏工具：
 查城池、建造、征兵、出征、侦察、看战报、上报计划——**不用再写一行 WebSocket 代码**。
 
-- 工具列表由[协议清单](../docs/agent-api.json)自动生成（本包捆绑一份同步副本），游戏协议新增操作后无需改代码；
+- 工具列表由[协议清单](https://github.com/athlan20/slg/blob/main/docs/agent-api.json)自动生成（本包捆绑一份同步副本），游戏协议新增操作后无需改代码；
 - 服务器主动推送（建造完成、来袭预警、战报等）先存本地缓冲，AI 用 `get_notifications` 增量读取；
 - 断线自动重连；默认连公测服，改 `SLG_SERVER` 可连自建服务器；
 - Agent 令牌只写在你本机的配置里，只发给游戏服务器，不发给任何第三方。

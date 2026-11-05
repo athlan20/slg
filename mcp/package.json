@@ -1,7 +1,8 @@
 {
   "name": "slg-mcp",
-  "version": "0.2.1",
-  "description": "《SLG · 让你的 AI 替你征战三国》的 MCP 服务：装进 Claude Desktop / Cursor / Claude Code，AI 就能直接查城池、建造、征兵、出征、看战报。",
+  "mcpName": "io.github.athlan20/slg-mcp",
+  "version": "0.2.2",
+  "description": "Let your AI agent play a Three Kingdoms strategy game (SLG): MCP server to query cities, build, recruit, march, scout and read battle reports. 《SLG · 让你的 AI 替你征战三国》的 MCP 服务。",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -11,7 +12,8 @@
   "files": [
     "dist",
     "manifest",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -24,10 +26,16 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
+    "mcp-server",
     "slg",
+    "strategy-game",
+    "three-kingdoms",
     "game",
+    "wargame",
     "ai-agent",
+    "ai-game",
     "claude",
+    "claude-code",
     "cursor"
   ],
   "scripts": {
@@ -47,5 +55,6 @@
     "@types/ws": "^8.5.10",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0"
-  }
+  },
+  "homepage": "https://slg.yuntianyou.cc"
 }
