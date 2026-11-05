@@ -40,6 +40,8 @@ export interface TileOwnerView {
   ally: boolean;
   /** v77（AISLG-195）：与占领者的关系 self / ally / friendly / hostile / neutral */
   relation: 'self' | 'ally' | 'friendly' | 'hostile' | 'neutral';
+  /** v95（AISLG-226）：本账号现在能否向该占领者协防；解除友好冷却期内 relation 仍为 friendly，但为 false */
+  canAssist: boolean;
 }
 
 /** NPC 城池库存档位（v23 AISLG-55；相对该城初始库存，不给精确数值） */

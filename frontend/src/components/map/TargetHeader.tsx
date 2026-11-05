@@ -11,6 +11,7 @@ import { useScoutReportModal } from '../../state/scoutReportModal';
 import type { WorldSession } from '../../state/worldSession';
 import { FamousCityNote } from '../FamousCityNote';
 import { WorldSiteNote } from './WorldSiteNote';
+import { TargetCloseButton } from './TargetCloseButton';
 import { relativeAgo } from '../ScoutReportModal';
 import { YellowTurbanCampNote } from '../YellowTurbanCampNote';
 import { plunderCooldownLeft, protectionLeftText } from '../worldPanelText';
@@ -121,16 +122,7 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
             {detail ? ` · ${TERRAIN_LABEL[detail.terrain]} · ${TILE_KIND_LABEL[detail.kind]}` : ''}
           </small>
         </span>
-        <button
-          type="button"
-          role="选中详情-关闭按钮"
-          aria-label={TARGET_COPY.close}
-          title={TARGET_COPY.close}
-          onClick={onClose}
-          className="cursor-pointer rounded px-1.5 py-0.5 text-[14px] leading-none text-faint hover:text-fg"
-        >
-          ✕
-        </button>
+        <TargetCloseButton onClose={onClose} />
       </div>
 
       {detail === null ? (

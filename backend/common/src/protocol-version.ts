@@ -720,5 +720,8 @@
  *   随机落城、随机迁城跳过未领取的遗迹格；高级迁城令指定遗迹格返回 MOVE_CITY_TILE_INVALID。
  *   开关 fog_enabled 关闭时以上全部不显示、不领取、不记首探；探索榜返回空。
  * v94（名将忠诚度与被俘，AISLG-228，只加不改）：只有 29 位在野名将有忠诚度（招揽 / 上线迁移时为 100，每 24 小时 −10 从招揽时刻起算，赏赐 +10，欠饷每小时 −1，忠诚度 0 下野，30 及以下提醒一次）。玩家打玩家战败时：攻方随队名将 / 守城失守的城守名将可能被俘（概率 5% + (100 − 忠诚度) × 0.25%，每账号 7 天最多 1 名），囚禁 24 小时，期间不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计（新错误码 HERO_CAPTURED）。主人用新增 RANSOM_HERO（op 151）赎回：赎金 2000 × 等级从主城扣，胜方主城收 50%；超时未赎回则下野，胜方得结交资格。GET_HEROES 的 heroes[] 新增 loyalty 与 captive；新错误码 HERO_NOT_CAPTURED；新事件 hero_left / hero_captured / hero_ransomed / hero_loyalty_low；全服播报新增 hero_left / hero_captured；PUSH_HERO_STATE reason 新增 loyalty_changed / captured / ransomed / left。新表 hero_capture_limits（换季清空）；account_heroes 新增 loyalty / loyalty_at / loyalty_warned / loyalty_arrears_at / captured_by / captured_until。
+ * v95（AISLG-226，只加不改）：TileOwnerView 新增 canAssist（tiles[].owner、GET_TILE 等占领者视图）：本账号现在能否向该占领者协防。
+ *   同联盟或友盟（relation 行为 friendly）为 true；自己、解除友好后 24 小时冷却期（relation 仍显示 friendly，只为不能互打）、中立、敌对均为 false，
+ *   与 MARCH task=assist 的校验（ASSIST_NOT_ALLY）口径一致。relation 与其它字段语义不变。
  */
-export const PROTOCOL_VERSION = 94;
+export const PROTOCOL_VERSION = 95;

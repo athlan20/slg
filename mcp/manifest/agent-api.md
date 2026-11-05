@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**94** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**95** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 94）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 95）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 94,
+    "protocolVersion": 95,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 94,
+    "protocolVersion": 95,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/91 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/92 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 91,
+    "docVersion": 92,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 94,
-    "docNotice": "接口文档已从 v91 更新到 v94：请 GET /agent-api/changes/91 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 95,
+    "docNotice": "接口文档已从 v92 更新到 v95：请 GET /agent-api/changes/92 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -4169,7 +4169,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].heroSite | { name, hero, claimed } \| null | 名将处所（v93，AISLG-227）：8 位一线在野名将的隐居地，实时视野或已探索才有；name 为处所名（如「茅庐」），hero 为名将名，claimed = true 表示名将已被招揽（已出山，图标变灰）。迷雾关闭时恒为 null。 |
 | tiles[].famous.firstExplorer | string \| null | 名城首探者用户名（v93，AISLG-227）：尚无人首探为 null；迷雾关闭时该字段缺省。 |
 | tiles[].level | number | 野地等级（1..10）或 NPC 城池等级（1..3）；玩家城池为 0。 |
-| tiles[].owner | object \| null | 占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally, relation }；relation（v77）= self / ally / friendly / hostile / neutral；无主为 null。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。 |
+| tiles[].owner | object \| null | 占领者（占领野地或城池地块归属的城池）：{ accountId, username, cityId, cityName, ally, relation, canAssist }；relation（v77）= self / ally / friendly / hostile / neutral；无主为 null。canAssist（v95，AISLG-226）= 你现在能否向该占领者协防：同联盟或友盟为 true；自己、解除友好后 24 小时冷却期（relation 仍为 friendly，只为不能互打）、中立、敌对均为 false，与 MARCH task=assist 的校验一致。ally（v67，AISLG-182）= 占领者与你同属一个联盟（盟友，自己的地块为 false）：盟友的城池 / 野地不能掠夺、抢占、占领，也不能侦察（返回 ALLY_NOT_ATTACKABLE）。 |
 | tiles[].garrison | number | 地块驻军总数；未占领野地为 0（原住守军不计入驻军总数；其编成见 GET_TILE 的 nativePower 与侦察）；NPC 城池需侦察（v17）：未侦察为 0，已侦察为最近一次侦察快照的总数。 |
 | tiles[].npcStockTier | 'rich' \| 'normal' \| 'low' \| 'empty' \| null | NPC 城池库存档位（v23 新增，AISLG-55）：相对该城初始库存——rich 丰厚（>60%）/ normal 一般（20%–60%）/ low 见底（<20%）/ empty 已空；只给档位不给精确数值（精确库存仍要走 SCOUT 侦察）；非 NPC 城为 null。掠夺后档位随库存变化，全服看到的档位一致。 |
 | tiles[].camp | object \| null | 黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small\|medium\|large\|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer\|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。 |
@@ -22363,7 +22363,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 94。
+- 协议版本随对外协议内容的每次变化递增；当前为 95。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 
