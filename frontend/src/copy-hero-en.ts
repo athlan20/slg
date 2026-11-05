@@ -60,6 +60,8 @@ export const HERO_COPY_EN = {
     captiveTag: 'Captive',
     statusCaptive: (clock: string) => `Captured — ransom before ${clock}`,
     ransom: (gold: number) => `Ransom ${gold}g`,
+    ransomConfirm: (gold: number) => `Pay ${gold}g to ransom`,
+    ransomCancel: 'Cancel',
     ransomHint: 'The owner can ransom before the captivity ends: the full ransom is paid from the main city, the captor gets 50%, and the hero returns at once with loyalty −20 (minimum 1)',
     captiveDenied: 'This hero is held captive and cannot be operated on',
     dismiss: 'Dismiss',

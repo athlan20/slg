@@ -80,7 +80,10 @@ export async function settleHeroSalary(
     }
     return null;
   }
-  await client.query(`UPDATE account_heroes SET arrears = true, salary_at = $2 WHERE id = $1`, [hero.id, next]);
+  // 欠饷重试时不再推后 salary_at：否则每个 tick 推 1 小时，补上金币后会长期不扣俸禄（AISLG-228）
+  if (!hero.arrears) {
+    await client.query(`UPDATE account_heroes SET arrears = true, salary_at = $2 WHERE id = $1`, [hero.id, next]);
+  }
   await settleArrearsLoyalty(client, hero, nowMs);
   if (!hero.arrears) {
     await insertEvent(client, {

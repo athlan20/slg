@@ -89,6 +89,7 @@ export function HeroCard({
   const copy = useCopy();
   const { HERO_COPY, CHAT_COPY, STRATAGEM_COPY } = copy;
   const [confirming, setConfirming] = useState(false);
+  const [confirmingRansom, setConfirmingRansom] = useState(false);
   const status = statusOf(hero, cityNames, now);
   const guardsHere = currentCityId !== null && hero.guardCityId === currentCityId;
   const canAssign = !guardsHere && !hero.marchingMarchId && !hero.training && !hero.captive && currentCityId !== null;
@@ -150,16 +151,37 @@ export function HeroCard({
           <span role="武将面板-被俘时限" className="min-w-0 truncate text-warn" title={HERO_COPY.card.ransomHint}>
             {HERO_COPY.card.statusCaptive(formatClock(hero.captive.capturedUntil))}
           </span>
-          <button
-            type="button"
-            role="武将面板-赎回按钮"
-            disabled={busy}
-            title={HERO_COPY.card.ransomHint}
-            onClick={onRansom}
-            className={`${smallBtn} shrink-0 border-warn text-warn disabled:border-line disabled:text-faint`}
-          >
-            {HERO_COPY.card.ransom(hero.captive.ransomGold)}
-          </button>
+          {confirmingRansom ? (
+            <span role="武将面板-赎回确认" className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                role="武将面板-确认赎回按钮"
+                disabled={busy}
+                title={HERO_COPY.card.ransomHint}
+                onClick={() => {
+                  setConfirmingRansom(false);
+                  onRansom();
+                }}
+                className={`${smallBtn} border-warn text-warn disabled:border-line disabled:text-faint`}
+              >
+                {HERO_COPY.card.ransomConfirm(hero.captive.ransomGold)}
+              </button>
+              <button type="button" role="武将面板-取消赎回按钮" onClick={() => setConfirmingRansom(false)} className={smallBtn}>
+                {HERO_COPY.card.ransomCancel}
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              role="武将面板-赎回按钮"
+              disabled={busy}
+              title={HERO_COPY.card.ransomHint}
+              onClick={() => setConfirmingRansom(true)}
+              className={`${smallBtn} shrink-0 border-warn text-warn disabled:border-line disabled:text-faint`}
+            >
+              {HERO_COPY.card.ransom(hero.captive.ransomGold)}
+            </button>
+          )}
         </div>
       ) : null}
 

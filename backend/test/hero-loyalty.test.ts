@@ -319,6 +319,37 @@ describe('名将忠诚度（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '
     assert.equal(await heroRow(wild.id), null, '历练结束后下野');
   });
 
+  test('欠饷重试不推后下次扣俸禄时间：补上金币后下一小时照常扣', async () => {
+    const owner = await newAccount(pool, `${tag}-arrears-next`);
+    const wild = await recruitWild(owner);
+    const cityId = await capitalIdOf(pool, owner);
+    await pool.query(`UPDATE cities SET gold = 0 WHERE id = $1`, [cityId]);
+    await pool.query(`UPDATE account_heroes SET salary_at = now() - interval '1 second' WHERE id = $1`, [wild.id]);
+    const t0 = Date.now();
+    const client = await pool.connect();
+    try {
+      const settle = async (nowMs: number, gold: number) => {
+        await client.query('BEGIN');
+        const row = (await client.query(`SELECT * FROM account_heroes WHERE id = $1 FOR UPDATE`, [wild.id])).rows[0] as AccountHeroRow;
+        await settleHeroSalary(client, row, { id: cityId, gold }, nowMs);
+        await client.query('COMMIT');
+      };
+      await settle(t0, 0);
+      const firstNext = (await heroRow(wild.id))?.salary_at as Date;
+      for (let tick = 1; tick <= 360; tick += 1) {
+        await settle(t0 + tick * 10_000, 0);
+      }
+      assert.equal(((await heroRow(wild.id))?.salary_at as Date).getTime(), firstNext.getTime(), '欠饷 1 小时内反复重试，时间不动');
+      const recoverAt = t0 + 3_600_000 + 10_000;
+      await settle(recoverAt, 1_000_000);
+      const next = ((await heroRow(wild.id))?.salary_at as Date).getTime();
+      assert.equal((await heroRow(wild.id))?.arrears, false);
+      assert.ok(next <= recoverAt + 3_600_000, '补上后最多 1 小时再扣');
+    } finally {
+      client.release();
+    }
+  });
+
   test('欠饷期间每小时 −1，补上俸禄后停止；只在俸禄结算里扣', async () => {
     const owner = await newAccount(pool, `${tag}-arrears`);
     const wild = await recruitWild(owner);

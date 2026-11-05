@@ -58,6 +58,8 @@ export const HERO_COPY = {
     captiveTag: '被俘',
     statusCaptive: (clock: string) => `被俘囚禁，${clock} 前需赎回`,
     ransom: (gold: number) => `赎回 ${gold} 金`,
+    ransomConfirm: (gold: number) => `确认花 ${gold} 金赎回`,
+    ransomCancel: '取消',
     ransomHint: '主人在囚禁结束前赎回：扣主城全额赎金，胜方收 50%，名将立刻归队，忠诚度 −20（最低 1）',
     captiveDenied: '该武将被俘囚禁中，暂不能操作',
     dismiss: '解雇',
