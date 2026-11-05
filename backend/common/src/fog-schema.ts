@@ -30,4 +30,23 @@ ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_turn_x double precision;
 ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_turn_y double precision;
 ALTER TABLE marches ADD COLUMN IF NOT EXISTS fog_turn_at timestamptz;
 CREATE INDEX IF NOT EXISTS idx_marches_fog_pending ON marches (resolved_at) WHERE resolved_at IS NOT NULL AND fog_recorded_at IS NULL;
+-- 遗迹与首探（AISLG-227，v93）：新表，全部 IF NOT EXISTS，向后兼容。fog_relics 每季由世界种子生成，领取即写 claimed_by；
+-- fog_first_explores 以 target_key（名城 famous:<名> / 名将处所 site:<名将>）为主键，INSERT ... ON CONFLICT DO NOTHING 保证只发一次奖。
+CREATE TABLE IF NOT EXISTS fog_relics (
+  id bigserial PRIMARY KEY,
+  x integer NOT NULL,
+  y integer NOT NULL,
+  tier text NOT NULL,
+  kind text NOT NULL,
+  claimed_by uuid REFERENCES accounts(id) ON DELETE SET NULL,
+  claimed_at timestamptz,
+  UNIQUE (x, y)
+);
+CREATE INDEX IF NOT EXISTS idx_fog_relics_claimed ON fog_relics (claimed_by, claimed_at);
+CREATE TABLE IF NOT EXISTS fog_first_explores (
+  target_key text PRIMARY KEY,
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  username text NOT NULL,
+  explored_at timestamptz NOT NULL DEFAULT now()
+);
 `;

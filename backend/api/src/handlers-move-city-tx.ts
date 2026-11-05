@@ -29,6 +29,8 @@ import {
 } from '../../common/src/move-city-db';
 import type { MoveCityPreviewData, MoveCityResponseData } from '../../common/src/protocol-move-city';
 import { isUnknownTarget } from './fog-march';
+import { getFogEnabled } from '../../common/src/fog-config';
+import { hasUnclaimedRelicAt } from '../../common/src/fog-relic-db';
 
 export interface Point {
   x: number;
@@ -84,6 +86,10 @@ export async function moveCityTx(
     }
     const tile = await loadTileBrief(client, target.x, target.y);
     if (!moveTileUsable(tile)) {
+      return { ok: false, code: 'MOVE_CITY_TILE_INVALID' };
+    }
+    // 战争迷雾（v93，AISLG-227）：未领取的遗迹格不能迁入（与随机落城的跳过规则一致）
+    if (getFogEnabled() && (await hasUnclaimedRelicAt(client, target.x, target.y))) {
       return { ok: false, code: 'MOVE_CITY_TILE_INVALID' };
     }
     if (await tooCloseToOtherCities(client, accountId, target.x, target.y)) {

@@ -40,6 +40,10 @@ export const SERVER_BROADCAST_TYPES = [
   'alliance_diplomacy',
   // v79（AISLG-200）洛阳：窗口预告 / 开始 / 结束，必达
   'luoyang_window',
+  // v93（AISLG-227）战争迷雾：名城首探 / 名将处所首探、传说遗迹被领取；必达，播报不带坐标
+  'famous_first_explored',
+  'hero_site_first_explored',
+  'legendary_relic_claimed',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];
@@ -56,7 +60,7 @@ export function isServerBroadcastType(value: unknown): value is ServerBroadcastT
  * 只统计最近 7 天 Agent 上线过的账号，排名 = 该模型实力前 10 名的平均战力。
  * v70（AISLG-185）新增 alliance 联盟榜：按联盟势力排名（成员不足 5 人不上榜），条目见 allianceEntries。
  */
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance', 'nobility'] as const;
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance', 'nobility', 'exploration'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 

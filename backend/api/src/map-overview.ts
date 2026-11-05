@@ -5,7 +5,8 @@
 import type { MapOverviewSide } from '../../common/src/protocol';
 import { getFogEnabled } from '../../common/src/fog-config';
 import { withFogRequest } from './fog-view';
-import { fogOverview, type OverviewRow } from './fog-overview';
+import { type OverviewRow } from './fog-overview';
+import { fogOverviewWithSites } from './fog-site-overview';
 import { WORLD_SIZE } from '../../common/src/world';
 import { respondOk } from './frames';
 import type { HandlerContext } from './handlers';
@@ -44,7 +45,7 @@ export async function handleGetMapOverview(
   // v92（AISLG-224）：开启战争迷雾时按探索状态裁剪（同时维护探索位图）；关闭时与原来完全一致
   if (accountId !== null && getFogEnabled()) {
     const fog = await withFogRequest(ctx.pool, accountId, (req) =>
-      req.enabled ? fogOverview(req, rows) : Promise.resolve(null),
+      req.enabled ? fogOverviewWithSites(req, rows) : Promise.resolve(null),
     );
     if (fog) {
       respondOk(ctx.registry, conn, op, seq, {

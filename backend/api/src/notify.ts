@@ -14,7 +14,7 @@ import { buildView, marchView, recruitView, type BuildRow, type MarchRow, type R
 import { loadWorldWindow } from './views-world';
 import { loadFogWindow } from './fog-view';
 import { handleSeasonNotice } from './notify-season';
-import { pushExplorationReport } from './notify-fog';
+import { pushExplorationReport, handleFogPush } from './notify-fog';
 import { pushAllianceMessage } from './handlers-chat-send';
 
 /** 兜底轮询周期；第一期望延迟与 DB 压力的折中，未做负载评估 */
@@ -246,6 +246,11 @@ export class CompletionNotifier {
           void pushExplorationReport(this.pool, this.registry, this.stopped, payload.accountId, eventId);
           return;
         }
+      }
+      if (payload.reason === 'relic_claimed' || payload.reason === 'fog_reward') {
+        // v93（AISLG-227）：遗迹领取（全服地图刷新）与首探 / 遗迹奖励到账（推城池状态）；实现见 notify-fog.ts
+        void handleFogPush(this.pool, this.registry, this.stopped, payload);
+        return;
       }
       if (payload.reason === 'battle_report' && payload.accountId) {
         // reportId 在 JSON 里可能是数字或数字字符串（历史 bigserial 序列化差异），统一归一化

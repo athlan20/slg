@@ -34,6 +34,7 @@ import {
   type SeenRow,
 } from '../../common/src/fog-db';
 import { inAnyVision, isCellExplored, type VisionSource } from '../../common/src/fog';
+import { applySiteViews } from './fog-site-view';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { loadTileDetail, loadWorldWindow } from './views-world';
 
@@ -241,6 +242,8 @@ export function exploredTileView(
     durability: null,
     wildFamous: seen ? seen.wildFamous : false,
     reserve: null,
+    relic: null,
+    heroSite: null,
     fog: 'explored',
     seenAt: seen ? seen.seenAt.toISOString() : null,
   };
@@ -263,6 +266,8 @@ export function campOnlyTileView(facts: TileFacts): TileView {
     durability: null,
     wildFamous: false,
     reserve: null,
+    relic: null,
+    heroSite: null,
     fog: 'explored',
     seenAt: null,
   };
@@ -324,6 +329,7 @@ export async function loadFogWindow(
       out.push(exploredTileView(factsOf(tile), seen.get(key), relations, famousAt, intel.get(key)));
     }
     await syncSeenTiles(req.client, accountId, live, req.now);
+    await applySiteViews(req, out, x, y, w, h);
     return out;
   });
 }
@@ -377,6 +383,13 @@ function exploredDetail(
   };
 }
 
+/** 详情补遗迹 / 处所 / 名城首探者（开关开启时才会走到这里） */
+async function withSites(req: FogRequest, x: number, y: number, detail: TileDetailView): Promise<TileDetailView> {
+  const holder = [detail];
+  await applySiteViews(req, holder, x, y, 1, 1);
+  return holder[0];
+}
+
 /** GET_TILE：关闭时原样；实时视野原样；已探索用白名单；未探索（无黄巾营地）返回 unexplored */
 export async function loadFogTileDetail(pool: pg.Pool, accountId: string, x: number, y: number): Promise<FogDetailResult> {
   if (!getFogEnabled()) {
@@ -391,7 +404,7 @@ export async function loadFogTileDetail(pool: pg.Pool, accountId: string, x: num
     }
     if (isLiveTile(req, detail)) {
       await syncSeenTiles(req.client, accountId, [{ x, y }], req.now);
-      return { kind: 'ok', detail };
+      return { kind: 'ok', detail: await withSites(req, x, y, detail) };
     }
     const facts = factsOf(detail);
     if (!isCellExplored(req.bits, x, y)) {
@@ -399,7 +412,7 @@ export async function loadFogTileDetail(pool: pg.Pool, accountId: string, x: num
         const base = campOnlyTileView(facts);
         return {
           kind: 'ok',
-          detail: {
+          detail: await withSites(req, x, y, {
             ...base,
             garrisonDetail: Object.fromEntries(TROOP_KINDS.map((kind) => [kind, 0])) as ArmyCounts,
             nativePower: 0,
@@ -410,7 +423,7 @@ export async function loadFogTileDetail(pool: pg.Pool, accountId: string, x: num
             assists: null,
             plunderedAt: null,
             wildFamousIntel: null,
-          },
+          }),
         };
       }
       return { kind: 'unexplored' };
@@ -422,7 +435,7 @@ export async function loadFogTileDetail(pool: pg.Pool, accountId: string, x: num
     const shown = exploredTileView(facts, seen, relations, famousAt, intel);
     return {
       kind: 'ok',
-      detail: exploredDetail(shown, facts.terrain, intel, seen, detail.wildFamousIntel),
+      detail: await withSites(req, x, y, exploredDetail(shown, facts.terrain, intel, seen, detail.wildFamousIntel)),
     };
   });
 }
