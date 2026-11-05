@@ -8,8 +8,9 @@ import assert from 'node:assert/strict';
 import { ErrorCode, Op, PROTOCOL_VERSION, type ErrorCode as ErrorCodeType } from '../common/src/protocol';
 import { ERROR_MESSAGES } from '../api/src/frames';
 import { OP_DOC } from '../common/src/protocol-doc-ops';
-import { ERROR_DOC, FRAME_EXAMPLES, type OpDoc, type RequestOpDoc } from '../common/src/protocol-doc';
+import { ERROR_DOC, FRAME_EXAMPLES, type FieldDoc, type OpDoc, type RequestOpDoc } from '../common/src/protocol-doc';
 import { WALKTHROUGH } from '../common/src/protocol-doc-walkthrough';
+import { LEADERBOARD_KINDS, SERVER_BROADCAST_TYPES } from '../common/src/protocol-server';
 
 const OP_DOC_BY_NUMBER = OP_DOC as Record<number, OpDoc>;
 
@@ -112,5 +113,42 @@ test('每个请求型协议都标注 preAuth，且只有 LOGIN、微信扫码与
     }
     const typed = doc as RequestOpDoc;
     assert.equal(typed.preAuth, PRE_AUTH_DOC_NAMES.has(typed.name), `${typed.name} 的 preAuth 标注不正确`);
+  }
+});
+
+// 排行榜与全服播报的枚举防漏（AISLG-227）：新增榜单 / 播报类型时，文档枚举与 detail 说明必须同步
+function requestDocByName(name: string): RequestOpDoc {
+  const doc = Object.values(OP_DOC).find((entry) => entry.name === name);
+  assert.ok(doc && doc.kind === 'request', `${name} 的请求型文档缺失`);
+  return doc as RequestOpDoc;
+}
+
+function fieldOf(doc: RequestOpDoc, list: 'requestFields' | 'dataFields', name: string): FieldDoc {
+  const field = doc[list].find((entry) => entry.name === name);
+  assert.ok(field, `${doc.name} 的 ${list} 缺少字段 ${name}`);
+  return field;
+}
+
+test('LEADERBOARD_KINDS 每一项都出现在 GET_LEADERBOARD 的 kind 请求与返回枚举里', () => {
+  const doc = requestDocByName('GET_LEADERBOARD');
+  for (const kind of LEADERBOARD_KINDS) {
+    assert.ok(fieldOf(doc, 'requestFields', 'kind').type.includes(`'${kind}'`), `GET_LEADERBOARD 请求 kind 枚举缺少 ${kind}`);
+    assert.ok(fieldOf(doc, 'dataFields', 'kind').type.includes(`'${kind}'`), `GET_LEADERBOARD 返回 kind 枚举缺少 ${kind}`);
+  }
+});
+
+test('SERVER_BROADCAST_TYPES 每一项都出现在 GET_SERVER_BROADCASTS 的 broadcasts[].type 枚举里', () => {
+  const doc = requestDocByName('GET_SERVER_BROADCASTS');
+  const typeField = fieldOf(doc, 'dataFields', 'broadcasts[].type');
+  for (const type of SERVER_BROADCAST_TYPES) {
+    assert.ok(typeField.type.includes(`'${type}'`), `broadcasts[].type 枚举缺少 ${type}`);
+  }
+});
+
+test('SERVER_BROADCAST_TYPES 每一项都出现在 GET_SERVER_BROADCASTS 的 broadcasts[].detail 说明里', () => {
+  const doc = requestDocByName('GET_SERVER_BROADCASTS');
+  const detailField = fieldOf(doc, 'dataFields', 'broadcasts[].detail');
+  for (const type of SERVER_BROADCAST_TYPES) {
+    assert.ok(detailField.desc.includes(type), `broadcasts[].detail 说明缺少 ${type} 的字段说明`);
   }
 });

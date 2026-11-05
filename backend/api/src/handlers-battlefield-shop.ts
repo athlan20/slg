@@ -107,13 +107,19 @@ export async function handleBuyBattlefieldItem(
       );
       reward = { resources: { gold: 0, wood: each, food: each, stone: each, iron: each } };
     } else if (item === 'hero_exp') {
-      const hero = await client.query(`SELECT id FROM account_heroes WHERE id = $1 AND account_id = $2`, [
-        heroId,
-        accountId,
-      ]);
+      const hero = await client.query(
+        `SELECT id, captured_by, captured_until FROM account_heroes WHERE id = $1 AND account_id = $2`,
+        [heroId, accountId],
+      );
       if (!hero.rowCount) {
         await client.query('ROLLBACK');
         respondError(ctx.registry, conn, op, seq, 'HERO_NOT_FOUND');
+        return;
+      }
+      // v94（AISLG-228）：被俘囚禁中的武将不能加经验
+      if ((hero.rows[0] as { captured_by: string | null }).captured_by) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'HERO_CAPTURED');
         return;
       }
       const exp = await grantHeroExp(client, heroId as string, def.heroExp ?? 0);

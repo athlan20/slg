@@ -329,6 +329,7 @@ async function dispatchOp(
     case Op.GIFT_HERO:
     case Op.BEFRIEND_HERO:
     case Op.RECRUIT_FAMOUS_HERO:
+    case Op.RANSOM_HERO:
       await routeHeroGrowthOp(ctx, conn, op, seq, data);
       break;
     case Op.TRUCE:

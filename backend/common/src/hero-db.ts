@@ -28,6 +28,7 @@ import {
   type HeroBattleBonus,
 } from './hero';
 import { heroDayIndex, GIFT_DAILY_LIMIT, RESET_DAILY_LIMIT, type TrainingTier } from './hero-growth';
+import { initialLoyalty, ransomCost } from './hero-loyalty';
 import { rollHeroSpecialty, SPECIALTY_RULES, type HeroSpecialty } from './hero-specialty';
 import type {
   FamousClaimView,
@@ -67,6 +68,15 @@ export interface AccountHeroRow {
   reset_count: number;
   /** v86（AISLG-211）：施计冷却截止（施计后 1 小时基准随缩放）；从未施计为 null */
   stratagem_cooldown_until?: Date | null;
+  /** v94（AISLG-228）：忠诚度（只有在野名将非 null）；loyalty_at 为自然下降的结算锚点 */
+  loyalty: number | null;
+  loyalty_at: Date | null;
+  loyalty_warned: boolean;
+  /** 欠饷每小时 −1 的上次扣减锚点（欠饷开始时起算） */
+  loyalty_arrears_at: Date | null;
+  /** 被俘：胜方账号 id 与囚禁截止（均非 null 才是被俘中） */
+  captured_by: string | null;
+  captured_until: Date | null;
   created_at: Date;
 }
 
@@ -121,7 +131,16 @@ export function heroView(row: AccountHeroRow, guardCityId: string | null, marchi
       gift: Math.max(0, GIFT_DAILY_LIMIT - usedToday(row.gift_day, row.gift_count, today)),
       reset: Math.max(0, RESET_DAILY_LIMIT - usedToday(row.reset_day, row.reset_count, today)),
     },
+    loyalty: row.loyalty,
+    captive: row.captured_by && row.captured_until
+      ? { capturedUntil: row.captured_until.toISOString(), ransomGold: ransomCost(row.level) }
+      : null,
   };
+}
+
+/** 带忠诚度的武将（在野名将）是否处于被俘囚禁中（captured_by 与截止时刻都在） */
+export function isCaptive(row: Pick<AccountHeroRow, 'captured_by' | 'captured_until'>): boolean {
+  return row.captured_by !== null && row.captured_until !== null;
 }
 
 /** 账号全部武将（按获得先后） */
@@ -230,13 +249,18 @@ function candidateView(row: TavernCandidateRow): HeroCandidateView {
 export async function insertHero(
   client: Writer,
   accountId: string,
-  hero: { name: string; famous: boolean; lead: number; force: number; wit: number },
+  hero: { name: string; famous: boolean; lead: number; force: number; wit: number; loyalty?: number | null },
   rng: () => number = Math.random,
 ): Promise<AccountHeroRow> {
+  // v94（AISLG-228）：忠诚度非 null 时锚点为入队时刻（招揽即起算）
   const ins = await client.query(
-    `INSERT INTO account_heroes (account_id, name, famous, lead, force, wit, base_lead, base_force, base_wit, specialty)
-     VALUES ($1, $2, $3, $4, $5, $6, $4, $5, $6, $7) RETURNING *`,
-    [accountId, hero.name, hero.famous, hero.lead, hero.force, hero.wit, hero.famous ? null : rollHeroSpecialty(rng)],
+    `INSERT INTO account_heroes (account_id, name, famous, lead, force, wit, base_lead, base_force, base_wit, specialty, loyalty, loyalty_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $4, $5, $6, $7, $8, CASE WHEN $8::int IS NULL THEN NULL ELSE now() END) RETURNING *`,
+    [
+      accountId, hero.name, hero.famous, hero.lead, hero.force, hero.wit,
+      hero.famous ? null : rollHeroSpecialty(rng),
+      hero.loyalty ?? null,
+    ],
   );
   return ins.rows[0] as AccountHeroRow;
 }
@@ -265,7 +289,8 @@ export async function grantFamousHero(
     return null;
   }
   const rolled = attrs ?? rollFamousAttrs(Math.random);
-  const hero = await insertHero(client, accountId, { name: def.name, famous: true, ...rolled });
+  // v94（AISLG-228）：在野名将带忠诚度 100，名城 / 黄巾名将为 null
+  const hero = await insertHero(client, accountId, { name: def.name, famous: true, ...rolled, loyalty: initialLoyalty(def.name) });
   const claim = await client.query(
     `INSERT INTO famous_heroes (name, source, hero_id, owner_account_id)
      VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO NOTHING RETURNING name`,

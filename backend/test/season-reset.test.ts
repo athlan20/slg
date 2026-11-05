@@ -197,6 +197,8 @@ describe('换季重置端到端（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
       world_tiles: WORLD_SIZE * WORLD_SIZE,
       famous_cities: FAMOUS_CITY_NAMES.length,
       arena_entries: ARENA_NPC_COUNT,
+      // 遗迹（v93，AISLG-227）：换季事务内按新世界重新生成 200 处
+      fog_relics: 200,
     };
     for (const table of RESET_TABLES) {
       assert.equal(counts[table], expected[table] ?? 0, `${table} 行数`);

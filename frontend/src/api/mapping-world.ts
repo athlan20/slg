@@ -14,6 +14,7 @@ import { stratagemEventText } from './stratagemText';
 import { giftEventText } from './giftText';
 import { itemEventText } from './itemText';
 import { moveCityEventText } from './moveCityText';
+import { fogBroadcastText, fogEventText } from './fogText';
 
 function buildingName(kind: unknown): string {
   const { BUILDING_LABEL, EXTRA_STATE } = getCopy();
@@ -151,7 +152,7 @@ function scoutCompletedText(detail: Record<string, unknown>): string {
 }
 
 export function eventText(view: EventView): string {
-  return heroEventText(view) ?? stratagemEventText(view) ?? giftEventText(view) ?? itemEventText(view) ?? moveCityEventText(view) ?? baseEventText(view) + heroExpSuffix(view);
+  return heroEventText(view) ?? stratagemEventText(view) ?? giftEventText(view) ?? itemEventText(view) ?? moveCityEventText(view) ?? fogEventText(view) ?? baseEventText(view) + heroExpSuffix(view);
 }
 
 function baseEventText(view: EventView): string {
@@ -468,6 +469,10 @@ export function serverBroadcastText(view: {
       return EXTRA_STATE.broadcast.cityBroken(actor);
     case 'win_streak':
       return EXTRA_STATE.broadcast.winStreak(actor, String(view.detail.streak ?? '5'));
+    case 'famous_first_explored':
+    case 'hero_site_first_explored':
+    case 'legendary_relic_claimed':
+      return fogBroadcastText(view) ?? '';
     case 'yt_started':
       return YT_COPY.broadcast.started(Number(view.detail.totalCamps ?? 0));
     case 'yt_grown':
@@ -479,6 +484,16 @@ export function serverBroadcastText(view: {
     case 'hero_granted':
       // 名将名与来源标签是后端固定词，英文界面按码表翻译
       return HERO_COPY.broadcast.granted(String(view.detail.username ?? EXTRA_STATE.mapping.unknownPlayer), tName(String(view.detail.heroName ?? '')), tHeroSource(String(view.detail.source ?? '')));
+    case 'hero_left':
+      // v94（AISLG-228）：名将下野（不带坐标）
+      return HERO_COPY.broadcast.left(tName(String(view.detail.heroName ?? '')), String(view.detail.username ?? EXTRA_STATE.mapping.unknownPlayer));
+    case 'hero_captured':
+      // v94（AISLG-228）：玩家俘虏了玩家的名将
+      return HERO_COPY.broadcast.captured(
+        String(view.detail.captorUsername ?? EXTRA_STATE.mapping.unknownPlayer),
+        String(view.detail.ownerUsername ?? EXTRA_STATE.mapping.unknownPlayer),
+        tName(String(view.detail.heroName ?? '')),
+      );
     case 'city_conquered':
       return EXTRA_STATE.broadcast.cityConquered(actor, String(view.detail.from ?? ''), tName(String(view.detail.cityName ?? '?')), pos);
     case 'arena_champion':
