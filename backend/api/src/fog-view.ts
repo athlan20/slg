@@ -272,12 +272,20 @@ function factsOf(tile: TileView): TileFacts {
   return { x: tile.x, y: tile.y, terrain: tile.terrain, realKind: tile.kind, realLevel: tile.level, camp: tile.camp };
 }
 
-/** 实时视野判定：视野来源覆盖，或盟友的城池格（只这一格，不带半径） */
+/**
+ * 城池格“实时可见”的关系口径（AISLG-226，全部地方共用）：占领者与请求账号的 relation 为 ally（同盟）或 friendly（友盟，
+ * 含解除友好后的 24 小时冷却）。只这一格，不带半径；敌对（含敌对冷却）不算。
+ */
+export function isFriendlyRelation(relation: string | null | undefined): boolean {
+  return relation === 'ally' || relation === 'friendly';
+}
+
+/** 实时视野判定：视野来源覆盖，或友盟 / 同盟的城池格（只这一格，不带半径） */
 export function isLiveTile(req: FogRequest, tile: { x: number; y: number; kind: string; owner: TileOwnerView | null }): boolean {
   if (!req.enabled) {
     return true;
   }
-  if (tile.kind === 'city' && tile.owner?.ally === true) {
+  if (tile.kind === 'city' && isFriendlyRelation(tile.owner?.relation)) {
     return true;
   }
   return inAnyVision(req.sources, tile.x, tile.y);
