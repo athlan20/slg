@@ -165,6 +165,7 @@ describe('友盟城池格实时可见（需 TEST_DATABASE_URL）', { skip: dbUrl
     // 每个用例从“未探索”起步：上一个用例看到过的城池会留下快照和探索位图，互相污染
     await pool.query(`DELETE FROM fog_seen WHERE account_id = $1`, [A]);
     await pool.query(`DELETE FROM fog_explored WHERE account_id = $1`, [A]);
+    await pool.query(`DELETE FROM scout_intel WHERE account_id = $1`, [A]);
     await pool.query(`DELETE FROM marches WHERE account_id = $1`, [A]);
     await pool.query(`DELETE FROM city_army WHERE city_id = $1`, [cityA]);
     await pool.query(`INSERT INTO city_army (city_id, troop, count) VALUES ($1, 'militia', 500), ($1, 'scout', 20)`, [cityA]);
@@ -214,4 +215,92 @@ describe('友盟城池格实时可见（需 TEST_DATABASE_URL）', { skip: dbUrl
     const res = sink.frames[sink.frames.length - 1];
     assert.equal(res.ok, true, JSON.stringify(res.error));
   });
+
+  /** 请求账号视角下某格的占领者视图（GET_TILE）；未探索返回 null */
+  async function ownerOf(accountId: string, x: number, y: number) {
+    const detail = await loadFogTileDetail(pool, accountId, x, y);
+    if (detail.kind !== 'ok') {
+      return null;
+    }
+    assert.ok(detail.detail.owner, `(${x},${y}) 应有占领者`);
+    return detail.detail.owner;
+  }
+
+  /** 同一格在窗口（GET_WORLD_MAP）里的 canAssist 必须与 GET_TILE 一致；窗口里没有这格则不比 */
+  async function assertWindowCanAssist(accountId: string, x: number, y: number, expected: boolean) {
+    const tiles = await loadFogWindow(pool, accountId, x, y, 1, 1);
+    const tile = tiles.find((t) => t.x === x && t.y === y);
+    if (tile) {
+      assert.equal(tile.owner?.canAssist, expected, `(${x},${y}) 窗口里的 canAssist`);
+    }
+  }
+
+  /** 从 A 的主城对目标派协防（MARCH task=assist），返回错误码；成功为 null */
+  async function assistError(x: number, y: number): Promise<string | null> {
+    const sink = makeSink();
+    const conn = { accountId: A, role: 'player' as InitiatorRole } as unknown as ConnInfo;
+    await handleMessage(sink.ctx, conn, JSON.stringify({ op: Op.MARCH, seq: 1, data: { x, y, task: 'assist', troops: { militia: 10 } } }));
+    const res = sink.frames[sink.frames.length - 1];
+    return res.ok ? null : (res.error?.code ?? 'UNKNOWN');
+  }
+
+  // canAssist 的口径：同联盟 / 友盟为 true，冷却期（relation 仍为 friendly）/ 中立 / 敌对 / 自己为 false；
+  // 且 canAssist 与 MARCH task=assist 的实际判定一致。fog_enabled 开和关都要过。
+  for (const fogEnabled of [true, false]) {
+    test(`canAssist 口径（fog_enabled=${fogEnabled}）：同盟 / 友盟为 true，冷却 / 中立 / 敌对 / 自己为 false，与协防校验一致`, async () => {
+      setFogEnabledCache(fogEnabled);
+      if (fogEnabled) {
+        // 侦察过的格让所在区块在开局时即为已探索（openingBits）：友盟格可在关系结束后走“已探索快照”路径
+        await pool.query(`INSERT INTO scout_intel (account_id, x, y, detail) VALUES ($1, $2, $3, '{}'::jsonb)`, [A, FRIEND.x, FRIEND.y]);
+      }
+
+      // 友盟：实时可见（开迷雾时同时把快照写入 fog_seen，供后面的“已探索”用例复用）
+      await setRelation({ relation: 'friendly', cooldown: 'none' });
+      let owner = await ownerOf(A, FRIEND.x, FRIEND.y);
+      assert.equal(owner?.relation, 'friendly');
+      assert.equal(owner?.canAssist, true, '友盟城 canAssist');
+      await assertWindowCanAssist(A, FRIEND.x, FRIEND.y, true);
+      assert.equal(await assistError(FRIEND.x, FRIEND.y), null, '友盟城协防应被受理');
+
+      // 同盟：A 与 M 同在 allianceA
+      owner = await ownerOf(A, ALLY.x, ALLY.y);
+      assert.equal(owner?.relation, 'ally');
+      assert.equal(owner?.canAssist, true, '同盟城 canAssist');
+      assert.equal(await assistError(ALLY.x, ALLY.y), null, '同盟城协防应被受理');
+
+      // 解除友好后 24 小时冷却：relation 仍显示 friendly（只为不能互打），但不能协防
+      await setRelation({ relation: 'neutral', cooldown: 'future' });
+      owner = await ownerOf(A, FRIEND.x, FRIEND.y);
+      assert.equal(owner?.relation, 'friendly', '冷却期 relation 仍为 friendly');
+      assert.equal(owner?.canAssist, false, '冷却期 canAssist 为 false');
+      await assertWindowCanAssist(A, FRIEND.x, FRIEND.y, false);
+      assert.equal(await assistError(FRIEND.x, FRIEND.y), 'ASSIST_NOT_ALLY', '冷却期协防应返回 ASSIST_NOT_ALLY');
+
+      // 冷却结束（开迷雾时这格已探索，走快照路径）：中立，不能协防
+      await setRelation({ relation: 'neutral', cooldown: 'past' });
+      owner = await ownerOf(A, FRIEND.x, FRIEND.y);
+      assert.equal(owner?.relation, 'neutral');
+      assert.equal(owner?.canAssist, false, '冷却结束后 canAssist 为 false');
+      await assertWindowCanAssist(A, FRIEND.x, FRIEND.y, false);
+      assert.equal(await assistError(FRIEND.x, FRIEND.y), 'ASSIST_NOT_ALLY', '中立协防应返回 ASSIST_NOT_ALLY');
+
+      // 敌对：不能协防
+      await setRelation({ relation: 'hostile', cooldown: 'none' });
+      owner = await ownerOf(A, FRIEND.x, FRIEND.y);
+      assert.equal(owner?.relation, 'hostile');
+      assert.equal(owner?.canAssist, false, '敌对 canAssist 为 false');
+      assert.equal(await assistError(FRIEND.x, FRIEND.y), 'ASSIST_NOT_ALLY', '敌对协防应返回 ASSIST_NOT_ALLY');
+
+      // 没有任何关系（无联盟关系行）：中立
+      await setRelation(null);
+      owner = await ownerOf(A, FRIEND.x, FRIEND.y);
+      assert.equal(owner?.relation, 'neutral');
+      assert.equal(owner?.canAssist, false, '中立 canAssist 为 false');
+
+      // 自己的城：不能协防自己
+      owner = await ownerOf(A, 100, 100);
+      assert.equal(owner?.relation, 'self');
+      assert.equal(owner?.canAssist, false, '自己的城 canAssist 为 false');
+    });
+  }
 });
