@@ -2294,7 +2294,7 @@
 | --- | --- | --- |
 | events | array | 事件数组，顺序见各游标说明。 |
 | events[].id | number | 事件自增 id，可作为 beforeId / sinceId 游标。 |
-| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）· 'hero_left'（v93，AISLG-228，名将下野，detail = { heroId, heroName, cause = loyalty / captive_expired }，胜方得结交资格时另有一条 qualified = true）/ 'hero_captured'（v93，名将被俘，主人与胜方各一条，detail = { heroId, heroName, ownerUsername, captorUsername, capturedUntil, ransomGold, side }）/ 'hero_ransomed'（v93，名将被赎回，detail = { heroId, heroName, ransomGold, taxShare, destroyed, side }）/ 'hero_loyalty_low'（v93，忠诚度降到 30 及以下，detail = { heroId, heroName, loyalty }）。 |
+| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost' \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）· 'hero_left'（v94，AISLG-228，名将下野，detail = { heroId, heroName, cause = loyalty / captive_expired }，胜方得结交资格时另有一条 qualified = true）/ 'hero_captured'（v94，名将被俘，主人与胜方各一条，detail = { heroId, heroName, ownerUsername, captorUsername, capturedUntil, ransomGold, side }）/ 'hero_ransomed'（v94，名将被赎回，detail = { heroId, heroName, ransomGold, taxShare, destroyed, side }）/ 'hero_loyalty_low'（v94，忠诚度降到 30 及以下，detail = { heroId, heroName, loyalty }）。 |
 | events[].initiator | 'player' \| 'agent' \| null | 发起事件的连接声明的登录类型。 |
 | events[].cityId | string \| null | 关联城池 id，无关联时为 null。 |
 | events[].buildId | string \| null | 关联建造 / 征兵 / 行军条目 id，无关联时为 null。 |
@@ -6695,7 +6695,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | cityId / tavernLevel | string / number | 主城与其酒馆等级（0 = 未建；v87 起恒为主城）。 |
 | maxTavernLevel / normalCap / normalCount | number | 主城的酒馆等级（v87 起只读主城）；普通将上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1；当前普通将数量。 |
 | famousCap / famousCount | number | 名将上限（固定 3，不占普通将上限）与当前数量。 |
-| heroes | array | 账号全部武将：{ id, name, famous, lead, force, wit, level, exp, expNext 距下一级, salaryPerHour 已随时间缩放, arrears 欠饷, woundedUntil 重伤恢复时刻或 null, guardCityId 正在城守的城或 null, marchingMarchId 正在随行的行军或 null, bonus { atkPercent, defPercent, leadCap }（满编口径）, guardProductionPercent 城守产量加成, loyalty 忠诚度 0..100（v93，只有 29 位在野名将有，其余为 null；30 及以下应标红提醒）, captive 被俘囚禁 { capturedUntil 截止时刻, ransomGold 赎金 } 或 null（v93；被俘时不能出征 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计，可用 RANSOM_HERO 赎回） }。 |
+| heroes | array | 账号全部武将：{ id, name, famous, lead, force, wit, level, exp, expNext 距下一级, salaryPerHour 已随时间缩放, arrears 欠饷, woundedUntil 重伤恢复时刻或 null, guardCityId 正在城守的城或 null, marchingMarchId 正在随行的行军或 null, bonus { atkPercent, defPercent, leadCap }（满编口径）, guardProductionPercent 城守产量加成, loyalty 忠诚度 0..100（v94，只有 29 位在野名将有，其余为 null；30 及以下应标红提醒）, captive 被俘囚禁 { capturedUntil 截止时刻, ransomGold 赎金 } 或 null（v94；被俘时不能出征 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计，可用 RANSOM_HERO 赎回） }。 |
 | candidates | array | 主城酒馆当前候选（v87 起账号只有一份）：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；主城酒馆未建为空数组。 |
 | famousClaims | array | 全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将被获得后的落位 { x, y, level }；未被获得的在野名将与名城 / 黄巾名将为 null（未被获得时不泄露藏身位置）}。 |
 | friendships | array | 结交进度（v54）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 已被他人招揽（作废）}。 |
@@ -18776,7 +18776,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
-### op 151 · RANSOM_HERO — 赎回被俘名将（v93，AISLG-228）
+### op 151 · RANSOM_HERO — 赎回被俘名将（v94，AISLG-228）
 
 `C→S` 请求-响应 · 需登录后发送
 
@@ -19939,7 +19939,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| reason | string | recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ training_cancelled（历练被取消、武将回城，不给经验，v71）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）/ loyalty_changed（v93，忠诚度自然下降或欠饷扣减，重拉 GET_HEROES 看数值）/ captured（v93，名将被俘）/ ransomed（v93，名将被赎回）/ left（v93，名将下野：忠诚度为 0 或囚禁超时）。 |
+| reason | string | recruited / dismissed / guard_changed / arrears / salary_paid / wounded / exp_gained / granted / training_started / training_done（历练结束、经验已到账）/ training_cancelled（历练被取消、武将回城，不给经验，v71）/ points_changed（加点或洗点）/ gifted（赏赐）/ friendship_changed（结交进度）/ loyalty_changed（v94，忠诚度自然下降或欠饷扣减，重拉 GET_HEROES 看数值）/ captured（v94，名将被俘）/ ransomed（v94，名将被赎回）/ left（v94，名将下野：忠诚度为 0 或囚禁超时）。 |
 | heroId | string | 涉及的武将 id（guard_changed 撤任时可能为 null）。 |
 | exp | object | reason=exp_gained 时给出 { gained 本次经验, level, leveledTo 升到几级或 null }。 |
 
@@ -20656,8 +20656,8 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `HERO_BUSY` | （v36，AISLG-114）武将正在随队出征（含返程），不能出征 / 解雇 / 任命城守。 | 等部队回城（marchingMarchId 变回 null）后再操作。 |
 | `HERO_WOUNDED` | （v36，AISLG-114）武将重伤未愈（带队战败后 2 小时基准，随时间缩放），不能出征。 | 等 woundedUntil 过去，或换其他武将。 |
 | `HERO_ARREARS` | （v36，AISLG-114）武将欠饷中（主城金币不足以支付俸禄），不能出征。 | 给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。 |
-| `HERO_CAPTURED` | （v93，AISLG-228）武将被俘囚禁中（24 小时基准），不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计。 | 主人用 RANSOM_HERO 在囚禁截止前赎回；超时则名将下野，不必再操作。 |
-| `HERO_NOT_CAPTURED` | （v93，AISLG-228）武将未被俘，或囚禁已到期（即将下野），不能赎回。 | 用 GET_HEROES 查看 heroes[].captive；为 null 即无需赎回。 |
+| `HERO_CAPTURED` | （v94，AISLG-228）武将被俘囚禁中（24 小时基准），不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计。 | 主人用 RANSOM_HERO 在囚禁截止前赎回；超时则名将下野，不必再操作。 |
+| `HERO_NOT_CAPTURED` | （v94，AISLG-228）武将未被俘，或囚禁已到期（即将下野），不能赎回。 | 用 GET_HEROES 查看 heroes[].captive；为 null 即无需赎回。 |
 | `HERO_TRAINING` | （v54，AISLG-144）武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）。 | 等历练结束（train_until 过去，经验到账并收到 reason=training_done 推送）后再操作。 |
 | `HERO_POINTS_INSUFFICIENT` | （v54，AISLG-144）分配点数超过自由点数（附 freePoints）。 | 先升级获得点数（每级普通将 3、名将 5），或减少分配数量。 |
 | `HERO_NOTHING_TO_RESET` | （v54，AISLG-144）武将没有已分配的点数（属性等于初始值），洗点无意义。 | 先加点再洗点；无需洗点时不必调用。 |

@@ -30,7 +30,7 @@ export function heroEventText(view: EventView): string | null {
     case 'guard_changed':
       return d.heroId ? HERO_COPY.event.guardAssigned(name) : HERO_COPY.event.guardRemoved();
     case 'hero_left':
-      // v93（AISLG-228）：胜方的一条带 qualified（囚禁超时后获得结交资格）
+      // v94（AISLG-228）：胜方的一条带 qualified（囚禁超时后获得结交资格）
       if (d.qualified) {
         return HERO_COPY.event.heroLeftQualified(name, String(d.ownerUsername ?? ''));
       }

@@ -173,7 +173,7 @@ export async function entryLineups(q: Queryable, entries: ArenaEntryRow[]): Prom
   if (wanted.size > 0) {
     const res = await q.query(`SELECT * FROM account_heroes WHERE id = ANY($1::uuid[])`, [[...wanted]]);
     for (const row of res.rows as AccountHeroRow[]) {
-      // v93（AISLG-228）：被俘囚禁中的武将不参战（阵容里的空位按无人处理）
+      // v94（AISLG-228）：被俘囚禁中的武将不参战（阵容里的空位按无人处理）
       if (row.captured_by === null) {
         heroes.set(row.id, row);
       }

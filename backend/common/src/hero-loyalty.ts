@@ -1,4 +1,4 @@
-// 名将忠诚度与被俘的纯规则（v93，AISLG-228）：只有 29 位在野名将有忠诚度（loyalty 非 NULL），
+// 名将忠诚度与被俘的纯规则（v94，AISLG-228）：只有 29 位在野名将有忠诚度（loyalty 非 NULL），
 // 其余武将完全不受影响。被俘判定只在玩家打玩家时调用（见 worker/src/pvp-capture.ts），随机数
 // 由调用方注入，便于测试。数据库存取在 hero-loyalty-db.ts / hero-capture-db.ts；数值以需求为准。
 

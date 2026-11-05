@@ -208,7 +208,7 @@ export async function resolvePvpPlunderArrival(
     });
   }
 
-  // v93（AISLG-228）：玩家打玩家的被俘判定（攻方败 → 随队名将；守城失守 → 城守名将）
+  // v94（AISLG-228）：玩家打玩家的被俘判定（攻方败 → 随队名将；守城失守 → 城守名将）
   await captureAfterPvpBattle(client, {
     march, attackerWon: result.attackerWon, defenderAccountId: city.account_id,
     cityId: city.id, guardHeroId: guard?.id ?? null, notifies,

@@ -68,7 +68,7 @@ export interface AccountHeroRow {
   reset_count: number;
   /** v86（AISLG-211）：施计冷却截止（施计后 1 小时基准随缩放）；从未施计为 null */
   stratagem_cooldown_until?: Date | null;
-  /** v93（AISLG-228）：忠诚度（只有在野名将非 null）；loyalty_at 为自然下降的结算锚点 */
+  /** v94（AISLG-228）：忠诚度（只有在野名将非 null）；loyalty_at 为自然下降的结算锚点 */
   loyalty: number | null;
   loyalty_at: Date | null;
   loyalty_warned: boolean;
@@ -252,7 +252,7 @@ export async function insertHero(
   hero: { name: string; famous: boolean; lead: number; force: number; wit: number; loyalty?: number | null },
   rng: () => number = Math.random,
 ): Promise<AccountHeroRow> {
-  // v93（AISLG-228）：忠诚度非 null 时锚点为入队时刻（招揽即起算）
+  // v94（AISLG-228）：忠诚度非 null 时锚点为入队时刻（招揽即起算）
   const ins = await client.query(
     `INSERT INTO account_heroes (account_id, name, famous, lead, force, wit, base_lead, base_force, base_wit, specialty, loyalty, loyalty_at)
      VALUES ($1, $2, $3, $4, $5, $6, $4, $5, $6, $7, $8, CASE WHEN $8::int IS NULL THEN NULL ELSE now() END) RETURNING *`,
@@ -289,7 +289,7 @@ export async function grantFamousHero(
     return null;
   }
   const rolled = attrs ?? rollFamousAttrs(Math.random);
-  // v93（AISLG-228）：在野名将带忠诚度 100，名城 / 黄巾名将为 null
+  // v94（AISLG-228）：在野名将带忠诚度 100，名城 / 黄巾名将为 null
   const hero = await insertHero(client, accountId, { name: def.name, famous: true, ...rolled, loyalty: initialLoyalty(def.name) });
   const claim = await client.query(
     `INSERT INTO famous_heroes (name, source, hero_id, owner_account_id)

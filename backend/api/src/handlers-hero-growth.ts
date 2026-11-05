@@ -250,7 +250,7 @@ export async function handleGiftHero(
     if (!hero) {
       return await fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
     }
-    // v93（AISLG-228）：囚禁中不能赏赐；在野名将的赏赐同时 +10 忠诚度（上限 100）
+    // v94（AISLG-228）：囚禁中不能赏赐；在野名将的赏赐同时 +10 忠诚度（上限 100）
     if (isCaptive(hero)) {
       return await fail(ctx, conn, client, op, seq, 'HERO_CAPTURED');
     }

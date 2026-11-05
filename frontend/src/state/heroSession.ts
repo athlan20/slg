@@ -49,7 +49,7 @@ export interface HeroSession {
   cancelTraining: (heroId: string) => Promise<boolean>;
   /** 赏赐（v54）：花金币加经验 */
   gift: (heroId: string) => Promise<boolean>;
-  /** 赎回被俘名将（v93，AISLG-228）：赎金从主城扣 */
+  /** 赎回被俘名将（v94，AISLG-228）：赎金从主城扣 */
   ransom: (heroId: string) => Promise<boolean>;
   /** 结交在野名将（v54） */
   befriend: (heroName: string) => Promise<boolean>;

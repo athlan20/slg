@@ -116,7 +116,7 @@ export async function handleBuyBattlefieldItem(
         respondError(ctx.registry, conn, op, seq, 'HERO_NOT_FOUND');
         return;
       }
-      // v93（AISLG-228）：被俘囚禁中的武将不能加经验
+      // v94（AISLG-228）：被俘囚禁中的武将不能加经验
       if ((hero.rows[0] as { captured_by: string | null }).captured_by) {
         await client.query('ROLLBACK');
         respondError(ctx.registry, conn, op, seq, 'HERO_CAPTURED');

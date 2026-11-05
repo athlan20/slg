@@ -1,4 +1,4 @@
-// 玩家打玩家的名将被俘判定（v93，AISLG-228）。只在 pvp-raid（攻城）/ pvp-conquer（攻占分城）/ pvp-tile（抢野地）
+// 玩家打玩家的名将被俘判定（v94，AISLG-228）。只在 pvp-raid（攻城）/ pvp-conquer（攻占分城）/ pvp-tile（抢野地）
 // 的战斗结算之后调用，NPC、黄巾、竞技场、将星塔、战场都不走这里（settleMarchHero 本身不判定被俘）：
 // - 攻方战败 → 随队名将（march.hero_id）可能被俘，胜方为守方账号；被俘后 march.hero_id 清空，返程不再携带；
 // - 攻方胜、守城失守 → 城守名将（guardHeroId）可能被俘，胜方为攻方账号。

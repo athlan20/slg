@@ -27,7 +27,7 @@ export interface SalaryNotice {
 }
 
 /**
- * 欠饷期间的忠诚度损失（v93，AISLG-228）：只有带忠诚度的武将；欠饷开始时起算锚点，之后每满 1 小时（基准，
+ * 欠饷期间的忠诚度损失（v94，AISLG-228）：只有带忠诚度的武将；欠饷开始时起算锚点，之后每满 1 小时（基准，
  * 随缩放）−1，由本函数在俸禄结算里按小时结清（不是每次 tick 都扣）。
  */
 async function settleArrearsLoyalty(client: pg.PoolClient, hero: AccountHeroRow, nowMs: number): Promise<void> {
@@ -58,7 +58,7 @@ export async function settleHeroSalary(
   nowMs: number,
 ): Promise<SalaryNotice | null> {
   const intervalMs = scaledMs(3_600_000);
-  // 囚禁中不扣俸禄、不计欠饷（v93，AISLG-228）
+  // 囚禁中不扣俸禄、不计欠饷（v94，AISLG-228）
   if (isCaptive(hero)) {
     return null;
   }

@@ -407,11 +407,11 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。',
   },
   HERO_CAPTURED: {
-    desc: '（v93，AISLG-228）武将被俘囚禁中（24 小时基准），不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计。',
+    desc: '（v94，AISLG-228）武将被俘囚禁中（24 小时基准），不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计。',
     action: '主人用 RANSOM_HERO 在囚禁截止前赎回；超时则名将下野，不必再操作。',
   },
   HERO_NOT_CAPTURED: {
-    desc: '（v93，AISLG-228）武将未被俘，或囚禁已到期（即将下野），不能赎回。',
+    desc: '（v94，AISLG-228）武将未被俘，或囚禁已到期（即将下野），不能赎回。',
     action: '用 GET_HEROES 查看 heroes[].captive；为 null 即无需赎回。',
   },
   HERO_TRAINING: {

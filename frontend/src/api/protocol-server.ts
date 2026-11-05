@@ -71,7 +71,7 @@ export const SERVER_BROADCAST_TYPES = [
   'yt_finished',
   // v36 AISLG-115 名将获得：全服唯一的追求目标
   'hero_granted',
-  // v93 AISLG-228 名将下野 / 被俘
+  // v94 AISLG-228 名将下野 / 被俘
   'hero_left',
   'hero_captured',
   // v40 AISLG-124 玩家占领玩家分城

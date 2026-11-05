@@ -35,7 +35,7 @@ interface HeroCardProps {
   /** 取消历练（v71，AISLG-190）：仅历练中显示按钮，武将立刻回家、不返还经验 */
   onCancelTrain: () => void;
   onGift: () => void;
-  /** 赎回被俘名将（v93，AISLG-228）：仅被俘时显示 */
+  /** 赎回被俘名将（v94，AISLG-228）：仅被俘时显示 */
   onRansom: () => void;
   onReset: () => void;
   /** 施计（v86，AISLG-211）：打开了施计弹窗并带上这名武将 */
@@ -93,7 +93,7 @@ export function HeroCard({
   const status = statusOf(hero, cityNames, now);
   const guardsHere = currentCityId !== null && hero.guardCityId === currentCityId;
   const canAssign = !guardsHere && !hero.marchingMarchId && !hero.training && !hero.captive && currentCityId !== null;
-  // v93（AISLG-228）：忠诚度 30 及以下标红并提示；被俘时只显示赎回入口
+  // v94（AISLG-228）：忠诚度 30 及以下标红并提示；被俘时只显示赎回入口
   const loyaltyLow = hero.loyalty !== null && hero.loyalty <= 30;
   const atHome = heroAtHome(hero);
   const growth = HERO_COPY.growth;
