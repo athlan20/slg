@@ -5,7 +5,7 @@
  * 名人堂 / 存档的榜种（GET_HALL_OF_FAME 的 kind；model 走模型榜存档）。
  * v70（AISLG-185）新增 alliance：换季时联盟榜前三的存档，条目带盟主与联盟信息（见 HallEntryView）
  */
-export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model', 'alliance'] as const;
+export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model', 'alliance', 'exploration'] as const;
 export type HallKind = (typeof HALL_KINDS)[number];
 
 /** 当前赛季视图（GET_SEASON） */

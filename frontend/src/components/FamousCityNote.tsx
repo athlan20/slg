@@ -8,6 +8,7 @@ import { famousEffectText } from './famousEffectText';
 export function FamousCityNote({ famous }: { famous: FamousTileView }) {
   const copy = useCopy();
   const { CITY_COPY, RESOURCE_LABEL, TROOP_LABEL } = copy;
+  const F = copy.EXTRA_MAP.fog;
   const outer = famous.stage === 'outer';
   const eliteKind = FAMOUS_ELITE_TROOP[famous.name];
   const eliteLine = eliteKind ? CITY_COPY.famous.eliteRow(TROOP_LABEL[eliteKind].name) : null;
@@ -36,6 +37,12 @@ export function FamousCityNote({ famous }: { famous: FamousTileView }) {
       {eliteLine ? (
         <p role="世界地图详情区-名城专属兵" title={eliteLine} className="truncate px-2 py-0.5 text-[11.5px] text-gold">
           {eliteLine}
+        </p>
+      ) : null}
+      {/* 首探者（v93，AISLG-227）：迷雾关闭时字段缺省，不显示 */}
+      {'firstExplorer' in famous ? (
+        <p role="世界地图详情区-名城首探" className="truncate px-2 py-0.5 text-[11.5px] text-muted">
+          {famous.firstExplorer ? F.firstExplorer(famous.firstExplorer) : F.noFirstExplorer}
         </p>
       ) : null}
     </>

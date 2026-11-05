@@ -28,6 +28,10 @@ const DOT_STYLE: Record<DrawnSide, { cssVar: string; fallback: string; size: num
   // famous_rumor（AISLG-224）：未探索名城的大致方位，半透明的金色点
   famous_rumor: { cssVar: '--gold', fallback: '#d9a441', size: 4 },
   enemy: { cssVar: '--warn', fallback: '#e0653a', size: 2 },
+  // 遗迹 / 名将处所（v93，AISLG-227）：遗迹青色小点，处所金色（已出山则灰）
+  relic: { cssVar: '--accent', fallback: '#2dd4bf', size: 3 },
+  hero_site: { cssVar: '--gold', fallback: '#d9a441', size: 4 },
+  hero_site_claimed: { cssVar: '--muted', fallback: '#8a8f98', size: 3 },
   famous: { cssVar: '--gold', fallback: '#d9a441', size: 4 },
   own: { cssVar: '--accent', fallback: '#2dd4bf', size: 3 },
   friendly: { cssVar: '--ok', fallback: '#4ade80', size: 3 },
@@ -36,7 +40,7 @@ const DOT_STYLE: Record<DrawnSide, { cssVar: string; fallback: string; size: num
   ally: { cssVar: '--st-online', fallback: '#34d399', size: 3 },
 };
 /** 绘制顺序：名城在他方之上，本方城池最后盖在最上面 */
-const DRAW_ORDER: DrawnSide[] = ['enemy', 'ally', 'famous', 'famous_rumor', 'own'];
+const DRAW_ORDER: DrawnSide[] = ['enemy', 'ally', 'famous', 'famous_rumor', 'relic', 'hero_site', 'hero_site_claimed', 'own'];
 
 function themeColor(cssVar: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();

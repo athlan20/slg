@@ -10,6 +10,7 @@
 import { LEADERBOARD_KINDS, type LeaderboardKind } from '../../common/src/protocol';
 import { getMembership } from '../../common/src/alliance-db';
 import { nobilityName } from '../../common/src/nobility';
+import { getFogEnabled } from '../../common/src/fog-config';
 import { readString, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
@@ -31,6 +32,11 @@ export async function handleGetLeaderboard(
     return;
   }
   const kind = kindRaw as LeaderboardKind;
+  // 探索榜（v93）：迷雾关闭时不重算也不返回（空榜）
+  if (kind === 'exploration' && !getFogEnabled()) {
+    respondOk(ctx.registry, conn, op, seq, { kind, updatedAt: new Date().toISOString(), entries: [], me: null });
+    return;
+  }
   if (kind === 'model') {
     await respondModelLeaderboard(ctx, conn, op, seq);
     return;

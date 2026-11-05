@@ -203,6 +203,7 @@ export const LEADERBOARD_EN = {
   plunder: 'Total Plunder',
   model: 'Model Leaderboard',
   nobility: 'Nobility',
+  exploration: 'Exploration',
   updatedAt: (time: string) => `Snapshot ${time}`,
   rankColumn: 'Rank',
   playerColumn: 'Player',

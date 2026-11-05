@@ -19,6 +19,7 @@ const KIND_ROLE_ZH: Record<HallKind, string> = {
   arena: '竞技场',
   starTower: '将星塔',
   alliance: '联盟',
+  exploration: '探索',
 };
 
 const ROW_GRID = 'grid grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-2';

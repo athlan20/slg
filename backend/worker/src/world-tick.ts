@@ -53,6 +53,8 @@ import { famousWallExtraPercent } from '../../common/src/famous-effects';
 import { wallDefensePercent } from '../../common/src/battle';
 import { loadBuildingLevels } from '../../common/src/production';
 import { applyScoutDeception, withDeceptionMark } from './scout-deception';
+import { settleReturn } from './return-settle';
+import { claimRelicOnArrival } from './fog-relic-claim';
 
 const MARCH_BATCH_LIMIT = 50;
 
@@ -143,32 +145,6 @@ export async function processDueMarches(pool: pg.Pool): Promise<number> {
   }
 }
 
-/** 返程行军：城池生产结算到到达时刻，部队并入城内驻军 */
-async function settleReturn(
-  client: pg.PoolClient,
-  march: MarchRow,
-  troops: Partial<Record<TroopKind, number>>,
-): Promise<void> {
-  const { row } = await settleOwnerCity(client, march.from_city_id, march.arrive_at);
-  if (row) {
-    await troopsEnterCity(client, march.from_city_id, troops);
-    // v26（AISLG-79）：撤回 / 失效返程的运输货物随部队回到出发城（即时入账，不钳储量上限）
-    const cargo = readCargo(march.cargo);
-    if (cargo) {
-      await creditLoot(client, march.from_city_id, cargo);
-    }
-  }
-  // 城池行被删（重置）时部队随之消失；行军仍标记结算完成，避免重复处理
-  const upd = await client.query(
-    `UPDATE marches SET status = 'returned', resolved_at = clock_timestamp()
-     WHERE id = $1 AND status = 'marching' RETURNING id`,
-    [march.id],
-  );
-  if (upd.rowCount) {
-    await completeMarchEvent(client, march, 'returned', { troops });
-  }
-}
-
 /**
  * 出征 / 侦察 / 调兵 / 掠夺 / 占领到达的分发。出征城已在调用方按锁序锁定并把生产
  * 结算到到达时刻（settled）；本函数内不得再锁 cities。掠夺 / 占领（v16）委托
@@ -189,6 +165,8 @@ async function resolveArrival(
     await abortMarchToReturn(client, march, troops, settled, notifies);
     return;
   }
+  // v93（AISLG-227）：遗迹格即领取（掠夺 / 占领 / 增援 / 侦察），先于原有结算，不看战斗结果
+  await claimRelicOnArrival(client, march);
   // v29（AISLG-76）：掠夺任务的目标格上有进行中的黄巾营地 / 老巢 → 走营地结算
   if (march.purpose === 'plunder' && tile?.kind === 'wilderness' && !tile.owner_city_id) {
     if (await loadCampAt(client, march.x, march.y)) {

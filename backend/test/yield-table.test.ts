@@ -28,6 +28,8 @@ function tileBase(overrides: Partial<TileView>): TileView {
     protection: null,
     durability: null,
     wildFamous: false,
+    relic: null,
+    heroSite: null,
     reserve: null,
     ...overrides,
   };

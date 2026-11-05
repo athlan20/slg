@@ -10,6 +10,7 @@ import { tName } from '../../i18n/names';
 import { useScoutReportModal } from '../../state/scoutReportModal';
 import type { WorldSession } from '../../state/worldSession';
 import { FamousCityNote } from '../FamousCityNote';
+import { WorldSiteNote } from './WorldSiteNote';
 import { relativeAgo } from '../ScoutReportModal';
 import { YellowTurbanCampNote } from '../YellowTurbanCampNote';
 import { plunderCooldownLeft, protectionLeftText } from '../worldPanelText';
@@ -184,6 +185,7 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
               </p>
             ) : null}
             {detail.famous ? <FamousCityNote famous={detail.famous} /> : null}
+            <WorldSiteNote relic={detail.relic} heroSite={detail.heroSite} />
             {detail.camp ? <YellowTurbanCampNote camp={detail.camp} now={now} /> : null}
             {detail.nativePower > 0 ? <p className="truncate text-warn">{COPY.worldMap.nativePowerRow(detail.nativePower)}</p> : null}
             {detail.wildFamousIntel ? (

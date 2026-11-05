@@ -4,6 +4,7 @@
 // 竞技场与将星塔没有快照，此处现算（竞技场排除 NPC）。
 
 import type pg from 'pg';
+import { getFogEnabled } from '../../common/src/fog-config';
 
 /** 每个个人榜存档的前 N 名 */
 export const ARCHIVE_TOP_N = 50;
@@ -29,6 +30,17 @@ export async function archiveSeason(client: pg.PoolClient, seasonId: number, sea
      WHERE kind IN ('power', 'territory', 'plunder', 'nobility') AND rank <= $2`,
     [seasonId, ARCHIVE_TOP_N],
   );
+
+  // 探索榜（v93，AISLG-227）：迷雾开启时才写入名人堂（关闭时快照已清空，这里再守一次）
+  if (getFogEnabled()) {
+    await client.query(
+      `INSERT INTO season_archives (season_id, kind, rank, account_id, username, city_name, value, agent_model)
+       SELECT $1, kind, rank, account_id, username, city_name, value, agent_model
+       FROM leaderboard_snapshots
+       WHERE kind = 'exploration' AND rank <= $2`,
+      [seasonId, ARCHIVE_TOP_N],
+    );
+  }
 
   // 联盟榜（v70，AISLG-185）：前三存档；账号列存盟主（展示名与账号 id），联盟信息进专用列
   await client.query(
@@ -136,7 +148,7 @@ async function writeHonors(client: pg.PoolClient, seasonId: number, seasonName: 
      SELECT a.account_id, a.season_id, a.kind, a.rank,
        $2 || '·' ||
        CASE a.kind WHEN 'power' THEN '力量榜' WHEN 'territory' THEN '领土榜' WHEN 'plunder' THEN '掠夺榜' WHEN 'nobility' THEN '爵位榜'
-                   WHEN 'arena' THEN '竞技场' WHEN 'starTower' THEN '将星塔' ELSE a.kind END ||
+                   WHEN 'arena' THEN '竞技场' WHEN 'starTower' THEN '将星塔' WHEN 'exploration' THEN '探索榜' ELSE a.kind END ||
        CASE a.rank WHEN 1 THEN '冠军' WHEN 2 THEN '亚军' ELSE '季军' END
      FROM season_archives a
      WHERE a.season_id = $1 AND a.rank <= $3 AND a.account_id IS NOT NULL AND a.kind <> 'alliance'`,
