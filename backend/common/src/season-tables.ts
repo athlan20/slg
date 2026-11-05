@@ -60,6 +60,8 @@ export const RESET_TABLES: readonly string[] = [
   'famous_heroes',
   'hero_unlocks',
   'hero_friendship',
+  // 名将被俘频率限制（v94，AISLG-228）：每账号最近一次被俘时刻，换季清空
+  'hero_capture_limits',
   'arena_entries',
   'arena_daily',
   'arena_matches',

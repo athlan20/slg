@@ -15,7 +15,9 @@ import {
   startTraining,
   usedDailyCount,
 } from '../../common/src/hero-growth-db';
-import { heroBusyMarchMap, heroGuardMaps } from '../../common/src/hero-db';
+import { heroBusyMarchMap, heroGuardMaps, isCaptive } from '../../common/src/hero-db';
+import { loyaltyAfterGift } from '../../common/src/hero-loyalty';
+import { setLoyalty } from '../../common/src/hero-loyalty-db';
 import type { HeroOnlyResponseData, HeroView } from '../../common/src/protocol-hero';
 import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
@@ -97,18 +99,18 @@ export async function handleAllocateHeroPoints(
     await client.query('BEGIN');
     const hero = await lockOwnHero(client, accountId, heroId);
     if (!hero) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
     }
     const busy = await heroBusyCode(client, accountId, hero);
     if (busy) {
-      return fail(ctx, conn, client, op, seq, busy);
+      return await fail(ctx, conn, client, op, seq, busy);
     }
     const check = validatePointsRequest(points, hero.free_points);
     if (check === 'invalid') {
-      return fail(ctx, conn, client, op, seq, 'INVALID_PARAMS');
+      return await fail(ctx, conn, client, op, seq, 'INVALID_PARAMS');
     }
     if (check === 'insufficient') {
-      return fail(ctx, conn, client, op, seq, 'HERO_POINTS_INSUFFICIENT', { freePoints: hero.free_points });
+      return await fail(ctx, conn, client, op, seq, 'HERO_POINTS_INSUFFICIENT', { freePoints: hero.free_points });
     }
     const res = await client.query(
       `UPDATE account_heroes SET lead = lead + $2, force = force + $3, wit = wit + $4, free_points = free_points - $5
@@ -148,23 +150,23 @@ export async function handleResetHeroPoints(
     const snap = capitalId ? await lockCitySnapshot(client, accountId, capitalId) : null;
     const hero = await lockOwnHero(client, accountId, heroId);
     if (!hero) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
     }
     const busy = await heroBusyCode(client, accountId, hero);
     if (busy) {
-      return fail(ctx, conn, client, op, seq, busy);
+      return await fail(ctx, conn, client, op, seq, busy);
     }
     const allocated = allocatedPoints(heroAttrs(hero), heroBaseAttrs(hero));
     if (allocated <= 0) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOTHING_TO_RESET');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOTHING_TO_RESET');
     }
     if (usedDailyCount(hero, 'reset') >= RESET_DAILY_LIMIT) {
-      return fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: RESET_DAILY_LIMIT });
+      return await fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: RESET_DAILY_LIMIT });
     }
     const cost = resetCost(hero.level);
     if (!snap || snap.resources.gold < cost) {
       // 用本事务已锁住的快照回包：另开连接读城池会等本事务持有的城池行锁，自己把自己死锁
-      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
+      return await fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
     }
     await client.query(`UPDATE cities SET gold = gold - $2 WHERE id = $1`, [snap.cityId, cost]);
     await bumpDailyCount(client, hero, 'reset');
@@ -205,11 +207,11 @@ export async function handleTrainHero(
     await client.query('BEGIN');
     const hero = await lockOwnHero(client, accountId, heroId);
     if (!hero) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
     }
     const busy = await heroBusyCode(client, accountId, hero);
     if (busy) {
-      return fail(ctx, conn, client, op, seq, busy);
+      return await fail(ctx, conn, client, op, seq, busy);
     }
     await startTraining(client, hero, tier);
     const res = await client.query(`SELECT * FROM account_heroes WHERE id = $1`, [hero.id]);
@@ -246,18 +248,25 @@ export async function handleGiftHero(
     const snap = capitalId ? await lockCitySnapshot(client, accountId, capitalId) : null;
     const hero = await lockOwnHero(client, accountId, heroId);
     if (!hero) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+    }
+    // v94（AISLG-228）：囚禁中不能赏赐；在野名将的赏赐同时 +10 忠诚度（上限 100）
+    if (isCaptive(hero)) {
+      return await fail(ctx, conn, client, op, seq, 'HERO_CAPTURED');
     }
     if (usedDailyCount(hero, 'gift') >= GIFT_DAILY_LIMIT) {
-      return fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: GIFT_DAILY_LIMIT });
+      return await fail(ctx, conn, client, op, seq, 'HERO_DAILY_LIMIT', { limit: GIFT_DAILY_LIMIT });
     }
     if (!snap || snap.resources.gold < GIFT_GOLD) {
       // 用本事务已锁住的快照回包：另开连接读城池会等本事务持有的城池行锁，自己把自己死锁
-      return fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
+      return await fail(ctx, conn, client, op, seq, 'INSUFFICIENT_RESOURCES', snap ? { city: toCityView(snap) } : undefined);
     }
     await client.query(`UPDATE cities SET gold = gold - $2 WHERE id = $1`, [snap.cityId, GIFT_GOLD]);
     await bumpDailyCount(client, hero, 'gift');
     await grantHeroExp(client, hero.id, GIFT_EXP);
+    if (hero.loyalty !== null) {
+      await setLoyalty(client, hero, loyaltyAfterGift(hero.loyalty));
+    }
     const res = await client.query(`SELECT * FROM account_heroes WHERE id = $1`, [hero.id]);
     const view = await viewAfter(client, accountId, res.rows[0] as AccountHeroRow);
     await client.query('COMMIT');
@@ -294,7 +303,10 @@ export async function handleCancelTraining(
     await client.query('BEGIN');
     const hero = await lockOwnHero(client, accountId, heroId);
     if (!hero) {
-      return fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+      return await fail(ctx, conn, client, op, seq, 'HERO_NOT_FOUND');
+    }
+    if (isCaptive(hero)) {
+      return await fail(ctx, conn, client, op, seq, 'HERO_CAPTURED');
     }
     const upd = await client.query(
       `UPDATE account_heroes SET train_until = NULL, train_tier = NULL, train_exp = NULL
@@ -303,7 +315,7 @@ export async function handleCancelTraining(
       [hero.id, accountId],
     );
     if (!upd.rowCount) {
-      return fail(ctx, conn, client, op, seq, 'TRAINING_NOT_CANCELLABLE');
+      return await fail(ctx, conn, client, op, seq, 'TRAINING_NOT_CANCELLABLE');
     }
     const view = await viewAfter(client, accountId, upd.rows[0] as AccountHeroRow);
     await client.query('COMMIT');

@@ -4,7 +4,7 @@
 import type pg from 'pg';
 import { scaledSeconds } from './time-scale';
 import { heroDayIndex, TRAINING_TIERS, trainingExp, type TrainingTier } from './hero-growth';
-import { grantHeroExp, heroBusyMarchMap, heroGuardMaps, usedToday, type AccountHeroRow } from './hero-db';
+import { grantHeroExp, heroBusyMarchMap, heroGuardMaps, isCaptive, usedToday, type AccountHeroRow } from './hero-db';
 
 type Queryable = pg.Pool | pg.PoolClient;
 
@@ -14,12 +14,15 @@ export async function mainCityId(q: Queryable, accountId: string): Promise<strin
   return res.rowCount ? (res.rows[0] as { id: string }).id : null;
 }
 
-/** 占用判定：随队出征（含返程）→ HERO_BUSY；任城守 → HERO_BUSY；历练中 → HERO_TRAINING；否则 null */
+/** 占用判定：被俘囚禁 → HERO_CAPTURED（v94）；历练中 → HERO_TRAINING；随队出征（含返程）→ HERO_BUSY；任城守 → HERO_BUSY；否则 null */
 export async function heroBusyCode(
   q: Queryable,
   accountId: string,
   hero: AccountHeroRow,
-): Promise<'HERO_BUSY' | 'HERO_TRAINING' | null> {
+): Promise<'HERO_BUSY' | 'HERO_TRAINING' | 'HERO_CAPTURED' | null> {
+  if (isCaptive(hero)) {
+    return 'HERO_CAPTURED';
+  }
   if (hero.train_until) {
     return 'HERO_TRAINING';
   }

@@ -264,6 +264,8 @@ export const Op = {
   BUY_ITEM: 149,
   /** C→S 迁城（v91，AISLG-220：data.cityId + data.mode = random|pointing；pointing 必带 x / y；执行须 confirm=true，preview=true 只预览；消耗迁城令 / 高级迁城令；主城与分城都能迁，名城不能迁） */
   MOVE_CITY: 150,
+  /** C→S 赎回被俘名将（v94，AISLG-228：data.heroId；仅主人；赎金 = 2000 × 名将等级 从主城扣，胜方主城收 50%（向下取整），另一半销毁；忠诚度 −20 最低 1） */
+  RANSOM_HERO: 151,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -474,6 +476,10 @@ export const ErrorCode = {
   HERO_WOUNDED: 'HERO_WOUNDED',
   /** 武将欠饷中，不能出征（v36，AISLG-114；俸禄扣款成功后自动恢复） */
   HERO_ARREARS: 'HERO_ARREARS',
+  /** 武将被俘囚禁中，不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计（v94，AISLG-228） */
+  HERO_CAPTURED: 'HERO_CAPTURED',
+  /** 武将未被俘（或囚禁已到期），不能赎回（v94，AISLG-228） */
+  HERO_NOT_CAPTURED: 'HERO_NOT_CAPTURED',
   /** 城守只能任命本账号、未随行出征的武将（v36，AISLG-115） */
   GUARD_ASSIGN_DENIED: 'GUARD_ASSIGN_DENIED',
   /** 武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（v54，AISLG-144） */

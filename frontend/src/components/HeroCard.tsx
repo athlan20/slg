@@ -35,6 +35,8 @@ interface HeroCardProps {
   /** 取消历练（v71，AISLG-190）：仅历练中显示按钮，武将立刻回家、不返还经验 */
   onCancelTrain: () => void;
   onGift: () => void;
+  /** 赎回被俘名将（v94，AISLG-228）：仅被俘时显示 */
+  onRansom: () => void;
   onReset: () => void;
   /** 施计（v86，AISLG-211）：打开了施计弹窗并带上这名武将 */
   onCastStratagem?: () => void;
@@ -42,6 +44,9 @@ interface HeroCardProps {
 
 function statusOf(hero: HeroView, cityNames: Record<string, string>, now: number): { text: string; tone: string } {
   const { EXTRA_PANEL, HERO_COPY } = getCopy();
+  if (hero.captive) {
+    return { text: HERO_COPY.card.statusCaptive(formatClock(hero.captive.capturedUntil)), tone: 'text-warn' };
+  }
   if (hero.woundedUntil && Date.parse(hero.woundedUntil) > now) {
     return { text: HERO_COPY.card.statusWounded(formatClock(hero.woundedUntil)), tone: 'text-warn' };
   }
@@ -77,15 +82,19 @@ export function HeroCard({
   onTrain,
   onCancelTrain,
   onGift,
+  onRansom,
   onReset,
   onCastStratagem,
 }: HeroCardProps) {
   const copy = useCopy();
   const { HERO_COPY, CHAT_COPY, STRATAGEM_COPY } = copy;
   const [confirming, setConfirming] = useState(false);
+  const [confirmingRansom, setConfirmingRansom] = useState(false);
   const status = statusOf(hero, cityNames, now);
   const guardsHere = currentCityId !== null && hero.guardCityId === currentCityId;
-  const canAssign = !guardsHere && !hero.marchingMarchId && !hero.training && currentCityId !== null;
+  const canAssign = !guardsHere && !hero.marchingMarchId && !hero.training && !hero.captive && currentCityId !== null;
+  // v94（AISLG-228）：忠诚度 30 及以下标红并提示；被俘时只显示赎回入口
+  const loyaltyLow = hero.loyalty !== null && hero.loyalty <= 30;
   const atHome = heroAtHome(hero);
   const growth = HERO_COPY.growth;
   // expNext 是距下一级还差多少，本级总需求 = 已有经验 + 还差的；满级时为 0
@@ -112,6 +121,21 @@ export function HeroCard({
             </span>
           ) : null}
           <span className="ml-1.5 font-mono text-[11.5px] font-normal text-accent">{HERO_COPY.card.level(hero.level, HERO_LEVEL_MAX)}</span>
+          {hero.loyalty !== null ? (
+            <span
+              role="武将面板-忠诚度"
+              className={`ml-1.5 font-mono text-[11.5px] font-normal ${loyaltyLow ? 'font-semibold text-warn' : 'text-dim'}`}
+              title={loyaltyLow ? HERO_COPY.card.loyaltyLow : undefined}
+            >
+              {HERO_COPY.card.loyalty(hero.loyalty)}
+              {loyaltyLow ? <span role="武将面板-忠诚度提示" className="ml-1">{HERO_COPY.card.loyaltyLow}</span> : null}
+            </span>
+          ) : null}
+          {hero.captive ? (
+            <span role="武将面板-被俘标记" className="ml-1.5 rounded border border-warn px-1 text-[10.5px] font-normal text-warn">
+              {HERO_COPY.card.captiveTag}
+            </span>
+          ) : null}
         </span>
         <span role="武将面板-状态" className={`shrink-0 truncate text-[11.5px] ${status.tone}`} title={status.text}>
           {status.text}
@@ -121,6 +145,45 @@ export function HeroCard({
       <p role="武将面板-属性" className="truncate font-mono text-[11.5px] text-dim" title={detail}>
         {detail}
       </p>
+
+      {hero.captive ? (
+        <div role="武将面板-被俘" className="flex items-center justify-between gap-2 text-[11.5px]">
+          <span role="武将面板-被俘时限" className="min-w-0 truncate text-warn" title={HERO_COPY.card.ransomHint}>
+            {HERO_COPY.card.statusCaptive(formatClock(hero.captive.capturedUntil))}
+          </span>
+          {confirmingRansom ? (
+            <span role="武将面板-赎回确认" className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                role="武将面板-确认赎回按钮"
+                disabled={busy}
+                title={HERO_COPY.card.ransomHint}
+                onClick={() => {
+                  setConfirmingRansom(false);
+                  onRansom();
+                }}
+                className={`${smallBtn} border-warn text-warn disabled:border-line disabled:text-faint`}
+              >
+                {HERO_COPY.card.ransomConfirm(hero.captive.ransomGold)}
+              </button>
+              <button type="button" role="武将面板-取消赎回按钮" onClick={() => setConfirmingRansom(false)} className={smallBtn}>
+                {HERO_COPY.card.ransomCancel}
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              role="武将面板-赎回按钮"
+              disabled={busy}
+              title={HERO_COPY.card.ransomHint}
+              onClick={() => setConfirmingRansom(true)}
+              className={`${smallBtn} shrink-0 border-warn text-warn disabled:border-line disabled:text-faint`}
+            >
+              {HERO_COPY.card.ransom(hero.captive.ransomGold)}
+            </button>
+          )}
+        </div>
+      ) : null}
 
       {hero.specialty ? (
         <p role="hero-specialty" className="line-clamp-2 text-[11px] text-accent" title={specialtyEffect(hero.specialty)}>
@@ -159,7 +222,7 @@ export function HeroCard({
         <button
           type="button"
           role="武将面板-赏赐按钮"
-          disabled={busy || hero.dailyLeft.gift <= 0}
+          disabled={busy || hero.dailyLeft.gift <= 0 || hero.captive !== null}
           title={growth.giftHint(hero.dailyLeft.gift)}
           onClick={onGift}
           className={`${smallBtn} border-line text-dim hover:text-fg disabled:text-faint`}
@@ -211,7 +274,7 @@ export function HeroCard({
           ) : null}
           {onShare ? <ChatShareButton role="武将面板-分享按钮" label={CHAT_COPY.share.hero} onClick={onShare} /> : null}
           {guardsHere ? (
-            <button type="button" role="武将面板-撤任城守按钮" disabled={busy} onClick={onRemoveGuard} className={`${smallBtn} border-line text-dim hover:text-fg`}>
+            <button type="button" role="武将面板-撤任城守按钮" disabled={busy || hero.captive !== null} onClick={onRemoveGuard} className={`${smallBtn} border-line text-dim hover:text-fg`}>
               {HERO_COPY.card.removeGuard}
             </button>
           ) : (
@@ -248,7 +311,14 @@ export function HeroCard({
               </button>
             </span>
           ) : (
-            <button type="button" role="武将面板-解雇按钮" disabled={busy} onClick={() => setConfirming(true)} className={`${smallBtn} border-line text-faint hover:text-warn`}>
+            <button
+              type="button"
+              role="武将面板-解雇按钮"
+              disabled={busy || hero.captive !== null}
+              title={hero.captive ? HERO_COPY.card.captiveDenied : undefined}
+              onClick={() => setConfirming(true)}
+              className={`${smallBtn} border-line text-faint hover:text-warn`}
+            >
               {HERO_COPY.card.dismiss}
             </button>
           )}

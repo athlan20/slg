@@ -19,6 +19,7 @@ import {
   heroGuardMaps,
   heroView,
   insertHero,
+  isCaptive,
   loadFamousClaims,
   loadHero,
   loadHeroes,
@@ -35,7 +36,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /**
  * 出征 / 侦察 / 截击 / 运输配将校验（v36，AISLG-114，MARCH 与 SCOUT 共用）：
- * 武将属于本账号、未重伤、未欠饷、未随行（另一支部队）、未任城守（城守不能同时出征）。
+ * 武将属于本账号、未被俘（v94）、未重伤、未欠饷、未随行（另一支部队）、未任城守（城守不能同时出征）。
+ * 武将行加 FOR UPDATE（v94）：与同一武将的下野 / 被俘 / 赎回串行，避免行军落库时武将已离开。
  * 通过返回武将行，否则返回错误码。
  */
 export async function checkHeroMarchable(
@@ -43,9 +45,12 @@ export async function checkHeroMarchable(
   accountId: string,
   heroId: string,
 ): Promise<{ ok: true; hero: AccountHeroRow } | { ok: false; code: ErrorCode }> {
-  const hero = await loadHero(client, heroId);
+  const hero = await loadHero(client, heroId, true);
   if (!hero || hero.account_id !== accountId) {
     return { ok: false, code: 'HERO_NOT_FOUND' };
+  }
+  if (isCaptive(hero)) {
+    return { ok: false, code: 'HERO_CAPTURED' };
   }
   if (hero.train_until) {
     return { ok: false, code: 'HERO_TRAINING' };
@@ -265,6 +270,12 @@ export async function handleDismissHero(
       respondError(ctx.registry, conn, op, seq, 'HERO_TRAINING');
       return;
     }
+    // v94：被俘囚禁中不能解雇（赎回或囚禁到期后再说）
+    if (isCaptive(hero)) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'HERO_CAPTURED');
+      return;
+    }
     // 名将的 famous_heroes 归属行随外键级联删除 → 回到全服可获得状态；城守随解雇撤任
     await client.query(`UPDATE cities SET guard_hero_id = NULL WHERE guard_hero_id = $1`, [hero.id]);
     await client.query(`DELETE FROM account_heroes WHERE id = $1`, [hero.id]);
@@ -321,6 +332,11 @@ export async function handleAssignHero(
       if (!hero || hero.account_id !== accountId) {
         await client.query('ROLLBACK');
         respondError(ctx.registry, conn, op, seq, 'HERO_NOT_FOUND');
+        return;
+      }
+      if (isCaptive(hero)) {
+        await client.query('ROLLBACK');
+        respondError(ctx.registry, conn, op, seq, 'HERO_CAPTURED');
         return;
       }
       const busy = await heroBusyMarchMap(client, accountId);

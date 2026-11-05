@@ -61,6 +61,7 @@ import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { clearCityTroopPools, recordPoolTroops } from '../../common/src/troop-pools-db';
+import { captureAfterPvpBattle } from './pvp-capture';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -191,6 +192,12 @@ export async function resolvePvpConquestArrival(
       data: { reason: 'exp_gained', heroId: guard.id, exp },
     });
   }
+
+  // v94（AISLG-228）：玩家打玩家的被俘判定（攻方败 → 随队名将；守城失守 → 城守名将）
+  await captureAfterPvpBattle(client, {
+    march, attackerWon: result.attackerWon, defenderAccountId: city.account_id,
+    cityId: city.id, guardHeroId: guard?.id ?? null, notifies,
+  });
 
   const attackerPower = armyPower(troops);
   const defenderPower = armyPower(setup.merged);
