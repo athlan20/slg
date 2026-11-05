@@ -52,6 +52,7 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
     model: COPY.leaderboard.model,
     alliance: ALLIANCE_COPY.board.tab,
     nobility: COPY.leaderboard.nobility,
+    exploration: COPY.leaderboard.exploration,
   };
   const [tab, setTab] = useState<LeaderboardKind>(view?.kind ?? 'power');
   // 联盟榜里点开的联盟（公开信息视图）；null = 显示榜单
@@ -137,7 +138,7 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
                       <span className="ml-1.5 hidden truncate text-faint sm:inline">{COPY.leaderboard.modelTop(entry.topPlayer.username, entry.topPlayer.value)}</span>
                     ) : null}
                   </span>
-                  <span className="font-mono">{entry.value}</span>
+                  <span className="font-mono">{(view?.kind ?? tab) === 'exploration' ? `${(Number(entry.value) / 100).toFixed(1)}%` : entry.value}</span>
                 </div>
               )}
             />
@@ -165,7 +166,7 @@ export function LeaderboardModal({ view, loading, onClose, onSelectKind, hall, h
                         </span>
                       ) : null}
                     </span>
-                    <span className="font-mono">{entry.value}</span>
+                    <span className="font-mono">{(view?.kind ?? tab) === 'exploration' ? `${(Number(entry.value) / 100).toFixed(1)}%` : entry.value}</span>
                   </div>
                 );
               }}

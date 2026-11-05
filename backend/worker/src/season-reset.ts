@@ -8,10 +8,11 @@ import { insertSeason } from '../../common/src/season-insert';
 import { SCHEMA_LOCK_ID } from '../../common/src/db';
 import { getCurrentSeason, notifySeasonEvent, setMaintenance, type SeasonRow } from '../../common/src/season-db';
 import { seasonLengthDays } from '../../common/src/season-seed';
-import { generateWorldTiles, WORLD_SEED } from '../../common/src/world';
+import { generateWorldTiles, WORLD_SEED, WORLD_SIZE } from '../../common/src/world';
 import { insertWorldTiles } from '../../common/src/world-db';
 import { ensureFamousCities } from '../../common/src/famous-city-db';
 import { placeWildFamousIn } from '../../common/src/wild-famous-db';
+import { ensureRelics } from '../../common/src/fog-relic-db';
 import { ensureArenaNpcs, lockArena } from '../../common/src/arena-db';
 import { refreshTimeScale } from '../../common/src/time-scale';
 import { refreshLeaderboards } from './leaderboard-tick';
@@ -134,6 +135,8 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
       await client.query(`ANALYZE world_tiles`);
       await ensureFamousCities(client);
       await placeWildFamousIn(client);
+      // 战争迷雾遗迹（v93，AISLG-227）：按新世界重新生成（表已随 RESET_TABLES 清空），同一事务内
+      await ensureRelics(client, seed, WORLD_SIZE);
       await lockArena(client);
       await ensureArenaNpcs(client);
       await enter('season');

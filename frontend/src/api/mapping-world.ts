@@ -14,6 +14,7 @@ import { stratagemEventText } from './stratagemText';
 import { giftEventText } from './giftText';
 import { itemEventText } from './itemText';
 import { moveCityEventText } from './moveCityText';
+import { fogBroadcastText, fogEventText } from './fogText';
 
 function buildingName(kind: unknown): string {
   const { BUILDING_LABEL, EXTRA_STATE } = getCopy();
@@ -151,7 +152,7 @@ function scoutCompletedText(detail: Record<string, unknown>): string {
 }
 
 export function eventText(view: EventView): string {
-  return heroEventText(view) ?? stratagemEventText(view) ?? giftEventText(view) ?? itemEventText(view) ?? moveCityEventText(view) ?? baseEventText(view) + heroExpSuffix(view);
+  return heroEventText(view) ?? stratagemEventText(view) ?? giftEventText(view) ?? itemEventText(view) ?? moveCityEventText(view) ?? fogEventText(view) ?? baseEventText(view) + heroExpSuffix(view);
 }
 
 function baseEventText(view: EventView): string {
@@ -468,6 +469,10 @@ export function serverBroadcastText(view: {
       return EXTRA_STATE.broadcast.cityBroken(actor);
     case 'win_streak':
       return EXTRA_STATE.broadcast.winStreak(actor, String(view.detail.streak ?? '5'));
+    case 'famous_first_explored':
+    case 'hero_site_first_explored':
+    case 'legendary_relic_claimed':
+      return fogBroadcastText(view) ?? '';
     case 'yt_started':
       return YT_COPY.broadcast.started(Number(view.detail.totalCamps ?? 0));
     case 'yt_grown':

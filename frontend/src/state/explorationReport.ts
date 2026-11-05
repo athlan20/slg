@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 export interface ExplorationReportCell {
   x: number;
   y: number;
-  kind: 'famous' | 'wild_hero' | 'gold_mine' | 'player_city' | 'npc_city' | 'high_wilderness';
+  kind: 'famous' | 'relic' | 'wild_hero' | 'gold_mine' | 'player_city' | 'npc_city' | 'high_wilderness';
   level?: number;
 }
 
@@ -19,6 +19,8 @@ export interface ExplorationReport {
   wildHeroes?: number;
   playerCities?: number;
   famous?: number;
+  /** 未领取的遗迹（v93，AISLG-227）：总数与按种类计数 */
+  relics?: { total: number; byKind: Record<string, number> };
   cells: ExplorationReportCell[];
 }
 

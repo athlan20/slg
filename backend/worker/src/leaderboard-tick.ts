@@ -18,6 +18,8 @@ import pg from 'pg';
 import { ALLIANCE_RANK_MIN_MEMBERS, TROOP_KINDS, type TroopKind } from '../../common/src/protocol';
 import { TROOP_POWER } from '../../common/src/battle';
 import { computeAlliancePowers } from '../../common/src/alliance-db';
+import { exploredChunkCount, fogBitsFrom } from '../../common/src/fog';
+import { getFogEnabled } from '../../common/src/fog-config';
 import { CURRENT_SEASON_ID_SQL } from '../../common/src/season-db';
 import {
   aggregateModelLeaderboard,
@@ -213,6 +215,29 @@ async function computeModelRows(client: pg.PoolClient, powerRows: readonly Leade
   return aggregateModelLeaderboard(stats);
 }
 
+/**
+ * 探索榜（v93，AISLG-227）：已探索区块数（数值口径与前端百分比 ÷ 100 一致）；只算迷雾开启时的账号。
+ * 没有主城的账号不上榜（与其他个人榜一致）。
+ */
+async function computeExplorationRows(client: pg.PoolClient): Promise<LeaderboardRow[]> {
+  const res = await client.query(
+    `SELECT fe.account_id, fe.bits, a.username, a.agent_model,
+            (SELECT c.name FROM cities c WHERE c.account_id = a.id ORDER BY c.created_at LIMIT 1) AS city_name
+     FROM fog_explored fe
+     JOIN accounts a ON a.id = fe.account_id`,
+  );
+  return (res.rows as Array<{ account_id: string; bits: Uint8Array; username: string; agent_model: string | null; city_name: string | null }>)
+    .filter((row) => row.city_name !== null)
+    .map((row) => ({
+      account_id: row.account_id,
+      username: row.username,
+      city_name: row.city_name as string,
+      value: exploredChunkCount(fogBitsFrom(row.bits)),
+      agent_model: row.agent_model,
+    }))
+    .filter((row) => row.value > 0);
+}
+
 /** 整榜重算（一个事务内替换各榜的全部名次；v50 起含模型榜聚合） */
 export async function refreshLeaderboards(pool: pg.Pool): Promise<void> {
   const client = await pool.connect();
@@ -220,12 +245,21 @@ export async function refreshLeaderboards(pool: pg.Pool): Promise<void> {
     await client.query('BEGIN');
     const computedAt = new Date();
     const powerRows = await computePowerRows(client);
-    for (const [kind, rows] of [
+    // 探索榜（v93）：迷雾关闭时不重算、清掉旧快照（GET_LEADERBOARD 返回空，换季存档也不写）
+    const fogOn = getFogEnabled();
+    if (!fogOn) {
+      await client.query(`DELETE FROM leaderboard_snapshots WHERE kind = 'exploration'`);
+    }
+    const kindRows: Array<[string, LeaderboardRow[]]> = [
       ['power', powerRows],
       ['territory', await computeTerritoryRows(client)],
       ['plunder', await computePlunderRows(client)],
       ['nobility', await computeNobilityRows(client)],
-    ] as const) {
+    ];
+    if (fogOn) {
+      kindRows.push(['exploration', await computeExplorationRows(client)]);
+    }
+    for (const [kind, rows] of kindRows) {
       const ranked = [...rows].sort((a, b) => b.value - a.value || a.username.localeCompare(b.username)).slice(0, LEADERBOARD_SIZE);
       await client.query(`DELETE FROM leaderboard_snapshots WHERE kind = $1`, [kind]);
       for (let i = 0; i < ranked.length; i += 1) {

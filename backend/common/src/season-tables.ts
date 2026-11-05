@@ -105,6 +105,9 @@ export const RESET_TABLES: readonly string[] = [
   // 战争迷雾（v92，AISLG-224）：探索位图与上次看到的快照随赛季清空（fog_enabled 设置保留在 settings）
   'fog_explored',
   'fog_seen',
+  // 遗迹与首探（v93，AISLG-227）：遗迹随新世界重新生成，首探记录随赛季清空
+  'fog_relics',
+  'fog_first_explores',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

@@ -992,8 +992,12 @@ export type {
   TileStatePushData,
   FamousTileView,
   NpcStockTier,
+  RelicTier,
+  RelicKind,
+  RelicTileView,
+  HeroSiteView,
 } from './protocol-world';
-export { TERRAIN_KINDS, isTerrainKind, TILE_KINDS } from './protocol-world';
+export { TERRAIN_KINDS, isTerrainKind, TILE_KINDS, RELIC_KINDS } from './protocol-world';
 export type {
   BattleReportView,
   BattleReportCommentView,
