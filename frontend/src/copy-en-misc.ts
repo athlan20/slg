@@ -120,6 +120,7 @@ export const ERRORS_EN = {
     buildingExists: 'A building of this type already exists or is under construction/upgrade — you cannot start another one',
     buildingNotBuilt: 'This building type is not built yet — build it first, then upgrade',
     buildingLevelMax: 'The building has reached its level cap and cannot be upgraded further',
+    buildingMainOnly: 'The Tavern and Academy can only be built in your main city — switch back to the main city to build or upgrade them',
     buildNotCancellable: 'Build task not found, not yours, or already completed / cancelled',
     invalidParams: 'Invalid building type',
     fallback: 'Failed to start the build',

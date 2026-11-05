@@ -480,7 +480,7 @@
  * 等级上限 20 → 40。名将扩到 40 名，其中 29 名在野（Lv3+ 野地，开服分配，地图标记 wildFamous，
  * 侦察后 wildFamousIntel 给出名字与属性），打赢该野地守军即获结交资格（GET_HEROES.unlocks），
  * 好感满 100 招揽（全服唯一）。HeroView 新增 freePoints / training / dailyLeft，GET_HEROES 新增
- * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt。推送 PUSH_HERO_STATE 新增
+ * friendships / unlocks / friendshipCap，famousClaims 新增 wildAt（口径：在野名将未被获得时为 null，被获得后才给出落位；AISLG-223 收紧，字段与类型不变，未升版本号）。推送 PUSH_HERO_STATE 新增
  * reason。新表 hero_unlocks / hero_friendship；account_heroes 新增 base_* / free_points / train_* /
  * gift_* / reset_*；world_tiles 新增 wild_*。
  * v55（将星塔，AISLG-146，只加不改）：新增 GET_STAR_TOWER（op 83）、STAR_TOWER_CHALLENGE（op 84，无参数，挑战
@@ -669,5 +669,44 @@
  *   stratagem_received；PUSH_MARCH_STATE 新增 reason=march_time_changed；PUSH_CITY_STATE 新增 reason=stratagem；
  *   CityView 新增 stratagems；ScoutIntel 新增 deception；新表 account_stratagem_tokens / city_stratagem_effects /
  *   stratagem_immunity；account_heroes 新增 stratagem_cooldown_until、marches 新增 stratagem_used。
+ * v87（酒馆 / 书院只在主城，AISLG-217）：酒馆 tavern 与书院 academy 的效果本来就是账号级的（科技全账号生效、
+ *   武将上限取主城酒馆等级、研究门槛按主城书院），现在只在主城建。BUILD / UPGRADE（含连续升级 toLevel）对分城
+ *   的这两项返回新错误码 BUILDING_MAIN_ONLY，不扣资源、不入队；分城的 CityView.levels / costs / buildings
+ *   不再下发 tavern / academy 两个键（主城照旧）。使用侧一律按主城判定：GET_TECHS 的 academyLevel / academyOk、
+ *   RESEARCH_TECH 的门槛与扣费、GET_HEROES 的候选与 maxTavernLevel / normalCap 都取主城，请求里的 cityId 保留但
+ *   忽略（不报错，结果与不传相同）。酒馆候选账号只有一份，tavern_candidates.city_id 固定为主城（4 小时基准刷新 3 名
+ *   的常量不变）。上线存量数据一次性幂等迁移：全账号最高等级合并到主城（主城更高则不变）、分城两项记录删除、
+ *   分城在建 / 排队的这两项取消并全额返还到该城（沿用 CANCEL_BUILD 的返还规则）、分城候选清空；进行中的研究不受影响。
+ *   SET_CAPITAL（v82）对调身份时两城的酒馆 / 书院记录一并互换（等级跟着「主城」身份走），清空两城候选，
+ *   两城在建 / 排队的这两项同样取消并返还。分城被占领 / 放弃不再有任何等级损失（建筑随城，规则不变）。
+ * v88（伤兵营全城汇总，AISLG-218，只加不改）：新增 GET_TROOP_POOLS（op 147，无参数、只读、玩家与 Agent 通用）——
+ *   一次返回账号全部城的伤兵 / 俘虏 / 逃兵三池与各城断粮时刻：cities[] 每项 { cityId, name, isMain,
+ *   starveAt, wounded, captives, deserters }，三池结构与 CityView 的 wounded / captives / deserters 完全相同
+ *   （troops 按兵种合计 + earliestExpireAt，过期行已过滤），starveAt 与 CityView.starveAt 同口径；主城在前，
+ *   其余按创建时间；三池全空的城也返回。不新增批量协议：一键处理仍由客户端逐城带 cityId 调
+ *   RESTORE_TROOPS（143）/ RELEASE_TROOPS（144），两条协议的行为与数值完全不变。
+ * v89（礼金，AISLG-221，只加不改）：账号新增礼金余额 accounts.gift。每个赛季开始固定发 1000（SEASON_GIFT），
+ *   新号归入当前赛季时、老号进入新赛季的惰性加入时置为 1000（同赛季重复登录不回弹），换季清零；存量账号在
+ *   v89 迁移里按当前赛季一次性补发（列不存在时才建，幂等）。重置账号不动礼金。GET_STATE 新增账号级
+ *   gift（当前余额）与 giftSeasonGrant（= 1000）。新增错误码 INSUFFICIENT_GIFT（扣除失败、余额不变，附 balance）
+ *   与事件 gift_spent（detail = { reason, amount, balance }）。本版本不新增 op，礼金暂无消耗方（用途见 AISLG-222）。
+ * v90（道具，AISLG-222，只加不改）：新增道具背包 user_items（每账号每种道具一行数量，换季随 RESET 表清空）、
+ *   道具配置 ITEM_DEFS（迁城令 50 礼金 / 高级迁城令 100 礼金，堆叠上限 99；代码常量，不进数据库）。新增 GET_ITEMS（op 148，
+ *   背包 items、目录 catalog、礼金 gift）与 BUY_ITEM（op 149，礼金买道具，必须带 expectedPrice；单价不一致返回 ITEM_PRICE_CHANGED）；
+ *   GET_STATE 新增 items；PUSH_ACCOUNT_STATE（op 2020）新增 reason = items_changed（带 items 与 gift）。新增错误码
+ *   INSUFFICIENT_ITEM / ITEM_STACK_FULL / ITEM_PRICE_CHANGED 与事件 item_granted / item_used / item_bought。
+ *   公共函数 grantItem / consumeItem 在 common/src/items-db.ts（仅事务内调用）；消耗由各玩法 op 自己调用（迁城令由 AISLG-220 的 MOVE_CITY 消耗）。
+ * v91（城池迁移，AISLG-220，只加不改）：新增 MOVE_CITY（op 150）：把账号名下的一座城（主城或分城，名城除外）迁到空野地。
+ *   mode = random（消耗 1 张迁城令 city_order，系统按注册落位同一算法选址）或 pointing（消耗 1 张高级迁城令 city_order_adv，
+ *   指定 x / y，目标须为无主空野地，离他人城池格 ≥ 3）；执行须 confirm = true，preview = true 只预览（条件不满足同样返回错误码）。
+ *   拦截顺序：名城 MOVE_CITY_FAMOUS → 本城军队在外 MOVE_CITY_ARMY_OUTSIDE → 盟友驻军 MOVE_CITY_HAS_ALLY_FORCE → 战乱 MOVE_CITY_IN_BATTLE
+ *   → 目标格 MOVE_CITY_TILE_INVALID / MOVE_CITY_TOO_CLOSE / MOVE_CITY_NO_SPACE → 令不足 INSUFFICIENT_ITEM → 并发抢格 MOVE_CITY_TILE_TAKEN。
+ *   旧格：主城 → 空野地（地形保留、等级重抽）；分城 → 回归 NPC 城（等级 = origin_level，并写放弃冷却 city_discards）。
+ *   pointing 迁后 12 小时（随时间缩放）内这座城的掠夺 / 占领 / 侦察 / 派协防返回 MOVE_CITY_ATTACK_LOCK（附 retryAfterSeconds），
+ *   运输、调兵、增援自己名下野地不受限；random 迁城无此限制。城池行新增 move_lock_until。
+ *   GET_STATE 新增 moveCity（逐城 reasons / moveLockUntil，与 random / pointing 两种令的持有数）。
+ *   事件 city_moved；PUSH_CITY_STATE reason = city_moved（带 from / to）与 PUSH_TILE_STATE reason = city_moved（新旧两格）。
+ *   新增 9 个错误码 MOVE_CITY_*（FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK）。
+ * v92（AISLG-224，战争迷雾）：未探索的地块对玩家与 Agent 不可见（开关 fog_enabled 默认关闭）。新增推送 PUSH_EXPLORATION_REPORT（op 2029）与事件 exploration_report；新错误码 TILE_UNEXPLORED / CHAT_COORD_UNEXPLORED / MOVE_CITY_TILE_UNEXPLORED（随各协议落地）。
  */
-export const PROTOCOL_VERSION = 86;
+export const PROTOCOL_VERSION = 92;

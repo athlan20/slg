@@ -36,10 +36,12 @@ export const CITY_SCOPED_OPS: ReadonlySet<number> = new Set([
   Op.EXCHANGE,
   Op.CREATE_MARKET_ORDER,
   Op.BUY_MARKET_ORDER,
-  Op.GET_TECHS,
-  Op.RESEARCH_TECH,
+  // v87（AISLG-217）：GET_TECHS / RESEARCH_TECH 不再带 cityId——书院只在主城，请求里的 cityId
+  // 保留但忽略（不再进本作用域，也就不会因非本账号而报 INVALID_PARAMS）
   Op.BUILD_FARM,
   Op.DISCARD_CITY,
+  // v91（AISLG-220）：迁城的 cityId 必填，按指定城校验归属并迁走它
+  Op.MOVE_CITY,
   // v82（AISLG-205）：设为主城必须指定 cityId（分城），与放弃分城同口径
   Op.SET_CAPITAL,
 ]);

@@ -18,6 +18,8 @@ interface PagedListProps<T> {
   gapClass?: string;
   /** 没有条目时显示的空态 */
   empty?: ReactNode;
+  /** 每页条数上限（再多也不超过，即使高度放得下；道具列表用 6） */
+  maxPerPage?: number;
   /** 还有更早的数据可向服务端翻页（事件流等）：最后一页的翻页器显示「更早」 */
   hasMore?: boolean;
   loadingMore?: boolean;
@@ -39,6 +41,7 @@ export function PagedList<T>({
   gap = 4,
   gapClass = 'gap-1',
   empty = null,
+  maxPerPage,
   hasMore = false,
   loadingMore = false,
   onLoadMore,
@@ -111,7 +114,7 @@ export function PagedList<T>({
     }
   }, [items.length, per, hasMore, autoLoadKey]);
 
-  const size = per ?? 1;
+  const size = Math.min(per ?? 1, maxPerPage ?? Number.POSITIVE_INFINITY);
   const pages = Math.max(1, Math.ceil(items.length / size));
   const current = Math.min(page, pages - 1);
   useEffect(() => {

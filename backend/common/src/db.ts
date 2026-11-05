@@ -13,9 +13,14 @@ import { BATTLEFIELD_SCHEMA_SQL } from './battlefield-schema';
 import { NOBILITY_SCHEMA_SQL } from './nobility-schema';
 import { MARKET_SCHEMA_SQL } from './market-schema';
 import { STRATAGEM_SCHEMA_SQL } from './stratagem-schema';
+import { ITEMS_SCHEMA_SQL } from './items-schema';
+import { MOVE_CITY_SCHEMA_SQL } from './move-city-schema';
 import { SEASON_SCHEMA_SQL } from './season-schema';
 import { seedFirstSeason } from './season-seed';
 import { attachPoolDiagnostics, logConnError } from './db-diag';
+import { migrateMainOnlyBuildings } from './main-only-db';
+import { migrateGiftColumn } from './gift-schema';
+import { FOG_SCHEMA_SQL } from './fog-schema';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -676,7 +681,8 @@ CREATE INDEX IF NOT EXISTS idx_city_assist_account ON city_assist (account_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tech_research_one_active ON tech_research (account_id) WHERE status = 'researching';
 
 -- v36（AISLG-114/115/116）：武将。account_heroes = 账号级武将（普通将从酒馆招募、名将从 PvE 获得）；
--- tavern_candidates = 每城酒馆的候选武将（读取时按 refreshed_at 惰性刷新，每 4 小时基准一批）；
+-- tavern_candidates = 酒馆候选武将（读取时按 refreshed_at 惰性刷新，每 4 小时基准一批）；
+-- v87（AISLG-217）：酒馆只在主城建造，候选账号只有一份——city_id 固定为主城 id（上线迁移与换主城均已收敛）。
 -- famous_heroes = 名将全服归属（name 即名将主键；解雇武将级联删除归属行 → 名将回到可获得状态）。
 -- cities.guard_hero_id = 城守；marches.hero_id = 随队武将（返程行军沿用，回城后自然释放）
 CREATE TABLE IF NOT EXISTS account_heroes (
@@ -809,15 +815,43 @@ CREATE INDEX IF NOT EXISTS idx_city_troop_pools_expire ON city_troop_pools (expi
  * 另一个进程（如已在跑的 Worker）正持有表行锁时，ALTER TABLE 的 ACCESS EXCLUSIVE 锁可能与其互等
  * 而被 PostgreSQL 判为死锁（40P01，本进程为牺牲者）——DDL 整体是幂等的，回滚后短暂退避重试即可。
  */
+
+/**
+ * 一次性数据迁移放在单事务里跑（v87 AISLG-217 起）：取消条目与返还必须原子，中途失败整体回滚，
+ * 下次启动重试即可（迁移本身幂等）。
+ */
+async function migrateDataOnce(client: pg.PoolClient): Promise<void> {
+  await client.query('BEGIN');
+  try {
+    // v87（AISLG-217）：酒馆 / 书院只在主城——存量数据取最高等级合并到主城、分城两项删除、
+    // 分城在建 / 排队的两项取消并全额返还（幂等，跑过一次后无操作）
+    await migrateMainOnlyBuildings(client);
+    // v89（AISLG-221）：礼金列（accounts.gift）；列不存在时才建并给当前赛季账号补发 1000（同一事务，幂等）
+    await migrateGiftColumn(client);
+    // v92（AISLG-224）：迷雾上线前已结束的行军不再重放探索——一次性把 fog_recorded_at 补齐（settings 标记防重复）
+    const fogBackfill = await client.query(`SELECT 1 FROM settings WHERE key = 'fog_backfill_v92'`);
+    if (!fogBackfill.rowCount) {
+      await client.query(`UPDATE marches SET fog_recorded_at = now() WHERE resolved_at IS NOT NULL AND fog_recorded_at IS NULL`);
+      await client.query(`INSERT INTO settings (key, value) VALUES ('fog_backfill_v92', '{"done": true}'::jsonb)`);
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  }
+}
+
 export async function ensureSchema(pool: pg.Pool): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query(`SELECT pg_advisory_lock(${SCHEMA_LOCK_ID})`);
     for (let attempt = 1; ; attempt += 1) {
       try {
-        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL + BATTLEFIELD_SCHEMA_SQL + NOBILITY_SCHEMA_SQL + MARKET_SCHEMA_SQL + STRATAGEM_SCHEMA_SQL);
+        await client.query(SCHEMA_SQL + ALLIANCE_SCHEMA_SQL + CHAT_SCHEMA_SQL + ARENA_SCHEMA_SQL + HERO_SCHEMA_SQL + STAR_TOWER_SCHEMA_SQL + ANNOUNCEMENT_SCHEMA_SQL + SEASON_SCHEMA_SQL + BATTLEFIELD_SCHEMA_SQL + NOBILITY_SCHEMA_SQL + MARKET_SCHEMA_SQL + STRATAGEM_SCHEMA_SQL + ITEMS_SCHEMA_SQL + MOVE_CITY_SCHEMA_SQL + FOG_SCHEMA_SQL);
         // 赛季（AISLG-134）：seasons 为空时播种第 1 季（幂等，咨询锁内执行）
         await seedFirstSeason(client);
+        // 数据迁移（幂等，咨询锁内、独立事务）
+        await migrateDataOnce(client);
         return;
       } catch (err) {
         // 对方可能正在跑十几秒的建图事务（世界锁内），退避总长要盖过它：500ms × (1+…+7) ≈ 14s

@@ -34,7 +34,7 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
     if (!origin || total <= 0) {
       return null;
     }
-    const station = act === 'transfer' ? city.levels.post_station * 10 : 0;
+    const station = act === 'transfer' ? (city.levels.post_station ?? 0) * 10 : 0;
     return marchTravelSeconds(origin.x, origin.y, x, y, troops, city.timeScale, marchBonusPercent(city.techs) + station);
   }, [origin, total, act, city, x, y, troops]);
 
@@ -53,7 +53,7 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
         : act === 'occupy'
           ? isNpc
             ? CITY_COPY.worldMap.taskOccupyNpcHint(BRANCH_MIN_GOVERNMENT)
-            : COPY.worldMap.taskOccupyHint(city.levels.government, city.territory.length)
+            : COPY.worldMap.taskOccupyHint(city.levels.government ?? 0, city.territory.length)
           : act === 'reinforce'
             ? COPY.worldMap.attackHintOwn
             : COPY.worldMap.transferHint;

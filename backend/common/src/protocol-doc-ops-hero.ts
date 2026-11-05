@@ -79,26 +79,26 @@ const FAMOUS_CLAIM_VIEW = {
   wildAt: null,
 } as const;
 
-const HERO_RULES = `武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 ${HERO_ATTR_MIN}–${HERO_ATTR_MAX} 随机；招募费 = ${RECRUIT_BASE_GOLD} + 三项合计 × ${RECRUIT_GOLD_PER_ATTR}（金币，从酒馆所在城扣）。**名将**（三项各 ${FAMOUS_ATTR_MIN}–${FAMOUS_ATTR_MAX}）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × ${ATK_PERCENT_PER_FORCE}%、全军受到伤害 − 智力 × ${DEF_PERCENT_PER_WIT}%，各自封顶 ${HERO_BONUS_CAP_PERCENT}%；能吃到加成的兵数 = 统率 × ${LEAD_TROOPS_PER_POINT}，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 ${SALARY_PER_LEVEL_NORMAL} × 等级、名将 ${SALARY_PER_LEVEL_FAMOUS} × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 ${WOUND_HOURS} 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 ${heroPointsPerLevel(false)}、名将 ${heroPointsPerLevel(true)}，由玩家分到三项属性，v54 起升级不再自动加属性），上限 ${HERO_LEVEL_MAX} 级——加成仍受 ${HERO_BONUS_CAP_PERCENT}% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。${WILD_FAMOUS_RULES_DESC}`;
+const HERO_RULES = `武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 ${HERO_ATTR_MIN}–${HERO_ATTR_MAX} 随机；招募费 = ${RECRUIT_BASE_GOLD} + 三项合计 × ${RECRUIT_GOLD_PER_ATTR}（金币，从主城扣）。**名将**（三项各 ${FAMOUS_ATTR_MIN}–${FAMOUS_ATTR_MAX}）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × ${ATK_PERCENT_PER_FORCE}%、全军受到伤害 − 智力 × ${DEF_PERCENT_PER_WIT}%，各自封顶 ${HERO_BONUS_CAP_PERCENT}%；能吃到加成的兵数 = 统率 × ${LEAD_TROOPS_PER_POINT}，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 ${SALARY_PER_LEVEL_NORMAL} × 等级、名将 ${SALARY_PER_LEVEL_FAMOUS} × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 ${WOUND_HOURS} 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 ${heroPointsPerLevel(false)}、名将 ${heroPointsPerLevel(true)}，由玩家分到三项属性，v54 起升级不再自动加属性），上限 ${HERO_LEVEL_MAX} 级——加成仍受 ${HERO_BONUS_CAP_PERCENT}% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。${WILD_FAMOUS_RULES_DESC}`;
 
 export const REQUEST_GET_HEROES: RequestOpDoc = {
   kind: 'request',
   name: 'GET_HEROES',
   title: '查询武将（账号武将 / 酒馆候选 / 名将归属，v36，AISLG-114/115/116）',
   preAuth: false,
-  summary: `返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（每城一座酒馆，每 ${TAVERN_REFRESH_HOURS} 小时基准随时间缩放刷新 ${TAVERN_CANDIDATE_COUNT} 名）、普通将 / 名将数量与上限、全部 ${ALL_FAMOUS_HEROES.length} 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null，在野名将附 wildAt 落位），以及在野名将的结交进度（friendships）与结交资格（unlocks）。${HERO_RULES}`,
+  summary: `返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（v87 AISLG-217 起：酒馆只在主城建造、候选账号只有一份，固定为主城那座，每 ${TAVERN_REFRESH_HOURS} 小时基准随时间缩放刷新 ${TAVERN_CANDIDATE_COUNT} 名）、普通将 / 名将数量与上限、全部 ${ALL_FAMOUS_HEROES.length} 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null；在野名将未被获得时 wildAt 为 null，被获得后才给出落位 wildAt），以及在野名将的结交进度（friendships）与结交资格（unlocks）。${HERO_RULES}`,
   requestFields: [
-    { name: 'cityId', type: 'string', desc: '可选。看哪座城的酒馆候选（缺省 = 会话当前城 / 主城）。' },
+    { name: 'cityId', type: 'string', desc: '可选但已忽略（v87，AISLG-217）：候选账号只有一份、固定在主城，传什么 cityId 都不报错，结果相同。' },
   ],
   dataFields: [
     { name: 'heroes[].specialty', type: 'string | null', desc: SPECIALTY_DOC },
     { name: 'heroes[].specialtyBonus', type: 'object | null', desc: 'v59: Full-strength specialty percentages { atkPercent, defPercent, siegeOnly }; null for famous and legacy heroes. Apply only to the matching troops listed in specialty rules.' },
-    { name: 'cityId / tavernLevel', type: 'string / number', desc: '查询城与其酒馆等级（0 = 未建）。' },
-    { name: 'maxTavernLevel / normalCap / normalCount', type: 'number', desc: `账号酒馆最高等级；普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1；当前普通将数量。` },
+    { name: 'cityId / tavernLevel', type: 'string / number', desc: '主城与其酒馆等级（0 = 未建；v87 起恒为主城）。' },
+    { name: 'maxTavernLevel / normalCap / normalCount', type: 'number', desc: `主城的酒馆等级（v87 起只读主城）；普通将上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1；当前普通将数量。` },
     { name: 'famousCap / famousCount', type: 'number', desc: `名将上限（固定 ${FAMOUS_HERO_CAP}，不占普通将上限）与当前数量。` },
     { name: 'heroes', type: 'array', desc: `账号全部武将：{ id, name, famous, lead, force, wit, level, exp, expNext 距下一级, salaryPerHour 已随时间缩放, arrears 欠饷, woundedUntil 重伤恢复时刻或 null, guardCityId 正在城守的城或 null, marchingMarchId 正在随行的行军或 null, bonus { atkPercent, defPercent, leadCap }（满编口径）, guardProductionPercent 城守产量加成 }。` },
-    { name: 'candidates', type: 'array', desc: `该城酒馆当前候选：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；酒馆未建为空数组。` },
-    { name: 'famousClaims', type: 'array', desc: '全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将的落位 { x, y, level } 或 null }。' },
+    { name: 'candidates', type: 'array', desc: `主城酒馆当前候选（v87 起账号只有一份）：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；主城酒馆未建为空数组。` },
+    { name: 'famousClaims', type: 'array', desc: '全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将被获得后的落位 { x, y, level }；未被获得的在野名将与名城 / 黄巾名将为 null（未被获得时不泄露藏身位置）}。' },
     { name: 'friendships', type: 'array', desc: `结交进度（v54）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 已被他人招揽（作废）}。` },
     { name: 'unlocks', type: 'string[]', desc: '结交资格（v54）：打赢过其野地守军、且尚未被他人获得的在野名将名。' },
     { name: 'friendshipCap', type: 'number', desc: `同时结交上限（v54，固定 ${BEFRIEND_ACTIVE_CAP}）。` },
@@ -219,4 +219,4 @@ export const PUSH_HERO_STATE: PushOpDoc = {
 export const MARCH_HERO_FIELD_DESC = `可选（v36，AISLG-114）。随队武将 id（GET_HEROES 的 heroes[]）：全军攻击 + 武力 × ${ATK_PERCENT_PER_FORCE}%、受到伤害 − 智力 × ${DEF_PERCENT_PER_WIT}%（各封顶 ${HERO_BONUS_CAP_PERCENT}%，统率超编按比例摊薄——能吃到加成的兵数 = 统率 × ${LEAD_TROOPS_PER_POINT}）。一支部队至多一名；同一武将同一时间只能在一支部队里；城守 / 重伤（战败后 ${WOUND_HOURS} 小时基准）/ 欠饷的武将不能带队（GUARD_ASSIGN_DENIED / HERO_WOUNDED / HERO_ARREARS）。战报与 march_completed 事件的 heroExp 会带出武将与经验信息。`;
 
 /** 供城池 / 建筑文档引用的酒馆效果描述 */
-export const TAVERN_EFFECT_DESC = `酒馆（tavern，v36 AISLG-114）：每城限一座；每 ${TAVERN_REFRESH_HOURS} 小时（随全局时间缩放）刷新 ${TAVERN_CANDIDATE_COUNT} 名候选普通将（三项属性各 ${HERO_ATTR_MIN}–${HERO_ATTR_MAX}），花金币招募（${RECRUIT_BASE_GOLD} + 三项合计 × ${RECRUIT_GOLD_PER_ATTR}）；账号普通将上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1（酒馆取账号所有城中的最高等级）。`;
+export const TAVERN_EFFECT_DESC = `酒馆（tavern，v36 AISLG-114；v87 AISLG-217 起只在主城建造）：每 ${TAVERN_REFRESH_HOURS} 小时（随全局时间缩放）刷新 ${TAVERN_CANDIDATE_COUNT} 名候选普通将（三项属性各 ${HERO_ATTR_MIN}–${HERO_ATTR_MAX}），花金币从主城招募（${RECRUIT_BASE_GOLD} + 三项合计 × ${RECRUIT_GOLD_PER_ATTR}）；候选账号只有一份（固定在主城），普通将上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1。`;

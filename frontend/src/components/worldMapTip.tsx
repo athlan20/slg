@@ -7,6 +7,8 @@ import { tName } from '../i18n/names';
 import type { AllianceMarkView, NpcStockTier, TileView } from '../api/protocol';
 import type { CitySide } from './worldMapMarks';
 import { famousEffectText } from './famousEffectText';
+import { YieldTipLines } from './map/YieldLayer';
+import type { YieldInfo } from './map/yieldTable';
 
 /** NPC 城库存档位的文案与色调（v23 AISLG-55）：已空变暗、见底警示、丰厚金色；文案随语言在函数体内取 */
 export function npcTierLabel(tier: NpcStockTier): string {
@@ -83,13 +85,16 @@ export function tileAria(tile: TileView, isOwn: boolean): string {
 interface WorldMapTooltipProps {
   tip: TileTip | null;
   clusters?: Map<string, { size: number; percent: number; resourceLabel: string }>;
+  /** 产出图层（AISLG-216）：开发出图层时给出本格的每小时产量与储量（格子太小时数字只在这里） */
+  yieldMap?: Map<string, YieldInfo>;
 }
 
 /** 悬浮提示：名称 / 坐标 / 归属 / 驻军 + 操作提示 */
-export function WorldMapTooltip({ tip, clusters }: WorldMapTooltipProps) {
+export function WorldMapTooltip({ tip, clusters, yieldMap }: WorldMapTooltipProps) {
   const copy = useCopy();
   const { COPY, CITY_COPY, YT_COPY, RESOURCE_LABEL } = copy;
   const cluster = tip ? clusters?.get(`${tip.tile.x},${tip.tile.y}`) : undefined;
+  const yieldInfo = tip ? yieldMap?.get(`${tip.tile.x},${tip.tile.y}`) : undefined;
   const { ALLIANCE_COPY } = copy;
   return (
     <div
@@ -141,6 +146,7 @@ export function WorldMapTooltip({ tip, clusters }: WorldMapTooltipProps) {
             </div>
           ) : null}
           {cluster ? <div className="text-gold">{COPY.worldMap.clusterTip(cluster.resourceLabel, cluster.size, cluster.percent)}</div> : null}
+          {yieldInfo ? <YieldTipLines info={yieldInfo} /> : null}
           {tip.tile.garrison > 0 ? <div className="text-dim">{COPY.worldMap.garrisonRow(tip.tile.garrison)}</div> : null}
           <div className="mt-0.5 border-t border-line-soft pt-0.5 text-[11px] text-faint">{COPY.worldMap.tipAction}</div>
         </>

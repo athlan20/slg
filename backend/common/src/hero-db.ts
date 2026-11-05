@@ -171,8 +171,9 @@ export function tavernRefreshMs(): number {
 }
 
 /**
- * 某座城的酒馆候选（惰性刷新）：候选不存在或已过期（refreshed_at + 4 小时基准 ≤ now）
- * 时重摇一批（3 名），同一事务内 DELETE + INSERT。未建酒馆的城返回空数组（不落库）。
+ * 酒馆候选（惰性刷新；v87 AISLG-217：账号只有一份，cityId 固定为主城 id）：候选不存在或已过期
+ * （refreshed_at + 4 小时基准 ≤ now）时重摇一批（3 名），同一事务内 DELETE + INSERT。
+ * 主城酒馆未建（tavernLevel ≤ 0）时返回空数组（不落库）。
  */
 export async function loadTavernCandidates(
   client: Writer,
@@ -277,25 +278,31 @@ export async function grantFamousHero(
   return hero;
 }
 
-/** 全部名将的归属视图（未被获得的也列出，ownerUsername 为 null；在野名将附落位坐标） */
-export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]> {
-  const res = await q.query(
-    `SELECT f.name, f.source, f.granted_at, a.username
-     FROM famous_heroes f JOIN accounts a ON a.id = f.owner_account_id`,
-  );
-  const owned = new Map(
-    (res.rows as Array<{ name: string; source: string; granted_at: Date; username: string }>).map((row) => [
-      row.name,
-      row,
-    ]),
-  );
-  const wild = await q.query(`SELECT wild_hero, x, y, level FROM world_tiles WHERE wild_hero IS NOT NULL`);
-  const wildAt = new Map(
-    (wild.rows as Array<{ wild_hero: string; x: number; y: number; level: number }>).map((row) => [row.wild_hero, row]),
-  );
+/** famous_heroes JOIN accounts 的一行（已被获得的名将） */
+export interface FamousClaimRow {
+  name: string;
+  granted_at: Date;
+  username: string;
+}
+
+/** world_tiles 上带在野名将的一行（落位野地） */
+export interface WildTileRow {
+  wild_hero: string;
+  x: number;
+  y: number;
+  level: number;
+}
+
+/**
+ * 名将归属视图的纯组装（loadFamousClaims 与单测共用）。在野名将只有被获得之后才给落位坐标：
+ * 未被获得时 wildAt 为 null，避免一次接口调用就拿到全部藏身位置；名城 / 黄巾名将没有落位，恒为 null。
+ */
+export function buildFamousClaims(claims: FamousClaimRow[], wildTiles: WildTileRow[]): FamousClaimView[] {
+  const owned = new Map(claims.map((row) => [row.name, row]));
+  const wildAt = new Map(wildTiles.map((row) => [row.wild_hero, row]));
   return ALL_FAMOUS_HEROES.map((def) => {
     const claim = owned.get(def.name);
-    const tile = wildAt.get(def.name);
+    const tile = claim && def.source.kind === 'wild' ? wildAt.get(def.name) : undefined;
     return {
       name: def.name,
       sourceLabel: famousSourceLabel(def.source),
@@ -304,6 +311,16 @@ export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]>
       wildAt: tile ? { x: tile.x, y: tile.y, level: tile.level } : null,
     };
   });
+}
+
+/** 全部名将的归属视图（未被获得的也列出，ownerUsername 为 null；在野名将仅被获得后附落位坐标） */
+export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]> {
+  const res = await q.query(
+    `SELECT f.name, f.granted_at, a.username
+     FROM famous_heroes f JOIN accounts a ON a.id = f.owner_account_id`,
+  );
+  const wild = await q.query(`SELECT wild_hero, x, y, level FROM world_tiles WHERE wild_hero IS NOT NULL`);
+  return buildFamousClaims(res.rows as FamousClaimRow[], wild.rows as WildTileRow[]);
 }
 
 /** 某座城的城守（未任命返回 null） */
@@ -365,14 +382,18 @@ export async function woundHero(client: Writer, heroId: string, until: Date): Pr
   await client.query(`UPDATE account_heroes SET wounded_until = $2 WHERE id = $1`, [heroId, until]);
 }
 
-/** 普通将上限相关：账号所有城中酒馆的最高等级 */
+/** 普通将上限相关：主城酒馆等级（v87，AISLG-217：只读主城——酒馆只在主城建造，不再取所有城的最高值） */
 export async function maxTavernLevel(q: Queryable, accountId: string): Promise<number> {
   const res = await q.query(
-    `SELECT coalesce(max(b.level), 0)::int AS lv FROM city_buildings b
-     JOIN cities c ON c.id = b.city_id WHERE c.account_id = $1 AND b.kind = 'tavern'`,
+    `SELECT coalesce(b.level, 0)::int AS lv
+     FROM cities c
+     LEFT JOIN city_buildings b ON b.city_id = c.id AND b.kind = 'tavern'
+     WHERE c.account_id = $1
+     ORDER BY c.created_at, c.id
+     LIMIT 1`,
     [accountId],
   );
-  return (res.rows[0] as { lv: number }).lv;
+  return (res.rows[0] as { lv: number } | undefined)?.lv ?? 0;
 }
 
 /** 普通将 / 名将数量、上限与酒馆最高等级（招募校验与视图共用） */

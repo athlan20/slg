@@ -30,6 +30,9 @@ export function ArmyPage() {
               onDisband={session.disbandTroops}
               onRestore={session.restoreTroops}
               onRelease={session.releaseTroops}
+              allCities={session.troopPoolsAll.cities}
+              onRefreshAll={() => void session.troopPoolsAll.refresh()}
+              setPoolsVisible={session.troopPoolsAll.setVisible}
             />
           ),
         },

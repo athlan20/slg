@@ -1,17 +1,21 @@
 /** 军队卡（军队页左，v84 起三种模式）：上边「招募 / 遣散 / 伤兵营」切换——招募 = 征兵表单
  *  （RecruitForm），遣散 = 城内驻军解散表单（DisbandForm，AISLG-209），伤兵营 = 伤兵 /
  *  俘虏 / 逃兵三池表单（TroopPoolsForm，AISLG-212）。三种模式共用同一个表单位置与卡片高度，
- *  切换不改变页面网格；伤兵或俘虏快过期（剩 6 小时内）时「伤兵营」页签给红点。
+ *  切换不改变页面网格。
+ *  v88（AISLG-218）：红点改看**全账号**——任意一座城的伤兵 / 俘虏 / 逃兵快过期（剩 6 小时内）
+ *  就亮；全城池子由会话切片 troopPoolsAll 提供（伤兵营可见时 30 秒刷新），页签与表单共用
+ *  同一个判断函数（anyCityPoolExpiringSoon）。
  */
 
-import { useState } from 'react';
-import { TROOP_KINDS, type CityView, type TroopKind } from '../api/protocol';
+import { useEffect, useState } from 'react';
+import { TROOP_KINDS, type AccountTroopPoolsCityView, type CityView, type TroopKind } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
 import type { ConnectionStatus } from '../state/useGameSession';
 import { Card } from './ui/Card';
 import { DisbandForm } from './army/DisbandForm';
 import { RecruitForm } from './army/RecruitForm';
-import { TroopPoolsForm, poolExpiringSoon } from './army/TroopPoolsForm';
+import { anyCityPoolExpiringSoon } from '../state/troopPoolsAllCities';
+import { TroopPoolsForm } from './army/TroopPoolsForm';
 
 interface RecruitPanelProps {
   city: CityView | null;
@@ -21,10 +25,16 @@ interface RecruitPanelProps {
   onCancelRecruit: (recruitId: string) => void;
   /** 遣散（v84，AISLG-209）：成功返回 null，失败返回人读错误 */
   onDisband: (troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
-  /** 治疗 / 招降 / 劝回（v85，AISLG-212）：成功返回 null，失败返回人读错误 */
-  onRestore: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
-  /** 放弃治疗 / 释放俘虏（v85）：成功返回 null，失败返回人读错误 */
-  onRelease: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
+  /** 治疗 / 招降 / 劝回（v85，AISLG-212）：成功返回 null，失败返回人读错误；cityId 缺省 = 当前城 */
+  onRestore: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 放弃治疗 / 释放俘虏（v85）：成功返回 null，失败返回人读错误；cityId 缺省 = 当前城 */
+  onRelease: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 账号全部城的池子（v88，AISLG-218）：汇总行 / 一键按钮 / 红点用；未拉到为 null */
+  allCities: AccountTroopPoolsCityView[] | null;
+  /** 全城池子有变化（本城或一键处理做完）：重拉全城池子并对齐本城状态 */
+  onRefreshAll: () => void;
+  /** 伤兵营页签是否可见（v88）：可见时全城池子每 30 秒刷新一次 */
+  setPoolsVisible: (visible: boolean) => void;
 }
 
 type Mode = 'recruit' | 'disband' | 'pools';
@@ -38,17 +48,28 @@ export function RecruitPanel({
   onDisband,
   onRestore,
   onRelease,
+  allCities,
+  onRefreshAll,
+  setPoolsVisible,
 }: RecruitPanelProps) {
   const copy = useCopy();
   const { ARMY_COPY, COPY } = copy;
   const [mode, setMode] = useState<Mode>('recruit');
+  // v88（AISLG-218）：伤兵营可见时才 30 秒刷新一次全城池子（切走页签或离开军队页即停）
+  useEffect(() => {
+    const visible = mode === 'pools';
+    setPoolsVisible(visible);
+    return () => setPoolsVisible(false);
+  }, [mode, setPoolsVisible]);
   const barracks = city?.levels.barracks ?? 0;
   const troopsInCity = city ? TROOP_KINDS.reduce((sum, kind) => sum + (city.army[kind] ?? 0), 0) : 0;
   const poolTotal = (view: { troops: Record<string, number> } | null | undefined): number =>
     view ? TROOP_KINDS.reduce((sum, kind) => sum + (view.troops[kind] ?? 0), 0) : 0;
-  // 快过期红点（v85）：伤兵或俘虏剩不足 6 小时就亮
+  // 快过期红点（v88）：**任意一座城**的伤兵 / 俘虏 / 逃兵剩不足 6 小时就亮（站在主城也看得到分城的）
   const poolsHot =
-    city !== null && (poolExpiringSoon(city.wounded?.earliestExpireAt ?? null) || poolExpiringSoon(city.captives?.earliestExpireAt ?? null));
+    anyCityPoolExpiringSoon(allCities, 'wounded') ||
+    anyCityPoolExpiringSoon(allCities, 'captive') ||
+    anyCityPoolExpiringSoon(allCities, 'deserter');
   const meta =
     mode === 'recruit' ? (
       <span role="征兵面板-守城加成">
@@ -87,7 +108,14 @@ export function RecruitPanel({
       {mode === 'disband' ? (
         <DisbandForm city={city} connection={connection} onDisband={onDisband} />
       ) : mode === 'pools' ? (
-        <TroopPoolsForm city={city} connection={connection} onRestore={onRestore} onRelease={onRelease} />
+        <TroopPoolsForm
+          city={city}
+          connection={connection}
+          onRestore={onRestore}
+          onRelease={onRelease}
+          allCities={allCities}
+          onRefreshAll={onRefreshAll}
+        />
       ) : (
         <RecruitForm city={city} connection={connection} recruitError={recruitError} onStartRecruit={onStartRecruit} onCancelRecruit={onCancelRecruit} />
       )}

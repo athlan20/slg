@@ -85,7 +85,7 @@ export interface FamousClaimView {
   /** 当前主人用户名；null = 尚未被获得（可争取） */
   ownerUsername: string | null;
   grantedAt: string | null;
-  /** 在野名将的落位野地（坐标与等级）；名城 / 黄巾为 null。被获得后仍保留落位信息 */
+  /** 在野名将的落位野地（坐标与等级）：未被获得（ownerUsername 为 null）时为 null，不泄露藏身位置；被获得后给出落位并保留。名城 / 黄巾恒为 null */
   wildAt: { x: number; y: number; level: number } | null;
 }
 

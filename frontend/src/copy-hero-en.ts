@@ -21,8 +21,10 @@ export const HERO_COPY_EN = {
       `Regular ${normal}/${normalCap} · Famous ${famous}/${famousCap}`,
     hint: 'Heroes are shared across the account: bring 1 along on march / scout / intercept / transport tasks, or assign one as City Guard. Attributes only decide combat bonuses, and each bonus is capped at 20%.',
     loading: 'Loading heroes…',
-    noTavern: 'This city has no Tavern yet: build one and it refreshes 3 hero candidates every 4 hours — recruit them with gold.',
+    noTavern: 'Your main city has no Tavern yet: build one (the Tavern can only be built in the main city) and it refreshes 3 hero candidates every 4 hours — recruit them with gold.',
     noHeroes: 'No heroes yet. Go recruit one from the Tavern candidates.',
+    tavernMainOnly: 'The Tavern can only be built in your main city: candidates and recruitment always use the main city Tavern. Switch back to the main city to view candidates and recruit.',
+    goMainCity: 'Back to main city',
   },
   candidates: {
     title: 'Tavern candidates',

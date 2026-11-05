@@ -218,6 +218,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '建筑已达等级上限（当前为 20 级，v31 AISLG-85 由 10 级开放；占位数值）。UPGRADE 的 toLevel 超过上限同样返回本错误码。',
     action: '该类型已无法继续升级，转投其他建筑或系统。',
   },
+  BUILDING_MAIN_ONLY: {
+    desc: '该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆 tavern 与书院 academy）。两者的效果本来就是账号级的（科技全账号生效、武将上限取主城酒馆等级），分城建了无用，因此只在主城建造；分城的 BUILD / UPGRADE（含连续升级 toLevel）一律返回本错误码，不扣资源、不入队。',
+    action: '改用主城（不带 cityId 或传 GET_STATE 的 cities[] 中 isMain 为 true 的那座）发起 BUILD / UPGRADE；分城的 city.levels / city.costs 与建筑清单里不含这两项，不要再尝试建造。',
+  },
   BUILD_NOT_CANCELLABLE: {
     desc: '目标建造不存在、不属于本账号，或已完成 / 已取消。排队中与建造中的条目都可取消（v7 起排队可取消，v71 AISLG-190 起建造中也可取消）。',
     action: '用 GET_STATE 查看 city.queue，只对 status=queued 或 building 的条目发起 CANCEL_BUILD。',
@@ -359,7 +363,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '等待 PUSH_TECH_STATE（research_completed）后再发起，或用 CANCEL_RESEARCH 取消当前研究（全额返还）。',
   },
   ACADEMY_TOO_LOW: {
-    desc: '发起研究的城书院等级低于目标等级（v27，AISLG-77：第 N 级科技要求书院 ≥ N 级，未建书院按 0 级）；失败 data 附 academyRequired（要求的书院等级）与 academyLevel（该城现有）。',
+    desc: '书院等级低于目标等级（v27，AISLG-77：第 N 级科技要求书院 ≥ N 级，未建书院按 0 级；v87 AISLG-217 起按主城的书院判定）；失败 data 附 academyRequired（要求的书院等级）与 academyLevel（主城现有）。',
     action: '先在该城建造 / 升级书院（academy）到 academyRequired，或改用书院更高的分城发起（data.cityId）。',
   },
   RESEARCH_NOT_CANCELLABLE: {
@@ -383,7 +387,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '重拉 GET_HEROES 取当前候选再招募。',
   },
   HERO_CAP_REACHED: {
-    desc: '（v36，AISLG-114）普通将数量已达上限 = ⌈酒馆最高等级 ÷ 2⌉ + 1（附 normalCap）。',
+    desc: '（v36，AISLG-114）普通将数量已达上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1（附 normalCap；v87 起只读主城酒馆）。',
     action: '升级酒馆提高上限，或先 DISMISS_HERO 腾名额。',
   },
   HERO_NOT_FOUND: {
@@ -865,6 +869,70 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
   CITY_AMBUSHED: {
     desc: '（v86，AISLG-211）这座城中了十面埋伏，期间不能派出任何部队（MARCH 的各用途、侦察、协防出发、交易所商队、剧本战场入场都被拒）；响应附 retryAfterSeconds。已经在外的部队照常行动、照常可以召回。',
     action: '等到 retryAfterSeconds 之后再派兵；已在外的部队用 RECALL_MARCH 召回不受影响。',
+  },
+  INSUFFICIENT_GIFT: {
+    desc: '（v89，AISLG-221）礼金余额不足，扣除被拒；响应附 balance（当前余额）。不扣、不写事件，其他数据不变。礼金每赛季固定发 1000，换季清零，不能转让或兑换。',
+    action: '等下一个赛季（换季后重新登录即回到 1000）或改用金币等其他方式；用 GET_STATE 的 gift 查看当前余额。',
+  },
+  INSUFFICIENT_ITEM: {
+    desc: '（v90，AISLG-222）道具数量不足，消耗被拒；响应附 itemId 与 count（当前数量）。不扣、不写事件，其他数据不变。',
+    action: '先用 GET_ITEMS 确认数量；不够时用 BUY_ITEM 用礼金买，或等获得途径（任务 / 活动）发放。',
+  },
+  ITEM_STACK_FULL: {
+    desc: '（v90，AISLG-222）购买后会超过该道具的堆叠上限，购买被拒；响应附 stackMax、have（当前数量）、canBuy（还能买几张，已满为 0）。礼金与道具都不变。',
+    action: '把购买数量降到 canBuy 以内；已满时先用掉道具再买。',
+  },
+  ITEM_PRICE_CHANGED: {
+    desc: '（v90，AISLG-222）BUY_ITEM 的 expectedPrice 与当前单价不一致（道具调价过）；响应附 price（当前单价）。不扣礼金、不加道具。',
+    action: '用 GET_ITEMS 刷新目录，把新单价告诉玩家，让玩家重新确认后带新单价重发；不要自动用新价重试。',
+  },
+  MOVE_CITY_FAMOUS: {
+    desc: '（v91，AISLG-220）名城（特殊城池）不能迁移；不扣令、不改任何数据。',
+    action: '换一座非名城的城迁移；名城只能靠攻占 / 经营保有。',
+  },
+  MOVE_CITY_ARMY_OUTSIDE: {
+    desc: '（v91，AISLG-220）这座城有部队在外：本城发出的行军（出征 / 返程 / 运输 / 调兵）或派去别人城里的协防。响应附 count。',
+    action: '等部队回到本城（或用 RECALL_MARCH 召回、DISMISS_ASSIST 撤回协防）后再迁。驻守自己野地的部队不算在外。',
+  },
+  MOVE_CITY_HAS_ALLY_FORCE: {
+    desc: '（v91，AISLG-220）盟友的部队正在协防这座城；响应附 count。迁城时不会自动遣返。',
+    action: '请盟友召回协防，或城主用 DISMISS_ASSIST 遣返后再迁。',
+  },
+  MOVE_CITY_IN_BATTLE: {
+    desc: '（v91，AISLG-220）这座城或其名下野地正有行军指向，或有未结的 NPC 来袭（与放弃分城、遣散士兵同一口径）。只看这一座城。',
+    action: '等战斗结算或来袭结束后再迁；若是自己的行军，可用 RECALL_MARCH 撤回。',
+  },
+  MOVE_CITY_TILE_INVALID: {
+    desc: '（v91，AISLG-220）指定坐标不是无主、无 NPC 的空野地（NPC 城、他人城池、已被占领的野地、城池格等一切非空野地的格都算）。不扣令。',
+    action: '用 GET_MAP_OVERVIEW / GET_WORLD_MAP 找一块空野地（kind=wilderness 且无归属）后重试。',
+  },
+  MOVE_CITY_TILE_TAKEN: {
+    desc: '（v91，AISLG-220）目标格在判定与落库之间被别人抢先占走（并发）。令与坐标都未改动。',
+    action: '重新 GET_WORLD_MAP 选一块空野地后再发起迁城。',
+  },
+  MOVE_CITY_TOO_CLOSE: {
+    desc: '（v91，AISLG-220）目标离其他账号的城池格（分城、名城含在内）不足 3 格（Chebyshev 距离）。自己的城不受此限。',
+    action: '选离他人城池至少 3 格的空野地；随机迁不受此限。',
+  },
+  MOVE_CITY_NO_SPACE: {
+    desc: '（v91，AISLG-220）随机迁城时世界中已没有可选的空野地。',
+    action: '改用指定坐标迁城（高级迁城令）选一块空野地，或等世界有空地后再试。',
+  },
+  TILE_UNEXPLORED: {
+    desc: '该地块在战争迷雾中未探索，且不在任何视野来源（城池 / 领地 / 行军 / 盟友城池格）覆盖内，服务端不返回它的任何信息（v92，AISLG-224）。仅在 fog_enabled 开启时出现。',
+    action: '先派斥候或部队去这个方向探索（派去未探索坐标的出征本身允许，盲打时前端应提示“目标在迷雾中”）。也可以改查已探索的格子。',
+  },
+  CHAT_COORD_UNEXPLORED: {
+    desc: '聊天坐标卡片指向未探索的格子；服务端不会把这个格子的地形、等级等信息填进卡片（v92，AISLG-224）。',
+    action: '先探索该坐标再发送卡片，或只发送文字坐标。',
+  },
+  MOVE_CITY_TILE_UNEXPLORED: {
+    desc: '高级迁城令（指定坐标）的目标格未探索，也不在实时视野内，无法指定为迁城目标（v92，AISLG-224）。随机迁城令不受影响。',
+    action: '先探索目标区域（派斥候或部队去那里），或改用随机迁城令。',
+  },
+  MOVE_CITY_ATTACK_LOCK: {
+    desc: '（v91，AISLG-220）指定坐标迁城后 12 小时内，这座城的掠夺 / 占领 / 侦察 / 派协防（以及其他攻击类出征）被拒；响应附 retryAfterSeconds。运输、调兵、增援自己名下野地与召回不受限。',
+    action: '等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。',
   },
   INTERNAL: {
     desc: '服务端内部错误。',

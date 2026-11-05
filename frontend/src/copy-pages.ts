@@ -2,6 +2,7 @@
 // 沿用旧面板文案的地方直接引用 copy.ts / copy-*.ts，这里只放导航重构后新增的句子。
 
 import type { MarchView } from './api/protocol';
+import { TROOP_POOL_ALL_COPY } from './copy-troop-pools';
 
 export const MAPUI_COPY = {
   title: '世界地图',
@@ -230,6 +231,8 @@ export const ARMY_COPY = {
     busy: '处理中…',
     cityStarving: '本城正在断粮，断粮结束后才能劝回逃兵（逃兵 24 小时过期，先运粮食吧）',
     hintSelect: '在现有数量范围内填写数量，或点「全部」',
+    // v88（AISLG-218）：「全部城池一键处理」的汇总行 / 全城按钮 / 确认框文案（新文件，避免本文件继续膨胀）
+    poolsAll: TROOP_POOL_ALL_COPY,
   },
   tag: {
     porter: '运输',

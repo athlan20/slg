@@ -8,9 +8,11 @@ import {
   TROOP_KINDS,
   isMarchPurpose,
   type BuildingCounts,
+  type BuildingKind,
   type BuildView,
   type CityView,
   type InitiatorRole,
+  type KindActionCosts,
   type MarchView,
   type RecruitView,
   type Resources,
@@ -34,11 +36,11 @@ import { loadCityTroopPools } from '../../common/src/troop-pools-db';
 import { guardProductionPercent } from '../../common/src/hero';
 import {
   wallBasePercent,
-  actionCosts,
   buildingLevelMaxes,
   popCap,
   populationGrowthPerHour,
 } from '../../common/src/rules';
+import { cityActionCosts, cityBuildingRecords } from '../../common/src/main-only-view';
 import { toFullArmyCounts } from '../../common/src/battle';
 import {
   TERRAIN_INFO,
@@ -164,6 +166,11 @@ export interface MarchRow {
   account_id: string;
   from_city_id: string;
   x: number;
+  /** 迷雾（AISLG-224 复核）：盲打校验被拒（到达原路返回）；撤回时的实际位置与时刻 */
+  fog_denied?: boolean;
+  fog_turn_x?: number | null;
+  fog_turn_y?: number | null;
+  fog_turn_at?: Date | null;
   y: number;
   troops: Partial<Record<TroopKind, number>> | null;
   purpose: string;
@@ -408,20 +415,11 @@ export function deployCountOf(snap: Pick<CitySnapshot, 'marches' | 'territory'> 
 }
 
 /** 按建筑类型展开数量（0/1）与等级两张映射（v7 起为九种建筑） */
-function kindRecords(levels: BuildingLevels): { buildings: BuildingCounts; levels: BuildingCounts } {
-  const buildings = {} as BuildingCounts;
-  const levelRecord = {} as BuildingCounts;
-  for (const kind of BUILDING_KINDS) {
-    const level = levels[kind] ?? 0;
-    buildings[kind] = level > 0 ? 1 : 0;
-    levelRecord[kind] = level;
-  }
-  return { buildings, levels: levelRecord };
-}
-
 export function toCityView(snap: CitySnapshot): CityView {
   const queue = snap.queue.map(buildView);
-  const records = kindRecords(snap.levels);
+  // v87（AISLG-217）：主城 = 账号最早创建的城；分城的建筑清单 / 等级 / 成本不含酒馆与书院
+  const isMainCity = snap.cityId === snap.mainCityId;
+  const records = cityBuildingRecords(snap.levels, isMainCity);
   const production = productionPerHour(
     snap.levels, territoryDisplayRates(snap.territory), snap.productionBonusPercent + snap.luoyangBonusPercent, snap.techs, snap.guardProductionPercent,
   );
@@ -444,10 +442,10 @@ export function toCityView(snap: CitySnapshot): CityView {
     buildings: records.buildings,
     levels: records.levels,
     // v6：下一步动作成本（未建=建造成本，已建未满级=升级成本）
-    costs: actionCosts(snap.levels, snap.famousName, constructionReductionPercent(snap.techs)),
+    costs: cityActionCosts(snap.levels, isMainCity, snap.famousName, constructionReductionPercent(snap.techs)),
     // v63（AISLG-167）：各建筑等级上限；名城主题建筑为 25，其余 20
     levelMax: buildingLevelMaxes(snap.famousName),
-    farms: records.buildings.farm,
+    farms: records.buildings.farm ?? 0,
     production: roundedProduction,
     population: {
       current: snap.population,

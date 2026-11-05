@@ -250,6 +250,9 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     durability: durabilityView(row, requesterAccountId),
     wildFamous: wildFamousMarked(row),
     reserve: reserveOf(row, garrison, requesterAccountId),
+    // 战争迷雾（v92）：视图默认实时可见；开启迷雾时由 fog-view.ts 按探索状态改写
+    fog: 'visible',
+    seenAt: null,
   };
 }
 

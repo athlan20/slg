@@ -25,7 +25,11 @@ interface HeroPanelProps {
 export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
   const copy = useCopy();
   const { EXTRA_PANEL, HERO_COPY } = copy;
-  const { chat, stratagem } = useGame().session;
+  const game = useGame().session;
+  const { chat, stratagem } = game;
+  // v87（AISLG-217）：酒馆只在主城——当前城是分城时提示并引导切回主城
+  const mainCityId = cityList.cities.find((item) => item.isMain)?.id ?? null;
+  const isMainCity = city !== null && (mainCityId === null || city.id === mainCityId);
   const { state, error, busy } = session;
   const now = useNow(state !== null && state.heroes.length > 0);
   const cityNames: Record<string, string> = Object.fromEntries(cityList.cities.map((item) => [item.id, item.name]));
@@ -78,7 +82,18 @@ export function HeroPanel({ city, cityList, session }: HeroPanelProps) {
               />
             )}
           />
-          <HeroTavern state={state} city={city} busy={busy} onRecruit={(id) => void session.recruit(id)} />
+          <HeroTavern
+            state={state}
+            city={city}
+            isMain={isMainCity}
+            onGoMain={() => {
+              if (mainCityId !== null) {
+                void game.switchCity(mainCityId);
+              }
+            }}
+            busy={busy}
+            onRecruit={(id) => void session.recruit(id)}
+          />
           <HeroFriendship
             state={state}
             busy={busy}

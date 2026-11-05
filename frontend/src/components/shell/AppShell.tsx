@@ -67,6 +67,7 @@ export function AppShell() {
         onSwitchAccount={() => setDialog('switch')}
         onReset={() => setDialog('reset')}
         onDiscardBranch={() => setDialog('discard')}
+        onMoveCity={() => setDialog('move')}
         onSetCapital={() => setDialog('capital')}
         onExchange={() => requestExchange()}
         onLeaderboard={() => openLeaderboard()}
@@ -77,6 +78,7 @@ export function AppShell() {
         onOpenAnnouncements={session.announcements.openList}
         allianceBadge={session.alliance.badge}
         onOpenAlliance={session.alliance.openPanel}
+        onOpenItems={session.items.openPanel}
       />
       <TopBar
         page={page}
@@ -137,6 +139,18 @@ export function AppShell() {
           cityList={session.cityList}
           timeScale={city?.timeScale ?? 1}
           onSetCapital={session.setCapital}
+          moveCityView={session.cityList.moveCity}
+          items={session.cityList.items}
+          moveCity={session.moveCity}
+          onPickMoveOnMap={(cityId) => {
+            session.moveCity.startPick(cityId);
+            setDialog(null);
+            go('map');
+          }}
+          onBuyItems={() => {
+            setDialog(null);
+            session.items.openPanel();
+          }}
         />
       ) : null}
     </div>

@@ -7,6 +7,7 @@ import { ApiClient, ConnectionError } from '../api/client';
 import {
   Op,
   type AccountStatePushData,
+  type ItemsStatePushData,
   type AgentInfoView,
   type AgentPlanPushData,
   type BattleReportCommentPushData,
@@ -68,6 +69,7 @@ import { useHeroSession, type HeroSession } from './heroSession';
 import { useQuestSession, type QuestSession } from './questSession';
 import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useMapOverview, type MapOverviewSession } from './mapOverview';
+import { useTroopPoolsAllCities, type TroopPoolsAllCitiesSession } from './troopPoolsAllCities';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
 import { useBattlefieldSession, type BattlefieldSession } from './battlefield';
 import { useNobilitySession, type NobilitySession } from './nobilitySession';
@@ -83,6 +85,9 @@ import { useAllianceSession, type AllianceSession } from './allianceSession';
 import { useAllianceMarks, type AllianceMarksSession } from './allianceMarks';
 import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 import { useStratagemSession, type StratagemSession } from './stratagemSession';
+import { useItemsSession, type ItemsSession } from './itemsSession';
+import { useMoveCitySession, type MoveCitySession } from './moveCitySession';
+import { clearExplorationReports, pushExplorationReport, type ExplorationReport } from './explorationReport';
 
 /** 断线自动重连间隔（毫秒） */
 const RECONNECT_DELAY_MS = 3000;
@@ -135,12 +140,18 @@ export interface GameSession {
   cancelRecruit: (recruitId: string) => Promise<void>;
   /** 遣散城内驻军（v84，AISLG-209）：返还征兵成本的 50%、不退人口；成功返回 null，失败返回人读错误 */
   disbandTroops: (troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
-  /** 治疗 / 招降 / 劝回（v85，AISLG-212）：成功返回 null，失败返回人读错误 */
-  restoreTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
-  /** 放弃治疗 / 释放俘虏（v85）：免费不返还；成功返回 null，失败返回人读错误 */
-  releaseTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
+  /** 治疗 / 招降 / 劝回（v85，AISLG-212）：成功返回 null，失败返回人读错误；cityId 缺省 = 当前城（v88 全城一键处理按城传） */
+  restoreTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 放弃治疗 / 释放俘虏（v85）：免费不返还；成功返回 null，失败返回人读错误；cityId 缺省 = 当前城 */
+  releaseTroops: (pool: import('../api/protocol').TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 全账号伤兵营（v88，AISLG-218）：全城池子 / 伤兵营可见时 30 秒刷新 / 立即重拉 */
+  troopPoolsAll: TroopPoolsAllCitiesSession;
   /** 计谋（v86，AISLG-211）：定义 / 令 / 武将预览 / 施计 / 被施计警报 */
   stratagem: StratagemSession;
+  /** 背包与商店（v90，AISLG-222）：弹窗、目录、礼金购买 */
+  items: ItemsSession;
+  /** 城池迁移（v91，AISLG-220）：指定坐标迁的选点、预览与执行 */
+  moveCity: MoveCitySession;
   /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
   craftDefense: (kind: import('../api/protocol').DefenseKind, count: number) => Promise<void>;
   /** 取消打造（v73）：排队中 / 打造中都可取消，成本全额返还 */
@@ -257,8 +268,10 @@ export function useGameSession(): GameSession {
   const [recruitError, setRecruitError] = useState<string | null>(null);
   const [defenseError, setDefenseError] = useState<string | null>(null);
   const [city, setCity] = useState<CityView | null>(null);
+  // 战报推送计数（v88，AISLG-218）：伤兵营可见时据此重拉全城池子（战报可能带来新的伤兵 / 俘虏）
+  const [battleReportTick, setBattleReportTick] = useState(0);
   const cityList = useCityList(setCity);
-  const { applyState: applyCityList, reset: resetCityList } = cityList;
+  const { applyState: applyCityList, applyItems: applyCityItems, reset: resetCityList } = cityList;
   const [agent, setAgent] = useState<AgentInfoView | null>(null);
   const [events, setEvents] = useState<SessionEvent[]>([]);
   const [eventsExhausted, setEventsExhausted] = useState(false);
@@ -380,6 +393,13 @@ export function useGameSession(): GameSession {
   const { clear: worldClear, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush } = world;
   // 世界小地图（v58 AISLG-160）：全图城池点位，展开时才拉取
   const mapOverview = useMapOverview({ clientRef, connected: connection === 'online' });
+  // 全账号伤兵营（v88 AISLG-218）：全城池子，连接后拉一次 + 伤兵营可见时 30 秒刷新，
+  // 战报推送（PUSH_BATTLE_REPORT）到达时也刷新一次
+  const troopPoolsAll = useTroopPoolsAllCities({
+    clientRef,
+    connected: connection === 'online',
+    battleReportTick,
+  });
 
   // 科技研究会话切片（v27 AISLG-77）：科技表 / 研究 / 取消，推送到达时联动
   const techSession = useTechSession({
@@ -423,6 +443,11 @@ export function useGameSession(): GameSession {
   // 计谋切片（v86 AISLG-211）：定义 / 计谋令 / 逐武将预览 / 施计动作 / 被施计警报
   const stratagem = useStratagemSession(clientRef, { scheduleSync });
   const { clear: stratagemClear, onPush: onStratagemPush } = stratagem;
+  const items = useItemsSession(clientRef, { applyItems: applyCityItems });
+  const { clear: itemsClear } = items;
+  // 城池迁移切片（v91）：迁城后重拉城池列表与状态
+  const moveCity = useMoveCitySession(clientRef, { onMoved: () => void syncAll('initial') });
+  const { cancelPick: moveCityCancelPick } = moveCity;
 
   // 移动目标会话切片（v28 AISLG-78）：流寇 / 运粮商队列表，推送增量合并
   const moving = useMovingTargets({ clientRef, connected: connection === 'online' });
@@ -496,10 +521,15 @@ export function useGameSession(): GameSession {
         // v12：地块归属 / 驻军变化 → 更新地图窗口并刷新选中详情
         const data = frame.data as unknown as TileStatePushData;
         onTilePush(data.tile);
+      } else if (frame.op === Op.PUSH_EXPLORATION_REPORT) {
+        // v92（AISLG-224）：探索简报 → 地图页简报卡片
+        pushExplorationReport((frame.data as unknown as { report: ExplorationReport }).report);
       } else if (frame.op === Op.PUSH_BATTLE_REPORT) {
         // v13：战斗战报生成 → 置顶战报列表（列表未加载时不预取，按需拉取覆盖）
         const data = frame.data as unknown as { report: BattleReportView };
         onBattleReportPush(data.report);
+        // v88（AISLG-218）：战报可能带来新的伤兵 / 俘虏——伤兵营可见时重拉全城池子
+        setBattleReportTick((tick) => tick + 1);
       } else if (frame.op === Op.PUSH_BATTLE_REPORT_COMMENT) {
         // v23（AISLG-53）：Agent 点评写入 → 更新战报列表/缓存，弹窗开着则就地补显
         const data = frame.data as unknown as BattleReportCommentPushData;
@@ -592,7 +622,12 @@ export function useGameSession(): GameSession {
         // account_renamed 事件由下方防抖增量查询补进事件流
         const data = frame.data as unknown as AccountStatePushData;
         if (data.reason === 'account_renamed' && typeof data.username === 'string') {
-          setAccount((prev) => (prev ? { ...prev, username: data.username } : prev));
+          const renamed = data.username;
+          setAccount((prev) => (prev ? { ...prev, username: renamed } : prev));
+        } else if (data.reason === 'items_changed') {
+          // v90（AISLG-222）：道具背包 / 礼金变化（其他连接买了道具、或消耗方扣了道具）：按推送直接更新，不重拉
+          const push = frame.data as unknown as ItemsStatePushData;
+          applyCityItems({ items: push.items, gift: push.gift });
         }
       } else if (frame.op === Op.PUSH_STRATAGEM) {
         // v86（AISLG-211）：被施计警报——目标方即时弹窗；等价文案由服务端 stratagem_received
@@ -619,7 +654,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
+    [scheduleSync, syncAll, applyCityItems, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {
@@ -678,12 +713,14 @@ export function useGameSession(): GameSession {
       seasonClear();
       hallClear();
       stratagemClear();
+      itemsClear();
+      moveCityCancelPick();
       allianceClear();
       allianceMarksClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, moveCityCancelPick],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -711,9 +748,11 @@ export function useGameSession(): GameSession {
     questClear();
     hallClear();
     stratagemClear();
+    itemsClear();
+    moveCityCancelPick();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, moveCityCancelPick]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1016,6 +1055,8 @@ export function useGameSession(): GameSession {
 
   const logout = useCallback(async () => {
     logoutIntentRef.current = true;
+    // 退出登录：探索简报不串到下一个账号（AISLG-224 复核）
+    clearExplorationReports();
     const client = clientRef.current;
     try {
       if (client?.connected) {
@@ -1396,6 +1437,8 @@ export function useGameSession(): GameSession {
     restoreTroops,
     releaseTroops,
     stratagem,
+    items,
+    moveCity,
     craftDefense,
     cancelDefenseCraft,
     dismissAssist,
@@ -1412,6 +1455,7 @@ export function useGameSession(): GameSession {
     switchCity,
     world,
     mapOverview,
+    troopPoolsAll,
     techSession,
     arenaSession,
     starTowerSession,

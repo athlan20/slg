@@ -1,0 +1,64 @@
+# 发布 slg-mcp 到 npm。
+# 触发：推送 v* 或 mcp-v* 标签（后者只发 slg-mcp、不对应服务端发版），或在 Actions 页面手动运行（workflow_dispatch）。
+# 发布内容以 mcp/package.json 的 version 为准；该版本已在 npm 上存在则直接跳过，可重复触发。
+# 认证用 npm 的 Trusted Publishing（OIDC）：不需要令牌，要求在 npmjs.com 的 slg-mcp 包设置里
+# 绑定 GitHub 仓库 athlan20/slg 与本文件名 publish-mcp.yml（需 npm ≥ 11.5.1，下面一步会升级）。
+name: Publish slg-mcp
+
+on:
+  push:
+    tags: ['v*', 'mcp-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # Trusted Publishing 与 provenance 都需要
+
+concurrency:
+  group: publish-mcp
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+
+      - name: 读取版本并检查是否已发布
+        id: ver
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "::warning::标签 ${GITHUB_REF_NAME} 与 mcp/package.json 版本 ${VERSION} 不一致，按 package.json 的版本发布"
+          fi
+          if npm view "slg-mcp@${VERSION}" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::slg-mcp@${VERSION} 已在 npm 上，跳过发布"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 安装依赖
+        if: steps.ver.outputs.published == 'false'
+        run: npm ci
+
+      - name: 升级 npm（Trusted Publishing 需要 11.5.1 及以上）
+        if: steps.ver.outputs.published == 'false'
+        run: npm install -g npm@latest && npm --version
+
+      # prepublishOnly 会依次：同步协议清单、类型检查、测试、构建，任何一步失败都不会发布
+      - name: 发布到 npm
+        if: steps.ver.outputs.published == 'false'
+        run: npm publish --provenance --access public

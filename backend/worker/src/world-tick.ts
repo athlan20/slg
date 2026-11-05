@@ -184,6 +184,11 @@ async function resolveArrival(
   movingNotifies: MovingNotify[],
   yt: YtNotifies,
 ): Promise<void> {
+  // v92（AISLG-224 复核）：迷雾中的盲打校验曾被拒绝（fog_denied）：到达一律原路返回，不战斗、不掠夺、不侦察
+  if (march.fog_denied) {
+    await abortMarchToReturn(client, march, troops, settled, notifies);
+    return;
+  }
   // v29（AISLG-76）：掠夺任务的目标格上有进行中的黄巾营地 / 老巢 → 走营地结算
   if (march.purpose === 'plunder' && tile?.kind === 'wilderness' && !tile.owner_city_id) {
     if (await loadCampAt(client, march.x, march.y)) {

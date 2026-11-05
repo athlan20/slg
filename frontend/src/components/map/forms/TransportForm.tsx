@@ -42,7 +42,7 @@ export function TransportForm({ ctx }: { ctx: TargetCtx }) {
   // 驿站（v30 AISLG-83）：运输目标是自己另一座城，出发城驿站每级 +10% 行军速度
   const eta =
     origin && total > 0
-      ? marchTravelSeconds(origin.x, origin.y, x, y, troops, city.timeScale, marchBonusPercent(city.techs) + city.levels.post_station * 10)
+      ? marchTravelSeconds(origin.x, origin.y, x, y, troops, city.timeScale, marchBonusPercent(city.techs) + (city.levels.post_station ?? 0) * 10)
       : null;
 
   const setKey = (key: keyof Resources, raw: number) => {

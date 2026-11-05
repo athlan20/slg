@@ -798,6 +798,7 @@ const ERRORS = {
     buildingExists: '该类型建筑已存在或正在建造/升级中，不可重复发起',
     buildingNotBuilt: '该类型尚未建造，请先建造再升级',
     buildingLevelMax: '建筑已达等级上限，无法继续升级',
+    buildingMainOnly: '酒馆与书院只能建在主城，请切回主城再建造或升级',
     buildNotCancellable: '建造任务不存在、不属于本账号或已完成 / 已取消',
     invalidParams: '建筑类型不合法',
     fallback: '发起建造失败',

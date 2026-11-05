@@ -3,6 +3,9 @@
  *  花费（治疗 / 劝回 50%、招降 60%，招降另扣人口）与最早一批的剩余时间（剩不足 6 小时
  *  红色提示），「治疗 / 招降 / 劝回」与「放弃 / 释放」各开站内确认弹窗（不用浏览器原生
  *  confirm）。逃兵没有「释放」（只能劝回或等过期）；断粮中劝回由服务端 CITY_STARVING 拒绝。
+ *  v88（AISLG-218）：池子页签下方多一行「全部城池合计」，提交按钮组旁多一组「全部治疗 /
+ *  全部招降 / 全部劝回 / 全部放弃 / 全部释放」（全城汇总与一键处理在 TroopPoolsAllCities.tsx）；
+ *  页签红点改看「任意一座城的该池子快过期」（全城池子由 RecruitPanel 传下来）。
  */
 
 import { useState } from 'react';
@@ -10,10 +13,10 @@ import {
   CAPTIVE_RECRUIT_COST_PERCENT,
   DESERTER_RECALL_COST_PERCENT,
   HEAL_COST_PERCENT,
-  POOL_EXPIRE_WARN_HOURS,
   TROOP_INFO,
   TROOP_KINDS,
   restoreCostPreview,
+  type AccountTroopPoolsCityView,
   type CityView,
   type TroopKind,
   type TroopPoolKind,
@@ -23,16 +26,22 @@ import { formatDurationText } from '../../api/format';
 import { poolCostText, poolTroopsText } from '../../api/poolText';
 import { TROOP_LABEL as TROOP_LABEL_ZH } from '../../copy';
 import { useCopy } from '../../i18n/bundle';
+import { anyCityPoolExpiringSoon, poolExpiringSoon, poolRemainSeconds } from '../../state/troopPoolsAllCities';
 import type { ConnectionStatus } from '../../state/useGameSession';
 import { Modal } from '../ui/Modal';
+import { TroopPoolsAllCities, TroopPoolsAllCitiesSummary } from './TroopPoolsAllCities';
 
 interface TroopPoolsFormProps {
   city: CityView | null;
   connection: ConnectionStatus;
-  /** 治疗 / 招降 / 劝回；成功返回 null，失败返回人读错误（服务端权威结果） */
-  onRestore: (pool: TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
-  /** 放弃治疗 / 释放俘虏；成功返回 null，失败返回人读错误 */
-  onRelease: (pool: TroopPoolKind, troops: Partial<Record<TroopKind, number>>) => Promise<string | null>;
+  /** 治疗 / 招降 / 劝回；成功返回 null，失败返回人读错误（服务端权威结果）；cityId 缺省 = 当前城 */
+  onRestore: (pool: TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 放弃治疗 / 释放俘虏；成功返回 null，失败返回人读错误；cityId 缺省 = 当前城 */
+  onRelease: (pool: TroopPoolKind, troops: Partial<Record<TroopKind, number>>, cityId?: string) => Promise<string | null>;
+  /** 账号全部城的池子（v88，AISLG-218）：汇总行 / 一键按钮 / 页签红点用；未拉到为 null */
+  allCities: AccountTroopPoolsCityView[] | null;
+  /** 全城池子有变化（本城或一键处理做完）：重拉全城池子并对齐本城状态 */
+  onRefreshAll: () => void;
 }
 
 /** 池子在 CityView 上的字段名（pool=captive 对应 captives） */
@@ -42,20 +51,7 @@ function poolView(city: CityView | null, pool: TroopPoolKind): TroopPoolView {
   return view ?? empty;
 }
 
-/** 最早一批剩余秒数；池空 / 已过期为 0 */
-function remainSeconds(earliestExpireAt: string | null): number {
-  if (earliestExpireAt === null) {
-    return 0;
-  }
-  return Math.max(0, (Date.parse(earliestExpireAt) - Date.now()) / 1000);
-}
-
-/** 是否快过期（剩不足阈值）——城池界面红点与池内红色提示共用 */
-export function poolExpiringSoon(earliestExpireAt: string | null): boolean {
-  return remainSeconds(earliestExpireAt) <= POOL_EXPIRE_WARN_HOURS * 3600 && earliestExpireAt !== null;
-}
-
-export function TroopPoolsForm({ city, connection, onRestore, onRelease }: TroopPoolsFormProps) {
+export function TroopPoolsForm({ city, connection, onRestore, onRelease, allCities, onRefreshAll }: TroopPoolsFormProps) {
   const copy = useCopy();
   const { TROOP_LABEL } = copy;
   const P = copy.ARMY_COPY.pools;
@@ -81,7 +77,7 @@ export function TroopPoolsForm({ city, connection, onRestore, onRelease }: Troop
     pool === 'captive'
       ? TROOP_KINDS.reduce((sum, kind) => sum + (selected[kind] ?? 0) * TROOP_INFO[kind].population, 0)
       : 0;
-  const remain = remainSeconds(view.earliestExpireAt);
+  const remain = poolRemainSeconds(view.earliestExpireAt);
   const expireSoon = poolExpiringSoon(view.earliestExpireAt);
   const starving = city?.starveAt !== null && city?.starveAt !== undefined && Date.parse(city.starveAt) <= Date.now();
   const submitDisabled = connection !== 'online' || city === null || total === 0;
@@ -128,6 +124,8 @@ export function TroopPoolsForm({ city, connection, onRestore, onRelease }: Troop
     if (failure === null) {
       setConfirming(null);
       setCounts({});
+      // 本城池子变了 → 立即重拉全城汇总（红点与合计随之更新）
+      onRefreshAll();
     } else {
       setError(failure);
     }
@@ -157,10 +155,13 @@ export function TroopPoolsForm({ city, connection, onRestore, onRelease }: Troop
   return (
     <>
       <div role="伤兵营-池子切换" className="flex shrink-0 items-center gap-1 px-1">
-        {poolTab('wounded', P.poolWounded, TROOP_KINDS.reduce((sum, kind) => sum + (poolView(city, 'wounded').troops[kind] ?? 0), 0), poolExpiringSoon(poolView(city, 'wounded').earliestExpireAt))}
-        {poolTab('captive', P.poolCaptives, TROOP_KINDS.reduce((sum, kind) => sum + (poolView(city, 'captive').troops[kind] ?? 0), 0), poolExpiringSoon(poolView(city, 'captive').earliestExpireAt))}
-        {poolTab('deserter', P.poolDeserters, TROOP_KINDS.reduce((sum, kind) => sum + (poolView(city, 'deserter').troops[kind] ?? 0), 0), false)}
+        {poolTab('wounded', P.poolWounded, TROOP_KINDS.reduce((sum, kind) => sum + (poolView(city, 'wounded').troops[kind] ?? 0), 0), anyCityPoolExpiringSoon(allCities, 'wounded'))}
+        {poolTab('captive', P.poolCaptives, TROOP_KINDS.reduce((sum, kind) => sum + (poolView(city, 'captive').troops[kind] ?? 0), 0), anyCityPoolExpiringSoon(allCities, 'captive'))}
+        {poolTab('deserter', P.poolDeserters, TROOP_KINDS.reduce((sum, kind) => sum + (poolView(city, 'deserter').troops[kind] ?? 0), 0), anyCityPoolExpiringSoon(allCities, 'deserter'))}
       </div>
+
+      {/* v88（AISLG-218）：池子页签下方的「全部城池合计」 */}
+      <TroopPoolsAllCitiesSummary cities={allCities} pool={pool} />
 
       <div role="伤兵营-兵种表" className="flex min-h-0 flex-1 flex-col gap-px overflow-hidden">
         <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_2.6rem_5.2rem] gap-1.5 px-1.5 text-[10.5px] text-faint">
@@ -267,6 +268,15 @@ export function TroopPoolsForm({ city, connection, onRestore, onRelease }: Troop
             {pool === 'wounded' ? P.releaseWounded : P.releaseCaptive}
           </button>
         ) : null}
+        {/* v88（AISLG-218）：提交按钮组旁的全城一键处理（确认框 / 结果摘要都在里面） */}
+        <TroopPoolsAllCities
+          cities={allCities}
+          pool={pool}
+          connection={connection}
+          onRestore={onRestore}
+          onRelease={onRelease}
+          onFinished={onRefreshAll}
+        />
       </div>
 
       {error && confirming === null ? (

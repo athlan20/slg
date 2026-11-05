@@ -5,7 +5,7 @@ import type { CityGuardView } from './protocol-hero';
 import type { CityStratagemView } from './protocol-stratagem';
 import { RESOURCE_KEYS } from './protocol-wire';
 
-export const PROTOCOL_VERSION = 86;
+export const PROTOCOL_VERSION = 88;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -224,6 +224,14 @@ export const Op = {
   GET_STRATAGEMS: 145,
   /** C→S 施计（v86，AISLG-211）：data.heroId + data.stratagem + data.target = { cityId } | { marchId } | { attackId }；扣 1 张令并冷却 1 小时 */
   CAST_STRATAGEM: 146,
+  /** C→S 查询全账号伤兵营（v88，AISLG-218）：无参数、只读；账号全部城的伤兵 / 俘虏 / 逃兵三池 + 各城断粮时刻 */
+  GET_TROOP_POOLS: 147,
+  /** C→S 查询道具背包 / 目录 / 礼金（v90，AISLG-222） */
+  GET_ITEMS: 148,
+  /** C→S 礼金买道具（v90，AISLG-222：itemId / count / expectedPrice 必填） */
+  BUY_ITEM: 149,
+  /** 城池迁移（v91，AISLG-220）：随机迁（迁城令）/ 指定坐标迁（高级迁城令），preview 只预览 */
+  MOVE_CITY: 150,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -283,6 +291,8 @@ export const Op = {
   PUSH_BATTLEFIELD_STATE: 2027,
   /** 被施计警报（v86，AISLG-211）：会失败的计谋不论成败都推给目标玩家（欺敌类与金蝉脱壳不推） */
   PUSH_STRATAGEM: 2028,
+  /** S→C 探索简报（v92，AISLG-224） */
+  PUSH_EXPLORATION_REPORT: 2029,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
@@ -326,6 +336,7 @@ export type ErrorCode =
   | 'BUILDING_EXISTS'
   | 'BUILDING_NOT_BUILT'
   | 'BUILDING_LEVEL_MAX'
+  | 'BUILDING_MAIN_ONLY'
   | 'BUILD_NOT_CANCELLABLE'
   | 'TRAINING_NOT_CANCELLABLE'
   | 'AGENT_FORBIDDEN'
@@ -451,6 +462,24 @@ export type ErrorCode =
   | 'STRATAGEM_TOKEN_SHORT'
   | 'STRATAGEM_TOKEN_FULL'
   | 'CITY_AMBUSHED'
+  /** 礼金不足（v89，AISLG-221；响应附 balance） */
+  | 'INSUFFICIENT_GIFT'
+  /** 道具不足（v90，AISLG-222；响应附 itemId、count） */
+  | 'INSUFFICIENT_ITEM'
+  /** 道具堆叠上限（v90，AISLG-222；响应附 stackMax、have、canBuy） */
+  | 'ITEM_STACK_FULL'
+  /** 道具单价已变（v90，AISLG-222；响应附 price） */
+  | 'ITEM_PRICE_CHANGED'
+  /** 城池迁移（v91，AISLG-220）：名城不能迁 / 本城有部队在外 / 盟友驻军 / 战乱 / 目标格不合法 / 太近 / 无空地 / 抢先占格 / 出征限制 */
+  | 'MOVE_CITY_FAMOUS'
+  | 'MOVE_CITY_ARMY_OUTSIDE'
+  | 'MOVE_CITY_HAS_ALLY_FORCE'
+  | 'MOVE_CITY_IN_BATTLE'
+  | 'MOVE_CITY_TILE_INVALID'
+  | 'MOVE_CITY_TILE_TAKEN'
+  | 'MOVE_CITY_TOO_CLOSE'
+  | 'MOVE_CITY_NO_SPACE'
+  | 'MOVE_CITY_ATTACK_LOCK'
   /** 换季维护中（v65）：除 GET_SEASON 与登录相关协议外一律返回，响应附 retryAfterSec（秒） */
   | 'MAINTENANCE'
   | 'INTERNAL';
@@ -459,6 +488,8 @@ export type ErrorCode =
 export * from './protocol-wire';
 export * from './protocol-season';
 export * from './protocol-stratagem';
+export * from './protocol-items';
+export * from './protocol-move-city';
 
 export interface Resources {
   gold: number;
@@ -921,12 +952,12 @@ export interface CityView {
   /** 账号爵位（v76）：{ index（0 = 平民）, name } */
   nobility: { index: number; name: string };
   resources: Resources;
-  /** 按建筑类型统计的已建数量（单实例规则下为 0 或 1） */
-  buildings: BuildingCounts;
-  /** 各建筑类型的当前等级（0 = 未建造；产量、人口上限与储量上限均按等级推导） */
-  levels: BuildingCounts;
-  /** 各建筑「下一步动作」成本：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用 */
-  costs: Record<BuildingKind, KindActionCosts>;
+  /** 按建筑类型统计的已建数量（单实例规则下为 0 或 1）。v87：分城不含 tavern / academy */
+  buildings: Partial<BuildingCounts>;
+  /** 各建筑类型的当前等级（0 = 未建造；产量、人口上限与储量上限均按等级推导）。v87：分城不含 tavern / academy */
+  levels: Partial<BuildingCounts>;
+  /** 各建筑「下一步动作」成本：build=建造（未建时），upgrade=升级（已建未满级时），null=不可用。v87：分城不含 tavern / academy */
+  costs: Partial<Record<BuildingKind, KindActionCosts>>;
   /** 各建筑的等级上限（v63）：普通 20；占有对应名城时其主题建筑为 25 */
   levelMax: Record<BuildingKind, number>;
   /** 兼容字段：已建成的农田数量（= buildings.farm） */
@@ -1089,10 +1120,10 @@ export interface SetNicknameResponseData {
 
 /** PUSH_ACCOUNT_STATE（op 2020）推送载荷：账号级状态变化（v52） */
 export interface AccountStatePushData {
-  /** account_renamed=昵称被修改 */
-  reason: 'account_renamed';
-  /** 新昵称 */
-  username: string;
+  /** account_renamed=昵称被修改；items_changed=道具背包 / 礼金变化（v90，带 items 与 gift） */
+  reason: 'account_renamed' | 'items_changed';
+  /** 新昵称（account_renamed 时有） */
+  username?: string;
 }
 
 /** RESET_ACCOUNT 响应载荷：重置完成后的城池现状（即开号初始状态） */
@@ -1222,6 +1253,9 @@ export interface ReleaseTroopsResponseData {
   released: Partial<Record<TroopKind, number>>;
   city: CityView;
 }
+
+// 全账号伤兵营（v88，AISLG-218）的类型在 protocol-troop-pools.ts
+export type { AccountTroopPoolsCityView, GetTroopPoolsResponseData } from './protocol-troop-pools';
 
 // 盟友协防（v74，AISLG-194）的类型在 protocol-assist.ts
 export type { AssistView, AssistOutView, DismissAssistRequestData, DismissAssistResponseData } from './protocol-assist';

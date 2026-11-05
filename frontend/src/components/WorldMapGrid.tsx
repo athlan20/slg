@@ -7,13 +7,17 @@
  *  只负责渲染与悬浮 / 选中态；地图数据与动作在 worldSession，组装在 WorldMapView。
  */
 
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import type { AllianceMarkView, TileView, WorldMapResponseData } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import { useMapZoomGestures, type ZoomHandler } from '../state/useMapZoomGestures';
 import { zoomStep } from '../state/mapZoom';
 import { WorldTileBadges } from './WorldTileBadges';
+import { TERRITORY_FILL_CLASS } from './map/TerritoryOverlay';
+import { TileYield } from './map/YieldLayer';
+import type { TerritoryCell } from './map/territoryBorders';
+import type { YieldInfo } from './map/yieldTable';
 import { AllianceMarkBadge, CityMark, TERRAIN_CLASS, TerrainIcon, levelTone } from './worldMapMarks';
 import { NPC_TIER_CLASS, WorldMapTooltip, citySide, npcTierLabel, tileAria, type TileTip } from './worldMapTip';
 
@@ -37,10 +41,18 @@ interface WorldMapGridProps {
   onZoom: ZoomHandler;
   /** 当前缩放档位（world.viewSize）：滚轮 / 键盘缩放按它步进 */
   zoomSize: number;
-  /** 图层开关：黄巾营地徽章 / 我的领地描边（流寇·商队由调用方控制 movingMarks） */
-  layers?: { yt: boolean; mine: boolean };
+  /** 图层开关：黄巾营地徽章（流寇·商队由调用方控制 movingMarks） */
+  layers?: { yt: boolean };
   /** 本盟地图标记（AISLG-184 / F2）：键 "x,y" → 标记（已过期的不传） */
   marks?: Map<string, AllianceMarkView>;
+  /** 领地色块（AISLG-216）：键 "x,y" → 关系色；关掉领地图层时不传（只剩三角旗） */
+  territoryCells?: Map<string, TerritoryCell>;
+  /** 产出图层（AISLG-216）：键 "x,y" → 产量与储量；关掉产出图层时不传 */
+  yieldMap?: Map<string, YieldInfo>;
+  /** 产出数字是否显示（视野边长 ≥ 15 格时只显示资源图标） */
+  showYieldNumber?: boolean;
+  /** 覆盖层（AISLG-216）：行军路线 / 图标 / 来袭标记，挂在网格同一个相对容器里随网格一起位移 */
+  overlay?: ReactNode;
 }
 
 /** 拖曳会话（v23 AISLG-64；AISLG-102 重写为「理想原点」模型）：pointerdown 建立、move 换算理想原点、up 结束 */
@@ -75,11 +87,13 @@ const ARROW_DELTA: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
 };
 
-export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanTo, panStep, territoryClusters, movingMarks, onZoom, zoomSize, layers, marks }: WorldMapGridProps) {
+export function WorldMapGrid({
+  win, selected, accountId, onSelect, onPan, onPanTo, panStep, territoryClusters, movingMarks, onZoom, zoomSize, layers, marks,
+  territoryCells, yieldMap, showYieldNumber = true, overlay,
+}: WorldMapGridProps) {
   const copy = useCopy();
   const { TILE_KIND_LABEL } = copy;
   const showYt = layers?.yt ?? true;
-  const showMine = layers?.mine ?? true;
   const [tip, setTip] = useState<TileTip | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   // 滚轮 / 双指捏合缩放（AISLG-103）；捏合期间拖曳让路
@@ -292,140 +306,149 @@ export function WorldMapGrid({ win, selected, accountId, onSelect, onPan, onPanT
       onPointerUp={onDragEnd}
       onPointerCancel={onDragEnd}
     >
+      {/* 网格与覆盖层同一个相对容器：拖曳位移只套在这一层，行军 / 领地 / 来袭标记跟着格子一起走 */}
       <div
-        ref={gridRef}
-        role="世界地图视野-网格"
-        className="grid h-full gap-[3px] will-change-transform"
+        role="世界地图视野-内容"
+        className="relative h-full"
         style={{
-          gridTemplateColumns: `repeat(${win.w}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${win.h}, minmax(0, 1fr))`,
           transform: anchor
             ? `translate(${(win.x - anchor.x) * tileStep().w}px, ${(win.y - anchor.y) * tileStep().h}px)`
             : undefined,
           transition: dragSettling ? 'transform 120ms ease-out' : 'none',
         }}
       >
-        {rows.flatMap((y) =>
-          cols.map((x) => {
-            const tile = tileAt.get(`${x},${y}`);
-            if (!tile) {
-              return <span key={`${x}-${y}`} role="世界地图视野-空格" className="rounded bg-panel" />;
-            }
-            const isOwn = tile.owner !== null && tile.owner.accountId === accountId;
-            const isSelected = selected !== null && selected.x === x && selected.y === y;
-            const isCity = tile.kind !== 'wilderness';
-            const occupied = tile.kind === 'wilderness' && tile.owner !== null;
-            // 盟友（AISLG-182 / F2）：同一联盟的地块单独描边、角旗与城名着色，不随「我的领地」图层开关隐藏
-            const ally = !isOwn && (tile.owner?.relation === 'ally' || tile.owner?.relation === 'friendly');
-            const hostile = !isOwn && tile.owner?.relation === 'hostile';
-            const mark = marks?.get(`${x},${y}`);
-            // 连片领地（v23 AISLG-59）：本账号有连片加成的野地统一描金边
-            const cluster = showMine ? territoryClusters?.get(`${x},${y}`) : undefined;
-            // 占领 / 本方城池：内描边 + 角旗；本方强调色、他方警示色（「我的领地」图层关闭时不描本方）
-            const ownership = cluster
-              ? 'ring-2 ring-inset ring-gold'
-              : ally
-                ? 'ring-2 ring-inset ring-st-online/80'
-                : (occupied || (tile.kind === 'city' && isOwn)) && (showMine || !isOwn)
-                  ? isOwn
-                    ? 'ring-2 ring-inset ring-accent/80'
-                    : 'ring-2 ring-inset ring-warn/70'
-                  : '';
-            return (
-              <button
-                key={`${x}-${y}`}
-                type="button"
-                role="世界地图视野-地块"
-                data-x={x}
-                data-y={y}
-                tabIndex={tile === tabTarget ? 0 : -1}
-                aria-label={tileAria(tile, isOwn)}
-                aria-pressed={isSelected}
-                onClick={() => {
-                  // 拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分）
-                  if (lastDragMovedRef.current) {
-                    lastDragMovedRef.current = false;
-                    return;
-                  }
-                  onSelect(x, y);
-                }}
-                onKeyDown={(e) => onTileKey(e, tile)}
-                onMouseEnter={(e) => showTip(tile, isOwn, e.currentTarget)}
-                onFocus={(e) => showTip(tile, isOwn, e.currentTarget)}
-                onBlur={hideTip}
-                className={`group relative grid cursor-pointer place-items-center overflow-hidden rounded transition-[filter,box-shadow] duration-100 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
-                  TERRAIN_CLASS[tile.terrain] ?? TERRAIN_CLASS.plain
-                } ${ownership} ${
-                  // 已掠空的 NPC 城：整格变暗（v23 AISLG-55）
-                  tile.kind === 'npc_city' && tile.npcStockTier === 'empty' ? 'opacity-45 saturate-50' : ''
-                } ${
-                  isSelected ? 'z-[1] shadow-[0_0_0_2px_var(--accent),0_0_14px_var(--accent-dim)]' : ''
-                }`}
-              >
-                {isCity ? (
-                  <>
-                    <CityMark side={citySide(tile, isOwn)} className="w-[42%] text-[clamp(9px,2.2cqw,18px)]" />
-                    {tile.kind === 'npc_city' && tile.npcStockTier ? (
+        <div
+          ref={gridRef}
+          role="世界地图视野-网格"
+          className="grid h-full gap-[3px] will-change-transform"
+          style={{
+            gridTemplateColumns: `repeat(${win.w}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${win.h}, minmax(0, 1fr))`,
+          }}
+        >
+          {rows.flatMap((y) =>
+            cols.map((x) => {
+              const tile = tileAt.get(`${x},${y}`);
+              if (!tile) {
+                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾（迷雾开启时才会缺格）
+                return <span key={`${x}-${y}`} role="世界地图-迷雾层" title={copy.EXTRA_MAP.fog.unknownTitle} aria-label={copy.EXTRA_MAP.fog.unknownTitle} className="rounded bg-[#05070b]" />;
+              }
+              const isOwn = tile.owner !== null && tile.owner.accountId === accountId;
+              const isSelected = selected !== null && selected.x === x && selected.y === y;
+              const isCity = tile.kind !== 'wilderness';
+              const occupied = tile.kind === 'wilderness' && tile.owner !== null;
+              // 盟友（AISLG-182 / F2）：同一联盟的地块角旗与城名着色（AISLG-216 起每格描边交给领地图层）
+              const ally = !isOwn && (tile.owner?.relation === 'ally' || tile.owner?.relation === 'friendly');
+              const hostile = !isOwn && tile.owner?.relation === 'hostile';
+              const mark = marks?.get(`${x},${y}`);
+              // 领地色块（AISLG-216）：关系色 20% 铺在地形底色上，图标 / 等级 / 徽章仍在上层
+              // 已探索但不在视野内的格子不画领地色块与产出（只画实时视野内的地块，AISLG-224）
+              const explored = tile.fog === 'explored';
+              const territory = explored ? undefined : territoryCells?.get(`${x},${y}`);
+              // 产出（AISLG-216）：资源图标 + 每小时产量（自己的地含驻军采集）+ 储量条
+              const yieldInfo = explored ? undefined : yieldMap?.get(`${x},${y}`);
+              return (
+                <button
+                  key={`${x}-${y}`}
+                  type="button"
+                  role="世界地图视野-地块"
+                  data-x={x}
+                  data-y={y}
+                  tabIndex={tile === tabTarget ? 0 : -1}
+                  aria-label={tileAria(tile, isOwn)}
+                  aria-pressed={isSelected}
+                  onClick={() => {
+                    // 拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分）
+                    if (lastDragMovedRef.current) {
+                      lastDragMovedRef.current = false;
+                      return;
+                    }
+                    onSelect(x, y);
+                  }}
+                  onKeyDown={(e) => onTileKey(e, tile)}
+                  onMouseEnter={(e) => showTip(tile, isOwn, e.currentTarget)}
+                  onFocus={(e) => showTip(tile, isOwn, e.currentTarget)}
+                  onBlur={hideTip}
+                  className={`group relative grid cursor-pointer place-items-center overflow-hidden rounded transition-[filter,box-shadow] duration-100 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
+                    explored ? 'brightness-[.6] saturate-50' : ''
+                  } ${
+                    TERRAIN_CLASS[tile.terrain] ?? TERRAIN_CLASS.plain
+                  } ${
+                    // 已掠空的 NPC 城：整格变暗（v23 AISLG-55）
+                    tile.kind === 'npc_city' && tile.npcStockTier === 'empty' ? 'opacity-45 saturate-50' : ''
+                  } ${
+                    isSelected ? 'z-[1] shadow-[0_0_0_2px_var(--accent),0_0_14px_var(--accent-dim)]' : ''
+                  }`}
+                >
+                  {territory ? <span role="世界地图视野-领地色块" aria-hidden="true" className={`pointer-events-none absolute inset-0 ${TERRITORY_FILL_CLASS[territory.relation]}`} /> : null}
+                  {isCity ? (
+                    <>
+                      <CityMark side={citySide(tile, isOwn)} className="w-[42%] text-[clamp(9px,2.2cqw,18px)]" />
+                      {tile.kind === 'npc_city' && tile.npcStockTier ? (
+                        <span
+                          role="世界地图视野-NPC库存档位"
+                          className={`absolute left-[6%] top-[4%] font-mono text-[clamp(8px,1.25cqw,12px)] leading-none ${NPC_TIER_CLASS[tile.npcStockTier]}`}
+                          title={npcTierLabel(tile.npcStockTier)}
+                        >
+                          {tile.npcStockTier === 'rich' ? '◆' : tile.npcStockTier === 'normal' ? '◇' : tile.npcStockTier === 'low' ? '·' : '×'}
+                        </span>
+                      ) : null}
                       <span
-                        role="世界地图视野-NPC库存档位"
-                        className={`absolute left-[6%] top-[4%] font-mono text-[clamp(8px,1.25cqw,12px)] leading-none ${NPC_TIER_CLASS[tile.npcStockTier]}`}
-                        title={npcTierLabel(tile.npcStockTier)}
+                        role="世界地图视野-城名"
+                        className={`absolute inset-x-0.5 bottom-[4%] truncate @max-lg:hidden text-center text-[clamp(8px,1.25cqw,12px)] leading-tight ${
+                          tile.kind === 'npc_city' ? 'text-gold' : isOwn ? 'font-semibold text-accent' : ally ? 'font-semibold text-st-online' : hostile ? 'font-semibold text-st-error' : 'text-warn'
+                        }`}
                       >
-                        {tile.npcStockTier === 'rich' ? '◆' : tile.npcStockTier === 'normal' ? '◇' : tile.npcStockTier === 'low' ? '·' : '×'}
+                        {tile.kind === 'npc_city' ? (tile.famous ? tName(tile.famous.name) : `NPC Lv${tile.level}`) : (tile.owner ? tName(tile.owner.cityName) : TILE_KIND_LABEL.city)}
                       </span>
-                    ) : null}
-                    <span
-                      role="世界地图视野-城名"
-                      className={`absolute inset-x-0.5 bottom-[4%] truncate @max-lg:hidden text-center text-[clamp(8px,1.25cqw,12px)] leading-tight ${
-                        tile.kind === 'npc_city' ? 'text-gold' : isOwn ? 'font-semibold text-accent' : ally ? 'font-semibold text-st-online' : hostile ? 'font-semibold text-st-error' : 'text-warn'
-                      }`}
-                    >
-                      {tile.kind === 'npc_city' ? (tile.famous ? tName(tile.famous.name) : `NPC Lv${tile.level}`) : (tile.owner ? tName(tile.owner.cityName) : TILE_KIND_LABEL.city)}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <TerrainIcon terrain={tile.terrain} className="w-[40%]" />
-                    {/* 在野名将标记（v54，AISLG-144）：野地里藏着未被获得的名将，公开可见 */}
-                    {tile.wildFamous ? (
+                    </>
+                  ) : (
+                    <>
+                      <TerrainIcon terrain={tile.terrain} className="w-[40%]" />
+                      {/* 在野名将标记（v54，AISLG-144）：野地里藏着未被获得的名将，公开可见 */}
+                      {tile.wildFamous ? (
+                        <span
+                          role="世界地图视野-在野名将"
+                          aria-hidden="true"
+                          title={copy.HERO_COPY.wild.mapMark}
+                          className="absolute left-[6%] top-[4%] font-semibold leading-none text-gold text-[clamp(9px,1.6cqw,14px)] drop-shadow-[0_0_4px_var(--gold)]"
+                        >
+                          ★
+                        </span>
+                      ) : null}
+                      {/* 等级数字：默认隐藏，悬停 / 选中显示；满级（10 级）金色常显（docs 第 6 节） */}
                       <span
-                        role="世界地图视野-在野名将"
-                        aria-hidden="true"
-                        title={copy.HERO_COPY.wild.mapMark}
-                        className="absolute left-[6%] top-[4%] font-semibold leading-none text-gold text-[clamp(9px,1.6cqw,14px)] drop-shadow-[0_0_4px_var(--gold)]"
+                        role="世界地图视野-等级"
+                        className={`absolute bottom-[4%] right-[6%] font-mono text-[clamp(8px,1.25cqw,12px)] leading-none tabular-nums transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 ${
+                          tile.level >= MAX_TILE_LEVEL ? 'font-semibold text-gold' : `${levelTone(tile.level)} ${isSelected ? '' : 'opacity-0'}`
+                        }`}
                       >
-                        ★
+                        {tile.level}
                       </span>
-                    ) : null}
-                    {/* 等级数字：默认隐藏，悬停 / 选中显示；满级（10 级）金色常显（docs 第 6 节） */}
+                    </>
+                  )}
+                  <WorldTileBadges tile={tile} mark={movingMarks?.get(`${x},${y}`)} hideCamp={!showYt} />
+                  {mark ? <AllianceMarkBadge kind={mark.kind} /> : null}
+                  {occupied ? (
                     <span
-                      role="世界地图视野-等级"
-                      className={`absolute bottom-[4%] right-[6%] font-mono text-[clamp(8px,1.25cqw,12px)] leading-none tabular-nums transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 ${
-                        tile.level >= MAX_TILE_LEVEL ? 'font-semibold text-gold' : `${levelTone(tile.level)} ${isSelected ? '' : 'opacity-0'}`
+                      role="世界地图视野-占领角旗"
+                      aria-hidden="true"
+                      className={`absolute left-0 top-0 h-[22%] w-[22%] [clip-path:polygon(0_0,100%_0,0_100%)] ${
+                        isOwn ? 'bg-accent' : ally ? 'bg-st-online' : hostile ? 'bg-st-error' : 'bg-warn'
                       }`}
-                    >
-                      {tile.level}
-                    </span>
-                  </>
-                )}
-                <WorldTileBadges tile={tile} mark={movingMarks?.get(`${x},${y}`)} hideCamp={!showYt} />
-                {mark ? <AllianceMarkBadge kind={mark.kind} /> : null}
-                {occupied ? (
-                  <span
-                    role="世界地图视野-占领角旗"
-                    aria-hidden="true"
-                    className={`absolute left-0 top-0 h-[22%] w-[22%] [clip-path:polygon(0_0,100%_0,0_100%)] ${
-                      isOwn ? 'bg-accent' : ally ? 'bg-st-online' : hostile ? 'bg-st-error' : 'bg-warn'
-                    }`}
-                  />
-                ) : null}
-              </button>
-            );
-          }),
-        )}
+                    />
+                  ) : null}
+                  {yieldInfo ? <TileYield info={yieldInfo} showNumber={showYieldNumber} /> : null}
+                </button>
+              );
+            }),
+          )}
+        </div>
+
+        {overlay}
       </div>
 
-      <WorldMapTooltip tip={tip} clusters={territoryClusters} />
+      <WorldMapTooltip tip={tip} clusters={territoryClusters} yieldMap={yieldMap} />
     </div>
   );
 }

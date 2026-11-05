@@ -121,6 +121,8 @@ export async function saveBattleReport(
 
 /** 行军行（marches 表；troops 为按兵种的 jsonb 快照） */
 export interface MarchRow {
+  /** 迷雾（AISLG-224 复核）：盲打校验被拒（到达原路返回） */
+  fog_denied?: boolean;
   id: string;
   account_id: string;
   from_city_id: string;
