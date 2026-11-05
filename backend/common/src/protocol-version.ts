@@ -708,6 +708,17 @@
  *   事件 city_moved；PUSH_CITY_STATE reason = city_moved（带 from / to）与 PUSH_TILE_STATE reason = city_moved（新旧两格）。
  *   新增 9 个错误码 MOVE_CITY_*（FAMOUS / ARMY_OUTSIDE / HAS_ALLY_FORCE / IN_BATTLE / TILE_INVALID / TILE_TAKEN / TOO_CLOSE / NO_SPACE / ATTACK_LOCK）。
  * v92（AISLG-224，战争迷雾）：未探索的地块对玩家与 Agent 不可见（开关 fog_enabled 默认关闭）。新增推送 PUSH_EXPLORATION_REPORT（op 2029）与事件 exploration_report；新错误码 TILE_UNEXPLORED / CHAT_COORD_UNEXPLORED / MOVE_CITY_TILE_UNEXPLORED（随各协议落地）。
- * v93（名将忠诚度与被俘，AISLG-228，只加不改；协议号为暂定，合入 develop 时按当时的号调整）：只有 29 位在野名将有忠诚度（招揽 / 上线迁移时为 100，每 24 小时 −10 从招揽时刻起算，赏赐 +10，欠饷每小时 −1，忠诚度 0 下野，30 及以下提醒一次）。玩家打玩家战败时：攻方随队名将 / 守城失守的城守名将可能被俘（概率 5% + (100 − 忠诚度) × 0.25%，每账号 7 天最多 1 名），囚禁 24 小时，期间不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计（新错误码 HERO_CAPTURED）。主人用新增 RANSOM_HERO（op 151）赎回：赎金 2000 × 等级从主城扣，胜方主城收 50%；超时未赎回则下野，胜方得结交资格。GET_HEROES 的 heroes[] 新增 loyalty 与 captive；新错误码 HERO_NOT_CAPTURED；新事件 hero_left / hero_captured / hero_ransomed / hero_loyalty_low；全服播报新增 hero_left / hero_captured；PUSH_HERO_STATE reason 新增 loyalty_changed / captured / ransomed / left。新表 hero_capture_limits（换季清空）；account_heroes 新增 loyalty / loyalty_at / loyalty_warned / loyalty_arrears_at / captured_by / captured_until。
+ * v93（AISLG-227，战争迷雾的遗迹与探索）：只加不改。地图新增遗迹（200 处，普通 / 稀有 / 传说，8 个种类）与 8 位一线在野名将的名将处所：
+ *   TileView 新增 relic（{ tier, kind }，已探索 / 视野内且未领取才有）与 heroSite（{ name, hero, claimed }，已探索 / 视野内才有），
+ *   迷雾关闭时两者恒为 null；FamousTileView 新增 firstExplorer（迷雾开启时给首探者用户名，尚无人首探为 null，关闭时缺省）。
+ *   行军到达遗迹格（掠夺 / 占领 / 增援 / 侦察，盲打被拒的 fog_denied 除外）即领取，奖励发到主城，每账号每北京日最多 2 处。
+ *   名城首探（8 座）与名将处所首探（8 处）各全服唯一，首探奖励与全服播报见 docs。
+ *   小地图 MapOverviewSide 新增 relic / hero_site / hero_site_claimed。
+ *   探索榜 GET_LEADERBOARD kind = exploration（数值为已探索区块数，前端按 ÷100 显示百分比）；HALL_KINDS 同步新增 exploration。
+ *   新增事件 relic_claimed / famous_first_explored / hero_site_first_explored；新增全服播报 famous_first_explored / hero_site_first_explored / legendary_relic_claimed（必达，不带坐标）。
+ *   探索简报 exploration_report 新增 relics（按种类计数）与 cells 中的 relic 坐标。
+ *   随机落城、随机迁城跳过未领取的遗迹格；高级迁城令指定遗迹格返回 MOVE_CITY_TILE_INVALID。
+ *   开关 fog_enabled 关闭时以上全部不显示、不领取、不记首探；探索榜返回空。
+ * v94（名将忠诚度与被俘，AISLG-228，只加不改）：只有 29 位在野名将有忠诚度（招揽 / 上线迁移时为 100，每 24 小时 −10 从招揽时刻起算，赏赐 +10，欠饷每小时 −1，忠诚度 0 下野，30 及以下提醒一次）。玩家打玩家战败时：攻方随队名将 / 守城失守的城守名将可能被俘（概率 5% + (100 − 忠诚度) × 0.25%，每账号 7 天最多 1 名），囚禁 24 小时，期间不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计（新错误码 HERO_CAPTURED）。主人用新增 RANSOM_HERO（op 151）赎回：赎金 2000 × 等级从主城扣，胜方主城收 50%；超时未赎回则下野，胜方得结交资格。GET_HEROES 的 heroes[] 新增 loyalty 与 captive；新错误码 HERO_NOT_CAPTURED；新事件 hero_left / hero_captured / hero_ransomed / hero_loyalty_low；全服播报新增 hero_left / hero_captured；PUSH_HERO_STATE reason 新增 loyalty_changed / captured / ransomed / left。新表 hero_capture_limits（换季清空）；account_heroes 新增 loyalty / loyalty_at / loyalty_warned / loyalty_arrears_at / captured_by / captured_until。
  */
-export const PROTOCOL_VERSION = 93;
+export const PROTOCOL_VERSION = 94;

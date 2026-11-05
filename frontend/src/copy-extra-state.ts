@@ -69,6 +69,12 @@ export const EXTRA_STATE = {
     marchTaskPlunder: '（掠夺）',
     marchTaskOccupy: '（占领）',
     marchReturn: (pos: string, clock: string) => `驻军自 ${pos} 启程返城，预计 ${clock} 到达`,
+    relicClaimed: (kind: string, pos: string) => `发掘了${kind} ${pos}，奖励已入主城`,
+    relicTaken: (pos: string) => `${pos} 的遗迹已被发掘`,
+    relicLimit: (pos: string) => `今日已领满 2 处遗迹，${pos} 的遗迹留在原地`,
+    famousFirst: (name: string) => `首探名城 ${name}，奖励已入主城`,
+    heroSiteFirst: (site: string, hero: string, unlocked: boolean) =>
+      unlocked ? `首探处所「${site}」（${hero}），可直接结交` : `首探处所「${site}」（${hero}），名将已出山，奖励已入主城`,
     marchOut: (task: string, pos: string, troops: string, clock: string) =>
       `部队出征${task} → ${pos}（${troops}），预计 ${clock} 到达`,
     marchArrived: (pos: string) => `行军到达 ${pos}`,
@@ -157,6 +163,9 @@ export const EXTRA_STATE = {
     goldMineFirst: (actor: string, pos: string) => `${actor} 首个占领了金矿 ${pos}`,
     cityBroken: (actor: string) => `${actor} 的主城被 NPC 攻破`,
     winStreak: (actor: string, streak: string) => `${actor} 的军队一小时内连胜 ${streak} 场`,
+    famousFirst: (actor: string, name: string) => `${actor} 首探了名城 ${name}`,
+    heroSiteFirst: (actor: string, site: string, hero: string) => `${actor} 首探了 ${hero} 的处所「${site}」`,
+    legendaryRelic: (actor: string, kind: string) => `${actor} 发掘了传说遗迹：${kind}`,
     cityConquered: (actor: string, from: string, cityName: string, pos: string) =>
       `${actor} 攻占了${from ? ` ${from} 的` : '他人的'}分城「${cityName}」${pos}`,
     arenaChampion: (actor: string, previous: string) => `${actor} 在竞技场登上第 1 名，取代了 ${previous}`,

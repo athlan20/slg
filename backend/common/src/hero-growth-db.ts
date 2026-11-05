@@ -14,7 +14,7 @@ export async function mainCityId(q: Queryable, accountId: string): Promise<strin
   return res.rowCount ? (res.rows[0] as { id: string }).id : null;
 }
 
-/** 占用判定：被俘囚禁 → HERO_CAPTURED（v93）；历练中 → HERO_TRAINING；随队出征（含返程）→ HERO_BUSY；任城守 → HERO_BUSY；否则 null */
+/** 占用判定：被俘囚禁 → HERO_CAPTURED（v94）；历练中 → HERO_TRAINING；随队出征（含返程）→ HERO_BUSY；任城守 → HERO_BUSY；否则 null */
 export async function heroBusyCode(
   q: Queryable,
   accountId: string,

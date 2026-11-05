@@ -18,6 +18,7 @@ export function WorldExplorationReport({ onCenter }: { onCenter: (x: number, y: 
         </button>
       </header>
       <p className="mb-2 text-muted">{F.reportSummary(top.chunks)}</p>
+      {top.relics && top.relics.total > 0 ? <p className="mb-2 text-muted">{F.reportRelics(top.relics.total)}</p> : null}
       <p className="mb-1 text-muted">{F.reportCells}</p>
       <ul className="flex flex-col gap-1">
         {top.cells.map((cell) => (

@@ -1,4 +1,4 @@
-// 名将忠诚度与被俘的协议文档（RANSOM_HERO op 151，v93，AISLG-228）。数值直引 hero-loyalty.ts 的真实常量。
+// 名将忠诚度与被俘的协议文档（RANSOM_HERO op 151，v94，AISLG-228）。数值直引 hero-loyalty.ts 的真实常量。
 
 import { Op } from './protocol';
 import type { RequestOpDoc } from './protocol-doc';
@@ -26,7 +26,7 @@ export const CAPTURE_RULES_DESC = `被俘（只在玩家打玩家时判定；打
 export const REQUEST_RANSOM_HERO: RequestOpDoc = {
   kind: 'request',
   name: 'RANSOM_HERO',
-  title: '赎回被俘名将（v93，AISLG-228）',
+  title: '赎回被俘名将（v94，AISLG-228）',
   preAuth: false,
   summary: `只有名将的主人能赎回处于囚禁中的名将（GET_HEROES 的 heroes[].captive 非 null）。赎金 = ${RANSOM_GOLD_PER_LEVEL} × 名将等级，从主人主城扣全额；金币不足返回 INSUFFICIENT_RESOURCES（附 city）且不改任何数据。成功后胜方主城收 ${RANSOM_TAKER_PERCENT}%（向下取整），另一半销毁；名将立刻回归，忠诚度 −${LOYALTY_RANSOM_DROP}（最低 1）。囚禁已到期（captive.capturedUntil 已过）时返回 HERO_NOT_CAPTURED，名将即将或已经下野。\n\n${CAPTURE_RULES_DESC}\n\n${LOYALTY_RULES_DESC}`,
   requestFields: [{ name: 'heroId', type: 'string', desc: '必填。被俘名将的 id（GET_HEROES 的 heroes[].id）。' }],

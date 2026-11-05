@@ -1,4 +1,4 @@
-// 赎回被俘名将（v93，AISLG-228）：RANSOM_HERO（op 151）。只有主人能赎；赎金 = 2000 × 等级，从主人主城扣全额，
+// 赎回被俘名将（v94，AISLG-228）：RANSOM_HERO（op 151）。只有主人能赎；赎金 = 2000 × 等级，从主人主城扣全额，
 // 胜方主城收 50%，另一半销毁（规则见 common/src/hero-capture-db.ts 的 payRansom）。锁序与 GIFT_HERO 一致：
 // 先锁主人主城（lockCitySnapshot 同时结算生产），再武将行，最后胜方主城。与囚禁到期的下野共用武将行锁互斥。
 

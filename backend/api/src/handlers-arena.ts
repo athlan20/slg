@@ -222,7 +222,7 @@ export async function handleSetArenaLineup(
         if (!hero || hero.account_id !== accountId) {
           throw new ArenaReject('HERO_NOT_FOUND');
         }
-        // v93（AISLG-228）：被俘囚禁中的武将不能上阵
+        // v94（AISLG-228）：被俘囚禁中的武将不能上阵
         if (isCaptive(hero)) {
           throw new ArenaReject('HERO_CAPTURED');
         }

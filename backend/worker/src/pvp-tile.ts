@@ -188,7 +188,7 @@ export async function resolvePvpOccupyArrival(
     null, null, tileCasualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
-  // v93（AISLG-228）：玩家打玩家的被俘判定（野地战只有攻方随队名将可能被俘）
+  // v94（AISLG-228）：玩家打玩家的被俘判定（野地战只有攻方随队名将可能被俘）
   await captureAfterPvpBattle(client, {
     march, attackerWon: result.attackerWon, defenderAccountId: owner.account_id,
     cityId: null, guardHeroId: null, notifies,

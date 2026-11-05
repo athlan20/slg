@@ -6,7 +6,7 @@ import type { AllianceLeaderboardEntryView } from './protocol-alliance';
 import type { TroopKind } from './protocol';
 
 /** 排行榜类别（v23 AISLG-61；v50 AISLG-133 新增 model 模型榜；v70 AISLG-185 新增 alliance 联盟榜） */
-export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance', 'nobility'] as const;
+export const LEADERBOARD_KINDS = ['power', 'territory', 'plunder', 'model', 'alliance', 'nobility', 'exploration'] as const;
 
 export type LeaderboardKind = (typeof LEADERBOARD_KINDS)[number];
 
@@ -71,7 +71,7 @@ export const SERVER_BROADCAST_TYPES = [
   'yt_finished',
   // v36 AISLG-115 名将获得：全服唯一的追求目标
   'hero_granted',
-  // v93 AISLG-228 名将下野 / 被俘
+  // v94 AISLG-228 名将下野 / 被俘
   'hero_left',
   'hero_captured',
   // v40 AISLG-124 玩家占领玩家分城
@@ -82,6 +82,10 @@ export const SERVER_BROADCAST_TYPES = [
   'announcement',
   // v76 AISLG-197 爵位：升到大夫及以上
   'nobility_promoted',
+  // v93（AISLG-227）战争迷雾：名城 / 名将处所首探、传说遗迹被领取（必达，不带坐标）
+  'famous_first_explored',
+  'hero_site_first_explored',
+  'legendary_relic_claimed',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

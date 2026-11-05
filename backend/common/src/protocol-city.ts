@@ -114,8 +114,9 @@ export interface CityStatePushData {
    *  troops_disbanded=城内驻军被遣散（v84，AISLG-209；cityId 为遣散的城，收到后重新 GET_STATE）；
    *  troop_pools_changed=伤兵 / 俘虏 / 逃兵池子发生变化（v85，AISLG-212；战斗结算入账、治疗 / 招降 / 劝回、放弃 / 释放、断粮兵变与过期清理后）；
    *  stratagem=城池中了计谋（v86，AISLG-211；烧粮 / 十面埋伏 / 趁火打劫 / 欺敌覆盖；收到后重新 GET_STATE）；
-   *  city_moved=城池迁移（v91，AISLG-220；cityId 为迁走的城，from / to 为新旧坐标，收到后重新 GET_STATE） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem' | 'city_moved';
+   *  city_moved=城池迁移（v91，AISLG-220；cityId 为迁走的城，from / to 为新旧坐标，收到后重新 GET_STATE）；
+   *  fog_reward=遗迹 / 名城首探奖励到账（v93，AISLG-227；cityId 为主城，收到后重新 GET_STATE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem' | 'city_moved' | 'fog_reward';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -223,6 +224,12 @@ export const EventType = {
   MARCH_COMPLETED: 'march_completed',
   /** v92（AISLG-224）：探索简报（去程新探索了区块才生成；detail = 新区块计数、按类计数与最多 10 个坐标，见 fog-record.ts） */
   EXPLORATION_REPORT: 'exploration_report',
+  /** v93（AISLG-227）：遗迹领取结果（detail.outcome = claimed / taken / limit；claimed 时带 tier / kind / reward / items） */
+  RELIC_CLAIMED: 'relic_claimed',
+  /** v93（AISLG-227）：名城首探奖励（detail = { name, reward, items }） */
+  FAMOUS_FIRST_EXPLORED: 'famous_first_explored',
+  /** v93（AISLG-227）：名将处所首探奖励（detail = { name, hero, reward, unlocked }） */
+  HERO_SITE_FIRST_EXPLORED: 'hero_site_first_explored',
   /** v12：野地被占领（detail.terrain / level / 加成） */
   WILDERNESS_OCCUPIED: 'wilderness_occupied',
   /** v12：野地占领失效（detail.cause = npc_attack / recall / conquest） */
@@ -255,13 +262,13 @@ export const EventType = {
   HERO_LEVEL_UP: 'hero_level_up',
   HERO_GRANTED: 'hero_granted',
   GUARD_CHANGED: 'guard_changed',
-  /** v93（AISLG-228）：名将离开主人（忠诚度 0 下野，或被俘超 24 小时未赎回）；detail = { heroName, cause = loyalty / captive_expired, ... } */
+  /** v94（AISLG-228）：名将离开主人（忠诚度 0 下野，或被俘超 24 小时未赎回）；detail = { heroName, cause = loyalty / captive_expired, ... } */
   HERO_LEFT: 'hero_left',
-  /** v93（AISLG-228）：名将被俘（主人与胜方各一条；detail = { heroId, heroName, captorUsername / ownerUsername, capturedUntil, ransomGold }） */
+  /** v94（AISLG-228）：名将被俘（主人与胜方各一条；detail = { heroId, heroName, captorUsername / ownerUsername, capturedUntil, ransomGold }） */
   HERO_CAPTURED: 'hero_captured',
-  /** v93（AISLG-228）：名将被赎回（主人与胜方各一条；detail = { heroId, heroName, ransomGold, taxShare, destroyed }） */
+  /** v94（AISLG-228）：名将被赎回（主人与胜方各一条；detail = { heroId, heroName, ransomGold, taxShare, destroyed }） */
   HERO_RANSOMED: 'hero_ransomed',
-  /** v93（AISLG-228）：忠诚度降到 30 及以下（每次跌破只提醒一次；detail = { heroId, heroName, loyalty }） */
+  /** v94（AISLG-228）：忠诚度降到 30 及以下（每次跌破只提醒一次；detail = { heroId, heroName, loyalty }） */
   HERO_LOYALTY_LOW: 'hero_loyalty_low',
   /** v29：黄巾之乱结算奖励（AISLG-76，detail = { rank, killed, tier, reward, reason }） */
   YT_REWARD: 'yt_reward',

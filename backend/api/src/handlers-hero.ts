@@ -36,8 +36,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /**
  * 出征 / 侦察 / 截击 / 运输配将校验（v36，AISLG-114，MARCH 与 SCOUT 共用）：
- * 武将属于本账号、未被俘（v93）、未重伤、未欠饷、未随行（另一支部队）、未任城守（城守不能同时出征）。
- * 武将行加 FOR UPDATE（v93）：与同一武将的下野 / 被俘 / 赎回串行，避免行军落库时武将已离开。
+ * 武将属于本账号、未被俘（v94）、未重伤、未欠饷、未随行（另一支部队）、未任城守（城守不能同时出征）。
+ * 武将行加 FOR UPDATE（v94）：与同一武将的下野 / 被俘 / 赎回串行，避免行军落库时武将已离开。
  * 通过返回武将行，否则返回错误码。
  */
 export async function checkHeroMarchable(
@@ -270,7 +270,7 @@ export async function handleDismissHero(
       respondError(ctx.registry, conn, op, seq, 'HERO_TRAINING');
       return;
     }
-    // v93：被俘囚禁中不能解雇（赎回或囚禁到期后再说）
+    // v94：被俘囚禁中不能解雇（赎回或囚禁到期后再说）
     if (isCaptive(hero)) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'HERO_CAPTURED');

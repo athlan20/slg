@@ -2,7 +2,7 @@
 // 规则与存档读写见 season-db.ts；维护态拦截见 api/src/maintenance-gate.ts。
 
 /** 名人堂 / 存档的榜种（GET_HALL_OF_FAME 的 kind；model 走模型榜存档） */
-export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model', 'alliance'] as const;
+export const HALL_KINDS = ['power', 'territory', 'plunder', 'arena', 'starTower', 'model', 'alliance', 'exploration'] as const;
 export type HallKind = (typeof HALL_KINDS)[number];
 
 /** 当前赛季视图（GET_SEASON） */

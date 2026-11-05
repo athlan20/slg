@@ -3,7 +3,7 @@
 // free_points = 未分配的自由点数；train_* = 历练中（到点由 Worker 结算经验）；gift_* / reset_* = 每游戏日次数。
 // world_tiles 新增 wild_*：在野名将落位在该野地（开服分配后固定，见 wild-famous-db.ts）。
 // hero_unlocks = 结交资格（打赢过该野地原住守军）；hero_friendship = 结交进度（好感 / 当日次数）。
-// v93（AISLG-228 名将忠诚度与被俘）：account_heroes 新增 loyalty（只有在野名将非 NULL）、loyalty_at（自然下降
+// v94（AISLG-228 名将忠诚度与被俘）：account_heroes 新增 loyalty（只有在野名将非 NULL）、loyalty_at（自然下降
 // 的结算锚点）、loyalty_warned（已发过 30 线提醒）、loyalty_arrears_at（欠饷每小时 −1 的锚点）、
 // captured_by / captured_until（被俘的胜方账号与囚禁截止）。上线时已有的在野名将忠诚度 100，锚点为迁移时刻。
 // hero_capture_limits = 每账号最近一次被俘时刻（7 天内最多被俘 1 名）。

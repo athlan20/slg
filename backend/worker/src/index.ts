@@ -147,7 +147,7 @@ async function main(): Promise<void> {
       console.error('worker hero salary tick failed:', err instanceof Error ? err.message : err);
     }
     try {
-      // v93（AISLG-228）：名将忠诚度——每 24 小时（随缩放）−10，0 下野；囚禁到期未赎回则下野、胜方得结交资格
+      // v94（AISLG-228）：名将忠诚度——每 24 小时（随缩放）−10，0 下野；囚禁到期未赎回则下野、胜方得结交资格
       await processHeroLoyalty(pool);
     } catch (err) {
       console.error('worker hero loyalty tick failed:', err instanceof Error ? err.message : err);

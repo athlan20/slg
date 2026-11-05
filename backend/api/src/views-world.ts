@@ -250,6 +250,9 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     durability: durabilityView(row, requesterAccountId),
     wildFamous: wildFamousMarked(row),
     reserve: reserveOf(row, garrison, requesterAccountId),
+    // 遗迹 / 名将处所（v93）：默认无；开启迷雾时由 fog-view.ts 的 applySiteViews 按探索状态补上
+    relic: null,
+    heroSite: null,
     // 战争迷雾（v92）：视图默认实时可见；开启迷雾时由 fog-view.ts 按探索状态改写
     fog: 'visible',
     seenAt: null,

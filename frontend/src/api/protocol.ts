@@ -232,7 +232,7 @@ export const Op = {
   BUY_ITEM: 149,
   /** 城池迁移（v91，AISLG-220）：随机迁（迁城令）/ 指定坐标迁（高级迁城令），preview 只预览 */
   MOVE_CITY: 150,
-  /** 赎回被俘名将（v93，AISLG-228）：data.heroId，赎金 = 2000 × 等级从主城扣 */
+  /** 赎回被俘名将（v94，AISLG-228）：data.heroId，赎金 = 2000 × 等级从主城扣 */
   RANSOM_HERO: 151,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,

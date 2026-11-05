@@ -53,6 +53,12 @@ export const EXTRA_STATE_EN = {
     accountRenamed: (from: string, to: string) => `Nickname changed: ${from} → ${to}`,
     marchTaskPlunder: ' (plunder)',
     marchTaskOccupy: ' (occupy)',
+    relicClaimed: (kind: string, pos: string) => `Unearthed ${kind} ${pos}; rewards sent to your main city`,
+    relicTaken: (pos: string) => `The relic at ${pos} has already been unearthed`,
+    relicLimit: (pos: string) => `Daily limit of 2 relics reached; the relic at ${pos} stays where it is`,
+    famousFirst: (name: string) => `First to explore famous city ${name}; rewards sent to your main city`,
+    heroSiteFirst: (site: string, hero: string, unlocked: boolean) =>
+      unlocked ? `First to explore ${site} (${hero}); you can befriend them directly` : `First to explore ${site} (${hero}); they have already joined the cause, rewards sent`,
     marchReturn: (pos: string, clock: string) => `Garrison set out from ${pos} for home, arriving about ${clock}`,
     marchOut: (task: string, pos: string, troops: string, clock: string) =>
       `Army marching out${task} → ${pos} (${troops}), arriving about ${clock}`,
@@ -137,6 +143,9 @@ export const EXTRA_STATE_EN = {
     npcCityEmptied: (actor: string, level: string, pos: string) => `${actor} emptied the NPC city Lv${level} ${pos}`,
     goldMineFirst: (actor: string, pos: string) => `${actor} was the first to occupy the gold mine ${pos}`,
     cityBroken: (actor: string) => `${actor}'s main city was broken by an NPC attack`,
+    famousFirst: (actor: string, name: string) => `${actor} was first to explore famous city ${name}`,
+    heroSiteFirst: (actor: string, site: string, hero: string) => `${actor} was first to explore ${hero}'s ${site}`,
+    legendaryRelic: (actor: string, kind: string) => `${actor} unearthed a legendary relic: ${kind}`,
     winStreak: (actor: string, streak: string) => `${actor}'s army won ${streak} battles in a row within an hour`,
     cityConquered: (actor: string, from: string, cityName: string, pos: string) =>
       `${actor} took over${from ? ` ${from}'s` : " another player's"} branch city "${cityName}" ${pos}`,
