@@ -371,8 +371,6 @@ export function WorldMapGrid({
                   onFocus={(e) => showTip(tile, isOwn, e.currentTarget)}
                   onBlur={hideTip}
                   className={`group relative grid cursor-pointer place-items-center overflow-hidden rounded transition-[filter,box-shadow] duration-100 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
-                    explored ? 'brightness-[.4] saturate-50' : ''
-                  } ${
                     TERRAIN_CLASS[tile.terrain] ?? TERRAIN_CLASS.plain
                   } ${
                     // 已掠空的 NPC 城：整格变暗（v23 AISLG-55）
@@ -407,7 +405,8 @@ export function WorldMapGrid({
                     <>
                       <TerrainIcon terrain={tile.terrain} className="w-[40%]" />
                       {/* 在野名将标记（v54，AISLG-144）：野地里藏着未被获得的名将，公开可见 */}
-                      {tile.wildFamous ? (
+                      {/* 名将处所（AISLG-227）取代 ★：有处所信息的格不再画 ★，其余在野名将照旧 */}
+                      {tile.wildFamous && !tile.heroSite ? (
                         <span
                           role="世界地图视野-在野名将"
                           aria-hidden="true"
@@ -442,6 +441,8 @@ export function WorldMapGrid({
                     />
                   ) : null}
                   {yieldInfo ? <TileYield info={yieldInfo} showNumber={showYieldNumber} /> : null}
+                  {/* 已探索格：格内遮罩等同亮度 40%（AISLG-227）；遗迹 / 处所标记 z-[2] 在遮罩之上，不被压暗 */}
+                  {explored ? <span role="世界地图视野-阴影压暗" aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/60 backdrop-saturate-50" /> : null}
                 </button>
               );
             }),
