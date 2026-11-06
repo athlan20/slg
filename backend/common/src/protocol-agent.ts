@@ -28,6 +28,8 @@ export interface OfflineDigestView {
   npcRaids: number;
   /** 被 NPC 攻破丢失的野地数 */
   wildernessLost: number;
+  /** 离线期间因长期未上线（本人与 Agent 都 7 天没上线）被收回的野地数（v98，AISLG-238；不计入 wildernessLost） */
+  wildernessInactiveLost: number;
   /** 断粮哗变损失的兵力合计（v34，AISLG-107；离线期间各城各次哗变减员之和，不含在 troopsLost 内） */
   mutinyLost: number;
   /** 最接近满仓的资源（占其储量上限 ≥ 80% 时给出；其余为 null） */

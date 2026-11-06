@@ -747,5 +747,13 @@
  *   新错误码 FACILITY_TILE_INVALID / FACILITY_MAX_LEVEL / FACILITY_BUILDING / FACILITY_LIMIT（资源不足沿用 INSUFFICIENT_RESOURCES）。
  *   新表 wilderness_facilities（换季清空）；fog_seen 新增 facility_level（上次看到的望楼等级，向后兼容）。
  *   迷雾开关 fog_enabled 关闭时望楼仍可建，但不产生视野效果。
+ * v98（长期不活跃账号的野地收回，AISLG-238，只加不改）：本人和 Agent 都 7 天没上线（阈值现实时间，
+ *   不随 time_scale 变化，与盟主自动转让同一个 7 天）的账号，Worker 每小时扫一轮，把名下（所有城合计）
+ *   野地一次全部收回：地块变无主（当前储量不重置、不设换主保护，其他玩家可立即占领），驻军直接回到
+ *   这块地所属的城（不走行军、不损失），地上的望楼毁掉（不退资源）。主城 / 分城与城内资源兵力不受影响；
+ *   已收回的地不退还，玩家回来后新占的地需再连续 7 天不活跃才会被收回；收完后重复扫描不再产生事件。
+ *   wilderness_lost 的 detail.cause 新增 inactive（与 facility_lost 的 cause 同名取值）；离线日报
+ *   offline 新增 wildernessInactiveLost（离线期间因长期未上线被收回的野地数，与 wildernessLost 分开计）。
+ *   无新增 op / 推送号 / 错误码，现有客户端无需改动。
  */
-export const PROTOCOL_VERSION = 97;
+export const PROTOCOL_VERSION = 98;

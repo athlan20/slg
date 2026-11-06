@@ -486,7 +486,7 @@ export const PUSH_TILE_STATE: PushOpDoc = {
   kind: 'push',
   name: 'PUSH_TILE_STATE',
   title: '推送：地块归属 / 驻军变化（v12）',
-  summary: `地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军、facility_completed=望楼建成 / 升级完成（v97，AISLG-232，tile.facility 为新等级）。望楼随野地一起毁掉时不单独推：那一格另有一条 wilderness_lost，tile.facility 随之变 null。`,
+  summary: `地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回 / NPC 袭击失守 / 账号长期未上线被收回，v98 AISLG-238，cause=inactive；此时驻军已回到归属城、望楼已毁、地块变为无主）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军、facility_completed=望楼建成 / 升级完成（v97，AISLG-232，tile.facility 为新等级）。望楼随野地一起毁掉时不单独推：那一格另有一条 wilderness_lost，tile.facility 随之变 null。`,
   dataFields: [
     { name: 'reason', type: 'string', desc: '触发本次推送的变化类别（见 summary）。' },
     { name: 'tile', type: 'object', desc: '变化后的地块视图，字段与 GET_WORLD_MAP 的 tiles[] 相同。' },
@@ -494,5 +494,5 @@ export const PUSH_TILE_STATE: PushOpDoc = {
   examples: [
     { op: Op.PUSH_TILE_STATE, push: true, data: { reason: 'wilderness_occupied', tile: TILE_OWNED } },
   ],
-  agentNote: `NPC 会周期性袭击玩家占领的野地（袭击部队编成按野地等级推导，参考战力 = 等级 × ${armyPower(npcRaidArmy(1))}，定稿编成；基准每 30 分钟随机袭击一块已占领野地，v19 校准；实际 ÷ 全局时间缩放）：收到 wilderness_lost（cause=npc_attack）说明驻军全灭，用 GET_STATE 对齐领土与驻军；袭击结算同样生成守方视角战报。`,
+  agentNote: `NPC 会周期性袭击玩家占领的野地（袭击部队编成按野地等级推导，参考战力 = 等级 × ${armyPower(npcRaidArmy(1))}，定稿编成；基准每 30 分钟随机袭击一块已占领野地，v19 校准；实际 ÷ 全局时间缩放）：收到 wilderness_lost（cause=npc_attack）说明驻军全灭，用 GET_STATE 对齐领土与驻军；袭击结算同样生成守方视角战报。本人和 Agent 都 7 天没上线（现实时间）的账号，系统每小时扫一轮把名下野地一次全部收回——收到 wilderness_lost（cause=inactive）说明地块已变无主，驻军已不损失地回到归属城、望楼已毁（不退款）、当前储量不重置，其他玩家可立即占领；城与城内资源兵力不受影响。`,
 };
