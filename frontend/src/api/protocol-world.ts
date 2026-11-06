@@ -377,6 +377,33 @@ export interface WorldMapResponseData {
   tiles: TileView[];
 }
 
+/** 视野内他人部队的规模档位（v96，AISLG-230）：小股 1–499 / 中军 500–4 999 / 大军 5 000+ */
+export type VisibleMarchScale = 'small' | 'medium' | 'large';
+
+/** 他人部队的主人关系（v96）：与地块 owner.relation 同一口径（解除友好冷却期内为 friendly） */
+export type VisibleMarchRelation = 'ally' | 'friendly' | 'hostile' | 'neutral';
+
+/** 视野内一支他人部队（v96，AISLG-230）：没有目标格 / 出发城 / 时刻 / 兵力 / 兵种 / 将领 / 任务类型 */
+export interface VisibleMarchView {
+  /** 行军 id，与来袭预警的 attackId（= 后端 marchId）匹配 */
+  id: string;
+  /** 当前位置（格坐标，1 位小数） */
+  x: number;
+  y: number;
+  /** 速度（格/秒），只用来外推图标位置 */
+  vx: number;
+  vy: number;
+  returning: boolean;
+  scale: VisibleMarchScale;
+  owner: { username: string; allianceName: string | null; relation: VisibleMarchRelation };
+}
+
+/** GET_VISIBLE_MARCHES 响应（v96） */
+export interface GetVisibleMarchesResponseData {
+  serverTime: string;
+  marches: VisibleMarchView[];
+}
+
 /** 小地图城池点位的归属：本方 / 他方玩家城池 / NPC 城池 / 未被占领的名城 */
 /** famous_rumor（v92）：未探索的名城在锚点上的大致方位 */
 export type MapOverviewSide =
