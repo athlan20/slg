@@ -1,4 +1,4 @@
-// 望楼（野地设施）的协议处理（v96，AISLG-232）：FACILITY_BUILD 一条——没盖过就新建 1 级，盖过就升一级。
+// 望楼（野地设施）的协议处理（v97，AISLG-232）：FACILITY_BUILD 一条——没盖过就新建 1 级，盖过就升一级。
 // 规则与数值见 common/src/facility.ts，落库 / 视图 / 丢失见 common/src/facility-db.ts，
 // 到期完成见 worker/src/facility-tick.ts。
 //

@@ -1,4 +1,4 @@
-// 野地设施（望楼）的表结构（AISLG-232，v96）：新表 wilderness_facilities，只加不改旧表。
+// 野地设施（望楼）的表结构（AISLG-232，v97）：新表 wilderness_facilities，只加不改旧表。
 // 由 db.ts 的 ensureSchema 幂等创建；随换季清空（season-tables.ts RESET）。
 // 一行 = 一块野地上的设施：level 是**已完成**的等级（建造中为 0），building_to / finish_at 是进行中的那一级
 //（同一块地同一时间只有一个进行中的建造 / 升级，由行锁 + 这两个字段表达）。

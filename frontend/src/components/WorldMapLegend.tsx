@@ -9,9 +9,19 @@ import { ALLIANCE_MARK_KINDS } from '../api/protocol';
 import { AllianceMarkGlyph, CityMark, TERRAIN_CLASS, TerrainIcon } from './worldMapMarks';
 import { TERRITORY_SWATCH_CLASS } from './map/TerritoryOverlay';
 import type { TerritoryRelation } from './map/territoryBorders';
+import { ENEMY_MARCH_TONE_COLOR, type EnemyMarchTone } from './map/enemyMarchGeometry';
 
 /** 领地图例的四种关系（顺序固定：自己 → 盟友 → 敌对 → 其他） */
 const TERRITORY_LEGEND_ORDER: TerritoryRelation[] = ['own', 'ally', 'hostile', 'other'];
+
+/** 他人部队图例的顺序（来袭 → 敌对 → 中立 → 同盟友盟）与对应的文案键 */
+const ENEMY_MARCH_LEGEND_ORDER: EnemyMarchTone[] = ['incoming', 'hostile', 'neutral', 'friend'];
+const ENEMY_MARCH_LEGEND_LABEL: Record<EnemyMarchTone, 'legendIncoming' | 'legendHostile' | 'legendNeutral' | 'legendFriend'> = {
+  incoming: 'legendIncoming',
+  hostile: 'legendHostile',
+  neutral: 'legendNeutral',
+  friend: 'legendFriend',
+};
 
 const itemCls = 'flex items-center gap-1 whitespace-nowrap text-[10.5px] text-dim';
 const swatchCls = 'grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border border-line-soft';
@@ -53,7 +63,7 @@ export function WorldMapLegend() {
           {COPY.worldMap.legendLevel}
         </li>
       </ul>
-      {/* 视野（v96，AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格（取代野地原来的 3 格） */}
+      {/* 视野（v97，AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格（取代野地原来的 3 格） */}
       <ul role="世界地图图例-视野" className="flex flex-wrap gap-x-2.5 gap-y-1">
         <li className={itemCls}>
           <span role="世界地图图例-望楼" className={`${swatchCls} border-accent/60 font-semibold text-accent`}>
@@ -74,6 +84,29 @@ export function WorldMapLegend() {
           <span role="世界地图图例-领地-连片金边" className="grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border-2 border-gold bg-t-plain" />
           {EXTRA_MAP.territoryLegend.cluster}
         </li>
+      </ul>
+      {/* 他人部队（AISLG-230）：跟「行军」图层走，颜色按与你的关系：来袭 / 敌对 / 中立 / 同盟友盟 */}
+      <ul role="世界地图图例-他人部队" className="flex flex-wrap gap-x-2.5 gap-y-1">
+        <li className={itemCls}>
+          <span
+            role="世界地图图例-他人部队-图标"
+            className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-[9px] font-semibold leading-none text-bg"
+            style={{ background: ENEMY_MARCH_TONE_COLOR.neutral }}
+          >
+            {EXTRA_MAP.enemyMarch.glyph}
+          </span>
+          {EXTRA_MAP.enemyMarch.legend}
+        </li>
+        {ENEMY_MARCH_LEGEND_ORDER.map((tone) => (
+          <li key={tone} className={itemCls}>
+            <span
+              role={`世界地图图例-他人部队-${tone}`}
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: ENEMY_MARCH_TONE_COLOR[tone] }}
+            />
+            {EXTRA_MAP.enemyMarch[ENEMY_MARCH_LEGEND_LABEL[tone]]}
+          </li>
+        ))}
       </ul>
       {/* 联盟标记（AISLG-184 / F2）：四种符号，与地块上的徽章一致 */}
       <ul role="世界地图图例-联盟标记" aria-label={ALLIANCE_COPY.marks.legend} className="flex flex-wrap gap-x-2.5 gap-y-1">

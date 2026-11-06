@@ -349,7 +349,7 @@ export async function addTileArmy(
 
 /**
  * 清空地块驻军并清除占领（野地失守 / 召回共用；NPC 城池地块不适用）。
- * v96（AISLG-232）：这块地上的望楼一并毁掉（不转给新主人、不退资源，原主人收到 facility_lost）——
+ * v97（AISLG-232）：这块地上的望楼一并毁掉（不转给新主人、不退资源，原主人收到 facility_lost）——
  * 野地失守的入口都走这里，避免每个入口各写一份。
  */
 export async function clearTileOccupation(

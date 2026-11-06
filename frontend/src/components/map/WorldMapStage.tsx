@@ -38,6 +38,8 @@ import { yieldOfTile, type YieldInfo } from './yieldTable';
 export const PAN_STEP = 5;
 /** 容器尺寸变化后等多久再重算窗口（毫秒）：拖拽改窗口大小时不连发请求 */
 const RESIZE_DEBOUNCE_MS = 120;
+/** 视野内他人部队的刷新间隔（AISLG-230，真实时间，不随 time_scale 变）：地图打开时每 5 秒拉一次当前窗口 */
+const ENEMY_MARCH_POLL_MS = 5_000;
 
 interface WorldMapStageProps {
   world: WorldSession;
@@ -76,6 +78,23 @@ export function WorldMapStage({
     }, 15_000);
     return () => globalThis.clearInterval(timer);
   }, [fogRouteHit, world.refresh]);
+  // 视野内他人部队（AISLG-230）：地图打开（本组件挂载）且拿到窗口后每 5 秒按当前窗口拉一次；
+  // 换窗口（平移 / 缩放）立刻补一次；切页或关地图时本组件卸载，定时器随之停掉。
+  const { fetchEnemyMarches } = world;
+  const windowX = world.window?.x ?? null;
+  const windowY = world.window?.y ?? null;
+  const windowW = world.window?.w ?? null;
+  const windowH = world.window?.h ?? null;
+  useEffect(() => {
+    if (windowX === null || windowY === null) {
+      return undefined;
+    }
+    void fetchEnemyMarches();
+    const timer = globalThis.setInterval(() => {
+      void fetchEnemyMarches();
+    }, ENEMY_MARCH_POLL_MS);
+    return () => globalThis.clearInterval(timer);
+  }, [fetchEnemyMarches, windowX, windowY, windowW, windowH]);
   const { COPY, RESOURCE_LABEL, MAPUI_COPY, YT_COPY } = copy;
   const { go } = useNav();
   const boxRef = useRef<HTMLDivElement | null>(null);
@@ -211,6 +230,7 @@ export function WorldMapStage({
                 marches={city?.marches ?? []}
                 cities={cityList}
                 warnings={npcWarnings}
+                enemyMarches={world.enemyMarches}
                 onOpenMarch={setDetailId}
                 onCenter={world.centerOn}
                 onOpenMarchList={() => go('army')}

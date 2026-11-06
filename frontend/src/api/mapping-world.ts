@@ -348,7 +348,7 @@ function baseEventText(view: EventView): string {
       }
       return EXTRA_STATE.event.wildLost(posLost);
     }
-    // 望楼（v96，AISLG-232）：建成 / 升级完成、随野地毁掉
+    // 望楼（v97，AISLG-232）：建成 / 升级完成、随野地毁掉
     case 'facility_completed':
       return EXTRA_STATE.event.facilityCompleted(posOf(view.detail), Number(view.detail.level ?? 0));
     case 'facility_lost':

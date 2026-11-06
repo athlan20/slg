@@ -943,19 +943,19 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。',
   },
   FACILITY_TILE_INVALID: {
-    desc: '（v96，AISLG-232）目标格不是本账号占领的野地：城池格、NPC 城池、无主野地、别人占领的野地都算。不扣任何资源。',
+    desc: '（v97，AISLG-232）目标格不是本账号占领的野地：城池格、NPC 城池、无主野地、别人占领的野地都算。不扣任何资源。',
     action: '用 GET_STATE 的 city.territory 核对本账号占领的野地坐标，只对列表中的地块发起 FACILITY_BUILD。',
   },
   FACILITY_MAX_LEVEL: {
-    desc: '（v96，AISLG-232）这块地的望楼已经满级（3 级），不能再升级。不扣任何资源。',
+    desc: '（v97，AISLG-232）这块地的望楼已经满级（3 级），不能再升级。不扣任何资源。',
     action: '换一块自己占领的野地建望楼；每座城最多 2 座。',
   },
   FACILITY_BUILDING: {
-    desc: '（v96，AISLG-232）这块地的望楼正在建造或升级中，同一块地同一时间只能有一个进行中的工程。不扣任何资源。',
+    desc: '（v97，AISLG-232）这块地的望楼正在建造或升级中，同一块地同一时间只能有一个进行中的工程。不扣任何资源。',
     action: '等 city.territory[].facility.building.finishAt 到点（Worker 到期完成）后再发起下一次升级。',
   },
   FACILITY_LIMIT: {
-    desc: '（v96，AISLG-232）这座城名下的望楼已达上限：每座城最多 2 座（主城 2 座，每座分城各 2 座）。响应附 limit 与 count。不扣任何资源。',
+    desc: '（v97，AISLG-232）这座城名下的望楼已达上限：每座城最多 2 座（主城 2 座，每座分城各 2 座）。响应附 limit 与 count。不扣任何资源。',
     action: '换另一座城名下的野地建望楼，或先把这块地的望楼升到更高级（升级不受名额限制）。',
   },
   INTERNAL: {

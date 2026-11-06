@@ -46,6 +46,10 @@ export const EXTRA_MAP = {
   layers: {
     marches: '行军',
     yield: '产出',
+    /** 手机端图层入口按钮与面板（AISLG-231）：宽度 < 640px 时横排复选框收进这里 */
+    button: '图层',
+    /** 面板的读屏名称 */
+    panelAria: '地图图层',
   },
   /** 行军图层（AISLG-216）：任务单字、倒计时、图标提示、同格合并与视野外箭头 */
   march: {
@@ -121,7 +125,7 @@ export const EXTRA_MAP = {
     /** 视野半径说明里的一行（AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格 */
     watchtowerVision: '望楼：6 / 8 / 10 格（取代野地原来的 3 格）',
   },
-  /** 望楼（AISLG-232，v96）：地图标记、详情区里的建造 / 升级一栏 */
+  /** 望楼（AISLG-232，v97）：地图标记、详情区里的建造 / 升级一栏 */
   watchtower: {
     /** 地图格上的小标记（单字；英文用 W) */
     glyph: '望',
@@ -160,6 +164,34 @@ export const EXTRA_MAP = {
     label: (time: string) => `来袭 ${time}`,
     /** 视野外红色箭头的提示 */
     arrowHint: '点击跳到被袭击的格子',
+  },
+  /** 他人部队图层（AISLG-230）：图例、图标提示与规模档位；颜色依次为来袭 / 敌对 / 中立 / 同盟友盟 */
+  enemyMarch: {
+    legend: '他人部队',
+    /** 图标里的单字（英文用短码 E = Enemy） */
+    glyph: '他',
+    legendIncoming: '来袭自己',
+    legendHostile: '敌对',
+    legendNeutral: '中立',
+    legendFriend: '同盟 / 友盟',
+    /** 规模档位（协议值 small / medium / large） */
+    scale: {
+      small: '小股',
+      medium: '中军',
+      large: '大军',
+    } as Record<string, string>,
+    /** 图标提示：玩家名 / 联盟 / 规模 / 去程还是返程 */
+    tipOwner: (name: string) => `玩家：${name}`,
+    tipAlliance: (name: string) => `联盟：${name}`,
+    tipNoAlliance: '联盟：无',
+    tipScale: (label: string) => `规模：${label}`,
+    tipReturning: '返程中',
+    tipOutbound: '前往目标',
+    /** 提示底部说明：看不到目标与时刻，也不发起交互 */
+    tipNote: '只能看到视野内的部队，看不到目标与到达时间',
+    /** 读屏文案 */
+    aria: (owner: string, scale: string, returning: boolean) =>
+      `${owner} 的部队 · ${scale} · ${returning ? '返程中' : '前往目标'}`,
   },
   /** 领地图例（AISLG-216）：四种关系色 + 连片加成金边 */
   territoryLegend: {

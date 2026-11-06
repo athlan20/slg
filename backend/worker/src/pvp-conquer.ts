@@ -401,7 +401,7 @@ async function transferCityOwnership(
       await troopsEnterCity(client, prevOwnerMainCityId, garrison);
     }
     await client.query(`DELETE FROM tile_army WHERE x = $1 AND y = $2`, [row.x, row.y]);
-    // v96（AISLG-232）：分城易主，该城名下的望楼一并毁掉（不转给新主人、不退资源）
+    // v97（AISLG-232）：分城易主，该城名下的望楼一并毁掉（不转给新主人、不退资源）
     await destroyFacility(client, row.x, row.y, 'city_lost');
     await client.query(
       `UPDATE world_tiles SET owner_city_id = NULL, owner_changed_until = NULL WHERE x = $1 AND y = $2 AND kind = 'wilderness'`,

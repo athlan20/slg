@@ -113,7 +113,7 @@ export function buildErrorText(
   }
 }
 
-/** 望楼建造 / 升级失败的人读提示（地块详情区里显示，v96 AISLG-232） */
+/** 望楼建造 / 升级失败的人读提示（地块详情区里显示，v97 AISLG-232） */
 export function facilityErrorText(
   code: ErrorCode | undefined,
   message: string | undefined,

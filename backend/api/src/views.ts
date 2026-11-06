@@ -245,7 +245,7 @@ export interface CitySnapshot {
   marches: MarchRow[];
   /** 本城占领的野地（v12，含驻军总数） */
   territory: TerritoryRow[];
-  /** 本城名下野地上的望楼（v96，AISLG-232）：键 "x,y"，按地块取用 */
+  /** 本城名下野地上的望楼（v97，AISLG-232）：键 "x,y"，按地块取用 */
   facilities: Map<string, FacilityRow>;
   /** 独占产量加成（百分数，v24 AISLG-56：名城分城 +20%）与名城名；普通城为 0 / null */
   productionBonusPercent: number;
@@ -308,7 +308,7 @@ export async function lockCitySnapshot(
   const levels = await loadBuildingLevels(client, row.id);
   const techs = await loadTechLevels(client, accountId);
   const territory = await loadTerritory(client, row.id);
-  // v96（AISLG-232）：本城名下野地上的望楼（等级 / 视野半径 / 进行中的建造）
+  // v97（AISLG-232）：本城名下野地上的望楼（等级 / 视野半径 / 进行中的建造）
   const facilities = new Map<string, FacilityRow>();
   for (const facility of await loadCityFacilities(client, row.id)) {
     facilities.set(`${facility.x},${facility.y}`, facility);

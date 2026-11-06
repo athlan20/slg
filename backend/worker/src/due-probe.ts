@@ -21,7 +21,7 @@ export interface DueProbe {
   npcAttacks: boolean;
   reserves: boolean;
   battlefieldMovements: boolean;
-  /** v96（AISLG-232）：望楼（野地设施）到点完成 */
+  /** v97（AISLG-232）：望楼（野地设施）到点完成 */
   facilities: boolean;
 }
 

@@ -421,7 +421,7 @@ export function WorldMapGrid({
                       ) : null}
                       {/* 遗迹 / 名将处所图标（v93，AISLG-227）：独立组件，见 WorldSiteMarker.tsx */}
                       <WorldSiteMarker tile={tile} />
-                      {/* 望楼标记（v96，AISLG-232）：独立组件，见 WatchtowerMarker.tsx */}
+                      {/* 望楼标记（v97，AISLG-232）：独立组件，见 WatchtowerMarker.tsx */}
                       <WatchtowerMarker tile={tile} />
                       {/* 等级数字：默认隐藏，悬停 / 选中显示；满级（10 级）金色常显（docs 第 6 节） */}
                       <span

@@ -234,8 +234,10 @@ export const Op = {
   MOVE_CITY: 150,
   /** 赎回被俘名将（v94，AISLG-228）：data.heroId，赎金 = 2000 × 等级从主城扣 */
   RANSOM_HERO: 151,
-  /** 在自己占领的野地上建望楼 / 升级望楼（v96，AISLG-232）：data.x / data.y；资源从占着这块地的城扣 */
-  FACILITY_BUILD: 152,
+  /** 在自己占领的野地上建望楼 / 升级望楼（v97，AISLG-232）：data.x / data.y；资源从占着这块地的城扣 */
+  FACILITY_BUILD: 153,
+  /** 查询窗口内视野里的他人部队（v96，AISLG-230）：data.x/y/w/h 同 GET_WORLD_MAP；只给位置 / 方向 / 去返程 / 规模档位 / 主人关系 */
+  GET_VISIBLE_MARCHES: 152,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -486,7 +488,7 @@ export type ErrorCode =
   | 'MOVE_CITY_TOO_CLOSE'
   | 'MOVE_CITY_NO_SPACE'
   | 'MOVE_CITY_ATTACK_LOCK'
-  /** 野地设施·望楼（v96，AISLG-232）：非自己的野地 / 已满级 / 正在建造 / 该城望楼已达 2 座 */
+  /** 野地设施·望楼（v97，AISLG-232）：非自己的野地 / 已满级 / 正在建造 / 该城望楼已达 2 座 */
   | 'FACILITY_TILE_INVALID'
   | 'FACILITY_MAX_LEVEL'
   | 'FACILITY_BUILDING'
@@ -752,6 +754,10 @@ export type {
   FamousTileView,
   FamousEffectView,
   WorldMapResponseData,
+  VisibleMarchScale,
+  VisibleMarchRelation,
+  VisibleMarchView,
+  GetVisibleMarchesResponseData,
   MapOverviewResponseData,
   MapOverviewSide,
   MarchRequestData,
