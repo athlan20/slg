@@ -13,12 +13,7 @@
 import type pg from 'pg';
 import type { Resources } from '../../common/src/protocol';
 import { applyCost } from '../../common/src/rules';
-import {
-  FACILITY_MAX_LEVEL,
-  FACILITY_PER_CITY_LIMIT,
-  facilityUpgradeCost,
-  facilityUpgradeSeconds,
-} from '../../common/src/facility';
+import { FACILITY_PER_CITY_LIMIT, facilityUpgradeCost, facilityUpgradeSeconds } from '../../common/src/facility';
 import { countCityFacilities, lockFacility, territoryFacilityView, type FacilityRow } from '../../common/src/facility-db';
 import { loadTile, type TileRow } from '../../common/src/world-db';
 import { respondError, respondOk } from './frames';

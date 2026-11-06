@@ -7,13 +7,7 @@
 import type { CityView, TileDetailView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
 import { useCopy } from '../../i18n/bundle';
-import {
-  WATCHTOWER_MAX_LEVEL,
-  WATCHTOWER_PER_CITY_LIMIT,
-  watchtowerNextLevel,
-  watchtowerSeconds,
-  watchtowerVisionRadius,
-} from './watchtowerTable';
+import { WATCHTOWER_PER_CITY_LIMIT, watchtowerNextLevel, watchtowerSeconds, watchtowerVisionRadius } from './watchtowerTable';
 
 export interface WatchtowerNoteProps {
   detail: TileDetailView;
@@ -119,6 +113,3 @@ export function WatchtowerNote({ detail, city, isOwn, fogEnabled, busy, onBuild,
     </div>
   );
 }
-
-/** 满级常量导出给外部判断（详见 watchtowerTable） */
-export { WATCHTOWER_MAX_LEVEL };
