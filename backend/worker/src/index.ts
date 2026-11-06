@@ -143,7 +143,7 @@ async function main(): Promise<void> {
     }
     if (due.facilities) {
       try {
-        // v96（AISLG-232）：望楼（野地设施）到点建成 / 升级完成（事件 facility_completed + 推送地块变化）
+        // v97（AISLG-232）：望楼（野地设施）到点建成 / 升级完成（事件 facility_completed + 推送地块变化）
         const facilitiesDone = await processDueFacilities(pool);
         if (facilitiesDone > 0) {
           console.log(`completed ${facilitiesDone} facility build(s)`);

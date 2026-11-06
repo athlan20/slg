@@ -235,7 +235,7 @@ export function TargetPanel() {
           </div>
         ) : null}
         {inAlliance ? <TargetMarkNote x={x} y={y} marks={session.allianceMarks} myId={accountId} now={now} /> : null}
-        {/* 望楼（v96，AISLG-232）：自己的野地可建造 / 升级，别人的只显示等级与视野 */}
+        {/* 望楼（v97，AISLG-232）：自己的野地可建造 / 升级，别人的只显示等级与视野 */}
         {detail && world.window?.fogEnabled !== undefined ? (
           <WatchtowerNote
             detail={detail}

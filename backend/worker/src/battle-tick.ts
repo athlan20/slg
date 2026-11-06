@@ -312,7 +312,7 @@ export async function resolveNpcWildernessRaid(
     target.notifies.push({ reason: 'tile_changed', accountId, x: tile.x, y: tile.y, tileReason: 'npc_attack_repelled' });
     return;
   }
-  // v96（AISLG-232）：驻军全灭即失地，望楼随之毁掉
+  // v97（AISLG-232）：驻军全灭即失地，望楼随之毁掉
   await clearTileOccupation(client, tile.x, tile.y, 'npc_attack');
   await insertEvent(client, {
     accountId,

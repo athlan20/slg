@@ -239,7 +239,7 @@ export async function handleResetAccount(
          )`,
         [cityIds],
       );
-      // v96（AISLG-232）：野地上的望楼随占领一并清掉（不退款；主人收到 facility_lost）
+      // v97（AISLG-232）：野地上的望楼随占领一并清掉（不退款；主人收到 facility_lost）
       for (const id of cityIds) {
         await destroyFacilitiesOfCity(client, id, 'reset');
       }

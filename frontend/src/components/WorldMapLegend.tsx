@@ -63,7 +63,7 @@ export function WorldMapLegend() {
           {COPY.worldMap.legendLevel}
         </li>
       </ul>
-      {/* 视野（v96，AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格（取代野地原来的 3 格） */}
+      {/* 视野（v97，AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格（取代野地原来的 3 格） */}
       <ul role="世界地图图例-视野" className="flex flex-wrap gap-x-2.5 gap-y-1">
         <li className={itemCls}>
           <span role="世界地图图例-望楼" className={`${swatchCls} border-accent/60 font-semibold text-accent`}>

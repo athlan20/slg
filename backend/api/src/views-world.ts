@@ -77,7 +77,7 @@ interface TileQueryRow extends TileRow {
   owner_main_created_at?: Date | null;
   /** 城主的「维修」科技等级（v72，AISLG-192；城防值与展示口径一致地回涨） */
   owner_repair_level?: number | null;
-  /** 望楼（v96，AISLG-232）：地块上的设施类别与已建成等级（还在建第一级时 level 为 0）；没有设施为 null */
+  /** 望楼（v97，AISLG-232）：地块上的设施类别与已建成等级（还在建第一级时 level 为 0）；没有设施为 null */
   facility_kind?: string | null;
   facility_level?: number | null;
   /** 在野名将落位（v54）：名字 / 属性；wild_claimed 为该名将已被任何人获得 */
@@ -263,7 +263,7 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     // 遗迹 / 名将处所（v93）：默认无；开启迷雾时由 fog-view.ts 的 applySiteViews 按探索状态补上
     relic: null,
     heroSite: null,
-    // 望楼（v96，AISLG-232）：能看到这块地就能看到有望楼与等级（不含建造进度）
+    // 望楼（v97，AISLG-232）：能看到这块地就能看到有望楼与等级（不含建造进度）
     facility: facilityOf(row),
     // 战争迷雾（v92）：视图默认实时可见；开启迷雾时由 fog-view.ts 按探索状态改写
     fog: 'visible',
@@ -299,7 +299,7 @@ function reserveStepOf(row: TileQueryRow, garrison: number): TileReserveStep | n
   );
 }
 
-/** 望楼视图（v96，AISLG-232）：还在建第一级（level = 0）时不给——别人只看到已经盖好的望楼 */
+/** 望楼视图（v97，AISLG-232）：还在建第一级（level = 0）时不给——别人只看到已经盖好的望楼 */
 function facilityOf(row: Pick<TileQueryRow, 'facility_kind' | 'facility_level'>): TileView['facility'] {
   return tileFacilityView(
     row.facility_kind ? { kind: row.facility_kind, level: Math.max(0, Number(row.facility_level ?? 0)) } : null,
@@ -402,7 +402,7 @@ export async function loadTileDetail(
     scoutedAt,
     defenses,
     assists: await assistsOf(q, row, accountId),
-    // 望楼的建造进度只给占着这块地的城的主人（v96，AISLG-232）
+    // 望楼的建造进度只给占着这块地的城的主人（v97，AISLG-232）
     facilityBuilding:
       accountId !== undefined && row.owner_account_id === accountId && row.kind === 'wilderness'
         ? facilityBuildingView(await loadFacility(q, x, y))

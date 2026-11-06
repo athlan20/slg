@@ -106,12 +106,12 @@ export interface WorldSession {
   scout: (x: number, y: number, count: number, heroId?: string | null) => Promise<boolean>;
   /** 撤回行军途中的部队（RECALL_MARCH，v13）：行军翻转为返程 */
   recallMarch: (marchId: string) => Promise<boolean>;
+  /** 在自己占领的野地上建望楼 / 升级望楼（FACILITY_BUILD，v97 AISLG-232）：成功后对齐城池与地块详情 */
+  buildFacility: (x: number, y: number) => Promise<boolean>;
   /** 视野内的他人部队（AISLG-230）：最近一次快照（null = 还没拉过 / 已清空） */
   enemyMarches: EnemyMarchSnapshot | null;
   /** 拉一次当前窗口的他人部队（地图打开时每 5 秒一次；迷雾关闭时服务端返回空数组） */
   fetchEnemyMarches: () => Promise<void>;
-  /** 在自己占领的野地上建望楼 / 升级望楼（FACILITY_BUILD，v97 AISLG-232）：成功后对齐城池与地块详情 */
-  buildFacility: (x: number, y: number) => Promise<boolean>;
   /** 战报列表（GET_BATTLE_REPORTS，v13；null = 尚未拉取） */
   battleReports: BattleReportView[] | null;
   reportsLoading: boolean;
@@ -531,7 +531,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
     [clientRef, setCity, appendLocalEvent, scheduleSync, refresh],
   );
 
-  /** 建望楼 / 升级望楼（FACILITY_BUILD，v96 AISLG-232）：资源从占着这块地的城扣，扣费后的城池状态随响应回来 */
+  /** 建望楼 / 升级望楼（FACILITY_BUILD，v97 AISLG-232）：资源从占着这块地的城扣，扣费后的城池状态随响应回来 */
   const buildFacility = useCallback(
     async (x: number, y: number): Promise<boolean> => {
       const client = clientRef.current;
@@ -831,9 +831,9 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
       recall,
       scout,
       recallMarch,
+      buildFacility,
       enemyMarches,
       fetchEnemyMarches,
-      buildFacility,
       battleReports,
       reportsLoading,
       reportsExhausted,
@@ -877,9 +877,9 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
       recall,
       scout,
       recallMarch,
+      buildFacility,
       enemyMarches,
       fetchEnemyMarches,
-      buildFacility,
       fetchBattleReports,
       loadOlderBattleReports,
       fetchBattleReportById,

@@ -1,4 +1,4 @@
-// 望楼（野地设施）的到期完成（v96，AISLG-232）：wilderness_facilities.finish_at 到点后把 building_to 写进 level，
+// 望楼（野地设施）的到期完成（v97，AISLG-232）：wilderness_facilities.finish_at 到点后把 building_to 写进 level，
 // 清空进行中的那一级，给主人写 facility_completed 事件并通知地块变化（API 收到后推 PUSH_TILE_STATE reason=facility_completed）。
 // 由 Worker 的到期探针（due-probe.ts：facilities）驱动，不新增高频空轮询（AISLG-208 的口径）。
 //

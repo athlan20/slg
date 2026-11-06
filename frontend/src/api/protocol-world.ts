@@ -69,14 +69,14 @@ export interface FamousTileView {
   effect: FamousEffectView | null;
 }
 
-/** 野地上的设施（v96，AISLG-232）：对所有人可见的部分——有望楼、几级 */
+/** 野地上的设施（v97，AISLG-232）：对所有人可见的部分——有望楼、几级 */
 export interface TileFacilityView {
   kind: 'watchtower';
   /** 已建成的等级（1..3） */
   level: number;
 }
 
-/** 进行中的建造 / 升级（v96，AISLG-232；只有主人能看到） */
+/** 进行中的建造 / 升级（v97，AISLG-232；只有主人能看到） */
 export interface FacilityBuildingView {
   /** 目标等级（1..3） */
   toLevel: number;
@@ -101,7 +101,7 @@ export interface TileView {
   relic: RelicTileView | null;
   /** 名将处所（v93，AISLG-227）：已探索或视野内才有 */
   heroSite: HeroSiteView | null;
-  /** 野地上的设施（v96，AISLG-232）：只要能看到这块地就能看到有望楼与它的等级（不含建造进度）；
+  /** 野地上的设施（v97，AISLG-232）：只要能看到这块地就能看到有望楼与它的等级（不含建造进度）；
    *  没盖、或还在建第一级时为 null */
   facility: TileFacilityView | null;
   x: number;
@@ -181,7 +181,7 @@ export interface TileDetailView extends TileView {
   defenses: DefenseScoutView | null;
   /** 协防部队（v74）：自己的城 / 盟友的城给 "谁在协防、带了多少兵"；其余为 null */
   assists: import('./protocol-assist').AssistView[] | null;
-  /** 望楼的建造 / 升级进度（v96，AISLG-232）：只有占着这块地的城的主人看得到，其余为 null */
+  /** 望楼的建造 / 升级进度（v97，AISLG-232）：只有占着这块地的城的主人看得到，其余为 null */
   facilityBuilding: FacilityBuildingView | null;
 }
 
@@ -203,7 +203,7 @@ export interface TerritoryView {
   clusterSize: number;
   /** 连片产量加成（百分数：3–4 块 10 / ≥5 块 20；不足 3 块为 0） */
   clusterBonusPercent: number;
-  /** 这块地上的望楼（v96，AISLG-232）：等级、视野半径与进行中的建造 / 升级；没盖为 null */
+  /** 这块地上的望楼（v97，AISLG-232）：等级、视野半径与进行中的建造 / 升级；没盖为 null */
   facility: TerritoryFacilityView | null;
 }
 
@@ -407,7 +407,7 @@ export interface WorldMapResponseData {
   y: number;
   w: number;
   h: number;
-  /** 战争迷雾开关 fog_enabled 的当前值（v96，AISLG-232）：关闭时望楼不产生视野效果 */
+  /** 战争迷雾开关 fog_enabled 的当前值（v97，AISLG-232）：关闭时望楼不产生视野效果 */
   fogEnabled?: boolean;
   tiles: TileView[];
 }
@@ -511,7 +511,7 @@ export interface TileStatePushData {
     /** v40（AISLG-124）：分城被玩家占领易主 / 城防值被打掉一截 */
     | 'city_conquered'
     | 'city_durability_hit'
-    /** v96（AISLG-232）：望楼建成 / 升级完成（望楼随野地毁掉时走 wilderness_lost） */
+    /** v97（AISLG-232）：望楼建成 / 升级完成（望楼随野地毁掉时走 wilderness_lost） */
     | 'facility_completed';
   tile: TileView;
 }

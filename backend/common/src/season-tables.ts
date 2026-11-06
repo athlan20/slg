@@ -45,7 +45,7 @@ export const RESET_TABLES: readonly string[] = [
   'builds',
   'recruits',
   'city_defenses',
-  // 野地设施（望楼，AISLG-232，v96）：随城池 / 世界清空
+  // 野地设施（望楼，AISLG-232，v97）：随城池 / 世界清空
   'wilderness_facilities',
   // 伤兵 / 俘虏 / 逃兵三池（v85，AISLG-212）：随城池清空
   'city_troop_pools',

@@ -34,7 +34,7 @@ export interface TileFact {
   famous: boolean;
   /** 在野名将落位且尚未被获得 */
   wildFamous: boolean;
-  /** 地上的望楼等级（v96，AISLG-232；0 = 没有） */
+  /** 地上的望楼等级（v97，AISLG-232；0 = 没有） */
   facilityLevel: number;
 }
 
@@ -48,7 +48,7 @@ export interface SeenRow {
   ownerCityId: string | null;
   ownerCityName: string | null;
   wildFamous: boolean;
-  /** 上次看到时的望楼等级（v96，AISLG-232；0 = 没有） */
+  /** 上次看到时的望楼等级（v97，AISLG-232；0 = 没有） */
   facilityLevel: number;
   seenAt: Date;
 }
@@ -175,7 +175,7 @@ export async function ownVisionSources(q: Queryable, accountId: string): Promise
   (cities.rows as Array<{ x: number; y: number }>).forEach((row, index) => {
     sources.push({ x: row.x, y: row.y, radius: index === 0 ? FOG_VISION.mainCity : FOG_VISION.branchCity });
   });
-  // v96（AISLG-232）：野地上的望楼联表取等级，半径 = max(野地 3, 望楼 6 / 8 / 10)
+  // v97（AISLG-232）：野地上的望楼联表取等级，半径 = max(野地 3, 望楼 6 / 8 / 10)
   const territory = await q.query(
     `SELECT wt.x, wt.y, wf.level AS facility_level FROM world_tiles wt JOIN cities c ON c.id = wt.owner_city_id
      LEFT JOIN wilderness_facilities wf ON wf.x = wt.x AND wf.y = wt.y

@@ -156,7 +156,7 @@ async function discardCityTx(client: pg.PoolClient, accountId: string, cityId: s
   );
   // v74（AISLG-194）：放弃的城若有人协防，协防部队先自动遣返原派出方（否则随城级联消失）
   const returned = await returnAssistsForCity(client, cityId, 'city_discarded');
-  // v96（AISLG-232）：该城名下野地上的望楼一并毁掉（名下野地转无主；设施行随城级联删除，事件在这里补写）
+  // v97（AISLG-232）：该城名下野地上的望楼一并毁掉（名下野地转无主；设施行随城级联删除，事件在这里补写）
   await destroyFacilitiesOfCity(client, cityId, 'city_lost');
   // 名下野地转为无主（owner_city_id 外键 ON DELETE SET NULL），随后删除城池行：
   // 建筑、城内驻军、建造 / 征兵 / 研究队列与城守任命随外键级联清理（资源随城作废）

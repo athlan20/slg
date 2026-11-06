@@ -1,4 +1,4 @@
-// 望楼数值的前端镜像（AISLG-232，v96）：唯一事实来源是 backend/common/src/facility.ts，
+// 望楼数值的前端镜像（AISLG-232，v97）：唯一事实来源是 backend/common/src/facility.ts，
 // 客户端只用来在建造前展示花费与耗时（服务端仍按同一份常量复核）。
 // 一致性由 backend/test/facility.test.ts 钉住（与 yieldTable 的做法相同）。
 
