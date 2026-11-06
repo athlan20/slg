@@ -14,8 +14,8 @@ import {
   facilityUpgradeSeconds,
   watchtowerVisionRadius,
 } from '../common/src/facility';
-import { FOG_VISION, wildernessVisionRadius } from '../common/src/fog';
-import { ownVisionSources } from '../common/src/fog-db';
+import { FOG_VISION, isCellExplored, wildernessVisionRadius } from '../common/src/fog';
+import { ensureFogState, ownVisionSources } from '../common/src/fog-db';
 import { loadFacility } from '../common/src/facility-db';
 import { processDueFacilities } from '../worker/src/facility-tick';
 import { clearTileOccupation } from '../common/src/world-db';
@@ -26,6 +26,14 @@ import { runWithCity } from '../api/src/city-scope';
 import { handleFacilityBuild } from '../api/src/handlers-facility';
 import { loadTileDetail, loadWorldWindow } from '../api/src/views-world';
 import { loadCityState } from '../api/src/views';
+
+import {
+  WATCHTOWER_LEVELS as FE_WATCHTOWER_LEVELS,
+  WATCHTOWER_MAX_LEVEL as FE_MAX_LEVEL,
+  WATCHTOWER_PER_CITY_LIMIT as FE_PER_CITY_LIMIT,
+  watchtowerSeconds as feWatchtowerSeconds,
+  watchtowerVisionRadius as feVisionRadius,
+} from '../../frontend/src/components/map/watchtowerTable';
 
 import { createTempDatabase, type TempDatabase } from './season-test-db';
 
@@ -60,6 +68,22 @@ describe('望楼的数值与纯规则（无需数据库）', () => {
   test('每座城最多 2 座、最高 3 级', () => {
     assert.equal(FACILITY_PER_CITY_LIMIT, 2);
     assert.equal(FACILITY_MAX_LEVEL, 3);
+  });
+
+  test('前端镜像（watchtowerTable）与后端数值完全一致', () => {
+    assert.equal(FE_MAX_LEVEL, FACILITY_MAX_LEVEL);
+    assert.equal(FE_PER_CITY_LIMIT, FACILITY_PER_CITY_LIMIT);
+    for (let level = 1; level <= FACILITY_MAX_LEVEL; level += 1) {
+      const backend = facilityUpgradeCost('watchtower', level - 1);
+      const feLevel = FE_WATCHTOWER_LEVELS[level];
+      assert.equal(FE_WATCHTOWER_LEVELS[level] !== undefined, true);
+      assert.deepEqual(feLevel.cost, { gold: backend?.gold, wood: backend?.wood, stone: backend?.stone });
+      assert.equal(feLevel.seconds, facilityUpgradeSeconds('watchtower', level - 1, 1));
+      assert.equal(feLevel.visionRadius, watchtowerVisionRadius(level));
+      assert.equal(feVisionRadius(level), watchtowerVisionRadius(level));
+      assert.equal(feWatchtowerSeconds(feLevel, 1), facilityUpgradeSeconds('watchtower', level - 1, 1));
+      assert.equal(feWatchtowerSeconds(feLevel, 50), facilityUpgradeSeconds('watchtower', level - 1, 50));
+    }
   });
 });
 
@@ -264,6 +288,34 @@ describe('望楼的事务规则（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
     const maxed = await build(W[0].x, W[0].y);
     assert.equal(maxed.ok, false);
     assert.equal(maxed.error?.code, 'FACILITY_MAX_LEVEL');
+  });
+
+  test('望楼的视野照常记入已探索（视野 10 格的望楼把它周边区块并进探索位图）', async () => {
+    // 用另一个账号远处的野地做探针（避开主城开局 30 格与两座城的视野，也避开本账号的望楼名额）
+    const far = { x: 600, y: 600 };
+    const otherCityId = (await pool.query(`SELECT id FROM cities WHERE account_id = $1`, [otherId])).rows[0].id as string;
+    await pool.query(
+      `INSERT INTO world_tiles (x, y, terrain, kind, level, owner_city_id, npc) VALUES ($1, $2, 'plain', 'wilderness', 2, $3, NULL)
+       ON CONFLICT (x, y) DO UPDATE SET kind = 'wilderness', owner_city_id = EXCLUDED.owner_city_id, npc = NULL`,
+      [far.x, far.y, otherCityId],
+    );
+    await pool.query(
+      `INSERT INTO wilderness_facilities (x, y, kind, level, city_id) VALUES ($1, $2, 'watchtower', 3, $3)
+       ON CONFLICT (x, y) DO UPDATE SET kind = 'watchtower', level = 3, building_to = NULL, finish_at = NULL`,
+      [far.x, far.y, otherCityId],
+    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const state = await ensureFogState(client, otherId, new Date());
+      await client.query('COMMIT');
+      // 9 格与 10 格都在望楼视野内（另一座城只有 8 格视野，覆盖不到）
+      assert.equal(isCellExplored(state.bits, far.x + 9, far.y), true);
+      // 21 格外（区块 62）不在任何视野来源内
+      assert.equal(isCellExplored(state.bits, far.x + 21, far.y), false);
+    } finally {
+      client.release();
+    }
   });
 
   test('同一座城第 3 座被拒，另一座分城还能盖', async () => {

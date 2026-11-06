@@ -300,6 +300,8 @@ export interface WorldMapResponseData {
   y: number;
   w: number;
   h: number;
+  /** 战争迷雾开关 fog_enabled 的当前值（v96，AISLG-232）：关闭时望楼照建但不产生视野效果，界面据此注明「迷雾未开启」 */
+  fogEnabled?: boolean;
   tiles: TileView[];
 }
 

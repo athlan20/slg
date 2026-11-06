@@ -29,6 +29,7 @@ import { TargetCloseButton } from './TargetCloseButton';
 import { TargetChatActions } from './TargetChatActions';
 import { MoveCityPickAction } from './MoveCityPick';
 import { TargetMarkNote } from './TargetMarkNote';
+import { WatchtowerNote } from './WatchtowerNote';
 import { StratagemEntry } from '../stratagem/StratagemEntry';
 import { remainingSeconds } from '../stratagem/StratagemCityNote';
 
@@ -57,6 +58,8 @@ function unknownDetailAt(x: number, y: number): TileDetailView {
     durability: null,
     wildFamous: false,
     reserve: null,
+    facility: null,
+    facilityBuilding: null,
     fog: 'explored',
     seenAt: null,
     garrisonDetail: zeros,
@@ -232,6 +235,20 @@ export function TargetPanel() {
           </div>
         ) : null}
         {inAlliance ? <TargetMarkNote x={x} y={y} marks={session.allianceMarks} myId={accountId} now={now} /> : null}
+        {/* 望楼（v96，AISLG-232）：自己的野地可建造 / 升级，别人的只显示等级与视野 */}
+        {detail && world.window?.fogEnabled !== undefined ? (
+          <WatchtowerNote
+            detail={detail}
+            city={city}
+            isOwn={isOwn}
+            fogEnabled={world.window.fogEnabled !== false}
+            busy={busy}
+            now={now}
+            onBuild={() => {
+              void ctx.run(() => world.buildFacility(x, y));
+            }}
+          />
+        ) : null}
         {world.error ? (
           <p role="世界地图详情区-错误" className="line-clamp-2 shrink-0 text-[12px] text-warn" title={world.error}>
             {world.error}

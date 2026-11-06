@@ -118,6 +118,43 @@ export const EXTRA_MAP = {
     heroClaimed: '名将已出山：处所与名字保留，首探只发资源，不再给结交资格',
     heroNotClaimed: '名将未出山：首探者不打守军即可结交，其他人打赢守军也可结交',
     reportRelics: (n: number) => `发现遗迹 ${n} 处`,
+    /** 视野半径说明里的一行（AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格 */
+    watchtowerVision: '望楼：6 / 8 / 10 格（取代野地原来的 3 格）',
+  },
+  /** 望楼（AISLG-232，v96）：地图标记、详情区里的建造 / 升级一栏 */
+  watchtower: {
+    /** 地图格上的小标记（单字；英文用 W) */
+    glyph: '望',
+    title: (level: number, radius: number) => `望楼 Lv${level}（视野 ${radius} 格）`,
+    aria: (level: number) => `望楼 ${level} 级`,
+    /** 详情区标题与等级行 */
+    sectionTitle: '望楼',
+    levelLine: (level: number, radius: number) => `${level} 级 · 视野 ${radius} 格`,
+    noneLine: '这块地上还没有望楼',
+    build: '建造',
+    upgrade: '升级',
+    building: (target: number) => `建造中（升到 ${target} 级）`,
+    buildingUpgrade: (target: number) => `升级中（升到 ${target} 级）`,
+    left: (time: string) => `剩余 ${time}`,
+    costLine: (gold: number, wood: number, stone: number) => `花费 金 ${gold} / 木 ${wood} / 石 ${stone}`,
+    timeLine: (time: string) => `耗时 ${time}`,
+    costAndTime: (gold: number, wood: number, stone: number, time: string) => `金 ${gold} / 木 ${wood} / 石 ${stone} · ${time}`,
+    maxLevel: '已满级（3 级）',
+    quota: (count: number, limit: number) => `本城望楼 ${count}/${limit}`,
+    quotaFull: (limit: number) => `本城望楼已满 ${limit} 座（升级现有望楼不受限制）`,
+    fogOff: '迷雾未开启：望楼照常可建，但不产生视野效果',
+    /** 别人的望楼（不含进度） */
+    othersLine: (level: number, radius: number) => `这里的望楼 ${level} 级（视野 ${radius} 格）`,
+    /** 发起建造后写进事件流的一句 */
+    startedLog: (x: number, y: number) => `已开工：(${x}, ${y}) 的望楼`,
+    /** 失败提示（服务端错误码 → 人读文案） */
+    errors: {
+      tileInvalid: '只能在自己占领的野地上建望楼',
+      maxLevel: '这块地的望楼已满级（3 级）',
+      building: '这块地的望楼正在建造 / 升级中',
+      limit: '这座城的望楼已满 2 座（升级现有望楼不受限制）',
+      fallback: '望楼建造失败，请稍后再试',
+    },
   },
   raid: {
     label: (time: string) => `来袭 ${time}`,

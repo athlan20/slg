@@ -69,12 +69,41 @@ export interface FamousTileView {
   effect: FamousEffectView | null;
 }
 
+/** 野地上的设施（v96，AISLG-232）：对所有人可见的部分——有望楼、几级 */
+export interface TileFacilityView {
+  kind: 'watchtower';
+  /** 已建成的等级（1..3） */
+  level: number;
+}
+
+/** 进行中的建造 / 升级（v96，AISLG-232；只有主人能看到） */
+export interface FacilityBuildingView {
+  /** 目标等级（1..3） */
+  toLevel: number;
+  /** 完成时刻（ISO 8601） */
+  finishAt: string;
+}
+
+/** 本城名下野地的设施（CityView.territory[].facility；含建造进度，主人可见） */
+export interface TerritoryFacilityView {
+  kind: 'watchtower';
+  /** 已建成的最高等级；正在新建第一级时为 0 */
+  level: number;
+  /** 已建成等级的视野半径（切比雪夫距离，格）；level 为 0 时为 0 */
+  visionRadius: number;
+  /** 进行中的建造 / 升级；没有则为 null */
+  building: FacilityBuildingView | null;
+}
+
 /** 地图窗口内一格的视图 */
 export interface TileView {
   /** 遗迹（v93，AISLG-227）：已探索或视野内且未领取才有 */
   relic: RelicTileView | null;
   /** 名将处所（v93，AISLG-227）：已探索或视野内才有 */
   heroSite: HeroSiteView | null;
+  /** 野地上的设施（v96，AISLG-232）：只要能看到这块地就能看到有望楼与它的等级（不含建造进度）；
+   *  没盖、或还在建第一级时为 null */
+  facility: TileFacilityView | null;
   x: number;
   y: number;
   terrain: TerrainKind;
@@ -152,6 +181,8 @@ export interface TileDetailView extends TileView {
   defenses: DefenseScoutView | null;
   /** 协防部队（v74）：自己的城 / 盟友的城给 "谁在协防、带了多少兵"；其余为 null */
   assists: import('./protocol-assist').AssistView[] | null;
+  /** 望楼的建造 / 升级进度（v96，AISLG-232）：只有占着这块地的城的主人看得到，其余为 null */
+  facilityBuilding: FacilityBuildingView | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */
@@ -172,6 +203,8 @@ export interface TerritoryView {
   clusterSize: number;
   /** 连片产量加成（百分数：3–4 块 10 / ≥5 块 20；不足 3 块为 0） */
   clusterBonusPercent: number;
+  /** 这块地上的望楼（v96，AISLG-232）：等级、视野半径与进行中的建造 / 升级；没盖为 null */
+  facility: TerritoryFacilityView | null;
 }
 
 /** 出征任务（v16）：plunder 掠夺（缺省）/ occupy 占领；v26 transport 运输（目标限本账号另一座城，须带 cargo） */
@@ -374,6 +407,8 @@ export interface WorldMapResponseData {
   y: number;
   w: number;
   h: number;
+  /** 战争迷雾开关 fog_enabled 的当前值（v96，AISLG-232）：关闭时望楼不产生视野效果 */
+  fogEnabled?: boolean;
   tiles: TileView[];
 }
 

@@ -103,6 +103,7 @@ export const REQUEST_GET_WORLD_MAP: RequestOpDoc = {
   dataFields: [
     { name: 'size', type: 'number', desc: '世界边长（世界为 size×size 方格）。' },
     { name: 'x / y / w / h', type: 'number', desc: '本次窗口的左上角与宽高（已按世界边界钳制后的实际值）。' },
+    { name: 'fogEnabled', type: 'boolean', desc: '战争迷雾开关 fog_enabled 的当前值（v96，AISLG-232）。关闭时望楼照建但不产生视野效果，客户端据此注明「迷雾未开启」。' },
     { name: 'tiles', type: 'array', desc: '窗口内地块，按 y 行 x 列排序。' },
     { name: 'tiles[].x / tiles[].y', type: 'number', desc: '地块坐标。' },
     { name: 'tiles[].terrain', type: "'plain' | 'grass' | 'forest' | 'hill' | 'desert' | 'marsh' | 'lake' | 'gold_mine'", desc: '地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。' },

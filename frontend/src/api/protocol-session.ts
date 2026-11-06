@@ -25,6 +25,9 @@ export type EventType =
   | 'relic_claimed'
   | 'famous_first_explored'
   | 'hero_site_first_explored'
+  /** 望楼（v96，AISLG-232）：建成 / 升级完成、随野地毁掉 */
+  | 'facility_completed'
+  | 'facility_lost'
   | 'wilderness_occupied'
   | 'wilderness_lost'
   | 'npc_city_occupied'

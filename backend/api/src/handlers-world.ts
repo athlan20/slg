@@ -93,6 +93,8 @@ export async function handleGetWorldMap(
     y: window.y,
     w: window.w,
     h: window.h,
+    // v96（AISLG-232）：界面上要说明「望楼在迷雾关闭时不产生视野效果」，这里给出开关的当前值
+    fogEnabled: getFogEnabled(),
     tiles,
   });
 }

@@ -113,6 +113,32 @@ export function buildErrorText(
   }
 }
 
+/** 望楼建造 / 升级失败的人读提示（地块详情区里显示，v96 AISLG-232） */
+export function facilityErrorText(
+  code: ErrorCode | undefined,
+  message: string | undefined,
+  data?: Record<string, unknown>,
+): string {
+  const { COPY, EXTRA_MAP } = getCopy();
+  const W = EXTRA_MAP.watchtower.errors;
+  switch (code) {
+    case 'FACILITY_TILE_INVALID':
+      return W.tileInvalid;
+    case 'FACILITY_MAX_LEVEL':
+      return W.maxLevel;
+    case 'FACILITY_BUILDING':
+      return W.building;
+    case 'FACILITY_LIMIT':
+      return W.limit;
+    case 'INSUFFICIENT_RESOURCES':
+      return COPY.errors.build.insufficientResources + shortfallSuffix(data);
+    case 'INVALID_PARAMS':
+      return COPY.errors.build.invalidParams;
+    default:
+      return message ?? W.fallback;
+  }
+}
+
 /** 改名失败的人读提示（改名弹窗内显示） */
 export function renameErrorText(code: ErrorCode | undefined, message: string | undefined): string {
   const { COPY } = getCopy();
