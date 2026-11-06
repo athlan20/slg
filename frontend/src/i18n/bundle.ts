@@ -34,6 +34,8 @@ import { FOOT_COPY, HALL_COPY, MODAL_COPY, NAV_COPY, PAGED_COPY, SEASON_COPY, TO
 import { FOOT_COPY_EN, HALL_COPY_EN, MODAL_COPY_EN, NAV_COPY_EN, PAGED_COPY_EN, SEASON_COPY_EN, TOP_COPY_EN } from '../copy-ui-en';
 import { GITHUB_COPY } from '../copy-github';
 import { GITHUB_COPY_EN } from '../copy-github-en';
+import { LANDING_COPY } from '../copy-landing';
+import { LANDING_COPY_EN } from '../copy-landing-en';
 import { GOOGLE_COPY } from '../copy-google';
 import { GOOGLE_COPY_EN } from '../copy-google-en';
 import { STARVE_COPY } from '../copy-starvation';
@@ -106,6 +108,7 @@ const ZH = {
   TOP_COPY,
   FOOT_COPY,
   GITHUB_COPY,
+  LANDING_COPY,
   GOOGLE_COPY,
   STARVE_COPY,
   EXTRA_STATE,
@@ -165,6 +168,7 @@ const EN: Bundle = {
   TOP_COPY: TOP_COPY_EN,
   FOOT_COPY: FOOT_COPY_EN,
   GITHUB_COPY: GITHUB_COPY_EN,
+  LANDING_COPY: LANDING_COPY_EN,
   GOOGLE_COPY: GOOGLE_COPY_EN,
   STARVE_COPY: STARVE_COPY_EN,
   EXTRA_STATE: EXTRA_STATE_EN,
