@@ -6,6 +6,8 @@
 import pg from 'pg';
 import { ensureFamousCities } from './famous-city-db';
 import { ensureWildFamous } from './wild-famous-db';
+import { ensureRelics } from './fog-relic-db';
+import { getFogEnabled } from './fog-config';
 import {
   type TerrainKind,
   type TileKind,
@@ -89,6 +91,18 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
     if (wildPlaced > 0) {
       console.log(`ensureWorld: placed ${wildPlaced} wild famous heroes`);
     }
+    // 战争迷雾遗迹（v93，AISLG-227）：本季还没有遗迹时补生成（幂等；换季时已在换季事务内生成）
+    await client.query('BEGIN');
+    try {
+      const relicPlaced = await ensureRelics(client, await currentWorldSeed(client), WORLD_SIZE);
+      await client.query('COMMIT');
+      if (relicPlaced > 0) {
+        console.log(`ensureWorld: placed ${relicPlaced} fog relics`);
+      }
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw err;
+    }
   } finally {
     try {
       await client.query(`SELECT pg_advisory_unlock(${WORLD_LOCK_ID})`);
@@ -169,6 +183,10 @@ export async function claimCityTile(
   cityId: string,
 ): Promise<{ x: number; y: number } | null> {
   const center = Math.floor(WORLD_SIZE / 2);
+  // 战争迷雾（v93，AISLG-227）：开启时跳过未领取的遗迹格（关闭时与原来一致，不读遗迹表）
+  const relicSkip = getFogEnabled()
+    ? `AND NOT EXISTS (SELECT 1 FROM fog_relics fr WHERE fr.x = wt.x AND fr.y = wt.y AND fr.claimed_by IS NULL)`
+    : '';
   for (let attempt = 0; attempt < CLAIM_ATTEMPTS; attempt += 1) {
     // 采样候选：中心点固定入样（无既有城池时凭 tie-break 胜出 → 首城在中心附近），其余随机
     const sample: Array<[number, number]> = [[center, center]];
@@ -193,7 +211,7 @@ export async function claimCityTile(
              SELECT s.column1 AS x, s.column2 AS y
              FROM sample s
              JOIN world_tiles wt ON wt.x = s.column1 AND wt.y = s.column2
-             WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.npc IS NULL
+             WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.npc IS NULL ${relicSkip}
            ),
            candidate AS (
              SELECT v.x, v.y

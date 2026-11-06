@@ -44,6 +44,9 @@ export interface TileOwnerView {
   ally: boolean;
   /** 与占领者的关系（v77，AISLG-195）：self 自己 / ally 同盟 / friendly 友盟 / hostile 敌对 / neutral 其他 */
   relation: 'self' | 'ally' | 'friendly' | 'hostile' | 'neutral';
+  /** 本账号现在能否向这位占领者协防（v95，AISLG-226）：同联盟或友盟为 true；自己、解除友好的 24 小时冷却期、中立、敌对为 false。
+   *  与 MARCH task=assist 的校验（canAssist）口径一致；冷却期内 relation 仍为 friendly（只为不能互打），但这里为 false */
+  canAssist: boolean;
 }
 
 /** NPC 城池库存档位（v23，AISLG-55）：相对该城初始库存的比例分档——只给大概档位，
@@ -63,6 +66,36 @@ export interface FamousTileView {
   recoversAt: string | null;
   /** 占领后得到的名城独有效果（v62，AISLG-166）：可在名城介绍中查看 */
   effect: FamousEffectView | null;
+  /**
+   * 名城首探者（v93，AISLG-227）：未探索的格不返回；迷雾开启时已探索 / 视野内的名城给出首探者用户名，
+   * 尚无人首探为 null；迷雾关闭时字段缺省（不显示首探信息）
+   */
+  firstExplorer?: string | null;
+}
+
+/** 遗迹的品质（v93，AISLG-227）：普通 / 稀有 / 传说 */
+export type RelicTier = 'common' | 'rare' | 'legendary';
+
+/** 遗迹的种类（v93，AISLG-227）：八种，与 common/src/relic.ts 的配置一一对应 */
+export const RELIC_KINDS = ['granary', 'lumberyard', 'quarry', 'ironworks', 'caravan', 'battlefield', 'treasury', 'mausoleum'] as const;
+export type RelicKind = (typeof RELIC_KINDS)[number];
+
+/** 地块上未领取的遗迹（v93，AISLG-227）：已探索或视野内才给；领取后不再返回 */
+export interface RelicTileView {
+  tier: RelicTier;
+  kind: RelicKind;
+}
+
+/**
+ * 名将处所（v93，AISLG-227）：8 位一线在野名将的隐居地（所在野地格）。已探索或视野内才给；
+ * claimed 为 true 表示名将已被招揽（处所与名字保留，图标变灰，首探只发资源）。
+ */
+export interface HeroSiteView {
+  /** 处所名，如「茅庐」 */
+  name: string;
+  /** 名将名，如「诸葛亮」 */
+  hero: string;
+  claimed: boolean;
 }
 
 /**
@@ -109,6 +142,10 @@ export interface TileView {
   wildFamous: boolean;
   /** 野地储量（v61，AISLG-165）：仅野地有值（有主或无主），其余地块为 null */
   reserve: ReserveView | null;
+  /** 遗迹（v93，AISLG-227）：实时视野或已探索且未领取的遗迹格才有；其余为 null（迷雾关闭时恒为 null） */
+  relic: RelicTileView | null;
+  /** 名将处所（v93，AISLG-227）：实时视野或已探索的处所格才有；其余为 null（迷雾关闭时恒为 null） */
+  heroSite: HeroSiteView | null;
   /** 战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾时一致）；explored = 已探索但不在视野内，
    *  只给上次看到的地形 / 等级 / 占领者，动态字段（驻军、库存 / 储量档位、保护、城防）为 null 或 0；未探索的地块不返回 */
   fog: 'explored' | 'visible';
@@ -233,7 +270,10 @@ export interface WorldMapResponseData {
 
 /** 小地图城池点位的归属：本方（主城 / 分城）、他方玩家城池、NPC 城池、名城（未被占领的名城） */
 /** famous_rumor（v92，AISLG-224）：未探索的名城在锚点上的大致方位（锚点不是真实坐标） */
-export type MapOverviewSide = 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous' | 'famous_rumor';
+/** relic（v93，AISLG-227）：已探索且未领取的遗迹；hero_site / hero_site_claimed：已探索的名将处所（未招揽 / 已出山） */
+export type MapOverviewSide =
+  | 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous' | 'famous_rumor'
+  | 'relic' | 'hero_site' | 'hero_site_claimed';
 
 /** GET_MAP_OVERVIEW（op 95）响应载荷（v58）：全图城池点位，野地不返回 */
 export interface MapOverviewResponseData {
@@ -304,6 +344,8 @@ export interface MarchStatePushData {
 /** PUSH_TILE_STATE（op 2006）推送载荷：地块归属 / 驻军变化 */
 export interface TileStatePushData {
   reason:
+    /** relic_claimed（v93，AISLG-227）：遗迹被领取，推给仍能看到该格的账号（tile 为领取后的视图，遗迹已不在） */
+    | 'relic_claimed'
     | 'wilderness_occupied'
     | 'wilderness_lost'
     /** v61（AISLG-165）：野地储量采空（归属方视角，推送地块最新视图） */

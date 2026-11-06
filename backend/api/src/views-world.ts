@@ -43,6 +43,8 @@ interface TileQueryRow extends TileRow {
   owner_account_id: string | null;
   /** 占领者与请求账号同一联盟（v67，AISLG-182；自己不算盟友） */
   owner_is_ally?: boolean;
+  /** 本账号能否向城主协防（v95，AISLG-226）：同联盟或友盟（relation = friendly，不含冷却期）；自己为 false */
+  owner_can_assist?: boolean | null;
   owner_username: string | null;
   owner_nobility?: number | null;
   owner_relation?: string | null;
@@ -87,6 +89,7 @@ const TILE_SELECT = `
   SELECT wt.x, wt.y, wt.terrain, wt.kind, wt.level, wt.owner_city_id, wt.npc, wt.plundered_at,
          c.account_id AS owner_account_id, a.username AS owner_username, a.nobility AS owner_nobility, c.name AS owner_city_name,
          (am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id AND c.account_id <> $1) AS owner_is_ally,
+         (c.account_id <> $1 AND ((am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id) OR r.relation = 'friendly')) AS owner_can_assist,
          CASE
            WHEN c.account_id = $1 THEN 'self'
            WHEN am_me.alliance_id IS NOT NULL AND am_me.alliance_id = am_o.alliance_id THEN 'ally'
@@ -228,6 +231,7 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
       nobilityName: nobilityName(Number(row.owner_nobility ?? 0)),
       ally: row.owner_is_ally === true,
       relation: ownerRelationOf(row.owner_relation, row.owner_account_id, requesterAccountId),
+      canAssist: row.owner_can_assist === true,
     };
   }
   // NPC 城池库存档位（v23 AISLG-55）：对全服可见（只给档位不给数值，精确值走侦察）
@@ -250,6 +254,9 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     durability: durabilityView(row, requesterAccountId),
     wildFamous: wildFamousMarked(row),
     reserve: reserveOf(row, garrison, requesterAccountId),
+    // 遗迹 / 名将处所（v93）：默认无；开启迷雾时由 fog-view.ts 的 applySiteViews 按探索状态补上
+    relic: null,
+    heroSite: null,
     // 战争迷雾（v92）：视图默认实时可见；开启迷雾时由 fog-view.ts 按探索状态改写
     fog: 'visible',
     seenAt: null,

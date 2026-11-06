@@ -7,6 +7,7 @@
  *  只负责渲染与悬浮 / 选中态；地图数据与动作在 worldSession，组装在 WorldMapView。
  */
 
+import { WorldSiteMarker } from './map/WorldSiteMarker';
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import type { AllianceMarkView, TileView, WorldMapResponseData } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
@@ -16,6 +17,7 @@ import { zoomStep } from '../state/mapZoom';
 import { WorldTileBadges } from './WorldTileBadges';
 import { TERRITORY_FILL_CLASS } from './map/TerritoryOverlay';
 import { TileYield } from './map/YieldLayer';
+import { FogCell } from './map/FogCell';
 import type { TerritoryCell } from './map/territoryBorders';
 import type { YieldInfo } from './map/yieldTable';
 import { AllianceMarkBadge, CityMark, TERRAIN_CLASS, TerrainIcon, levelTone } from './worldMapMarks';
@@ -287,6 +289,14 @@ export function WorldMapGrid({
     }
   };
 
+  /** 选中（地块与迷雾格共用）：拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分） */
+  const selectCell = (x: number, y: number) => {
+    if (lastDragMovedRef.current) {
+      lastDragMovedRef.current = false;
+      return;
+    }
+    onSelect(x, y);
+  };
   const tileAt = new Map(win.tiles.map((tile) => [`${tile.x},${tile.y}`, tile]));
   const cols = Array.from({ length: win.w }, (_, i) => win.x + i);
   const rows = Array.from({ length: win.h }, (_, i) => win.y + i);
@@ -330,8 +340,8 @@ export function WorldMapGrid({
             cols.map((x) => {
               const tile = tileAt.get(`${x},${y}`);
               if (!tile) {
-                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾（迷雾开启时才会缺格）
-                return <span key={`${x}-${y}`} role="世界地图-迷雾层" title={copy.EXTRA_MAP.fog.unknownTitle} aria-label={copy.EXTRA_MAP.fog.unknownTitle} className="rounded bg-[#05070b]" />;
+                // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾；都可点选，带本盟标记时画角标（AISLG-226）
+                return <FogCell key={`${x}-${y}`} x={x} y={y} mark={marks?.get(`${x},${y}`)} selected={selected?.x === x && selected?.y === y} onSelect={selectCell} />;
               }
               const isOwn = tile.owner !== null && tile.owner.accountId === accountId;
               const isSelected = selected !== null && selected.x === x && selected.y === y;
@@ -357,21 +367,12 @@ export function WorldMapGrid({
                   tabIndex={tile === tabTarget ? 0 : -1}
                   aria-label={tileAria(tile, isOwn)}
                   aria-pressed={isSelected}
-                  onClick={() => {
-                    // 拖曳结束后的 click 不触发选中（点击与拖曳按位移阈值区分）
-                    if (lastDragMovedRef.current) {
-                      lastDragMovedRef.current = false;
-                      return;
-                    }
-                    onSelect(x, y);
-                  }}
+                  onClick={() => selectCell(x, y)}
                   onKeyDown={(e) => onTileKey(e, tile)}
                   onMouseEnter={(e) => showTip(tile, isOwn, e.currentTarget)}
                   onFocus={(e) => showTip(tile, isOwn, e.currentTarget)}
                   onBlur={hideTip}
                   className={`group relative grid cursor-pointer place-items-center overflow-hidden rounded transition-[filter,box-shadow] duration-100 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
-                    explored ? 'brightness-[.6] saturate-50' : ''
-                  } ${
                     TERRAIN_CLASS[tile.terrain] ?? TERRAIN_CLASS.plain
                   } ${
                     // 已掠空的 NPC 城：整格变暗（v23 AISLG-55）
@@ -406,7 +407,8 @@ export function WorldMapGrid({
                     <>
                       <TerrainIcon terrain={tile.terrain} className="w-[40%]" />
                       {/* 在野名将标记（v54，AISLG-144）：野地里藏着未被获得的名将，公开可见 */}
-                      {tile.wildFamous ? (
+                      {/* 名将处所（AISLG-227）取代 ★：有处所信息的格不再画 ★，其余在野名将照旧 */}
+                      {tile.wildFamous && !tile.heroSite ? (
                         <span
                           role="世界地图视野-在野名将"
                           aria-hidden="true"
@@ -416,6 +418,8 @@ export function WorldMapGrid({
                           ★
                         </span>
                       ) : null}
+                      {/* 遗迹 / 名将处所图标（v93，AISLG-227）：独立组件，见 WorldSiteMarker.tsx */}
+                      <WorldSiteMarker tile={tile} />
                       {/* 等级数字：默认隐藏，悬停 / 选中显示；满级（10 级）金色常显（docs 第 6 节） */}
                       <span
                         role="世界地图视野-等级"
@@ -439,6 +443,8 @@ export function WorldMapGrid({
                     />
                   ) : null}
                   {yieldInfo ? <TileYield info={yieldInfo} showNumber={showYieldNumber} /> : null}
+                  {/* 已探索格：格内遮罩等同亮度 40%（AISLG-227）；遗迹 / 处所标记 z-[2] 在遮罩之上，不被压暗 */}
+                  {explored ? <span role="世界地图视野-阴影压暗" aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/60 backdrop-saturate-50" /> : null}
                 </button>
               );
             }),

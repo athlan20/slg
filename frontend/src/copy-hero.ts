@@ -18,6 +18,7 @@ export const HERO_COPY = {
     meta: (normal: number, normalCap: number, famous: number, famousCap: number) =>
       `普通将 ${normal}/${normalCap} · 名将 ${famous}/${famousCap}`,
     hint: '武将账号共享：出征 / 侦察 / 截击 / 运输时可带 1 名；也可任命为城守。属性只决定战斗加成，且加成各自封顶 20%。',
+    alert: (captives: number, low: number) => `被俘待赎回 ${captives} 名 · 忠诚度低 ${low} 名`,
     loading: '正在读取武将…',
     noTavern: '主城还没有酒馆：建造酒馆后每 4 小时刷新 3 名候选将领，花金币招募（酒馆只能建在主城）。',
     noHeroes: '还没有武将。到酒馆候选里招募一名吧。',
@@ -52,6 +53,15 @@ export const HERO_COPY = {
     assignGuard: '任命为本城城守',
     removeGuard: '撤任城守',
     guardOther: '改任本城城守',
+    loyalty: (value: number) => `忠诚 ${value}`,
+    loyaltyLow: '忠诚度 30 及以下，再不赏赐就要下野了',
+    captiveTag: '被俘',
+    statusCaptive: (clock: string) => `被俘囚禁，${clock} 前需赎回`,
+    ransom: (gold: number) => `赎回 ${gold} 金`,
+    ransomConfirm: (gold: number) => `确认花 ${gold} 金赎回`,
+    ransomCancel: '取消',
+    ransomHint: '主人在囚禁结束前赎回：扣主城全额赎金，胜方收 50%，名将立刻归队，忠诚度 −20（最低 1）',
+    captiveDenied: '该武将被俘囚禁中，暂不能操作',
     dismiss: '解雇',
     dismissConfirm: '确认解雇？',
     dismissFamousHint: '解雇后该名将回到全服「可获得」状态，可能被他人得到',
@@ -84,6 +94,7 @@ export const HERO_COPY = {
       busy: '在外',
       guard: '城守',
       training: '历练',
+      captive: '被俘',
     },
     preview: (atk: number, def: number, scale: number) =>
       `加成：攻击 +${atk}% · 减伤 ${def}%${scale < 1 ? `（编队超过统率上限，已按 ${Math.round(scale * 100)}% 摊薄）` : ''}`,
@@ -101,6 +112,14 @@ export const HERO_COPY = {
     expSuffix: (name: string, gained: number, leveledTo: number | null) =>
       `；武将 ${name} 经验 +${gained}${leveledTo ? `，升到 Lv${leveledTo}` : ''}`,
     woundedSuffix: (name: string) => `；武将 ${name} 重伤`,
+    heroLeftLoyalty: (name: string) => `武将 ${name} 忠诚度耗尽，离开了你`,
+    heroLeftCaptive: (name: string) => `武将 ${name} 被俘后超时未赎回，已离开你`,
+    heroLeftQualified: (name: string, owner: string) => `${owner} 的名将 ${name} 囚禁超时离开，你获得了结交资格`,
+    captured: (name: string, captor: string, ransom: number) => `武将 ${name} 被 ${captor} 俘虏，24 小时内可用 ${ransom} 金赎回`,
+    capturedBy: (name: string, owner: string) => `俘虏了 ${owner} 的武将 ${name}，对方 24 小时内可赎回`,
+    ransomed: (name: string, cost: number) => `武将 ${name} 已赎回（花费 ${cost} 金），忠诚度 −20`,
+    ransomedBy: (name: string, owner: string, share: number) => `${owner} 赎回了武将 ${name}，你的主城得 ${share} 金`,
+    loyaltyLow: (name: string, loyalty: number) => `武将 ${name} 忠诚度降到 ${loyalty}，再不赏赐就要下野了`,
   },
   report: {
     attackerHero: (name: string, lead: number, force: number, wit: number, atk: number, def: number) =>
@@ -110,6 +129,8 @@ export const HERO_COPY = {
   },
   broadcast: {
     granted: (username: string, name: string, source: string) => `${username} ${source}，获得名将 ${name}`,
+    left: (name: string, username: string) => `名将 ${name} 离开了 ${username}`,
+    captured: (captor: string, owner: string, name: string) => `${captor} 俘虏了 ${owner} 的 ${name}`,
   },
   growth: {
     points: (n: number) => `可分配 ${n} 点`,
@@ -121,7 +142,7 @@ export const HERO_COPY = {
     reset: '洗点',
     pointsHint: '升级得到的自由点数，分到统率 / 武力 / 智力（点数只能靠升级获得）',
     trainHint: '派去历练，到点经验自动到账（离线也结算）；历练期间不能出征、任城守或加点',
-    giftHint: (left: number) => `花 1000 金币得 100 经验，今日还能赏赐 ${left} 次`,
+    giftHint: (left: number) => `花 1000 金币得 100 经验，忠诚度 +10，今日还能赏赐 ${left} 次`,
     resetHint: (left: number) => `已分配的点数全部退回，花等级 × 1000 金币，今日还能洗点 ${left} 次`,
     busyHint: '外出、城守或历练中，暂不能加点 / 历练 / 洗点',
     cancelTraining: '取消历练（不返还经验）',
@@ -165,6 +186,8 @@ export const HERO_COPY = {
       HERO_FAVOR_INSUFFICIENT: '好感度未满 100，还不能招揽',
       HERO_FAVOR_FULL: '好感度已满，直接招揽即可',
       FAMOUS_CLAIMED: '该名将已被他人获得',
+      HERO_CAPTURED: '该武将被俘囚禁中，需主人在囚禁结束前赎回',
+      HERO_NOT_CAPTURED: '该武将未被俘（或囚禁已结束），不能赎回',
     } as Partial<Record<ErrorCode, string>>,
   },
 };

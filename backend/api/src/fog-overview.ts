@@ -10,7 +10,7 @@ import type { MapOverviewSide } from '../../common/src/protocol';
 import { exploredPercentOf, inAnyVision, isCellExplored, FOG_POWER_TOP_N } from '../../common/src/fog';
 import { loadSeenWindow } from '../../common/src/fog-db';
 import type { FogRequest } from './fog-view';
-import { relationsOf } from './fog-view';
+import { isFriendlyRelation, relationsOf } from './fog-view';
 
 /** 小地图查询的一行（map-overview.ts 的 SQL 输出） */
 export interface OverviewRow {
@@ -83,8 +83,9 @@ export async function fogOverview(req: FogRequest, rows: readonly OverviewRow[])
   for (const famous of registered.rows as Array<{ x: number; y: number }>) {
     famousRegistered.add(`${famous.x},${famous.y}`);
   }
+  // 友盟 / 同盟的城池格实时可见（只这一格，口径同 fog-view 的 isLiveTile）
   const live = (x: number, y: number, row?: OverviewRow): boolean =>
-    inAnyVision(req.sources, x, y) || (row !== undefined && row.kind === 'city' && row.owner_is_ally === true);
+    inAnyVision(req.sources, x, y) || (row !== undefined && row.kind === 'city' && isFriendlyRelation(row.owner_relation));
   const points: Array<[number, number, MapOverviewSide]> = [];
   const emitted = new Set<string>();
   // 1. 实时视野内的城、战力榜前 20 的主城：按当前状态（它们始终可见）
@@ -103,6 +104,11 @@ export async function fogOverview(req: FogRequest, rows: readonly OverviewRow[])
     if (emitted.has(key) || live(snapshot.x, snapshot.y)) {
       continue;
     }
+    // 快照只在“看到过”时写入；地图格子按区块探索位图显示，这里同口径：区块未探索的城不显示
+    // （友盟 / 同盟的城池格实时可见期间写入的快照，关系结束后不应继续出现在小地图上）
+    if (!isCellExplored(req.bits, snapshot.x, snapshot.y)) {
+      continue;
+    }
     if (snapshot.kind === 'npc_city') {
       points.push([snapshot.x, snapshot.y, famousRegistered.has(key) ? 'famous' : 'npc']);
     } else if (snapshot.kind === 'city' && snapshot.ownerAccountId) {
@@ -112,6 +118,7 @@ export async function fogOverview(req: FogRequest, rows: readonly OverviewRow[])
   }
   // 3. 名城锚点：未探索（真实位置不知道）时显示大致方位；探索后由第 2 步的快照显示真实位置
   const anchors = famousAnchors(WORLD_SIZE);
+  const rowAt = new Map(rows.map((row) => [`${row.x},${row.y}`, row] as const));
   const names = await req.client.query(`SELECT name, x, y FROM famous_cities`);
   for (const famous of names.rows as Array<{ name: string; x: number; y: number }>) {
     const index = (FAMOUS_CITY_NAMES as readonly string[]).indexOf(famous.name);
@@ -119,7 +126,8 @@ export async function fogOverview(req: FogRequest, rows: readonly OverviewRow[])
     if (!anchor) {
       continue;
     }
-    if (!isCellExplored(req.bits, famous.x, famous.y) && !live(famous.x, famous.y)) {
+    // 名城格若是友盟 / 同盟的城池，实时可见，不再在锚点上画大致方位
+    if (!isCellExplored(req.bits, famous.x, famous.y) && !live(famous.x, famous.y, rowAt.get(`${famous.x},${famous.y}`))) {
       points.push([anchor.x, anchor.y, 'famous_rumor']);
     }
   }

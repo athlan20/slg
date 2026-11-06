@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.athlan20/slg-mcp",
-  "description": "Let your AI agent play a Three Kingdoms strategy game: query cities, build, recruit, march, scout and read battle reports.",
+  "description": "Let your AI agent play a Three Kingdoms strategy game (SLG): build, recruit, march, scout, battle.",
   "repository": {
     "url": "https://github.com/athlan20/slg",
     "source": "github",

@@ -40,6 +40,8 @@ export interface TileOwnerView {
   ally: boolean;
   /** v77（AISLG-195）：与占领者的关系 self / ally / friendly / hostile / neutral */
   relation: 'self' | 'ally' | 'friendly' | 'hostile' | 'neutral';
+  /** v95（AISLG-226）：本账号现在能否向该占领者协防；解除友好冷却期内 relation 仍为 friendly，但为 false */
+  canAssist: boolean;
 }
 
 /** NPC 城池库存档位（v23 AISLG-55；相对该城初始库存，不给精确数值） */
@@ -54,6 +56,8 @@ export interface FamousEffectView {
 
 /** 名城标识与当前阶段（v24，AISLG-56） */
 export interface FamousTileView {
+  /** 名城首探者（v93）：迷雾关闭时缺省；尚无人首探为 null */
+  firstExplorer?: string | null;
   name: string;
   /** outer=外围阶段（须先清外围）；keeper=外围已清、可攻城守并占领 */
   stage: 'outer' | 'keeper';
@@ -67,6 +71,10 @@ export interface FamousTileView {
 
 /** 地图窗口内一格的视图 */
 export interface TileView {
+  /** 遗迹（v93，AISLG-227）：已探索或视野内且未领取才有 */
+  relic: RelicTileView | null;
+  /** 名将处所（v93，AISLG-227）：已探索或视野内才有 */
+  heroSite: HeroSiteView | null;
   x: number;
   y: number;
   terrain: TerrainKind;
@@ -371,7 +379,24 @@ export interface WorldMapResponseData {
 
 /** 小地图城池点位的归属：本方 / 他方玩家城池 / NPC 城池 / 未被占领的名城 */
 /** famous_rumor（v92）：未探索的名城在锚点上的大致方位 */
-export type MapOverviewSide = 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous' | 'famous_rumor';
+export type MapOverviewSide =
+  | 'own' | 'ally' | 'friendly' | 'hostile' | 'enemy' | 'npc' | 'famous' | 'famous_rumor'
+  | 'relic' | 'hero_site' | 'hero_site_claimed';
+
+/** 遗迹（v93，AISLG-227）：未领取的遗迹；kind 与后端 RELIC_KINDS 一致 */
+export type RelicTier = 'common' | 'rare' | 'legendary';
+export type RelicKind = 'granary' | 'lumberyard' | 'quarry' | 'ironworks' | 'caravan' | 'battlefield' | 'treasury' | 'mausoleum';
+export interface RelicTileView {
+  tier: RelicTier;
+  kind: RelicKind;
+}
+
+/** 名将处所（v93，AISLG-227）：claimed = 名将已被招揽（已出山） */
+export interface HeroSiteView {
+  name: string;
+  hero: string;
+  claimed: boolean;
+}
 
 /** GET_MAP_OVERVIEW 响应（v58，AISLG-160）：城池点位 [x, y, side]，按 y 行 x 列排序；野地不返回 */
 export interface MapOverviewResponseData {

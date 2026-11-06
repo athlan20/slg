@@ -69,6 +69,7 @@ export const ALLIANCE_COPY = {
     declare: '宣布敌对',
     limit: (friends: number, hostiles: number) => `最多 ${friends} 个友盟、${hostiles} 个敌对`,
     note: '友盟互不攻击、可以互相协防；解除友好后 24 小时内仍不能互相攻击，72 小时内不能再次结好。敌对只在地图标红，不改变战斗规则。',
+    assistCooldown: '解除友好冷却中，暂时不能协防',
     managerOnly: '只有盟主 / 副盟主可以发起或解除外交',
     directionSent: '已发出',
     directionReceived: '收到',

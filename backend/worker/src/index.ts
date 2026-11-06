@@ -28,6 +28,7 @@ import { processTroopPools } from './troop-pool-tick';
 import { processDueReserves } from './reserve-tick';
 import { processHeroSalaries } from './hero-salary-tick';
 import { processHeroTraining } from './hero-training-tick';
+import { processHeroLoyalty } from './hero-loyalty-tick';
 import { processArenaRewards } from './arena-tick';
 import { processAlliances } from './alliance-tick';
 import { processBattlefield } from './battlefield-tick';
@@ -144,6 +145,12 @@ async function main(): Promise<void> {
       await processHeroSalaries(pool);
     } catch (err) {
       console.error('worker hero salary tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v94（AISLG-228）：名将忠诚度——每 24 小时（随缩放）−10，0 下野；囚禁到期未赎回则下野、胜方得结交资格
+      await processHeroLoyalty(pool);
+    } catch (err) {
+      console.error('worker hero loyalty tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v54（AISLG-144）：武将历练到点结算——经验到账（离线也结算），升级得自由点数

@@ -56,6 +56,8 @@ function tileBase(overrides: Partial<TileView>): TileView {
     protection: null,
     durability: null,
     wildFamous: false,
+    relic: null,
+    heroSite: null,
     reserve: null,
     ...overrides,
   };
@@ -65,7 +67,7 @@ function owned(x: number, y: number, accountId: string, relation: NonNullable<Ti
   return tileBase({
     x,
     y,
-    owner: { accountId, username: accountId, cityId: `city-${accountId}`, cityName: `城-${accountId}`, nobility: 0, nobilityName: '平民', ally: relation === 'ally', relation },
+    owner: { accountId, username: accountId, cityId: `city-${accountId}`, cityName: `城-${accountId}`, nobility: 0, nobilityName: '平民', ally: relation === 'ally', relation, canAssist: relation === 'ally' || relation === 'friendly' },
   });
 }
 

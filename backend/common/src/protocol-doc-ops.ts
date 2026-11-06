@@ -141,6 +141,7 @@ import { REQUEST_GET_QUESTS, REQUEST_CLAIM_QUEST, REQUEST_GET_ACTIVITIES, REQUES
 import { GIFT_STATE_FIELDS } from './protocol-doc-gift';
 import { ITEMS_STATE_FIELDS, REQUEST_BUY_ITEM, REQUEST_GET_ITEMS } from './protocol-doc-ops-items';
 import { MOVE_CITY_STATE_FIELDS, REQUEST_MOVE_CITY } from './protocol-doc-ops-move-city';
+import { REQUEST_RANSOM_HERO } from './protocol-doc-ops-hero-loyalty';
 
 const REQUEST_GET_STATE: RequestOpDoc = {
   kind: 'request',
@@ -298,7 +299,7 @@ const REQUEST_GET_EVENTS: RequestOpDoc = {
     {
       name: 'events[].type',
       type: 'string',
-      desc: "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）。",
+      desc: "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）· 'hero_left'（v94，AISLG-228，名将下野，detail = { heroId, heroName, cause = loyalty / captive_expired }，胜方得结交资格时另有一条 qualified = true）/ 'hero_captured'（v94，名将被俘，主人与胜方各一条，detail = { heroId, heroName, ownerUsername, captorUsername, capturedUntil, ransomGold, side }）/ 'hero_ransomed'（v94，名将被赎回，detail = { heroId, heroName, ransomGold, taxShare, destroyed, side }）/ 'hero_loyalty_low'（v94，忠诚度降到 30 及以下，detail = { heroId, heroName, loyalty }）。",
     },
     { name: 'events[].initiator', type: "'player' | 'agent' | null", desc: '发起事件的连接声明的登录类型。' },
     { name: 'events[].cityId', type: 'string | null', desc: '关联城池 id，无关联时为 null。' },
@@ -482,6 +483,7 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.GET_ITEMS]: REQUEST_GET_ITEMS,
   [Op.BUY_ITEM]: REQUEST_BUY_ITEM,
   [Op.MOVE_CITY]: REQUEST_MOVE_CITY,
+  [Op.RANSOM_HERO]: REQUEST_RANSOM_HERO,
   [Op.CAST_STRATAGEM]: REQUEST_CAST_STRATAGEM,
   [Op.PUSH_STRATAGEM]: PUSH_STRATAGEM,
   [Op.PUSH_EXPLORATION_REPORT]: PUSH_EXPLORATION_REPORT,

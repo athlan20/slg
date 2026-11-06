@@ -406,6 +406,14 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v36，AISLG-114）武将欠饷中（主城金币不足以支付俸禄），不能出征。',
     action: '给主城补足金币，俸禄结算成功后自动恢复（收到 reason=salary_paid 推送）。',
   },
+  HERO_CAPTURED: {
+    desc: '（v94，AISLG-228）武将被俘囚禁中（24 小时基准），不能出征 / 侦察 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计。',
+    action: '主人用 RANSOM_HERO 在囚禁截止前赎回；超时则名将下野，不必再操作。',
+  },
+  HERO_NOT_CAPTURED: {
+    desc: '（v94，AISLG-228）武将未被俘，或囚禁已到期（即将下野），不能赎回。',
+    action: '用 GET_HEROES 查看 heroes[].captive；为 null 即无需赎回。',
+  },
   HERO_TRAINING: {
     desc: '（v54，AISLG-144）武将正在历练中，不能出征 / 任城守 / 解雇 / 加点 / 洗点 / 再次历练（赏赐不受限）。',
     action: '等历练结束（train_until 过去，经验到账并收到 reason=training_done 推送）后再操作。',
@@ -919,7 +927,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '改用指定坐标迁城（高级迁城令）选一块空野地，或等世界有空地后再试。',
   },
   TILE_UNEXPLORED: {
-    desc: '该地块在战争迷雾中未探索，且不在任何视野来源（城池 / 领地 / 行军 / 盟友城池格）覆盖内，服务端不返回它的任何信息（v92，AISLG-224）。仅在 fog_enabled 开启时出现。',
+    desc: '该地块在战争迷雾中未探索，且不在任何视野来源（城池 / 领地 / 行军 / 同盟或友盟的城池格）覆盖内，服务端不返回它的任何信息（v92，AISLG-224）。仅在 fog_enabled 开启时出现。',
     action: '先派斥候或部队去这个方向探索（派去未探索坐标的出征本身允许，盲打时前端应提示“目标在迷雾中”）。也可以改查已探索的格子。',
   },
   CHAT_COORD_UNEXPLORED: {

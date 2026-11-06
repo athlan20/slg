@@ -49,6 +49,10 @@ export interface HeroView {
   guardProductionPercent: number;
   /** 今日剩余次数（v54）：赏赐 / 洗点 */
   dailyLeft: { gift: number; reset: number };
+  /** 忠诚度 0..100（v94，AISLG-228）：只有 29 位在野名将有，其余为 null；30 及以下标红 */
+  loyalty: number | null;
+  /** 被俘囚禁（v94）：截止时刻与赎金；未被俘为 null */
+  captive: { capturedUntil: string; ransomGold: number } | null;
 }
 
 /** 在野名将的结交进度（v54） */
@@ -201,7 +205,11 @@ export interface HeroStatePushData {
     | 'training_cancelled' // 历练被取消，武将回城、不给经验（v71，AISLG-190）
     | 'points_changed'   // 加点 / 洗点（v54）
     | 'gifted'           // 赏赐（v54）
-    | 'friendship_changed'; // 结交进度（v54）
+    | 'friendship_changed' // 结交进度（v54）
+    | 'loyalty_changed'   // 忠诚度变化（v94）
+    | 'captured'          // 名将被俘（v94）
+    | 'ransomed'          // 名将被赎回（v94）
+    | 'left';             // 名将下野（v94）
   heroId?: string;
   /** exp_gained 时的经验与升级信息 */
   exp?: { gained: number; level: number; leveledTo: number | null };

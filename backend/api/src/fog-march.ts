@@ -7,7 +7,7 @@ import { getFogEnabled } from '../../common/src/fog-config';
 import { ensureFogState, marchVisionSources, ownVisionSources } from '../../common/src/fog-db';
 import { inAnyVision, isCellExplored } from '../../common/src/fog';
 import { loadTechLevels } from '../../common/src/tech-db';
-import { isAllyOfCity } from './march-target';
+import { isFriendlyRelation, relationsOf } from './fog-view';
 
 /** 盲打只支持 plunder / occupy（运输、调兵、增援、协防的目标都是自己或盟友的地，不会在迷雾里） */
 export function blindEligibleTask(task: MarchTask): boolean {
@@ -31,11 +31,18 @@ export async function cellVisibility(client: pg.PoolClient, accountId: string, x
   if (inAnyVision(sources, x, y)) {
     return 'visible';
   }
-  const tile = await client.query(`SELECT kind, owner_city_id FROM world_tiles WHERE x = $1 AND y = $2`, [x, y]);
-  const row = tile.rows[0] as { kind: string; owner_city_id: string | null } | undefined;
-  if (row && row.kind === 'city' && row.owner_city_id && (await isAllyOfCity(client, accountId, row.owner_city_id))) {
-    // 盟友城池格始终实时可见（只这一格）
-    return 'visible';
+  const tile = await client.query(
+    `SELECT wt.kind, c.account_id AS owner_account_id FROM world_tiles wt LEFT JOIN cities c ON c.id = wt.owner_city_id
+     WHERE wt.x = $1 AND wt.y = $2`,
+    [x, y],
+  );
+  const row = tile.rows[0] as { kind: string; owner_account_id: string | null } | undefined;
+  if (row && row.kind === 'city' && row.owner_account_id) {
+    // 友盟 / 同盟的城池格始终实时可见（只这一格），与地图、GET_TILE 同一关系口径（fog-view 的 isFriendlyRelation）
+    const relation = (await relationsOf(client, accountId, [row.owner_account_id])).get(row.owner_account_id);
+    if (isFriendlyRelation(relation?.relation)) {
+      return 'visible';
+    }
   }
   return isCellExplored(state.bits, x, y) ? 'explored' : 'unknown';
 }
