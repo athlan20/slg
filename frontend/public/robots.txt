@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://slg.yuntianyou.cc/sitemap.xml
