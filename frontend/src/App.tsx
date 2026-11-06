@@ -11,9 +11,11 @@ import { ScoutReportModalProvider } from './state/scoutReportModal';
 import { useGameSession } from './state/useGameSession';
 import { useIncomingAttacks } from './state/useIncomingAttacks';
 import { reportShareLabel } from './components/chat/chatText';
+import { useCopy } from './i18n/bundle';
 
 export default function App() {
   const session = useGameSession();
+  const landing = useCopy().LANDING_COPY;
   const loggedIn = session.account !== null;
   // 出发城坐标（AISLG-72）：当前操作的城（缺省主城）在 GET_STATE cities 里的世界坐标；未分配坐标的城不给行军时长预估
   const activeCityRef = session.cityList.cities.find((item) => item.id === session.cityList.activeCityId) ?? session.cityList.cities[0] ?? null;
@@ -88,6 +90,13 @@ export default function App() {
               ) : (
                 <main role="主体-未登录" className="flex h-dvh justify-center overflow-y-auto p-3">
                   <div role="主体-登录框" className="mt-[10vh] h-fit w-full max-w-lg">
+                    <section role="未登录-游戏介绍" className="mb-3">
+                      <h1 role="未登录-游戏介绍-标题" className="text-lg font-semibold">{landing.title}</h1>
+                      <p role="未登录-游戏介绍-正文" className="mt-1 text-[13px] text-faint">{landing.intro}</p>
+                      <p role="未登录-游戏介绍-链接" className="mt-1 text-[13px]">
+                        <a href="/agent-api.md" className="underline">{landing.agentDocs}</a>
+                      </p>
+                    </section>
                     <LoginPanel
                       booting={session.booting}
                       loginBusy={session.loginBusy}
