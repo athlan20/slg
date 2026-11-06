@@ -18,7 +18,7 @@ import pg from 'pg';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { insertEvent } from '../../common/src/events';
 import { EventType } from '../../common/src/protocol';
-import { INACTIVE_WILDERNESS_RECLAIM_MS } from '../../common/src/rules';
+import { INACTIVE_WILDERNESS_RECLAIM_MS } from '../../common/src/inactive';
 import { loadTileArmy } from '../../common/src/world-db';
 import { destroyFacility } from '../../common/src/facility-db';
 import { troopsEnterCity } from './tick-shared';
@@ -26,7 +26,9 @@ import { troopsEnterCity } from './tick-shared';
 /** 扫描节流（毫秒，真实时间）：阈值是天级，每小时扫一轮足够 */
 export const INACTIVE_TICK_MS = 60 * 60 * 1000;
 
-let lastRunMs = 0;
+// 进程启动后先等一个节流周期再扫第一轮：线上刚发版时 Agent 还在重连、在线心跳要等一小时才刷 last_active_at，
+// 立刻扫会把「只靠 Agent 玩」的账号当成不活跃（AISLG-236 之前登录的 Agent 没刷过 last_active_at）。
+let lastRunMs = Date.now();
 
 /** 一轮扫描的结果：收回的账号数与野地数（都按本轮真正处理过的算） */
 export interface InactiveReclaimResult {
@@ -64,6 +66,12 @@ export async function processInactiveTerritories(
        JOIN world_tiles wt ON wt.owner_city_id = c.id AND wt.kind = 'wilderness'
        JOIN accounts a ON a.id = c.account_id
       WHERE COALESCE(a.last_active_at, a.last_online_at, a.created_at) < $1
+        -- 兜底：AISLG-236 之前 Agent 上线不刷 last_active_at，存量账号的该列可能偏旧；
+        -- 7 天内有 Agent 上线 / 断线事件的账号一律算活跃，不收
+        AND NOT EXISTS (
+          SELECT 1 FROM events e
+           WHERE e.account_id = a.id AND e.type IN ('agent_connected', 'agent_disconnected') AND e.created_at >= $1
+        )
       ORDER BY c.account_id`,
     [cutoff],
   );
@@ -94,7 +102,11 @@ async function reclaimAccount(pool: pg.Pool, accountId: string, cutoff: Date): P
   try {
     await client.query('BEGIN');
     const still = await client.query(
-      `SELECT 1 FROM accounts a WHERE a.id = $1 AND COALESCE(a.last_active_at, a.last_online_at, a.created_at) < $2`,
+      `SELECT 1 FROM accounts a WHERE a.id = $1 AND COALESCE(a.last_active_at, a.last_online_at, a.created_at) < $2
+          AND NOT EXISTS (
+            SELECT 1 FROM events e
+             WHERE e.account_id = a.id AND e.type IN ('agent_connected', 'agent_disconnected') AND e.created_at >= $2
+          )`,
       [accountId, cutoff],
     );
     if (!still.rowCount) {

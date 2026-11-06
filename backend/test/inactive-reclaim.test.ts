@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import pg from 'pg';
 import { ensureSchema } from '../common/src/db';
-import { INACTIVE_WILDERNESS_RECLAIM_MS } from '../common/src/rules';
+import { INACTIVE_WILDERNESS_RECLAIM_MS } from '../common/src/inactive';
 import { ALLIANCE_LEADER_INACTIVE_MS } from '../common/src/protocol-alliance';
 import { Op, type InitiatorRole } from '../common/src/protocol';
 import { INACTIVE_TICK_MS, processInactiveTerritories } from '../worker/src/inactive-tick';
@@ -317,6 +317,25 @@ describe('inactive-tick 收回野地的事务规则（需 TEST_DATABASE_URL）',
     const old = await newAccount('s-created-at', { createdAt: new Date(Date.now() - 9 * DAY) });
     const oldCity = await newCity(old, 285, 285, '老号');
     await claimTile(1101, 1100, oldCity, {});
+    assert.deepEqual(await processInactiveTerritories(pool, nextClock()), { accounts: 1, tiles: 1 });
+  });
+
+  test('兜底：last_active_at 偏旧但 7 天内有 Agent 上线 / 断线事件的账号不被回收；事件过期才收', async () => {
+    // 模拟 AISLG-236 之前的存量账号：Agent 在用，last_active_at 却停在 9 天前
+    const j = await newAccount('u-agent-stale', {
+      lastActiveAt: new Date(Date.now() - 9 * DAY),
+      lastOnlineAt: new Date(Date.now() - 9 * DAY),
+    });
+    const main = await newCity(j, 295, 295, '主城');
+    await claimTile(1300, 1300, main, {});
+    await pool.query(
+      `INSERT INTO events (account_id, city_id, type, created_at) VALUES ($1, $2, 'agent_connected', now() - interval '2 days')`,
+      [j, main],
+    );
+    assert.deepEqual(await processInactiveTerritories(pool, nextClock()), { accounts: 0, tiles: 0 });
+    assert.equal((await tileState(1300, 1300)).owner_city_id, main, '7 天内有 Agent 事件就算活跃');
+    // Agent 事件也过期了才收
+    await pool.query(`UPDATE events SET created_at = now() - interval '8 days' WHERE account_id = $1 AND type = 'agent_connected'`, [j]);
     assert.deepEqual(await processInactiveTerritories(pool, nextClock()), { accounts: 1, tiles: 1 });
   });
 
