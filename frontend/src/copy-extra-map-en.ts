@@ -31,6 +31,8 @@ export const EXTRA_MAP_EN = {
   layers: {
     marches: 'Marches',
     yield: 'Yield',
+    button: 'Layers',
+    panelAria: 'Map layers',
   },
   march: {
     glyph: {
