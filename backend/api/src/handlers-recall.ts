@@ -210,7 +210,8 @@ export async function handleRecallGarrison(
     }
 
     // 全部撤回（v12 行为不变）：清除占领，驻军整编队返程
-    await clearTileOccupation(client, x, y);
+    // v96（AISLG-232）：放弃占领，望楼随之毁掉（不退款）
+    await clearTileOccupation(client, x, y, 'recall');
     let march: MarchRow | null = null;
     if (!isEmptyArmy(army)) {
       march = await startReturnMarch(client, {

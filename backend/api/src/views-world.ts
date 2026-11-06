@@ -29,6 +29,7 @@ import { reserveViewFrom } from './reserve-view';
 import { FAMOUS_PRODUCTION_BONUS_PERCENT, famousRecoversAt, famousStage } from '../../common/src/famous-city';
 import { famousEffectView } from '../../common/src/famous-effects';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
+import { facilityBuildingView, loadFacility, tileFacilityView } from '../../common/src/facility-db';
 import {
   TERRAIN_INFO,
   npcStockTierOf,
@@ -76,6 +77,9 @@ interface TileQueryRow extends TileRow {
   owner_main_created_at?: Date | null;
   /** 城主的「维修」科技等级（v72，AISLG-192；城防值与展示口径一致地回涨） */
   owner_repair_level?: number | null;
+  /** 望楼（v96，AISLG-232）：地块上的设施类别与已建成等级（还在建第一级时 level 为 0）；没有设施为 null */
+  facility_kind?: string | null;
+  facility_level?: number | null;
   /** 在野名将落位（v54）：名字 / 属性；wild_claimed 为该名将已被任何人获得 */
   wild_hero?: string | null;
   wild_lead?: number | null;
@@ -109,6 +113,7 @@ const TILE_SELECT = `
          row_to_json(yc) AS camp_json,
          wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit,
          wt.reserve, wt.reserve_at, c.settled_at AS owner_settled_at,
+         wf.kind AS facility_kind, wf.level AS facility_level,
          EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero) AS wild_claimed
   FROM world_tiles wt
   LEFT JOIN cities c ON c.id = wt.owner_city_id
@@ -124,6 +129,7 @@ const TILE_SELECT = `
     ON ta.x = wt.x AND ta.y = wt.y
   LEFT JOIN scout_intel si ON si.account_id = $1 AND si.x = wt.x AND si.y = wt.y
   LEFT JOIN yt_camps yc ON yc.x = wt.x AND yc.y = wt.y AND yc.status = 'active'
+  LEFT JOIN wilderness_facilities wf ON wf.x = wt.x AND wf.y = wt.y
 `;
 
 function ownerRelationOf(value: string | null | undefined, ownerAccountId: string, requesterAccountId?: string): TileOwnerView['relation'] {
@@ -257,6 +263,8 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     // 遗迹 / 名将处所（v93）：默认无；开启迷雾时由 fog-view.ts 的 applySiteViews 按探索状态补上
     relic: null,
     heroSite: null,
+    // 望楼（v96，AISLG-232）：能看到这块地就能看到有望楼与等级（不含建造进度）
+    facility: facilityOf(row),
     // 战争迷雾（v92）：视图默认实时可见；开启迷雾时由 fog-view.ts 按探索状态改写
     fog: 'visible',
     seenAt: null,
@@ -288,6 +296,13 @@ function reserveStepOf(row: TileQueryRow, garrison: number): TileReserveStep | n
     owned ? (row.owner_settled_at ?? now) : now,
     now,
     owned,
+  );
+}
+
+/** 望楼视图（v96，AISLG-232）：还在建第一级（level = 0）时不给——别人只看到已经盖好的望楼 */
+function facilityOf(row: Pick<TileQueryRow, 'facility_kind' | 'facility_level'>): TileView['facility'] {
+  return tileFacilityView(
+    row.facility_kind ? { kind: row.facility_kind, level: Math.max(0, Number(row.facility_level ?? 0)) } : null,
   );
 }
 
@@ -387,6 +402,11 @@ export async function loadTileDetail(
     scoutedAt,
     defenses,
     assists: await assistsOf(q, row, accountId),
+    // 望楼的建造进度只给占着这块地的城的主人（v96，AISLG-232）
+    facilityBuilding:
+      accountId !== undefined && row.owner_account_id === accountId && row.kind === 'wilderness'
+        ? facilityBuildingView(await loadFacility(q, x, y))
+        : null,
     plunderedAt: row.plundered_at ? row.plundered_at.toISOString() : null,
     wildFamousIntel: wildFamousDetail(row, scoutedAt !== null),
   };

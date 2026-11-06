@@ -57,6 +57,7 @@ import {
   handleMarch,
 } from './handlers-world';
 import { handleRecallGarrison, readRecallTroops } from './handlers-recall';
+import { handleFacilityBuild } from './handlers-facility';
 import { handleGetMapOverview } from './map-overview';
 import { handleAnnouncementOp } from './handlers-announcement';
 import { handleAllianceOp } from './handlers-alliance';
@@ -644,6 +645,16 @@ async function dispatchOp(
     case Op.GET_HALL_OF_FAME:
       await handleGetHallOfFame(ctx, conn, op, seq, data);
       break;
+    case Op.FACILITY_BUILD: {
+      const x = data?.x;
+      const y = data?.y;
+      if (!Number.isInteger(x) || !Number.isInteger(y)) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleFacilityBuild(ctx, conn, op, seq, x as number, y as number);
+      break;
+    }
     case Op.BUILD_FARM:
       // 兼容入口（协议 v2 及以前）：等价于 BUILD 且 kind='farm'，忽略请求参数
       await handleBuild(ctx, conn, op, seq, 'farm');

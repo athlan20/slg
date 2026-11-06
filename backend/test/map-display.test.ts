@@ -59,6 +59,7 @@ function tileBase(overrides: Partial<TileView>): TileView {
     relic: null,
     heroSite: null,
     reserve: null,
+    facility: null,
     ...overrides,
   };
 }

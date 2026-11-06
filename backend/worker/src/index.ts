@@ -26,6 +26,7 @@ import { processYellowTurban } from './yt-tick';
 import { processStarvation } from './starvation-tick';
 import { processTroopPools } from './troop-pool-tick';
 import { processDueReserves } from './reserve-tick';
+import { processDueFacilities } from './facility-tick';
 import { processHeroSalaries } from './hero-salary-tick';
 import { processHeroTraining } from './hero-training-tick';
 import { processHeroLoyalty } from './hero-loyalty-tick';
@@ -138,6 +139,17 @@ async function main(): Promise<void> {
         await processDueReserves(pool);
       } catch (err) {
         console.error('worker reserve tick failed:', err instanceof Error ? err.message : err);
+      }
+    }
+    if (due.facilities) {
+      try {
+        // v96（AISLG-232）：望楼（野地设施）到点建成 / 升级完成（事件 facility_completed + 推送地块变化）
+        const facilitiesDone = await processDueFacilities(pool);
+        if (facilitiesDone > 0) {
+          console.log(`completed ${facilitiesDone} facility build(s)`);
+        }
+      } catch (err) {
+        console.error('worker facility tick failed:', err instanceof Error ? err.message : err);
       }
     }
     try {

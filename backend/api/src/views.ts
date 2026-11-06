@@ -50,6 +50,7 @@ import {
   type TerritoryRow,
 } from '../../common/src/world';
 import { loadTerritory } from '../../common/src/world-db';
+import { loadCityFacilities, territoryFacilityView, type FacilityRow } from '../../common/src/facility-db';
 import {
   advanceTile,
   applyReserveUpdates,
@@ -244,6 +245,8 @@ export interface CitySnapshot {
   marches: MarchRow[];
   /** 本城占领的野地（v12，含驻军总数） */
   territory: TerritoryRow[];
+  /** 本城名下野地上的望楼（v96，AISLG-232）：键 "x,y"，按地块取用 */
+  facilities: Map<string, FacilityRow>;
   /** 独占产量加成（百分数，v24 AISLG-56：名城分城 +20%）与名城名；普通城为 0 / null */
   productionBonusPercent: number;
   /** 洛阳之主联盟的全员产量加成（v79，AISLG-200；0 或 5） */
@@ -305,6 +308,11 @@ export async function lockCitySnapshot(
   const levels = await loadBuildingLevels(client, row.id);
   const techs = await loadTechLevels(client, accountId);
   const territory = await loadTerritory(client, row.id);
+  // v96（AISLG-232）：本城名下野地上的望楼（等级 / 视野半径 / 进行中的建造）
+  const facilities = new Map<string, FacilityRow>();
+  for (const facility of await loadCityFacilities(client, row.id)) {
+    facilities.set(`${facility.x},${facility.y}`, facility);
+  }
   const armyFoodUsePerHour = await loadArmyFoodUsePerHour(client, row.id);
   // v36（AISLG-115）：城守（产量加成 + 守城加成的数据源）
   const guard = await loadCityGuard(client, row.id);
@@ -405,6 +413,7 @@ export async function lockCitySnapshot(
     assistsOut,
     marches: marchRes.rows as MarchRow[],
     territory,
+    facilities,
   };
 }
 
@@ -522,6 +531,7 @@ export function toCityView(snap: CitySnapshot): CityView {
         clusterSize: sizes.get(`${tile.x},${tile.y}`) ?? 1,
         clusterBonusPercent: Math.round((clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1) - 1) * 100),
         reserve: reserveViewFrom(step, true),
+        facility: territoryFacilityView(snap.facilities.get(`${tile.x},${tile.y}`) ?? null),
       };
     }),
     queue,
