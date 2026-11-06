@@ -262,16 +262,81 @@ export function marchPositionAt(geometry: MarchGeometry, nowMs: number): { x: nu
 }
 
 /**
+ * 行军行的行程段输入（AISLG-230 抽成共用函数，不要写第二份）：去程 出发城 → 目标格，返程 目标格 → 出发城，
+ * 撤回（fog_turn_*）从撤回瞬间的实际位置回出发城。时刻都是毫秒。
+ * 截击「到了先埋伏」的口径与前端 marchEndMs 一致：endMs = ambush_at（部队走到埋伏点即停）。
+ */
+export interface MarchPathInput {
+  /** 出发城坐标 */
+  homeX: number;
+  homeY: number;
+  /** 行军目标格 */
+  targetX: number;
+  targetY: number;
+  /** 是否返程（purpose = 'return'；撤回后的返程另有 turn） */
+  returning: boolean;
+  /** 开始行进时刻（毫秒，一般为 started_at） */
+  startMs: number;
+  /** 结束时刻（毫秒）：arrive_at；截击埋伏为 ambush_at */
+  endMs: number;
+  /** 撤回时的实际位置与时刻（fog_turn_x / fog_turn_y / fog_turn_at）；未撤回为 null */
+  turn?: { x: number; y: number; atMs: number } | null;
+}
+
+/** 行程段：起点、终点与起止时刻（毫秒） */
+export interface MarchLeg {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  startMs: number;
+  endMs: number;
+}
+
+/** 行军 → 本次行进的行程段（返程反向、撤回从撤回点回城） */
+export function marchLegOf(path: MarchPathInput): MarchLeg {
+  if (path.turn) {
+    return { fromX: path.turn.x, fromY: path.turn.y, toX: path.homeX, toY: path.homeY, startMs: path.turn.atMs, endMs: path.endMs };
+  }
+  if (path.returning) {
+    return { fromX: path.targetX, fromY: path.targetY, toX: path.homeX, toY: path.homeY, startMs: path.startMs, endMs: path.endMs };
+  }
+  return { fromX: path.homeX, fromY: path.homeY, toX: path.targetX, toY: path.targetY, startMs: path.startMs, endMs: path.endMs };
+}
+
+/**
+ * 部队在 nowMs 的位置（浮点格坐标）与速度（格/秒，只表明方向与快慢，不含目标）。
+ * 位置与视野、他人行军上图（GET_VISIBLE_MARCHES）共用这一份算法。
+ */
+export function marchMoveAt(path: MarchPathInput, nowMs: number): { x: number; y: number; vx: number; vy: number } {
+  const leg = marchLegOf(path);
+  const t = marchProgressAt(leg, nowMs);
+  const spanMs = leg.endMs - leg.startMs;
+  const perSecond = spanMs > 0 ? 1000 / spanMs : 0;
+  return {
+    x: leg.fromX + (leg.toX - leg.fromX) * t,
+    y: leg.fromY + (leg.toY - leg.fromY) * t,
+    vx: (leg.toX - leg.fromX) * perSecond,
+    vy: (leg.toY - leg.fromY) * perSecond,
+  };
+}
+
+/**
  * 行军在当前时刻提供的实时视野来源：部队当前位置（取整格）+ 半径。
  * 含斥候的编队用斥候半径（侦察科技决定），否则用行军半径。
  */
-export function marchVisionSource(geometry: MarchGeometry, nowMs: number, hasScout: boolean, scoutingLevel: number): VisionSource {
-  const pos = marchPositionAt(geometry, nowMs);
+export function marchVisionSourceOf(path: MarchPathInput, nowMs: number, hasScout: boolean, scoutingLevel: number): VisionSource {
+  const move = marchMoveAt(path, nowMs);
   return {
-    x: Math.round(pos.x),
-    y: Math.round(pos.y),
+    x: Math.round(move.x),
+    y: Math.round(move.y),
     radius: hasScout ? scoutVisionRadius(scoutingLevel) : FOG_VISION.march,
   };
+}
+
+/** 同上，按 MarchGeometry（前端同口径、无撤回）取实时视野来源 */
+export function marchVisionSource(geometry: MarchGeometry, nowMs: number, hasScout: boolean, scoutingLevel: number): VisionSource {
+  return marchVisionSourceOf(geometry, nowMs, hasScout, scoutingLevel);
 }
 
 /** 去程已走比例（写入已探索用）：(结束时刻 − startedAt) ÷ (arriveAt − startedAt)，夹在 0～1 */

@@ -102,6 +102,28 @@ export const EXTRA_MAP_EN = {
     label: (time: string) => `Raid ${time}`,
     arrowHint: 'Tap to jump to the raided tile',
   },
+  enemyMarch: {
+    legend: 'Other players',
+    glyph: 'E',
+    legendIncoming: 'Incoming on you',
+    legendHostile: 'Hostile',
+    legendNeutral: 'Neutral',
+    legendFriend: 'Ally / Friendly',
+    scale: {
+      small: 'Small',
+      medium: 'Medium',
+      large: 'Large',
+    } as Record<string, string>,
+    tipOwner: (name: string) => `Player: ${name}`,
+    tipAlliance: (name: string) => `Alliance: ${name}`,
+    tipNoAlliance: 'Alliance: none',
+    tipScale: (label: string) => `Size: ${label}`,
+    tipReturning: 'Returning',
+    tipOutbound: 'Heading out',
+    tipNote: 'Only troops inside your vision; destination and arrival are hidden',
+    aria: (owner: string, scale: string, returning: boolean) =>
+      `${owner}'s troops · ${scale} · ${returning ? 'returning' : 'heading out'}`,
+  },
   territoryLegend: {
     own: 'You',
     ally: 'Allies',

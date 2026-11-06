@@ -234,6 +234,8 @@ export const Op = {
   MOVE_CITY: 150,
   /** 赎回被俘名将（v94，AISLG-228）：data.heroId，赎金 = 2000 × 等级从主城扣 */
   RANSOM_HERO: 151,
+  /** 查询窗口内视野里的他人部队（v96，AISLG-230）：data.x/y/w/h 同 GET_WORLD_MAP；只给位置 / 方向 / 去返程 / 规模档位 / 主人关系 */
+  GET_VISIBLE_MARCHES: 152,
   /** 用 Google ID Token 换会话令牌（v44）：data.credential；登录前可发，仅供网页；第一次自动建号 */
   GOOGLE_LOGIN: 60,
   /** 给当前账号绑定 Google（v44）：data.credential；仅玩家连接，仅供网页 */
@@ -745,6 +747,10 @@ export type {
   FamousTileView,
   FamousEffectView,
   WorldMapResponseData,
+  VisibleMarchScale,
+  VisibleMarchRelation,
+  VisibleMarchView,
+  GetVisibleMarchesResponseData,
   MapOverviewResponseData,
   MapOverviewSide,
   MarchRequestData,
