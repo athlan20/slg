@@ -21,6 +21,8 @@ export interface OfflineDigestView {
   mutinyLost: number;
   npcRaids: number;
   wildernessLost: number;
+  /** 离线期间因长期未上线（本人与 Agent 都 7 天没上线）被收回的野地数（v98，AISLG-238；不计入 wildernessLost） */
+  wildernessInactiveLost: number;
   storageFull: { resource: string; percent: number } | null;
 }
 

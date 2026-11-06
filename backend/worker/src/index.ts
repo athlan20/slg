@@ -32,6 +32,7 @@ import { processHeroTraining } from './hero-training-tick';
 import { processHeroLoyalty } from './hero-loyalty-tick';
 import { processArenaRewards } from './arena-tick';
 import { processAlliances } from './alliance-tick';
+import { processInactiveTerritories } from './inactive-tick';
 import { processBattlefield } from './battlefield-tick';
 import { processMarketOrders } from './market-tick';
 import { processLuoyang } from './luoyang-tick';
@@ -181,6 +182,15 @@ async function main(): Promise<void> {
       await processAlliances(pool);
     } catch (err) {
       console.error('worker alliance tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v98（AISLG-238）：本人和 Agent 都 7 天没上线的账号，名下野地全部收回（内部节流到每小时）
+      const reclaimed = await processInactiveTerritories(pool);
+      if (reclaimed.accounts > 0) {
+        console.log(`reclaimed ${reclaimed.tiles} wilderness tile(s) from ${reclaimed.accounts} inactive account(s)`);
+      }
+    } catch (err) {
+      console.error('worker inactive territory tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v79（AISLG-200）：洛阳窗口回满城防 / 预告 / 开始 / 结束播报（内部节流到 5 秒）

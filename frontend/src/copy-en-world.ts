@@ -261,6 +261,7 @@ export const OFFLINE_REPORT_EN = {
   troopsLostRow: (n: number) => `${n} troops lost`,
   npcRaidsRow: (n: number) => `${n} NPC raids`,
   wildernessLostRow: (n: number) => `${n} wilderness tiles lost to NPC attacks`,
+  wildernessInactiveRow: (n: number) => `${n} wilderness tiles reclaimed for long inactivity`,
   statusTitle: 'Status',
   statusCalm: 'All resource levels normal',
   storageFullRow: (label: string, percent: number) =>
