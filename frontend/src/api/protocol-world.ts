@@ -483,6 +483,8 @@ export interface TileStatePushData {
     | 'garrison_reinforced'
     /** v40（AISLG-124）：分城被玩家占领易主 / 城防值被打掉一截 */
     | 'city_conquered'
-    | 'city_durability_hit';
+    | 'city_durability_hit'
+    /** v96（AISLG-232）：望楼建成 / 升级完成（望楼随野地毁掉时走 wilderness_lost） */
+    | 'facility_completed';
   tile: TileView;
 }

@@ -486,7 +486,7 @@ export const PUSH_TILE_STATE: PushOpDoc = {
   kind: 'push',
   name: 'PUSH_TILE_STATE',
   title: '推送：地块归属 / 驻军变化（v12）',
-  summary: `地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军、facility_completed=望楼建成 / 升级完成（v96，AISLG-232，tile.facility 为新等级）、facility_lost=望楼随野地一起毁掉（v96，同一格也会收到 wilderness_lost；tile.facility 为 null）。`,
+  summary: `地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军、facility_completed=望楼建成 / 升级完成（v96，AISLG-232，tile.facility 为新等级）。望楼随野地一起毁掉时不单独推：那一格另有一条 wilderness_lost，tile.facility 随之变 null。`,
   dataFields: [
     { name: 'reason', type: 'string', desc: '触发本次推送的变化类别（见 summary）。' },
     { name: 'tile', type: 'object', desc: '变化后的地块视图，字段与 GET_WORLD_MAP 的 tiles[] 相同。' },

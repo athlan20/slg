@@ -730,7 +730,8 @@
  *   每块地最多一座、每座城名下最多 2 座；资源从占着这块地的那座城扣。
  *   city.territory[] 每项新增 facility（{ kind: 'watchtower', level, visionRadius, building: { toLevel, finishAt } | null } | null），
  *   TileView 新增 facility（{ kind, level } | null，别人看到的版本、不含进度），TileDetailView 新增 facilityBuilding
- *   （只有主人能看到进度）；新事件 facility_completed / facility_lost，PUSH_TILE_STATE 新增 reason facility_completed / facility_lost。
+ *   （只有主人能看到进度）；新事件 facility_completed / facility_lost，PUSH_TILE_STATE 新增 reason facility_completed
+ *   （望楼随野地毁掉时不单独推，那一格另有 wilderness_lost）。
  *   野地易主、所属分城易主或被放弃、召回驻军放弃占领、账号重置时望楼一并毁掉（不转给新主人、不退资源）。
  *   新错误码 FACILITY_TILE_INVALID / FACILITY_MAX_LEVEL / FACILITY_BUILDING / FACILITY_LIMIT（资源不足沿用 INSUFFICIENT_RESOURCES）。
  *   新表 wilderness_facilities（换季清空）；fog_seen 新增 facility_level（上次看到的望楼等级，向后兼容）。

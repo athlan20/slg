@@ -396,9 +396,8 @@ export interface TileStatePushData {
     | 'city_durability_hit'
     /** v91（AISLG-220）：城池迁移，新旧两格各推一次（归属方视角） */
     | 'city_moved'
-    /** v96（AISLG-232）：望楼建成 / 升级完成（归属方视角，tile.facility 为新等级） */
-    | 'facility_completed'
-    /** v96（AISLG-232）：望楼随野地一起毁掉（归属方视角，tile.facility 为 null） */
-    | 'facility_lost';
+    /** v96（AISLG-232）：望楼建成 / 升级完成（归属方视角，tile.facility 为新等级）。
+     *  望楼随野地毁掉不单独推：那一格本来就有一条 wilderness_lost（tile.facility 随之变 null） */
+    | 'facility_completed';
   tile: TileView;
 }
