@@ -5,13 +5,12 @@ import type pg from 'pg';
 import {
   FOG_OPENING_RADIUS,
   FOG_VISION,
-  scoutVisionRadius,
   fogBitsFrom,
   markSquare,
   newFogBits,
   type VisionSource,
-  marchVisionSource,
-  type MarchGeometry,
+  marchVisionSourceOf,
+  type MarchPathInput,
   FOG_CHUNKS_PER_SIDE,
   FOG_CHUNK_SIZE,
   FOG_CHUNK_COUNT,
@@ -177,6 +176,44 @@ export async function ownVisionSources(q: Queryable, accountId: string): Promise
   return sources;
 }
 
+/**
+ * 行军行（联表出发城坐标后）的行程信息。AISLG-230 起「行军行 → 当前位置」只此一份：
+ * 实时视野（本文件）与 GET_VISIBLE_MARCHES（api/src/fog-enemy-marches.ts）共用。
+ */
+export interface MarchPathRow {
+  /** 目标格（marches.x / marches.y） */
+  tx: number;
+  ty: number;
+  purpose: string;
+  started_at: Date;
+  arrive_at: Date;
+  ambush_at?: Date | null;
+  /** 撤回时的实际位置与时刻（fog_turn_*，未撤回为 null） */
+  fog_turn_x?: number | null;
+  fog_turn_y?: number | null;
+  fog_turn_at?: Date | null;
+  /** 出发城坐标（cities.x / cities.y） */
+  hx: number;
+  hy: number;
+}
+
+/** 行程段：截击在埋伏点结束，撤回从撤回瞬间位置沿直线回出发城（与写入时的回程时长一致） */
+export function marchPathOf(row: MarchPathRow): MarchPathInput {
+  const endAt = row.purpose === 'intercept' && row.ambush_at ? row.ambush_at : row.arrive_at;
+  return {
+    homeX: row.hx,
+    homeY: row.hy,
+    targetX: row.tx,
+    targetY: row.ty,
+    returning: row.purpose === 'return',
+    startMs: row.started_at.getTime(),
+    endMs: endAt.getTime(),
+    turn: row.fog_turn_at
+      ? { x: Number(row.fog_turn_x), y: Number(row.fog_turn_y), atMs: row.fog_turn_at.getTime() }
+      : null,
+  };
+}
+
 /** 行军中的实时视野来源（当前位置，按斥候与否取半径）；只读，不写已探索 */
 export async function marchVisionSources(
   q: Queryable,
@@ -195,31 +232,9 @@ export async function marchVisionSources(
   for (const row of res.rows as Array<Record<string, unknown>>) {
     const troops = (row.troops ?? {}) as Record<string, number>;
     const hasScout = (troops.scout ?? 0) > 0;
-    if (row.fog_turn_at) {
-      // 撤回后：从撤回瞬间的实际位置，沿直线回出发城，时刻从撤回时刻到 arrive_at（与撤回时写入的返程时长一致）
-      const t0 = (row.fog_turn_at as Date).getTime();
-      const t1 = (row.arrive_at as Date).getTime();
-      const t = t1 <= t0 ? 1 : Math.min(1, Math.max(0, (now.getTime() - t0) / (t1 - t0)));
-      const tx = Number(row.fog_turn_x);
-      const ty = Number(row.fog_turn_y);
-      sources.push({
-        x: Math.round(tx + ((row.hx as number) - tx) * t),
-        y: Math.round(ty + ((row.hy as number) - ty) * t),
-        radius: hasScout ? scoutVisionRadius(scoutingLevel) : FOG_VISION.march,
-      });
-      continue;
-    }
-    const endAt = row.purpose === 'intercept' && row.ambush_at ? (row.ambush_at as Date) : (row.arrive_at as Date);
-    const geometry: MarchGeometry = {
-      homeX: row.hx as number,
-      homeY: row.hy as number,
-      targetX: row.tx as number,
-      targetY: row.ty as number,
-      returning: row.purpose === 'return',
-      startMs: (row.started_at as Date).getTime(),
-      endMs: endAt.getTime(),
-    };
-    sources.push(marchVisionSource(geometry, now.getTime(), hasScout, scoutingLevel));
+    sources.push(
+      marchVisionSourceOf(marchPathOf(row as unknown as MarchPathRow), now.getTime(), hasScout, scoutingLevel),
+    );
   }
   return sources;
 }

@@ -35,7 +35,8 @@ import type { TileRow } from '../../common/src/world-db';
 import { readIntInRange, respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
-import { loadFogTileDetail, loadFogWindow } from './fog-view';
+import { loadFogTileDetail, loadFogWindow, withFogRequest } from './fog-view';
+import { loadVisibleMarches } from './fog-enemy-marches';
 import { deployCountOf, loadCityState, lockCitySnapshot, marchView, type MarchRow } from './views';
 import { canDeployMore, stationPercent } from '../../common/src/building-effects';
 import { famousMarchPercent } from '../../common/src/famous-effects';
@@ -59,6 +60,33 @@ async function dbNowOf(client: pg.PoolClient): Promise<Date> {
   return res.rows[0].now as Date;
 }
 
+/**
+ * 窗口式地图查询的窗口解析（GET_WORLD_MAP / GET_VISIBLE_MARCHES 共用）：
+ * w/h 越界视为未提供（取缺省），不钳制放大（v17）；x/y 缺省按主城居中折算，再按世界边界钳制。
+ */
+export async function resolveMapWindow(
+  pool: pg.Pool,
+  accountId: string,
+  data: Record<string, unknown> | undefined,
+): Promise<{ x: number; y: number; w: number; h: number }> {
+  const width = readIntInRange(data, 'w', 1, MAX_MAP_WINDOW, DEFAULT_MAP_WINDOW);
+  const height = readIntInRange(data, 'h', 1, MAX_MAP_WINDOW, DEFAULT_MAP_WINDOW);
+  const originX = Number.isInteger(data?.x) ? (data?.x as number) : undefined;
+  const originY = Number.isInteger(data?.y) ? (data?.y as number) : undefined;
+  if (originX !== undefined && originY !== undefined) {
+    return clampMapWindow(originX, originY, width, height);
+  }
+  const city = await pool.query(
+    `SELECT x, y FROM cities WHERE account_id = $1 ORDER BY created_at LIMIT 1`,
+    [accountId],
+  );
+  const row = city.rows[0] as { x: number | null; y: number | null } | undefined;
+  const center = Math.floor(WORLD_SIZE / 2);
+  const cx = row?.x ?? center;
+  const cy = row?.y ?? center;
+  return clampMapWindow(cx - Math.floor(width / 2), cy - Math.floor(height / 2), width, height);
+}
+
 /** GET_WORLD_MAP：窗口式地图查询；缺省以主城为中心 DEFAULT_MAP_WINDOW×DEFAULT_MAP_WINDOW */
 export async function handleGetWorldMap(
   ctx: HandlerContext,
@@ -67,24 +95,7 @@ export async function handleGetWorldMap(
   seq: number | undefined,
   data: Record<string, unknown> | undefined,
 ): Promise<void> {
-  // w/h 越界视为未提供（取缺省），不钳制放大——与文档「1..MAX_MAP_WINDOW，缺省 DEFAULT_MAP_WINDOW」一致（v17）
-  const width = readIntInRange(data, 'w', 1, MAX_MAP_WINDOW, DEFAULT_MAP_WINDOW);
-  const height = readIntInRange(data, 'h', 1, MAX_MAP_WINDOW, DEFAULT_MAP_WINDOW);
-  let originX = Number.isInteger(data?.x) ? (data?.x as number) : undefined;
-  let originY = Number.isInteger(data?.y) ? (data?.y as number) : undefined;
-  if (originX === undefined || originY === undefined) {
-    const city = await ctx.pool.query(
-      `SELECT x, y FROM cities WHERE account_id = $1 ORDER BY created_at LIMIT 1`,
-      [conn.accountId as string],
-    );
-    const row = city.rows[0] as { x: number | null; y: number | null } | undefined;
-    const center = Math.floor(WORLD_SIZE / 2);
-    const cx = row?.x ?? center;
-    const cy = row?.y ?? center;
-    originX = cx - Math.floor(width / 2);
-    originY = cy - Math.floor(height / 2);
-  }
-  const window = clampMapWindow(originX, originY, width, height);
+  const window = await resolveMapWindow(ctx.pool, conn.accountId as string, data);
   // v92（AISLG-224）：战争迷雾裁剪（开关关闭时原样返回，fog = visible）
   const tiles = await loadFogWindow(ctx.pool, conn.accountId as string, window.x, window.y, window.w, window.h);
   respondOk(ctx.registry, conn, op, seq, {
@@ -95,6 +106,36 @@ export async function handleGetWorldMap(
     h: window.h,
     tiles,
   });
+}
+
+/**
+ * GET_VISIBLE_MARCHES（op 152，v96，AISLG-230）：窗口内、查看者实时视野里的他人部队。
+ * 玩家与 Agent 同一接口、同一套裁剪（只认登录账号，不看 role）；fog_enabled 关闭时返回空数组，
+ * 不报错、不碰任何迷雾表（与 GET_WORLD_MAP 同口径）。
+ */
+export async function handleGetVisibleMarches(
+  ctx: HandlerContext,
+  conn: ConnInfo,
+  op: number,
+  seq: number | undefined,
+  data: Record<string, unknown> | undefined,
+): Promise<void> {
+  const accountId = conn.accountId as string;
+  if (!getFogEnabled()) {
+    respondOk(ctx.registry, conn, op, seq, { serverTime: new Date().toISOString(), marches: [] });
+    return;
+  }
+  const window = await resolveMapWindow(ctx.pool, accountId, data);
+  const payload = await withFogRequest(ctx.pool, accountId, async (req) => {
+    const marches = await loadVisibleMarches(req.client, {
+      accountId,
+      sources: req.sources,
+      window,
+      now: req.now,
+    });
+    return { serverTime: req.now.toISOString(), marches };
+  });
+  respondOk(ctx.registry, conn, op, seq, payload);
 }
 
 /** GET_TILE：单格详情（野地收益预览 / NPC 城池驻军与库存） */

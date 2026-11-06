@@ -2,12 +2,15 @@
  *  在目标格叠一圈红色内描边（呼吸闪烁 1.2 秒）、格子上方挂「来袭 mm:ss」；
  *  悬停 / 轻点显示敌军规模（与现有来袭预警文案同口径）；目标在视野外时在边框上画红色箭头。
  *  来袭红标不受「行军」图层开关影响，始终显示。
+ *  AISLG-230 起：来袭部队本身进了视野（他人部队图层给出了位置）时，额外从它的当前位置画一条红线到被攻击格，
+ *  粗细与现有行军线一致（2px）；没进视野就只有原来的红标。这里只加「连线所需的数据」（位置表）。
  */
 
 import { useMemo, useState } from 'react';
 import type { NpcAttackWarningPushData, TroopKind } from '../../api/protocol';
 import { useCopy } from '../../i18n/bundle';
-import { cellToPx, edgeArrow, formatMarchLeft, type GridMetrics } from './marchGeometry';
+import { cellToPx, edgeArrow, formatMarchLeft, type Cell, type GridMetrics } from './marchGeometry';
+import { raidLines } from './enemyMarchGeometry';
 
 interface RaidOverlayProps {
   warnings: NpcAttackWarningPushData[];
@@ -17,14 +20,17 @@ interface RaidOverlayProps {
   metrics: GridMetrics;
   size: { w: number; h: number };
   onCenter: (x: number, y: number) => void;
+  /** 视野内他人部队这一帧的位置（行军 id → 格坐标）：只有来袭部队进了视野才画连线 */
+  enemyPositions?: ReadonlyMap<string, Cell>;
 }
 
-export function RaidOverlay({ warnings, now, origin, win, metrics: m, size, onCenter }: RaidOverlayProps) {
+export function RaidOverlay({ warnings, now, origin, win, metrics: m, size, onCenter, enemyPositions }: RaidOverlayProps) {
   const copy = useCopy();
   const { COPY, DEFENSE_COPY, EXTRA_MAP } = copy;
   const [tipId, setTipId] = useState<string | null>(null);
   const live = useMemo(() => warnings.filter((warning) => Date.parse(warning.arriveAt) > now), [warnings, now]);
   const tip = live.find((warning) => warning.attackId === tipId) ?? null;
+  const lines = enemyPositions && enemyPositions.size > 0 ? raidLines(enemyPositions, live, now) : [];
   if (live.length === 0 || size.w <= 0 || size.h <= 0) {
     return null;
   }
@@ -32,6 +38,30 @@ export function RaidOverlay({ warnings, now, origin, win, metrics: m, size, onCe
 
   return (
     <>
+      {/* 来袭部队进了视野：从它的当前位置连一条红线到被攻击格（与现有行军线同粗细） */}
+      {lines.length > 0 ? (
+        <svg role="世界地图-来袭连线" aria-hidden="true" width={size.w} height={size.h} className="pointer-events-none absolute inset-0 overflow-hidden">
+          {lines.map((line) => {
+            const from = cellToPx(line.from, origin, m);
+            const to = cellToPx(line.to, origin, m);
+            return (
+              <line
+                key={line.id}
+                x1={from.px}
+                y1={from.py}
+                x2={to.px}
+                y2={to.py}
+                stroke="var(--st-error)"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeDasharray="3 3"
+                opacity={0.9}
+              />
+            );
+          })}
+        </svg>
+      ) : null}
+
       {live.map((warning) => {
         const arrow = edgeArrow({ x: warning.x, y: warning.y }, origin, win, m);
         const time = formatMarchLeft(Math.max(0, Date.parse(warning.arriveAt) - now));

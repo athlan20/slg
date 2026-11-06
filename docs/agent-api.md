@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**95** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**96** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 95）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 96）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 95,
+    "protocolVersion": 96,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 95,
+    "protocolVersion": 96,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/92 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/93 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 92,
+    "docVersion": 93,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 95,
-    "docNotice": "接口文档已从 v92 更新到 v95：请 GET /agent-api/changes/92 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 96,
+    "docNotice": "接口文档已从 v93 更新到 v96：请 GET /agent-api/changes/93 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -18844,6 +18844,117 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 152 · GET_VISIBLE_MARCHES — 查询视野内的他人部队（v96，AISLG-230）
+
+`C→S` 请求-响应 · 需登录后发送
+
+查询窗口内、你的**实时视野**里的其他玩家部队（战争迷雾第三步，受 fog_enabled 控制）。请求给窗口左上角 (x, y) 与宽高 (w, h)，含义与限制同 GET_WORLD_MAP：缺省以主城为中心取 10×10，w/h 须为 1..20 的整数，非法或越界取缺省值，窗口起点按世界边界钳制。返回 marches[]：每支其他账号、status = marching 的部队，若其当前位置（四舍五入到整格）落在**你自己的**实时视野内就出现，走出视野后下一次查询就消失。实时视野只有自己的来源：主城 12 格、分城 8 格、占领的野地 3 格、行军中的部队 3 格、含斥候的部队 5 / 6 / 7 格（侦察科技决定）；**盟友的视野不共享**，盟友的部队也要进你自己的视野才看得到。下列情形不上图：自己的部队（本协议不返回，避免重复显示）、侦察部队（purpose = scout，或编队里只有斥候，去程返程都算，保留侦察的隐蔽性）、已过埋伏时刻（ambushAt）正在埋伏的截击部队（保留埋伏玩法）、已到达的部队与剧本战场的小队（战场有自己的地图）。流寇 / 商队 / 黄巾营地不受影响（见 GET_MOVING_TARGETS / GET_YELLOW_TURBAN）。盲打（fog_denied）与撤回中的部队正常上图，撤回的按实际回程位置算。返回最多 50 支，离窗口中心由近到远，超出部分不返回。fog_enabled 关闭时 marches 为空数组（不报错，与上线前一致）。玩家与 Agent 走同一接口、同一套裁剪。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| x | number | 可选。窗口左上角 x，0..999；缺省按主城居中折算，超出部分按边界钳制。 |
+| y | number | 可选。窗口左上角 y，0..999；缺省按主城居中折算，超出部分按边界钳制。 |
+| w | number | 可选。窗口宽度，1..20 的整数；缺省、非法或越界取 10。 |
+| h | number | 可选。窗口高度，1..20 的整数；缺省、非法或越界取 10。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| serverTime | string | 快照时刻（ISO 8601）：客户端以收到响应的本地时刻为基准用 vx / vy 外推，不必依赖两端时钟一致。 |
+| marches | array | 窗口内视野里的他人部队，离窗口中心由近到远，最多 50 支；迷雾关闭时为空数组。 |
+| marches[].id | string | 行军 id（UUID）：用来和来袭预警 PUSH_ATTACK_WARNING 的 marchId 对上——敌军打进你的视野时界面据此把图标转红并连线到被攻击格。 |
+| marches[].x / marches[].y | number | 部队当前所在位置（世界格坐标，保留 1 位小数）。 |
+| marches[].vx / marches[].vy | number | 速度（每秒格数，正负表示方向），只用来让图标平滑移动；两次采样本来也能算出方向，因此不算泄露。 |
+| marches[].returning | boolean | true = 返程（往出发城走），false = 去程。 |
+| marches[].scale | 'small' \| 'medium' \| 'large' | 规模档位（按编队总人数，不给精确兵力）：small 1–499 小股 / medium 500–4999 中军 / large 5000 及以上大军。 |
+| marches[].owner.username | string | 所属玩家名（中立玩家也给）。 |
+| marches[].owner.allianceName | string \| null | 所属联盟名；没有联盟为 null。 |
+| marches[].owner.relation | 'ally' \| 'friendly' \| 'hostile' \| 'neutral' | 与你（请求账号）的关系，与地块 owner.relation 同一口径：ally 同盟 / friendly 友盟（含解除友好后的冷却期）/ hostile 敌对联盟 / neutral 中立。界面按它上色：同盟友盟绿色、中立灰色、敌对橙色、正在来袭自己红色（后者由 marchId 与来袭预警匹配得出）。 |
+
+**Agent 提示**：这里只有**你的视野内**的他人部队，看不到不代表没有：目标可能就在迷雾里、或者离你的城池太远。别把「marches 为空」当成安全信号。判断有没有部队打自己仍然以来袭预警（PUSH_ATTACK_WARNING / 事件 player_attack_warning，含目标格与到达时刻）为准；本协议给的是位置、方向、去返程、规模档位与主人关系，**没有**目标格、出发城、出发 / 到达时间与兵力明细，所以用它算不出对手要去哪。盟友的视野不共享，盟友看到的部队你看不到。第一版只能看、不能截击（MARCH 的 targetId 截击只支持流寇 / 商队这类移动目标）。
+
+**示例**
+
+**视野里有 1 支敌军（地图打开时每 5 秒一次）**
+
+请求：
+
+```json
+{
+  "op": 152,
+  "seq": 9,
+  "data": {
+    "x": 10,
+    "y": 12,
+    "w": 10,
+    "h": 10
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 152,
+  "seq": 9,
+  "ok": true,
+  "data": {
+    "serverTime": "2026-09-25T08:00:00.000Z",
+    "marches": [
+      {
+        "id": "e5f2cc35-f086-47a1-9b3c-2d4e5f6a7b8c",
+        "x": 14.3,
+        "y": 17.6,
+        "vx": 0.0667,
+        "vy": 0,
+        "returning": false,
+        "scale": "medium",
+        "owner": {
+          "username": "zhangfei",
+          "allianceName": "桃园",
+          "relation": "hostile"
+        }
+      }
+    ]
+  }
+}
+```
+
+**迷雾关闭（或视野里什么都没有）**
+
+请求：
+
+```json
+{
+  "op": 152,
+  "seq": 10,
+  "data": {
+    "x": 10,
+    "y": 12,
+    "w": 10,
+    "h": 10
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 152,
+  "seq": 10,
+  "ok": true,
+  "data": {
+    "serverTime": "2026-09-25T08:00:00.000Z",
+    "marches": []
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -22363,7 +22474,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 95。
+- 协议版本随对外协议内容的每次变化递增；当前为 96。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

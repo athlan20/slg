@@ -52,6 +52,7 @@ import {
 } from './handlers-market';
 import {
   handleGetTile,
+  handleGetVisibleMarches,
   handleGetWorldMap,
   handleMarch,
 } from './handlers-world';
@@ -220,6 +221,10 @@ async function dispatchOp(
       break;
     case Op.GET_WORLD_MAP:
       await handleGetWorldMap(ctx, conn, op, seq, data);
+      break;
+    // v96（AISLG-230）：窗口内视野里的他人部队
+    case Op.GET_VISIBLE_MARCHES:
+      await handleGetVisibleMarches(ctx, conn, op, seq, data);
       break;
     case Op.GET_MAP_OVERVIEW:
       await handleGetMapOverview(ctx, conn, op, seq);
