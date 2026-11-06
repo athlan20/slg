@@ -10,7 +10,8 @@
 import type pg from 'pg';
 import { EventType } from './protocol';
 import { insertEvent } from './events';
-import { watchtowerVisionRadius, type FacilityKind } from './facility';
+import type { FacilityKind } from './facility';
+import { builtFacilityVisionRadius } from './fog';
 import type { TerritoryFacilityView, TileFacilityView } from './protocol-world';
 
 type Queryable = pg.Pool | pg.PoolClient;
@@ -76,15 +77,17 @@ export function tileFacilityView(row: Pick<FacilityRow, 'kind' | 'level'> | null
   return { kind: 'watchtower', level: row.level };
 }
 
-/** 本城领地里设施的视图（含建造进度，只有主人能看到） */
-export function territoryFacilityView(row: FacilityRow | null): TerritoryFacilityView | null {
+/** 本城领地里设施的视图（含建造进度，只有主人能看到）：视野半径是这块地**加成后的有效半径**
+ * （丘陵上的野地 +2：1 / 2 / 3 级 8 / 10 / 12；AISLG-233），与 fog-db 的实际视野同一口径，
+ * 所以调用方要把地块的地形传进来。 */
+export function territoryFacilityView(row: FacilityRow | null, terrain?: string | null): TerritoryFacilityView | null {
   if (!row || row.kind !== 'watchtower') {
     return null;
   }
   return {
     kind: 'watchtower',
     level: row.level,
-    visionRadius: watchtowerVisionRadius(row.level),
+    visionRadius: builtFacilityVisionRadius(row.level, terrain),
     building:
       row.building_to !== null && row.finish_at !== null
         ? { toLevel: row.building_to, finishAt: row.finish_at.toISOString() }

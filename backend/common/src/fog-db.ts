@@ -165,7 +165,8 @@ export function chunkCoords(index: number): Coord[] {
   return coords;
 }
 
-/** 账号的城池与占领野地（固定视野来源，不含行军）：主城 12、分城 8、占领野地 3（有望楼时取望楼半径） */
+/** 账号的城池与占领野地（固定视野来源，不含行军）：主城 12、分城 8、占领野地 3（有望楼时取望楼半径，
+ *  丘陵上的野地再 +2、上限 12，见 fog.ts 的 wildernessVisionRadius） */
 export async function ownVisionSources(q: Queryable, accountId: string): Promise<VisionSource[]> {
   const cities = await q.query(
     `SELECT x, y FROM cities WHERE account_id = $1 AND x IS NOT NULL AND y IS NOT NULL ORDER BY created_at, id`,
@@ -175,15 +176,16 @@ export async function ownVisionSources(q: Queryable, accountId: string): Promise
   (cities.rows as Array<{ x: number; y: number }>).forEach((row, index) => {
     sources.push({ x: row.x, y: row.y, radius: index === 0 ? FOG_VISION.mainCity : FOG_VISION.branchCity });
   });
-  // v97（AISLG-232）：野地上的望楼联表取等级，半径 = max(野地 3, 望楼 6 / 8 / 10)
+  // v97：野地上的望楼联表取等级、地形联表取 wt.terrain（同一张表，不多查一次库）：
+  // 半径 = max(野地 3, 望楼 6 / 8 / 10)，丘陵上的野地再 +2（AISLG-233），上限 12
   const territory = await q.query(
-    `SELECT wt.x, wt.y, wf.level AS facility_level FROM world_tiles wt JOIN cities c ON c.id = wt.owner_city_id
+    `SELECT wt.x, wt.y, wt.terrain, wf.level AS facility_level FROM world_tiles wt JOIN cities c ON c.id = wt.owner_city_id
      LEFT JOIN wilderness_facilities wf ON wf.x = wt.x AND wf.y = wt.y
      WHERE c.account_id = $1 AND wt.kind = 'wilderness'`,
     [accountId],
   );
-  for (const row of territory.rows as Array<{ x: number; y: number; facility_level: number | null }>) {
-    sources.push({ x: row.x, y: row.y, radius: wildernessVisionRadius(row.facility_level) });
+  for (const row of territory.rows as Array<{ x: number; y: number; terrain: string; facility_level: number | null }>) {
+    sources.push({ x: row.x, y: row.y, radius: wildernessVisionRadius(row.facility_level, row.terrain) });
   }
   return sources;
 }

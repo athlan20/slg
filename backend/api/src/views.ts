@@ -531,7 +531,8 @@ export function toCityView(snap: CitySnapshot): CityView {
         clusterSize: sizes.get(`${tile.x},${tile.y}`) ?? 1,
         clusterBonusPercent: Math.round((clusterBonusMultiplier(sizes.get(`${tile.x},${tile.y}`) ?? 1) - 1) * 100),
         reserve: reserveViewFrom(step, true),
-        facility: territoryFacilityView(snap.facilities.get(`${tile.x},${tile.y}`) ?? null),
+        // 视野半径按地块地形给有效的（丘陵上的野地 +2）：与 fog-db 的实际视野同一口径（AISLG-233）
+        facility: territoryFacilityView(snap.facilities.get(`${tile.x},${tile.y}`) ?? null, tile.terrain),
       };
     }),
     queue,

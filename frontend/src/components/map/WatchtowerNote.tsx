@@ -3,11 +3,13 @@
  *  望楼受迷雾开关影响：fog_enabled 关闭时照常可建，但不产生视野效果——这里注明「迷雾未开启」。
  *  数据来源：等级取自 tile.facility（所有人可见），进度取自 tile.facilityBuilding（只有主人可见），
  *  本城望楼名额取自 city.territory（同一座城才有意义）。
+ *  视野格数是**加成后的有效半径**（AISLG-233：丘陵上的野地 +2，1 / 2 / 3 级为 8 / 10 / 12），与后端下发与实际视野一致。
  */
 import type { CityView, TileDetailView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
 import { useCopy } from '../../i18n/bundle';
-import { WATCHTOWER_PER_CITY_LIMIT, watchtowerNextLevel, watchtowerSeconds, watchtowerVisionRadius } from './watchtowerTable';
+import { WATCHTOWER_PER_CITY_LIMIT, watchtowerNextLevel, watchtowerSeconds } from './watchtowerTable';
+import { builtFacilityVisionRadius } from './wildernessVision';
 
 export interface WatchtowerNoteProps {
   detail: TileDetailView;
@@ -50,7 +52,7 @@ export function WatchtowerNote({ detail, city, isOwn, fogEnabled, busy, onBuild,
           {W.sectionTitle}
         </span>
         <span role="选中详情-望楼-等级" className="text-[11.5px] text-dim">
-          {W.othersLine(level, watchtowerVisionRadius(level))}
+          {W.othersLine(level, builtFacilityVisionRadius(level, detail.terrain))}
         </span>
       </div>
     );
@@ -70,7 +72,7 @@ export function WatchtowerNote({ detail, city, isOwn, fogEnabled, busy, onBuild,
         <span>{W.sectionTitle}</span>
         {level > 0 ? (
           <span role="选中详情-望楼-等级" className="font-normal text-accent">
-            {W.levelLine(level, watchtowerVisionRadius(level))}
+            {W.levelLine(level, builtFacilityVisionRadius(level, detail.terrain))}
           </span>
         ) : null}
       </span>

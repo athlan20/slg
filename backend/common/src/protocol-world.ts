@@ -136,7 +136,8 @@ export interface TerritoryFacilityView {
   kind: 'watchtower';
   /** 已建成的最高等级；正在新建（还没有任何一级完成）时是 0 */
   level: number;
-  /** 已建成等级的视野半径（切比雪夫距离，格）；level = 0 时为 0 */
+  /** 已建成等级的视野半径（切比雪夫距离，格）；level = 0 时为 0。
+   *  丘陵上的野地是**加成后的有效半径**（1 / 2 / 3 级 8 / 10 / 12，AISLG-233），与 fog 的实际视野一致 */
   visionRadius: number;
   /** 进行中的建造 / 升级；没有则为 null */
   building: FacilityBuildingView | null;

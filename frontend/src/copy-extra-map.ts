@@ -124,6 +124,12 @@ export const EXTRA_MAP = {
     reportRelics: (n: number) => `发现遗迹 ${n} 处`,
     /** 视野半径说明里的一行（AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格 */
     watchtowerVision: '望楼：6 / 8 / 10 格（取代野地原来的 3 格）',
+    /** 视野半径说明里的一行（AISLG-233）：丘陵上的野地与望楼再加 2 格 */
+    hillVision: '丘陵上的野地和望楼视野 +2',
+  },
+  /** 丘陵视野（AISLG-233）：丘陵野地的详情里在地形之后补一行 */
+  hillVision: {
+    detail: '高地：视野 +2',
   },
   /** 望楼（AISLG-232，v97）：地图标记、详情区里的建造 / 升级一栏 */
   watchtower: {

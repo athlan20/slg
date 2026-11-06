@@ -136,7 +136,8 @@ export async function handleFacilityBuild(
     const facilities = new Map(snap.facilities);
     facilities.set(`${x},${y}`, row);
     const view = toCityView({ ...(snap as CitySnapshot), resources: afterCost, facilities });
-    respondOk(ctx.registry, conn, op, seq, { facility: territoryFacilityView(row), city: view });
+    // 视野半径按这块地的地形给（丘陵上的野地 +2，AISLG-233）
+    respondOk(ctx.registry, conn, op, seq, { facility: territoryFacilityView(row, tile.terrain), city: view });
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw err;
