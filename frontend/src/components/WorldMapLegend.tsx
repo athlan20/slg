@@ -71,6 +71,13 @@ export function WorldMapLegend() {
           </span>
           {EXTRA_MAP.fog.watchtowerVision}
         </li>
+        {/* 丘陵视野（AISLG-233）：丘陵上的野地与望楼视野 +2 */}
+        <li role="世界地图图例-丘陵视野" className={itemCls}>
+          <span role="世界地图图例-丘陵视野-图标" className={`${swatchCls} border-line-soft text-[9px] text-dim`}>
+            {TERRAIN_LABEL.hill.slice(0, 1)}
+          </span>
+          {EXTRA_MAP.fog.hillVision}
+        </li>
       </ul>
       {/* 领地关系色（AISLG-216）：铺色 20% + 外圈同色描边，连片加成的一片外圈转金色 */}
       <ul role="世界地图图例-领地" className="flex flex-wrap gap-x-2.5 gap-y-1">
