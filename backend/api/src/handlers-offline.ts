@@ -25,7 +25,8 @@ const DIGEST_EVENT_LIMIT = 2000;
 /** 「仓库快满了」提示阈值（占储量上限百分比） */
 const STORAGE_FULL_PERCENT = 80;
 
-/** 玩家连接全部断开时记录离线时刻（handleConnectionClosed 调用；Agent 连接不算） */
+/** 玩家连接全部断开时记录离线时刻（handleConnectionClosed 调用；Agent 连接不算）。
+ *  这是离线日报的统计起点；Agent 断线只刷 last_active_at（AISLG-236），不走这里 */
 export async function markPlayerOffline(pool: pg.Pool, accountId: string): Promise<void> {
   await pool.query(`UPDATE accounts SET last_online_at = now(), last_active_at = now() WHERE id = $1`, [accountId]);
 }
