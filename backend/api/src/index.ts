@@ -104,7 +104,7 @@ async function main(): Promise<void> {
     sweepWxTickets(ctx);
     sweepGithubOauth(ctx.github);
   }, 5_000);
-  // v66（AISLG-181）：玩家在线心跳，刷新 last_active_at（联盟盟主不活跃判断）
+  // v66（AISLG-181）：在线心跳，刷新 last_active_at（联盟盟主不活跃判断）；AISLG-236 起 Agent 连接同样算在线
   const activeHeartbeat = startActiveHeartbeat(ctx);
 
   // Google 一键登录（v44）：没配 GOOGLE_CLIENT_ID 时整体关闭，GOOGLE_LOGIN 返回 GOOGLE_UNAVAILABLE
