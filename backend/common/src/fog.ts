@@ -33,6 +33,14 @@ export const FOG_VISION = {
   scoutTech6: 7,
 } as const;
 
+/**
+ * 丘陵上的野地视野加成（AISLG-233「丘陵视野」）：站得高望得远，只对**占领的野地**生效——
+ * 主城 / 分城（地形开局随机，加成会变成看运气）与行军中的部队（一路走一路变半径，视野会闪）都不加成。
+ */
+export const HILL_VISION_BONUS = 2;
+/** 视野半径上限（格）：与主城持平，丘陵加成不再往上叠（AISLG-233；3 级望楼 10 + 2 正好封顶） */
+export const FOG_VISION_MAX = 12;
+
 /** 开局 / 存量初始化：主城周围该半径内的区块记为已探索 */
 export const FOG_OPENING_RADIUS = 30;
 /** 探索简报最多列出的坐标数 */
@@ -41,12 +49,25 @@ export const FOG_REPORT_CELL_LIMIT = 10;
 export const FOG_POWER_TOP_N = 20;
 
 /**
- * 一块占领野地的视野半径（v97，AISLG-232）：野地原来 3 格，地上的望楼按等级给 6 / 8 / 10 格，
- * **取大不叠加**（望楼的半径取代野地那 3 格）。这是「视野半径怎么算」的唯一入口——
- * 地形影响视野等后续规则加在这里，不要在别处另写一份。
+ * 一块占领野地的视野半径：野地原来 3 格，地上的望楼按等级给 6 / 8 / 10 格，**取大不叠加**
+ *（v97，AISLG-232；望楼的半径取代野地那 3 格）。丘陵上的野地在这之上再 +2（v97，AISLG-233：
+ * 没望楼 3 → 5，1 / 2 / 3 级望楼 6 / 8 / 10 → 8 / 10 / 12），半径上限 12、与主城持平。
+ * 这是「视野半径怎么算」的唯一入口——地形影响视野的规则加在这里，不要在别处另写一份。
+ * 其他地形（平原 / 草原 / 森林 / 荒漠 / 沼泽 / 湖泊 / 金矿）不变。
  */
-export function wildernessVisionRadius(facilityLevel: number | null | undefined): number {
-  return Math.max(FOG_VISION.wilderness, facilityVisionRadiusOf(facilityLevel));
+export function wildernessVisionRadius(facilityLevel: number | null | undefined, terrain?: string | null): number {
+  const base = Math.max(FOG_VISION.wilderness, facilityVisionRadiusOf(facilityLevel));
+  const radius = terrain === 'hill' ? base + HILL_VISION_BONUS : base;
+  return Math.min(FOG_VISION_MAX, radius);
+}
+
+/**
+ * 下发给客户端的设施视野半径（city.territory[].facility.visionRadius / GET_TILE 的 facility）：
+ * 望楼还没建成（0 级）时为 0；建成后是该地块**加成后的有效半径**（丘陵外 6 / 8 / 10，丘陵上 8 / 10 / 12），
+ * 界面显示的格数与实际视野一致（AISLG-233 技术细节）。
+ */
+export function builtFacilityVisionRadius(facilityLevel: number | null | undefined, terrain?: string | null): number {
+  return facilityLevel && facilityLevel > 0 ? wildernessVisionRadius(facilityLevel, terrain) : 0;
 }
 
 /** 斥候视野半径：侦察科技等级 → 半径（Lv3 起 6，Lv6 起 7） */
