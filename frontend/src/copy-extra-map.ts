@@ -46,6 +46,10 @@ export const EXTRA_MAP = {
   layers: {
     marches: '行军',
     yield: '产出',
+    /** 手机端图层入口按钮与面板（AISLG-231）：宽度 < 640px 时横排复选框收进这里 */
+    button: '图层',
+    /** 面板的读屏名称 */
+    panelAria: '地图图层',
   },
   /** 行军图层（AISLG-216）：任务单字、倒计时、图标提示、同格合并与视野外箭头 */
   march: {
