@@ -8,6 +8,7 @@ import { ensureFamousCities } from './famous-city-db';
 import { ensureWildFamous } from './wild-famous-db';
 import { ensureRelics } from './fog-relic-db';
 import { getFogEnabled } from './fog-config';
+import { destroyFacility, type FacilityLossCause } from './facility-db';
 import {
   type TerrainKind,
   type TileKind,
@@ -346,9 +347,19 @@ export async function addTileArmy(
   }
 }
 
-/** 清空地块驻军并清除占领（野地失守 / 召回共用；NPC 城池地块不适用） */
-export async function clearTileOccupation(client: pg.PoolClient, x: number, y: number): Promise<void> {
+/**
+ * 清空地块驻军并清除占领（野地失守 / 召回共用；NPC 城池地块不适用）。
+ * v97（AISLG-232）：这块地上的望楼一并毁掉（不转给新主人、不退资源，原主人收到 facility_lost）——
+ * 野地失守的入口都走这里，避免每个入口各写一份。
+ */
+export async function clearTileOccupation(
+  client: pg.PoolClient,
+  x: number,
+  y: number,
+  facilityCause: FacilityLossCause = 'conquest',
+): Promise<void> {
   await client.query(`DELETE FROM tile_army WHERE x = $1 AND y = $2`, [x, y]);
+  await destroyFacility(client, x, y, facilityCause);
   await client.query(
     `UPDATE world_tiles SET owner_city_id = NULL WHERE x = $1 AND y = $2 AND kind = 'wilderness'`,
     [x, y],

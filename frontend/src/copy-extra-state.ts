@@ -116,6 +116,9 @@ export const EXTRA_STATE = {
     wildRecall: (pos: string) => `撤回驻军，放弃野地 ${pos}`,
     wildConquest: (pos: string, by: string) => `野地 ${pos} 被${by ? `玩家 ${by} ` : ''}抢占，占领失效`,
     wildLost: (pos: string) => `野地 ${pos} 失守，占领失效`,
+    /** 望楼（AISLG-232，v97）：建成 / 升级完成、随野地毁掉 */
+    facilityCompleted: (pos: string, level: number) => `望楼建成：${pos} 升到 ${level} 级`,
+    facilityLost: (pos: string, level: number) => `望楼毁了：${pos}（${level > 0 ? `${level} 级` : '在建'}），不退款`,
     npcCityOccupied: (pos: string, name: string, loot: string) =>
       `占领 NPC 城池 ${pos} 为分城${name ? `「${name}」` : ''}${loot ? `，接收库存${loot}` : ''}`,
     npcRaidRepelled: (pos: string, losses: string) => `NPC 袭击 ${pos} 被击退${losses ? `，损失 ${losses}` : ''}`,

@@ -31,6 +31,7 @@ function tileBase(overrides: Partial<TileView>): TileView {
     relic: null,
     heroSite: null,
     reserve: null,
+    facility: null,
     ...overrides,
   };
 }
@@ -89,6 +90,7 @@ test('格子产出：野地给数字、自己的地含驻军采集、营地与�
     garrison: 60,
     clusterSize: 3,
     clusterBonusPercent: 10,
+    facility: null,
   };
   const mine = yieldOfTile(tileBase({ x: 1, y: 1, terrain: 'forest', level: 5, owner: { accountId: 'me', username: 'me', cityId: 'c1', cityName: '城', nobility: 0, nobilityName: '平民', ally: false, relation: 'self', canAssist: false }, reserve: ownTile.reserve }), ownTile, 'me');
   assert.ok(mine);

@@ -113,6 +113,35 @@ export interface ReserveView {
   eta: { kind: 'empty' | 'full'; at: string } | null;
 }
 
+/**
+ * 野地上的设施（v97，AISLG-232）：地图与地块详情里对**所有人**可见的部分——有望楼、几级。
+ * 建造进度与剩余时间只有主人能看到（见 TerritoryView.facility / TileDetailView.facilityBuilding）。
+ */
+export interface TileFacilityView {
+  kind: 'watchtower';
+  /** 已建成的等级（1..3）；建造中这一级还没算数，仍显示旧的等级 */
+  level: number;
+}
+
+/** 进行中的建造 / 升级（v97，AISLG-232；只有主人能看到） */
+export interface FacilityBuildingView {
+  /** 目标等级（1..3）：新建设施时是 1，升级时是当前等级 + 1 */
+  toLevel: number;
+  /** 完成时刻（ISO 8601；已按发起时的全局时间缩放折算，由 Worker 到期完成） */
+  finishAt: string;
+}
+
+/** 本城名下野地的设施（CityView.territory 元素的一部分；含建造进度，主人可见） */
+export interface TerritoryFacilityView {
+  kind: 'watchtower';
+  /** 已建成的最高等级；正在新建（还没有任何一级完成）时是 0 */
+  level: number;
+  /** 已建成等级的视野半径（切比雪夫距离，格）；level = 0 时为 0 */
+  visionRadius: number;
+  /** 进行中的建造 / 升级；没有则为 null */
+  building: FacilityBuildingView | null;
+}
+
 /** 地图窗口内一格的视图（GET_WORLD_MAP / PUSH_TILE_STATE 共用） */
 export interface TileView {
   x: number;
@@ -146,6 +175,8 @@ export interface TileView {
   relic: RelicTileView | null;
   /** 名将处所（v93，AISLG-227）：实时视野或已探索的处所格才有；其余为 null（迷雾关闭时恒为 null） */
   heroSite: HeroSiteView | null;
+  /** 望楼（v97，AISLG-232）：只要能看到这块地就能看到有望楼与它的等级（不含建造进度）；没盖或还在建 1 级为 null */
+  facility: TileFacilityView | null;
   /** 战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾时一致）；explored = 已探索但不在视野内，
    *  只给上次看到的地形 / 等级 / 占领者，动态字段（驻军、库存 / 储量档位、保护、城防）为 null 或 0；未探索的地块不返回 */
   fog: 'explored' | 'visible';
@@ -193,6 +224,8 @@ export interface TileDetailView extends TileView {
   /** 协防部队（v74，AISLG-194）：自己的城或盟友的城给出 "谁在协防、带了多少兵"；
    *  其他人 / 野地 / NPC 城为 null（外人侦察只能看到计入守军总数的兵力） */
   assists: import('./protocol-assist').AssistView[] | null;
+  /** 望楼的建造 / 升级进度（v97，AISLG-232）：**只有占着这块地的城的主人能看到**，其余为 null */
+  facilityBuilding: FacilityBuildingView | null;
 }
 
 /** 本城占领的野地（CityView.territory 元素） */
@@ -215,6 +248,8 @@ export interface TerritoryView {
   clusterBonusPercent: number;
   /** 野地储量（v61，AISLG-165）；本城占领的地块恒有权查看数值 */
   reserve: ReserveView;
+  /** 这块地上的望楼（v97，AISLG-232）：等级、视野半径与进行中的建造 / 升级；没盖为 null */
+  facility: TerritoryFacilityView | null;
 }
 
 /** 行军视图（推送与查询共用同一结构） */
@@ -265,6 +300,8 @@ export interface WorldMapResponseData {
   y: number;
   w: number;
   h: number;
+  /** 战争迷雾开关 fog_enabled 的当前值（v97，AISLG-232）：关闭时望楼照建但不产生视野效果，界面据此注明「迷雾未开启」 */
+  fogEnabled?: boolean;
   tiles: TileView[];
 }
 
@@ -416,6 +453,9 @@ export interface TileStatePushData {
     /** v40（AISLG-124）：分城城防值被打掉一截（守方视角刷新城防 / 免战） */
     | 'city_durability_hit'
     /** v91（AISLG-220）：城池迁移，新旧两格各推一次（归属方视角） */
-    | 'city_moved';
+    | 'city_moved'
+    /** v97（AISLG-232）：望楼建成 / 升级完成（归属方视角，tile.facility 为新等级）。
+     *  望楼随野地毁掉不单独推：那一格本来就有一条 wilderness_lost（tile.facility 随之变 null） */
+    | 'facility_completed';
   tile: TileView;
 }

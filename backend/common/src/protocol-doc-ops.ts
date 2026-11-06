@@ -51,6 +51,7 @@ import {
   REQUEST_GET_SERVER_BROADCASTS,
 } from './protocol-doc-ops-agent';
 import { PUSH_STARVATION_STATE } from './protocol-doc-ops-starvation';
+import { REQUEST_FACILITY_BUILD } from './protocol-doc-ops-facility';
 import {
   PUSH_HERO_STATE,
   REQUEST_ASSIGN_HERO,
@@ -195,7 +196,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.defenses', type: 'object', desc: '城防器械（v73，AISLG-193）：{ cap 库存上限（城墙等级 × 60）, stock 四种器械已入库件数（trap / chevaux / rolling_log / boulder，恒含四个键）, total 合计, queue 打造队列（第 1 项 status=crafting、其余 queued；条目结构同 CRAFT_DEFENSE 的 craft） }。守城战开打时按需自动消耗，战报的 defenses 字段给出用量与杀伤。' },
     { name: 'city.defenseBonus', type: 'number', desc: '城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。' },
     { name: 'city.marches', type: 'array', desc: '本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。' },
-    { name: 'city.territory', type: 'array', desc: '本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。' },
+    { name: 'city.territory', type: 'array', desc: '本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）, facility 这块地上的望楼（v97 新增，AISLG-232；{ kind（恒为 watchtower）, level 已建成等级 0..3, visionRadius 视野半径 1 级 6 / 2 级 8 / 3 级 10 格, building: { toLevel, finishAt } | null 进行中的建造 / 升级 }，没盖为 null）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。' },
     ...GIFT_STATE_FIELDS,
     ...ITEMS_STATE_FIELDS,
     ...MOVE_CITY_STATE_FIELDS,
@@ -589,4 +590,6 @@ export const OP_DOC: Record<Op, OpDoc> = {
   ...ALLIANCE_OP_DOCS,
   // 联盟地图标记（v69，AISLG-184）：条目在 protocol-doc-ops-alliance-mark.ts；玩家与 Agent 通用，收录进对外 Agent 文档
   ...ALLIANCE_MARK_OP_DOCS,
+  // 野地设施（望楼，v97，AISLG-232）：条目在 protocol-doc-ops-facility.ts，玩家与 Agent 通用，收录进对外 Agent 文档
+  [Op.FACILITY_BUILD]: REQUEST_FACILITY_BUILD,
 };

@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**96** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**97** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 96）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 97）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 96,
+    "protocolVersion": 97,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 96,
+    "protocolVersion": 97,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/93 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/94 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 93,
+    "docVersion": 94,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 96,
-    "docNotice": "接口文档已从 v93 更新到 v96：请 GET /agent-api/changes/93 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 97,
+    "docNotice": "接口文档已从 v94 更新到 v97：请 GET /agent-api/changes/94 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -862,7 +862,7 @@
 | city.defenses | object | 城防器械（v73，AISLG-193）：{ cap 库存上限（城墙等级 × 60）, stock 四种器械已入库件数（trap / chevaux / rolling_log / boulder，恒含四个键）, total 合计, queue 打造队列（第 1 项 status=crafting、其余 queued；条目结构同 CRAFT_DEFENSE 的 craft） }。守城战开打时按需自动消耗，战报的 defenses 字段给出用量与杀伤。 |
 | city.defenseBonus | number | 城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。 |
 | city.marches | array | 本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。 |
-| city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
+| city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）, facility 这块地上的望楼（v97 新增，AISLG-232；{ kind（恒为 watchtower）, level 已建成等级 0..3, visionRadius 视野半径 1 级 6 / 2 级 8 / 3 级 10 格, building: { toLevel, finishAt } \| null 进行中的建造 / 升级 }，没盖为 null）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
 | gift | number | （v89，AISLG-221）账号礼金当前余额（账号级，不分城）。每个赛季开始固定发 1000（登录时惰性发放，同赛季不重复发），换季清零；不能转让、赠送、兑换成金币或任何资源。只用于服务端标明的便利功能，扣除时事件流写 gift_spent（detail = { reason, amount, balance }）。 |
 | giftSeasonGrant | number | （v89）每个赛季每个账号发放的礼金额度（当前为 1000）。界面与 Agent 用它显示“礼金 gift / giftSeasonGrant”，不要写死数值。 |
 | items | object | （v90，AISLG-222）账号道具背包：{ [itemId]: count }，每种已定义道具都有键（缺省 0）。与 GET_ITEMS 的 items 同口径。道具随换季清空。 |
@@ -4159,6 +4159,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | --- | --- | --- |
 | size | number | 世界边长（世界为 size×size 方格）。 |
 | x / y / w / h | number | 本次窗口的左上角与宽高（已按世界边界钳制后的实际值）。 |
+| fogEnabled | boolean | 战争迷雾开关 fog_enabled 的当前值（v97，AISLG-232）。关闭时望楼照建但不产生视野效果，客户端据此注明「迷雾未开启」。 |
 | tiles | array | 窗口内地块，按 y 行 x 列排序。 |
 | tiles[].x / tiles[].y | number | 地块坐标。 |
 | tiles[].terrain | 'plain' \| 'grass' \| 'forest' \| 'hill' \| 'desert' \| 'marsh' \| 'lake' \| 'gold_mine' | 地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。 |
@@ -4166,6 +4167,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].fog | 'explored' \| 'visible' | 战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾一致）；explored = 已探索但不在视野内（动态字段清空，见 summary）。未探索的格不返回。 |
 | tiles[].seenAt | string \| null | 已探索的格为上次看到的时间（ISO）；实时视野为 null。 |
 | tiles[].relic | { tier, kind } \| null | 遗迹（v93，AISLG-227）：实时视野或已探索且未领取的遗迹格才有；tier = common / rare / legendary，kind = granary / lumberyard / quarry / ironworks / caravan / battlefield / treasury / mausoleum。领取后所有人的地图上立刻消失。迷雾关闭时恒为 null。 |
+| tiles[].facility | { kind, level } \| null | 野地上的设施（v97，AISLG-232）：目前只有望楼 kind = watchtower，level 为已建成等级（1..3）。只要能看到这块地（实时视野或已探索）就能看到有望楼与它的等级——别人想「断你的眼」得先知道眼在哪；**不含建造进度**（进度只有主人能看到，见 GET_STATE 的 city.territory[].facility）。没盖望楼、或还在建第一级时为 null。 |
 | tiles[].heroSite | { name, hero, claimed } \| null | 名将处所（v93，AISLG-227）：8 位一线在野名将的隐居地，实时视野或已探索才有；name 为处所名（如「茅庐」），hero 为名将名，claimed = true 表示名将已被招揽（已出山，图标变灰）。迷雾关闭时恒为 null。 |
 | tiles[].famous.firstExplorer | string \| null | 名城首探者用户名（v93，AISLG-227）：尚无人首探为 null；迷雾关闭时该字段缺省。 |
 | tiles[].level | number | 野地等级（1..10）或 NPC 城池等级（1..3）；玩家城池为 0。 |
@@ -4285,6 +4287,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tile.nativePower | number | 未占领野地的原住守军规模参考（v24：含该地块固定浮动与战后恢复进度的当前存量；v18 起定位为粗估，不构成胜负预测——它抹平了射程与速度克制；已占领野地、NPC 城池与玩家城池为 0）。 |
 | tile.wilderness | object \| null | 野地收益预览：{ resource 加成资源, bonusRate 占领加成/小时（= 基线 + 等级 × 每级增量，v21 加成保底：森林/草原/金矿 30+70×等级、平原/丘陵/荒漠 25+55×等级、沼泽 20+40×等级、湖泊 40+80×等级）, gatherRate 当前驻军采集/小时（v61 起受储量约束：储量空时只按恢复速度采集）, reserve 野地储量（v61，同 tiles[].reserve）}；非野地为 null。 |
 | tile.npc | object \| null | NPC 城池情报（v13 需侦察）：{ garrison 驻防按兵种（快照）, stock 可掠夺库存（快照）, scoutDetail / garrisonTotal（v27）}；未侦察或非 NPC 城为 null。**v27 起驻防精度随侦察科技**：scoutDetail=rough（侦察科技 Lv0–2）时 garrison 全 0，只有 garrisonTotal { min, max } 给总兵力约数（真实 ±20%）；kinds（Lv3–5）给兵种明细、各兵种数量为近似值（真实 ±20%，同一地块固定不变）；exact（Lv6+）精确。历史情报无 scoutDetail 字段，视为 exact。 |
+| tile.facilityBuilding | { toLevel, finishAt } \| null | 望楼的建造 / 升级进度（v97，AISLG-232）：**只有占着这块地的城的主人能看到**（toLevel 为目标等级、finishAt 为完成时刻 ISO 8601），其余账号为 null；没有进行中的工程也为 null。 |
 | tile.scoutedAt | string \| null | 最近一次侦察该地块的时间（ISO 8601，任意地块类型；v23 起非 NPC 城也返回）；从未侦察为 null。 |
 | tile.assists | array \| null | （v74，AISLG-194）城池的协防部队：{ id, accountId, username, fromCityId, fromCityName, troops（全兵种计数）, arrivedAt, initiator }。自己的城与盟友的城可见；其他人的城为 null（外人侦察只能看到计入守军总数的兵力）。 |
 | tile.durability | number \| null | 他人分城的当前城防值（v40，AISLG-124）：0..100，按「免战截止前不回涨、之后每小时 +10」惰性结算展示；非 null 即可被 task=occupy 攻打的分城，归零一击换主。主城 / 野地 / NPC 城 / 自己的城为 null。 |
@@ -18955,6 +18958,112 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 153 · FACILITY_BUILD — 在野地上建望楼 / 升级望楼（v97，AISLG-232）
+
+`C→S` 请求-响应 · 需登录后发送
+
+在自己**已占领的野地**上建望楼：没盖过就新建 1 级，盖过就升一级（最高 3 级）。望楼是野地上的了望塔，建好后这块地周围的视野扩大到对应半径——别人也看得到你的望楼（想断你的眼睛就得把这块地抢走）。规则：只能盖在 kind = 'wilderness' 且归你城池的格上（城池 / NPC 城 / 无主地 / 别人的野地返回 FACILITY_TILE_INVALID）；每块地最多一座，每座城名下的野地最多 2 座（主城 2 座、每座分城各 2 座，新建时计名额，升级已有望楼不受影响）；同一块地同一时间只能有一个进行中的建造 / 升级（FACILITY_BUILDING）。数值（占位，按需求一字不改）：1 级：视野 6 格，金 300 / 木 200 / 石 100，基准 120 秒；2 级：视野 8 格，金 600 / 木 400 / 石 200，基准 240 秒；3 级：视野 10 格，金 900 / 木 600 / 石 300，基准 360 秒；满级累计金 1800 / 木 1200 / 石 600。**资源从占着这块地的那座城扣**；耗时为基准 ÷ 全局时间缩放、不低于 1 秒，但**不吃**「建筑」科技折扣。望楼**不占城池建造队列**，用自己的计时（响应里的 facility.building.finishAt），由后台 Worker 到期完成。视野半径是切比雪夫距离，**取代**野地原来的 3 格、不叠加；视野照常记入已探索；迷雾开关 fog_enabled 关闭时望楼仍可建，但不产生视野效果。失去野地（被抢、所属城易主 / 被放弃、召回驻军放弃占领）望楼一并毁掉，不转给新主人、不退资源，原主人收到事件 facility_lost；储量采空不影响望楼。玩家与 Agent 走同一个接口。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| x | number | 必填。目标地块 x（须为本账号城池占领的野地，见 GET_STATE 的 city.territory）。 |
+| y | number | 必填。目标地块 y。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| facility | object | 该地块的设施（与 GET_STATE 的 city.territory[].facility 同结构）：{ kind: 'watchtower', level 已建成等级（正在新建第一级时为 0）, visionRadius 已建成等级的视野半径（格；level 为 0 时 0）, building: { toLevel 进行中的目标等级, finishAt 完成时刻 ISO 8601 } \| null }。 |
+| city | object | 扣费后的城池状态（结构同 GET_STATE 的 city；资源从占着这块地的那座城扣）。失败时只附 city 与缺口字段。 |
+
+**可能错误**：`INVALID_PARAMS`、`FACILITY_TILE_INVALID`、`FACILITY_BUILDING`、`FACILITY_MAX_LEVEL`、`FACILITY_LIMIT`、`INSUFFICIENT_RESOURCES`（处置建议见第 4 节）
+
+**Agent 提示**：望楼能扩大视野（1 级 6 格 / 2 级 8 格 / 3 级 10 格，取代野地原来的 3 格），是「提前看到别人部队」的手段；失去这块野地就失去望楼（不退款），抢别人的野地就能拆掉他的眼睛。先 GET_STATE 看 city.territory[].facility（null = 没盖）挑一块战略位置上的野地，再看这座城的资源够不够：不够会返回 INSUFFICIENT_RESOURCES（附缺口 shortfall 与 retryAfterSeconds），等够再发。建造中用 city.territory[].facility.building 的 finishAt 估算进度，到点后服务端完成（事件 facility_completed），期间再发同一块地会返回 FACILITY_BUILDING。
+
+**示例**
+
+**在自己的野地上新建 1 级望楼（扣 金 300 / 木 200 / 石 100，基准 120 秒后完成）**
+
+请求：
+
+```json
+{
+  "op": 153,
+  "seq": 41,
+  "data": {
+    "x": 512,
+    "y": 340
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 153,
+  "seq": 41,
+  "ok": true,
+  "data": {
+    "facility": {
+      "kind": "watchtower",
+      "level": 0,
+      "visionRadius": 0,
+      "building": {
+        "toLevel": 1,
+        "finishAt": "2026-09-25T08:02:00.000Z"
+      }
+    },
+    "city": {
+      "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+      "resources": {
+        "gold": 4700,
+        "wood": 4800,
+        "food": 5000,
+        "stone": 2900,
+        "iron": 3000
+      },
+      "territory": []
+    }
+  }
+}
+```
+
+**这座城名下的望楼已满 2 座**
+
+请求：
+
+```json
+{
+  "op": 153,
+  "seq": 42,
+  "data": {
+    "x": 513,
+    "y": 340
+  }
+}
+```
+
+失败响应（`FACILITY_LIMIT`）：
+
+```json
+{
+  "op": 153,
+  "seq": 42,
+  "ok": false,
+  "error": {
+    "code": "FACILITY_LIMIT",
+    "message": "这座城名下的望楼已达上限（每座城最多 2 座）"
+  },
+  "data": {
+    "limit": 2,
+    "count": 2
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -19386,7 +19495,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `S→C` 服务端推送 · 无 `seq`
 
-地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军。
+地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军、facility_completed=望楼建成 / 升级完成（v97，AISLG-232，tile.facility 为新等级）。望楼随野地一起毁掉时不单独推：那一格另有一条 wilderness_lost，tile.facility 随之变 null。
 
 **data 字段**
 
@@ -20885,6 +20994,10 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `TILE_UNEXPLORED` | 该地块在战争迷雾中未探索，且不在任何视野来源（城池 / 领地 / 行军 / 同盟或友盟的城池格）覆盖内，服务端不返回它的任何信息（v92，AISLG-224）。仅在 fog_enabled 开启时出现。 | 先派斥候或部队去这个方向探索（派去未探索坐标的出征本身允许，盲打时前端应提示“目标在迷雾中”）。也可以改查已探索的格子。 |
 | `MOVE_CITY_TILE_UNEXPLORED` | 高级迁城令（指定坐标）的目标格未探索，也不在实时视野内，无法指定为迁城目标（v92，AISLG-224）。随机迁城令不受影响。 | 先探索目标区域（派斥候或部队去那里），或改用随机迁城令。 |
 | `MOVE_CITY_ATTACK_LOCK` | （v91，AISLG-220）指定坐标迁城后 12 小时内，这座城的掠夺 / 占领 / 侦察 / 派协防（以及其他攻击类出征）被拒；响应附 retryAfterSeconds。运输、调兵、增援自己名下野地与召回不受限。 | 等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。 |
+| `FACILITY_TILE_INVALID` | （v97，AISLG-232）目标格不是本账号占领的野地：城池格、NPC 城池、无主野地、别人占领的野地都算。不扣任何资源。 | 用 GET_STATE 的 city.territory 核对本账号占领的野地坐标，只对列表中的地块发起 FACILITY_BUILD。 |
+| `FACILITY_MAX_LEVEL` | （v97，AISLG-232）这块地的望楼已经满级（3 级），不能再升级。不扣任何资源。 | 换一块自己占领的野地建望楼；每座城最多 2 座。 |
+| `FACILITY_BUILDING` | （v97，AISLG-232）这块地的望楼正在建造或升级中，同一块地同一时间只能有一个进行中的工程。不扣任何资源。 | 等 city.territory[].facility.building.finishAt 到点（Worker 到期完成）后再发起下一次升级。 |
+| `FACILITY_LIMIT` | （v97，AISLG-232）这座城名下的望楼已达上限：每座城最多 2 座（主城 2 座，每座分城各 2 座）。响应附 limit 与 count。不扣任何资源。 | 换另一座城名下的野地建望楼，或先把这块地的望楼升到更高级（升级不受名额限制）。 |
 | `INTERNAL` | 服务端内部错误。 | 可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。 |
 
 ## 5. 完整示例会话
@@ -22474,7 +22587,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 96。
+- 协议版本随对外协议内容的每次变化递增；当前为 97。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

@@ -103,6 +103,7 @@ export const REQUEST_GET_WORLD_MAP: RequestOpDoc = {
   dataFields: [
     { name: 'size', type: 'number', desc: '世界边长（世界为 size×size 方格）。' },
     { name: 'x / y / w / h', type: 'number', desc: '本次窗口的左上角与宽高（已按世界边界钳制后的实际值）。' },
+    { name: 'fogEnabled', type: 'boolean', desc: '战争迷雾开关 fog_enabled 的当前值（v97，AISLG-232）。关闭时望楼照建但不产生视野效果，客户端据此注明「迷雾未开启」。' },
     { name: 'tiles', type: 'array', desc: '窗口内地块，按 y 行 x 列排序。' },
     { name: 'tiles[].x / tiles[].y', type: 'number', desc: '地块坐标。' },
     { name: 'tiles[].terrain', type: "'plain' | 'grass' | 'forest' | 'hill' | 'desert' | 'marsh' | 'lake' | 'gold_mine'", desc: '地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。' },
@@ -110,6 +111,7 @@ export const REQUEST_GET_WORLD_MAP: RequestOpDoc = {
     { name: 'tiles[].fog', type: "'explored' | 'visible'", desc: '战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾一致）；explored = 已探索但不在视野内（动态字段清空，见 summary）。未探索的格不返回。' },
     { name: 'tiles[].seenAt', type: 'string | null', desc: '已探索的格为上次看到的时间（ISO）；实时视野为 null。' },
     { name: 'tiles[].relic', type: '{ tier, kind } | null', desc: '遗迹（v93，AISLG-227）：实时视野或已探索且未领取的遗迹格才有；tier = common / rare / legendary，kind = granary / lumberyard / quarry / ironworks / caravan / battlefield / treasury / mausoleum。领取后所有人的地图上立刻消失。迷雾关闭时恒为 null。' },
+    { name: 'tiles[].facility', type: '{ kind, level } | null', desc: '野地上的设施（v97，AISLG-232）：目前只有望楼 kind = watchtower，level 为已建成等级（1..3）。只要能看到这块地（实时视野或已探索）就能看到有望楼与它的等级——别人想「断你的眼」得先知道眼在哪；**不含建造进度**（进度只有主人能看到，见 GET_STATE 的 city.territory[].facility）。没盖望楼、或还在建第一级时为 null。' },
     { name: 'tiles[].heroSite', type: '{ name, hero, claimed } | null', desc: '名将处所（v93，AISLG-227）：8 位一线在野名将的隐居地，实时视野或已探索才有；name 为处所名（如「茅庐」），hero 为名将名，claimed = true 表示名将已被招揽（已出山，图标变灰）。迷雾关闭时恒为 null。' },
     { name: 'tiles[].famous.firstExplorer', type: 'string | null', desc: '名城首探者用户名（v93，AISLG-227）：尚无人首探为 null；迷雾关闭时该字段缺省。' },
     { name: 'tiles[].level', type: 'number', desc: `野地等级（1..${WILDERNESS_LEVEL_MAX}）或 NPC 城池等级（1..3）；玩家城池为 0。` },
@@ -222,6 +224,7 @@ export const REQUEST_GET_TILE: RequestOpDoc = {
     { name: 'tile.nativePower', type: 'number', desc: '未占领野地的原住守军规模参考（v24：含该地块固定浮动与战后恢复进度的当前存量；v18 起定位为粗估，不构成胜负预测——它抹平了射程与速度克制；已占领野地、NPC 城池与玩家城池为 0）。' },
     { name: 'tile.wilderness', type: 'object | null', desc: '野地收益预览：{ resource 加成资源, bonusRate 占领加成/小时（= 基线 + 等级 × 每级增量，v21 加成保底：森林/草原/金矿 30+70×等级、平原/丘陵/荒漠 25+55×等级、沼泽 20+40×等级、湖泊 40+80×等级）, gatherRate 当前驻军采集/小时（v61 起受储量约束：储量空时只按恢复速度采集）, reserve 野地储量（v61，同 tiles[].reserve）}；非野地为 null。' },
     { name: 'tile.npc', type: 'object | null', desc: 'NPC 城池情报（v13 需侦察）：{ garrison 驻防按兵种（快照）, stock 可掠夺库存（快照）, scoutDetail / garrisonTotal（v27）}；未侦察或非 NPC 城为 null。**v27 起驻防精度随侦察科技**：scoutDetail=rough（侦察科技 Lv0–2）时 garrison 全 0，只有 garrisonTotal { min, max } 给总兵力约数（真实 ±20%）；kinds（Lv3–5）给兵种明细、各兵种数量为近似值（真实 ±20%，同一地块固定不变）；exact（Lv6+）精确。历史情报无 scoutDetail 字段，视为 exact。' },
+    { name: 'tile.facilityBuilding', type: '{ toLevel, finishAt } | null', desc: '望楼的建造 / 升级进度（v97，AISLG-232）：**只有占着这块地的城的主人能看到**（toLevel 为目标等级、finishAt 为完成时刻 ISO 8601），其余账号为 null；没有进行中的工程也为 null。' },
     { name: 'tile.scoutedAt', type: 'string | null', desc: '最近一次侦察该地块的时间（ISO 8601，任意地块类型；v23 起非 NPC 城也返回）；从未侦察为 null。' },
     { name: 'tile.assists', type: 'array | null', desc: '（v74，AISLG-194）城池的协防部队：{ id, accountId, username, fromCityId, fromCityName, troops（全兵种计数）, arrivedAt, initiator }。自己的城与盟友的城可见；其他人的城为 null（外人侦察只能看到计入守军总数的兵力）。' },
     { name: 'tile.durability', type: 'number | null', desc: '他人分城的当前城防值（v40，AISLG-124）：0..100，按「免战截止前不回涨、之后每小时 +10」惰性结算展示；非 null 即可被 task=occupy 攻打的分城，归零一击换主。主城 / 野地 / NPC 城 / 自己的城为 null。' },
@@ -483,7 +486,7 @@ export const PUSH_TILE_STATE: PushOpDoc = {
   kind: 'push',
   name: 'PUSH_TILE_STATE',
   title: '推送：地块归属 / 驻军变化（v12）',
-  summary: `地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军。`,
+  summary: `地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军、facility_completed=望楼建成 / 升级完成（v97，AISLG-232，tile.facility 为新等级）。望楼随野地一起毁掉时不单独推：那一格另有一条 wilderness_lost，tile.facility 随之变 null。`,
   dataFields: [
     { name: 'reason', type: 'string', desc: '触发本次推送的变化类别（见 summary）。' },
     { name: 'tile', type: 'object', desc: '变化后的地块视图，字段与 GET_WORLD_MAP 的 tiles[] 相同。' },

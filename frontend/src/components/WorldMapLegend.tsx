@@ -63,6 +63,15 @@ export function WorldMapLegend() {
           {COPY.worldMap.legendLevel}
         </li>
       </ul>
+      {/* 视野（v97，AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格（取代野地原来的 3 格） */}
+      <ul role="世界地图图例-视野" className="flex flex-wrap gap-x-2.5 gap-y-1">
+        <li className={itemCls}>
+          <span role="世界地图图例-望楼" className={`${swatchCls} border-accent/60 font-semibold text-accent`}>
+            {EXTRA_MAP.watchtower.glyph}
+          </span>
+          {EXTRA_MAP.fog.watchtowerVision}
+        </li>
+      </ul>
       {/* 领地关系色（AISLG-216）：铺色 20% + 外圈同色描边，连片加成的一片外圈转金色 */}
       <ul role="世界地图图例-领地" className="flex flex-wrap gap-x-2.5 gap-y-1">
         {TERRITORY_LEGEND_ORDER.map((relation) => (

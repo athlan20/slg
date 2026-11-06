@@ -314,6 +314,10 @@ export const EventType = {
   MARKET_ORDER_CANCELLED: 'market_order_cancelled',
   MARKET_ORDER_EXPIRED: 'market_order_expired',
   MARKET_TRADE: 'market_trade',
+  /** v97（AISLG-232）：野地设施（望楼）建成 / 升级完成（detail = { x, y, kind: 'watchtower', level }） */
+  FACILITY_COMPLETED: 'facility_completed',
+  /** v97（AISLG-232）：野地设施毁掉（detail = { x, y, kind, level, cause }；cause = conquest 野地被抢 / city_lost 所属城易主或被放弃 / recall 主动放弃 / reset 重置账号） */
+  FACILITY_LOST: 'facility_lost',
   AGENT_CONNECTED: 'agent_connected',
   AGENT_DISCONNECTED: 'agent_disconnected',
 } as const;
