@@ -4,6 +4,7 @@
 // 区块：全图切成 10×10 的块，共 10,000 块，第 i 块对应位图第 i>>3 字节的第 (i&7) 位。
 
 import { WORLD_SIZE } from './world';
+import { facilityVisionRadiusOf } from './facility';
 
 /** 区块边长（格） */
 export const FOG_CHUNK_SIZE = 10;
@@ -38,6 +39,15 @@ export const FOG_OPENING_RADIUS = 30;
 export const FOG_REPORT_CELL_LIMIT = 10;
 /** 战力榜前 N 名的主城在小地图上公开（分城不公开） */
 export const FOG_POWER_TOP_N = 20;
+
+/**
+ * 一块占领野地的视野半径（v96，AISLG-232）：野地原来 3 格，地上的望楼按等级给 6 / 8 / 10 格，
+ * **取大不叠加**（望楼的半径取代野地那 3 格）。这是「视野半径怎么算」的唯一入口——
+ * 地形影响视野等后续规则加在这里，不要在别处另写一份。
+ */
+export function wildernessVisionRadius(facilityLevel: number | null | undefined): number {
+  return Math.max(FOG_VISION.wilderness, facilityVisionRadiusOf(facilityLevel));
+}
 
 /** 斥候视野半径：侦察科技等级 → 半径（Lv3 起 6，Lv6 起 7） */
 export function scoutVisionRadius(scoutingLevel: number): number {

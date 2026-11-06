@@ -4,7 +4,8 @@
 // FOR UPDATE SKIP LOCKED 与条件守卫，探针与处理之间被别处抢先处理也安全）。
 // 各条件与对应 processDueXxx 的领取条件保持一致，且都能走已有的按到期时间的部分索引：
 // idx_builds_due / idx_recruits_due / idx_defense_crafts_due / idx_tech_research_due /
-// idx_marches_due / idx_npc_attacks_due / idx_world_tiles_reserve_empty / idx_battlefield_squads_arrive。
+// idx_marches_due / idx_npc_attacks_due / idx_world_tiles_reserve_empty / idx_battlefield_squads_arrive /
+// idx_wilderness_facilities_due（v96，望楼到期完成）。
 // 战场行军额外限定在「最新的 active 事件」上，与 processBattlefieldMovements 的选取口径一致：
 // 已结束事件的遗留小队（正常结束会 DELETE，异常残留也不会）不该让探针永远为真。
 
@@ -20,6 +21,8 @@ export interface DueProbe {
   npcAttacks: boolean;
   reserves: boolean;
   battlefieldMovements: boolean;
+  /** v96（AISLG-232）：望楼（野地设施）到点完成 */
+  facilities: boolean;
 }
 
 const PROBE_SQL = `
@@ -32,6 +35,7 @@ SELECT
   EXISTS (SELECT 1 FROM npc_attacks       WHERE resolved_at IS NULL    AND arrive_at <= now() LIMIT 1) AS npc_attacks,
   EXISTS (SELECT 1 FROM world_tiles
           WHERE owner_city_id IS NOT NULL AND reserve_empty_at IS NOT NULL AND reserve_empty_at <= now() LIMIT 1) AS reserves,
+  EXISTS (SELECT 1 FROM wilderness_facilities WHERE finish_at IS NOT NULL AND finish_at <= now() LIMIT 1) AS facilities,
   EXISTS (SELECT 1 FROM battlefield_squads s
           WHERE s.status = 'marching' AND s.arrive_at <= now()
             AND s.event_id = (SELECT id FROM battlefield_events WHERE status = 'active' ORDER BY signup_start DESC LIMIT 1)
@@ -48,6 +52,7 @@ export const ALL_DUE: DueProbe = {
   npcAttacks: true,
   reserves: true,
   battlefieldMovements: true,
+  facilities: true,
 };
 
 /** 一条查询（pool.query：不开事务、不跨 tick 占连接）读出 8 类到期队列是否有活 */
@@ -66,5 +71,6 @@ export async function probeDueWork(pool: pg.Pool): Promise<DueProbe> {
     npcAttacks: row.npc_attacks === true,
     reserves: row.reserves === true,
     battlefieldMovements: row.battlefield_movements === true,
+    facilities: row.facilities === true,
   };
 }

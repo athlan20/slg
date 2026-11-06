@@ -12,6 +12,7 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { loadCityState, lockCitySnapshot } from './views';
 import { CITY_NAME_MAX } from './handlers-city';
+import { destroyFacilitiesOfCity } from '../../common/src/facility-db';
 
 /** 昵称长度上限（v52）：与 LOGIN 密码分支的用户名同限（1..32）——昵称就是账号 username */
 export const NICKNAME_MAX = 32;
@@ -238,6 +239,10 @@ export async function handleResetAccount(
          )`,
         [cityIds],
       );
+      // v96（AISLG-232）：野地上的望楼随占领一并清掉（不退款；主人收到 facility_lost）
+      for (const id of cityIds) {
+        await destroyFacilitiesOfCity(client, id, 'reset');
+      }
       await client.query(
         `UPDATE world_tiles SET owner_city_id = NULL, npc = NULL,
                 kind = CASE WHEN kind = 'city' THEN 'wilderness' ELSE kind END

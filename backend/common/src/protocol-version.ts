@@ -723,5 +723,17 @@
  * v95（AISLG-226，只加不改）：TileOwnerView 新增 canAssist（tiles[].owner、GET_TILE 等占领者视图）：本账号现在能否向该占领者协防。
  *   同联盟或友盟（relation 行为 friendly）为 true；自己、解除友好后 24 小时冷却期（relation 仍显示 friendly，只为不能互打）、中立、敌对均为 false，
  *   与 MARCH task=assist 的校验（ASSIST_NOT_ALLY）口径一致。relation 与其它字段语义不变。
+ * v96（野地设施·望楼，AISLG-232，只加不改）：新增 FACILITY_BUILD（op 152，请求 { x, y }）——在自己**已占领的野地**上
+ *   建望楼，没盖过就新建 1 级、盖过就升一级（最高 3 级）。视野半径 1 / 2 / 3 级 = 6 / 8 / 10 格（切比雪夫，**取代**
+ *   野地原来的 3 格、不叠加），花费 金 / 木 / 石 300·200·100 / 600·400·200 / 900·600·300，基准耗时 120 / 240 / 360 秒
+ *   （÷ time_scale，不低于 1 秒，不吃「建筑」科技折扣）；望楼不占城池建造队列，自带计时（Worker 到期完成）。
+ *   每块地最多一座、每座城名下最多 2 座；资源从占着这块地的那座城扣。
+ *   city.territory[] 每项新增 facility（{ kind: 'watchtower', level, visionRadius, building: { toLevel, finishAt } | null } | null），
+ *   TileView 新增 facility（{ kind, level } | null，别人看到的版本、不含进度），TileDetailView 新增 facilityBuilding
+ *   （只有主人能看到进度）；新事件 facility_completed / facility_lost，PUSH_TILE_STATE 新增 reason facility_completed / facility_lost。
+ *   野地易主、所属分城易主或被放弃、召回驻军放弃占领、账号重置时望楼一并毁掉（不转给新主人、不退资源）。
+ *   新错误码 FACILITY_TILE_INVALID / FACILITY_MAX_LEVEL / FACILITY_BUILDING / FACILITY_LIMIT（资源不足沿用 INSUFFICIENT_RESOURCES）。
+ *   新表 wilderness_facilities（换季清空）；fog_seen 新增 facility_level（上次看到的望楼等级，向后兼容）。
+ *   迷雾开关 fog_enabled 关闭时望楼仍可建，但不产生视野效果。
  */
-export const PROTOCOL_VERSION = 95;
+export const PROTOCOL_VERSION = 96;

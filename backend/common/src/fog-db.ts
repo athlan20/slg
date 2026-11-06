@@ -15,6 +15,7 @@ import {
   FOG_CHUNKS_PER_SIDE,
   FOG_CHUNK_SIZE,
   FOG_CHUNK_COUNT,
+  wildernessVisionRadius,
 } from './fog';
 
 type Queryable = pg.Pool | pg.PoolClient;
@@ -34,6 +35,8 @@ export interface TileFact {
   famous: boolean;
   /** 在野名将落位且尚未被获得 */
   wildFamous: boolean;
+  /** 地上的望楼等级（v96，AISLG-232；0 = 没有） */
+  facilityLevel: number;
 }
 
 export interface SeenRow {
@@ -46,6 +49,8 @@ export interface SeenRow {
   ownerCityId: string | null;
   ownerCityName: string | null;
   wildFamous: boolean;
+  /** 上次看到时的望楼等级（v96，AISLG-232；0 = 没有） */
+  facilityLevel: number;
   seenAt: Date;
 }
 
@@ -70,11 +75,13 @@ export async function loadTileFacts(q: Queryable, coords: readonly Coord[]): Pro
     `SELECT wt.x, wt.y, wt.kind, wt.terrain, wt.level, wt.owner_city_id,
             c.account_id AS owner_account_id, a.username AS owner_username, c.name AS owner_city_name,
             (wt.npc -> 'famous') IS NOT NULL AS famous,
-            (wt.wild_hero IS NOT NULL AND NOT EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero)) AS wild_famous
+            (wt.wild_hero IS NOT NULL AND NOT EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero)) AS wild_famous,
+            COALESCE(wf.level, 0) AS facility_level
      FROM unnest($1::int[], $2::int[]) AS t(x, y)
      JOIN world_tiles wt ON wt.x = t.x AND wt.y = t.y
      LEFT JOIN cities c ON c.id = wt.owner_city_id
-     LEFT JOIN accounts a ON a.id = c.account_id`,
+     LEFT JOIN accounts a ON a.id = c.account_id
+     LEFT JOIN wilderness_facilities wf ON wf.x = wt.x AND wf.y = wt.y`,
     [xs, ys],
   );
   return (res.rows as Array<Record<string, unknown>>).map((row) => ({
@@ -89,6 +96,7 @@ export async function loadTileFacts(q: Queryable, coords: readonly Coord[]): Pro
     ownerCityName: (row.owner_city_name as string | null) ?? null,
     famous: row.famous === true,
     wildFamous: row.wild_famous === true,
+    facilityLevel: Math.max(0, Number(row.facility_level ?? 0)),
   }));
 }
 
@@ -122,20 +130,22 @@ export async function syncSeenTiles(client: pg.PoolClient, accountId: string, co
       owner_city_id: fact.ownerCityId,
       owner_city_name: fact.ownerCityName,
       wild_famous: fact.wildFamous,
+      facility_level: fact.facilityLevel,
     }));
     await client.query(
-      `INSERT INTO fog_seen (account_id, x, y, kind, level, owner_account_id, owner_username, owner_city_id, owner_city_name, wild_famous, seen_at)
-       SELECT $1, r.x, r.y, r.kind, r.level, r.owner_account_id, r.owner_username, r.owner_city_id, r.owner_city_name, r.wild_famous, $3
+      `INSERT INTO fog_seen (account_id, x, y, kind, level, owner_account_id, owner_username, owner_city_id, owner_city_name, wild_famous, facility_level, seen_at)
+       SELECT $1, r.x, r.y, r.kind, r.level, r.owner_account_id, r.owner_username, r.owner_city_id, r.owner_city_name, r.wild_famous, r.facility_level, $3
        FROM jsonb_to_recordset($2::jsonb) AS r(x int, y int, kind text, level int, owner_account_id uuid, owner_username text,
-                                               owner_city_id uuid, owner_city_name text, wild_famous boolean)
+                                               owner_city_id uuid, owner_city_name text, wild_famous boolean, facility_level int)
        ON CONFLICT (account_id, x, y) DO UPDATE SET
          kind = EXCLUDED.kind, level = EXCLUDED.level, owner_account_id = EXCLUDED.owner_account_id,
          owner_username = EXCLUDED.owner_username, owner_city_id = EXCLUDED.owner_city_id,
-         owner_city_name = EXCLUDED.owner_city_name, wild_famous = EXCLUDED.wild_famous, seen_at = EXCLUDED.seen_at
+         owner_city_name = EXCLUDED.owner_city_name, wild_famous = EXCLUDED.wild_famous,
+         facility_level = EXCLUDED.facility_level, seen_at = EXCLUDED.seen_at
        WHERE (fog_seen.kind, fog_seen.level, fog_seen.owner_account_id, fog_seen.owner_username, fog_seen.owner_city_id,
-              fog_seen.owner_city_name, fog_seen.wild_famous) IS DISTINCT FROM
+              fog_seen.owner_city_name, fog_seen.wild_famous, fog_seen.facility_level) IS DISTINCT FROM
              (EXCLUDED.kind, EXCLUDED.level, EXCLUDED.owner_account_id, EXCLUDED.owner_username, EXCLUDED.owner_city_id,
-              EXCLUDED.owner_city_name, EXCLUDED.wild_famous)
+              EXCLUDED.owner_city_name, EXCLUDED.wild_famous, EXCLUDED.facility_level)
           OR fog_seen.seen_at < EXCLUDED.seen_at - interval '60 seconds'`,
       [accountId, JSON.stringify(payload), now],
     );
@@ -156,7 +166,7 @@ export function chunkCoords(index: number): Coord[] {
   return coords;
 }
 
-/** 账号的城池与占领野地（固定视野来源，不含行军）：主城 12、分城 8、占领野地 3 */
+/** 账号的城池与占领野地（固定视野来源，不含行军）：主城 12、分城 8、占领野地 3（有望楼时取望楼半径） */
 export async function ownVisionSources(q: Queryable, accountId: string): Promise<VisionSource[]> {
   const cities = await q.query(
     `SELECT x, y FROM cities WHERE account_id = $1 AND x IS NOT NULL AND y IS NOT NULL ORDER BY created_at, id`,
@@ -166,13 +176,15 @@ export async function ownVisionSources(q: Queryable, accountId: string): Promise
   (cities.rows as Array<{ x: number; y: number }>).forEach((row, index) => {
     sources.push({ x: row.x, y: row.y, radius: index === 0 ? FOG_VISION.mainCity : FOG_VISION.branchCity });
   });
+  // v96（AISLG-232）：野地上的望楼联表取等级，半径 = max(野地 3, 望楼 6 / 8 / 10)
   const territory = await q.query(
-    `SELECT wt.x, wt.y FROM world_tiles wt JOIN cities c ON c.id = wt.owner_city_id
+    `SELECT wt.x, wt.y, wf.level AS facility_level FROM world_tiles wt JOIN cities c ON c.id = wt.owner_city_id
+     LEFT JOIN wilderness_facilities wf ON wf.x = wt.x AND wf.y = wt.y
      WHERE c.account_id = $1 AND wt.kind = 'wilderness'`,
     [accountId],
   );
-  for (const row of territory.rows as Array<{ x: number; y: number }>) {
-    sources.push({ x: row.x, y: row.y, radius: FOG_VISION.wilderness });
+  for (const row of territory.rows as Array<{ x: number; y: number; facility_level: number | null }>) {
+    sources.push({ x: row.x, y: row.y, radius: wildernessVisionRadius(row.facility_level) });
   }
   return sources;
 }
@@ -314,7 +326,7 @@ export async function loadSeenWindow(
   h: number,
 ): Promise<Map<string, SeenRow>> {
   const res = await q.query(
-    `SELECT x, y, kind, level, owner_account_id, owner_username, owner_city_id, owner_city_name, wild_famous, seen_at
+    `SELECT x, y, kind, level, owner_account_id, owner_username, owner_city_id, owner_city_name, wild_famous, facility_level, seen_at
      FROM fog_seen WHERE account_id = $1 AND x >= $2 AND x < $2 + $4 AND y >= $3 AND y < $3 + $5`,
     [accountId, x, y, w, h],
   );
@@ -330,6 +342,7 @@ export async function loadSeenWindow(
       ownerCityId: (row.owner_city_id as string | null) ?? null,
       ownerCityName: (row.owner_city_name as string | null) ?? null,
       wildFamous: row.wild_famous === true,
+      facilityLevel: Math.max(0, Number(row.facility_level ?? 0)),
       seenAt: row.seen_at as Date,
     };
     out.set(`${seen.x},${seen.y}`, seen);

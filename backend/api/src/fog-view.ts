@@ -248,6 +248,8 @@ export function exploredTileView(
     reserve: null,
     relic: null,
     heroSite: null,
+    // 望楼（v96，AISLG-232）：已探索但不在视野内时给上次看到的那座（等级走快照，不含建造进度）
+    facility: seen && seen.facilityLevel > 0 ? { kind: 'watchtower', level: seen.facilityLevel } : null,
     fog: 'explored',
     seenAt: seen ? seen.seenAt.toISOString() : null,
   };
@@ -272,6 +274,7 @@ export function campOnlyTileView(facts: TileFacts): TileView {
     reserve: null,
     relic: null,
     heroSite: null,
+    facility: null,
     fog: 'explored',
     seenAt: null,
   };
@@ -390,6 +393,8 @@ function exploredDetail(
     scoutedAt: intel ? intel.scoutedAt.toISOString() : null,
     defenses: shown.kind === 'city' ? (intel?.defenses ?? null) : null,
     assists: null,
+    // 建造 / 升级进度是实时信息，已探索的格不给（v96，AISLG-232）
+    facilityBuilding: null,
     plunderedAt: null,
     wildFamousIntel,
   };
@@ -433,6 +438,7 @@ export async function loadFogTileDetail(pool: pg.Pool, accountId: string, x: num
             scoutedAt: null,
             defenses: null,
             assists: null,
+            facilityBuilding: null,
             plunderedAt: null,
             wildFamousIntel: null,
           }),
