@@ -723,5 +723,16 @@
  * v95（AISLG-226，只加不改）：TileOwnerView 新增 canAssist（tiles[].owner、GET_TILE 等占领者视图）：本账号现在能否向该占领者协防。
  *   同联盟或友盟（relation 行为 friendly）为 true；自己、解除友好后 24 小时冷却期（relation 仍显示 friendly，只为不能互打）、中立、敌对均为 false，
  *   与 MARCH task=assist 的校验（ASSIST_NOT_ALLY）口径一致。relation 与其它字段语义不变。
+ * v96（视野内的他人部队上图，AISLG-230，只加不改）：新增 GET_VISIBLE_MARCHES（op 152），请求 data.x / y / w / h
+ *   含义与限制同 GET_WORLD_MAP（窗口最大 20×20，缺省以主城为中心）。返回 { serverTime, marches[] }，每项
+ *   { id, x, y, vx, vy, returning, scale, owner: { username, allianceName, relation } }：
+ *   id 为行军 id（与来袭预警的 marchId 匹配），位置保留 1 位小数，vx / vy 为每秒格数（只供图标平滑移动）。
+ *   上图的部队须是其他账号、status = marching、当前位置（四舍五入到整格）在查看者自己的实时视野内，
+ *   且 fog_enabled 开启（关闭时返回空数组，不报错、不碰迷雾表）。盟友视野不共享；自己的部队、侦察
+ *   （purpose=scout 或编队只有斥候，去程返程都算）、已过 ambush_at 的埋伏、已到达的部队、剧本战场小队不上图。
+ *   规模档位 scale = small（1–499）/ medium（500–4 999）/ large（5 000+）；relation = ally / friendly /
+ *   hostile / neutral，与地块 owner.relation 同口径（解除友好冷却期内算 friendly）；allianceName 无联盟为 null。
+ *   最多返回离窗口中心最近的 50 支。**不下发**出发城、目标格、出发 / 到达时间、精确兵力、兵种、将领与任务类型。
+ *   玩家与 Agent 同一接口、同一套裁剪；服务端在本进程内存里缓存全服在途部队的位置快照（3 秒过期）。
  */
-export const PROTOCOL_VERSION = 95;
+export const PROTOCOL_VERSION = 96;
