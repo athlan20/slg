@@ -17,7 +17,7 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
   name: 'GET_FACTIONS',
   title: '查询五方势力（v99，AISLG-239）',
   preAuth: false,
-  summary: `查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：${LAIR_TEXT}。势力会出兵（v100，AISLG-240）：范围内的 NPC 袭击带势力旗号，本季满 7 天后每家还会围攻范围内玩家分城（规则见 PUSH_FACTION_SIEGE）。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随本季天数变大（${RADIUS_TEXT}，按本季实际开始时间算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 ${FACTION_INITIAL_RADIUS} 格内的 NPC 城全部归该势力，之后每家每 ${FACTION_SWALLOW_INTERVAL_MS / 3_600_000} 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响，但老巢本版本不可出征（MARCH / SCOUT 打到老巢返回 FACTION_LAIR_TARGET）。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。`,
+  summary: `查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：${LAIR_TEXT}。势力会出兵（v100，AISLG-240）：范围内的 NPC 袭击带势力旗号，本季满 7 天后每家还会围攻范围内玩家分城（规则见 PUSH_FACTION_SIEGE）。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随本季天数变大（${RADIUS_TEXT}，按本季实际开始时间算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 ${FACTION_INITIAL_RADIUS} 格内的 NPC 城全部归该势力，之后每家每 ${FACTION_SWALLOW_INTERVAL_MS / 3_600_000} 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响；v101（AISLG-241）起老巢可以打：每家老巢分 20 营，每次进攻只打当前一营（守城战、城墙减伤 50%），当前营打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营），每营战力 = 全服战力前 10 名合计 ÷ 15（每天刷新、只升不降、最低 10,000）；20 营全部清空这家本季灭亡（不再吞城 / 围攻、势力城变回普通 NPC 城、老巢变废墟，最后一击的玩家拿首领名将）。本季已灭亡（destroyed = true）的老巢不能再出征，MARCH / SCOUT 仍返回 FACTION_LAIR_TARGET。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。`,
   requestFields: [],
   dataFields: [
     { name: 'enabled', type: 'boolean', desc: '势力总开关（settings 的 faction_enabled，默认关闭）。false 时下面各字段为空值，世界里没有势力内容。' },
@@ -33,6 +33,11 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
     { name: 'factions[].lair', type: 'object', desc: '老巢坐标 { x, y }，对全服公开（不受战争迷雾影响）。老巢周围 5 格内不会有玩家城。' },
     { name: 'factions[].radius', type: 'number', desc: '这家当前的势力范围半径（与本季半径相同，逐家给出便于客户端直接画范围）。' },
     { name: 'factions[].cityCount', type: 'number', desc: '这家当前持有的势力城数（被玩家占下的城立即不算）。' },
+    { name: 'factions[].destroyed', type: 'boolean', desc: '（v101，AISLG-241）这家本季已被攻破（灭亡）：不再吞城 / 围攻、不再画范围、老巢是废墟，换季重生。' },
+    { name: 'factions[].campsTotal', type: 'number', desc: '（v101）老巢的营数（共 20 营）。' },
+    { name: 'factions[].campsRemaining', type: 'number', desc: '（v101）剩余营数（含当前营；0 = 已灭亡）。' },
+    { name: 'factions[].campRemainingPercent', type: 'number', desc: '（v101）当前营剩余守军百分比 0~100（满营 100；每次打输保留残血，百分比随之下降）。' },
+    { name: 'factions[].campPower', type: 'number', desc: '（v101）每营守军参考战力（全服战力前 10 名合计 ÷ 15，每天刷新、只升不降、最低 10,000）。' },
   ],
   errors: [],
   examples: [
@@ -59,6 +64,11 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
                 lair: { x: 80, y: 80 },
                 radius: 150,
                 cityCount: 51,
+                destroyed: false,
+                campsTotal: 20,
+                campsRemaining: 17,
+                campRemainingPercent: 42,
+                campPower: 256000,
               },
             ],
           },
@@ -78,7 +88,49 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
       ],
     },
   ],
-  agentNote: `势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 ${FACTION_LAIR_CLEAR_RADIUS} 格内没有玩家城，所以别把坐标 (${FACTIONS.map((def) => `${def.lair.x}, ${def.lair.y}`).join(') / (')}) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。`,
+  agentNote: `势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 ${FACTION_LAIR_CLEAR_RADIUS} 格内没有玩家城，所以别把坐标 (${FACTIONS.map((def) => `${def.lair.x}, ${def.lair.y}`).join(') / (')}) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。v101（AISLG-241）起老巢可以打：MARCH（task=plunder）指向老巢坐标，一次只打当前一营（守城战、城墙减伤 50%），当前营守军打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营）；每营战力 = 全服战力前 10 名合计 ÷ 15（每天刷新、只升不降、最低 10,000），编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。每场按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重），声望按歼灭战力的 1%；打掉最后一营的玩家拿该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，全服唯一），灭亡时按贡献（累计歼灭守军战力）名次再发一次（数额是黄巾之乱同名次的 3 倍）。任何玩家都能打，不要求入盟、不算攻击玩家、不破新手保护；打之前先 SCOUT 看当前营守军，SCOUT / GET_FACTIONS 都能看到剩余营数与当前营百分比。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。`,
+};
+
+export const PUSH_FACTION_LAIR: PushOpDoc = {
+  kind: 'push',
+  name: 'PUSH_FACTION_LAIR',
+  title: '推送：老巢战况（v101，AISLG-241）',
+  summary: `老巢战况变化，全服在线连接都会收到（老巢是全服共同目标）：attacked = 有人打了老巢（守军残血或打掉一营，看 campsRemaining 判断是不是进了下一营）；recovered = 连续 24 小时没人进攻，恢复 1 营；destroyed = 最后一营被清空，这家本季灭亡。收到后重拉 GET_FACTIONS 对齐即可；灭亡另有全服播报 faction_lair_destroyed（带最后一击的玩家名）。`,
+  dataFields: [
+    { name: 'reason', type: "'attacked' | 'recovered' | 'destroyed'", desc: 'attacked 有人进攻（含打掉一营）；recovered 恢复 1 营；destroyed 本季灭亡。' },
+    { name: 'faction', type: 'object', desc: '{ key, name, nameEn }：哪一家。' },
+    { name: 'campsTotal', type: 'number', desc: '老巢的营数（共 20 营）。' },
+    { name: 'campsRemaining', type: 'number', desc: '剩余营数（含当前营；destroyed 时为 0）。' },
+    { name: 'campRemainingPercent', type: 'number', desc: '当前营剩余守军百分比 0~100。' },
+    { name: 'destroyed', type: 'boolean', desc: '这家本季是否已灭亡。' },
+  ],
+  examples: [
+    {
+      op: Op.PUSH_FACTION_LAIR,
+      push: true,
+      data: {
+        reason: 'attacked',
+        faction: { key: 'nanman', name: '南蛮', nameEn: 'Nanman' },
+        campsTotal: 20,
+        campsRemaining: 17,
+        campRemainingPercent: 42,
+        destroyed: false,
+      },
+    },
+    {
+      op: Op.PUSH_FACTION_LAIR,
+      push: true,
+      data: {
+        reason: 'destroyed',
+        faction: { key: 'nanman', name: '南蛮', nameEn: 'Nanman' },
+        campsTotal: 20,
+        campsRemaining: 0,
+        campRemainingPercent: 0,
+        destroyed: true,
+      },
+    },
+  ],
+  agentNote: `这是全服广播，与你自己的账号无关；用来及时更新「还剩几营」。真要打之前请先 SCOUT 老巢坐标拿到当前营守军（剩余百分比只是粗略进度），再按自己的全部战力估一下这一营打不打得掉——打不完也保留残血、奖励照发，所以能打就打。灭亡（destroyed）后这家本季不能再打，等换季重生。`,
 };
 
 export const PUSH_FACTION_SIEGE: PushOpDoc = {

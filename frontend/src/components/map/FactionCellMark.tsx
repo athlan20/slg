@@ -18,17 +18,19 @@ export function FactionTint({ factionKey }: { factionKey: FactionKey }) {
   );
 }
 
-/** 老巢单字标记（老巢坐标公开，迷雾里也画；提示带势力名与首领） */
-export function FactionLairMark({ name, leader }: { name: string; leader: string }) {
+/** 老巢单字标记（老巢坐标公开，迷雾里也画；提示带势力名与首领）。
+ *  v101（AISLG-241）：这家本季已灭亡时改画废墟单字，提示写「已被攻破」。 */
+export function FactionLairMark({ name, leader, destroyed = false }: { name: string; leader: string; destroyed?: boolean }) {
   const { EXTRA_MAP } = useCopy();
+  const title = destroyed ? EXTRA_MAP.faction.lairHintRuins(name) : EXTRA_MAP.faction.lairHint(name, leader);
   return (
     <span
-      role="世界地图视野-势力老巢"
+      role={destroyed ? '世界地图视野-势力老巢废墟' : '世界地图视野-势力老巢'}
       aria-hidden="true"
-      title={EXTRA_MAP.faction.lairHint(name, leader)}
+      title={title}
       className="pointer-events-none absolute inset-x-0 top-[16%] grid place-items-center font-semibold leading-none text-gold drop-shadow-[0_0_4px_var(--gold)] text-[clamp(9px,1.6cqw,14px)]"
     >
-      {EXTRA_MAP.tileGlyphs.factionLair}
+      {destroyed ? EXTRA_MAP.tileGlyphs.factionLairRuins : EXTRA_MAP.tileGlyphs.factionLair}
     </span>
   );
 }

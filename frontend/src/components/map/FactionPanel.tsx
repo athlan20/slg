@@ -1,5 +1,5 @@
-/** 五方势力面板（v99，AISLG-239）：地图页右栏的卡片——五家的名称、首领、老巢坐标、
- *  当前半径与持城数。数据来自 GET_FACTIONS（会话切片在 state/factionSession.ts，每分钟重拉）；
+/** 五方势力面板（v99，AISLG-239；v101，AISLG-241 加营数）：地图页右栏的卡片——五家的名称、首领、
+ *  老巢坐标、当前半径、持城数与老巢剩余营数 / 当前营剩余百分比（已灭亡的写「已灭亡」）。数据来自 GET_FACTIONS（会话切片在 state/factionSession.ts，每分钟重拉）；
  *  开关关闭（enabled=false）或本季还没有老巢时整块不渲染，界面上没有任何势力内容。
  *  老巢坐标对全服公开（不受战争迷雾影响），这里直接给出。中文 / 英文名都来自服务端字段，随界面语言取。
  */
@@ -16,11 +16,11 @@ interface FactionPanelProps {
   onFocusLair?: (lair: { x: number; y: number }) => void;
 }
 
-/** 一行的文案：名称 / 首领 / 老巢 / 半径 / 持城（F 为 copy-extra-map 的 faction 文案组，由组件传入） */
+/** 一行的文案：名称 / 首领 / 老巢 / 半径 / 持城 / 营数（F 为 copy-extra-map 的 faction 文案组） */
 function rowText(
   faction: FactionView,
   F: ReturnType<typeof useCopy>['EXTRA_MAP']['faction'],
-): { name: string; leader: string; lair: string; radius: string; cities: string } {
+): { name: string; leader: string; lair: string; radius: string; cities: string; camps: string } {
   const lang = getLang();
   return {
     name: factionName(faction, lang),
@@ -28,6 +28,10 @@ function rowText(
     lair: F.lair(faction.lair.x, faction.lair.y),
     radius: F.radius(faction.radius),
     cities: F.cities(faction.cityCount),
+    // v101（AISLG-241）：剩余营数 + 当前营剩余百分比（与实际一致，含已灭亡）
+    camps: faction.destroyed
+      ? F.destroyed
+      : `${F.camps(faction.campsRemaining, faction.campsTotal)} · ${F.campRemaining(faction.campRemainingPercent)}`,
   };
 }
 
@@ -61,6 +65,12 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
               </span>
               <span role="势力面板-详情" className="col-start-2 col-end-4 truncate text-[11px] text-dim">
                 {F.leaderLabel} {text.leader} · {F.lairLabel} {text.lair}
+              </span>
+              <span
+                role="势力面板-老巢战况"
+                className={`col-start-2 col-end-4 truncate font-mono text-[11px] ${faction.destroyed ? 'text-danger' : 'text-dim'}`}
+              >
+                {text.camps}
               </span>
             </button>
           );

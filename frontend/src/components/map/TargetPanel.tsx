@@ -111,7 +111,7 @@ export function TargetPanel() {
   const detail = detailRaw ?? (unknownCell ? unknownDetailAt(x, y) : null);
   const isOwn = detail !== null && detail.owner !== null && detail.owner.accountId === accountId;
   // 迁城选点（v91）：只有无归属、无营地的空野地才能迁入
-  const isEmptyWilderness = !unknownCell && detail !== null && detail.x === x && detail.y === y && detail.kind === 'wilderness' && detail.owner === null && detail.camp === null;
+  const isEmptyWilderness = !unknownCell && detail !== null && detail.x === x && detail.y === y && detail.kind === 'wilderness' && !detail.faction?.isLair && detail.owner === null && detail.camp === null;
   const isOwnCity = detail?.kind === 'city' && isOwn;
   /** 调兵 / 运输目标：本账号的分城（非出发主城） */
   const transferable = isOwnCity && detail?.owner?.cityId !== city.id;
@@ -128,6 +128,11 @@ export function TargetPanel() {
     }
     if (detail.kind === 'npc_city') {
       acts.push('plunder', 'occupy', 'scout');
+    } else if (detail.faction?.isLair) {
+      // 老巢（AISLG-241）：只能进攻和侦察，废墟什么都不能做
+      if (!detail.faction.destroyed) {
+        acts.push('plunder', 'scout');
+      }
     } else if (detail.kind === 'wilderness') {
       if (detail.owner === null) {
         acts.push(...(detail.camp ? (['clear', 'scout'] as const) : (['plunder', 'occupy', 'scout'] as const)));
@@ -272,7 +277,11 @@ export function TargetPanel() {
                       item === current ? 'border-accent bg-accent-soft text-accent' : 'border-line text-dim hover:text-fg'
                     }`}
                   >
-                    {item === 'mark' ? ALLIANCE_COPY.marks.formTitle : TARGET_COPY.actions[item]}
+                    {item === 'mark'
+                      ? ALLIANCE_COPY.marks.formTitle
+                      : item === 'plunder' && detail.faction?.isLair
+                        ? copy.EXTRA_MAP.faction.lairAttack
+                        : TARGET_COPY.actions[item]}
                   </button>
                 );
               })}

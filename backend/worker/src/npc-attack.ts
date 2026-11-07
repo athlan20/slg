@@ -17,6 +17,7 @@ import { beaconLeadMultiplier, warningIntel } from '../../common/src/building-ef
 import { inNewbieProtection, inTruce } from '../../common/src/protection';
 import { factionAt, factionBannerOf, factionDefOf, factionRadiusAt } from '../../common/src/faction';
 import { getFactionEnabled } from '../../common/src/faction-config';
+import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
 import { getCurrentSeason } from '../../common/src/season-db';
 import { npcRaidIntervalMs } from './world-tick';
 import { loadCityNaming, settleOwnerCity, type TileNotify } from './tick-shared';
@@ -73,14 +74,25 @@ async function loadRaidFactionRadius(q: pg.Pool | pg.PoolClient): Promise<number
   return factionRadiusAt(season.startAt, new Date());
 }
 
-/** 这一格归哪家（范围内）+ 出发老巢；不在任何势力范围内 → null（与上线前的普通袭击一致） */
-function stampAt(radius: number | null, x: number, y: number): FactionStamp | null {
+/** 本季已灭亡的势力（v101，AISLG-241）：原范围内的袭击恢复成无旗号的普通袭击 */
+async function loadDestroyedFactions(q: pg.Pool | pg.PoolClient): Promise<Set<string>> {
+  if (!getFactionEnabled()) {
+    return new Set();
+  }
+  return destroyedFactionKeys(q);
+}
+
+/**
+ * 这一格归哪家（范围内）+ 出发老巢；不在任何势力范围内 / 这家本季已灭亡 → null
+ * （与上线前的普通袭击一致，全服袭击频率不变）。
+ */
+function stampAt(radius: number | null, dead: Set<string>, x: number, y: number): FactionStamp | null {
   if (radius === null) {
     return null;
   }
-  const key = factionAt(x, y, radius);
+  const key = factionAt(x, y, radius, (factionKey) => dead.has(factionKey));
   const def = key ? factionDefOf(key) : null;
-  // 势力标识在库里不存在时（脏数据 / 势力灭亡的处理留给 AISLG-241）按无旗号处理
+  // 势力标识在库里不存在时（脏数据）按无旗号处理
   return def ? { key: def.key, lair: { ...def.lair } } : null;
 }
 
@@ -165,6 +177,7 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
     await client.query('BEGIN');
     // v100（AISLG-240）：袭击的发起频率与目标选择都不变，只是给落在势力范围内的这次袭击打上旗号
     const factionRadius = await loadRaidFactionRadius(client);
+    const deadFactions = await loadDestroyedFactions(client);
     // 主城目标（20%）：主城 = 账号最早创建的城；官府 ≥ 2 过滤新号；免战期不入池；
     // v38（AISLG-122）：新手保护与主动免战中的账号同样不入池（保护是硬规则，NPC 也不打）
     if (Math.random() < NPC_RAID_CITY_SHARE) {
@@ -203,7 +216,7 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
           terrain: null,
           level: raidLevel,
           army: npcRaidArmy(raidLevel),
-          faction: stampAt(factionRadius, city.x, city.y),
+          faction: stampAt(factionRadius, deadFactions, city.x, city.y),
         };
         const created = await insertAttack(client, attack);
         warning = { accountId: attack.accountId, data: created.detail, assistIds: created.assistIds };
@@ -237,7 +250,7 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
           terrain: tile.terrain,
           level: tile.level,
           army: npcRaidArmy(tile.level),
-          faction: stampAt(factionRadius, tile.x, tile.y),
+          faction: stampAt(factionRadius, deadFactions, tile.x, tile.y),
         };
         const created = await insertAttack(client, attack);
         warning = { accountId: attack.accountId, data: created.detail, assistIds: created.assistIds };

@@ -13,7 +13,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   FACILITY_MAX_LEVEL: '这块地的望楼已达最高等级（3 级）',
   FACILITY_BUILDING: '这块地的望楼正在建造 / 升级中，等它完成后再操作',
   FACILITY_LIMIT: '这座城名下的望楼已达上限（每座城最多 2 座）',
-  FACTION_LAIR_TARGET: '势力老巢只能查询，不能出征或侦察',
+  FACTION_LAIR_TARGET: '这里不能这样操作：势力老巢只能进攻或侦察，已灭亡的老巢不能出征',
   UNKNOWN_OP: '协议号不存在',
   NOT_LOGGED_IN: '登录前只能发送登录协议',
   ALREADY_LOGGED_IN: '连接已登录，不能重复登录',

@@ -21,9 +21,11 @@ import {
   factionLairAt,
   factionRadiusAt,
   factionRadiusForDay,
+  factionOwnsTileSql,
   factionSnapshot,
   factionSwallowIntervalMs,
   inFactionLairClearance,
+  undoFactionSnapshot,
 } from '../common/src/faction';
 import { setFactionEnabledCache } from '../common/src/faction-config';
 import {
@@ -155,6 +157,11 @@ describe('五方势力的纯规则（无需数据库）', () => {
       lair: { ...def.lair },
       radius: 0,
       cityCount: 0,
+      destroyed: false,
+      campsTotal: 20,
+      campsRemaining: 20,
+      campRemainingPercent: 100,
+      campPower: 10000,
     }));
     for (const radius of [100, 150, 200, 250]) {
       for (const view of views) {
@@ -166,6 +173,49 @@ describe('五方势力的纯规则（无需数据库）', () => {
         }
       }
     }
+    // v101（AISLG-241）：本季已灭亡的势力不画范围——两家镜像同样一致（最近的是灭亡势力时归无主）
+    for (const destroyedKey of ['nanman', 'heishan'] as const) {
+      const marked = views.map((view) => ({ ...view, radius: 250, destroyed: view.key === destroyedKey }));
+      for (let x = 0; x < WORLD_SIZE; x += 11) {
+        for (let y = 0; y < WORLD_SIZE; y += 11) {
+          assert.equal(
+            factionAtCell(marked, x, y),
+            factionAt(x, y, 250, (key) => key === destroyedKey),
+            `灭亡 ${destroyedKey}：(${x},${y})`,
+          );
+        }
+      }
+    }
+  });
+
+  test('灭亡势力仍占着原来那块地的判定：最近的是灭亡势力时归无主，不改归第二近的一家', () => {
+    // (730, 300)：离乌桓 (920,80) 220 格、离黑山军 (500,500) 230 格，两家都在半径 250 内
+    assert.equal(factionAt(730, 300, 250), 'wuhuan');
+    assert.equal(factionAt(730, 300, 250, (key) => key === 'wuhuan'), null);
+    // 别家的「可吞」SQL 条件对它为假（其他势力的范围不因此扩大）
+    assert.ok(factionOwnsTileSql('heishan', '730', '300').includes('<'));
+    // 与灭亡势力无关的格不受影响
+    assert.equal(factionAt(500, 500, 250, (key) => key === 'wuhuan'), 'heishan');
+  });
+
+  test('势力灭亡时把势力城变回普通 NPC 城：普通的除回 1 倍，被吞的玩家分城原样保留', () => {
+    const base = npcSnapshot(2);
+    const scaled = factionSnapshot(base, 'wuhuan');
+    const undone = undoFactionSnapshot(scaled);
+    assert.equal(undone.faction, undefined);
+    for (const [kind, count] of Object.entries(base.garrison)) {
+      assert.equal(undone.garrison[kind as keyof typeof undone.garrison], count, `守军 ${kind}`);
+    }
+    for (const [key, value] of Object.entries(base.stock)) {
+      assert.equal(undone.stock[key as keyof typeof undone.stock], value, `库存 ${key}`);
+    }
+    // 被吞的玩家分城：建筑与库存原样保留，只去掉归属
+    const swallowed = { ...scaled, buildings: { government: 4, wall: 3 }, stock: { ...scaled.stock, gold: 777 }, fromPlayer: true };
+    const kept = undoFactionSnapshot(swallowed);
+    assert.equal(kept.faction, undefined);
+    assert.equal(kept.fromPlayer, undefined);
+    assert.equal(kept.stock.gold, 777);
+    assert.deepEqual(kept.buildings, { government: 4, wall: 3 });
   });
 
   test('势力城快照：守军与库存 × 1.5（逐兵种 / 逐资源四舍五入），并记下势力标识', () => {

@@ -181,6 +181,16 @@ export class CompletionNotifier {
         });
         return;
       }
+      if (payload.reason === 'faction_lair' && payload.data) {
+        // 打老巢（v101，AISLG-241）：老巢战况变化（有人进攻 / 恢复 1 营 / 势力灭亡）全服广播，
+        // 客户端据此重拉 GET_FACTIONS（面板剩余营数与当前营百分比、地图范围图层）
+        this.registry.broadcastAll({
+          op: Op.PUSH_FACTION_LAIR,
+          push: true,
+          data: payload.data as Record<string, unknown>,
+        });
+        return;
+      }
       if (payload.reason === 'starvation' && payload.accountId && payload.data) {
         // 断粮预警 / 哗变（v34 AISLG-107）：推给该账号的全部在线连接（含 Agent）
         this.registry.broadcast(payload.accountId, {

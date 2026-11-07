@@ -34,18 +34,22 @@ export interface FactionWindow {
   h: number;
 }
 
-/** 某格归哪家：范围内离老巢最近的一家；距离相同按 factions 顺序取先出现的一家；都不在范围内返回 null */
+/**
+ * 某格归哪家：范围内离老巢最近的一家；距离相同按 factions 顺序取先出现的一家；都不在范围内返回 null。
+ * v101（AISLG-241）：本季已灭亡的势力不画范围；最近的是灭亡势力时返回 null（不落到第二近的一家，
+ * 「其他势力的范围不因此扩大」），与后端 factionAt 同口径。
+ */
 export function factionAtCell(factions: readonly FactionView[], x: number, y: number): FactionKey | null {
-  let best: FactionKey | null = null;
+  let best: FactionView | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const faction of factions) {
     const distance = Math.max(Math.abs(faction.lair.x - x), Math.abs(faction.lair.y - y));
     if (distance <= faction.radius && distance < bestDistance) {
-      best = faction.key;
+      best = faction;
       bestDistance = distance;
     }
   }
-  return best;
+  return best && !best.destroyed ? best.key : null;
 }
 
 /** 窗口内属于势力范围的格：键 "x,y" → 势力标识（窗口最多 20×20，逐格算即可） */

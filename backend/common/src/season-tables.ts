@@ -117,6 +117,10 @@ export const RESET_TABLES: readonly string[] = [
   'factions',
   // 势力出兵（v100，AISLG-240）：围攻记录（在围 / 已结算 / 每周吞城计数）随赛季清空
   'faction_sieges',
+  // 攻破老巢（v101，AISLG-241）：老巢战况（营数 / 残血 / 每营战力 / 灭亡）与贡献榜随赛季清空，
+  // 下一季五家全部重生、贡献清零
+  'faction_lairs',
+  'faction_contrib',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

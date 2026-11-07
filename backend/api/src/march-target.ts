@@ -26,7 +26,7 @@ import { reachWindowOf, routeIndexOfCell } from '../../common/src/moving-target'
 import { activeAt, inNewbieProtection } from '../../common/src/protection';
 import { canAssist, cannotAttack } from '../../common/src/alliance-db';
 import { assistLimitDenial } from '../../common/src/city-assist-db';
-import { isFactionLairTarget } from '../../common/src/faction-db';
+import { factionLairAttackable, isFactionLairTarget } from '../../common/src/faction-db';
 
 /** MARCH 请求参数校验（分发层用）：坐标为整数、troops 为已知兵种的非负整数且不全为 0；
  *  task（v16）可选，缺省 'plunder'，非法值拒绝。
@@ -169,9 +169,15 @@ export async function resolveMarchTarget(
   if (!tile) {
     return { purpose: null, reason: 'TARGET_NOT_ATTACKABLE' };
   }
-  // v99（AISLG-239）：势力老巢只能查询、不能出征（本张单不做打老巢，AISLG-241 另行开放）
+  // v99（AISLG-239）：势力老巢不是普通野地；v101（AISLG-241）起本季未灭亡的老巢可以出征（打当前一营）
+  // 与侦察，已灭亡的废墟仍一律拒绝。占领 / 运输 / 协防对老巢格没有意义，统一拒绝。
   if (isFactionLairTarget(tile)) {
-    return { purpose: null, reason: 'FACTION_LAIR_TARGET' };
+    const alive = tile.faction_lair ? await factionLairAttackable(client, tile.faction_lair) : false;
+    if (!alive || task === 'occupy' || task === 'transport' || task === 'assist') {
+      return { purpose: null, reason: 'FACTION_LAIR_TARGET' };
+    }
+    // 攻打老巢不算攻击玩家：不带 pvp 标记（不破新手保护、不发来袭预警）
+    return { purpose: 'plunder' };
   }
   // v26（AISLG-79）：运输只能送到本账号的另一座城；其余目标一律 TASK_INVALID_FOR_TARGET
   if (task === 'transport') {

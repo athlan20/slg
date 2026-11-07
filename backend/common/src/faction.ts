@@ -2,7 +2,7 @@
 // 重叠格的归属判定、老巢落位保护半径、势力城守军与库存的倍率。纯函数，不碰数据库与协议运行时，
 // API（地块视图 / 出征校验 / 迁城校验 / 面板）与 Worker（吞城定时器）共用，两侧不得各算一套。
 // 数据库读写见 faction-db.ts，开关见 faction-config.ts；本张单只做势力本身——不出兵打玩家、
-// 不围攻（AISLG-240）、老巢不可攻打（AISLG-241）。
+// 不围攻（AISLG-240）。攻破老巢、势力灭亡见 faction-lair.ts（AISLG-241）。
 //
 // 数值来源（需求 AISLG-239「数值是怎么定的」）：老巢放在比名城锚点更靠角落的 80 / 920 上，
 // 与最近的名城锚点相距约 86 格；半径 100 / 150 / 200 / 250 对应五天覆盖 17.1% / 30.3% / 47.6% / 66.2%；
@@ -143,8 +143,15 @@ export function factionRadiusAt(seasonStart: Date, now: Date): number {
  * 这一格当前归哪家：在某家老巢的半径方块内、且离那家最近的一家；
  * 距离相同时按 FACTIONS 顺序取先出现的一家（需求「两家范围重叠的格，归离老巢更近的一家」）。
  * 五家范围之外的格返回 null。地图上色与吞城范围共用这一判定。
+ * v101（AISLG-241）：本季已灭亡的势力不占地盘——最近的是灭亡势力时返回 null（不落到第二近的一家，
+ * 需求「其他势力的范围不因此扩大」）。isDestroyed 缺省视为都没灭亡（与 AISLG-240 一致）。
  */
-export function factionAt(x: number, y: number, radius: number): FactionKey | null {
+export function factionAt(
+  x: number,
+  y: number,
+  radius: number,
+  isDestroyed?: (key: FactionKey) => boolean,
+): FactionKey | null {
   let best: FactionKey | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const def of FACTIONS) {
@@ -153,6 +160,9 @@ export function factionAt(x: number, y: number, radius: number): FactionKey | nu
       best = def.key;
       bestDistance = distance;
     }
+  }
+  if (best && isDestroyed?.(best)) {
+    return null;
   }
   return best;
 }
@@ -196,6 +206,31 @@ export function factionSnapshot(npc: NpcCitySnapshot, key: FactionKey): NpcCityS
     stock[constKey] = scale(npc.stock?.[constKey] ?? 0);
   }
   return { ...npc, garrison, stock, faction: key };
+}
+
+/**
+ * 势力灭亡时把势力城变回普通 NPC 城（v101，AISLG-241「势力城全部变回普通 NPC 城」）：
+ * - 普通的势力城：守军与库存按 1.5 倍放大过，这里除回去（向下取整、正值至少 1），去掉归属；
+ * - 被吞的玩家分城（快照带 fromPlayer）：建筑与库存原样保留，只去掉归属。
+ */
+export function undoFactionSnapshot(npc: NpcCitySnapshot): NpcCitySnapshot {
+  const { faction: _faction, fromPlayer, ...rest } = npc;
+  if (fromPlayer) {
+    return { ...rest };
+  }
+  const unscale = (count: number): number => (count > 0 ? Math.max(1, Math.round(count / FACTION_CITY_MULTIPLIER)) : 0);
+  const garrison: Partial<Record<TroopKind, number>> = {};
+  for (const kind of TROOP_KINDS) {
+    const count = npc.garrison?.[kind] ?? 0;
+    if (count > 0) {
+      garrison[kind] = unscale(count);
+    }
+  }
+  const stock: Resources = { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 };
+  for (const constKey of RESOURCE_KEYS) {
+    stock[constKey] = unscale(npc.stock?.[constKey] ?? 0);
+  }
+  return { ...rest, garrison, stock };
 }
 
 // ---- 吞城节奏 ----

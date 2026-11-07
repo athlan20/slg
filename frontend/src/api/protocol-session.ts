@@ -37,6 +37,10 @@ export type EventType =
   | 'faction_siege_warning'
   | 'faction_siege'
   | 'faction_city_lost'
+  /** 攻破老巢（v101，AISLG-241）：战斗 / 灭亡奖励 / 灭亡 */
+  | 'faction_lair_battle'
+  | 'faction_lair_reward'
+  | 'faction_lair_destroyed'
   | 'player_attack_warning'
   | 'pvp_raid'
   | 'truce_started'

@@ -460,9 +460,10 @@ export function useGameSession(): GameSession {
   const yellowTurban = useYellowTurban({ clientRef, connected: connection === 'online' });
   const { clear: ytClear, onPush: onYtPush } = yellowTurban;
 
-  // 五方势力会话切片（v99 AISLG-239）：连接就绪时拉一次，之后每分钟重拉（半径按真实天数变化，无推送）
+  // 五方势力会话切片（v99 AISLG-239）：连接就绪时拉一次，之后每分钟重拉（半径按真实天数变化）；
+  // v101（AISLG-241）：老巢战况有 PUSH_FACTION_LAIR 推送，收到即重拉
   const factions = useFactionSession({ clientRef, connected: connection === 'online' });
-  const { clear: factionClear } = factions;
+  const { clear: factionClear, fetchState: fetchFactions } = factions;
 
   // 剧本战场会话切片（v75，AISLG-198）：官渡的报名 / 入场 / 队伍 / 军功 / 商店，推送到达重拉
   const battlefield = useBattlefieldSession({ clientRef, connected: connection === 'online' });
@@ -620,6 +621,11 @@ export function useGameSession(): GameSession {
         // v100（AISLG-240）：势力围攻——预警进来袭预警队列（同一弹窗，标题写势力名 + 当前城防值）；
         // 守住的 / 扣城防的 / 城被吞的结果由事件流（faction_siege / faction_city_lost）随下方增量查询补齐
         onFactionSiegePush(frame.data as unknown as import('../api/protocol').FactionSiegePushData);
+      } else if (frame.op === Op.PUSH_FACTION_LAIR) {
+        // v101（AISLG-241）：老巢战况变化（有人进攻 / 恢复 1 营 / 势力灭亡）——重拉势力面板与地图范围，
+        // 战报与事件由 PUSH_BATTLE_REPORT 与事件流补齐
+        void fetchFactions();
+        return;
       } else if (frame.op === Op.PUSH_AGENT_STATUS) {
         const data = frame.data as unknown as { online: boolean };
         setAgent((prev) => (prev ? { ...prev, agentOnline: data.online } : prev));
@@ -665,7 +671,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, applyCityItems, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
+    [scheduleSync, syncAll, applyCityItems, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, fetchFactions, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {

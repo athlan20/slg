@@ -31,9 +31,13 @@ function totalOf(army: ArmyCounts): number {
 
 /** 战斗类别的界面名称（战报弹窗标题与聊天里的战报卡片共用） */
 export function battleKindTitle(kind: BattleReportView['kind']): string {
-  const { COPY, MOVING_COPY, YT_COPY, BATTLEFIELD_COPY } = getCopy();
+  const { COPY, MOVING_COPY, YT_COPY, BATTLEFIELD_COPY, EXTRA_MAP } = getCopy();
   if (kind === 'intercept') {
     return MOVING_COPY.report.kind;
+  }
+  if (kind === 'faction_lair') {
+    // v101（AISLG-241）：打老巢的战报
+    return EXTRA_MAP.faction.reportKind;
   }
   if (kind === 'yellow_turban') {
     return YT_COPY.report.kind;

@@ -33,7 +33,7 @@ import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen, nextLuoyangOpen, decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { loadActiveDecree } from '../../common/src/luoyang-db';
 import { isAllyOfCity } from './march-target';
-import { isFactionLairTarget } from '../../common/src/faction-db';
+import { factionLairAttackable, isFactionLairTarget } from '../../common/src/faction-db';
 import { cityDispatchBlockedSeconds } from './stratagem-target';
 
 /** 战报点评正文的长度上限（v23 AISLG-53；占位值随需求「已定」标注可调） */
@@ -132,8 +132,9 @@ export async function handleScout(
     const tile = (tileRes.rowCount ? tileRes.rows[0] : null) as
       | { kind: string; owner_city_id: string | null; npc: unknown; faction_lair: string | null }
       | null;
-    // v99（AISLG-239）：势力老巢只能查询、不能侦察（与 MARCH 同一道拦截）
-    if (isFactionLairTarget(tile)) {
+    // v99（AISLG-239）：势力老巢不是普通野地；v101（AISLG-241）起本季未灭亡的老巢可以侦察（看当前营守军），
+    // 已灭亡的废墟仍拒绝（与 MARCH 同一道拦截）
+    if (isFactionLairTarget(tile) && !(tile?.faction_lair && (await factionLairAttackable(client, tile.faction_lair)))) {
       await client.query('ROLLBACK');
       respondError(ctx.registry, conn, op, seq, 'FACTION_LAIR_TARGET');
       return;

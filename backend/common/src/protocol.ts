@@ -349,6 +349,8 @@ export const Op = {
   PUSH_EXPLORATION_REPORT: 2029,
   /** S→C 推送：五方势力围攻分城（v100，AISLG-240；reason = warning 预警 / repelled 打输 / hit 扣城防 / swallowed 城被吞） */
   PUSH_FACTION_SIEGE: 2030,
+  /** v101（AISLG-241）：老巢战况（有人进攻 / 恢复 1 营 / 势力灭亡），全服广播 */
+  PUSH_FACTION_LAIR: 2031,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];

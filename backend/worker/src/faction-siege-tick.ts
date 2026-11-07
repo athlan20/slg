@@ -12,6 +12,7 @@ import { beaconLeadMultiplier, warningIntel } from '../../common/src/building-ef
 import { factionBannerOf, factionDayAt, factionRadiusAt, factionDefOf, type FactionDef } from '../../common/src/faction';
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { loadFactionRows } from '../../common/src/faction-db';
+import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
 import {
   FACTION_SIEGE_WEEKLY_CAP,
   factionSiegeArmy,
@@ -101,7 +102,12 @@ export async function runFactionSiegeTick(pool: pg.Pool, now: Date = new Date())
     return result;
   }
   const rows = await loadFactionRows(pool);
+  // v101（AISLG-241）：本季已灭亡的势力不再发起围攻（在途的已在灭亡时作废）
+  const destroyed = await destroyedFactionKeys(pool);
   for (const row of rows) {
+    if (destroyed.has(row.key)) {
+      continue;
+    }
     const def = factionDefOf(row.key);
     if (!def) {
       // 数据库里的脏势力标识按「没有这家」处理：不当旗号、不围攻（AISLG-241 的灭亡逻辑另说）
