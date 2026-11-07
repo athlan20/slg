@@ -59,3 +59,58 @@ export interface GetFactionsResponseData {
   /** 五方势力；未启用（或本季尚未生成老巢）时为空数组 */
   factions: FactionView[];
 }
+
+// ---- 势力出兵（AISLG-240，v100）----
+
+/**
+ * 势力旗号（v100）：API 与 Worker 在袭击预警 / 围攻预警 / 事件 / 战报文案里带上它是哪一家。
+ * 不在任何势力范围内的袭击没有这个字段（与上线前一致）。
+ */
+export interface FactionBanner {
+  key: FactionKey;
+  /** 中文名（如「南蛮」） */
+  name: string;
+  /** 英文名（如 Nanman） */
+  nameEn: string;
+}
+
+/**
+ * PUSH_FACTION_SIEGE（op 2030）推送原因（v100，AISLG-240）：
+ * - warning：围攻预警（提前 60 分钟 × 烽火台加成，被围城的主人与其城里的协防方都收到）；
+ * - repelled：这家势力打输了（守住了，该势力 24 小时内不再打这座城）；
+ * - hit：这家势力打赢了一次，城防被扣、城进入 4 小时被动免战；
+ * - swallowed：城防归零、城被吞下（变成该势力的 NPC 城，原主人腾出分城名额）。
+ */
+export type FactionSiegePushReason = 'warning' | 'repelled' | 'hit' | 'swallowed';
+
+/** PUSH_FACTION_SIEGE（op 2030）推送载荷（v100，AISLG-240）；等价事件见 faction_siege_warning / faction_siege / faction_city_lost */
+export interface FactionSiegePushData {
+  reason: FactionSiegePushReason;
+  /** 围攻编号（faction_sieges.id；warning 时客户端可用于去重） */
+  siegeId: string;
+  faction: FactionBanner;
+  cityId: string;
+  /** 城池名（城被吞后仍给出原名；查不到时为 null） */
+  cityName: string | null;
+  x: number;
+  y: number;
+  /** 围城军参考战力 */
+  power: number;
+  /** 预警：预计到达时刻（ISO 8601） */
+  arriveAt?: string;
+  /** 预警：围城军兵力范围（+/-20% 取整，与 NPC 袭击预警同口径） */
+  armyMin?: number;
+  armyMax?: number;
+  /** 预警：敌情详细度（由被围城的烽火台等级决定，与来袭预警同一套） */
+  intel?: 'range' | 'kinds' | 'exact';
+  beaconLevel?: number;
+  armyKinds?: Partial<Record<import('./protocol-army').TroopKind, { min: number; max: number }>>;
+  army?: Partial<Record<import('./protocol-army').TroopKind, number>>;
+  /** 被围城当前城防值（预警与 hit / swallowed 都给） */
+  durability?: number;
+  /** hit：这次扣除的城防值与扣完后的值 */
+  damage?: number;
+  durabilityAfter?: number;
+  /** hit：城进入被动免战的截止时刻（ISO 8601） */
+  protectedUntil?: string;
+}

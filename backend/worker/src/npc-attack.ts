@@ -15,6 +15,9 @@ import { loadTileArmy, type TileRow } from '../../common/src/world-db';
 import { effectiveLevelSql, loadBuildingLevels } from '../../common/src/production';
 import { beaconLeadMultiplier, warningIntel } from '../../common/src/building-effects';
 import { inNewbieProtection, inTruce } from '../../common/src/protection';
+import { factionAt, factionBannerOf, factionDefOf, factionRadiusAt } from '../../common/src/faction';
+import { getFactionEnabled } from '../../common/src/faction-config';
+import { getCurrentSeason } from '../../common/src/season-db';
 import { npcRaidIntervalMs } from './world-tick';
 import { loadCityNaming, settleOwnerCity, type TileNotify } from './tick-shared';
 import { resolveNpcWildernessRaid, type NpcWildernessRaidTarget } from './battle-tick';
@@ -40,6 +43,12 @@ export function armyEstimateRange(army: Partial<Record<TroopKind, number>>): { m
   return { min: Math.floor(units * 0.8), max: Math.ceil(units * 1.2) };
 }
 
+/** 势力旗号（v100，AISLG-240）：这次袭击落在哪家的范围内、从哪个老巢出发；null = 普通 NPC 袭击 */
+interface FactionStamp {
+  key: string;
+  lair: { x: number; y: number };
+}
+
 interface PendingAttack {
   accountId: string;
   targetCityId: string;
@@ -49,6 +58,30 @@ interface PendingAttack {
   terrain: string | null;
   level: number;
   army: Partial<Record<TroopKind, number>>;
+  faction?: FactionStamp | null;
+}
+
+/** 当前势力范围半径（开关关闭 / 本季还没开始 / 还没生成老巢时为 null = 袭击不带旗号） */
+async function loadRaidFactionRadius(q: pg.Pool | pg.PoolClient): Promise<number | null> {
+  if (!getFactionEnabled()) {
+    return null;
+  }
+  const season = await getCurrentSeason(q);
+  if (!season) {
+    return null;
+  }
+  return factionRadiusAt(season.startAt, new Date());
+}
+
+/** 这一格归哪家（范围内）+ 出发老巢；不在任何势力范围内 → null（与上线前的普通袭击一致） */
+function stampAt(radius: number | null, x: number, y: number): FactionStamp | null {
+  if (radius === null) {
+    return null;
+  }
+  const key = factionAt(x, y, radius);
+  const def = key ? factionDefOf(key) : null;
+  // 势力标识在库里不存在时（脏数据 / 势力灭亡的处理留给 AISLG-241）按无旗号处理
+  return def ? { key: def.key, lair: { ...def.lair } } : null;
 }
 
 /** 落库一条袭击 + 预警事件（事务内）；预警推送经返回值由提交方发出 */
@@ -56,9 +89,10 @@ async function insertAttack(client: pg.PoolClient, attack: PendingAttack): Promi
   // v31（AISLG-81）：被袭击城（占领野地算其所属城）的烽火台等级决定预警提前量（每级 +10%）与敌情详细度
   const beacon = (await loadBuildingLevels(client, attack.targetCityId)).beacon;
   const leadMs = npcWarningLeadMs() * beaconLeadMultiplier(beacon);
+  const stamp = attack.faction ?? null;
   const ins = await client.query(
-    `INSERT INTO npc_attacks (account_id, target_city_id, x, y, target, level, army, arrive_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, now() + make_interval(secs => $8))
+    `INSERT INTO npc_attacks (account_id, target_city_id, x, y, target, level, army, arrive_at, faction, from_x, from_y)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, now() + make_interval(secs => $8), $9, $10, $11)
      RETURNING id, arrive_at`,
     [
       attack.accountId,
@@ -69,6 +103,9 @@ async function insertAttack(client: pg.PoolClient, attack: PendingAttack): Promi
       attack.level,
       JSON.stringify(attack.army),
       leadMs / 1000,
+      stamp?.key ?? null,
+      stamp?.lair.x ?? null,
+      stamp?.lair.y ?? null,
     ],
   );
   const row = ins.rows[0] as { id: string; arrive_at: Date };
@@ -84,6 +121,8 @@ async function insertAttack(client: pg.PoolClient, attack: PendingAttack): Promi
     ...intel,
     arriveAt: row.arrive_at.toISOString(),
     attackId: row.id,
+    // v100（AISLG-240）：势力范围内的袭击带上旗号（预警 / 事件 / 战报都显示「南蛮来袭」）
+    ...(stamp ? { faction: factionBannerOf(stamp.key), lair: stamp.lair } : {}),
   };
   await insertEvent(client, {
     accountId: attack.accountId,
@@ -124,6 +163,8 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
   let warning: { accountId: string; data: Record<string, unknown>; assistIds: string[] } | null = null;
   try {
     await client.query('BEGIN');
+    // v100（AISLG-240）：袭击的发起频率与目标选择都不变，只是给落在势力范围内的这次袭击打上旗号
+    const factionRadius = await loadRaidFactionRadius(client);
     // 主城目标（20%）：主城 = 账号最早创建的城；官府 ≥ 2 过滤新号；免战期不入池；
     // v38（AISLG-122）：新手保护与主动免战中的账号同样不入池（保护是硬规则，NPC 也不打）
     if (Math.random() < NPC_RAID_CITY_SHARE) {
@@ -162,6 +203,7 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
           terrain: null,
           level: raidLevel,
           army: npcRaidArmy(raidLevel),
+          faction: stampAt(factionRadius, city.x, city.y),
         };
         const created = await insertAttack(client, attack);
         warning = { accountId: attack.accountId, data: created.detail, assistIds: created.assistIds };
@@ -195,6 +237,7 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
           terrain: tile.terrain,
           level: tile.level,
           army: npcRaidArmy(tile.level),
+          faction: stampAt(factionRadius, tile.x, tile.y),
         };
         const created = await insertAttack(client, attack);
         warning = { accountId: attack.accountId, data: created.detail, assistIds: created.assistIds };
@@ -286,6 +329,15 @@ export interface NpcAttackRow {
   level: number;
   army: Partial<Record<TroopKind, number>>;
   arrive_at: Date;
+  /** v100（AISLG-240）：势力旗号与出发老巢（可空 = 普通 NPC 袭击） */
+  faction?: string | null;
+  from_x?: number | null;
+  from_y?: number | null;
+}
+
+/** 表行上的旗号（势力标识在 FACTIONS 里不存在时按无旗号处理，灭亡逻辑留给 AISLG-241） */
+export function factionBannerOfRow(row: NpcAttackRow): { key: string; name: string; nameEn: string } | null {
+  return factionBannerOf(row.faction ?? null);
 }
 
 /** 处理一批到期的 NPC 袭击（Worker tick 调用）；返回结算 / 作废数量 */
@@ -347,7 +399,14 @@ async function settleCityAttack(
   }
   await resolveNpcCityRaid(
     client,
-    { cityId: attack.target_city_id, accountId: attack.account_id, x: attack.x, y: attack.y, govLevel: 0 },
+    {
+      cityId: attack.target_city_id,
+      accountId: attack.account_id,
+      x: attack.x,
+      y: attack.y,
+      govLevel: 0,
+      faction: factionBannerOfRow(attack),
+    },
     notifies,
     { army: attack.army, raidLevel: attack.level },
   );
@@ -382,6 +441,7 @@ async function settleWildernessAttack(
     level: attack.level,
     garrison,
     defenderName: naming ? `${naming.username} 的驻军（${naming.cityName}）` : '玩家驻军',
+    faction: factionBannerOfRow(attack),
     notifies,
   };
   await resolveNpcWildernessRaid(client, target);

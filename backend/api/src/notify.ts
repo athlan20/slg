@@ -172,6 +172,15 @@ export class CompletionNotifier {
         });
         return;
       }
+      if (payload.reason === 'faction_siege' && payload.accountId && payload.data) {
+        // 五方势力围攻分城（v100，AISLG-240）：预警 / 打输 / 扣城防 / 城被吞，推给受影响账号的全部在线连接（含 Agent）
+        this.registry.broadcast(payload.accountId, {
+          op: Op.PUSH_FACTION_SIEGE,
+          push: true,
+          data: payload.data as Record<string, unknown>,
+        });
+        return;
+      }
       if (payload.reason === 'starvation' && payload.accountId && payload.data) {
         // 断粮预警 / 哗变（v34 AISLG-107）：推给该账号的全部在线连接（含 Agent）
         this.registry.broadcast(payload.accountId, {

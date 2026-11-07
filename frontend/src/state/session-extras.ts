@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type { ApiClient } from '../api/client';
 import {
   Op,
+  type FactionSiegePushData,
   type GetLeaderboardResponseData,
   type GetOfflineReportResponseData,
   type LeaderboardKind,
@@ -38,6 +39,8 @@ export interface SessionExtras {
   offlineReportError: string | null;
   /** 最近一次拉到的离线日报（Agent 页摘要用；不弹窗） */
   offlineSummary: GetOfflineReportResponseData | null;
+  /** 势力围攻预警推送（v100，AISLG-240）：归一化进同一预警队列 */
+  onFactionSiegePush: (push: FactionSiegePushData) => void;
   /** 拉取日报摘要（进入 Agent 页时调用，不弹窗） */
   loadOfflineSummary: () => Promise<void>;
   /** 上线自动检查的「最新回调」桥（登录 / 重连流程经 .current() 调用） */
@@ -187,6 +190,44 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
     setNpcWarnings((prev) => [...prev.filter((item) => item.attackId !== warning.attackId), warning].slice(-5));
   }, []);
 
+  /**
+   * 势力围攻预警（v100，AISLG-240）：与 NPC 来袭预警同一个弹窗队列（attackId = 围攻编号去重）。
+   * 只有 reason=warning 进队列；守住的 / 扣城防的 / 城被吞的结果由事件流（faction_siege /
+   * faction_city_lost）补齐，城防值与城池列表随下方增量查询对齐。
+   */
+  const onFactionSiegePush = useCallback((push: FactionSiegePushData) => {
+    if (push.reason !== 'warning') {
+      return;
+    }
+    setNpcWarnings((prev) =>
+      [
+        ...prev.filter((item) => item.attackId !== push.siegeId),
+        {
+          // 预警弹窗按 attackId 去重；八门金锁等计谋入口需要真实 id，围攻没有 attackId，用围攻编号
+          attackId: push.siegeId,
+          x: push.x,
+          y: push.y,
+          target: 'city' as const,
+          terrain: null,
+          level: 0,
+          armyMin: push.armyMin ?? 0,
+          armyMax: push.armyMax ?? 0,
+          ...(push.intel ? { intel: push.intel } : {}),
+          ...(push.beaconLevel !== undefined ? { beaconLevel: push.beaconLevel } : {}),
+          ...(push.armyKinds ? { armyKinds: push.armyKinds } : {}),
+          ...(push.army ? { army: push.army } : {}),
+          arriveAt: push.arriveAt ?? new Date().toISOString(),
+          siege: {
+            siegeId: push.siegeId,
+            faction: push.faction,
+            cityName: push.cityName,
+            durability: push.durability ?? 0,
+          },
+        },
+      ].slice(-5),
+    );
+  }, []);
+
   const dismissNpcWarning = useCallback((attackId: string) => {
     setNpcWarnings((prev) => prev.filter((item) => item.attackId !== attackId));
   }, []);
@@ -197,6 +238,7 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
     offlineReport,
     onBroadcastPush,
     onNpcWarningPush,
+    onFactionSiegePush,
     npcWarnings,
     dismissNpcWarning,
     resetNpcWarnings,

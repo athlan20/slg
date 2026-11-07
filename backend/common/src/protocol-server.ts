@@ -49,6 +49,8 @@ export const SERVER_BROADCAST_TYPES = [
   'hero_captured',
   // v99（AISLG-239）五方势力：势力范围半径扩大（每周最多一次，必达）
   'faction_expanded',
+  // v100（AISLG-240）势力出兵：围攻吞下玩家分城（大事，必达；owner 城名 + 势力名）
+  'faction_city_swallowed',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

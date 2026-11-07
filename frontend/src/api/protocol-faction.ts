@@ -38,3 +38,32 @@ export interface GetFactionsResponseData {
   serverTime: string;
   factions: FactionView[];
 }
+
+// ---- 势力出兵（AISLG-240，v100）----
+
+/** PUSH_FACTION_SIEGE（op 2030）推送原因：warning 预警 / repelled 打输 / hit 扣城防 / swallowed 城被吞 */
+export type FactionSiegePushReason = 'warning' | 'repelled' | 'hit' | 'swallowed';
+
+/** PUSH_FACTION_SIEGE（op 2030）推送载荷（镜像 backend/common/src/protocol-faction.ts） */
+export interface FactionSiegePushData {
+  reason: FactionSiegePushReason;
+  siegeId: string;
+  faction: { key: string; name: string; nameEn: string };
+  cityId: string;
+  cityName: string | null;
+  x: number;
+  y: number;
+  /** 围城军参考战力 */
+  power: number;
+  arriveAt?: string;
+  armyMin?: number;
+  armyMax?: number;
+  intel?: 'range' | 'kinds' | 'exact';
+  beaconLevel?: number;
+  armyKinds?: Partial<Record<string, { min: number; max: number }>>;
+  army?: Partial<Record<string, number>>;
+  durability?: number;
+  damage?: number;
+  durabilityAfter?: number;
+  protectedUntil?: string;
+}
