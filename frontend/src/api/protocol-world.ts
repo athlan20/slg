@@ -291,7 +291,7 @@ export interface BattleReportView {
   id: number;
   x: number;
   y: number;
-  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
+  kind: 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield' | 'faction_lair';
   role: 'attacker' | 'defender';
   won: boolean;
   rounds: number;

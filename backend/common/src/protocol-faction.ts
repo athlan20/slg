@@ -25,6 +25,8 @@ export interface FactionTileView {
   nameEn: string;
   /** true = 这格是势力老巢 */
   isLair: boolean;
+  /** v101（AISLG-241）：这家本季已灭亡（老巢变废墟）；范围格不再上报，只有老巢格带 true */
+  destroyed?: boolean;
 }
 
 /** 势力面板里的一家（GET_FACTIONS 的 factions[]） */
@@ -44,6 +46,16 @@ export interface FactionView {
   radius: number;
   /** 当前持有的势力城数（被玩家占下的城立即不算） */
   cityCount: number;
+  /** v101（AISLG-241）：本季已被玩家攻破（灭亡）——不再显示范围、不再吞城 / 围攻、老巢是废墟 */
+  destroyed: boolean;
+  /** 老巢的营数（共 20 营） */
+  campsTotal: number;
+  /** 剩余营数（含当前营；0 = 已灭亡） */
+  campsRemaining: number;
+  /** 当前营剩余守军百分比（0..100；满营 100，已灭亡 0） */
+  campRemainingPercent: number;
+  /** 每营守军参考战力（毁灭前最后一次刷新值；已灭亡仍给最后的值） */
+  campPower: number;
 }
 
 /** GET_FACTIONS（op 154）响应载荷；faction_enabled 关闭时 enabled = false、factions 为空数组 */
@@ -58,6 +70,29 @@ export interface GetFactionsResponseData {
   serverTime: string;
   /** 五方势力；未启用（或本季尚未生成老巢）时为空数组 */
   factions: FactionView[];
+}
+
+// ---- 攻破老巢（AISLG-241，v101）----
+
+/**
+ * PUSH_FACTION_LAIR（op 2031）推送原因（v101，AISLG-241）：
+ * - attacked：有人打了老巢（守军残血 / 打掉一营都在这里，看 campsRemaining 判定）；
+ * - recovered：连续 24 小时没人进攻，恢复 1 营；
+ * - destroyed：最后一营被清空，这家本季灭亡。
+ * 全服在线连接都收到（老巢是全服目标）；等价的全服播报见 faction_lair_destroyed。
+ */
+export type FactionLairPushReason = 'attacked' | 'recovered' | 'destroyed';
+
+/** PUSH_FACTION_LAIR（op 2031）推送载荷（v101，AISLG-241） */
+export interface FactionLairPushData {
+  reason: FactionLairPushReason;
+  faction: FactionBanner;
+  campsTotal: number;
+  campsRemaining: number;
+  /** 当前营剩余百分比（0..100） */
+  campRemainingPercent: number;
+  /** 这家本季是否已灭亡（reason = destroyed 时必为 true） */
+  destroyed: boolean;
 }
 
 // ---- 势力出兵（AISLG-240，v100）----

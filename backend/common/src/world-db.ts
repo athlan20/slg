@@ -129,6 +129,9 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
 async function wipeWorldForRebuild(client: pg.PoolClient): Promise<void> {
   // 势力记录跟世界走：不清掉的话重建后 ensureFactions 认为已开季，不再吞开季 25 格
   await client.query(`DELETE FROM factions`);
+  // v101（AISLG-241）：老巢战况与贡献榜同样跟世界走（重建后按 20 营、每营 10,000 重新生成）
+  await client.query(`DELETE FROM faction_lairs`);
+  await client.query(`DELETE FROM faction_contrib`);
   // 进行中的行军部队并回出发城（已结算的历史行军不并，避免重复入账）
   await client.query(
     `INSERT INTO city_army (city_id, troop, count)
@@ -240,7 +243,7 @@ export async function claimCityTile(
              SELECT s.column1 AS x, s.column2 AS y
              FROM sample s
              JOIN world_tiles wt ON wt.x = s.column1 AND wt.y = s.column2
-             WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.npc IS NULL ${relicSkip} ${factionSkip}
+             WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.npc IS NULL AND wt.faction_lair IS NULL ${relicSkip} ${factionSkip}
            ),
            candidate AS (
              SELECT v.x, v.y

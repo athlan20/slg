@@ -12,6 +12,8 @@ export interface FactionTileView {
   name: string;
   nameEn: string;
   isLair: boolean;
+  /** v101（AISLG-241）：这家本季已灭亡（老巢是废墟） */
+  destroyed?: boolean;
 }
 
 /** 势力面板里的一家 */
@@ -26,6 +28,16 @@ export interface FactionView {
   radius: number;
   /** 当前持有的势力城数 */
   cityCount: number;
+  /** v101（AISLG-241）：这家本季已被攻破（不再画范围、老巢是废墟） */
+  destroyed: boolean;
+  /** 老巢的营数（共 20 营） */
+  campsTotal: number;
+  /** 剩余营数（含当前营；0 = 已灭亡） */
+  campsRemaining: number;
+  /** 当前营剩余守军百分比 0~100 */
+  campRemainingPercent: number;
+  /** 每营守军参考战力 */
+  campPower: number;
 }
 
 /** GET_FACTIONS 响应（开关关闭时 enabled = false、factions 为空数组） */
@@ -66,4 +78,19 @@ export interface FactionSiegePushData {
   damage?: number;
   durabilityAfter?: number;
   protectedUntil?: string;
+}
+
+// ---- 攻破老巢（AISLG-241，v101）----
+
+/** PUSH_FACTION_LAIR（op 2031）推送原因：attacked 有人进攻 / recovered 恢复 1 营 / destroyed 本季灭亡 */
+export type FactionLairPushReason = 'attacked' | 'recovered' | 'destroyed';
+
+/** PUSH_FACTION_LAIR（op 2031）推送载荷（镜像 backend/common/src/protocol-faction.ts） */
+export interface FactionLairPushData {
+  reason: FactionLairPushReason;
+  faction: { key: string; name: string; nameEn: string };
+  campsTotal: number;
+  campsRemaining: number;
+  campRemainingPercent: number;
+  destroyed: boolean;
 }

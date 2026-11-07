@@ -479,6 +479,28 @@ function baseEventText(view: EventView): string {
       const cityName = tName(String(view.detail.cityName ?? EXTRA_STATE.event.branchFallback));
       return EXTRA_MAP.faction.siege.cityLost(name, cityName, posOf(view.detail));
     }
+    case 'faction_lair_battle': {
+      // v101（AISLG-241）：打老巢的一场战斗（自己的事件）——势力名 + 第几营 + 歼灭战力 + 奖励
+      const name = factionBannerName(view.detail.faction);
+      const campNo = Number(view.detail.campNo ?? 0);
+      const killed = Number(view.detail.killedPower ?? 0);
+      const gold = Number((view.detail.reward as { gold?: number } | null)?.gold ?? 0);
+      const outcome = view.detail.outcome === 'won' ? 'won' : 'lost';
+      return EXTRA_MAP.faction.lairBattle.battle(name, campNo, killed, gold, outcome);
+    }
+    case 'faction_lair_reward': {
+      // v101：这家势力灭亡时按贡献名次发的奖励
+      const name = factionBannerName(view.detail.faction);
+      const rank = Number(view.detail.rank ?? 0);
+      const gold = Number((view.detail.reward as { gold?: number } | null)?.gold ?? 0);
+      const each = Number((view.detail.reward as { wood?: number } | null)?.wood ?? 0);
+      return EXTRA_MAP.faction.lairBattle.reward(name, rank, gold, each);
+    }
+    case 'faction_lair_destroyed': {
+      // v101：这家势力本季被攻破（最后一击的玩家收到）
+      const name = factionBannerName(view.detail.faction);
+      return EXTRA_MAP.faction.lairBattle.destroyedByYou(name, String(view.detail.heroName ?? ''));
+    }
     case 'truce_started': {
       const until = typeof view.detail.until === 'string' ? formatClock(view.detail.until) : '?';
       return EXTRA_STATE.event.truceStarted(until);
@@ -565,6 +587,15 @@ export function serverBroadcastText(view: {
         tName(String(view.detail.cityName ?? '?')),
         factionBannerName({ name: view.detail.factionName, nameEn: view.detail.factionName }),
         pos,
+      );
+    case 'faction_lair_destroyed':
+      // v101（AISLG-241）：某家势力被攻破（必达播报，带最后一击的玩家名）
+      return EXTRA_MAP.faction.broadcastDestroyed(
+        String(view.detail.username ?? EXTRA_STATE.mapping.unknownPlayer),
+        factionBannerName(view.detail.faction),
+        getLang() === 'en'
+          ? String(view.detail.leaderEn ?? view.detail.leader ?? '')
+          : String(view.detail.leader ?? view.detail.leaderEn ?? ''),
       );
     case 'announcement':
       // v60 AISLG-162：运维发布公告时的一句标题（标题取中文原文）

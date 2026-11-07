@@ -25,7 +25,7 @@ import { addPrestige } from '../../common/src/nobility-db';
 import type { BattleCasualtiesSplit } from '../../common/src/battle-casualties';
 
 /** 战报类别（BattleReportView.kind 取值；v21 新增 city_raid = NPC 袭击玩家主城；v38 新增 pvp_raid = 玩家攻打玩家城；v39 新增 pvp_wilderness = 玩家抢占玩家野地） */
-export type BattleReportKind = 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield';
+export type BattleReportKind = 'wilderness' | 'npc_city' | 'npc_raid' | 'city_raid' | 'intercept' | 'yellow_turban' | 'pvp_raid' | 'pvp_wilderness' | 'pvp_conquest' | 'battlefield' | 'faction_lair';
 
 /** BattleSideSummary（引擎产出）→ 战报侧视图（battle-tick / plunder-tick / city-raid 共用；
  *  units / totalHp / avgRange 由 withSideStats 派生；v85 起可带伤兵 / 被俘 / 俘虏拆分） */
@@ -149,7 +149,7 @@ export interface MarchRow {
 /** 结束后经 pg_notify 发给 API 的载荷（battle_report 为 v13 新增；
  *  server_broadcast 为 v23 新增——broadcast 为完整播报视图，全服广播） */
 export interface TileNotify {
-  reason: 'march_resolved' | 'tile_changed' | 'battle_report' | 'server_broadcast' | 'hero_state';
+  reason: 'march_resolved' | 'tile_changed' | 'battle_report' | 'server_broadcast' | 'hero_state' | 'faction_lair';
   accountId: string;
   marchId?: string;
   x?: number;

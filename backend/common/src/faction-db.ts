@@ -18,6 +18,8 @@ import {
 import { getFactionEnabled } from './faction-config';
 import { FACTION_KEYS, type FactionKey, type FactionView, type GetFactionsResponseData } from './protocol-faction';
 import type { NpcCitySnapshot } from './world';
+import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairRemainingPercent } from './faction-lair';
+import { ensureFactionLairs, loadFactionLairRow, loadFactionLairs } from './faction-lair-db';
 
 type Queryable = pg.Pool | pg.PoolClient;
 
@@ -41,6 +43,8 @@ export async function ensureFactions(client: pg.PoolClient): Promise<number> {
   if (!getFactionEnabled()) {
     return 0;
   }
+  // v101（AISLG-241）：本季的老巢战况行（20 营、每营战力下限 10,000）；幂等，已有的不重建
+  await ensureFactionLairs(client);
   let created = 0;
   for (const def of FACTIONS) {
     const stamped = await client.query(
@@ -184,12 +188,18 @@ export async function loadFactionView(
     return { enabled: true, day, radius, serverTime, factions: [] };
   }
   const counts = await factionCityCounts(q);
+  const lairs = new Map((await loadFactionLairs(q)).map((row) => [row.key, row]));
   const factions: FactionView[] = [];
   for (const row of rows) {
     const def = factionDefOf(row.key);
     if (!def) {
       continue;
     }
+    const lair = lairs.get(def.key);
+    const destroyed = !!(lair && lair.destroyed_at);
+    const campsTotal = lair?.camps_total ?? FACTION_LAIR_CAMPS;
+    const campsRemaining = lair?.camps_remaining ?? FACTION_LAIR_CAMPS;
+    const campPower = lair?.camp_power ?? FACTION_LAIR_MIN_CAMP_POWER;
     factions.push({
       key: def.key,
       name: def.name,
@@ -198,7 +208,12 @@ export async function loadFactionView(
       leaderEn: def.leaderEn,
       lair: { x: row.lair_x, y: row.lair_y },
       radius,
-      cityCount: counts[def.key] ?? 0,
+      cityCount: destroyed ? 0 : counts[def.key] ?? 0,
+      destroyed,
+      campsTotal,
+      campsRemaining: destroyed ? 0 : campsRemaining,
+      campRemainingPercent: destroyed ? 0 : factionLairRemainingPercent(lair?.remaining ?? null, campPower),
+      campPower,
     });
   }
   return { enabled: true, day, radius, serverTime, factions };
@@ -207,4 +222,17 @@ export async function loadFactionView(
 /** 出征 / 侦察的目标是否为老巢（开关关闭时老巢标记不生效，与上线前一致） */
 export function isFactionLairTarget(tile: { faction_lair?: string | null } | null): boolean {
   return !!tile?.faction_lair && getFactionEnabled();
+}
+
+/**
+ * 这格老巢本季还能不能打 / 侦察（v101，AISLG-241）：false = 本季已灭亡的废墟（不能占领、不能再作为出征目标）。
+ * 开关关闭时调用方本就不会走到这里。战况行不存在（本季中途打开开关、数据还没生成）按「未灭亡」处理，
+ * 结算时 lockFactionLairRow 会补一行默认值（20 营、每营 10,000）。
+ */
+export async function factionLairAttackable(q: Queryable, key: string): Promise<boolean> {
+  if (!getFactionEnabled()) {
+    return false;
+  }
+  const row = await loadFactionLairRow(q, key);
+  return !row || !row.destroyed_at;
 }

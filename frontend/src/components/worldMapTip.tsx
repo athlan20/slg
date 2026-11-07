@@ -58,6 +58,9 @@ export function tileTitle(tile: TileView, isOwn: boolean): string {
   if (tile.kind === 'npc_city') {
     return tile.famous ? `${CITY_COPY.famous.title(tName(tile.famous.name))} Lv${tile.level}` : `${TILE_KIND_LABEL.npc_city} Lv${tile.level}`;
   }
+  if (tile.faction?.isLair) {
+    return tileFactionText(tile);
+  }
   return `${TERRAIN_LABEL[tile.terrain] ?? tile.terrain} · ${TILE_KIND_LABEL.wilderness} Lv${tile.level}`;
 }
 
@@ -65,6 +68,9 @@ export function tileTitle(tile: TileView, isOwn: boolean): string {
 export function tileOwnerText(tile: TileView, isOwn: boolean): string {
   const { COPY, EXTRA_MAP, ALLIANCE_COPY } = getCopy();
   const tip = EXTRA_MAP.tileTip;
+  if (tile.faction?.isLair) {
+    return tile.faction.destroyed ? EXTRA_MAP.faction.destroyed : EXTRA_MAP.faction.lairWall;
+  }
   if (!tile.owner) {
     return tile.kind === 'npc_city' ? tip.npcGuard : COPY.worldMap.ownerNone;
   }
@@ -127,7 +133,7 @@ export function WorldMapTooltip({ tip, clusters, yieldMap }: WorldMapTooltipProp
             {tileOwnerText(tip.tile, tip.isOwn)}
           </div>
           {/* 势力归属（v99，AISLG-239）：势力城 / 老巢在悬浮提示里标出来 */}
-          {tip.tile.faction ? (
+          {tip.tile.faction && !tip.tile.faction.isLair ? (
             <div role="世界地图视野-势力归属提示" className="text-gold">
               {tileFactionText(tip.tile)}
             </div>

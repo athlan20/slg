@@ -85,7 +85,7 @@ import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
 import { PUSH_STRATAGEM, REQUEST_CAST_STRATAGEM, REQUEST_GET_STRATAGEMS } from './protocol-doc-ops-stratagem';
 import { PUSH_EXPLORATION_REPORT } from './protocol-doc-ops-fog';
 import { REQUEST_GET_VISIBLE_MARCHES } from './protocol-doc-ops-visible-marches';
-import { PUSH_FACTION_SIEGE, REQUEST_GET_FACTIONS } from './protocol-doc-ops-faction';
+import { PUSH_FACTION_LAIR, PUSH_FACTION_SIEGE, REQUEST_GET_FACTIONS } from './protocol-doc-ops-faction';
 import { REQUEST_CLAIM_NOBILITY_SALARY, REQUEST_GET_NOBILITY } from './protocol-doc-ops-nobility';
 import { REQUEST_GET_LUOYANG, REQUEST_PUBLISH_DECREE } from './protocol-doc-ops-luoyang';
 import {
@@ -520,6 +520,7 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.GET_FACTIONS]: REQUEST_GET_FACTIONS,
   // 势力围攻分城（v100，AISLG-240）：预警 / 打输 / 扣城防 / 城被吞
   [Op.PUSH_FACTION_SIEGE]: PUSH_FACTION_SIEGE,
+  [Op.PUSH_FACTION_LAIR]: PUSH_FACTION_LAIR,
   [Op.GET_TILE]: REQUEST_GET_TILE,
   [Op.MARCH]: withCityId(REQUEST_MARCH),
   [Op.EXCHANGE]: withCityId(REQUEST_EXCHANGE),

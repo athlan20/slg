@@ -7,6 +7,7 @@ import pg from 'pg';
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { factionDayAt, factionDefOf, factionRadiusAt, factionSwallowIntervalMs } from '../../common/src/faction';
 import { loadFactionRows, swallowRandom } from '../../common/src/faction-db';
+import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
 import { getCurrentSeason } from '../../common/src/season-db';
 import { insertServerBroadcast } from '../../common/src/server-broadcast';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
@@ -34,6 +35,8 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
   if (rows.length === 0) {
     return result;
   }
+  // v101（AISLG-241）：本季已灭亡的势力不再吞城
+  const destroyed = await destroyedFactionKeys(pool);
   // 半径按本季实际开始时间与真实天数算（不随 time_scale 变化）；吞城间隔随缩放
   const radius = factionRadiusAt(season.startAt, now);
   const intervalMs = factionSwallowIntervalMs();
@@ -42,6 +45,9 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
   try {
     await client.query('BEGIN');
     for (const row of rows) {
+      if (destroyed.has(row.key)) {
+        continue;
+      }
       if (now.getTime() < row.last_swallow_at.getTime() + intervalMs) {
         continue;
       }
@@ -56,8 +62,9 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
       // 用数据库的 now() 记账：与数据库里存的时刻同源，进程与数据库时钟有偏差也不会倒流
       await client.query(`UPDATE factions SET last_swallow_at = now() WHERE key = $1`, [row.key]);
     }
-    // 半径扩大：五家同时扩（同一季同一半径），只播一条；每周最多一次（半径只在第 8 / 15 / 22 天变）
-    if (rows.some((row) => row.last_radius < radius)) {
+    // 半径扩大：五家同时扩（同一季同一半径），只播一条；每周最多一次（半径只在第 8 / 15 / 22 天变）。
+    // v101（AISLG-241）：本季已灭亡的势力不再画范围，只有还在的势力扩张时才播报（不播「五方」，见文案）
+    if (rows.some((row) => row.last_radius < radius && !destroyed.has(row.key))) {
       const created = await insertServerBroadcast(
         client,
         'faction_expanded',

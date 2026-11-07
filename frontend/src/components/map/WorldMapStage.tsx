@@ -210,12 +210,16 @@ export function WorldMapStage({
     [layers.faction, win, factionList],
   );
   const factionLairs = useMemo(() => {
-    const map = new Map<string, { name: string; leader: string }>();
+    const map = new Map<string, { name: string; leader: string; destroyed?: boolean }>();
     if (!layers.faction || !win) {
       return undefined;
     }
     for (const [key, faction] of lairsInWindow(factionList, win)) {
-      map.set(key, { name: factionName(faction, getLang()), leader: factionLeaderName(faction, getLang()) });
+      map.set(key, {
+        name: factionName(faction, getLang()),
+        leader: factionLeaderName(faction, getLang()),
+        destroyed: faction.destroyed,
+      });
     }
     return map;
   }, [layers.faction, win, factionList]);

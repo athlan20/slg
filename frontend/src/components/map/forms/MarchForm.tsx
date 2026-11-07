@@ -38,7 +38,9 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
     return marchTravelSeconds(origin.x, origin.y, x, y, troops, city.timeScale, marchBonusPercent(city.techs) + station);
   }, [origin, total, act, city, x, y, troops]);
 
-  const hint = act === 'assist'
+  const hint = detail?.faction?.isLair
+    ? copy.EXTRA_MAP.faction.lairAttackHint
+    : act === 'assist'
     ? COPY.worldMap.taskAssistHint
     : enemyWild
     ? COPY.worldMap.attackHintEnemyWild

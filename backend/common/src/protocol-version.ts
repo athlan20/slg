@@ -799,5 +799,24 @@
  *   PUSH_NPC_ATTACK_WARNING 新增可选 faction 与 lair；新事件 faction_siege_warning / faction_siege /
  *   faction_city_lost；新全服播报 faction_city_swallowed（必达）。新表 faction_sieges（换季清空）+
  *   npc_attacks 三列。打老巢、奖励、势力灭亡不在本版本（AISLG-241）。
+ * v101（攻破老巢：20 营、歼灭奖励、灭亡与重生，AISLG-241，只加不改；开关 faction_enabled 关闭时行为与上线前一致）：
+ *   一、怎么打：老巢分成 20 营，每次进攻只打当前一营、走守城战（城墙减伤 50%）。当前营的守军打掉多少算多少，
+ *   打输也保留残血；这一营清空才进入下一营，已打掉的营不会回来。连续 24 小时（随 time_scale 缩放）没人进攻
+ *   恢复 1 营（最多 20 营，当前营残血同时回满）。每营战力 = 全服战力前 10 名合计 ÷ 15，每天刷新一次、只升不降、
+ *   最低 10,000（全服战力算城内 + 野地驻军 + 行军中 + 协防），没打掉的营按新值、当前营保留残血比例；编成按
+ *   义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。任何玩家都能打（不要求入盟，不算攻击玩家、不破新手保护）。
+ *   二、奖励：每场战斗按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重，直接入账到出征城）；
+ *   声望按歼灭战力的 1%（不走世界地图 1:1）；最后一击的玩家获得该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，
+ *   全服唯一，名将总数 40 → 45）；灭亡时按贡献名次（累计歼灭守军战力）再发一次，数额是黄巾之乱同名次的 3 倍
+ *   （第 1 名 18,000 金 + 各 90,000；2~3 名 12,000 + 各 60,000；4~10 名 7,500 + 各 36,000；其余参与者 2,400 + 各 9,000）。
+ *   三、灭亡以后：本季灭亡并全服播报（带最后一击玩家名）；不再吞城、在途围攻作废；势力持有的城全部变回普通
+ *   NPC 城（普通的势力城守军与库存从 1.5 倍除回 1 倍，被吞的玩家分城保留建筑与库存）；原范围内的 NPC 袭击
+ *   恢复成无旗号（全服袭击频率不变）；老巢地块变成废墟（本季不能占领、不能再出征）；其他势力范围不扩大
+ *   （原归灭亡势力的格不会改归别家）。换季后五家重生、贡献清零。
+ *   四、协议：GET_FACTIONS 的 factions[] 新增 destroyed / campsTotal / campsRemaining / campRemainingPercent /
+ *   campPower，TileView.faction 新增可选 destroyed（老巢废墟）；新增推送 PUSH_FACTION_LAIR（op 2031，
+ *   reason = attacked / recovered / destroyed，全服广播）；新事件 faction_lair_battle / faction_lair_reward /
+ *   faction_lair_destroyed；新全服播报 faction_lair_destroyed（必达）；战报 kind 新增 faction_lair。
+ *   新表 faction_lairs / faction_contrib（均换季清空）。faction_enabled 关闭时以上全部不出现。
  */
-export const PROTOCOL_VERSION = 100;
+export const PROTOCOL_VERSION = 101;

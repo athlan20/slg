@@ -292,6 +292,12 @@ export const EventType = {
   FACTION_SIEGE: 'faction_siege',
   /** v100（AISLG-240）：城被势力吞下（detail = { cityId, cityName, x, y, faction, mainCityId, wildernessLost, reportId }；原主人收到，分城名额自动腾出） */
   FACTION_CITY_LOST: 'faction_city_lost',
+  /** v101（AISLG-241）：打老巢的一场战斗（detail = { faction, campNo, campsTotal, campsRemaining, killedPower, reward, reportId, destroyed, outcome = won / lost }） */
+  FACTION_LAIR_BATTLE: 'faction_lair_battle',
+  /** v101（AISLG-241）：灭亡奖励到账（detail = { faction, rank, power, tier, reward }） */
+  FACTION_LAIR_REWARD: 'faction_lair_reward',
+  /** v101（AISLG-241）：这家势力被攻破（最后一击的玩家收到，detail = { faction, factionName, leader, heroName, convertedCities, rewardedPlayers }） */
+  FACTION_LAIR_DESTROYED: 'faction_lair_destroyed',
   /** v73（AISLG-193）：开始打造城防器械（detail = { kind, count, cost, dueAt }） */
   DEFENSE_CRAFT_STARTED: 'defense_craft_started',
   /** v73：打造进入排队（detail = { kind, count, cost }） */
