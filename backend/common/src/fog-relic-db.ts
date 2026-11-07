@@ -17,7 +17,7 @@ async function eligibleFlags(client: pg.PoolClient, batch: Array<{ x: number; y:
      FROM unnest($1::int[], $2::int[]) WITH ORDINALITY AS t(x, y, i)
      LEFT JOIN world_tiles wt ON wt.x = t.x AND wt.y = t.y AND wt.kind = 'wilderness'
        AND wt.owner_city_id IS NULL AND wt.npc IS NULL AND wt.wild_hero IS NULL
-       AND wt.terrain NOT IN ('lake', 'gold_mine')
+       AND wt.terrain NOT IN ('lake', 'gold_mine') AND wt.faction_lair IS NULL
      ORDER BY t.i`,
     [batch.map((p) => p.x), batch.map((p) => p.y)],
   );

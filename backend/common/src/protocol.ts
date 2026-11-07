@@ -271,6 +271,9 @@ export const Op = {
   FACILITY_BUILD: 153,
   /** C→S 查询窗口内视野里的他人部队（v96，AISLG-230：data.x/y/w/h 同 GET_WORLD_MAP；只给位置 / 方向 / 去返程 / 规模档位 / 主人关系，不含目标与时刻；最多 50 支，迷雾关闭返回空） */
   GET_VISIBLE_MARCHES: 152,
+  /** C→S 查询五方势力（v99，AISLG-239：无参数、只读；五家的名称 / 首领 / 老巢坐标 / 当前半径 / 持城数，
+   *  玩家与 Agent 通用。开关 faction_enabled 关闭时 enabled=false、factions 为空数组） */
+  GET_FACTIONS: 154,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -758,6 +761,8 @@ export const ErrorCode = {
   FACILITY_BUILDING: 'FACILITY_BUILDING',
   /** 野地设施：这座城名下的望楼已达上限（每城 2 座）（v97，AISLG-232；附 limit / count） */
   FACILITY_LIMIT: 'FACILITY_LIMIT',
+  /** 五方势力：目标是势力老巢（v99，AISLG-239）——老巢本单只能查询、不能出征（MARCH / SCOUT 拒绝；AISLG-241 另行开放） */
+  FACTION_LAIR_TARGET: 'FACTION_LAIR_TARGET',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -1436,3 +1441,6 @@ export type {
   MoveCityOldTile,
   CityMovedPushMeta,
 } from './protocol-move-city';
+// 五方势力（v99，AISLG-239）：势力标识、地块上的势力归属与 GET_FACTIONS 响应
+export { FACTION_KEYS, isFactionKey } from './protocol-faction';
+export type { FactionKey, FactionTileView, FactionView, GetFactionsResponseData } from './protocol-faction';

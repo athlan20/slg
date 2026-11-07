@@ -250,6 +250,8 @@ export function exploredTileView(
     heroSite: null,
     // 望楼（v97，AISLG-232）：已探索但不在视野内时给上次看到的那座（等级走快照，不含建造进度）
     facility: seen && seen.facilityLevel > 0 ? { kind: 'watchtower', level: seen.facilityLevel } : null,
+    // 势力归属（v99，AISLG-239）：动态信息，已探索但不在视野内的格不给（与驻军 / 库存档位同口径）
+    faction: null,
     fog: 'explored',
     seenAt: seen ? seen.seenAt.toISOString() : null,
   };
@@ -275,6 +277,7 @@ export function campOnlyTileView(facts: TileFacts): TileView {
     relic: null,
     heroSite: null,
     facility: null,
+    faction: null,
     fog: 'explored',
     seenAt: null,
   };

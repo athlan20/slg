@@ -10,6 +10,7 @@ import { ensureWorld } from '../../common/src/world-db';
 import { seedArenaNpcs } from '../../common/src/arena-db';
 import { getTimeScale, refreshTimeScale, timeScaleStale } from '../../common/src/time-scale';
 import { fogConfigStale, refreshFogEnabled } from '../../common/src/fog-config';
+import { factionConfigStale, refreshFactionEnabled } from '../../common/src/faction-config';
 import { registerCors } from './cors';
 import { handleMessage, handleConnectionClosed, type HandlerContext } from './handlers';
 import { createWxService, sweepWxTickets } from './handlers-wechat';
@@ -68,6 +69,8 @@ async function main(): Promise<void> {
   console.log('slg-api database schema ready');
   // v53（AISLG-145）：竞技场系统守擂者启动时补齐（只读路径不再为补种抢锁；幂等，咨询锁串行化）
   await seedArenaNpcs(pool);
+  // v99（AISLG-239）：五方势力总开关要在世界生成前预热——ensureWorld 里按它决定放不放老巢
+  await refreshFactionEnabled(pool).catch(() => undefined);
   // v12：首次启动生成世界并回填存量城池坐标（幂等；与 Worker 并发由咨询锁串行化）
   await ensureWorld(maintenancePool);
   console.log('slg-api world ready');
@@ -85,6 +88,12 @@ async function main(): Promise<void> {
   setInterval(() => {
     if (fogConfigStale()) {
       void refreshFogEnabled(pool).catch(() => undefined);
+    }
+  }, 5_000);
+  // v99（AISLG-239）：五方势力总开关已在世界生成前预热过；这里只维护定期刷新（切换后随缓存生效）
+  setInterval(() => {
+    if (factionConfigStale()) {
+      void refreshFactionEnabled(pool).catch(() => undefined);
     }
   }, 5_000);
   console.log(`slg-api time_scale=${getTimeScale()}`);

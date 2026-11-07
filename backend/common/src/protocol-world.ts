@@ -8,6 +8,7 @@ import type { DefenseScoutView } from './protocol-defense';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchPurpose, MarchTask } from './protocol-battle';
 import type { YtTileCampView } from './protocol-yt';
+import type { FactionTileView } from './protocol-faction';
 
 /**
  * 地形清单（v12；v19 新增金矿 gold_mine）：平原 / 草原 / 森林 / 丘陵 / 荒漠 / 沼泽 / 湖泊 / 金矿。
@@ -178,6 +179,10 @@ export interface TileView {
   heroSite: HeroSiteView | null;
   /** 望楼（v97，AISLG-232）：只要能看到这块地就能看到有望楼与它的等级（不含建造进度）；没盖或还在建 1 级为 null */
   facility: TileFacilityView | null;
+  /** 势力归属（v99，AISLG-239）：被某方势力吞并的 NPC 城 / 老巢地块才有；其余为 null。
+   *  玩家占下这座城后地块转城池，归属随之消失；faction_enabled 关闭时恒为 null。
+   *  已探索但不在实时视野内的格给 null（势力归属是动态信息，与驻军 / 库存档位同口径）。 */
+  faction: FactionTileView | null;
   /** 战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾时一致）；explored = 已探索但不在视野内，
    *  只给上次看到的地形 / 等级 / 占领者，动态字段（驻军、库存 / 储量档位、保护、城防）为 null 或 0；未探索的地块不返回 */
   fog: 'explored' | 'visible';

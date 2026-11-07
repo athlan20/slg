@@ -58,6 +58,7 @@ import {
 } from './handlers-world';
 import { handleRecallGarrison, readRecallTroops } from './handlers-recall';
 import { handleFacilityBuild } from './handlers-facility';
+import { handleGetFactions } from './handlers-faction';
 import { handleGetMapOverview } from './map-overview';
 import { handleAnnouncementOp } from './handlers-announcement';
 import { handleAllianceOp } from './handlers-alliance';
@@ -104,7 +105,7 @@ import { handleMoveCity } from './handlers-move-city';
 import { loadMoveCityView } from '../../common/src/move-city-db';
 import { SEASON_GIFT } from '../../common/src/gift';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
-import { handleGetHallOfFame, handleGetSeason, respondMaintenance } from './handlers-season';
+import { handleGetSeason, handleGetHallOfFame, respondMaintenance } from './handlers-season';
 import { maintenanceActive } from './maintenance-gate';
 
 export interface HandlerContext {
@@ -227,6 +228,10 @@ async function dispatchOp(
     // v96（AISLG-230）：窗口内视野里的他人部队
     case Op.GET_VISIBLE_MARCHES:
       await handleGetVisibleMarches(ctx, conn, op, seq, data);
+      break;
+    // v99（AISLG-239）：五方势力（只读；关闭开关时返回 enabled=false）
+    case Op.GET_FACTIONS:
+      await handleGetFactions(ctx, conn, op, seq);
       break;
     case Op.GET_MAP_OVERVIEW:
       await handleGetMapOverview(ctx, conn, op, seq);

@@ -15,6 +15,7 @@ export const EXTRA_MAP_EN = {
     caravan: 'T',
     enemy: 'E',
     wild: 'W',
+    factionLair: 'F',
   },
   truceBadge: {
     glyph: 'T',
@@ -198,6 +199,23 @@ export const EXTRA_MAP_EN = {
   duration: {
     hm: (hours: number, minutes: number) => `${hours}h ${minutes}min`,
     m: (minutes: number) => `${minutes}min`,
+  },
+  faction: {
+    layer: 'Factions',
+    panelTitle: 'Five Factions',
+    panelAria: 'Five factions panel',
+    leaderLabel: 'Leader',
+    lairLabel: 'Lair',
+    radiusLabel: 'Range',
+    citiesLabel: 'Cities',
+    radius: (radius: number) => `${radius} tiles`,
+    cities: (count: number) => `${count}`,
+    lair: (x: number, y: number) => `(${x}, ${y})`,
+    lairHint: (name: string, leader: string) => `${name} lair · leader ${leader}`,
+    cityHint: (name: string) => `${name} faction city`,
+    lairTile: (name: string) => `${name} lair`,
+    cellAria: (name: string) => `${name} territory`,
+    broadcastExpanded: (radius: number) => `The five factions expand: territory range is now ${radius} tiles`,
   },
   reports: {
     lossesNone: 'none',

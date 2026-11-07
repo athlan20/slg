@@ -14,6 +14,7 @@ import { WorldSiteNote } from './WorldSiteNote';
 import { TargetCloseButton } from './TargetCloseButton';
 import { relativeAgo } from '../ScoutReportModal';
 import { YellowTurbanCampNote } from '../YellowTurbanCampNote';
+import { tileFactionText } from '../worldMapTip';
 import { plunderCooldownLeft, protectionLeftText } from '../worldPanelText';
 
 interface TargetHeaderProps {
@@ -124,6 +125,13 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
         </span>
         <TargetCloseButton onClose={onClose} />
       </div>
+
+      {/* 势力归属（v99，AISLG-239）：势力城 / 老巢在这儿标出来（老巢不可出征） */}
+      {detail?.faction ? (
+        <div role="选中详情-势力归属" className="text-[11.5px] text-gold">
+          {tileFactionText(detail)}
+        </div>
+      ) : null}
 
       {detail === null ? (
         <p className="text-[12px] text-faint">{TARGET_COPY.loading}</p>

@@ -4,6 +4,7 @@
 
 import type { ArmyCounts, InitiatorRole, Resources, TroopKind } from './protocol';
 import type { YtTileCampView } from './protocol-yt';
+import type { FactionTileView } from './protocol-faction';
 import type { BattleHeroView } from './protocol-hero';
 import type { DefenseScoutView, DefenseUseView } from './protocol-defense';
 
@@ -105,6 +106,9 @@ export interface TileView {
   /** 野地上的设施（v97，AISLG-232）：只要能看到这块地就能看到有望楼与它的等级（不含建造进度）；
    *  没盖、或还在建第一级时为 null */
   facility: TileFacilityView | null;
+  /** 势力归属（v99，AISLG-239）：被某方势力吞并的 NPC 城（isLair=false）或老巢地块（isLair=true）；
+   *  其余地块、开关关闭、已探索但不在视野内为 null */
+  faction: FactionTileView | null;
   x: number;
   y: number;
   terrain: TerrainKind;

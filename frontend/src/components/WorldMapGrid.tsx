@@ -21,6 +21,8 @@ import { TileYield } from './map/YieldLayer';
 import { FogCell } from './map/FogCell';
 import type { TerritoryCell } from './map/territoryBorders';
 import type { YieldInfo } from './map/yieldTable';
+import { FactionLairMark, FactionTint } from './map/FactionCellMark';
+import type { FactionKey } from '../api/protocol-faction';
 import { AllianceMarkBadge, CityMark, TERRAIN_CLASS, TerrainIcon, levelTone } from './worldMapMarks';
 import { NPC_TIER_CLASS, WorldMapTooltip, citySide, npcTierLabel, tileAria, type TileTip } from './worldMapTip';
 
@@ -52,6 +54,10 @@ interface WorldMapGridProps {
   territoryCells?: Map<string, TerritoryCell>;
   /** 产出图层（AISLG-216）：键 "x,y" → 产量与储量；关掉产出图层时不传 */
   yieldMap?: Map<string, YieldInfo>;
+  /** 势力范围图层（v99，AISLG-239）：键 "x,y" → 势力标识；关掉图层时不传。只铺色，不揭迷雾 */
+  factionCells?: Map<string, FactionKey>;
+  /** 窗口内的老巢（v99，AISLG-239）：键 "x,y" → 势力显示名与首领（老巢坐标公开，迷雾里也标记） */
+  factionLairs?: Map<string, { name: string; leader: string }>;
   /** 产出数字是否显示（视野边长 ≥ 15 格时只显示资源图标） */
   showYieldNumber?: boolean;
   /** 覆盖层（AISLG-216）：行军路线 / 图标 / 来袭标记，挂在网格同一个相对容器里随网格一起位移 */
@@ -92,7 +98,7 @@ const ARROW_DELTA: Record<string, [number, number]> = {
 
 export function WorldMapGrid({
   win, selected, accountId, onSelect, onPan, onPanTo, panStep, territoryClusters, movingMarks, onZoom, zoomSize, layers, marks,
-  territoryCells, yieldMap, showYieldNumber = true, overlay,
+  territoryCells, yieldMap, showYieldNumber = true, overlay, factionCells, factionLairs,
 }: WorldMapGridProps) {
   const copy = useCopy();
   const { TILE_KIND_LABEL } = copy;
@@ -342,7 +348,18 @@ export function WorldMapGrid({
               const tile = tileAt.get(`${x},${y}`);
               if (!tile) {
                 // 迷雾层（AISLG-224）：窗口里没有的格子即未探索，画成黑雾；都可点选，带本盟标记时画角标（AISLG-226）
-                return <FogCell key={`${x}-${y}`} x={x} y={y} mark={marks?.get(`${x},${y}`)} selected={selected?.x === x && selected?.y === y} onSelect={selectCell} />;
+                return (
+                  <FogCell
+                    key={`${x}-${y}`}
+                    x={x}
+                    y={y}
+                    mark={marks?.get(`${x},${y}`)}
+                    selected={selected?.x === x && selected?.y === y}
+                    onSelect={selectCell}
+                    factionKey={factionCells?.get(`${x},${y}`)}
+                    lair={factionLairs?.get(`${x},${y}`)}
+                  />
+                );
               }
               const isOwn = tile.owner !== null && tile.owner.accountId === accountId;
               const isSelected = selected !== null && selected.x === x && selected.y === y;
@@ -358,6 +375,9 @@ export function WorldMapGrid({
               const territory = explored ? undefined : territoryCells?.get(`${x},${y}`);
               // 产出（AISLG-216）：资源图标 + 每小时产量（自己的地含驻军采集）+ 储量条
               const yieldInfo = explored ? undefined : yieldMap?.get(`${x},${y}`);
+              // 势力范围（v99，AISLG-239）：铺半透明色块表示地盘；地块的势力归属另由 faction 字段表达
+              const factionKey = factionCells?.get(`${x},${y}`);
+              const factionLair = factionLairs?.get(`${x},${y}`);
               return (
                 <button
                   key={`${x}-${y}`}
@@ -382,6 +402,7 @@ export function WorldMapGrid({
                     isSelected ? 'z-[1] shadow-[0_0_0_2px_var(--accent),0_0_14px_var(--accent-dim)]' : ''
                   }`}
                 >
+                  {factionKey ? <FactionTint factionKey={factionKey} /> : null}
                   {territory ? <span role="世界地图视野-领地色块" aria-hidden="true" className={`pointer-events-none absolute inset-0 ${TERRITORY_FILL_CLASS[territory.relation]}`} /> : null}
                   {isCity ? (
                     <>
@@ -435,6 +456,7 @@ export function WorldMapGrid({
                     </>
                   )}
                   <WorldTileBadges tile={tile} mark={movingMarks?.get(`${x},${y}`)} hideCamp={!showYt} />
+                  {factionLair ? <FactionLairMark name={factionLair.name} leader={factionLair.leader} /> : null}
                   {mark ? <AllianceMarkBadge kind={mark.kind} /> : null}
                   {occupied ? (
                     <span

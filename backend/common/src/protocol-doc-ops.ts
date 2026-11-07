@@ -85,6 +85,7 @@ import { REQUEST_DISMISS_ASSIST } from './protocol-doc-ops-assist';
 import { PUSH_STRATAGEM, REQUEST_CAST_STRATAGEM, REQUEST_GET_STRATAGEMS } from './protocol-doc-ops-stratagem';
 import { PUSH_EXPLORATION_REPORT } from './protocol-doc-ops-fog';
 import { REQUEST_GET_VISIBLE_MARCHES } from './protocol-doc-ops-visible-marches';
+import { REQUEST_GET_FACTIONS } from './protocol-doc-ops-faction';
 import { REQUEST_CLAIM_NOBILITY_SALARY, REQUEST_GET_NOBILITY } from './protocol-doc-ops-nobility';
 import { REQUEST_GET_LUOYANG, REQUEST_PUBLISH_DECREE } from './protocol-doc-ops-luoyang';
 import {
@@ -515,6 +516,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.GET_MAP_OVERVIEW]: REQUEST_GET_MAP_OVERVIEW,
   // 视野内的他人部队（v96，AISLG-230）：玩家与 Agent 同一接口、同一套裁剪
   [Op.GET_VISIBLE_MARCHES]: REQUEST_GET_VISIBLE_MARCHES,
+  // 五方势力（v99，AISLG-239）：只读；老巢坐标对全服公开，不做迷雾裁剪
+  [Op.GET_FACTIONS]: REQUEST_GET_FACTIONS,
   [Op.GET_TILE]: REQUEST_GET_TILE,
   [Op.MARCH]: withCityId(REQUEST_MARCH),
   [Op.EXCHANGE]: withCityId(REQUEST_EXCHANGE),

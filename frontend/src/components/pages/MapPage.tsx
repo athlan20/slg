@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
 import { MilitarySummary } from '../intel/MilitarySummary';
+import { FactionPanel } from '../map/FactionPanel';
 import { MapCard } from '../map/MapCard';
 import { MovingTargetList } from '../map/MovingTargetList';
 import { TargetPanel } from '../map/TargetPanel';
@@ -55,6 +56,7 @@ export function MapPage() {
               <Card role="地图页-流寇商队" title={MOVING_COPY.panel.title}>
                 <MovingTargetList targets={session.moving.targets} world={world} />
               </Card>
+              <FactionPanel state={session.factions.state} onFocusLair={(lair) => world.centerOn(lair.x, lair.y)} />
             </div>
           ),
         },

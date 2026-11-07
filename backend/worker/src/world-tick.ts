@@ -18,6 +18,7 @@ import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { toFullArmyCounts } from '../../common/src/battle';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { famousEncounter } from '../../common/src/famous-city';
+import { getFactionEnabled } from '../../common/src/faction-config';
 import type { NpcCitySnapshot } from '../../common/src/world';
 import { saveScoutIntel } from '../../common/src/battle-db';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
@@ -162,6 +163,11 @@ async function resolveArrival(
 ): Promise<void> {
   // v92（AISLG-224 复核）：迷雾中的盲打校验曾被拒绝（fog_denied）：到达一律原路返回，不战斗、不掠夺、不侦察
   if (march.fog_denied) {
+    await abortMarchToReturn(client, march, troops, settled, notifies);
+    return;
+  }
+  // v99（AISLG-239）：势力老巢不可出征（发起时已拒，这里兜底在途自带老巢的行军——一律原路返回）
+  if (tile?.faction_lair && getFactionEnabled()) {
     await abortMarchToReturn(client, march, troops, settled, notifies);
     return;
   }

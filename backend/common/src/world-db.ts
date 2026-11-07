@@ -5,6 +5,9 @@
 
 import pg from 'pg';
 import { ensureFamousCities } from './famous-city-db';
+import { ensureFactions } from './faction-db';
+import { getFactionEnabled } from './faction-config';
+import { FACTIONS, FACTION_LAIR_CLEAR_RADIUS } from './faction';
 import { ensureWildFamous } from './wild-famous-db';
 import { ensureRelics } from './fog-relic-db';
 import { getFogEnabled } from './fog-config';
@@ -42,7 +45,8 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
     await client.query(`SELECT pg_advisory_lock(${WORLD_LOCK_ID})`);
     const count = await client.query(`SELECT count(*)::int AS n FROM world_tiles`);
     const expected = WORLD_SIZE * WORLD_SIZE;
-    if (count.rows[0].n !== expected) {
+    const rebuilt = count.rows[0].n !== expected;
+    if (rebuilt) {
       // 整段重建在一个事务里，可安全重试：另一进程的 ensureSchema 正在 ALTER TABLE（ACCESS EXCLUSIVE）时，
       // 本事务的外键检查会与其互等，PostgreSQL 判死锁（40P01）时回滚后短暂退避重试，不能让 API/Worker 因此退出
       for (let attempt = 1; ; attempt += 1) {
@@ -71,6 +75,13 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
     const famousCreated = await ensureFamousCities(client);
     if (famousCreated > 0) {
       console.log(`ensureWorld: promoted ${famousCreated} NPC cities to famous cities`);
+    }
+    // 五方势力（v99，AISLG-239）：世界刚生成 / 重建且开关打开时放五家老巢并吞下开季 25 格内的 NPC 城。
+    // 只在重建时放：赛季中途打开开关后重启不放老巢，避免落到现有玩家身上，等下次换季。
+    // 放在城池落位之前：存量城池重排时 claimCityTile 会避开老巢周围 5 格。
+    const factionCreated = rebuilt ? await ensureFactions(client) : 0;
+    if (factionCreated > 0) {
+      console.log(`ensureWorld: created ${factionCreated} faction lairs`);
     }
     // 存量城池补坐标（首启 / 重建后的重排：按创建顺序逐座分散落位）
     const cities = await client.query(
@@ -116,6 +127,8 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
 
 /** 世界重建前的清理：部队并回城内驻军，行军 / 占领 / 地图状态作废（调用方负责事务） */
 async function wipeWorldForRebuild(client: pg.PoolClient): Promise<void> {
+  // 势力记录跟世界走：不清掉的话重建后 ensureFactions 认为已开季，不再吞开季 25 格
+  await client.query(`DELETE FROM factions`);
   // 进行中的行军部队并回出发城（已结算的历史行军不并，避免重复入账）
   await client.query(
     `INSERT INTO city_army (city_id, troop, count)
@@ -169,6 +182,19 @@ const CLAIM_SAMPLE_SIZE = 64;
 /** 采样轮数（整批采样撞上占用格或并发撞车时换一批随机点重试；占位决策） */
 const CLAIM_ATTEMPTS = 5;
 
+/** 老巢周围不放玩家的 SQL 条件（v99，AISLG-239）：开关关闭时为空串，与上线前完全一致。
+ *  坐标都是代码常量（整数），直接内联，无需额外查询。 */
+function factionLairSkipSql(): string {
+  if (!getFactionEnabled()) {
+    return '';
+  }
+  const boxes = FACTIONS.map(
+    (def) =>
+      `(wt.x BETWEEN ${def.lair.x - FACTION_LAIR_CLEAR_RADIUS} AND ${def.lair.x + FACTION_LAIR_CLEAR_RADIUS} AND wt.y BETWEEN ${def.lair.y - FACTION_LAIR_CLEAR_RADIUS} AND ${def.lair.y + FACTION_LAIR_CLEAR_RADIUS})`,
+  );
+  return `AND NOT (${boxes.join(' OR ')})`;
+}
+
 /**
  * 为城池分配地块（分散落位，2026-09-27 决策）：在空闲野地里选一块与既有城池
  * （kind='city'，含分城）Chebyshev 距离最大的格子（城市随注册数摊开全图；并列时取
@@ -188,6 +214,8 @@ export async function claimCityTile(
   const relicSkip = getFogEnabled()
     ? `AND NOT EXISTS (SELECT 1 FROM fog_relics fr WHERE fr.x = wt.x AND fr.y = wt.y AND fr.claimed_by IS NULL)`
     : '';
+  // 五方势力（v99，AISLG-239）：开启时避开老巢周围 5 格（含老巢本身），关闭时与原来一致
+  const factionSkip = factionLairSkipSql();
   for (let attempt = 0; attempt < CLAIM_ATTEMPTS; attempt += 1) {
     // 采样候选：中心点固定入样（无既有城池时凭 tie-break 胜出 → 首城在中心附近），其余随机
     const sample: Array<[number, number]> = [[center, center]];
@@ -212,7 +240,7 @@ export async function claimCityTile(
              SELECT s.column1 AS x, s.column2 AS y
              FROM sample s
              JOIN world_tiles wt ON wt.x = s.column1 AND wt.y = s.column2
-             WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.npc IS NULL ${relicSkip}
+             WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.npc IS NULL ${relicSkip} ${factionSkip}
            ),
            candidate AS (
              SELECT v.x, v.y
@@ -304,6 +332,8 @@ export interface TileRow {
   wild_lead?: number | null;
   wild_force?: number | null;
   wild_wit?: number | null;
+  /** 势力老巢（v99，AISLG-239）：该格是哪家的老巢；其余为 null（开关关闭时恒为 null） */
+  faction_lair?: string | null;
 }
 
 /** 读取单格（不加锁；需要一致写时由调用方 FOR UPDATE） */

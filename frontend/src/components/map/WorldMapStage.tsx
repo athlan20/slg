@@ -30,6 +30,9 @@ import { WorldExplorationReport } from './WorldExplorationReport';
 import { mapMarchers } from './marchGeometry';
 import { needsFogRefresh } from './fogPolling';
 import { WorldMapOverlay } from './WorldMapOverlay';
+import { factionCellsOf, factionLeaderName, factionName, lairsInWindow } from './factionLayer';
+import { getLang } from '../../i18n/lang';
+import type { GetFactionsResponseData } from '../../api/protocol-faction';
 import { territoryCells } from './territoryBorders';
 import { showYieldNumber } from './YieldLayer';
 import { yieldOfTile, type YieldInfo } from './yieldTable';
@@ -59,10 +62,12 @@ interface WorldMapStageProps {
   cityList: CityRefView[];
   /** 未确认的敌人来袭预警（AISLG-216）：目标格红标与倒计时 */
   npcWarnings: NpcAttackWarningPushData[];
+  /** 五方势力（v99，AISLG-239）：势力面板数据（null = 还没拉取 / 未启用时为空列表） */
+  factions?: GetFactionsResponseData | null;
 }
 
 export function WorldMapStage({
-  world, movingTargets, city, accountId, layers, yellowTurban, onOpenYellowTurban, onSelect, overview, allianceMarks, cityList, npcWarnings,
+  world, movingTargets, city, accountId, layers, yellowTurban, onOpenYellowTurban, onSelect, overview, allianceMarks, cityList, npcWarnings, factions,
 }: WorldMapStageProps) {
   const copy = useCopy();
   // 迷雾（AISLG-224 复核）：有在途行军且路线与窗口相交时，每 15 秒重拉一次窗口；否则不拉
@@ -197,6 +202,24 @@ export function WorldMapStage({
     return map;
   }, [layers.yield, win, city?.territory, accountId]);
 
+  // 势力范围（v99，AISLG-239）：由公开数据（老巢坐标 + 当前半径）算出窗口内每格归哪家，
+  // 以及窗口里有没有老巢；关掉「势力范围」图层时都不传，地图上不留任何势力痕迹
+  const factionList = useMemo(() => (factions?.enabled ? factions.factions : []), [factions]);
+  const factionCells = useMemo(
+    () => (layers.faction && win ? factionCellsOf(factionList, win) : undefined),
+    [layers.faction, win, factionList],
+  );
+  const factionLairs = useMemo(() => {
+    const map = new Map<string, { name: string; leader: string }>();
+    if (!layers.faction || !win) {
+      return undefined;
+    }
+    for (const [key, faction] of lairsInWindow(factionList, win)) {
+      map.set(key, { name: factionName(faction, getLang()), leader: factionLeaderName(faction, getLang()) });
+    }
+    return map;
+  }, [layers.faction, win, factionList]);
+
   const event = yellowTurban?.event ?? null;
   const ytActive = layers.yt && event !== null && event.status === 'active';
   const ytNow = useNow(ytActive);
@@ -221,6 +244,8 @@ export function WorldMapStage({
             marks={markMap}
             territoryCells={territoryView}
             yieldMap={yieldMap}
+            factionCells={factionCells}
+            factionLairs={factionLairs}
             showYieldNumber={showYieldNumber(win)}
             overlay={
               <WorldMapOverlay
