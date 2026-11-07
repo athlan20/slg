@@ -747,6 +747,8 @@
  *   新错误码 FACILITY_TILE_INVALID / FACILITY_MAX_LEVEL / FACILITY_BUILDING / FACILITY_LIMIT（资源不足沿用 INSUFFICIENT_RESOURCES）。
  *   新表 wilderness_facilities（换季清空）；fog_seen 新增 facility_level（上次看到的望楼等级，向后兼容）。
  *   迷雾开关 fog_enabled 关闭时望楼仍可建，但不产生视野效果。
+ *   同批的丘陵视野（AISLG-233）只改取值、不加字段、不升版本：占领的丘陵野地视野 +2（没望楼 3 → 5，
+ *   1 / 2 / 3 级望楼 6 / 8 / 10 → 8 / 10 / 12），上限 12；主城 / 分城 / 行军中的部队即使脚下是丘陵也不加成。
  * v98（长期不活跃账号的野地收回，AISLG-238，只加不改）：本人和 Agent 都 7 天没上线（阈值现实时间，
  *   不随 time_scale 变化，与盟主自动转让同一个 7 天）的账号，Worker 每小时扫一轮，把名下（所有城合计）
  *   野地一次全部收回：地块变无主（当前储量不重置、不设换主保护，其他玩家可立即占领），驻军直接回到
