@@ -10,7 +10,8 @@
 import type pg from 'pg';
 import { EventType } from './protocol';
 import { insertEvent } from './events';
-import { watchtowerVisionRadius, type FacilityKind } from './facility';
+import type { FacilityKind } from './facility';
+import { builtFacilityVisionRadius } from './fog';
 import type { TerritoryFacilityView, TileFacilityView } from './protocol-world';
 
 type Queryable = pg.Pool | pg.PoolClient;
@@ -76,15 +77,17 @@ export function tileFacilityView(row: Pick<FacilityRow, 'kind' | 'level'> | null
   return { kind: 'watchtower', level: row.level };
 }
 
-/** 本城领地里设施的视图（含建造进度，只有主人能看到） */
-export function territoryFacilityView(row: FacilityRow | null): TerritoryFacilityView | null {
+/** 本城领地里设施的视图（含建造进度，只有主人能看到）：视野半径是这块地**加成后的有效半径**
+ * （丘陵上的野地 +2：1 / 2 / 3 级 8 / 10 / 12；AISLG-233），与 fog-db 的实际视野同一口径，
+ * 所以调用方要把地块的地形传进来。 */
+export function territoryFacilityView(row: FacilityRow | null, terrain?: string | null): TerritoryFacilityView | null {
   if (!row || row.kind !== 'watchtower') {
     return null;
   }
   return {
     kind: 'watchtower',
     level: row.level,
-    visionRadius: watchtowerVisionRadius(row.level),
+    visionRadius: builtFacilityVisionRadius(row.level, terrain),
     building:
       row.building_to !== null && row.finish_at !== null
         ? { toLevel: row.building_to, finishAt: row.finish_at.toISOString() }
@@ -140,8 +143,9 @@ export async function destroyFacility(
 }
 
 /** 设施丢失的原因（写进 facility_lost 的 detail.cause，与 wilderness_lost 的口径一致）：
- *  conquest 野地被抢 / npc_attack NPC 袭击失守 / recall 召回驻军主动放弃 / city_lost 所属分城易主或被放弃 / reset 重置账号 */
-export type FacilityLossCause = 'conquest' | 'npc_attack' | 'recall' | 'city_lost' | 'reset';
+ *  conquest 野地被抢 / npc_attack NPC 袭击失守 / recall 召回驻军主动放弃 / city_lost 所属分城易主或被放弃 / reset 重置账号 /
+ *  inactive 账号长期未上线被收回野地（v98，AISLG-238） */
+export type FacilityLossCause = 'conquest' | 'npc_attack' | 'recall' | 'city_lost' | 'reset' | 'inactive';
 
 /**
  * 一座城名下的全部设施一起毁掉（所属分城易主 / 被放弃 / 账号重置）：

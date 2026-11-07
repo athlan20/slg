@@ -119,6 +119,7 @@ async function buildOfflineDigest(
     troopsLost: 0,
     npcRaids: 0,
     wildernessLost: 0,
+    wildernessInactiveLost: 0,
     mutinyLost: 0,
     storageFull: null,
   };
@@ -158,6 +159,9 @@ async function buildOfflineDigest(
       digest.mutinyLost += typeof detail.total === 'number' ? Math.floor(detail.total) : lossesTotal(detail.losses);
     } else if (row.type === 'wilderness_lost' && detail.cause === 'npc_attack') {
       digest.wildernessLost += 1;
+    } else if (row.type === 'wilderness_lost' && detail.cause === 'inactive') {
+      // 长期未上线被收回（v98，AISLG-238）：单独计数，日报里原因写「长期未上线」
+      digest.wildernessInactiveLost += 1;
     }
   }
 

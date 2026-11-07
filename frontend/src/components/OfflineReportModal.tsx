@@ -54,7 +54,7 @@ export function OfflineReportModal({ data, onClose }: OfflineReportModalProps) {
 
       <div role="离线日报弹窗-损失">
         <h4 className={h4}>{COPY.offlineReport.lossesTitle}</h4>
-        {offline.battles === 0 && offline.npcRaids === 0 && offline.wildernessLost === 0 ? (
+        {offline.battles === 0 && offline.npcRaids === 0 && offline.wildernessLost === 0 && (offline.wildernessInactiveLost ?? 0) === 0 ? (
           <p className="text-[12px] text-faint">{COPY.offlineReport.lossesNone}</p>
         ) : (
           <ul className="flex flex-col gap-0.5 text-[13px] text-dim">
@@ -63,6 +63,7 @@ export function OfflineReportModal({ data, onClose }: OfflineReportModalProps) {
             {(offline.mutinyLost ?? 0) > 0 ? <li className="text-warn">{STARVE_COPY.offline.mutinyRow(offline.mutinyLost)}</li> : null}
             {offline.npcRaids > 0 ? <li>{COPY.offlineReport.npcRaidsRow(offline.npcRaids)}</li> : null}
             {offline.wildernessLost > 0 ? <li className="text-warn">{COPY.offlineReport.wildernessLostRow(offline.wildernessLost)}</li> : null}
+            {(offline.wildernessInactiveLost ?? 0) > 0 ? <li className="text-warn">{COPY.offlineReport.wildernessInactiveRow(offline.wildernessInactiveLost)}</li> : null}
           </ul>
         )}
       </div>
