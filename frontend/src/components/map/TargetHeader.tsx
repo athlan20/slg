@@ -151,6 +151,12 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
             </div>
           </div>
           <div role="世界地图详情区-地块摘要" className="flex flex-col gap-1 text-[11.5px]">
+            {/* 丘陵上的野地视野 +2（AISLG-233）：地形是公开信息，别人的丘陵野地也显示 */}
+            {detail.kind === 'wilderness' && detail.terrain === 'hill' ? (
+              <p role="选中详情-高地视野" className="truncate text-accent">
+                {copy.EXTRA_MAP.hillVision.detail}
+              </p>
+            ) : null}
             {detail.kind !== 'npc_city' ? (
               <p className="truncate text-dim" title={detail.owner ? `${detail.owner.username} · ${tName(detail.owner.cityName)}` : undefined}>
                 {detail.owner ? COPY.worldMap.ownerRow(`${detail.owner.username} · ${tName(detail.owner.cityName)}`) : COPY.worldMap.ownerNone}

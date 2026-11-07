@@ -747,5 +747,7 @@
  *   新错误码 FACILITY_TILE_INVALID / FACILITY_MAX_LEVEL / FACILITY_BUILDING / FACILITY_LIMIT（资源不足沿用 INSUFFICIENT_RESOURCES）。
  *   新表 wilderness_facilities（换季清空）；fog_seen 新增 facility_level（上次看到的望楼等级，向后兼容）。
  *   迷雾开关 fog_enabled 关闭时望楼仍可建，但不产生视野效果。
+ *   同批的丘陵视野（AISLG-233）只改取值、不加字段、不升版本：占领的丘陵野地视野 +2（没望楼 3 → 5，
+ *   1 / 2 / 3 级望楼 6 / 8 / 10 → 8 / 10 / 12），上限 12；主城 / 分城 / 行军中的部队即使脚下是丘陵也不加成。
  */
 export const PROTOCOL_VERSION = 97;

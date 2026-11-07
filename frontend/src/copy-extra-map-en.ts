@@ -98,6 +98,10 @@ export const EXTRA_MAP_EN = {
     heroNotClaimed: 'The general has not joined yet: the first explorer can befriend them without fighting, others can after beating the garrison',
     reportRelics: (n: number) => `${n} relic(s) found`,
     watchtowerVision: 'Watchtower: 6 / 8 / 10 tiles (replaces the 3-tile wilderness vision)',
+    hillVision: 'Hills: wilderness and watchtower vision +2',
+  },
+  hillVision: {
+    detail: 'High ground: vision +2',
   },
   watchtower: {
     glyph: 'W',
