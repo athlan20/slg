@@ -122,10 +122,14 @@ export const EXTRA_STATE = {
     facilityLost: (pos: string, level: number) => `望楼毁了：${pos}（${level > 0 ? `${level} 级` : '在建'}），不退款`,
     npcCityOccupied: (pos: string, name: string, loot: string) =>
       `占领 NPC 城池 ${pos} 为分城${name ? `「${name}」` : ''}${loot ? `，接收库存${loot}` : ''}`,
-    npcRaidRepelled: (pos: string, losses: string) => `NPC 袭击 ${pos} 被击退${losses ? `，损失 ${losses}` : ''}`,
-    npcRaidWiped: (pos: string) => `NPC 袭击 ${pos}，驻军全灭、占领失效`,
-    npcWarning: (target: string, arriveAt: string, mins: string, armyMin: string, armyMax: string) =>
-      `斥候发现一支 NPC 部队正向 ${target} 进发，预计 ${arriveAt} 到达${mins}，兵力约 ${armyMin}–${armyMax}`,
+    /** v100（AISLG-240）：势力范围内的袭击显示势力名（who 为空时是普通 NPC 袭击） */
+    npcRaidRepelled: (pos: string, losses: string, who = '') =>
+      `${who ? `${who}的袭击` : 'NPC 袭击'} ${pos} 被击退${losses ? `，损失 ${losses}` : ''}`,
+    npcRaidWiped: (pos: string, who = '') => `${who ? `${who}的袭击` : 'NPC 袭击'} ${pos}，驻军全灭、占领失效`,
+    npcWarning: (target: string, arriveAt: string, mins: string, armyMin: string, armyMax: string, who = '') =>
+      who
+        ? `斥候发现${who}的部队正向 ${target} 进发，预计 ${arriveAt} 到达${mins}，兵力约 ${armyMin}–${armyMax}`
+        : `斥候发现一支 NPC 部队正向 ${target} 进发，预计 ${arriveAt} 到达${mins}，兵力约 ${armyMin}–${armyMax}`,
     minutesLeft: (n: number) => `，约 ${n} 分钟后`,
     playerWarning: (who: string, where: string, arriveAt: string, mins: string, armyMin: string, armyMax: string) =>
       `烽火台示警：${who} 正向${where}进发，预计 ${arriveAt} 到达${mins}，兵力约 ${armyMin}–${armyMax}`,

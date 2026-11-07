@@ -347,6 +347,8 @@ export const Op = {
   PUSH_STRATAGEM: 2028,
   /** S→C 推送：探索简报（v92，AISLG-224；部队去程新探索了区块时推给本账号，载荷 { report } = exploration_report 事件，见 fog-record.ts） */
   PUSH_EXPLORATION_REPORT: 2029,
+  /** S→C 推送：五方势力围攻分城（v100，AISLG-240；reason = warning 预警 / repelled 打输 / hit 扣城防 / swallowed 城被吞） */
+  PUSH_FACTION_SIEGE: 2030,
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
@@ -973,6 +975,8 @@ export interface NpcAttackWarningPushData {
   army?: Partial<Record<import('./protocol-army').TroopKind, number>>;
   /** 预计到达时刻（ISO 8601；随 timeScale 缩放后的实际结算时刻） */
   arriveAt: string;
+  /** v100（AISLG-240）：这次袭击属于哪家势力（不在任何势力范围内时没有这个字段，与上线前一致） */
+  faction?: import('./protocol-faction').FactionBanner;
 }
 
 export type {
@@ -1443,4 +1447,12 @@ export type {
 } from './protocol-move-city';
 // 五方势力（v99，AISLG-239）：势力标识、地块上的势力归属与 GET_FACTIONS 响应
 export { FACTION_KEYS, isFactionKey } from './protocol-faction';
-export type { FactionKey, FactionTileView, FactionView, GetFactionsResponseData } from './protocol-faction';
+export type {
+  FactionKey,
+  FactionTileView,
+  FactionView,
+  GetFactionsResponseData,
+  FactionBanner,
+  FactionSiegePushData,
+  FactionSiegePushReason,
+} from './protocol-faction';

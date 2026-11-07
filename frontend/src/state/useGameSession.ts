@@ -501,7 +501,7 @@ export function useGameSession(): GameSession {
   });
   const announcements = useAnnouncements(clientRef);
   const { refresh: refreshAnnouncements, onPush: onAnnouncementPush, reset: resetAnnouncements } = announcements;
-  const { checkOfflineReportRef, fetchServerBroadcasts, onBroadcastPush, onNpcWarningPush, resetNpcWarnings } = extras;
+  const { checkOfflineReportRef, fetchServerBroadcasts, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, resetNpcWarnings } = extras;
   // 赛季切片（v65 AISLG-134）：换季预告 / 维护遮罩 / 新赛季重连收尾；名人堂切片：打开页签时按需拉取
   const season = useSeasonSession(clientRef, connection === 'online');
   const { applyLogin: applySeasonLogin, onPush: onSeasonPush, onMaintenance: onSeasonMaintenance, refresh: refreshSeason, clear: seasonClear } = season;
@@ -616,6 +616,10 @@ export function useGameSession(): GameSession {
           ...(data.army ? { army: data.army } : {}),
           arriveAt: data.arriveAt,
         });
+      } else if (frame.op === Op.PUSH_FACTION_SIEGE) {
+        // v100（AISLG-240）：势力围攻——预警进来袭预警队列（同一弹窗，标题写势力名 + 当前城防值）；
+        // 守住的 / 扣城防的 / 城被吞的结果由事件流（faction_siege / faction_city_lost）随下方增量查询补齐
+        onFactionSiegePush(frame.data as unknown as import('../api/protocol').FactionSiegePushData);
       } else if (frame.op === Op.PUSH_AGENT_STATUS) {
         const data = frame.data as unknown as { online: boolean };
         setAgent((prev) => (prev ? { ...prev, agentOnline: data.online } : prev));
@@ -661,7 +665,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, applyCityItems, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
+    [scheduleSync, syncAll, applyCityItems, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {

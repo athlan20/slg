@@ -277,6 +277,43 @@ export const EXTRA_MAP = {
     cellAria: (name: string) => `${name}势力范围`,
     /** 全服播报：半径扩大（每周最多一次） */
     broadcastExpanded: (radius: number) => `五方势力扩张：势力范围半径扩大至 ${radius} 格`,
+    /** 势力出兵（v100，AISLG-240）：袭击旗号与围攻的文案，全部带势力名 */
+    siege: {
+      /** 势力袭击（普通 NPC 袭击打上旗号）的标题：如「南蛮来袭」 */
+      raidTitle: (name: string) => `${name}来袭`,
+      /** 势力袭击的出处行 */
+      raidFrom: (name: string, x: number, y: number) => `${name}（老巢 (${x}, ${y})）`,
+      /** 预警弹窗 / 警报胶囊的标题 */
+      warningTitle: (name: string) => `${name}围攻`,
+      /** 警报胶囊与军情摘要：哪家在打哪座分城 */
+      alert: (name: string, cityName: string) => `${name}围攻 · ${cityName}`,
+      /** 势力袭击的警报胶囊与军情摘要 */
+      raidAlert: (name: string, target: string) => `${name}来袭 · ${target}`,
+      /** 预警弹窗的目标行 */
+      targetBranch: '你的分城',
+      /** 预警弹窗的建议 */
+      advice: '守军被全灭时扣 35 城防，城防归零这座城就被吞。来得及的话：增援驻军、请盟友协防。守住一次，这家 24 小时内不再打这座城。',
+      /** 预警正文：兵力范围 + 预计到达 + 当前城防值 */
+      warning: (name: string, where: string, arriveAt: string, mins: string, armyMin: string, armyMax: string, durability: string) =>
+        `斥候来报：${name}围城军正向${where}进发，预计 ${arriveAt} 到达${mins}，兵力约 ${armyMin}–${armyMax}，当前城防 ${durability}`,
+      /** 预警里的城防行 */
+      durabilityLine: (durability: string) => `当前城防值 ${durability}`,
+      /** 守住（势力打输） */
+      repelled: (name: string, pos: string, durability: string) => `${name}围攻 ${pos} 被击退，城防 ${durability}`,
+      /** 被扣城防（势力打赢一次） */
+      hit: (name: string, pos: string, before: string, after: string, damage: string, truce: string) =>
+        `${name}攻破 ${pos} 守军（城防 ${before} → ${after}，一击 −${damage}）${truce}`,
+      /** 免战尾注 */
+      truceUntil: (clock: string) => `，城免战至 ${clock}`,
+      /** 城被吞 */
+      swallowed: (name: string, pos: string) => `${name}吞下了你的分城 ${pos}（城防归零）`,
+      /** 失城事件（faction_city_lost） */
+      cityLost: (name: string, cityName: string, pos: string) =>
+        `你的分城「${cityName}」${pos} 被${name}吞下：建筑与资源留在城里，分城名额已腾出，可在 4 小时后按占领 NPC 城的流程打回来`,
+      /** 全服播报：某人的城被势力吞下 */
+      broadcastSwallowed: (actor: string, cityName: string, faction: string, pos: string) =>
+        `${actor} 的分城「${cityName}」${pos} 被${faction}吞下`,
+    },
   },
   /** WorldReportsPanel：战报列表行的内联片段 */
   reports: {

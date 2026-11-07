@@ -104,10 +104,14 @@ export const EXTRA_STATE_EN = {
     facilityLost: (pos: string, level: number) => `Watchtower destroyed: ${pos} (${level > 0 ? `level ${level}` : 'under construction'}), no refund`,
     npcCityOccupied: (pos: string, name: string, loot: string) =>
       `Occupied the NPC city ${pos} as a branch city${name ? ` "${name}"` : ''}${loot ? `, stock taken over ${loot}` : ''}`,
-    npcRaidRepelled: (pos: string, losses: string) => `NPC raid on ${pos} was repelled${losses ? `, losses: ${losses}` : ''}`,
-    npcRaidWiped: (pos: string) => `NPC raid on ${pos}: the garrison was wiped out and the occupation lost`,
-    npcWarning: (target: string, arriveAt: string, mins: string, armyMin: string, armyMax: string) =>
-      `Scouts spotted an NPC force marching toward ${target}, arriving ${arriveAt}${mins}, army about ${armyMin}-${armyMax}`,
+    npcRaidRepelled: (pos: string, losses: string, who = '') =>
+      `${who ? `The ${who} raid on` : 'NPC raid on'} ${pos} was repelled${losses ? `, losses: ${losses}` : ''}`,
+    npcRaidWiped: (pos: string, who = '') =>
+      `${who ? `The ${who} raid on` : 'NPC raid on'} ${pos}: the garrison was wiped out and the occupation lost`,
+    npcWarning: (target: string, arriveAt: string, mins: string, armyMin: string, armyMax: string, who = '') =>
+      who
+        ? `Scouts spotted a ${who} force marching toward ${target}, arriving ${arriveAt}${mins}, army about ${armyMin}-${armyMax}`
+        : `Scouts spotted an NPC force marching toward ${target}, arriving ${arriveAt}${mins}, army about ${armyMin}-${armyMax}`,
     minutesLeft: (n: number) => `, about ${n} min later`,
     playerWarning: (who: string, where: string, arriveAt: string, mins: string, armyMin: string, armyMax: string) =>
       `Beacon alert: ${who} is marching toward ${where}, arriving ${arriveAt}${mins}, army about ${armyMin}-${armyMax}`,

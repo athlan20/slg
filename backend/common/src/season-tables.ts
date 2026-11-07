@@ -115,6 +115,8 @@ export const RESET_TABLES: readonly string[] = [
   // 五方势力（v99，AISLG-239）：老巢与吞城进度随赛季清空，下一季按 faction_enabled 重新生成
   //（势力城的归属记在 world_tiles.npc 快照里，随 world_tiles 一起清空）
   'factions',
+  // 势力出兵（v100，AISLG-240）：围攻记录（在围 / 已结算 / 每周吞城计数）随赛季清空
+  'faction_sieges',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

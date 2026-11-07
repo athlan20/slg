@@ -216,6 +216,27 @@ export const EXTRA_MAP_EN = {
     lairTile: (name: string) => `${name} lair`,
     cellAria: (name: string) => `${name} territory`,
     broadcastExpanded: (radius: number) => `The five factions expand: territory range is now ${radius} tiles`,
+    siege: {
+      raidTitle: (name: string) => `${name} incoming`,
+      raidFrom: (name: string, x: number, y: number) => `${name} (lair (${x}, ${y}))`,
+      warningTitle: (name: string) => `${name} siege`,
+      alert: (name: string, cityName: string) => `${name} siege · ${cityName}`,
+      raidAlert: (name: string, target: string) => `${name} attack · ${target}`,
+      targetBranch: 'your branch city',
+      advice: 'Each time the garrison is wiped out the city loses 35 defense; at 0 the city is swallowed. If you have time: reinforce the garrison or ask allies to assist. Hold once and this faction leaves the city alone for 24 hours.',
+      warning: (name: string, where: string, arriveAt: string, mins: string, armyMin: string, armyMax: string, durability: string) =>
+        `Scouts report: a ${name} siege army is marching toward ${where}, arriving ${arriveAt}${mins}, army about ${armyMin}-${armyMax}, city defense ${durability}`,
+      durabilityLine: (durability: string) => `city defense ${durability}`,
+      repelled: (name: string, pos: string, durability: string) => `${name} siege on ${pos} was repelled, city defense ${durability}`,
+      hit: (name: string, pos: string, before: string, after: string, damage: string, truce: string) =>
+        `${name} broke the defenders of ${pos} (city defense ${before} → ${after}, −${damage} per hit)${truce}`,
+      truceUntil: (clock: string) => `, the city is in truce until ${clock}`,
+      swallowed: (name: string, pos: string) => `${name} has swallowed your branch city ${pos} (its city defense hit zero)`,
+      cityLost: (name: string, cityName: string, pos: string) =>
+        `Your branch city "${cityName}" ${pos} was swallowed by ${name}: buildings and resources stay inside, the branch slot is freed, and you can take it back like an NPC city`,
+      broadcastSwallowed: (actor: string, cityName: string, faction: string, pos: string) =>
+        `${actor}'s branch city "${cityName}" ${pos} was swallowed by ${faction}`,
+    },
   },
   reports: {
     lossesNone: 'none',

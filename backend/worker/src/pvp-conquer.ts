@@ -61,6 +61,7 @@ import {
 import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
+import { cancelSiegesForCity } from '../../common/src/faction-siege-db';
 import { clearCityTroopPools, recordPoolTroops } from '../../common/src/troop-pools-db';
 import { captureAfterPvpBattle } from './pvp-capture';
 
@@ -439,6 +440,8 @@ async function transferCityOwnership(
     `UPDATE npc_attacks SET resolved_at = clock_timestamp() WHERE target_city_id = $1 AND resolved_at IS NULL`,
     [cityId],
   );
+  // v100（AISLG-240）：城已换主，正在围攻这座城的势力本次围攻作废（不战斗）
+  await cancelSiegesForCity(client, cityId);
 
   // 城行：换主 + 城守卸任（武将仍归原主人）+ 城防回满 + 6 小时保护；建筑 / 资源 / 名城名保留
   // v85（AISLG-212）：原主人的伤兵 / 俘虏 / 逃兵池一并清空（城池易主，池子不随城移交）

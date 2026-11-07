@@ -476,6 +476,8 @@ export const PUSH_NPC_ATTACK_WARNING: PushOpDoc = {
     { name: 'armyKinds', type: 'object', desc: '仅 intel=kinds：各兵种大致数量范围 { 兵种: { min, max } }（±20% 取整）。' },
     { name: 'army', type: 'object', desc: '仅 intel=exact：精确编成 { 兵种: 数量 }。' },
     { name: 'arriveAt', type: 'string', desc: '预计到达时刻（ISO 8601；已按 timeScale 缩放，与实际结算时刻一致）。烽火台每级让预警提前量 +10%（10 级翻倍）：袭击从发起到到达的时长 = 基础提前量 ×（1 + 0.1 × 烽火台等级），预警在发起时即发出。' },
+    { name: 'faction', type: 'object', desc: 'v100（AISLG-240）：这次袭击属于哪家势力 { key, name, nameEn }（如南蛮）。只在该格落在某家势力范围内时有值——范围外的袭击与上线前完全一样，没有这个字段。发起频率（全服仍每 120 分钟一次）与目标选择都不变，只是打上了旗号，玩家能知道「是谁在打自己」。' },
+    { name: 'lair', type: 'object', desc: 'v100：出发老巢坐标 { x, y }（与 faction 同时出现）。' },
   ],
   examples: [
     { op: Op.PUSH_NPC_ATTACK_WARNING, push: true, data: { attackId: '3f1c2a4e-0000-4000-8000-000000000001', x: 128, y: 90, target: 'wilderness', terrain: 'forest', level: 2, armyMin: 17, armyMax: 27, arriveAt: '2026-10-01T08:15:00.000Z' } },

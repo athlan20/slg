@@ -49,6 +49,26 @@ export function factionDefOf(key: string | null | undefined): FactionDef | null 
   return FACTIONS.find((def) => def.key === key) ?? null;
 }
 
+/**
+ * 一家的旗号（v100，AISLG-240）：袭击 / 围攻的预警、事件与战报文案里用它标「是谁在打你」。
+ * 未知标识返回 null——调用方按「没有旗号」处理（与上线前的普通 NPC 行为一致）。
+ */
+export interface FactionBannerView {
+  key: FactionKey;
+  name: string;
+  nameEn: string;
+}
+
+export function factionBannerOf(key: string | null | undefined): FactionBannerView | null {
+  const def = factionDefOf(key);
+  return def ? { key: def.key, name: def.name, nameEn: def.nameEn } : null;
+}
+
+/** 一家的中文名（未知标识给通用名「势力」，用于战报 / 事件文案兜底） */
+export function factionNameOf(key: string | null | undefined): string {
+  return factionDefOf(key)?.name ?? '势力';
+}
+
 /** 一家的定义（已知合法标识时用；调用方保证 key 来自 FACTION_KEYS） */
 export function factionDef(key: FactionKey): FactionDef {
   const def = factionDefOf(key);

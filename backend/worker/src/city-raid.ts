@@ -37,6 +37,13 @@ export interface NpcCityRaidTarget {
   x: number;
   y: number;
   govLevel: number;
+  /** v100（AISLG-240）：这次袭击的势力旗号（null / 缺省 = 不在任何势力范围内的普通 NPC 袭击） */
+  faction?: { key: string; name: string; nameEn: string } | null;
+}
+
+/** 袭击方的名字（战报 / 事件文案）：势力范围内的袭击显示势力名，如「南蛮袭击部队」 */
+function attackerLabel(faction: NpcCityRaidTarget['faction']): string {
+  return faction ? `${faction.name}袭击部队` : 'NPC 袭击部队';
 }
 
 /** 发起时固定的袭击编成与强度（v23 AISLG-57 两阶段：预警先行，到达按固定编成结算） */
@@ -116,7 +123,7 @@ export async function resolveNpcCityRaid(
   const raidCasualties = await recordDefensePoolCasualties(client, target.cityId, setup, result, assistLosses, true);
   const reportId = await saveBattleReport(
     client, target.accountId, 'defender', !result.attackerWon, 'city_raid',
-    target.x, target.y, result, 'NPC 袭击部队', defenderName, wall, notifies,
+    target.x, target.y, result, attackerLabel(target.faction), defenderName, wall, notifies,
     null, guard ? heroBattleView(guard, garrisonTotal) : null,
     null, null, raidCasualties,
   );
@@ -163,6 +170,7 @@ export async function resolveNpcCityRaid(
       detail: {
         x: target.x, y: target.y, target: 'city', level: raidLevel,
         outcome: 'repelled',
+        ...(target.faction ? { faction: target.faction } : {}),
         npcPower, garrisonPower, rounds: result.rounds,
         losses: result.defender.losses, reportId,
       },
@@ -212,6 +220,7 @@ export async function resolveNpcCityRaid(
     detail: {
       x: target.x, y: target.y, target: 'city', level: raidLevel,
       outcome: 'garrison_lost', loot, truceUntil: truceUntil().toISOString(),
+      ...(target.faction ? { faction: target.faction } : {}),
       npcPower, garrisonPower, rounds: result.rounds,
       losses: result.defender.losses, reportId,
     },

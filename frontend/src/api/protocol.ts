@@ -301,6 +301,8 @@ export const Op = {
   PUSH_STRATAGEM: 2028,
   /** S→C 探索简报（v92，AISLG-224） */
   PUSH_EXPLORATION_REPORT: 2029,
+  /** S→C 势力围攻分城（v100，AISLG-240）：reason = warning / repelled / hit / swallowed */
+  PUSH_FACTION_SIEGE: 2030,
   /** 赛季预告 / 换季中 / 新赛季开始（v65，AISLG-134）：全部在线连接收到，含 Agent；started 后服务端断开全部连接 */
   PUSH_SEASON: 2023,
   /** 查询将星塔（v55，AISLG-146） */
