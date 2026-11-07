@@ -148,10 +148,8 @@ async function completeLogin(
   conn.username = success.account.username;
   conn.role = success.role;
   conn.sessionId = success.sessionId;
-  if (success.role === 'player') {
-    // v66（AISLG-181）：登录算活跃（联盟盟主不活跃判断）；失败不影响登录
-    touchActive(ctx.pool, [success.account.id]).catch(() => undefined);
-  }
+  // v66（AISLG-181）：登录算活跃（联盟盟主不活跃判断）；AISLG-236 起 Agent 登录同样算，失败不影响登录
+  touchActive(ctx.pool, [success.account.id]).catch(() => undefined);
   if (success.role === 'agent') {
     await recordAgentPresence(ctx, success.account.id, EventType.AGENT_CONNECTED);
     recordAgentModelLogin(ctx.pool, success.account.id, success.agentModel);
