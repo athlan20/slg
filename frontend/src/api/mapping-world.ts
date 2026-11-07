@@ -461,7 +461,7 @@ export function serverBroadcastText(view: {
   type: string;
   detail: Record<string, unknown>;
 }): string {
-  const { YT_COPY, HERO_COPY, EXTRA_STATE, ANNOUNCEMENT_COPY, CITY_COPY, ALLIANCE_COPY } = getCopy();
+  const { YT_COPY, HERO_COPY, EXTRA_STATE, ANNOUNCEMENT_COPY, CITY_COPY, ALLIANCE_COPY, EXTRA_MAP } = getCopy();
   const actor =
     typeof view.detail.username === 'string'
       ? view.detail.cityName
@@ -508,6 +508,9 @@ export function serverBroadcastText(view: {
     case 'arena_champion':
       // v53 AISLG-145：登上第 1 名（previous 为被取代的原第 1 名，可能是守擂者）
       return EXTRA_STATE.broadcast.arenaChampion(actor, String(view.detail.previous ?? EXTRA_STATE.mapping.unknownPlayer));
+    case 'faction_expanded':
+      // v99（AISLG-239）：五方势力的范围半径扩大（每周最多一次）
+      return EXTRA_MAP.faction.broadcastExpanded(Number(view.detail.radius ?? 0));
     case 'announcement':
       // v60 AISLG-162：运维发布公告时的一句标题（标题取中文原文）
       return ANNOUNCEMENT_COPY.broadcast.text(String(view.detail.title ?? ''));

@@ -1,4 +1,5 @@
-// 手机端图层开关（AISLG-231）：宽度 < 640px 时卡片标题栏右侧给一个「图层」按钮，点开是 5 个复选框的面板；
+// 手机端图层开关（AISLG-231）：宽度 < 640px 时卡片标题栏右侧给一个「图层」按钮，点开是全部图层复选框的面板
+//（AISLG-239 起 6 个：多一个「势力范围」）；
 // >= 640px 保持横排复选框。面板每行 ≥44px、点面板外 / Esc / 点地图格子都关闭（点格子仍选中），
 // 勾选立刻生效且面板不自动关闭，DOM 里同一图层复选框的 role 只出现一次，英文界面文案英文、role 仍中文。
 // 前置：playwright.config.ts 会拉起后端与前端；行军图层用直插 marches 验证（1 小时后到达，不会被 Worker 结算掉）。
@@ -18,8 +19,8 @@ const buttonRole = `${MAP_ROLE}-图层按钮`;
 const panelRole = `${MAP_ROLE}-图层面板`;
 const menuRole = `${MAP_ROLE}-图层菜单`;
 const inlineRole = `${MAP_ROLE}-图层`;
-/** 5 个图层的中文 role 后缀（role 不随界面语言变） */
-const LAYER_NAMES = ['流寇·商队', '黄巾', '领地', '行军', '产出'] as const;
+/** 图层的中文 role 后缀（role 不随界面语言变）；顺序与 mapLayerOptions 一致，AISLG-239 起加了「势力范围」 */
+const LAYER_NAMES = ['流寇·商队', '黄巾', '领地', '行军', '产出', '势力范围'] as const;
 const checkboxRole = (name: string) => `${MAP_ROLE}-图层-${name}`;
 const rowRole = (name: string) => `${MAP_ROLE}-图层行-${name}`;
 
@@ -47,7 +48,7 @@ async function seedMarch(username: string): Promise<void> {
 }
 
 test.describe('手机端图层按钮（AISLG-231）', () => {
-  test('390 宽：按钮开面板，5 项齐全、每行 ≥44px，勾选行军立刻生效且面板不关闭', async ({ page }) => {
+  test('390 宽：按钮开面板，6 项齐全、每行 ≥44px，勾选行军立刻生效且面板不关闭', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const username = uniqueUsername('e2e_lyr_menu');
     await seedAccount(username, E2E_PASSWORD);
@@ -74,7 +75,7 @@ test.describe('手机端图层按钮（AISLG-231）', () => {
     expect(panelBox!.x, '面板超出屏幕左边界').toBeGreaterThanOrEqual(0);
     expect(panelBox!.x + panelBox!.width, '面板超出屏幕右边界').toBeLessThanOrEqual(390);
 
-    // 5 项齐全，同一个复选框的 role 只出现一次（不靠 CSS 藏第二份）
+    // 6 项齐全，同一个复选框的 role 只出现一次（不靠 CSS 藏第二份）
     for (const name of LAYER_NAMES) {
       await expect(page.locator(`[role="${checkboxRole(name)}"]`)).toHaveCount(1);
       await expect(page.locator(`[role="${rowRole(name)}"]`)).toBeVisible();
@@ -210,6 +211,8 @@ test.describe('手机端图层按钮（AISLG-231）', () => {
     await expect(page.locator(`[role="${panelRole}"]`)).toBeVisible();
     await expect(page.locator(`[role="${rowRole('行军')}"]`)).toContainText('Marches');
     await expect(page.locator(`[role="${rowRole('产出')}"]`)).toContainText('Yield');
+    // 五方势力的图层（AISLG-239）：英文文案是 Factions
+    await expect(page.locator(`[role="${rowRole('势力范围')}"]`)).toContainText('Factions');
     await expect(page.locator(`[role="${checkboxRole('行军')}"]`)).toHaveCount(1);
   });
 });

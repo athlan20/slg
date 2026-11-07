@@ -30,6 +30,8 @@ import {
 import type { MoveCityPreviewData, MoveCityResponseData } from '../../common/src/protocol-move-city';
 import { isUnknownTarget } from './fog-march';
 import { getFogEnabled } from '../../common/src/fog-config';
+import { getFactionEnabled } from '../../common/src/faction-config';
+import { inFactionLairClearance } from '../../common/src/faction';
 import { hasUnclaimedRelicAt } from '../../common/src/fog-relic-db';
 
 export interface Point {
@@ -86,6 +88,10 @@ export async function moveCityTx(
     }
     const tile = await loadTileBrief(client, target.x, target.y);
     if (!moveTileUsable(tile)) {
+      return { ok: false, code: 'MOVE_CITY_TILE_INVALID' };
+    }
+    // 五方势力（v99，AISLG-239）：老巢周围 5 格不放玩家（含老巢本身），与注册落位同一口径
+    if (getFactionEnabled() && inFactionLairClearance(target.x, target.y)) {
       return { ok: false, code: 'MOVE_CITY_TILE_INVALID' };
     }
     // 战争迷雾（v93，AISLG-227）：未领取的遗迹格不能迁入（与随机落城的跳过规则一致）

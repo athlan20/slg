@@ -47,6 +47,8 @@ export const SERVER_BROADCAST_TYPES = [
   // v94（AISLG-228）名将离开主人（下野 / 被俘超时）与被俘：走普通限频（不带坐标）
   'hero_left',
   'hero_captured',
+  // v99（AISLG-239）五方势力：势力范围半径扩大（每周最多一次，必达）
+  'faction_expanded',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

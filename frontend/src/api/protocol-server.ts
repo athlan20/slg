@@ -86,6 +86,8 @@ export const SERVER_BROADCAST_TYPES = [
   'famous_first_explored',
   'hero_site_first_explored',
   'legendary_relic_claimed',
+  // v99（AISLG-239）五方势力：势力范围半径扩大（每周最多一次）
+  'faction_expanded',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

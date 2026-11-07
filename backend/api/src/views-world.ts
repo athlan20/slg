@@ -30,6 +30,8 @@ import { FAMOUS_PRODUCTION_BONUS_PERCENT, famousRecoversAt, famousStage } from '
 import { famousEffectView } from '../../common/src/famous-effects';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
 import { facilityBuildingView, loadFacility, tileFacilityView } from '../../common/src/facility-db';
+import { factionDefOf } from '../../common/src/faction';
+import { getFactionEnabled } from '../../common/src/faction-config';
 import {
   TERRAIN_INFO,
   npcStockTierOf,
@@ -111,7 +113,7 @@ const TILE_SELECT = `
          si.detail->'defenses' AS intel_defenses,
          si.detail->>'detail' AS intel_detail, si.detail->'garrisonTotal' AS intel_total,
          row_to_json(yc) AS camp_json,
-         wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit,
+         wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit, wt.faction_lair,
          wt.reserve, wt.reserve_at, c.settled_at AS owner_settled_at,
          wf.kind AS facility_kind, wf.level AS facility_level,
          EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero) AS wild_claimed
@@ -153,6 +155,25 @@ function isTerrain(value: unknown): value is TerrainKind {
 
 function isTileKind(value: unknown): value is TileKind {
   return value === 'wilderness' || value === 'npc_city' || value === 'city';
+}
+
+/**
+ * 势力归属（v99，AISLG-239）：被某方势力吞并的 NPC 城（归属在 npc 快照里）与老巢地块。
+ * 开关关闭时恒为 null（关闭时不得有任何势力内容，与上线前一致）。
+ */
+function factionView(row: TileQueryRow): TileView['faction'] {
+  if (!getFactionEnabled()) {
+    return null;
+  }
+  const lair = factionDefOf(row.faction_lair);
+  if (lair) {
+    return { key: lair.key, name: lair.name, nameEn: lair.nameEn, isLair: true };
+  }
+  if (row.kind !== 'npc_city' || !row.npc) {
+    return null;
+  }
+  const def = factionDefOf((row.npc as NpcCitySnapshot).faction);
+  return def ? { key: def.key, name: def.name, nameEn: def.nameEn, isLair: false } : null;
 }
 
 /** 名城标识（v24 AISLG-56）：阶段按当前时刻惰性推导，对全服可见（地图悬浮提示用） */
@@ -265,6 +286,8 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     heroSite: null,
     // 望楼（v97，AISLG-232）：能看到这块地就能看到有望楼与等级（不含建造进度）
     facility: facilityOf(row),
+    // 势力归属（v99，AISLG-239）：势力城 / 老巢地块；开关关闭时恒为 null
+    faction: factionView(row),
     // 战争迷雾（v92）：视图默认实时可见；开启迷雾时由 fog-view.ts 按探索状态改写
     fog: 'visible',
     seenAt: null,

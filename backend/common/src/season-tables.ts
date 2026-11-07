@@ -112,6 +112,9 @@ export const RESET_TABLES: readonly string[] = [
   // 遗迹与首探（v93，AISLG-227）：遗迹随新世界重新生成，首探记录随赛季清空
   'fog_relics',
   'fog_first_explores',
+  // 五方势力（v99，AISLG-239）：老巢与吞城进度随赛季清空，下一季按 faction_enabled 重新生成
+  //（势力城的归属记在 world_tiles.npc 快照里，随 world_tiles 一起清空）
+  'factions',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

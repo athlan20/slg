@@ -24,6 +24,8 @@ export const EXTRA_MAP = {
     enemy: '敌',
     /** 野地图标兜底（TargetHeader，取地形名首字失败时） */
     wild: '野',
+    /** 势力老巢（v99，AISLG-239：地图与迷雾层上的单字标记） */
+    factionLair: '势',
   },
   /** 顶栏主动免战按钮的单字图形（TruceShieldBadge） */
   truceBadge: {
@@ -246,6 +248,35 @@ export const EXTRA_MAP = {
   duration: {
     hm: (hours: number, minutes: number) => `${hours} 小时 ${minutes} 分`,
     m: (minutes: number) => `${minutes} 分`,
+  },
+  /** 五方势力（v99，AISLG-239）：图层开关 / 面板 / 范围与老巢标记 / 半径扩大的播报 */
+  faction: {
+    /** 图层面板里的开关名 */
+    layer: '势力范围',
+    /** 面板标题与读屏名称 */
+    panelTitle: '五方势力',
+    panelAria: '五方势力面板',
+    /** 面板每行的字段标签 */
+    leaderLabel: '首领',
+    lairLabel: '老巢',
+    radiusLabel: '范围',
+    citiesLabel: '持城',
+    /** 半径单位（格） */
+    radius: (radius: number) => `${radius} 格`,
+    /** 持城数单位（座） */
+    cities: (count: number) => `${count} 座`,
+    /** 老巢坐标（(x, y)） */
+    lair: (x: number, y: number) => `(${x}, ${y})`,
+    /** 地图上老巢标记的提示 */
+    lairHint: (name: string, leader: string) => `${name}老巢 · 首领${leader}`,
+    /** 势力城地块的悬浮说明 */
+    cityHint: (name: string) => `${name}势力城`,
+    /** 老巢地块的悬浮说明 */
+    lairTile: (name: string) => `${name}老巢`,
+    /** 势力范围色块的读屏文本 */
+    cellAria: (name: string) => `${name}势力范围`,
+    /** 全服播报：半径扩大（每周最多一次） */
+    broadcastExpanded: (radius: number) => `五方势力扩张：势力范围半径扩大至 ${radius} 格`,
   },
   /** WorldReportsPanel：战报列表行的内联片段 */
   reports: {
