@@ -52,10 +52,12 @@ import {
 } from './handlers-market';
 import {
   handleGetTile,
+  handleGetVisibleMarches,
   handleGetWorldMap,
   handleMarch,
 } from './handlers-world';
 import { handleRecallGarrison, readRecallTroops } from './handlers-recall';
+import { handleFacilityBuild } from './handlers-facility';
 import { handleGetMapOverview } from './map-overview';
 import { handleAnnouncementOp } from './handlers-announcement';
 import { handleAllianceOp } from './handlers-alliance';
@@ -88,6 +90,7 @@ import { handleClaimActivity, handleClaimQuest, handleGetActivities, handleGetQu
 import { handleGetLeaderboard } from './handlers-leaderboard';
 import { effectiveLevelSql } from '../../common/src/production';
 import { handleAgentDailyReport, handleGetOfflineReport, markPlayerOffline } from './handlers-offline';
+import { touchActive } from '../../common/src/alliance-db';
 import { loadCityState } from './views';
 import { cityTitle } from '../../common/src/nobility';
 import { CITY_SCOPED_OPS, runWithCity } from './city-scope';
@@ -220,6 +223,10 @@ async function dispatchOp(
       break;
     case Op.GET_WORLD_MAP:
       await handleGetWorldMap(ctx, conn, op, seq, data);
+      break;
+    // v96（AISLG-230）：窗口内视野里的他人部队
+    case Op.GET_VISIBLE_MARCHES:
+      await handleGetVisibleMarches(ctx, conn, op, seq, data);
       break;
     case Op.GET_MAP_OVERVIEW:
       await handleGetMapOverview(ctx, conn, op, seq);
@@ -639,6 +646,16 @@ async function dispatchOp(
     case Op.GET_HALL_OF_FAME:
       await handleGetHallOfFame(ctx, conn, op, seq, data);
       break;
+    case Op.FACILITY_BUILD: {
+      const x = data?.x;
+      const y = data?.y;
+      if (!Number.isInteger(x) || !Number.isInteger(y)) {
+        respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
+        break;
+      }
+      await handleFacilityBuild(ctx, conn, op, seq, x as number, y as number);
+      break;
+    }
     case Op.BUILD_FARM:
       // 兼容入口（协议 v2 及以前）：等价于 BUILD 且 kind='farm'，忽略请求参数
       await handleBuild(ctx, conn, op, seq, 'farm');
@@ -718,8 +735,8 @@ async function handleGetEvents(
   respondOk(ctx.registry, conn, op, seq, { events: rows.map(toEventView) });
 }
 
-/** 连接关闭时调用：Agent 离线写事件并推送最新 Agent 在线状态；玩家的最后一条
- *  玩家连接断开时记录离线时刻（离线日报的统计起点，v23 AISLG-54） */
+/** 连接关闭时调用：Agent 离线写事件并推送最新 Agent 在线状态，并刷新一次活跃时刻（AISLG-236）；
+ *  玩家的最后一条玩家连接断开时记录离线时刻（离线日报的统计起点，v23 AISLG-54） */
 export async function handleConnectionClosed(ctx: HandlerContext, conn: ConnInfo): Promise<void> {
   onWxConnectionClosed(ctx, conn);
   const accountId = ctx.registry.peekAccountId(conn);
@@ -748,6 +765,13 @@ export async function handleConnectionClosed(ctx: HandlerContext, conn: ConnInfo
     await recordAgentPresence(ctx, accountId, EventType.AGENT_DISCONNECTED);
   } catch (err) {
     console.error('write agent_disconnected failed:', err);
+  }
+  // AISLG-236：Agent 断线算活跃。只刷 last_active_at；last_online_at 仍只由玩家连接全部断开时写
+  //（离线日报的起点不能被 Agent 断线带动，所以不复用 markPlayerOffline）
+  try {
+    await touchActive(ctx.pool, [accountId]);
+  } catch (err) {
+    console.error('touch active on agent disconnect failed:', err);
   }
   if (wasOnline !== isOnline) {
     pushAgentStatus(ctx, accountId, isOnline);

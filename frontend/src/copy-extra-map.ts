@@ -46,6 +46,10 @@ export const EXTRA_MAP = {
   layers: {
     marches: '行军',
     yield: '产出',
+    /** 手机端图层入口按钮与面板（AISLG-231）：宽度 < 640px 时横排复选框收进这里 */
+    button: '图层',
+    /** 面板的读屏名称 */
+    panelAria: '地图图层',
   },
   /** 行军图层（AISLG-216）：任务单字、倒计时、图标提示、同格合并与视野外箭头 */
   march: {
@@ -118,11 +122,82 @@ export const EXTRA_MAP = {
     heroClaimed: '名将已出山：处所与名字保留，首探只发资源，不再给结交资格',
     heroNotClaimed: '名将未出山：首探者不打守军即可结交，其他人打赢守军也可结交',
     reportRelics: (n: number) => `发现遗迹 ${n} 处`,
+    /** 视野半径说明里的一行（AISLG-232）：望楼把这块野地的视野扩到 6 / 8 / 10 格 */
+    watchtowerVision: '望楼：6 / 8 / 10 格（取代野地原来的 3 格）',
+    /** 视野半径说明里的一行（AISLG-233）：丘陵上的野地与望楼再加 2 格 */
+    hillVision: '丘陵上的野地和望楼视野 +2',
+  },
+  /** 丘陵视野（AISLG-233）：丘陵野地的详情里在地形之后补一行 */
+  hillVision: {
+    detail: '高地：视野 +2',
+  },
+  /** 望楼（AISLG-232，v97）：地图标记、详情区里的建造 / 升级一栏 */
+  watchtower: {
+    /** 地图格上的小标记（单字；英文用 W) */
+    glyph: '望',
+    title: (level: number, radius: number) => `望楼 Lv${level}（视野 ${radius} 格）`,
+    aria: (level: number) => `望楼 ${level} 级`,
+    /** 详情区标题与等级行 */
+    sectionTitle: '望楼',
+    levelLine: (level: number, radius: number) => `${level} 级 · 视野 ${radius} 格`,
+    noneLine: '这块地上还没有望楼',
+    build: '建造',
+    upgrade: '升级',
+    building: (target: number) => `建造中（升到 ${target} 级）`,
+    buildingUpgrade: (target: number) => `升级中（升到 ${target} 级）`,
+    left: (time: string) => `剩余 ${time}`,
+    costLine: (gold: number, wood: number, stone: number) => `花费 金 ${gold} / 木 ${wood} / 石 ${stone}`,
+    timeLine: (time: string) => `耗时 ${time}`,
+    costAndTime: (gold: number, wood: number, stone: number, time: string) => `金 ${gold} / 木 ${wood} / 石 ${stone} · ${time}`,
+    maxLevel: '已满级（3 级）',
+    quota: (count: number, limit: number) => `本城望楼 ${count}/${limit}`,
+    quotaFull: (limit: number) => `本城望楼已满 ${limit} 座（升级现有望楼不受限制）`,
+    fogOff: '迷雾未开启：望楼照常可建，但不产生视野效果',
+    /** 别人的望楼（不含进度） */
+    othersLine: (level: number, radius: number) => `这里的望楼 ${level} 级（视野 ${radius} 格）`,
+    /** 发起建造后写进事件流的一句 */
+    startedLog: (x: number, y: number) => `已开工：(${x}, ${y}) 的望楼`,
+    /** 失败提示（服务端错误码 → 人读文案） */
+    errors: {
+      tileInvalid: '只能在自己占领的野地上建望楼',
+      maxLevel: '这块地的望楼已满级（3 级）',
+      building: '这块地的望楼正在建造 / 升级中',
+      limit: '这座城的望楼已满 2 座（升级现有望楼不受限制）',
+      fallback: '望楼建造失败，请稍后再试',
+    },
   },
   raid: {
     label: (time: string) => `来袭 ${time}`,
     /** 视野外红色箭头的提示 */
     arrowHint: '点击跳到被袭击的格子',
+  },
+  /** 他人部队图层（AISLG-230）：图例、图标提示与规模档位；颜色依次为来袭 / 敌对 / 中立 / 同盟友盟 */
+  enemyMarch: {
+    legend: '他人部队',
+    /** 图标里的单字（英文用短码 E = Enemy） */
+    glyph: '他',
+    legendIncoming: '来袭自己',
+    legendHostile: '敌对',
+    legendNeutral: '中立',
+    legendFriend: '同盟 / 友盟',
+    /** 规模档位（协议值 small / medium / large） */
+    scale: {
+      small: '小股',
+      medium: '中军',
+      large: '大军',
+    } as Record<string, string>,
+    /** 图标提示：玩家名 / 联盟 / 规模 / 去程还是返程 */
+    tipOwner: (name: string) => `玩家：${name}`,
+    tipAlliance: (name: string) => `联盟：${name}`,
+    tipNoAlliance: '联盟：无',
+    tipScale: (label: string) => `规模：${label}`,
+    tipReturning: '返程中',
+    tipOutbound: '前往目标',
+    /** 提示底部说明：看不到目标与时刻，也不发起交互 */
+    tipNote: '只能看到视野内的部队，看不到目标与到达时间',
+    /** 读屏文案 */
+    aria: (owner: string, scale: string, returning: boolean) =>
+      `${owner} 的部队 · ${scale} · ${returning ? '返程中' : '前往目标'}`,
   },
   /** 领地图例（AISLG-216）：四种关系色 + 连片加成金边 */
   territoryLegend: {

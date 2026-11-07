@@ -26,11 +26,13 @@ import { processYellowTurban } from './yt-tick';
 import { processStarvation } from './starvation-tick';
 import { processTroopPools } from './troop-pool-tick';
 import { processDueReserves } from './reserve-tick';
+import { processDueFacilities } from './facility-tick';
 import { processHeroSalaries } from './hero-salary-tick';
 import { processHeroTraining } from './hero-training-tick';
 import { processHeroLoyalty } from './hero-loyalty-tick';
 import { processArenaRewards } from './arena-tick';
 import { processAlliances } from './alliance-tick';
+import { processInactiveTerritories } from './inactive-tick';
 import { processBattlefield } from './battlefield-tick';
 import { processMarketOrders } from './market-tick';
 import { processLuoyang } from './luoyang-tick';
@@ -140,6 +142,17 @@ async function main(): Promise<void> {
         console.error('worker reserve tick failed:', err instanceof Error ? err.message : err);
       }
     }
+    if (due.facilities) {
+      try {
+        // v97（AISLG-232）：望楼（野地设施）到点建成 / 升级完成（事件 facility_completed + 推送地块变化）
+        const facilitiesDone = await processDueFacilities(pool);
+        if (facilitiesDone > 0) {
+          console.log(`completed ${facilitiesDone} facility build(s)`);
+        }
+      } catch (err) {
+        console.error('worker facility tick failed:', err instanceof Error ? err.message : err);
+      }
+    }
     try {
       // v36（AISLG-114）：武将俸禄——每小时（随缩放）从主城扣，金币不足记欠饷
       await processHeroSalaries(pool);
@@ -169,6 +182,15 @@ async function main(): Promise<void> {
       await processAlliances(pool);
     } catch (err) {
       console.error('worker alliance tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v98（AISLG-238）：本人和 Agent 都 7 天没上线的账号，名下野地全部收回（内部节流到每小时）
+      const reclaimed = await processInactiveTerritories(pool);
+      if (reclaimed.accounts > 0) {
+        console.log(`reclaimed ${reclaimed.tiles} wilderness tile(s) from ${reclaimed.accounts} inactive account(s)`);
+      }
+    } catch (err) {
+      console.error('worker inactive territory tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v79（AISLG-200）：洛阳窗口回满城防 / 预告 / 开始 / 结束播报（内部节流到 5 秒）

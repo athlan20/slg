@@ -1,5 +1,5 @@
 {
-  "version": 95,
+  "version": 98,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -873,7 +873,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 95,
+                "protocolVersion": 98,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -922,7 +922,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 95,
+                "protocolVersion": 98,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -942,14 +942,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/92 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/95 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 92,
+              "docVersion": 95,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -964,8 +964,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 95,
-                "docNotice": "接口文档已从 v92 更新到 v95：请 GET /agent-api/changes/92 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 98,
+                "docNotice": "接口文档已从 v95 更新到 v98：请 GET /agent-api/changes/95 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -1279,7 +1279,7 @@
         {
           "name": "city.territory",
           "type": "array",
-          "desc": "本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。"
+          "desc": "本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）, facility 这块地上的望楼（v97 新增，AISLG-232；{ kind（恒为 watchtower）, level 已建成等级 0..3, visionRadius 视野半径 1 级 6 / 2 级 8 / 3 级 10 格（丘陵上的野地各 +2：8 / 10 / 12，上限 12；level 为 0 时 0，AISLG-233）, building: { toLevel, finishAt } | null 进行中的建造 / 升级 }，没盖为 null）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。"
         },
         {
           "name": "gift",
@@ -2750,7 +2750,7 @@
         {
           "name": "events[].type",
           "type": "string",
-          "desc": "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost' | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）· 'hero_left'（v94，AISLG-228，名将下野，detail = { heroId, heroName, cause = loyalty / captive_expired }，胜方得结交资格时另有一条 qualified = true）/ 'hero_captured'（v94，名将被俘，主人与胜方各一条，detail = { heroId, heroName, ownerUsername, captorUsername, capturedUntil, ransomGold, side }）/ 'hero_ransomed'（v94，名将被赎回，detail = { heroId, heroName, ransomGold, taxShare, destroyed, side }）/ 'hero_loyalty_low'（v94，忠诚度降到 30 及以下，detail = { heroId, heroName, loyalty }）。"
+          "desc": "事件类型：'build_started' | 'build_queued' | 'build_completed' | 'build_cancelled'（v7） | 'recruit_started' | 'recruit_queued' | 'recruit_completed' | 'recruit_cancelled'（v11） | 'march_started' | 'march_completed' | 'wilderness_occupied' | 'wilderness_lost'（detail = { x, y, cause = npc_attack / recall / conquest / inactive（v98，AISLG-238，账号长期未上线被收回）, terrain, level }） | 'npc_city_occupied' | 'npc_raid'（v12） | 'city_renamed'（v7） | 'account_reset'（v9，重置后事件流只剩这一条） | 'agent_connected' | 'agent_disconnected' | 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） | 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） | 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） | 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） | 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）· 'hero_left'（v94，AISLG-228，名将下野，detail = { heroId, heroName, cause = loyalty / captive_expired }，胜方得结交资格时另有一条 qualified = true）/ 'hero_captured'（v94，名将被俘，主人与胜方各一条，detail = { heroId, heroName, ownerUsername, captorUsername, capturedUntil, ransomGold, side }）/ 'hero_ransomed'（v94，名将被赎回，detail = { heroId, heroName, ransomGold, taxShare, destroyed, side }）/ 'hero_loyalty_low'（v94，忠诚度降到 30 及以下，detail = { heroId, heroName, loyalty }）。"
         },
         {
           "name": "events[].initiator",
@@ -4692,6 +4692,11 @@
           "desc": "本次窗口的左上角与宽高（已按世界边界钳制后的实际值）。"
         },
         {
+          "name": "fogEnabled",
+          "type": "boolean",
+          "desc": "战争迷雾开关 fog_enabled 的当前值（v97，AISLG-232）。关闭时望楼照建但不产生视野效果，客户端据此注明「迷雾未开启」。"
+        },
+        {
           "name": "tiles",
           "type": "array",
           "desc": "窗口内地块，按 y 行 x 列排序。"
@@ -4725,6 +4730,11 @@
           "name": "tiles[].relic",
           "type": "{ tier, kind } | null",
           "desc": "遗迹（v93，AISLG-227）：实时视野或已探索且未领取的遗迹格才有；tier = common / rare / legendary，kind = granary / lumberyard / quarry / ironworks / caravan / battlefield / treasury / mausoleum。领取后所有人的地图上立刻消失。迷雾关闭时恒为 null。"
+        },
+        {
+          "name": "tiles[].facility",
+          "type": "{ kind, level } | null",
+          "desc": "野地上的设施（v97，AISLG-232）：目前只有望楼 kind = watchtower，level 为已建成等级（1..3）。只要能看到这块地（实时视野或已探索）就能看到有望楼与它的等级——别人想「断你的眼」得先知道眼在哪；**不含建造进度**（进度只有主人能看到，见 GET_STATE 的 city.territory[].facility）。没盖望楼、或还在建第一级时为 null。"
         },
         {
           "name": "tiles[].heroSite",
@@ -4894,6 +4904,11 @@
           "name": "tile.npc",
           "type": "object | null",
           "desc": "NPC 城池情报（v13 需侦察）：{ garrison 驻防按兵种（快照）, stock 可掠夺库存（快照）, scoutDetail / garrisonTotal（v27）}；未侦察或非 NPC 城为 null。**v27 起驻防精度随侦察科技**：scoutDetail=rough（侦察科技 Lv0–2）时 garrison 全 0，只有 garrisonTotal { min, max } 给总兵力约数（真实 ±20%）；kinds（Lv3–5）给兵种明细、各兵种数量为近似值（真实 ±20%，同一地块固定不变）；exact（Lv6+）精确。历史情报无 scoutDetail 字段，视为 exact。"
+        },
+        {
+          "name": "tile.facilityBuilding",
+          "type": "{ toLevel, finishAt } | null",
+          "desc": "望楼的建造 / 升级进度（v97，AISLG-232）：**只有占着这块地的城的主人能看到**（toLevel 为目标等级、finishAt 为完成时刻 ISO 8601），其余账号为 null；没有进行中的工程也为 null。"
         },
         {
           "name": "tile.scoutedAt",
@@ -6631,7 +6646,7 @@
         {
           "name": "offline",
           "type": "object",
-          "desc": "离线数字汇总：{ seconds 离线秒数, gains 收进账合计（按资源）, battles 战斗场次, troopsLost 我方总减员, npcRaids NPC 袭击次数, wildernessLost 被 NPC 攻破的野地数, storageFull 最接近满仓的资源（占储量上限 ≥ 80% 时给出，否则 null）, mutinyLost 断粮哗变损兵合计（v34，AISLG-107，不含在 troopsLost 内） }。"
+          "desc": "离线数字汇总：{ seconds 离线秒数, gains 收进账合计（按资源）, battles 战斗场次, troopsLost 我方总减员, npcRaids NPC 袭击次数, wildernessLost 被 NPC 攻破的野地数, wildernessInactiveLost 因长期未上线被收回的野地数（v98，AISLG-238，不计入 wildernessLost）, storageFull 最接近满仓的资源（占储量上限 ≥ 80% 时给出，否则 null）, mutinyLost 断粮哗变损兵合计（v34，AISLG-107，不含在 troopsLost 内） }。"
         },
         {
           "name": "offline.gains",
@@ -20417,6 +20432,264 @@
       "agentNote": "被俘的名将 captive.capturedUntil 前必须赎，否则下野；赎金 = 2000 × 等级，提前在主城留足金币。下野后名将回到原野地，可以按结交 → 好感满 100 → 招揽的流程重新争取（前主人没有特权）。"
     },
     {
+      "op": 152,
+      "kind": "request",
+      "name": "GET_VISIBLE_MARCHES",
+      "title": "查询视野内的他人部队（v96，AISLG-230）",
+      "preAuth": false,
+      "summary": "查询窗口内、你的**实时视野**里的其他玩家部队（战争迷雾第三步，受 fog_enabled 控制）。请求给窗口左上角 (x, y) 与宽高 (w, h)，含义与限制同 GET_WORLD_MAP：缺省以主城为中心取 10×10，w/h 须为 1..20 的整数，非法或越界取缺省值，窗口起点按世界边界钳制。返回 marches[]：每支其他账号、status = marching 的部队，若其当前位置（四舍五入到整格）落在**你自己的**实时视野内就出现，走出视野后下一次查询就消失。实时视野只有自己的来源：主城 12 格、分城 8 格、占领的野地 3 格（**丘陵上的野地 +2 = 5 格**，AISLG-233）、行军中的部队 3 格、含斥候的部队 5 / 6 / 7 格（侦察科技决定）；**盟友的视野不共享**，盟友的部队也要进你自己的视野才看得到。下列情形不上图：自己的部队（本协议不返回，避免重复显示）、侦察部队（purpose = scout，或编队里只有斥候，去程返程都算，保留侦察的隐蔽性）、已过埋伏时刻（ambushAt）正在埋伏的截击部队（保留埋伏玩法）、已到达的部队与剧本战场的小队（战场有自己的地图）。流寇 / 商队 / 黄巾营地不受影响（见 GET_MOVING_TARGETS / GET_YELLOW_TURBAN）。盲打（fog_denied）与撤回中的部队正常上图，撤回的按实际回程位置算。返回最多 50 支，离窗口中心由近到远，超出部分不返回。fog_enabled 关闭时 marches 为空数组（不报错，与上线前一致）。玩家与 Agent 走同一接口、同一套裁剪。",
+      "requestFields": [
+        {
+          "name": "x",
+          "type": "number",
+          "desc": "可选。窗口左上角 x，0..999；缺省按主城居中折算，超出部分按边界钳制。"
+        },
+        {
+          "name": "y",
+          "type": "number",
+          "desc": "可选。窗口左上角 y，0..999；缺省按主城居中折算，超出部分按边界钳制。"
+        },
+        {
+          "name": "w",
+          "type": "number",
+          "desc": "可选。窗口宽度，1..20 的整数；缺省、非法或越界取 10。"
+        },
+        {
+          "name": "h",
+          "type": "number",
+          "desc": "可选。窗口高度，1..20 的整数；缺省、非法或越界取 10。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "serverTime",
+          "type": "string",
+          "desc": "快照时刻（ISO 8601）：客户端以收到响应的本地时刻为基准用 vx / vy 外推，不必依赖两端时钟一致。"
+        },
+        {
+          "name": "marches",
+          "type": "array",
+          "desc": "窗口内视野里的他人部队，离窗口中心由近到远，最多 50 支；迷雾关闭时为空数组。"
+        },
+        {
+          "name": "marches[].id",
+          "type": "string",
+          "desc": "行军 id（UUID）：用来和来袭预警 PUSH_ATTACK_WARNING 的 marchId 对上——敌军打进你的视野时界面据此把图标转红并连线到被攻击格。"
+        },
+        {
+          "name": "marches[].x / marches[].y",
+          "type": "number",
+          "desc": "部队当前所在位置（世界格坐标，保留 1 位小数）。"
+        },
+        {
+          "name": "marches[].vx / marches[].vy",
+          "type": "number",
+          "desc": "速度（每秒格数，正负表示方向），只用来让图标平滑移动；两次采样本来也能算出方向，因此不算泄露。"
+        },
+        {
+          "name": "marches[].returning",
+          "type": "boolean",
+          "desc": "true = 返程（往出发城走），false = 去程。"
+        },
+        {
+          "name": "marches[].scale",
+          "type": "'small' | 'medium' | 'large'",
+          "desc": "规模档位（按编队总人数，不给精确兵力）：small 1–499 小股 / medium 500–4999 中军 / large 5000 及以上大军。"
+        },
+        {
+          "name": "marches[].owner.username",
+          "type": "string",
+          "desc": "所属玩家名（中立玩家也给）。"
+        },
+        {
+          "name": "marches[].owner.allianceName",
+          "type": "string | null",
+          "desc": "所属联盟名；没有联盟为 null。"
+        },
+        {
+          "name": "marches[].owner.relation",
+          "type": "'ally' | 'friendly' | 'hostile' | 'neutral'",
+          "desc": "与你（请求账号）的关系，与地块 owner.relation 同一口径：ally 同盟 / friendly 友盟（含解除友好后的冷却期）/ hostile 敌对联盟 / neutral 中立。界面按它上色：同盟友盟绿色、中立灰色、敌对橙色、正在来袭自己红色（后者由 marchId 与来袭预警匹配得出）。"
+        }
+      ],
+      "errors": [],
+      "examples": [
+        {
+          "caption": "视野里有 1 支敌军（地图打开时每 5 秒一次）",
+          "request": {
+            "op": 152,
+            "seq": 9,
+            "data": {
+              "x": 10,
+              "y": 12,
+              "w": 10,
+              "h": 10
+            }
+          },
+          "responses": [
+            {
+              "op": 152,
+              "seq": 9,
+              "ok": true,
+              "data": {
+                "serverTime": "2026-09-25T08:00:00.000Z",
+                "marches": [
+                  {
+                    "id": "e5f2cc35-f086-47a1-9b3c-2d4e5f6a7b8c",
+                    "x": 14.3,
+                    "y": 17.6,
+                    "vx": 0.0667,
+                    "vy": 0,
+                    "returning": false,
+                    "scale": "medium",
+                    "owner": {
+                      "username": "zhangfei",
+                      "allianceName": "桃园",
+                      "relation": "hostile"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "caption": "迷雾关闭（或视野里什么都没有）",
+          "request": {
+            "op": 152,
+            "seq": 10,
+            "data": {
+              "x": 10,
+              "y": 12,
+              "w": 10,
+              "h": 10
+            }
+          },
+          "responses": [
+            {
+              "op": 152,
+              "seq": 10,
+              "ok": true,
+              "data": {
+                "serverTime": "2026-09-25T08:00:00.000Z",
+                "marches": []
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "这里只有**你的视野内**的他人部队，看不到不代表没有：目标可能就在迷雾里、或者离你的城池太远。别把「marches 为空」当成安全信号。判断有没有部队打自己仍然以来袭预警（PUSH_ATTACK_WARNING / 事件 player_attack_warning，含目标格与到达时刻）为准；本协议给的是位置、方向、去返程、规模档位与主人关系，**没有**目标格、出发城、出发 / 到达时间与兵力明细，所以用它算不出对手要去哪。盟友的视野不共享，盟友看到的部队你看不到。第一版只能看、不能截击（MARCH 的 targetId 截击只支持流寇 / 商队这类移动目标）。"
+    },
+    {
+      "op": 153,
+      "kind": "request",
+      "name": "FACILITY_BUILD",
+      "title": "在野地上建望楼 / 升级望楼（v97，AISLG-232）",
+      "preAuth": false,
+      "summary": "在自己**已占领的野地**上建望楼：没盖过就新建 1 级，盖过就升一级（最高 3 级）。望楼是野地上的了望塔，建好后这块地周围的视野扩大到对应半径——别人也看得到你的望楼（想断你的眼睛就得把这块地抢走）。规则：只能盖在 kind = 'wilderness' 且归你城池的格上（城池 / NPC 城 / 无主地 / 别人的野地返回 FACILITY_TILE_INVALID）；每块地最多一座，每座城名下的野地最多 2 座（主城 2 座、每座分城各 2 座，新建时计名额，升级已有望楼不受影响）；同一块地同一时间只能有一个进行中的建造 / 升级（FACILITY_BUILDING）。数值（占位，按需求一字不改）：1 级：视野 6 格，金 300 / 木 200 / 石 100，基准 120 秒；2 级：视野 8 格，金 600 / 木 400 / 石 200，基准 240 秒；3 级：视野 10 格，金 900 / 木 600 / 石 300，基准 360 秒；满级累计金 1800 / 木 1200 / 石 600。**资源从占着这块地的那座城扣**；耗时为基准 ÷ 全局时间缩放、不低于 1 秒，但**不吃**「建筑」科技折扣。望楼**不占城池建造队列**，用自己的计时（响应里的 facility.building.finishAt），由后台 Worker 到期完成。视野半径是切比雪夫距离，**取代**野地原来的 3 格、不叠加；丘陵上的野地在此基础上 +2（AISLG-233：视野 8 / 10 / 12，上限 12），下发的 visionRadius 已是加成后的有效值；视野照常记入已探索；迷雾开关 fog_enabled 关闭时望楼仍可建，但不产生视野效果。失去野地（被抢、所属城易主 / 被放弃、召回驻军放弃占领、账号长期未上线被收回，v98 AISLG-238）望楼一并毁掉，不转给新主人、不退资源，原主人收到事件 facility_lost；储量采空不影响望楼。玩家与 Agent 走同一个接口。",
+      "requestFields": [
+        {
+          "name": "x",
+          "type": "number",
+          "desc": "必填。目标地块 x（须为本账号城池占领的野地，见 GET_STATE 的 city.territory）。"
+        },
+        {
+          "name": "y",
+          "type": "number",
+          "desc": "必填。目标地块 y。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "facility",
+          "type": "object",
+          "desc": "该地块的设施（与 GET_STATE 的 city.territory[].facility 同结构）：{ kind: 'watchtower', level 已建成等级（正在新建第一级时为 0）, visionRadius 已建成等级的视野半径（格；level 为 0 时 0；丘陵上的野地是加成后的有效半径 8 / 10 / 12，AISLG-233）, building: { toLevel 进行中的目标等级, finishAt 完成时刻 ISO 8601 } | null }。"
+        },
+        {
+          "name": "city",
+          "type": "object",
+          "desc": "扣费后的城池状态（结构同 GET_STATE 的 city；资源从占着这块地的那座城扣）。失败时只附 city 与缺口字段。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "FACILITY_TILE_INVALID",
+        "FACILITY_BUILDING",
+        "FACILITY_MAX_LEVEL",
+        "FACILITY_LIMIT",
+        "INSUFFICIENT_RESOURCES"
+      ],
+      "examples": [
+        {
+          "caption": "在自己的野地上新建 1 级望楼（扣 金 300 / 木 200 / 石 100，基准 120 秒后完成）",
+          "request": {
+            "op": 153,
+            "seq": 41,
+            "data": {
+              "x": 512,
+              "y": 340
+            }
+          },
+          "responses": [
+            {
+              "op": 153,
+              "seq": 41,
+              "ok": true,
+              "data": {
+                "facility": {
+                  "kind": "watchtower",
+                  "level": 0,
+                  "visionRadius": 0,
+                  "building": {
+                    "toLevel": 1,
+                    "finishAt": "2026-09-25T08:02:00.000Z"
+                  }
+                },
+                "city": {
+                  "id": "c8a1f1de-3b2a-4c5d-8e9f-0a1b2c3d4e5f",
+                  "resources": {
+                    "gold": 4700,
+                    "wood": 4800,
+                    "food": 5000,
+                    "stone": 2900,
+                    "iron": 3000
+                  },
+                  "territory": []
+                }
+              }
+            }
+          ]
+        },
+        {
+          "caption": "这座城名下的望楼已满 2 座",
+          "request": {
+            "op": 153,
+            "seq": 42,
+            "data": {
+              "x": 513,
+              "y": 340
+            }
+          },
+          "responses": [
+            {
+              "op": 153,
+              "seq": 42,
+              "ok": false,
+              "error": {
+                "code": "FACILITY_LIMIT",
+                "message": "这座城名下的望楼已达上限（每座城最多 2 座）"
+              },
+              "data": {
+                "limit": 2,
+                "count": 2
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "望楼能扩大视野（1 级 6 格 / 2 级 8 格 / 3 级 10 格，取代野地原来的 3 格），是「提前看到别人部队」的手段；失去这块野地就失去望楼（不退款），抢别人的野地就能拆掉他的眼睛。先 GET_STATE 看 city.territory[].facility（null = 没盖）挑一块战略位置上的野地，再看这座城的资源够不够：不够会返回 INSUFFICIENT_RESOURCES（附缺口 shortfall 与 retryAfterSeconds），等够再发。建造中用 city.territory[].facility.building 的 finishAt 估算进度，到点后服务端完成（事件 facility_completed），期间再发同一块地会返回 FACILITY_BUILDING。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -20824,7 +21097,7 @@
       "kind": "push",
       "name": "PUSH_TILE_STATE",
       "title": "推送：地块归属 / 驻军变化（v12）",
-      "summary": "地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回或 NPC 袭击失守）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军。",
+      "summary": "地块状态变化时推送给相关账号的在线连接：wilderness_occupied=野地被占领（含己方出征获胜）、wilderness_lost=占领失效（召回 / NPC 袭击失守 / 账号长期未上线被收回，v98 AISLG-238，cause=inactive；此时驻军已回到归属城、望楼已毁、地块变为无主）、reserve_depleted=名下野地储量采空（v61，AISLG-165；推送该地块最新视图，驻军仍在时改为按恢复速度采集）、npc_city_occupied=NPC 城池被占领为分城、npc_attack_repelled=NPC 袭击被击退（驻军折损）、garrison_reinforced=增援并入驻军、facility_completed=望楼建成 / 升级完成（v97，AISLG-232，tile.facility 为新等级）。望楼随野地一起毁掉时不单独推：那一格另有一条 wilderness_lost，tile.facility 随之变 null。",
       "dataFields": [
         {
           "name": "reason",
@@ -20861,7 +21134,7 @@
           }
         }
       ],
-      "agentNote": "NPC 会周期性袭击玩家占领的野地（袭击部队编成按野地等级推导，参考战力 = 等级 × 25，定稿编成；基准每 30 分钟随机袭击一块已占领野地，v19 校准；实际 ÷ 全局时间缩放）：收到 wilderness_lost（cause=npc_attack）说明驻军全灭，用 GET_STATE 对齐领土与驻军；袭击结算同样生成守方视角战报。"
+      "agentNote": "NPC 会周期性袭击玩家占领的野地（袭击部队编成按野地等级推导，参考战力 = 等级 × 25，定稿编成；基准每 30 分钟随机袭击一块已占领野地，v19 校准；实际 ÷ 全局时间缩放）：收到 wilderness_lost（cause=npc_attack）说明驻军全灭，用 GET_STATE 对齐领土与驻军；袭击结算同样生成守方视角战报。本人和 Agent 都 7 天没上线（现实时间）的账号，系统每小时扫一轮把名下野地一次全部收回——收到 wilderness_lost（cause=inactive）说明地块已变无主，驻军已不损失地回到归属城、望楼已毁（不退款）、当前储量不重置，其他玩家可立即占领；城与城内资源兵力不受影响。"
     },
     {
       "op": 2007,
@@ -23004,6 +23277,22 @@
     "MOVE_CITY_ATTACK_LOCK": {
       "desc": "（v91，AISLG-220）指定坐标迁城后 12 小时内，这座城的掠夺 / 占领 / 侦察 / 派协防（以及其他攻击类出征）被拒；响应附 retryAfterSeconds。运输、调兵、增援自己名下野地与召回不受限。",
       "action": "等待 retryAfterSeconds 之后再出征打别人；期间可以正常运输、调兵与增援。"
+    },
+    "FACILITY_TILE_INVALID": {
+      "desc": "（v97，AISLG-232）目标格不是本账号占领的野地：城池格、NPC 城池、无主野地、别人占领的野地都算。不扣任何资源。",
+      "action": "用 GET_STATE 的 city.territory 核对本账号占领的野地坐标，只对列表中的地块发起 FACILITY_BUILD。"
+    },
+    "FACILITY_MAX_LEVEL": {
+      "desc": "（v97，AISLG-232）这块地的望楼已经满级（3 级），不能再升级。不扣任何资源。",
+      "action": "换一块自己占领的野地建望楼；每座城最多 2 座。"
+    },
+    "FACILITY_BUILDING": {
+      "desc": "（v97，AISLG-232）这块地的望楼正在建造或升级中，同一块地同一时间只能有一个进行中的工程。不扣任何资源。",
+      "action": "等 city.territory[].facility.building.finishAt 到点（Worker 到期完成）后再发起下一次升级。"
+    },
+    "FACILITY_LIMIT": {
+      "desc": "（v97，AISLG-232）这座城名下的望楼已达上限：每座城最多 2 座（主城 2 座，每座分城各 2 座）。响应附 limit 与 count。不扣任何资源。",
+      "action": "换另一座城名下的野地建望楼，或先把这块地的望楼升到更高级（升级不受名额限制）。"
     },
     "INTERNAL": {
       "desc": "服务端内部错误。",

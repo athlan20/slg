@@ -266,6 +266,11 @@ export const Op = {
   MOVE_CITY: 150,
   /** C→S 赎回被俘名将（v94，AISLG-228：data.heroId；仅主人；赎金 = 2000 × 名将等级 从主城扣，胜方主城收 50%（向下取整），另一半销毁；忠诚度 −20 最低 1） */
   RANSOM_HERO: 151,
+  /** C→S 在自己占领的野地上建望楼 / 升级望楼（v97，AISLG-232；data.x / data.y）——没盖过就新建，盖过就升一级；
+   *  扣发起城（占着这块地的城）的资源，自带计时，不占城池建造队列 */
+  FACILITY_BUILD: 153,
+  /** C→S 查询窗口内视野里的他人部队（v96，AISLG-230：data.x/y/w/h 同 GET_WORLD_MAP；只给位置 / 方向 / 去返程 / 规模档位 / 主人关系，不含目标与时刻；最多 50 支，迷雾关闭返回空） */
+  GET_VISIBLE_MARCHES: 152,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -745,6 +750,14 @@ export const ErrorCode = {
   CHAT_COORD_UNEXPLORED: 'CHAT_COORD_UNEXPLORED',
   /** v92（AISLG-224）：高级迁城令指定的坐标未探索（也不在实时视野内） */
   MOVE_CITY_TILE_UNEXPLORED: 'MOVE_CITY_TILE_UNEXPLORED',
+  /** 野地设施：目标格不是本账号占领的野地（城池 / NPC 城 / 无主地 / 别人的野地）（v97，AISLG-232） */
+  FACILITY_TILE_INVALID: 'FACILITY_TILE_INVALID',
+  /** 野地设施：这块地的设施已满级（v97，AISLG-232） */
+  FACILITY_MAX_LEVEL: 'FACILITY_MAX_LEVEL',
+  /** 野地设施：这块地正在建造 / 升级中（v97，AISLG-232；同一块地同一时间只能有一个） */
+  FACILITY_BUILDING: 'FACILITY_BUILDING',
+  /** 野地设施：这座城名下的望楼已达上限（每城 2 座）（v97，AISLG-232；附 limit / count） */
+  FACILITY_LIMIT: 'FACILITY_LIMIT',
   /** 服务端内部错误 */
   INTERNAL: 'INTERNAL',
 } as const;
@@ -1002,8 +1015,18 @@ export type {
   RelicKind,
   RelicTileView,
   HeroSiteView,
+  TileFacilityView,
+  FacilityBuildingView,
+  TerritoryFacilityView,
+  VisibleMarchScale,
+  VisibleMarchRelation,
+  VisibleMarchOwnerView,
+  VisibleMarchView,
+  GetVisibleMarchesRequestData,
+  GetVisibleMarchesResponseData,
 } from './protocol-world';
 export { TERRAIN_KINDS, isTerrainKind, TILE_KINDS, RELIC_KINDS } from './protocol-world';
+export { VISIBLE_MARCH_LARGE_MIN, VISIBLE_MARCH_LIMIT, VISIBLE_MARCH_MEDIUM_MIN } from './protocol-world';
 export type {
   BattleReportView,
   BattleReportCommentView,
@@ -1402,6 +1425,9 @@ export type {
   BuyItemResponseData,
   ItemsStatePushData,
 } from './protocol-items';
+export type { FacilityBuildRequestData, FacilityBuildResponseData } from './protocol-facility';
+export { FACILITY_KINDS, isFacilityKind } from './facility';
+export type { FacilityKind } from './facility';
 export type {
   MoveCityRequestData,
   MoveCityResponseData,

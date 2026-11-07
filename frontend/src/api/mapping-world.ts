@@ -346,8 +346,17 @@ function baseEventText(view: EventView): string {
         const by = (view.detail.attacker as { username?: string } | undefined)?.username;
         return EXTRA_STATE.event.wildConquest(posLost, by ?? '');
       }
+      // v98（AISLG-238）：本人和 Agent 都 7 天没上线，系统收回野地（原因写明「长期未上线」）
+      if (view.detail.cause === 'inactive') {
+        return EXTRA_STATE.event.wildInactive(posLost);
+      }
       return EXTRA_STATE.event.wildLost(posLost);
     }
+    // 望楼（v97，AISLG-232）：建成 / 升级完成、随野地毁掉
+    case 'facility_completed':
+      return EXTRA_STATE.event.facilityCompleted(posOf(view.detail), Number(view.detail.level ?? 0));
+    case 'facility_lost':
+      return EXTRA_STATE.event.facilityLost(posOf(view.detail), Number(view.detail.level ?? 0));
     case 'npc_city_occupied': {
       // v24：占领 NPC 城变分城时接收其剩余库存（stock）；旧版 legacy 路径为掠得（loot）；
       // 城名是后端固定名城名（FAMOUS_CITY_NAMES），英文界面按码表翻译

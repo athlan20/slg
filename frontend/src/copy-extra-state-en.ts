@@ -99,6 +99,9 @@ export const EXTRA_STATE_EN = {
     wildRecall: (pos: string) => `Garrison recalled; wilderness ${pos} given up`,
     wildConquest: (pos: string, by: string) => `Wilderness ${pos} was seized${by ? ` by player ${by}` : ''}; the occupation is lost`,
     wildLost: (pos: string) => `Wilderness ${pos} fell; the occupation is lost`,
+    wildInactive: (pos: string) => `Reclaimed for long inactivity: wilderness ${pos} is now unowned`,
+    facilityCompleted: (pos: string, level: number) => `Watchtower ready: ${pos} is now level ${level}`,
+    facilityLost: (pos: string, level: number) => `Watchtower destroyed: ${pos} (${level > 0 ? `level ${level}` : 'under construction'}), no refund`,
     npcCityOccupied: (pos: string, name: string, loot: string) =>
       `Occupied the NPC city ${pos} as a branch city${name ? ` "${name}"` : ''}${loot ? `, stock taken over ${loot}` : ''}`,
     npcRaidRepelled: (pos: string, losses: string) => `NPC raid on ${pos} was repelled${losses ? `, losses: ${losses}` : ''}`,

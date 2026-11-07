@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS fog_relics (
   UNIQUE (x, y)
 );
 CREATE INDEX IF NOT EXISTS idx_fog_relics_claimed ON fog_relics (claimed_by, claimed_at);
+-- v97（AISLG-232）：上次看到的地块上有没有望楼、几级（0 = 没有）——已探索但不在视野内的格按快照显示望楼
+ALTER TABLE fog_seen ADD COLUMN IF NOT EXISTS facility_level integer NOT NULL DEFAULT 0;
 CREATE TABLE IF NOT EXISTS fog_first_explores (
   target_key text PRIMARY KEY,
   account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,

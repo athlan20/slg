@@ -4,6 +4,7 @@
 // 区块：全图切成 10×10 的块，共 10,000 块，第 i 块对应位图第 i>>3 字节的第 (i&7) 位。
 
 import { WORLD_SIZE } from './world';
+import { facilityVisionRadiusOf } from './facility';
 
 /** 区块边长（格） */
 export const FOG_CHUNK_SIZE = 10;
@@ -32,12 +33,42 @@ export const FOG_VISION = {
   scoutTech6: 7,
 } as const;
 
+/**
+ * 丘陵上的野地视野加成（AISLG-233「丘陵视野」）：站得高望得远，只对**占领的野地**生效——
+ * 主城 / 分城（地形开局随机，加成会变成看运气）与行军中的部队（一路走一路变半径，视野会闪）都不加成。
+ */
+export const HILL_VISION_BONUS = 2;
+/** 视野半径上限（格）：与主城持平，丘陵加成不再往上叠（AISLG-233；3 级望楼 10 + 2 正好封顶） */
+export const FOG_VISION_MAX = 12;
+
 /** 开局 / 存量初始化：主城周围该半径内的区块记为已探索 */
 export const FOG_OPENING_RADIUS = 30;
 /** 探索简报最多列出的坐标数 */
 export const FOG_REPORT_CELL_LIMIT = 10;
 /** 战力榜前 N 名的主城在小地图上公开（分城不公开） */
 export const FOG_POWER_TOP_N = 20;
+
+/**
+ * 一块占领野地的视野半径：野地原来 3 格，地上的望楼按等级给 6 / 8 / 10 格，**取大不叠加**
+ *（v97，AISLG-232；望楼的半径取代野地那 3 格）。丘陵上的野地在这之上再 +2（v97，AISLG-233：
+ * 没望楼 3 → 5，1 / 2 / 3 级望楼 6 / 8 / 10 → 8 / 10 / 12），半径上限 12、与主城持平。
+ * 这是「视野半径怎么算」的唯一入口——地形影响视野的规则加在这里，不要在别处另写一份。
+ * 其他地形（平原 / 草原 / 森林 / 荒漠 / 沼泽 / 湖泊 / 金矿）不变。
+ */
+export function wildernessVisionRadius(facilityLevel: number | null | undefined, terrain?: string | null): number {
+  const base = Math.max(FOG_VISION.wilderness, facilityVisionRadiusOf(facilityLevel));
+  const radius = terrain === 'hill' ? base + HILL_VISION_BONUS : base;
+  return Math.min(FOG_VISION_MAX, radius);
+}
+
+/**
+ * 下发给客户端的设施视野半径（city.territory[].facility.visionRadius / GET_TILE 的 facility）：
+ * 望楼还没建成（0 级）时为 0；建成后是该地块**加成后的有效半径**（丘陵外 6 / 8 / 10，丘陵上 8 / 10 / 12），
+ * 界面显示的格数与实际视野一致（AISLG-233 技术细节）。
+ */
+export function builtFacilityVisionRadius(facilityLevel: number | null | undefined, terrain?: string | null): number {
+  return facilityLevel && facilityLevel > 0 ? wildernessVisionRadius(facilityLevel, terrain) : 0;
+}
 
 /** 斥候视野半径：侦察科技等级 → 半径（Lv3 起 6，Lv6 起 7） */
 export function scoutVisionRadius(scoutingLevel: number): number {
@@ -262,16 +293,81 @@ export function marchPositionAt(geometry: MarchGeometry, nowMs: number): { x: nu
 }
 
 /**
+ * 行军行的行程段输入（AISLG-230 抽成共用函数，不要写第二份）：去程 出发城 → 目标格，返程 目标格 → 出发城，
+ * 撤回（fog_turn_*）从撤回瞬间的实际位置回出发城。时刻都是毫秒。
+ * 截击「到了先埋伏」的口径与前端 marchEndMs 一致：endMs = ambush_at（部队走到埋伏点即停）。
+ */
+export interface MarchPathInput {
+  /** 出发城坐标 */
+  homeX: number;
+  homeY: number;
+  /** 行军目标格 */
+  targetX: number;
+  targetY: number;
+  /** 是否返程（purpose = 'return'；撤回后的返程另有 turn） */
+  returning: boolean;
+  /** 开始行进时刻（毫秒，一般为 started_at） */
+  startMs: number;
+  /** 结束时刻（毫秒）：arrive_at；截击埋伏为 ambush_at */
+  endMs: number;
+  /** 撤回时的实际位置与时刻（fog_turn_x / fog_turn_y / fog_turn_at）；未撤回为 null */
+  turn?: { x: number; y: number; atMs: number } | null;
+}
+
+/** 行程段：起点、终点与起止时刻（毫秒） */
+export interface MarchLeg {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  startMs: number;
+  endMs: number;
+}
+
+/** 行军 → 本次行进的行程段（返程反向、撤回从撤回点回城） */
+export function marchLegOf(path: MarchPathInput): MarchLeg {
+  if (path.turn) {
+    return { fromX: path.turn.x, fromY: path.turn.y, toX: path.homeX, toY: path.homeY, startMs: path.turn.atMs, endMs: path.endMs };
+  }
+  if (path.returning) {
+    return { fromX: path.targetX, fromY: path.targetY, toX: path.homeX, toY: path.homeY, startMs: path.startMs, endMs: path.endMs };
+  }
+  return { fromX: path.homeX, fromY: path.homeY, toX: path.targetX, toY: path.targetY, startMs: path.startMs, endMs: path.endMs };
+}
+
+/**
+ * 部队在 nowMs 的位置（浮点格坐标）与速度（格/秒，只表明方向与快慢，不含目标）。
+ * 位置与视野、他人行军上图（GET_VISIBLE_MARCHES）共用这一份算法。
+ */
+export function marchMoveAt(path: MarchPathInput, nowMs: number): { x: number; y: number; vx: number; vy: number } {
+  const leg = marchLegOf(path);
+  const t = marchProgressAt(leg, nowMs);
+  const spanMs = leg.endMs - leg.startMs;
+  const perSecond = spanMs > 0 ? 1000 / spanMs : 0;
+  return {
+    x: leg.fromX + (leg.toX - leg.fromX) * t,
+    y: leg.fromY + (leg.toY - leg.fromY) * t,
+    vx: (leg.toX - leg.fromX) * perSecond,
+    vy: (leg.toY - leg.fromY) * perSecond,
+  };
+}
+
+/**
  * 行军在当前时刻提供的实时视野来源：部队当前位置（取整格）+ 半径。
  * 含斥候的编队用斥候半径（侦察科技决定），否则用行军半径。
  */
-export function marchVisionSource(geometry: MarchGeometry, nowMs: number, hasScout: boolean, scoutingLevel: number): VisionSource {
-  const pos = marchPositionAt(geometry, nowMs);
+export function marchVisionSourceOf(path: MarchPathInput, nowMs: number, hasScout: boolean, scoutingLevel: number): VisionSource {
+  const move = marchMoveAt(path, nowMs);
   return {
-    x: Math.round(pos.x),
-    y: Math.round(pos.y),
+    x: Math.round(move.x),
+    y: Math.round(move.y),
     radius: hasScout ? scoutVisionRadius(scoutingLevel) : FOG_VISION.march,
   };
+}
+
+/** 同上，按 MarchGeometry（前端同口径、无撤回）取实时视野来源 */
+export function marchVisionSource(geometry: MarchGeometry, nowMs: number, hasScout: boolean, scoutingLevel: number): VisionSource {
+  return marchVisionSourceOf(geometry, nowMs, hasScout, scoutingLevel);
 }
 
 /** 去程已走比例（写入已探索用）：(结束时刻 − startedAt) ÷ (arriveAt − startedAt)，夹在 0～1 */

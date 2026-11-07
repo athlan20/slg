@@ -585,6 +585,7 @@ const OFFLINE_REPORT = {
   troopsLostRow: (n: number) => `部队减员 ${n}`,
   npcRaidsRow: (n: number) => `NPC 袭击 ${n} 次`,
   wildernessLostRow: (n: number) => `被 NPC 攻破 ${n} 块野地`,
+  wildernessInactiveRow: (n: number) => `长期未上线，被收回 ${n} 块野地`,
   statusTitle: '现状',
   statusCalm: '各项资源水位正常',
   storageFullRow: (label: string, percent: number) => `仓库${label}快满了（${percent}%），产出正在作废`,
