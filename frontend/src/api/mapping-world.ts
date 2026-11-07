@@ -346,6 +346,10 @@ function baseEventText(view: EventView): string {
         const by = (view.detail.attacker as { username?: string } | undefined)?.username;
         return EXTRA_STATE.event.wildConquest(posLost, by ?? '');
       }
+      // v98（AISLG-238）：本人和 Agent 都 7 天没上线，系统收回野地（原因写明「长期未上线」）
+      if (view.detail.cause === 'inactive') {
+        return EXTRA_STATE.event.wildInactive(posLost);
+      }
       return EXTRA_STATE.event.wildLost(posLost);
     }
     // 望楼（v97，AISLG-232）：建成 / 升级完成、随野地毁掉

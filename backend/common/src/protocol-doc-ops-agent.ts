@@ -121,7 +121,7 @@ export const REQUEST_GET_OFFLINE_REPORT: RequestOpDoc = {
     '返回玩家最近一次离线（最后一条玩家连接断开）至今的时长、离线期间的收获 / 损失数字汇总（服务端从事件流统计，纯数字不做判断），以及 Agent 最近写好的日报（从未写过为 null）。玩家与 Agent 连接都可调用；Agent 连接调用返回的是同一份数据。从未离线过（新号 / 未断开过）offline.seconds 为 0、各计数为 0。前端约定：离线超过 30 分钟再上线时弹窗展示本响应，可关闭、可在页面上重新打开。',
   requestFields: [],
   dataFields: [
-    { name: 'offline', type: 'object', desc: '离线数字汇总：{ seconds 离线秒数, gains 收进账合计（按资源）, battles 战斗场次, troopsLost 我方总减员, npcRaids NPC 袭击次数, wildernessLost 被 NPC 攻破的野地数, storageFull 最接近满仓的资源（占储量上限 ≥ 80% 时给出，否则 null）, mutinyLost 断粮哗变损兵合计（v34，AISLG-107，不含在 troopsLost 内） }。' },
+    { name: 'offline', type: 'object', desc: '离线数字汇总：{ seconds 离线秒数, gains 收进账合计（按资源）, battles 战斗场次, troopsLost 我方总减员, npcRaids NPC 袭击次数, wildernessLost 被 NPC 攻破的野地数, wildernessInactiveLost 因长期未上线被收回的野地数（v98，AISLG-238，不计入 wildernessLost）, storageFull 最接近满仓的资源（占储量上限 ≥ 80% 时给出，否则 null）, mutinyLost 断粮哗变损兵合计（v34，AISLG-107，不含在 troopsLost 内） }。' },
     { name: 'offline.gains', type: 'object', desc: '五资源各自的合计进账（掠夺 / 战斗胜利的 loot 累加）。' },
     { name: 'offline.storageFull', type: 'object | null', desc: '{ resource 资源 kind, percent 占储量上限百分比 }；四资源均未达 80% 为 null。' },
     { name: 'agentReport', type: 'object | null', desc: 'Agent 最近写好的日报 { text, writtenAt }；从未写过为 null。' },

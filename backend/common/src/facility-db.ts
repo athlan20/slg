@@ -143,8 +143,9 @@ export async function destroyFacility(
 }
 
 /** 设施丢失的原因（写进 facility_lost 的 detail.cause，与 wilderness_lost 的口径一致）：
- *  conquest 野地被抢 / npc_attack NPC 袭击失守 / recall 召回驻军主动放弃 / city_lost 所属分城易主或被放弃 / reset 重置账号 */
-export type FacilityLossCause = 'conquest' | 'npc_attack' | 'recall' | 'city_lost' | 'reset';
+ *  conquest 野地被抢 / npc_attack NPC 袭击失守 / recall 召回驻军主动放弃 / city_lost 所属分城易主或被放弃 / reset 重置账号 /
+ *  inactive 账号长期未上线被收回野地（v98，AISLG-238） */
+export type FacilityLossCause = 'conquest' | 'npc_attack' | 'recall' | 'city_lost' | 'reset' | 'inactive';
 
 /**
  * 一座城名下的全部设施一起毁掉（所属分城易主 / 被放弃 / 账号重置）：
