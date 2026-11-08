@@ -12,6 +12,8 @@ import { generateWorldTiles, WORLD_SEED, WORLD_SIZE } from '../../common/src/wor
 import { insertWorldTiles } from '../../common/src/world-db';
 import { ensureFamousCities } from '../../common/src/famous-city-db';
 import { ensureFactions } from '../../common/src/faction-db';
+import { getFactionEnabled } from '../../common/src/faction-config';
+import { alignFactionStartedAtForSeason } from '../../common/src/faction-start';
 import { placeWildFamousIn } from '../../common/src/wild-famous-db';
 import { ensureRelics } from '../../common/src/fog-relic-db';
 import { ensureArenaNpcs, lockArena } from '../../common/src/arena-db';
@@ -153,6 +155,10 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
         [JSON.stringify({ scale: timeScale })],
       );
+      // 五方势力的启用时间（AISLG-243，v102）：势力的天数从 max(本季开始时间, 启用时间) 算。换季开了势力就把
+      // 启用时间对齐到新赛季开始时间（与开季放老巢同一时刻，天数从第 1 天算）；没开则删掉记录，
+      // 否则下个赛季中途打开开关会被误判成「已经启用过」而不放老巢。
+      await alignFactionStartedAtForSeason(client, startAt, getFactionEnabled());
       await setMaintenance(client, null);
       await enter('commit');
       return {

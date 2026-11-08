@@ -18,7 +18,7 @@ import { scaledMs } from './time-scale';
 
 // ---- 入池与节奏 ----
 
-/** 开季满 7 天后才围攻（本季第 8 天起；天数按本季实际开始时间算，不随 time_scale 变化） */
+/** 启用满 7 天后才围攻（势力第 8 天起；天数按势力起点算，见 factionEpochStart，不随 time_scale 变化） */
 export const FACTION_SIEGE_START_DAY = 8;
 
 /** 围城军倍率档位：战力 = 分城官府等级 × 倍率（第 8 天前恒为 0，即不围攻） */
@@ -94,20 +94,22 @@ export function factionSiegeWarningMs(): number {
 }
 
 /**
- * 本季第 day 天属于「第几个可围攻周」与这一周的起止时刻：一周按本季第 8、15、22 天起算，
+ * 势力第 day 天属于「第几个可围攻周」与这一周的起止时刻：一周按势力第 8、15、22 天起算，
  * 第 8 天前（day < 8）返回 null（还不能围攻，也就没有周上限）。
+ * epochStart 是势力起点（factionEpochStart：max(本季开始时间, 势力启用时间)，AISLG-243）——
+ * 当季启用时从启用当天算第 1 天，满 7 天才开始围攻。
  * 周界按真实天数推进（与半径同口径），换算成毫秒时用 scaledMs 之外的原始天数。
  */
 export function factionSiegeWeekOf(
-  seasonStart: Date,
+  epochStart: Date,
   now: Date,
 ): { index: number; start: Date; end: Date } | null {
-  const day = factionDayAt(seasonStart, now);
+  const day = factionDayAt(epochStart, now);
   if (day < FACTION_SIEGE_START_DAY) {
     return null;
   }
   const index = Math.floor((day - FACTION_SIEGE_START_DAY) / FACTION_SIEGE_WEEK_DAYS);
-  const startMs = seasonStart.getTime() + (FACTION_SIEGE_START_DAY - 1 + index * FACTION_SIEGE_WEEK_DAYS) * FACTION_SEASON_DAY_MS;
+  const startMs = epochStart.getTime() + (FACTION_SIEGE_START_DAY - 1 + index * FACTION_SIEGE_WEEK_DAYS) * FACTION_SEASON_DAY_MS;
   return {
     index,
     start: new Date(startMs),

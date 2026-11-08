@@ -17,7 +17,8 @@ import { beaconLeadMultiplier, warningIntel } from '../../common/src/building-ef
 import { inNewbieProtection, inTruce } from '../../common/src/protection';
 import { factionAt, factionBannerOf, factionDefOf, factionRadiusAt } from '../../common/src/faction';
 import { getFactionEnabled } from '../../common/src/faction-config';
-import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
+import { inactiveFactionKeys } from '../../common/src/faction-db';
+import { loadFactionEpochStart } from '../../common/src/faction-start';
 import { getCurrentSeason } from '../../common/src/season-db';
 import { npcRaidIntervalMs } from './world-tick';
 import { loadCityNaming, settleOwnerCity, type TileNotify } from './tick-shared';
@@ -62,7 +63,8 @@ interface PendingAttack {
   faction?: FactionStamp | null;
 }
 
-/** 当前势力范围半径（开关关闭 / 本季还没开始 / 还没生成老巢时为 null = 袭击不带旗号） */
+/** 当前势力范围半径（开关关闭 / 本季还没开始 / 还没生成老巢时为 null = 袭击不带旗号）。
+ *  v102（AISLG-243）：半径按势力起点算（max(本季开始时间, 势力启用时间)），当季启用时从第 1 天起算。 */
 async function loadRaidFactionRadius(q: pg.Pool | pg.PoolClient): Promise<number | null> {
   if (!getFactionEnabled()) {
     return null;
@@ -71,19 +73,21 @@ async function loadRaidFactionRadius(q: pg.Pool | pg.PoolClient): Promise<number
   if (!season) {
     return null;
   }
-  return factionRadiusAt(season.startAt, new Date());
+  const epochStart = await loadFactionEpochStart(q, season.startAt);
+  return factionRadiusAt(epochStart, new Date());
 }
 
-/** 本季已灭亡的势力（v101，AISLG-241）：原范围内的袭击恢复成无旗号的普通袭击 */
-async function loadDestroyedFactions(q: pg.Pool | pg.PoolClient): Promise<Set<string>> {
+/** 本季不存在的势力：已灭亡（v101，AISLG-241）或当季启用时因玩家城没放的那家（v102，AISLG-243）。
+ *  原范围内的袭击恢复成无旗号的普通袭击，其他势力的范围也不因此扩大。 */
+async function loadInactiveFactions(q: pg.Pool | pg.PoolClient): Promise<Set<string>> {
   if (!getFactionEnabled()) {
     return new Set();
   }
-  return destroyedFactionKeys(q);
+  return inactiveFactionKeys(q);
 }
 
 /**
- * 这一格归哪家（范围内）+ 出发老巢；不在任何势力范围内 / 这家本季已灭亡 → null
+ * 这一格归哪家（范围内）+ 出发老巢；不在任何势力范围内 / 这家本季不存在（没放或已灭亡）→ null
  * （与上线前的普通袭击一致，全服袭击频率不变）。
  */
 function stampAt(radius: number | null, dead: Set<string>, x: number, y: number): FactionStamp | null {
@@ -177,7 +181,7 @@ export async function createNpcAttack(pool: pg.Pool): Promise<number> {
     await client.query('BEGIN');
     // v100（AISLG-240）：袭击的发起频率与目标选择都不变，只是给落在势力范围内的这次袭击打上旗号
     const factionRadius = await loadRaidFactionRadius(client);
-    const deadFactions = await loadDestroyedFactions(client);
+    const deadFactions = await loadInactiveFactions(client);
     // 主城目标（20%）：主城 = 账号最早创建的城；官府 ≥ 2 过滤新号；免战期不入池；
     // v38（AISLG-122）：新手保护与主动免战中的账号同样不入池（保护是硬规则，NPC 也不打）
     if (Math.random() < NPC_RAID_CITY_SHARE) {
