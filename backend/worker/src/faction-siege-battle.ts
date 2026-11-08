@@ -41,7 +41,7 @@ export type SiegeOutcomeKind = 'cancelled' | 'repelled' | 'hit' | 'swallowed';
 /** 到达结算（Worker tick 调用）：取一批到期的围攻逐条结算；返回处理条数 */
 export async function resolveDueFactionSieges(
   pool: pg.Pool,
-  args: { now: Date; seasonStart: Date },
+  args: { now: Date; epochStart: Date },
 ): Promise<number> {
   if (!getFactionEnabled()) {
     return 0;
@@ -78,7 +78,7 @@ export async function resolveDueFactionSieges(
 export async function resolveOneSiege(
   client: pg.PoolClient,
   siege: FactionSiegeRow,
-  args: { now: Date; seasonStart: Date },
+  args: { now: Date; epochStart: Date },
   notifies: TileNotify[],
   pushes: Array<{ accountId: string; data: Record<string, unknown> }>,
 ): Promise<SiegeOutcomeKind> {
@@ -128,7 +128,7 @@ export async function resolveOneSiege(
   );
   const isMainCity = (mainRes.rows[0] as { id: string } | undefined)?.id === cityId;
   const denial = factionSiegeDenial({
-    day: factionDayAt(args.seasonStart, args.now),
+    day: factionDayAt(args.epochStart, args.now),
     isMainCity,
     famous: !!city.famous_name,
     newbieUntil: city.newbie_until,

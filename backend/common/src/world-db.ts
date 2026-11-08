@@ -7,6 +7,7 @@ import pg from 'pg';
 import { ensureFamousCities } from './famous-city-db';
 import { ensureFactions } from './faction-db';
 import { getFactionEnabled } from './faction-config';
+import { saveFactionStartedAt } from './faction-start';
 import { FACTIONS, FACTION_LAIR_CLEAR_RADIUS } from './faction';
 import { ensureWildFamous } from './wild-famous-db';
 import { ensureRelics } from './fog-relic-db';
@@ -77,11 +78,16 @@ export async function ensureWorld(pool: pg.Pool): Promise<void> {
       console.log(`ensureWorld: promoted ${famousCreated} NPC cities to famous cities`);
     }
     // 五方势力（v99，AISLG-239）：世界刚生成 / 重建且开关打开时放五家老巢并吞下开季 25 格内的 NPC 城。
-    // 只在重建时放：赛季中途打开开关后重启不放老巢，避免落到现有玩家身上，等下次换季。
+    // 只在重建时放；赛季中途打开开关走 worker/src/faction-start.ts（v102，AISLG-243：当季启用）。
     // 放在城池落位之前：存量城池重排时 claimCityTile 会避开老巢周围 5 格。
     const factionCreated = rebuilt ? await ensureFactions(client) : 0;
     if (factionCreated > 0) {
+      // AISLG-243（v102）：势力的天数从启用时间算。世界重建后老巢是全新的，启用时间重置到此刻（第 1 天）；
+      // 重建而开关没开时删掉旧记录，否则以后中途打开开关会被当成「已启用」而不放老巢
+      await saveFactionStartedAt(client, new Date());
       console.log(`ensureWorld: created ${factionCreated} faction lairs`);
+    } else if (rebuilt) {
+      await saveFactionStartedAt(client, null);
     }
     // 存量城池补坐标（首启 / 重建后的重排：按创建顺序逐座分散落位）
     const cities = await client.query(
