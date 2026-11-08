@@ -22,6 +22,7 @@ import { setFactionEnabledCache } from '../common/src/faction-config';
 import { inactiveFactionKeys, loadFactionRows, loadFactionView } from '../common/src/faction-db';
 import { alignFactionStartedAtForSeason, loadFactionEpochStart, loadFactionStartedAt } from '../common/src/faction-start';
 import { loadFactionLairs } from '../common/src/faction-lair-db';
+import { getCurrentSeason } from '../common/src/season-db';
 import { npcSnapshot } from '../common/src/world';
 import { ensureFactionSeasonStart, factionStartAnnouncement, runFactionStart } from '../worker/src/faction-start';
 import { createTempDatabase, type TempDatabase } from './season-test-db';
@@ -247,5 +248,18 @@ describe('势力当季启用的事务规则（需 TEST_DATABASE_URL）', { skip:
     assert.equal(fallback.getTime(), nextStart.getTime(), '没有记录时就是本季开始时间');
     const restart = await ensureFactionSeasonStart(pool, new Date(nextStart.getTime() + 2 * DAY));
     assert.equal(restart.started, true, '新赛季可以重新当季启用');
+  });
+  test('存量势力（v102 前放下的老巢，没有启用时间）：只补记成本季开始时间，天数不被重置成第 1 天', async () => {
+    await pool.query(`DELETE FROM settings WHERE key = 'faction_started_at'`);
+    assert.ok((await loadFactionRows(pool)).length > 0, '前提：本季已有势力行');
+    const season = await getCurrentSeason(pool);
+    assert.ok(season);
+    const later = new Date(season.startAt.getTime() + 20 * DAY);
+    const result = await ensureFactionSeasonStart(pool, later);
+    assert.equal(result.started, true);
+    assert.equal(result.placed, 0, '不再放第二次老巢');
+    assert.equal((await loadFactionStartedAt(pool))?.getTime(), season.startAt.getTime(), '记成本季开始时间，不是现在');
+    const epoch = await loadFactionEpochStart(pool, season.startAt);
+    assert.equal(factionDayAt(epoch, later), 21, '势力节奏与升级前一致');
   });
 });

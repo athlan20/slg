@@ -6,7 +6,7 @@
 //   （打上老巢标记、插 factions 行、吞周围 25 格内的 NPC 城）。
 // 只执行一次：判断依据就是 faction_started_at 有没有记录——关掉再打开开关不重复放，也不补放当初跳过的那家；
 // 换季后由 season-reset 重新对齐（开季五家全放，天数从新赛季开始算）。
-// 老巢已在本季生成过（换季 / 世界重建）时只补记启用时间，不再放第二次。
+// 老巢已在本季生成过（v102 前的存量数据）时只补记启用时间（记成本季开始时间，势力节奏不变），不再放第二次。
 // 放完发一条公告：说明天数从开启当天算第 1 天，以及哪几家本季没放（原因：该处已有玩家城）。
 
 import type pg from 'pg';
@@ -17,6 +17,7 @@ import { createFaction, placeFactionLair } from '../../common/src/faction-db';
 import { ensureFactionLairs } from '../../common/src/faction-lair-db';
 import { loadFactionStartedAt, saveFactionStartedAt } from '../../common/src/faction-start';
 import type { FactionKey } from '../../common/src/protocol-faction';
+import { getCurrentSeason } from '../../common/src/season-db';
 
 /** 当季启用的咨询锁（事务级）：API 与 Worker 同时触发时只有一个能进，另一个直接放弃 */
 export const FACTION_START_LOCK_ID = 8721430;
@@ -67,13 +68,16 @@ export async function ensureFactionSeasonStart(pool: pg.Pool, now: Date = new Da
       await client.query('ROLLBACK');
       return NOTHING;
     }
-    await saveFactionStartedAt(client, now);
-    // 老巢已在本季生成（换季 / 世界重建）：只记启用时间，天数就从这天重新算
+    // 老巢已在本季生成（v102 前换季 / 世界重建放的存量数据）：这些势力早就在跑了，启用时间记成本季开始时间，
+    // 天数 / 半径 / 围攻节奏保持原样，不能因为上线新版本被重置成第 1 天
     const existing = await client.query(`SELECT 1 FROM factions LIMIT 1`);
     if (existing.rowCount) {
+      const season = await getCurrentSeason(client);
+      await saveFactionStartedAt(client, season ? season.startAt : now);
       await client.query('COMMIT');
       return { started: true, placed: 0, skipped: [] };
     }
+    await saveFactionStartedAt(client, now);
     const placedKeys: FactionKey[] = [];
     const skipped: FactionDef[] = [];
     for (const def of FACTIONS) {
