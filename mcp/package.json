@@ -1,7 +1,7 @@
 {
   "name": "slg-mcp",
   "mcpName": "io.github.athlan20/slg-mcp",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Let your AI agent play a Three Kingdoms strategy game (SLG): MCP server to query cities, build, recruit, march, scout and read battle reports. 《SLG · 让你的 AI 替你征战三国》的 MCP 服务。",
   "license": "MIT",
   "type": "module",
