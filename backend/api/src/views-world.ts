@@ -61,6 +61,8 @@ interface TileQueryRow extends TileRow {
   intel_at: Date | null;
   /** 侦察详细度与总兵力范围（v27 AISLG-77；历史情报缺省 = exact） */
   intel_detail?: 'rough' | 'kinds' | 'exact' | null;
+  /** 老巢格的灭亡时刻（v101，AISLG-241；null = 本季还在） */
+  lair_destroyed_at?: Date | null;
   intel_total?: { min: number; max: number } | null;
   /** 进行中的黄巾营地 / 老巢（v29 AISLG-76；row_to_json，日期为字符串） */
   camp_json?: Record<string, unknown> | null;
@@ -114,6 +116,7 @@ const TILE_SELECT = `
          si.detail->>'detail' AS intel_detail, si.detail->'garrisonTotal' AS intel_total,
          row_to_json(yc) AS camp_json,
          wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit, wt.faction_lair,
+         fl.destroyed_at AS lair_destroyed_at,
          wt.reserve, wt.reserve_at, c.settled_at AS owner_settled_at,
          wf.kind AS facility_kind, wf.level AS facility_level,
          EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero) AS wild_claimed
@@ -132,6 +135,7 @@ const TILE_SELECT = `
   LEFT JOIN scout_intel si ON si.account_id = $1 AND si.x = wt.x AND si.y = wt.y
   LEFT JOIN yt_camps yc ON yc.x = wt.x AND yc.y = wt.y AND yc.status = 'active'
   LEFT JOIN wilderness_facilities wf ON wf.x = wt.x AND wf.y = wt.y
+  LEFT JOIN faction_lairs fl ON fl.key = wt.faction_lair
 `;
 
 function ownerRelationOf(value: string | null | undefined, ownerAccountId: string, requesterAccountId?: string): TileOwnerView['relation'] {
@@ -167,7 +171,9 @@ function factionView(row: TileQueryRow): TileView['faction'] {
   }
   const lair = factionDefOf(row.faction_lair);
   if (lair) {
-    return { key: lair.key, name: lair.name, nameEn: lair.nameEn, isLair: true };
+    // v101（AISLG-241）：本季已灭亡的老巢是废墟（不能出征 / 侦察 / 占领）
+    const destroyed = !!row.lair_destroyed_at;
+    return { key: lair.key, name: lair.name, nameEn: lair.nameEn, isLair: true, ...(destroyed ? { destroyed } : {}) };
   }
   if (row.kind !== 'npc_city' || !row.npc) {
     return null;

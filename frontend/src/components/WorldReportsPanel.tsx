@@ -30,9 +30,13 @@ function armyLosses(army: Record<TroopKind, number>): string {
 }
 
 function reportKindLabel(report: BattleReportView): string {
-  const { COPY, MOVING_COPY, YT_COPY } = getCopy();
+  const { COPY, MOVING_COPY, YT_COPY, EXTRA_MAP } = getCopy();
   if (report.kind === 'intercept') {
     return MOVING_COPY.report.kind;
+  }
+  if (report.kind === 'faction_lair') {
+    // v101（AISLG-241）：打老巢的战报
+    return EXTRA_MAP.faction.reportKind;
   }
   if (report.kind === 'yellow_turban') {
     return YT_COPY.report.kind;

@@ -21,12 +21,16 @@ interface FogCellProps {
   /** 势力范围图层（关掉时不传）：这格属于哪家，只铺色不揭迷雾 */
   factionKey?: FactionKey;
   /** 这格是哪家的老巢（公开信息，迷雾里也给一个小标记） */
-  lair?: { name: string; leader: string };
+  lair?: { name: string; leader: string; destroyed?: boolean };
 }
 
 export function FogCell({ x, y, mark, selected, onSelect, factionKey, lair }: FogCellProps) {
   const { EXTRA_MAP } = useCopy();
-  const title = lair ? EXTRA_MAP.faction.lairHint(lair.name, lair.leader) : EXTRA_MAP.fog.unknownTitle;
+  const title = lair
+    ? lair.destroyed
+      ? EXTRA_MAP.faction.lairHintRuins(lair.name)
+      : EXTRA_MAP.faction.lairHint(lair.name, lair.leader)
+    : EXTRA_MAP.fog.unknownTitle;
   return (
     <button
       type="button"
@@ -53,11 +57,11 @@ export function FogCell({ x, y, mark, selected, onSelect, factionKey, lair }: Fo
       {mark ? <AllianceMarkBadge kind={mark.kind} /> : null}
       {lair ? (
         <span
-          role="世界地图-迷雾层-势力老巢"
+          role={lair.destroyed ? '世界地图-迷雾层-势力老巢废墟' : '世界地图-迷雾层-势力老巢'}
           aria-hidden="true"
           className="absolute inset-0 grid place-items-center text-[clamp(9px,1.8cqw,15px)] leading-none text-gold drop-shadow-[0_0_4px_var(--gold)]"
         >
-          {EXTRA_MAP.tileGlyphs.factionLair}
+          {lair.destroyed ? EXTRA_MAP.tileGlyphs.factionLairRuins : EXTRA_MAP.tileGlyphs.factionLair}
         </span>
       ) : null}
     </button>

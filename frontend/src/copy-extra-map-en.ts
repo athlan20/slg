@@ -16,6 +16,7 @@ export const EXTRA_MAP_EN = {
     enemy: 'E',
     wild: 'W',
     factionLair: 'F',
+    factionLairRuins: 'R',
   },
   truceBadge: {
     glyph: 'T',
@@ -216,6 +217,28 @@ export const EXTRA_MAP_EN = {
     lairTile: (name: string) => `${name} lair`,
     cellAria: (name: string) => `${name} territory`,
     broadcastExpanded: (radius: number) => `The five factions expand: territory range is now ${radius} tiles`,
+    lairWall: 'Walls reduce damage by 50%',
+    lairAttack: 'Attack',
+    lairAttackHint: 'You fight only the current camp. Every kill counts, even if you lose, and you are paid gold and resources on the spot for the defenders you destroy, with no carry limit.',
+    lairHintRuins: (name: string) => `${name} lair has been broken this season; only ruins remain`,
+    camps: (remaining: number, total: number) => `${remaining}/${total} camps`,
+    campRemaining: (percent: number) => `current camp ${percent}%`,
+    destroyed: 'Destroyed',
+    reportKind: 'Faction lair',
+    broadcastDestroyed: (actor: string, faction: string, leader: string) =>
+      `${actor} broke the ${faction} lair: the faction is destroyed this season and its leader ${leader} joins them`,
+    lairBattle: {
+      battle: (name: string, campNo: number, killedPower: number, gold: number, outcome: 'won' | 'lost') =>
+        outcome === 'won'
+          ? `You broke camp ${campNo} of the ${name} lair: enemy power ${killedPower} wiped out, ${gold} gold earned on the spot (paid per enemy power, no carry load)`
+          : `Your attack on camp ${campNo} of the ${name} lair failed: the camp keeps its damage, you still wiped out ${killedPower} power and earned ${gold} gold (paid per enemy power, no carry load)`,
+      reward: (name: string, rank: number, gold: number, each: number) =>
+        `The ${name} was destroyed: contribution rank ${rank} pays ${gold} gold and ${each} of each resource`,
+      destroyedByYou: (name: string, heroName: string) =>
+        heroName
+          ? `You cleared the last camp of the ${name}: the faction is destroyed this season and its leader ${heroName} joins you`
+          : `You cleared the last camp of the ${name}: the faction is destroyed this season (its leader was already taken)`,
+    },
     siege: {
       raidTitle: (name: string) => `${name} incoming`,
       raidFrom: (name: string, x: number, y: number) => `${name} (lair (${x}, ${y}))`,

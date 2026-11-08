@@ -26,6 +26,8 @@ export const EXTRA_MAP = {
     wild: '野',
     /** 势力老巢（v99，AISLG-239：地图与迷雾层上的单字标记） */
     factionLair: '势',
+    /** 老巢废墟（v101，AISLG-241：这家本季已灭亡） */
+    factionLairRuins: '墟',
   },
   /** 顶栏主动免战按钮的单字图形（TruceShieldBadge） */
   truceBadge: {
@@ -277,6 +279,41 @@ export const EXTRA_MAP = {
     cellAria: (name: string) => `${name}势力范围`,
     /** 全服播报：半径扩大（每周最多一次） */
     broadcastExpanded: (radius: number) => `五方势力扩张：势力范围半径扩大至 ${radius} 格`,
+    /** 老巢：城墙减伤（AISLG-241） */
+    lairWall: '城墙减伤 50%',
+    /** 老巢的进攻按钮 */
+    lairAttack: '进攻',
+    /** 老巢的出征说明 */
+    lairAttackHint: '一次只打当前一营，打掉多少算多少，打输也算。按歼灭的守军战力当场发金币和资源，不占部队负重。',
+    /** 老巢废墟的提示（v101，AISLG-241：这家本季已被攻破） */
+    lairHintRuins: (name: string) => `${name}老巢已被攻破，本季只剩废墟`,
+    /** 面板：营数（剩余 / 总数） */
+    camps: (remaining: number, total: number) => `${remaining}/${total} 营`,
+    /** 面板：当前营剩余百分比 */
+    campRemaining: (percent: number) => `当前营 ${percent}%`,
+    /** 面板：本季已灭亡 */
+    destroyed: '已灭亡',
+    /** 战报类别名（打老巢） */
+    reportKind: '势力老巢',
+    /** 全服播报：这家势力被攻破（带最后一击的玩家名） */
+    broadcastDestroyed: (actor: string, faction: string, leader: string) =>
+      `${actor} 攻破了${faction}老巢，${faction}本季灭亡，首领${leader}归其所有`,
+    /** 攻破老巢（v101，AISLG-241）：战斗 / 灭亡奖励 / 灭亡的事件文案 */
+    lairBattle: {
+      /** 打老巢的一场战斗：势力名 + 第几营 + 歼灭战力 + 当场奖励 + 输赢（打输也发奖） */
+      battle: (name: string, campNo: number, killedPower: number, gold: number, outcome: 'won' | 'lost') =>
+        outcome === 'won'
+          ? `你攻破${name}老巢第 ${campNo} 营：歼灭守军战力 ${killedPower}，当场得金币 ${gold}（按歼灭战力发放，不占负重）`
+          : `你进攻${name}老巢第 ${campNo} 营未克：守军残血保留，仍歼灭战力 ${killedPower}，当场得金币 ${gold}（按歼灭战力发放，不占负重）`,
+      /** 灭亡奖励：名次 + 金币 + 每种资源 */
+      reward: (name: string, rank: number, gold: number, each: number) =>
+        `${name}已被攻破：贡献榜第 ${rank} 名奖励金币 ${gold}、木粮石铁各 ${each}`,
+      /** 最后一击的玩家：本季灭亡 + 首领名将归你 */
+      destroyedByYou: (name: string, heroName: string) =>
+        heroName
+          ? `你打掉了${name}最后一营：${name}本季灭亡，首领名将${heroName}归你所有`
+          : `你打掉了${name}最后一营：${name}本季灭亡（首领名将已被他人获得）`,
+    },
     /** 势力出兵（v100，AISLG-240）：袭击旗号与围攻的文案，全部带势力名 */
     siege: {
       /** 势力袭击（普通 NPC 袭击打上旗号）的标题：如「南蛮来袭」 */

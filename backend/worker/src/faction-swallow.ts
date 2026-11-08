@@ -200,6 +200,9 @@ export async function swallowFactionCity(
     stock,
     buildings,
     faction: args.faction,
+    // v101（AISLG-241）：这是被吞的玩家分城——势力灭亡时只去掉归属，建筑与库存原样保留
+    //（普通的势力城守军 / 库存是 1.5 倍，灭亡时要除回 1 倍，两者靠这个标记区分）
+    fromPlayer: true,
   };
   await client.query(
     `UPDATE world_tiles SET kind = 'npc_city', level = $3, owner_city_id = NULL, npc = $4::jsonb

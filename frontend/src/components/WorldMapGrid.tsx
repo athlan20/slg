@@ -57,7 +57,7 @@ interface WorldMapGridProps {
   /** 势力范围图层（v99，AISLG-239）：键 "x,y" → 势力标识；关掉图层时不传。只铺色，不揭迷雾 */
   factionCells?: Map<string, FactionKey>;
   /** 窗口内的老巢（v99，AISLG-239）：键 "x,y" → 势力显示名与首领（老巢坐标公开，迷雾里也标记） */
-  factionLairs?: Map<string, { name: string; leader: string }>;
+  factionLairs?: Map<string, { name: string; leader: string; destroyed?: boolean }>;
   /** 产出数字是否显示（视野边长 ≥ 15 格时只显示资源图标） */
   showYieldNumber?: boolean;
   /** 覆盖层（AISLG-216）：行军路线 / 图标 / 来袭标记，挂在网格同一个相对容器里随网格一起位移 */
@@ -456,7 +456,7 @@ export function WorldMapGrid({
                     </>
                   )}
                   <WorldTileBadges tile={tile} mark={movingMarks?.get(`${x},${y}`)} hideCamp={!showYt} />
-                  {factionLair ? <FactionLairMark name={factionLair.name} leader={factionLair.leader} /> : null}
+                  {factionLair ? <FactionLairMark name={factionLair.name} leader={factionLair.leader} destroyed={factionLair.destroyed} /> : null}
                   {mark ? <AllianceMarkBadge kind={mark.kind} /> : null}
                   {occupied ? (
                     <span
