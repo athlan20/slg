@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**99** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**100** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 99）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 100）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 99,
+    "protocolVersion": 100,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 99,
+    "protocolVersion": 100,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/96 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/97 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 96,
+    "docVersion": 97,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 99,
-    "docNotice": "接口文档已从 v96 更新到 v99：请 GET /agent-api/changes/96 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 100,
+    "docNotice": "接口文档已从 v97 更新到 v100：请 GET /agent-api/changes/97 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -2294,7 +2294,7 @@
 | --- | --- | --- |
 | events | array | 事件数组，顺序见各游标说明。 |
 | events[].id | number | 事件自增 id，可作为 beforeId / sinceId 游标。 |
-| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost'（detail = { x, y, cause = npc_attack / recall / conquest / inactive（v98，AISLG-238，账号长期未上线被收回）, terrain, level }） \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）· 'hero_left'（v94，AISLG-228，名将下野，detail = { heroId, heroName, cause = loyalty / captive_expired }，胜方得结交资格时另有一条 qualified = true）/ 'hero_captured'（v94，名将被俘，主人与胜方各一条，detail = { heroId, heroName, ownerUsername, captorUsername, capturedUntil, ransomGold, side }）/ 'hero_ransomed'（v94，名将被赎回，detail = { heroId, heroName, ransomGold, taxShare, destroyed, side }）/ 'hero_loyalty_low'（v94，忠诚度降到 30 及以下，detail = { heroId, heroName, loyalty }）。 |
+| events[].type | string | 事件类型：'build_started' \| 'build_queued' \| 'build_completed' \| 'build_cancelled'（v7） \| 'recruit_started' \| 'recruit_queued' \| 'recruit_completed' \| 'recruit_cancelled'（v11） \| 'march_started' \| 'march_completed' \| 'wilderness_occupied' \| 'wilderness_lost'（detail = { x, y, cause = npc_attack / recall / conquest / inactive（v98，AISLG-238，账号长期未上线被收回）, terrain, level }） \| 'npc_city_occupied' \| 'npc_raid'（v12） \| 'city_renamed'（v7） \| 'account_reset'（v9，重置后事件流只剩这一条） \| 'agent_connected' \| 'agent_disconnected' \| 'gift_spent'（v89，礼金扣除，detail = { reason, amount, balance }）· 'item_granted' / 'item_used' / 'item_bought'（v90，AISLG-222，道具发放 { itemId, requested, granted, reason } / 消耗 { itemId, amount, left, reason } / 礼金购买 { itemId, count, price, cost, owned, gift }） \| 'resource_exchanged'（v22，集市兑换成交，detail = { resource, amount, gold, rate }） \| 'npc_attack_warning'（v23，NPC 袭击预警，detail = { x, y, target, terrain, level, armyMin, armyMax, arriveAt, attackId }；v100 起势力范围内的袭击另带 faction = { key, name, nameEn } 与 lair = { x, y }（出发老巢），见 PUSH_NPC_ATTACK_WARNING） \| 'starvation_warning' / 'mutiny'（v34，断粮预警 / 哗变） \| 'hero_recruited' / 'hero_dismissed' / 'hero_arrears' / 'hero_wounded' / 'hero_level_up' / 'hero_granted' / 'guard_changed'（v36，AISLG-114/115/116，武将：招募 / 解雇 / 欠饷 / 重伤 / 升级 / 获得名将 / 城守任命）· 'wilderness_depleted'（v61，AISLG-165，名下野地储量采空，detail = { x, y, terrain, level, at }）· 'truce_cancelled'（v71，AISLG-190，主动免战提前解除，detail = { until, cancelledAt }）· 'troops_disbanded'（v84，AISLG-209，遣散城内驻军，detail = { cityId, troops, refunded }）· 'hero_left'（v94，AISLG-228，名将下野，detail = { heroId, heroName, cause = loyalty / captive_expired }，胜方得结交资格时另有一条 qualified = true）/ 'hero_captured'（v94，名将被俘，主人与胜方各一条，detail = { heroId, heroName, ownerUsername, captorUsername, capturedUntil, ransomGold, side }）/ 'hero_ransomed'（v94，名将被赎回，detail = { heroId, heroName, ransomGold, taxShare, destroyed, side }）/ 'hero_loyalty_low'（v94，忠诚度降到 30 及以下，detail = { heroId, heroName, loyalty }）· 'faction_siege_warning'（v100，AISLG-240，势力围攻分城预警，detail = { siegeId, faction: { key, name, nameEn }, cityId, cityName, x, y, level, power, durability, beaconLevel, intel, armyMin, armyMax, arriveAt }）/ 'faction_siege'（v100，围攻结算，detail = { siegeId, faction, cityId, cityName, x, y, power, garrisonPower, rounds, losses, reportId, outcome = repelled / hit / swallowed, durability, damage?, durabilityAfter?, protectedUntil? }）/ 'faction_city_lost'（v100，城被势力吞下，detail = { cityId, cityName, x, y, faction, mainCityId, wildernessLost, facilitiesLost, reportId, siegeId }）。 |
 | events[].initiator | 'player' \| 'agent' \| null | 发起事件的连接声明的登录类型。 |
 | events[].cityId | string \| null | 关联城池 id，无关联时为 null。 |
 | events[].buildId | string \| null | 关联建造 / 征兵 / 行军条目 id，无关联时为 null。 |
@@ -5982,8 +5982,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | broadcasts | array | 播报列表（新→旧）：{ id, type, detail, createdAt }。 |
-| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'announcement' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' \| 'nobility_promoted' \| 'alliance_diplomacy' \| 'luoyang_window' \| 'famous_first_explored' \| 'hero_site_first_explored' \| 'legendary_relic_claimed' \| 'hero_left' \| 'hero_captured' \| 'faction_expanded' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；alliance_diplomacy 为 v77 结成友盟 / 宣布敌对；announcement 为 v60 公告播报；luoyang_window 为 v79 洛阳窗口预告 / 开始 / 结束 / 易主 / 政令；famous_first_explored / hero_site_first_explored / legendary_relic_claimed 为 v93 战争迷雾的名城首探、名将处所首探、传说遗迹领取；以上均必达、不受每分钟 3 条限频；hero_left 为 v94 名将下野（忠诚度归零，或被俘后囚禁到期未赎回）；hero_captured 为 v94 名将被俘；这两类走普通限频；faction_expanded 为 v99 五方势力的势力范围半径扩大（必达，每周最多一次））。 |
-| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }；alliance_diplomacy = { kind: friendly\|hostile\|neutral, actorAlliance, actorAllianceName, otherAlliance, otherAllianceName }；hero_granted = { username, heroName, source }（source 为获得途径文字，如「首占名城「X」」「黄巾老巢首杀」「黄巾之乱贡献榜第 N 名」「在野名将（打赢守军后结交招揽）」「结交招揽」）；city_conquered = { username（攻方）, cityName, from（守方用户名）, x, y }；announcement = { announcementId, title }（title 为公告中文标题）；luoyang_window = { phase, ... }：phase = holder 洛阳易主（allianceId, allianceName, username）｜ soon 窗口前预告（startAt, endAt）｜ started 窗口开始（startAt, endAt）｜ ended 窗口结束（startAt, endAt）｜ decree 盟主发政令（allianceId, decreeKind = recruit\|march\|research, until）；famous_first_explored = { username, name }（name 为名城名，不带坐标）；hero_site_first_explored = { username, name, hero }（name 为处所名，hero 为名将名，不带坐标）；legendary_relic_claimed = { username, kind }（kind 为遗迹种类，当前唯一的传说遗迹为 mausoleum，不带坐标）；hero_left = { username, heroName }（username 为主人用户名，查不到时为 null）；hero_captured = { ownerUsername, captorUsername, heroName }（主人与胜方用户名，查不到时为 null）；faction_expanded = { radius, day }（五家的势力范围半径同时扩大到 radius 格，day 为本季第几天；不带坐标）。 |
+| broadcasts[].type | 'npc_city_emptied' \| 'gold_mine_first' \| 'city_broken' \| 'win_streak' \| 'yt_started' \| 'yt_grown' \| 'yt_boss' \| 'yt_boss_first_kill' \| 'yt_finished' \| 'hero_granted' \| 'city_conquered' \| 'arena_champion' \| 'star_tower_cleared' \| 'announcement' \| 'battlefield_signup' \| 'battlefield_started' \| 'battlefield_stronghold' \| 'battlefield_finished' \| 'nobility_promoted' \| 'alliance_diplomacy' \| 'luoyang_window' \| 'famous_first_explored' \| 'hero_site_first_explored' \| 'legendary_relic_claimed' \| 'hero_left' \| 'hero_captured' \| 'faction_expanded' \| 'faction_city_swallowed' | 播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；alliance_diplomacy 为 v77 结成友盟 / 宣布敌对；announcement 为 v60 公告播报；luoyang_window 为 v79 洛阳窗口预告 / 开始 / 结束 / 易主 / 政令；famous_first_explored / hero_site_first_explored / legendary_relic_claimed 为 v93 战争迷雾的名城首探、名将处所首探、传说遗迹领取；以上均必达、不受每分钟 3 条限频；hero_left 为 v94 名将下野（忠诚度归零，或被俘后囚禁到期未赎回）；hero_captured 为 v94 名将被俘；这两类走普通限频；faction_expanded 为 v99 五方势力的势力范围半径扩大（必达，每周最多一次）；faction_city_swallowed 为 v100 势力围攻吞下玩家分城（必达，detail = { username（原主人）, cityName, faction, factionName, x, y }））。 |
+| broadcasts[].detail | object | 按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared\|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score\|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }；alliance_diplomacy = { kind: friendly\|hostile\|neutral, actorAlliance, actorAllianceName, otherAlliance, otherAllianceName }；hero_granted = { username, heroName, source }（source 为获得途径文字，如「首占名城「X」」「黄巾老巢首杀」「黄巾之乱贡献榜第 N 名」「在野名将（打赢守军后结交招揽）」「结交招揽」）；city_conquered = { username（攻方）, cityName, from（守方用户名）, x, y }；announcement = { announcementId, title }（title 为公告中文标题）；luoyang_window = { phase, ... }：phase = holder 洛阳易主（allianceId, allianceName, username）｜ soon 窗口前预告（startAt, endAt）｜ started 窗口开始（startAt, endAt）｜ ended 窗口结束（startAt, endAt）｜ decree 盟主发政令（allianceId, decreeKind = recruit\|march\|research, until）；famous_first_explored = { username, name }（name 为名城名，不带坐标）；hero_site_first_explored = { username, name, hero }（name 为处所名，hero 为名将名，不带坐标）；legendary_relic_claimed = { username, kind }（kind 为遗迹种类，当前唯一的传说遗迹为 mausoleum，不带坐标）；hero_left = { username, heroName }（username 为主人用户名，查不到时为 null）；hero_captured = { ownerUsername, captorUsername, heroName }（主人与胜方用户名，查不到时为 null）；faction_expanded = { radius, day }（五家的势力范围半径同时扩大到 radius 格，day 为本季第几天；不带坐标）；faction_city_swallowed = { username, cityName, faction, factionName, x, y }（username 为失城玩家，cityName 为失城名，faction / factionName 为吞下它的势力）。 |
 | broadcasts[].createdAt | string | 播报写入时间（ISO 8601）。 |
 
 **Agent 提示**：播报是全服氛围信息，与你的决策无强制关系；但「某 NPC 城被掠空」意味着那座城不再值得打，「首个占领金矿」意味着金矿红利已被拿走。别把播报当任务清单——玩家对打法的意图直接与玩家沟通确认。
@@ -19069,7 +19069,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：凉州军（Liangzhou Rebels，首领韩遂）在 (80, 80)；乌桓（Wuhuan，首领蹋顿）在 (920, 80)；南蛮（Nanman，首领孟获）在 (80, 920)；山越（Shanyue，首领费栈）在 (920, 920)；黑山军（Heishan Army，首领张燕）在 (500, 500)。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随本季天数变大（第 1~7 天 100 格、第 8~14 天 150 格、第 15~21 天 200 格、第 22 天起 250 格，按本季实际开始时间算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 25 格内的 NPC 城全部归该势力，之后每家每 6 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 1.5 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响，但老巢本版本不可出征（MARCH / SCOUT 打到老巢返回 FACTION_LAIR_TARGET）。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。
+查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：凉州军（Liangzhou Rebels，首领韩遂）在 (80, 80)；乌桓（Wuhuan，首领蹋顿）在 (920, 80)；南蛮（Nanman，首领孟获）在 (80, 920)；山越（Shanyue，首领费栈）在 (920, 920)；黑山军（Heishan Army，首领张燕）在 (500, 500)。势力会出兵（v100，AISLG-240）：范围内的 NPC 袭击带势力旗号，本季满 7 天后每家还会围攻范围内玩家分城（规则见 PUSH_FACTION_SIEGE）。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随本季天数变大（第 1~7 天 100 格、第 8~14 天 150 格、第 15~21 天 200 格、第 22 天起 250 格，按本季实际开始时间算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 25 格内的 NPC 城全部归该势力，之后每家每 6 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 1.5 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响，但老巢本版本不可出征（MARCH / SCOUT 打到老巢返回 FACTION_LAIR_TARGET）。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。
 
 **请求字段**
 
@@ -19093,7 +19093,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | factions[].radius | number | 这家当前的势力范围半径（与本季半径相同，逐家给出便于客户端直接画范围）。 |
 | factions[].cityCount | number | 这家当前持有的势力城数（被玩家占下的城立即不算）。 |
 
-**Agent 提示**：势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 1.5 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 5 格内没有玩家城，所以别把坐标 (80, 80) / (920, 80) / (80, 920) / (920, 920) / (500, 500) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。本版本势力不出兵、不抢你的城，势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。faction_enabled 关闭的服上这些字段全部为空，忽略即可。
+**Agent 提示**：势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 1.5 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 5 格内没有玩家城，所以别把坐标 (80, 80) / (920, 80) / (80, 920) / (920, 920) / (500, 500) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。
 
 **示例**
 
@@ -19975,6 +19975,8 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | armyKinds | object | 仅 intel=kinds：各兵种大致数量范围 { 兵种: { min, max } }（±20% 取整）。 |
 | army | object | 仅 intel=exact：精确编成 { 兵种: 数量 }。 |
 | arriveAt | string | 预计到达时刻（ISO 8601；已按 timeScale 缩放，与实际结算时刻一致）。烽火台每级让预警提前量 +10%（10 级翻倍）：袭击从发起到到达的时长 = 基础提前量 ×（1 + 0.1 × 烽火台等级），预警在发起时即发出。 |
+| faction | object | v100（AISLG-240）：这次袭击属于哪家势力 { key, name, nameEn }（如南蛮）。只在该格落在某家势力范围内时有值——范围外的袭击与上线前完全一样，没有这个字段。发起频率（全服仍每 120 分钟一次）与目标选择都不变，只是打上了旗号，玩家能知道「是谁在打自己」。 |
+| lair | object | v100：出发老巢坐标 { x, y }（与 faction 同时出现）。 |
 
 **Agent 提示**：收到预警即是行动信号：比较 arriveAt 与现在，决定增援（向 (x,y) 发 MARCH task=occupy? 不——增援自有野地直接 MARCH 即可，目标为本账号地块自动转为增援）、撤回驻军（RECALL_GARRISON 弃守保兵）或不管。到达结算仍会生成 npc_raid 事件与守方战报（PUSH_BATTLE_REPORT）。
 
@@ -20910,6 +20912,96 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
         }
       ]
     }
+  }
+}
+```
+
+### op 2030 · PUSH_FACTION_SIEGE — 推送：势力围攻分城（v100，AISLG-240）
+
+`S→C` 服务端推送 · 无 `seq`
+
+五方势力出兵打玩家分城：本季满 7 天后，每家势力在自己范围内选**离老巢最近的玩家分城**围攻（同一时间最多围 1 座，同一座城 6 小时最多打一次）。每次围攻提前 60 分钟预警（吃烽火台加成，敌情详细度也按烽火台等级分档，与 NPC 袭击预警同一套），预警时给出**当前城防值**。围城军战力 = 该分城官府等级 × 倍率（第 8~14 天 100、15~21 天 150、22 天起 200，随 time_scale 无关），编成按 3 级 NPC 城守军的比例（义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12）缩放，不带冲车；战斗走守城战，城墙 / 箭塔 / 城防器械 / 城守 / 协防全部生效。势力打赢（全灭守军）扣 35 城防、城进入 4 小时被动免战、不掠夺资源；城防归零时城被吞，变成该势力的 NPC 城。被围城的主人与驻扎在该城的协防方都会收到本推送（reason 相同、内容相同）。等价事件：faction_siege_warning（预警）/ faction_siege（结算）/ faction_city_lost（失城）。
+
+**data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| reason | 'warning' \| 'repelled' \| 'hit' \| 'swallowed' | warning 预警（提前 60 分钟 × 烽火台加成）；repelled 这家势力打输了（守住了，该势力 24 小时内不再打这座城）；hit 这家势力打赢一次、城防被扣、城进入 4 小时被动免战；swallowed 城防归零、城被吞（原主人腾出分城名额）。 |
+| siegeId | string | 围攻编号（同一次围攻的预警与结算用同一个 id，可用于去重）。 |
+| faction | object | { key, name, nameEn }：是哪一家（如 { key: "nanman", name: "南蛮", nameEn: "Nanman" }）。 |
+| cityId | string | 被围攻的城 id（城被吞后该城已不存在，仍给出原 id）。 |
+| cityName | string \| null | 城池名（查不到时为 null）。 |
+| x | number | 城池坐标 x。 |
+| y | number | 城池坐标 y。 |
+| power | number | 围城军参考战力（= 官府等级 × 倍率）。 |
+| arriveAt | string | warning：预计到达（结算）时刻（ISO 8601，已按 time_scale 缩放）。 |
+| armyMin | number | warning：围城军兵力范围下限（编成总单位数 −20% 取整）。 |
+| armyMax | number | warning：围城军兵力范围上限（+20%）。 |
+| intel | 'range' \| 'kinds' \| 'exact' | warning：敌情详细度（烽火台 3 级起给各兵种范围、6 级起给精确编成，与来袭预警同口径）。 |
+| beaconLevel | number | warning：被围城的烽火台等级（0 = 未建）。 |
+| armyKinds | object | warning（intel=kinds）：{ 兵种: { min, max } }。 |
+| army | object | warning（intel=exact）：精确编成 { 兵种: 数量 }。 |
+| durability | number | 被围城当前城防值（warning 与 hit / swallowed 都给；hit / swallowed 时为本次结算前的值）。 |
+| damage | number | hit / swallowed：本次扣除的城防值（围城军不带冲车，恒为 35）。 |
+| durabilityAfter | number | hit / swallowed：结算后的城防值（swallowed 恒为 0）。 |
+| protectedUntil | string | hit：城进入 4 小时被动免战的截止时刻（ISO 8601，免战期内城防不回涨）。 |
+
+**Agent 提示**：收到 warning 时先看 durability：城防 100 起，每次被围城军打赢扣 35（两次之间只回涨一点点），所以城防 ≤ 35 的城下一轮就会丢。增援要在 arriveAt 之前进城门（MARCH task=reinforce / 协防 MARCH task=assist 都可，守城战里协防部队与城主驻军合并成守方）；把驻军塞满通常就能守住——常规驻军（义兵 30 × 官府等级 + 弓箭 8 × 官府等级）对上 1.0 倍围城军时全灭概率很低，而驻军只剩一半时大概率失守。守住的城该势力 24 小时内不会再来。城被吞（swallowed）后：建筑与等级留在城里、剩余资源变成这座势力城的可掠夺库存，任何玩家都能按占领 NPC 城的流程打下它并接收建筑与库存；原主人腾出分城名额，且打回来不受放弃分城冷却限制。每家势力每周最多吞 2 座城（一周按本季第 8、15、22 天起算），主城与名城分城永远不会被围攻。
+
+**示例**
+
+推送（`warning`）：
+
+```json
+{
+  "op": 2030,
+  "push": true,
+  "data": {
+    "reason": "warning",
+    "siegeId": "7c9c2a10-0000-4000-8000-000000000010",
+    "faction": {
+      "key": "nanman",
+      "name": "南蛮",
+      "nameEn": "Nanman"
+    },
+    "cityId": "3f0b1e2a-0000-4000-8000-000000000002",
+    "cityName": "分城(180,930)",
+    "x": 180,
+    "y": 930,
+    "power": 500,
+    "durability": 65,
+    "arriveAt": "2026-11-14T12:00:00.000Z",
+    "armyMin": 210,
+    "armyMax": 320,
+    "intel": "range",
+    "beaconLevel": 0
+  }
+}
+```
+
+推送（`hit`）：
+
+```json
+{
+  "op": 2030,
+  "push": true,
+  "data": {
+    "reason": "hit",
+    "siegeId": "7c9c2a10-0000-4000-8000-000000000010",
+    "faction": {
+      "key": "nanman",
+      "name": "南蛮",
+      "nameEn": "Nanman"
+    },
+    "cityId": "3f0b1e2a-0000-4000-8000-000000000002",
+    "cityName": "分城(180,930)",
+    "x": 180,
+    "y": 930,
+    "power": 500,
+    "durability": 65,
+    "damage": 35,
+    "durabilityAfter": 30,
+    "protectedUntil": "2026-11-14T16:00:00.000Z"
   }
 }
 ```
@@ -22693,7 +22785,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 99。
+- 协议版本随对外协议内容的每次变化递增；当前为 100。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

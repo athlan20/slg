@@ -284,8 +284,14 @@ export const EventType = {
   NEWBIE_PROTECTION_ENDED: 'newbie_protection_ended',
   /** v40：分城易主（AISLG-124；原主人 outcome=lost / 新主人 outcome=gained，detail 含城池、对方、坐标） */
   CITY_CONQUERED: 'city_conquered',
-  /** v61（AISLG-165）：名下野地储量采空（detail = { x, y, terrain, level, at }；驻军仍在时只按恢复速度采集） */
+  /** v61（AISLG-165）：名下野地储量采空（detail = { x, y, terrain, level, at }；驻军仍在时改为按恢复速度采集） */
   WILDERNESS_DEPLETED: 'wilderness_depleted',
+  /** v100（AISLG-240）：势力围攻分城预警（detail = { siegeId, faction, cityId, cityName, x, y, power, durability, 敌情（烽火台分档）, arriveAt }） */
+  FACTION_SIEGE_WARNING: 'faction_siege_warning',
+  /** v100（AISLG-240）：势力围攻结算（detail = { siegeId, faction, cityId, cityName, x, y, outcome = repelled / hit / swallowed, durability, damage?, durabilityAfter?, protectedUntil?, reportId }） */
+  FACTION_SIEGE: 'faction_siege',
+  /** v100（AISLG-240）：城被势力吞下（detail = { cityId, cityName, x, y, faction, mainCityId, wildernessLost, reportId }；原主人收到，分城名额自动腾出） */
+  FACTION_CITY_LOST: 'faction_city_lost',
   /** v73（AISLG-193）：开始打造城防器械（detail = { kind, count, cost, dueAt }） */
   DEFENSE_CRAFT_STARTED: 'defense_craft_started',
   /** v73：打造进入排队（detail = { kind, count, cost }） */

@@ -253,6 +253,8 @@ export interface NpcWildernessRaidTarget {
   garrison: Partial<Record<TroopKind, number>>;
   /** 战报守方展示名 */
   defenderName: string;
+  /** v100（AISLG-240）：这次袭击的势力旗号（null / 缺省 = 不在任何势力范围内的普通 NPC 袭击） */
+  faction?: { key: string; name: string; nameEn: string } | null;
   notifies: TileNotify[];
 }
 
@@ -269,9 +271,11 @@ export async function resolveNpcWildernessRaid(
   await recordPoolTroops(client, cityId, 'captive', raidCasualties.captives);
   const npcPower = armyPower(npcRaidArmy(level));
   const garrisonPower = armyPower(garrison);
+  const attackerName = target.faction ? `${target.faction.name}袭击部队` : 'NPC 袭击部队';
+  const factionDetail = target.faction ? { faction: target.faction } : {};
   const reportId = await saveBattleReport(
     client, accountId, 'defender', raid.defended, 'npc_raid',
-    tile.x, tile.y, raid.result, 'NPC 袭击部队', target.defenderName, 0, target.notifies,
+    tile.x, tile.y, raid.result, attackerName, target.defenderName, 0, target.notifies,
     null, null, null, null, raidCasualties,
   );
   // 连胜计数（v23 AISLG-60）：守方视角的胜负同样计入（击退 +1、失守清零；与主城守城同口径）
@@ -305,6 +309,7 @@ export async function resolveNpcWildernessRaid(
       detail: {
         x: tile.x, y: tile.y, target: 'wilderness', level,
         outcome: 'repelled',
+        ...factionDetail,
         npcPower, garrisonPower, rounds: raid.result.rounds,
         losses: raid.result.defender.losses, reportId,
       },
@@ -322,6 +327,7 @@ export async function resolveNpcWildernessRaid(
     detail: {
       x: tile.x, y: tile.y, target: 'wilderness', level,
       outcome: 'garrison_lost',
+      ...factionDetail,
       npcPower, garrisonPower, rounds: raid.result.rounds,
       losses: raid.result.defender.losses, reportId,
     },

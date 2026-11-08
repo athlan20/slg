@@ -33,6 +33,10 @@ export type EventType =
   | 'npc_city_occupied'
   | 'npc_raid'
   | 'npc_attack_warning'
+  /** 势力围攻分城（v100，AISLG-240）：预警 / 结算 / 失城 */
+  | 'faction_siege_warning'
+  | 'faction_siege'
+  | 'faction_city_lost'
   | 'player_attack_warning'
   | 'pvp_raid'
   | 'truce_started'

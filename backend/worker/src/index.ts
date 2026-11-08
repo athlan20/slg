@@ -21,6 +21,7 @@ import { fogConfigStale, refreshFogEnabled } from '../../common/src/fog-config';
 import { processDueNpcAttacks } from './npc-attack';
 import { startNpcRaidTimer } from './npc-raid-timer';
 import { startFactionTimer } from './faction-tick';
+import { startFactionSiegeTimer } from './faction-siege-tick';
 import { factionConfigStale, refreshFactionEnabled } from '../../common/src/faction-config';
 import { processDueResearch } from './tech-tick';
 import { processMovingTargets } from './moving-tick';
@@ -300,6 +301,8 @@ async function main(): Promise<void> {
   const stopRaidTimer = startNpcRaidTimer(pool);
   // 五方势力的吞城定时器（v99 AISLG-239）：见 faction-tick.ts（换季进行中不吞城）
   const stopFactionTimer = startFactionTimer(pool);
+  // 五方势力的围攻定时器（v100 AISLG-240）：见 faction-siege-tick.ts（发起围攻与到期结算）
+  const stopFactionSiegeTimer = startFactionSiegeTimer(pool);
 
   // 排行榜快照（v23 AISLG-61）：每 10 分钟整榜重算（数值与玩家页面同源，
   // 查询读快照，不做实时全表统计）；启动时先算一次，榜很快可用
@@ -323,6 +326,7 @@ async function main(): Promise<void> {
     stopLoopLag();
     stopRaidTimer();
     stopFactionTimer();
+    stopFactionSiegeTimer();
     await pool.end();
     process.exit(0);
   };

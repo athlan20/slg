@@ -24,6 +24,7 @@ import type { ConnInfo } from './connections';
 import { lockCitySnapshot } from './views';
 import { returnAssistsForCity } from '../../common/src/city-assist-db';
 import { destroyFacilitiesOfCity } from '../../common/src/facility-db';
+import { cancelSiegesForCity } from '../../common/src/faction-siege-db';
 
 type DiscardOutcome =
   | { ok: true; cityId: string; x: number; y: number; cooldownUntil: Date; assistProviders: string[] }
@@ -158,6 +159,8 @@ async function discardCityTx(client: pg.PoolClient, accountId: string, cityId: s
   const returned = await returnAssistsForCity(client, cityId, 'city_discarded');
   // v97（AISLG-232）：该城名下野地上的望楼一并毁掉（名下野地转无主；设施行随城级联删除，事件在这里补写）
   await destroyFacilitiesOfCity(client, cityId, 'city_lost');
+  // v100（AISLG-240）：城被放弃，正在围攻这座城的势力本次围攻作废（不战斗）
+  await cancelSiegesForCity(client, cityId);
   // 名下野地转为无主（owner_city_id 外键 ON DELETE SET NULL），随后删除城池行：
   // 建筑、城内驻军、建造 / 征兵 / 研究队列与城守任命随外键级联清理（资源随城作废）
   await client.query(`DELETE FROM cities WHERE id = $1`, [cityId]);
