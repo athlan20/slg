@@ -79,8 +79,9 @@ export async function archiveSeason(client: pg.PoolClient, seasonId: number, sea
     await client.query(
       `INSERT INTO season_archives
          (season_id, kind, rank, account_id, username, city_name, value, agent_model, alliance_id, alliance_name, member_count)
-       VALUES ($1, 'luoyang', 1, $2, $3, NULL, $4, NULL, $5, $6, $4)`,
-      [seasonId, luoyangRow.leader_id, luoyangRow.leader_name, luoyangRow.member_count, luoyangRow.id, luoyangRow.name],
+       VALUES ($1, 'luoyang', 1, $2, $3, NULL, $4, NULL, $5, $6, $7)`,
+      // $4（value，bigint）与 $7（member_count，integer）列类型不同，不能共用一个参数（否则 PG 报 inconsistent types deduced）
+      [seasonId, luoyangRow.leader_id, luoyangRow.leader_name, luoyangRow.member_count, luoyangRow.id, luoyangRow.name, luoyangRow.member_count],
     );
     await client.query(
       `INSERT INTO season_honors (account_id, season_id, kind, rank, title)
@@ -151,7 +152,7 @@ async function writeHonors(client: pg.PoolClient, seasonId: number, seasonName: 
                    WHEN 'arena' THEN '竞技场' WHEN 'starTower' THEN '将星塔' WHEN 'exploration' THEN '探索榜' ELSE a.kind END ||
        CASE a.rank WHEN 1 THEN '冠军' WHEN 2 THEN '亚军' ELSE '季军' END
      FROM season_archives a
-     WHERE a.season_id = $1 AND a.rank <= $3 AND a.account_id IS NOT NULL AND a.kind <> 'alliance'`,
+     WHERE a.season_id = $1 AND a.rank <= $3 AND a.account_id IS NOT NULL AND a.kind <> 'alliance' AND a.kind <> 'luoyang'`,
     [seasonId, seasonName, HONOR_TOP_N],
   );
   await client.query(
