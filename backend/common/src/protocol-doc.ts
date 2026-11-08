@@ -958,6 +958,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v97，AISLG-232）这座城名下的望楼已达上限：每座城最多 2 座（主城 2 座，每座分城各 2 座）。响应附 limit 与 count。不扣任何资源。',
     action: '换另一座城名下的野地建望楼，或先把这块地的望楼升到更高级（升级不受名额限制）。',
   },
+  FACTION_LAIR_TARGET: {
+    desc: '（v99，AISLG-239）目标是五方势力的老巢：老巢本版本只能查询（GET_FACTIONS / 地块的 faction.isLair），不能出征也不能侦察（MARCH / SCOUT 都拒绝），也不发兵、不改任何数据。',
+    action: '打势力城请选 faction.isLair = false 的 NPC 城：它们是同等级普通 NPC 城的 1.5 倍守军与库存，可以侦察 / 掠夺 / 占领。老巢周围 5 格内也不会落到玩家城，不要当成选址目标。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',

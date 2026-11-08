@@ -71,6 +71,7 @@ import { useMovingTargets, type MovingTargetsSession } from './movingTargets';
 import { useMapOverview, type MapOverviewSession } from './mapOverview';
 import { useTroopPoolsAllCities, type TroopPoolsAllCitiesSession } from './troopPoolsAllCities';
 import { useYellowTurban, type YellowTurbanSession } from './yellowTurban';
+import { useFactionSession, type FactionSession } from './factionSession';
 import { useBattlefieldSession, type BattlefieldSession } from './battlefield';
 import { useNobilitySession, type NobilitySession } from './nobilitySession';
 import { useMarketSession, type MarketSession } from './marketSession';
@@ -229,6 +230,8 @@ export interface GameSession {
   moving: MovingTargetsSession;
   /** 黄巾之乱会话（v29 AISLG-76）：事件进度 / 营地 / 我的贡献 / 贡献榜 */
   yellowTurban: YellowTurbanSession;
+  /** 五方势力会话（v99 AISLG-239）：五家的老巢 / 半径 / 持城数；开关关闭时 enabled=false、列表为空 */
+  factions: FactionSession;
   /** 剧本战场会话（v75 AISLG-198）：官渡的报名 / 入场 / 队伍 / 军功 / 商店 */
   battlefield: BattlefieldSession;
   /** 声望与爵位（v76 AISLG-197）：爵位 / 今日俸禄状态与领取 */
@@ -456,6 +459,10 @@ export function useGameSession(): GameSession {
   // 黄巾之乱会话切片（v29 AISLG-76）：事件进度 / 营地 / 贡献，推送到达重拉
   const yellowTurban = useYellowTurban({ clientRef, connected: connection === 'online' });
   const { clear: ytClear, onPush: onYtPush } = yellowTurban;
+
+  // 五方势力会话切片（v99 AISLG-239）：连接就绪时拉一次，之后每分钟重拉（半径按真实天数变化，无推送）
+  const factions = useFactionSession({ clientRef, connected: connection === 'online' });
+  const { clear: factionClear } = factions;
 
   // 剧本战场会话切片（v75，AISLG-198）：官渡的报名 / 入场 / 队伍 / 军功 / 商店，推送到达重拉
   const battlefield = useBattlefieldSession({ clientRef, connected: connection === 'online' });
@@ -705,6 +712,7 @@ export function useGameSession(): GameSession {
       heroClear();
       movingClear();
       ytClear();
+      factionClear();
       battlefieldClear();
       nobilityClear();
       marketClear();
@@ -720,7 +728,7 @@ export function useGameSession(): GameSession {
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, moveCityCancelPick],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, moveCityCancelPick],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -745,6 +753,7 @@ export function useGameSession(): GameSession {
     heroClear();
     movingClear();
     ytClear();
+      factionClear();
     questClear();
     hallClear();
     stratagemClear();
@@ -752,7 +761,7 @@ export function useGameSession(): GameSession {
     moveCityCancelPick();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, moveCityCancelPick]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, moveCityCancelPick]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1330,6 +1339,7 @@ export function useGameSession(): GameSession {
         heroClear();
         movingClear();
         ytClear();
+      factionClear();
       battlefieldClear();
       nobilityClear();
       marketClear();
@@ -1342,7 +1352,7 @@ export function useGameSession(): GameSession {
     } catch (err) {
       return err instanceof Error ? err.message : COPY.errors.reset.fallback;
     }
-  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList]);
+  }, [syncAll, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList]);
 
   /** 加载更早的一页事件（beforeId 游标分页；本地临时事件 id 为负，不作为游标） */
   const loadOlderEvents = useCallback(async () => {
@@ -1469,6 +1479,7 @@ export function useGameSession(): GameSession {
     hallOfFame,
     moving,
     yellowTurban,
+    factions,
     battlefield,
     nobility,
     market,

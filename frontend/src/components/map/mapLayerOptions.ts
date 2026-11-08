@@ -26,5 +26,7 @@ export function useLayerOptions(): LayerOption[] {
     // 新加两个图层（AISLG-216）：行军默认开、产出默认关（信息多，要的人自己打开）
     { key: 'marches', label: EXTRA_MAP.layers.marches, roleLabel: EXTRA_MAP_ZH.layers.marches },
     { key: 'yield', label: EXTRA_MAP.layers.yield, roleLabel: EXTRA_MAP_ZH.layers.yield },
+    // 五方势力的势力范围（v99，AISLG-239）：默认开（地盘是公开信息，开箱就能看到五股力量在长）
+    { key: 'faction', label: EXTRA_MAP.faction.layer, roleLabel: EXTRA_MAP_ZH.faction.layer },
   ];
 }

@@ -108,6 +108,7 @@ export const REQUEST_GET_WORLD_MAP: RequestOpDoc = {
     { name: 'tiles[].x / tiles[].y', type: 'number', desc: '地块坐标。' },
     { name: 'tiles[].terrain', type: "'plain' | 'grass' | 'forest' | 'hill' | 'desert' | 'marsh' | 'lake' | 'gold_mine'", desc: '地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。' },
     { name: 'tiles[].kind', type: "'wilderness' | 'npc_city' | 'city'", desc: '地块类别：野地 / NPC 城池 / 玩家城池（主城与分城）。' },
+    { name: 'tiles[].faction', type: '{ key, name, nameEn, isLair } | null', desc: '势力归属（v99，AISLG-239）：被某方势力吞并的 NPC 城给 { key, name, nameEn, isLair: false }（守军与可掠夺库存是同等级普通 NPC 城的 1.5 倍，见 GET_FACTIONS；玩家占下后地块转城池、归属消失）；老巢地块给 isLair: true（老巢坐标对全服公开、不受迷雾影响，但不可出征，见 FACTION_LAIR_TARGET）。其余地块、开关 faction_enabled 关闭、以及已探索但不在实时视野内的格（动态信息）为 null。' },
     { name: 'tiles[].fog', type: "'explored' | 'visible'", desc: '战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾一致）；explored = 已探索但不在视野内（动态字段清空，见 summary）。未探索的格不返回。' },
     { name: 'tiles[].seenAt', type: 'string | null', desc: '已探索的格为上次看到的时间（ISO）；实时视野为 null。' },
     { name: 'tiles[].relic', type: '{ tier, kind } | null', desc: '遗迹（v93，AISLG-227）：实时视野或已探索且未领取的遗迹格才有；tier = common / rare / legendary，kind = granary / lumberyard / quarry / ironworks / caravan / battlefield / treasury / mausoleum。领取后所有人的地图上立刻消失。迷雾关闭时恒为 null。' },

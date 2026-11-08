@@ -109,7 +109,7 @@ async function pickFreeWilderness(
 ): Promise<{ x: number; y: number } | null> {
   const res = await client.query(
     `SELECT wt.x, wt.y FROM world_tiles wt
-     WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.terrain <> 'lake'
+     WHERE wt.kind = 'wilderness' AND wt.owner_city_id IS NULL AND wt.terrain <> 'lake' AND wt.faction_lair IS NULL
        AND wt.x BETWEEN $1 AND $2 AND wt.y BETWEEN $3 AND $4
        AND NOT EXISTS (SELECT 1 FROM yt_camps yc WHERE yc.x = wt.x AND yc.y = wt.y AND yc.status = 'active')
      ORDER BY GREATEST(ABS(wt.x - $5), ABS(wt.y - $6)) + random() * 3

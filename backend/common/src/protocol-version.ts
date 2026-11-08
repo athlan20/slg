@@ -757,5 +757,19 @@
  *   wilderness_lost 的 detail.cause 新增 inactive（与 facility_lost 的 cause 同名取值）；离线日报
  *   offline 新增 wildernessInactiveLost（离线期间因长期未上线被收回的野地数，与 wildernessLost 分开计）。
  *   无新增 op / 推送号 / 错误码，现有客户端无需改动。
+ * v99（五方势力骨架，AISLG-239，只加不改）：地图四角与中央放五方势力——凉州军（韩遂，(80,80)）、乌桓（蹋顿，(920,80)）、
+ *   南蛮（孟获，(80,920)）、山越（费栈，(920,920)）、黑山军（张燕，(500,500)）。老巢是独立的新地块（kind 仍是 wilderness、
+ *   不可出征、不占名城），周围 5 格内不放玩家（注册落位 claimCityTile 与迁城都避开）。势力范围是以老巢为中心的方块，
+ *   半径按本季实际天数变大（第 1~7 天 100、8~14 天 150、15~21 天 200、22 天起 250，不随 time_scale 变化），
+ *   重叠格归离老巢更近的一家（距离相同按上述顺序）。开季时老巢周围 25 格内的 NPC 城全部归该势力，
+ *   之后每家每 6 小时（随缩放）在当前范围内随机吞一座无主 NPC 城；名城 / 玩家城 / 已被吞的城不吞。
+ *   势力城仍是 NPC 城，守军与可掠夺库存是同等级普通 NPC 城的 1.5 倍（写在 npc 快照上，掠夺 / 占领 / 侦察三条路径同时生效），
+ *   玩家占下后不再属于势力。新增 GET_FACTIONS（op 154，只读、玩家与 Agent 通用）：五家的名称 / 首领 / 老巢坐标 /
+ *   当前半径 / 持城数；TileView 新增 faction（{ key, name, nameEn, isLair }，迷雾里已探索但不在视野内为 null）。
+ *   新错误码 FACTION_LAIR_TARGET（MARCH / SCOUT 打老巢被拒）；新全服播报 faction_expanded（半径扩大，每周最多一次）。
+ *   总开关 faction_enabled 存 settings、默认关闭：关闭时行为与上线前完全一致（不放老巢、不吞城、地块无归属、
+ *   落位与迁城不避开老巢、GET_FACTIONS 返回 enabled=false）；打算跟换季一起上线——世界重新生成时才放老巢。
+ *   新表 factions（换季清空）+ world_tiles.faction_lair 列；本张单只做势力本身：不出兵打玩家、不围攻（AISLG-240）、
+ *   老巢不可攻打（AISLG-241）。
  */
-export const PROTOCOL_VERSION = 98;
+export const PROTOCOL_VERSION = 99;
