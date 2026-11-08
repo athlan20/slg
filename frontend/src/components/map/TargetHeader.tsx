@@ -14,6 +14,8 @@ import { WorldSiteNote } from './WorldSiteNote';
 import { TargetCloseButton } from './TargetCloseButton';
 import { relativeAgo } from '../ScoutReportModal';
 import { YellowTurbanCampNote } from '../YellowTurbanCampNote';
+import { tileFactionText } from '../worldMapTip';
+import { FactionLairNote } from './FactionLairNote';
 import { plunderCooldownLeft, protectionLeftText } from '../worldPanelText';
 
 interface TargetHeaderProps {
@@ -76,8 +78,12 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
     }
   };
 
+  /** 老巢地块（AISLG-241）：底层是一块野地，但不能按野地展示 */
+  const lair = detail?.faction?.isLair ? detail.faction : null;
   const name = !detail
     ? TARGET_COPY.detailTitle(x, y)
+    : lair
+      ? tileFactionText(detail)
     : detail.camp
       ? detail.camp.label
       : detail.kind === 'city'
@@ -89,7 +95,7 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
           : `${TERRAIN_LABEL[detail.terrain]} Lv${detail.level}`;
   const distance = origin ? Math.abs(x - origin.x) + Math.abs(y - origin.y) : null;
   const range = detail?.npc?.scoutDetail && detail.npc.scoutDetail !== 'exact' ? detail.npc.garrisonTotal : null;
-  const garrison = !detail
+  const garrison = !detail || lair
     ? TARGET_COPY.unknown
     : range
       ? TECH_COPY.scout.garrisonRangeShort(range.min, range.max)
@@ -119,11 +125,19 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
           </b>
           <small className="block truncate text-[11.5px] text-dim">
             ({x},{y})
-            {detail ? ` · ${TERRAIN_LABEL[detail.terrain]} · ${TILE_KIND_LABEL[detail.kind]}` : ''}
+            {detail ? ` · ${TERRAIN_LABEL[detail.terrain]}${lair ? '' : ` · ${TILE_KIND_LABEL[detail.kind]}`}` : ''}
           </small>
         </span>
         <TargetCloseButton onClose={onClose} />
       </div>
+
+      {/* 势力归属（v99，AISLG-239）：势力城在这儿标出来；老巢标题已写明，这里给战况 */}
+      {lair ? <FactionLairNote faction={lair} /> : null}
+      {detail?.faction && !lair ? (
+        <div role="选中详情-势力归属" className="text-[11.5px] text-gold">
+          {tileFactionText(detail)}
+        </div>
+      ) : null}
 
       {detail === null ? (
         <p className="text-[12px] text-faint">{TARGET_COPY.loading}</p>
@@ -152,12 +166,12 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
           </div>
           <div role="世界地图详情区-地块摘要" className="flex flex-col gap-1 text-[11.5px]">
             {/* 丘陵上的野地视野 +2（AISLG-233）：地形是公开信息，别人的丘陵野地也显示 */}
-            {detail.kind === 'wilderness' && detail.terrain === 'hill' ? (
+            {detail.kind === 'wilderness' && detail.terrain === 'hill' && !lair ? (
               <p role="选中详情-高地视野" className="truncate text-accent">
                 {copy.EXTRA_MAP.hillVision.detail}
               </p>
             ) : null}
-            {detail.kind !== 'npc_city' ? (
+            {detail.kind !== 'npc_city' && !lair ? (
               <p className="truncate text-dim" title={detail.owner ? `${detail.owner.username} · ${tName(detail.owner.cityName)}` : undefined}>
                 {detail.owner ? COPY.worldMap.ownerRow(`${detail.owner.username} · ${tName(detail.owner.cityName)}`) : COPY.worldMap.ownerNone}
               </p>
@@ -198,13 +212,13 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
                   : HERO_COPY.wild.intelHidden}
               </p>
             ) : null}
-            {detail.wilderness ? (
+            {detail.wilderness && !lair ? (
               <p className="truncate text-dim">
                 {COPY.worldMap.wildernessBonusRow(RESOURCE_LABEL[detail.wilderness.resource], detail.wilderness.bonusRate)}
                 {detail.wilderness.gatherRate > 0 ? ` · ${COPY.worldMap.wildernessGatherRow(RESOURCE_LABEL[detail.wilderness.resource], detail.wilderness.gatherRate)}` : ''}
               </p>
             ) : null}
-            {detail.reserve ? (
+            {detail.reserve && !lair ? (
               <p role="世界地图详情区-野地储量" className="truncate text-dim">
                 {COPY.worldMap.reserveRow(COPY.worldMap.reserveTier[detail.reserve.tier], detail.reserve.current, detail.reserve.cap)}
                 {detail.reserve.eta ? ` · ${COPY.worldMap.reserveEta(detail.reserve.eta.kind, formatClock(detail.reserve.eta.at))}` : ''}

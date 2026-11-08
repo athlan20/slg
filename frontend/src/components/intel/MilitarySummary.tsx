@@ -11,6 +11,7 @@ import { recommendCell } from '../../state/interceptPlan';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
 import { useNow } from '../../state/useNow';
+import { factionAlertText } from '../map/factionAlert';
 import { PagedList } from '../ui/PagedList';
 
 interface SummaryRow {
@@ -33,7 +34,7 @@ const TONE: Record<SummaryRow['tone'], string> = {
 
 export function MilitarySummary({ role }: { role: string }) {
   const copy = useCopy();
-  const { EXTRA_PANEL, SUMMARY_COPY } = copy;
+  const { EXTRA_MAP, EXTRA_PANEL, SUMMARY_COPY } = copy;
   const { session, incoming, openWarning, openYellowTurban, marchOrigin } = useGame();
   const { go } = useNav();
   const city = session.city;
@@ -48,7 +49,9 @@ export function MilitarySummary({ role }: { role: string }) {
       key: `npc-${first.attackId}`,
       tone: 'bad',
       role: '军情摘要-NPC来袭',
-      title: SUMMARY_COPY.npc(first.target === 'city' ? SUMMARY_COPY.npcCity : SUMMARY_COPY.npcWild(first.x, first.y), first.level),
+      title:
+        factionAlertText(first, EXTRA_MAP.faction.siege, first.target === 'city' ? SUMMARY_COPY.npcCity : SUMMARY_COPY.npcWild(first.x, first.y))
+        ?? SUMMARY_COPY.npc(first.target === 'city' ? SUMMARY_COPY.npcCity : SUMMARY_COPY.npcWild(first.x, first.y), first.level),
       sub: `${SUMMARY_COPY.npcSub(first.armyMin, first.armyMax, first.beaconLevel)}${incoming.length > 1 ? ` · ${EXTRA_PANEL.militarySummary.wavesTotal(incoming.length)}` : ''}`,
       right: <b className="font-mono tabular-nums text-st-error">{formatDurationText(Math.max(0, Math.ceil((Date.parse(first.arriveAt) - now) / 1000)))}</b>,
       onClick: openWarning,

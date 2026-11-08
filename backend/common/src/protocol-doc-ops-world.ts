@@ -108,6 +108,7 @@ export const REQUEST_GET_WORLD_MAP: RequestOpDoc = {
     { name: 'tiles[].x / tiles[].y', type: 'number', desc: '地块坐标。' },
     { name: 'tiles[].terrain', type: "'plain' | 'grass' | 'forest' | 'hill' | 'desert' | 'marsh' | 'lake' | 'gold_mine'", desc: '地形（v19 新增 gold_mine 金矿：占领产金、掠夺为空池；加成映射见 GET_TILE 的字段说明）。' },
     { name: 'tiles[].kind', type: "'wilderness' | 'npc_city' | 'city'", desc: '地块类别：野地 / NPC 城池 / 玩家城池（主城与分城）。' },
+    { name: 'tiles[].faction', type: '{ key, name, nameEn, isLair } | null', desc: '势力归属（v99，AISLG-239）：被某方势力吞并的 NPC 城给 { key, name, nameEn, isLair: false }（守军与可掠夺库存是同等级普通 NPC 城的 1.5 倍，见 GET_FACTIONS；玩家占下后地块转城池、归属消失）；老巢地块给 isLair: true（老巢坐标对全服公开、不受迷雾影响；v101 起本季未灭亡的老巢可以出征 / 侦察，见 FACTION_LAIR_TARGET），这家本季已被攻破时另带 destroyed: true（老巢废墟，本季不能再出征 / 侦察 / 占领）。其余地块、开关 faction_enabled 关闭、以及已探索但不在实时视野内的格（动态信息）为 null。' },
     { name: 'tiles[].fog', type: "'explored' | 'visible'", desc: '战争迷雾（v92，AISLG-224）：visible = 实时视野（与未开迷雾一致）；explored = 已探索但不在视野内（动态字段清空，见 summary）。未探索的格不返回。' },
     { name: 'tiles[].seenAt', type: 'string | null', desc: '已探索的格为上次看到的时间（ISO）；实时视野为 null。' },
     { name: 'tiles[].relic', type: '{ tier, kind } | null', desc: '遗迹（v93，AISLG-227）：实时视野或已探索且未领取的遗迹格才有；tier = common / rare / legendary，kind = granary / lumberyard / quarry / ironworks / caravan / battlefield / treasury / mausoleum。领取后所有人的地图上立刻消失。迷雾关闭时恒为 null。' },
@@ -475,6 +476,8 @@ export const PUSH_NPC_ATTACK_WARNING: PushOpDoc = {
     { name: 'armyKinds', type: 'object', desc: '仅 intel=kinds：各兵种大致数量范围 { 兵种: { min, max } }（±20% 取整）。' },
     { name: 'army', type: 'object', desc: '仅 intel=exact：精确编成 { 兵种: 数量 }。' },
     { name: 'arriveAt', type: 'string', desc: '预计到达时刻（ISO 8601；已按 timeScale 缩放，与实际结算时刻一致）。烽火台每级让预警提前量 +10%（10 级翻倍）：袭击从发起到到达的时长 = 基础提前量 ×（1 + 0.1 × 烽火台等级），预警在发起时即发出。' },
+    { name: 'faction', type: 'object', desc: 'v100（AISLG-240）：这次袭击属于哪家势力 { key, name, nameEn }（如南蛮）。只在该格落在某家势力范围内时有值——范围外的袭击与上线前完全一样，没有这个字段。发起频率（全服仍每 120 分钟一次）与目标选择都不变，只是打上了旗号，玩家能知道「是谁在打自己」。' },
+    { name: 'lair', type: 'object', desc: 'v100：出发老巢坐标 { x, y }（与 faction 同时出现）。' },
   ],
   examples: [
     { op: Op.PUSH_NPC_ATTACK_WARNING, push: true, data: { attackId: '3f1c2a4e-0000-4000-8000-000000000001', x: 128, y: 90, target: 'wilderness', terrain: 'forest', level: 2, armyMin: 17, armyMax: 27, arriveAt: '2026-10-01T08:15:00.000Z' } },

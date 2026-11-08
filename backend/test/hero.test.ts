@@ -24,6 +24,9 @@ import {
   heroPointsPerLevel,
   expForNextLevel,
   famousHeroForCity,
+  famousHeroForFaction,
+  famousSourceKey,
+  famousSourceLabel,
   guardProductionPercent,
   heroBattleBonus,
   normalHeroCap,
@@ -131,15 +134,24 @@ test('经验与成长：升到 L+1 需 100 × L²；每级获得自由点数；�
   assert.ok(r4.exp >= 999_999, '满级经验累计不丢');
 });
 
-test('名将定义：8 名城 + 黄巾 3 名 + 在野 29 名 = 40 名，名字全服唯一且与名城一一对应', () => {
-  assert.equal(ALL_FAMOUS_HEROES.length, 40);
+test('名将定义：8 名城 + 黄巾 3 名 + 势力首领 5 名 + 在野 29 名 = 45 名，名字全服唯一且与名城一一对应', () => {
+  assert.equal(ALL_FAMOUS_HEROES.length, 45);
   assert.equal(ALL_FAMOUS_HEROES.filter((def) => def.source.kind === 'wild').length, 29);
+  // v101（AISLG-241）：五方势力的首领名将（打掉这家老巢最后一营的玩家获得）
+  assert.equal(ALL_FAMOUS_HEROES.filter((def) => def.source.kind === 'faction').length, 5);
   const names = ALL_FAMOUS_HEROES.map((def) => def.name);
   assert.equal(new Set(names).size, names.length, '名字不重复');
   for (const city of ['官渡', '许昌', '洛阳', '长安', '成都', '建业', '襄阳', '邺城']) {
     assert.ok(famousHeroForCity(city), `${city} 绑定名将`);
   }
   assert.equal(famousHeroForCity('不存在'), null);
+  for (const faction of ['liangzhou', 'wuhuan', 'nanman', 'shanyue', 'heishan'] as const) {
+    assert.ok(famousHeroForFaction(faction), `${faction} 首领名将`);
+  }
+  assert.equal(famousHeroForFaction('未知' as never), null);
+  // 来源文案与稳定标识（announce / 事件 / famous_heroes.source）
+  assert.equal(famousSourceKey({ kind: 'faction', faction: 'nanman' }), 'faction:nanman');
+  assert.match(famousSourceLabel({ kind: 'faction', faction: 'nanman' }), /南蛮/);
 });
 
 test('等级上限 40（v54）', () => {

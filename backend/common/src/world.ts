@@ -4,6 +4,7 @@
 // 校准后仍为占位的数值：野地等级分布、NPC 城池存量与驻防、行军速度。调整入口只在本文件。
 
 import type { FamousCityState } from './famous-city';
+import type { FactionKey } from './protocol-faction';
 import {
   RESOURCE_KEYS,
   TERRAIN_KINDS,
@@ -237,6 +238,12 @@ export interface NpcCitySnapshot {
   famous?: FamousCityState;
   stock: Resources;
   buildings: Partial<Record<BuildingKind, number>>;
+  /** 势力归属（v99，AISLG-239）：被某方势力吞下的 NPC 城记在这里，守军与库存已按 1.5 倍写入；
+   *  普通 NPC 城无此字段，玩家占下后地块转城池、快照清空。见 common/src/faction.ts */
+  faction?: FactionKey;
+  /** v101（AISLG-241）：这座城是被势力吞下的玩家分城（建筑 / 库存原样保留，不乘 1.5）。
+   *  势力灭亡时按它决定「除回 1.5」还是「原样变回普通 NPC 城」 */
+  fromPlayer?: boolean;
 }
 
 /** 普通 NPC 城的初始快照（满编守军、初始库存与建筑）；放弃分城后地块按它回归 */

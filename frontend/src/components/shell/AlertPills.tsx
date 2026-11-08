@@ -7,6 +7,8 @@ import type { CityView } from '../../api/protocol';
 import { formatDurationText } from '../../api/format';
 import { useCopy } from '../../i18n/bundle';
 import { useNow } from '../../state/useNow';
+import { getLang } from '../../i18n/lang';
+import { factionAlertText } from '../map/factionAlert';
 
 interface AlertPillsProps {
   city: CityView | null;
@@ -18,7 +20,7 @@ const pill = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bo
 
 export function AlertPills({ city, incoming, onOpenWarning }: AlertPillsProps) {
   const copy = useCopy();
-  const { COPY, STARVE_COPY, TOP_COPY } = copy;
+  const { COPY, STARVE_COPY, TOP_COPY, EXTRA_MAP } = copy;
   const truceDeadline = city?.truceUntil ? Date.parse(city.truceUntil) : NaN;
   const starveAt = city?.starveAt ?? null;
   const mutinyNextAt = city?.mutinyNextAt ?? null;
@@ -41,11 +43,20 @@ export function AlertPills({ city, incoming, onOpenWarning }: AlertPillsProps) {
         <button
           type="button"
           role="警报-NPC来袭"
-          title={first.attacker ? COPY.npcWarning.titlePlayer : COPY.npcWarning.title}
+          title={
+            first.siege
+              ? EXTRA_MAP.faction.siege.warningTitle(getLang() === 'en' ? first.siege.faction.nameEn : first.siege.faction.name)
+              : first.faction
+                ? EXTRA_MAP.faction.siege.raidTitle(getLang() === 'en' ? first.faction.nameEn : first.faction.name)
+                : first.attacker
+                ? COPY.npcWarning.titlePlayer
+                : COPY.npcWarning.title
+          }
           onClick={onOpenWarning}
           className={`${pill} animate-pulse cursor-pointer border-st-error bg-st-error/10 text-st-error`}
         >
-          ⚠ {(first.attacker ? TOP_COPY.alertPlayer : TOP_COPY.alertNpc)(first.target === 'city' ? TOP_COPY.alertNpcCity : `(${first.x},${first.y})`)}
+          ⚠ {factionAlertText(first, EXTRA_MAP.faction.siege, first.target === 'city' ? TOP_COPY.alertNpcCity : `(${first.x},${first.y})`)
+            ?? (first.attacker ? TOP_COPY.alertPlayer : TOP_COPY.alertNpc)(first.target === 'city' ? TOP_COPY.alertNpcCity : `(${first.x},${first.y})`)}
           {incoming.length > 1 ? ` ×${incoming.length}` : ''}
           <b className="font-mono tabular-nums">{formatDurationText(Math.max(0, Math.ceil((Date.parse(first.arriveAt) - now) / 1000)))}</b>
         </button>

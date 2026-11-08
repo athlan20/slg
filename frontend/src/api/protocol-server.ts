@@ -86,6 +86,8 @@ export const SERVER_BROADCAST_TYPES = [
   'famous_first_explored',
   'hero_site_first_explored',
   'legendary_relic_claimed',
+  // v99（AISLG-239）五方势力：势力范围半径扩大（每周最多一次）
+  'faction_expanded',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];
@@ -133,6 +135,13 @@ export interface PlayerAttackWarningPushData {
   arriveAt: string;
 }
 
+/** 势力旗号（v100，AISLG-240）：袭击 / 围攻预警里说明是哪一家 */
+export interface FactionBannerView {
+  key: string;
+  name: string;
+  nameEn: string;
+}
+
 export interface NpcAttackWarningPushData {
   attackId: string;
   x: number;
@@ -152,4 +161,16 @@ export interface NpcAttackWarningPushData {
   armyKinds?: Partial<Record<TroopKind, { min: number; max: number }>>;
   army?: Partial<Record<TroopKind, number>>;
   arriveAt: string;
+  /** v100（AISLG-240）：势力范围内的袭击带上旗号（不在任何势力范围内时没有这个字段） */
+  faction?: FactionBannerView;
+  /** v100：出发老巢坐标 */
+  lair?: { x: number; y: number };
+  /** v100：势力围攻的预警（PUSH_FACTION_SIEGE reason=warning 归一化进同一预警队列时携带） */
+  siege?: {
+    siegeId: string;
+    faction: FactionBannerView;
+    cityName: string | null;
+    /** 被围城当前城防值 */
+    durability: number;
+  };
 }

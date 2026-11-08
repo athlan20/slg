@@ -58,6 +58,7 @@ function tileBase(overrides: Partial<TileView>): TileView {
     wildFamous: false,
     relic: null,
     heroSite: null,
+    faction: null,
     reserve: null,
     facility: null,
     ...overrides,

@@ -958,6 +958,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v97，AISLG-232）这座城名下的望楼已达上限：每座城最多 2 座（主城 2 座，每座分城各 2 座）。响应附 limit 与 count。不扣任何资源。',
     action: '换另一座城名下的野地建望楼，或先把这块地的望楼升到更高级（升级不受名额限制）。',
   },
+  FACTION_LAIR_TARGET: {
+    desc: '（v99，AISLG-239；v101，AISLG-241 起改成只拒绝三种情况）目标是五方势力的老巢格，但不满足出征条件：1) 这家本季已被攻破，老巢是废墟（不能再出征 / 侦察 / 占领）；2) 任务是 occupy / transport / assist（老巢只能打，不能占领、运输或协防）；3) 开关 faction_enabled 关闭（没有老巢）。本季未灭亡的老巢可以正常 MARCH（task=plunder，打当前一营）与 SCOUT（看当前营守军）。',
+    action: '要打老巢请用 MARCH 带 task=plunder 指向 faction.isLair = true 的坐标（一次只打当前一营，守城战、城墙减伤 50%）；想看当前营守军先 SCOUT。已灭亡（GET_FACTIONS 的 destroyed = true，地块 faction.destroyed = true）的老巢本季不再能打，等换季后重生。要占领 NPC 城请选 faction.isLair = false 的势力城。',
+  },
   INTERNAL: {
     desc: '服务端内部错误。',
     action: '可稍后重试同一请求；持续出现时向运营方反馈。INTERNAL 可能出现在任何请求的响应中。',

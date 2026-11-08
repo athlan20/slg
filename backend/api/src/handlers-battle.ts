@@ -33,6 +33,7 @@ import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen, nextLuoyangOpen, decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { loadActiveDecree } from '../../common/src/luoyang-db';
 import { isAllyOfCity } from './march-target';
+import { factionLairAttackable, isFactionLairTarget } from '../../common/src/faction-db';
 import { cityDispatchBlockedSeconds } from './stratagem-target';
 
 /** 战报点评正文的长度上限（v23 AISLG-53；占位值随需求「已定」标注可调） */
@@ -127,10 +128,17 @@ export async function handleScout(
       }
       scoutHero = { id: verdict.hero.id, name: verdict.hero.name };
     }
-    const tileRes = await client.query(`SELECT kind, owner_city_id, npc FROM world_tiles WHERE x = $1 AND y = $2 FOR UPDATE`, [x, y]);
+    const tileRes = await client.query(`SELECT kind, owner_city_id, npc, faction_lair FROM world_tiles WHERE x = $1 AND y = $2 FOR UPDATE`, [x, y]);
     const tile = (tileRes.rowCount ? tileRes.rows[0] : null) as
-      | { kind: string; owner_city_id: string | null; npc: unknown }
+      | { kind: string; owner_city_id: string | null; npc: unknown; faction_lair: string | null }
       | null;
+    // v99（AISLG-239）：势力老巢不是普通野地；v101（AISLG-241）起本季未灭亡的老巢可以侦察（看当前营守军），
+    // 已灭亡的废墟仍拒绝（与 MARCH 同一道拦截）
+    if (isFactionLairTarget(tile) && !(tile?.faction_lair && (await factionLairAttackable(client, tile.faction_lair)))) {
+      await client.query('ROLLBACK');
+      respondError(ctx.registry, conn, op, seq, 'FACTION_LAIR_TARGET');
+      return;
+    }
     // v91（AISLG-220）：指定坐标迁城后 12 小时内，这座城不能侦察他人城池 / 野地（侦察属于攻击类出征）
     const scoutLockLeft = await moveAttackLockRetry(client, accountId, snap.cityId, tile, 'plunder', null, ambushNowRes.rows[0].now as Date);
     if (scoutLockLeft !== null) {

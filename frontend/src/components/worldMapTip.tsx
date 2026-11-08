@@ -4,6 +4,7 @@
 
 import { getCopy, useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
+import { getLang } from '../i18n/lang';
 import type { AllianceMarkView, NpcStockTier, TileView } from '../api/protocol';
 import type { CitySide } from './worldMapMarks';
 import { famousEffectText } from './famousEffectText';
@@ -57,6 +58,9 @@ export function tileTitle(tile: TileView, isOwn: boolean): string {
   if (tile.kind === 'npc_city') {
     return tile.famous ? `${CITY_COPY.famous.title(tName(tile.famous.name))} Lv${tile.level}` : `${TILE_KIND_LABEL.npc_city} Lv${tile.level}`;
   }
+  if (tile.faction?.isLair) {
+    return tileFactionText(tile);
+  }
   return `${TERRAIN_LABEL[tile.terrain] ?? tile.terrain} · ${TILE_KIND_LABEL.wilderness} Lv${tile.level}`;
 }
 
@@ -64,6 +68,9 @@ export function tileTitle(tile: TileView, isOwn: boolean): string {
 export function tileOwnerText(tile: TileView, isOwn: boolean): string {
   const { COPY, EXTRA_MAP, ALLIANCE_COPY } = getCopy();
   const tip = EXTRA_MAP.tileTip;
+  if (tile.faction?.isLair) {
+    return tile.faction.destroyed ? EXTRA_MAP.faction.destroyed : EXTRA_MAP.faction.lairWall;
+  }
   if (!tile.owner) {
     return tile.kind === 'npc_city' ? tip.npcGuard : COPY.worldMap.ownerNone;
   }
@@ -75,6 +82,17 @@ export function tileOwnerText(tile: TileView, isOwn: boolean): string {
     return ALLIANCE_COPY.ally.ownerRow(tile.owner.username);
   }
   return tile.kind === 'city' ? tip.owner(tile.owner.username) : COPY.worldMap.ownerRow(tile.owner.username);
+}
+
+/** 势力归属文案（v99，AISLG-239）：势力城写「X势力城」，老巢写「X老巢」（名称按界面语言取） */
+export function tileFactionText(tile: TileView): string {
+  const faction = tile.faction;
+  if (!faction) {
+    return '';
+  }
+  const { EXTRA_MAP } = getCopy();
+  const name = getLang() === 'en' ? faction.nameEn : faction.name;
+  return faction.isLair ? EXTRA_MAP.faction.lairTile(name) : EXTRA_MAP.faction.cityHint(name);
 }
 
 export function tileAria(tile: TileView, isOwn: boolean): string {
@@ -114,6 +132,12 @@ export function WorldMapTooltip({ tip, clusters, yieldMap }: WorldMapTooltipProp
           <div className={tip.isOwn ? 'text-accent' : tip.tile.owner?.ally ? 'text-st-online' : tip.tile.owner ? 'text-warn' : 'text-dim'}>
             {tileOwnerText(tip.tile, tip.isOwn)}
           </div>
+          {/* 势力归属（v99，AISLG-239）：势力城 / 老巢在悬浮提示里标出来 */}
+          {tip.tile.faction && !tip.tile.faction.isLair ? (
+            <div role="世界地图视野-势力归属提示" className="text-gold">
+              {tileFactionText(tip.tile)}
+            </div>
+          ) : null}
           {tip.mark ? (
             <div role="世界地图视野-联盟标记提示" className="text-gold">
               {ALLIANCE_COPY.marks.tileTitle(ALLIANCE_COPY.marks.kindLabel[tip.mark.kind])}

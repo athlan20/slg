@@ -36,7 +36,7 @@ export function MapCard({ role }: MapCardProps) {
       title={MAPUI_COPY.title}
       actions={
         wide ? (
-          <div role={`${role}-图层`} className="ml-auto flex min-w-0 items-center gap-2.5 text-[12px] text-dim">
+          <div role={`${role}-图层`} className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-2.5 gap-y-1 text-[12px] text-dim">
             {options.map((option) => (
               <label key={option.key} className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap">
                 <input
@@ -68,6 +68,7 @@ export function MapCard({ role }: MapCardProps) {
         allianceMarks={session.allianceMarks.marks}
         cityList={session.cityList.cities}
         npcWarnings={incoming}
+        factions={session.factions.state}
       />
     </Card>
   );

@@ -24,6 +24,10 @@ export const EXTRA_MAP = {
     enemy: '敌',
     /** 野地图标兜底（TargetHeader，取地形名首字失败时） */
     wild: '野',
+    /** 势力老巢（v99，AISLG-239：地图与迷雾层上的单字标记） */
+    factionLair: '势',
+    /** 老巢废墟（v101，AISLG-241：这家本季已灭亡） */
+    factionLairRuins: '墟',
   },
   /** 顶栏主动免战按钮的单字图形（TruceShieldBadge） */
   truceBadge: {
@@ -246,6 +250,107 @@ export const EXTRA_MAP = {
   duration: {
     hm: (hours: number, minutes: number) => `${hours} 小时 ${minutes} 分`,
     m: (minutes: number) => `${minutes} 分`,
+  },
+  /** 五方势力（v99，AISLG-239）：图层开关 / 面板 / 范围与老巢标记 / 半径扩大的播报 */
+  faction: {
+    /** 图层面板里的开关名 */
+    layer: '势力范围',
+    /** 面板标题与读屏名称 */
+    panelTitle: '五方势力',
+    panelAria: '五方势力面板',
+    /** 面板每行的字段标签 */
+    leaderLabel: '首领',
+    lairLabel: '老巢',
+    radiusLabel: '范围',
+    citiesLabel: '持城',
+    /** 半径单位（格） */
+    radius: (radius: number) => `${radius} 格`,
+    /** 持城数单位（座） */
+    cities: (count: number) => `${count} 座`,
+    /** 老巢坐标（(x, y)） */
+    lair: (x: number, y: number) => `(${x}, ${y})`,
+    /** 地图上老巢标记的提示 */
+    lairHint: (name: string, leader: string) => `${name}老巢 · 首领${leader}`,
+    /** 势力城地块的悬浮说明 */
+    cityHint: (name: string) => `${name}势力城`,
+    /** 老巢地块的悬浮说明 */
+    lairTile: (name: string) => `${name}老巢`,
+    /** 势力范围色块的读屏文本 */
+    cellAria: (name: string) => `${name}势力范围`,
+    /** 全服播报：半径扩大（每周最多一次） */
+    broadcastExpanded: (radius: number) => `五方势力扩张：势力范围半径扩大至 ${radius} 格`,
+    /** 老巢：城墙减伤（AISLG-241） */
+    lairWall: '城墙减伤 50%',
+    /** 老巢的进攻按钮 */
+    lairAttack: '进攻',
+    /** 老巢的出征说明 */
+    lairAttackHint: '一次只打当前一营，打掉多少算多少，打输也算。按歼灭的守军战力当场发金币和资源，不占部队负重。',
+    /** 老巢废墟的提示（v101，AISLG-241：这家本季已被攻破） */
+    lairHintRuins: (name: string) => `${name}老巢已被攻破，本季只剩废墟`,
+    /** 面板：营数（剩余 / 总数） */
+    camps: (remaining: number, total: number) => `${remaining}/${total} 营`,
+    /** 面板：当前营剩余百分比 */
+    campRemaining: (percent: number) => `当前营 ${percent}%`,
+    /** 面板：本季已灭亡 */
+    destroyed: '已灭亡',
+    /** 战报类别名（打老巢） */
+    reportKind: '势力老巢',
+    /** 全服播报：这家势力被攻破（带最后一击的玩家名） */
+    broadcastDestroyed: (actor: string, faction: string, leader: string) =>
+      `${actor} 攻破了${faction}老巢，${faction}本季灭亡，首领${leader}归其所有`,
+    /** 攻破老巢（v101，AISLG-241）：战斗 / 灭亡奖励 / 灭亡的事件文案 */
+    lairBattle: {
+      /** 打老巢的一场战斗：势力名 + 第几营 + 歼灭战力 + 当场奖励 + 输赢（打输也发奖） */
+      battle: (name: string, campNo: number, killedPower: number, gold: number, outcome: 'won' | 'lost') =>
+        outcome === 'won'
+          ? `你攻破${name}老巢第 ${campNo} 营：歼灭守军战力 ${killedPower}，当场得金币 ${gold}（按歼灭战力发放，不占负重）`
+          : `你进攻${name}老巢第 ${campNo} 营未克：守军残血保留，仍歼灭战力 ${killedPower}，当场得金币 ${gold}（按歼灭战力发放，不占负重）`,
+      /** 灭亡奖励：名次 + 金币 + 每种资源 */
+      reward: (name: string, rank: number, gold: number, each: number) =>
+        `${name}已被攻破：贡献榜第 ${rank} 名奖励金币 ${gold}、木粮石铁各 ${each}`,
+      /** 最后一击的玩家：本季灭亡 + 首领名将归你 */
+      destroyedByYou: (name: string, heroName: string) =>
+        heroName
+          ? `你打掉了${name}最后一营：${name}本季灭亡，首领名将${heroName}归你所有`
+          : `你打掉了${name}最后一营：${name}本季灭亡（首领名将已被他人获得）`,
+    },
+    /** 势力出兵（v100，AISLG-240）：袭击旗号与围攻的文案，全部带势力名 */
+    siege: {
+      /** 势力袭击（普通 NPC 袭击打上旗号）的标题：如「南蛮来袭」 */
+      raidTitle: (name: string) => `${name}来袭`,
+      /** 势力袭击的出处行 */
+      raidFrom: (name: string, x: number, y: number) => `${name}（老巢 (${x}, ${y})）`,
+      /** 预警弹窗 / 警报胶囊的标题 */
+      warningTitle: (name: string) => `${name}围攻`,
+      /** 警报胶囊与军情摘要：哪家在打哪座分城 */
+      alert: (name: string, cityName: string) => `${name}围攻 · ${cityName}`,
+      /** 势力袭击的警报胶囊与军情摘要 */
+      raidAlert: (name: string, target: string) => `${name}来袭 · ${target}`,
+      /** 预警弹窗的目标行 */
+      targetBranch: '你的分城',
+      /** 预警弹窗的建议 */
+      advice: '守军被全灭时扣 35 城防，城防归零这座城就被吞。来得及的话：增援驻军、请盟友协防。守住一次，这家 24 小时内不再打这座城。',
+      /** 预警正文：兵力范围 + 预计到达 + 当前城防值 */
+      warning: (name: string, where: string, arriveAt: string, mins: string, armyMin: string, armyMax: string, durability: string) =>
+        `斥候来报：${name}围城军正向${where}进发，预计 ${arriveAt} 到达${mins}，兵力约 ${armyMin}–${armyMax}，当前城防 ${durability}`,
+      /** 预警里的城防行 */
+      durabilityLine: (durability: string) => `当前城防值 ${durability}`,
+      /** 守住（势力打输） */
+      repelled: (name: string, pos: string, durability: string) => `${name}围攻 ${pos} 被击退，城防 ${durability}`,
+      /** 被扣城防（势力打赢一次） */
+      hit: (name: string, pos: string, before: string, after: string, damage: string, truce: string) =>
+        `${name}攻破 ${pos} 守军（城防 ${before} → ${after}，一击 −${damage}）${truce}`,
+      /** 免战尾注 */
+      truceUntil: (clock: string) => `，城免战至 ${clock}`,
+      /** 城被吞 */
+      swallowed: (name: string, pos: string) => `${name}吞下了你的分城 ${pos}（城防归零）`,
+      /** 失城事件（faction_city_lost） */
+      cityLost: (name: string, cityName: string, pos: string) =>
+        `你的分城「${cityName}」${pos} 被${name}吞下：建筑与资源留在城里，分城名额已腾出，可在 4 小时后按占领 NPC 城的流程打回来`,
+      /** 全服播报：某人的城被势力吞下 */
+      broadcastSwallowed: (actor: string, cityName: string, faction: string, pos: string) =>
+        `${actor} 的分城「${cityName}」${pos} 被${faction}吞下`,
+    },
   },
   /** WorldReportsPanel：战报列表行的内联片段 */
   reports: {

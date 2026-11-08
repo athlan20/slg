@@ -18,6 +18,12 @@ import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { toFullArmyCounts } from '../../common/src/battle';
 import { loadNativeGarrison } from '../../common/src/native-garrison';
 import { famousEncounter } from '../../common/src/famous-city';
+import { getFactionEnabled } from '../../common/src/faction-config';
+import { factionLairAttackable } from '../../common/src/faction-db';
+import { loadFactionLairRow } from '../../common/src/faction-lair-db';
+import { factionLairScoutGarrison } from '../../common/src/faction-lair';
+import { resolveFactionLairBattle } from './faction-lair-battle';
+import type { FactionKey } from '../../common/src/protocol-faction';
 import type { NpcCitySnapshot } from '../../common/src/world';
 import { saveScoutIntel } from '../../common/src/battle-db';
 import { loadTileArmy, type TileRow } from '../../common/src/world-db';
@@ -165,6 +171,33 @@ async function resolveArrival(
     await abortMarchToReturn(client, march, troops, settled, notifies);
     return;
   }
+  // v99（AISLG-239）/ v101（AISLG-241）：势力老巢格不是普通野地——
+  // 本季未灭亡时可以打（一口一营的守城战）与侦察；已灭亡的废墟与旧版本遗留的其它任务一律原路返回。
+  if (tile?.faction_lair && getFactionEnabled()) {
+    const lairKey = tile.faction_lair as FactionKey;
+    if (!(await factionLairAttackable(client, lairKey))) {
+      await abortMarchToReturn(client, march, troops, settled, notifies);
+      return;
+    }
+    if (march.purpose === 'scout') {
+      await settleScoutArrival(client, march, troops, tile, settled, notifies);
+      return;
+    }
+    if (march.purpose === 'plunder') {
+      const lairNowRes = await client.query(`SELECT now() AS now`);
+      await resolveFactionLairBattle(client, {
+        march,
+        troops,
+        key: lairKey,
+        now: lairNowRes.rows[0].now as Date,
+        notifies,
+        settled,
+      });
+      return;
+    }
+    await abortMarchToReturn(client, march, troops, settled, notifies);
+    return;
+  }
   // v93（AISLG-227）：遗迹格即领取（掠夺 / 占领 / 增援 / 侦察），先于原有结算，不看战斗结果
   await claimRelicOnArrival(client, march);
   // v29（AISLG-76）：掠夺任务的目标格上有进行中的黄巾营地 / 老巢 → 走营地结算
@@ -285,9 +318,14 @@ async function settleScoutArrival(
   let defenseStock: Awaited<ReturnType<typeof loadCityDefenses>> | null = null;
   const attackerTechs = await loadTechLevels(client, march.account_id);
   if (tile.kind === 'wilderness' && !tile.owner_city_id) {
-    // v29（AISLG-76）：黄巾营地 / 老巢所在格——侦察到的是营地当前守军（含战后存量与老巢当前阶段）
-    const camp = await loadCampAt(client, tile.x, tile.y);
-    garrison = camp ? campGarrison(camp, new Date()) : await loadNativeGarrison(client, tile);
+    if (tile.faction_lair && getFactionEnabled()) {
+      // v101（AISLG-241）：老巢格——侦察到的是当前营的守军（残血按未回满的实况给）
+      garrison = factionLairScoutGarrison(await loadFactionLairRow(client, tile.faction_lair));
+    } else {
+      // v29（AISLG-76）：黄巾营地 / 老巢所在格——侦察到的是营地当前守军（含战后存量与老巢当前阶段）
+      const camp = await loadCampAt(client, tile.x, tile.y);
+      garrison = camp ? campGarrison(camp, new Date()) : await loadNativeGarrison(client, tile);
+    }
   } else if (tile.kind === 'npc_city') {
     const npc = tile.npc as NpcCitySnapshot | null;
     // 名城取当前阶段守军（外围 / 城守）；普通 NPC 城取驻防快照

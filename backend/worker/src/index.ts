@@ -20,6 +20,10 @@ import { processFogExploration } from './fog-tick';
 import { fogConfigStale, refreshFogEnabled } from '../../common/src/fog-config';
 import { processDueNpcAttacks } from './npc-attack';
 import { startNpcRaidTimer } from './npc-raid-timer';
+import { startFactionTimer } from './faction-tick';
+import { startFactionSiegeTimer } from './faction-siege-tick';
+import { startFactionLairTimer } from './faction-lair-tick';
+import { factionConfigStale, refreshFactionEnabled } from '../../common/src/faction-config';
 import { processDueResearch } from './tech-tick';
 import { processMovingTargets } from './moving-tick';
 import { processYellowTurban } from './yt-tick';
@@ -56,6 +60,8 @@ async function main(): Promise<void> {
   // 启动迁移、世界生成与换季（整图重灌）跑长语句，走维护池（超时放宽）；其余 tick 仍用 pool
   const maintenancePool = createPool('slg-worker-maint', 2, { maintenance: true });
   await ensureSchema(maintenancePool);
+  // v99（AISLG-239）：五方势力总开关要在世界生成前预热——ensureWorld 里按它决定放不放老巢
+  await refreshFactionEnabled(pool).catch(() => undefined);
   // v12：世界生成幂等（与 API 并发由咨询锁串行化），Worker 只依赖已存在的表
   await ensureWorld(maintenancePool);
   // v79（AISLG-200）：启动时刷新一次洛阳之主缓存（易主路径之外，兼容部署前已有的洛阳）
@@ -75,6 +81,10 @@ async function main(): Promise<void> {
     // 战争迷雾开关缓存过期则后台刷新（AISLG-224）
     if (fogConfigStale()) {
       void refreshFogEnabled(pool).catch(() => undefined);
+    }
+    // 五方势力总开关（AISLG-239，v99）：缓存过期则后台刷新（失败保旧值，下个 tick 再试）
+    if (factionConfigStale()) {
+      void refreshFactionEnabled(pool).catch(() => undefined);
     }
     try {
       // AISLG-134：换季（到点重置 / 预告）。换季在本 tick 内串行执行；换季完成则结束本 tick
@@ -290,6 +300,12 @@ async function main(): Promise<void> {
 
   // NPC 袭击发起定时器（v23 AISLG-57）：见 npc-raid-timer.ts
   const stopRaidTimer = startNpcRaidTimer(pool);
+  // 五方势力的吞城定时器（v99 AISLG-239）：见 faction-tick.ts（换季进行中不吞城）
+  const stopFactionTimer = startFactionTimer(pool);
+  // 五方势力的围攻定时器（v100 AISLG-240）：见 faction-siege-tick.ts（发起围攻与到期结算）
+  const stopFactionSiegeTimer = startFactionSiegeTimer(pool);
+  // 老巢定时器（v101 AISLG-241）：每天刷新每营战力 + 24 小时没人进攻恢复 1 营（见 faction-lair-tick.ts）
+  const stopFactionLairTimer = startFactionLairTimer(pool);
 
   // 排行榜快照（v23 AISLG-61）：每 10 分钟整榜重算（数值与玩家页面同源，
   // 查询读快照，不做实时全表统计）；启动时先算一次，榜很快可用
@@ -312,6 +328,9 @@ async function main(): Promise<void> {
     stopProbe.stop();
     stopLoopLag();
     stopRaidTimer();
+    stopFactionTimer();
+    stopFactionSiegeTimer();
+    stopFactionLairTimer();
     await pool.end();
     process.exit(0);
   };

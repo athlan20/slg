@@ -11,6 +11,7 @@ import { seasonLengthDays } from '../../common/src/season-seed';
 import { generateWorldTiles, WORLD_SEED, WORLD_SIZE } from '../../common/src/world';
 import { insertWorldTiles } from '../../common/src/world-db';
 import { ensureFamousCities } from '../../common/src/famous-city-db';
+import { ensureFactions } from '../../common/src/faction-db';
 import { placeWildFamousIn } from '../../common/src/wild-famous-db';
 import { ensureRelics } from '../../common/src/fog-relic-db';
 import { ensureArenaNpcs, lockArena } from '../../common/src/arena-db';
@@ -134,6 +135,8 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
       // 整表重灌后立即收集统计信息：否则新图刚上线的前几分钟查询计划按空表估算（同事务内 ANALYZE 合法）
       await client.query(`ANALYZE world_tiles`);
       await ensureFamousCities(client);
+      // 五方势力（v99，AISLG-239）：开关打开时按新世界重新放老巢并吞下开季 25 格（factions 已随 RESET_TABLES 清空）
+      await ensureFactions(client);
       await placeWildFamousIn(client);
       // 战争迷雾遗迹（v93，AISLG-227）：按新世界重新生成（表已随 RESET_TABLES 清空），同一事务内
       await ensureRelics(client, seed, WORLD_SIZE);
