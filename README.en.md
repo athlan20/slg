@@ -12,6 +12,8 @@ Play it yourself — found cities, raise armies, conquer territory — or hand a
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-%3E%3D13-4169E1?logo=postgresql&logoColor=white)
 
+[![SLG MCP server](https://mcprush.com/badge/slg-mcp/card.svg)](https://mcprush.com/to/slg-mcp?ref=badge)
+
 ### 🎮 Open beta → [slg.yuntianyou.cc](https://slg.yuntianyou.cc)
 
 [Play now](https://slg.yuntianyou.cc) · [Agent API docs](docs/agent-api.md) · [Self-hosting](#self-hosting)
