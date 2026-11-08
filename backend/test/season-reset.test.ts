@@ -22,6 +22,7 @@ import { EventType } from '../common/src/protocol-city';
 import { insertAccountWithCity, generateSessionToken, hashSessionToken } from '../api/src/auth';
 import { processSeasonTick, resetSeasonTickStateForTest } from '../worker/src/season-tick';
 import { isSeasonResetting } from '../worker/src/season-busy';
+import { loadFactionEpochStart } from '../common/src/faction-start';
 import { createTempDatabase, type TempDatabase } from './season-test-db';
 
 const dbUrl = process.env.TEST_DATABASE_URL;
@@ -140,6 +141,11 @@ describe('换季重置端到端（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
       `INSERT INTO settings (key, value, updated_at) VALUES ('time_scale', '{"scale": 5}', now()), ('next_time_scale', '{"scale": 20}', now())
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
     );
+    // 势力启用时间（v102，AISLG-243）：留一条上季的记录，换季时开关关着就得删掉它
+    await pool.query(
+      `INSERT INTO settings (key, value, updated_at) VALUES ('faction_started_at', '{"at": "2026-01-01T00:00:00.000Z"}', now())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+    );
 
     const season = await getCurrentSeason(pool);
     assert.ok(season);
@@ -208,6 +214,16 @@ describe('换季重置端到端（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
     const famous = await pool.query(`SELECT count(*)::int AS n FROM world_tiles WHERE wild_hero IS NOT NULL`);
     assert.equal(famous.rows[0].n, WILD_FAMOUS_NAMES.length, '野外名将重新落位');
     assert.notEqual(await npcFingerprint(pool), oldFingerprint, '地图已换（NPC 城位置随新种子变化）');
+  });
+
+  test('势力启用时间随换季对齐：换季时开关关着就删掉上季的记录（否则下季中途打开开关会被当成已启用）', async () => {
+    const started = await pool.query(`SELECT 1 FROM settings WHERE key = 'faction_started_at'`);
+    assert.equal(started.rowCount, 0, '上季的记录已删除');
+    const season = await getCurrentSeason(pool);
+    assert.ok(season);
+    // 没有记录时势力的起点就是本季开始时间（第 1 天），与换季前行为一致
+    const epoch = await loadFactionEpochStart(pool, season.startAt);
+    assert.equal(epoch.getTime(), season.startAt.getTime());
   });
 
   test('进程重启（API / Worker 启动时的 ensureWorld）不换图：按当前赛季种子，地块数已齐则不重建', async () => {

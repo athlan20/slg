@@ -1,17 +1,20 @@
 // 五方势力的吞城定时器（AISLG-239，v99）：每家每 6 小时（随全局时间缩放）在当前势力范围里
 // 随机吞一座无主 NPC 城；半径扩大时写一条全服播报（每周最多一次）。
+// v102（AISLG-243）：每轮先看一眼开关——开关刚打开而本季还没启用过时，先把老巢放下来（worker/src/faction-start.ts）。
 // 参照 npc-raid-timer 的链式 setTimeout + season-busy：换季进行中不吞城（世界即将清空），顺延再试。
-// 开季的「老巢周围 25 格全部归该势力」不在这里，在世界生成 / 换季事务里（common/src/faction-db.ts）。
+// 开季的「老巢周围 25 格全部归该势力」不在这里，在世界生成 / 换季 / 当季启用的事务里（common/src/faction-db.ts）。
 
 import pg from 'pg';
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { factionDayAt, factionDefOf, factionRadiusAt, factionSwallowIntervalMs } from '../../common/src/faction';
 import { loadFactionRows, swallowRandom } from '../../common/src/faction-db';
+import { loadFactionEpochStart } from '../../common/src/faction-start';
 import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
 import { getCurrentSeason } from '../../common/src/season-db';
 import { insertServerBroadcast } from '../../common/src/server-broadcast';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
+import { runFactionStart } from './faction-start';
 
 export interface FactionTickResult {
   /** 本次吞下的城数（每家每轮到点吞一座） */
@@ -37,8 +40,10 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
   }
   // v101（AISLG-241）：本季已灭亡的势力不再吞城
   const destroyed = await destroyedFactionKeys(pool);
-  // 半径按本季实际开始时间与真实天数算（不随 time_scale 变化）；吞城间隔随缩放
-  const radius = factionRadiusAt(season.startAt, now);
+  // v102（AISLG-243）：半径按「势力起点」与真实天数算（起点 = max(本季开始时间, 势力启用时间)，不随 time_scale 变化）；
+  // 吞城间隔随缩放
+  const epochStart = await loadFactionEpochStart(pool, season.startAt);
+  const radius = factionRadiusAt(epochStart, now);
   const intervalMs = factionSwallowIntervalMs();
 
   const client = await pool.connect();
@@ -68,7 +73,7 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
       const created = await insertServerBroadcast(
         client,
         'faction_expanded',
-        { radius, day: factionDayAt(season.startAt, now) },
+        { radius, day: factionDayAt(epochStart, now) },
         { force: true },
       );
       await client.query(`UPDATE factions SET last_radius = $1 WHERE last_radius < $1`, [radius]);
@@ -110,8 +115,10 @@ export function startFactionTimer(pool: pg.Pool): () => void {
         schedule();
         return;
       }
+      // v102（AISLG-243）：开关刚打开、本季还没启用过时先放一次老巢（只执行一次），不等换季
       void trackWorkerJob(
-        runFactionTick(pool)
+        runFactionStart(pool)
+          .then(() => runFactionTick(pool))
           .then((tick) => {
             if (tick.swallowed > 0) {
               console.log(`faction swallowed ${tick.swallowed} NPC city(ies)`);

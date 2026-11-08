@@ -16,10 +16,11 @@ import {
   type FactionDef,
 } from './faction';
 import { getFactionEnabled } from './faction-config';
+import { loadFactionEpochStart } from './faction-start';
 import { FACTION_KEYS, type FactionKey, type FactionView, type GetFactionsResponseData } from './protocol-faction';
 import type { NpcCitySnapshot } from './world';
 import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairRemainingPercent } from './faction-lair';
-import { ensureFactionLairs, loadFactionLairRow, loadFactionLairs } from './faction-lair-db';
+import { destroyedFactionKeys, ensureFactionLairs, loadFactionLairRow, loadFactionLairs } from './faction-lair-db';
 
 type Queryable = pg.Pool | pg.PoolClient;
 
@@ -37,7 +38,9 @@ export interface FactionRow {
  * - 老巢地块：kind 保持 wilderness、level 0、无主、无 NPC，只打上 faction_lair 标记（不是新地块种类，
  *   不影响既有的野地 / NPC 城 / 城池三态判定）。被玩家占着的格（理论上不会发生）不抢占，跳过并告警。
  * - factions 表没有这家时插入一行，并立刻吞下老巢周围 25 格内的全部 NPC 城（开季的地盘）。
- * 调用方：ensureWorld（只在世界刚生成 / 重建时）与换季重置（同一事务内）。赛季中途打开开关不放老巢，等下次换季。
+ * 调用方：ensureWorld（只在世界刚生成 / 重建时）与换季重置（同一事务内）。赛季中途打开开关
+ * 不放五家全部，而是走 worker/src/faction-start.ts 的 ensureFactionSeasonStart（AISLG-243：会跳过
+ * 老巢周围 5 格内有玩家城的那几家）。
  */
 export async function ensureFactions(client: pg.PoolClient): Promise<number> {
   if (!getFactionEnabled()) {
@@ -47,39 +50,59 @@ export async function ensureFactions(client: pg.PoolClient): Promise<number> {
   await ensureFactionLairs(client);
   let created = 0;
   for (const def of FACTIONS) {
-    const stamped = await client.query(
-      `UPDATE world_tiles
-       SET kind = 'wilderness', level = 0, owner_city_id = NULL, npc = NULL, faction_lair = $3, plundered_at = NULL
-       WHERE x = $1 AND y = $2 AND owner_city_id IS NULL`,
-      [def.lair.x, def.lair.y, def.key],
-    );
-    if (!stamped.rowCount) {
-      // 行不存在时补插（世界生成覆盖全图，这里兜住不完整的世界）；行存在但被玩家占着则不抢占
-      const exists = await client.query(`SELECT 1 FROM world_tiles WHERE x = $1 AND y = $2`, [def.lair.x, def.lair.y]);
-      if (exists.rowCount) {
-        console.warn(`ensureFactions: lair ${def.key} at ${def.lair.x},${def.lair.y} is occupied, skipped`);
-        continue;
-      }
-      await client.query(
-        `INSERT INTO world_tiles (x, y, terrain, kind, level, owner_city_id, npc, faction_lair)
-         VALUES ($1, $2, 'plain', 'wilderness', 0, NULL, NULL, $3)`,
-        [def.lair.x, def.lair.y, def.key],
-      );
-    }
-    const existing = await client.query(`SELECT key FROM factions WHERE key = $1`, [def.key]);
-    if (existing.rowCount) {
+    if (!(await placeFactionLair(client, def))) {
+      console.warn(`ensureFactions: lair ${def.key} at ${def.lair.x},${def.lair.y} is occupied, skipped`);
       continue;
     }
-    await client.query(
-      `INSERT INTO factions (key, lair_x, lair_y, last_radius) VALUES ($1, $2, $3, $4) ON CONFLICT (key) DO NOTHING`,
-      // 起始半径不算“扩大”：last_radius 从第 1 天的半径起，第 8 天才会播第一条
-      [def.key, def.lair.x, def.lair.y, factionRadiusForDay(1)],
-    );
-    const swallowed = await swallowWithin(client, def, FACTION_INITIAL_RADIUS);
-    console.log(`ensureFactions: ${def.key} lair at ${def.lair.x},${def.lair.y}, swallowed ${swallowed} NPC cities`);
-    created += 1;
+    created += await createFaction(client, def);
   }
   return created;
+}
+
+/**
+ * 把老巢地块打上标记（kind 保持 wilderness、无主、无 NPC，只写 faction_lair）。
+ * 返回 false = 这一格被占着（玩家城），不抢占，调用方跳过这家。
+ */
+export async function placeFactionLair(client: pg.PoolClient, def: FactionDef): Promise<boolean> {
+  const stamped = await client.query(
+    `UPDATE world_tiles
+     SET kind = 'wilderness', level = 0, owner_city_id = NULL, npc = NULL, faction_lair = $3, plundered_at = NULL
+     WHERE x = $1 AND y = $2 AND owner_city_id IS NULL`,
+    [def.lair.x, def.lair.y, def.key],
+  );
+  if (stamped.rowCount) {
+    return true;
+  }
+  // 行不存在时补插（世界生成覆盖全图，这里兜住不完整的世界）；行存在但被玩家占着则不抢占
+  const exists = await client.query(`SELECT 1 FROM world_tiles WHERE x = $1 AND y = $2`, [def.lair.x, def.lair.y]);
+  if (exists.rowCount) {
+    return false;
+  }
+  await client.query(
+    `INSERT INTO world_tiles (x, y, terrain, kind, level, owner_city_id, npc, faction_lair)
+     VALUES ($1, $2, 'plain', 'wilderness', 0, NULL, NULL, $3)`,
+    [def.lair.x, def.lair.y, def.key],
+  );
+  return true;
+}
+
+/**
+ * 建这家本季的势力记录并吞下开季 25 格内的 NPC 城；已有记录时返回 0（幂等）。
+ * 返回 1 = 本次新建了这家（调用方据此计数）。
+ */
+export async function createFaction(client: pg.PoolClient, def: FactionDef): Promise<number> {
+  const existing = await client.query(`SELECT key FROM factions WHERE key = $1`, [def.key]);
+  if (existing.rowCount) {
+    return 0;
+  }
+  await client.query(
+    `INSERT INTO factions (key, lair_x, lair_y, last_radius) VALUES ($1, $2, $3, $4) ON CONFLICT (key) DO NOTHING`,
+    // 起始半径不算“扩大”：last_radius 从第 1 天的半径起，第 8 天才会播第一条
+    [def.key, def.lair.x, def.lair.y, factionRadiusForDay(1)],
+  );
+  const swallowed = await swallowWithin(client, def, FACTION_INITIAL_RADIUS);
+  console.log(`createFaction: ${def.key} lair at ${def.lair.x},${def.lair.y}, swallowed ${swallowed} NPC cities`);
+  return 1;
 }
 
 /** 范围内可吞的 NPC 城条件：NPC 城、非名城、还没有任何势力归属（已被其他势力吞掉的不再改主） */
@@ -155,6 +178,20 @@ export async function loadFactionRows(q: Queryable): Promise<FactionRow[]> {
     }));
 }
 
+/**
+ * 本季不存在的势力（v102，AISLG-243）：factions 表里没有行（当季启用时老巢周围 5 格内有玩家城的那家
+ * 本季不放）或本季已灭亡。这些势力不画范围、不出现在面板、NPC 袭击也不带它们的旗号；
+ * 与「其他势力的范围不因此扩大」同口径——离这格最近的势力不存在时这格无归属。
+ */
+export async function inactiveFactionKeys(q: Queryable): Promise<Set<string>> {
+  const present = new Set<string>((await loadFactionRows(q)).map((row) => row.key));
+  const inactive = new Set<string>(FACTION_KEYS.filter((key) => !present.has(key)));
+  for (const key of await destroyedFactionKeys(q)) {
+    inactive.add(key);
+  }
+  return inactive;
+}
+
 /** 各家当前持有的势力城数（按 npc->>'faction' 计数；表达式索引 idx_world_tiles_faction 覆盖） */
 export async function factionCityCounts(q: Queryable): Promise<Record<string, number>> {
   const res = await q.query(
@@ -169,8 +206,9 @@ export async function factionCityCounts(q: Queryable): Promise<Record<string, nu
 }
 
 /**
- * 势力面板数据（GET_FACTIONS）：本季天数、当前半径与五家的名称 / 首领 / 老巢 / 半径 / 持城数。
+ * 势力面板数据（GET_FACTIONS）：势力第几天、当前半径与本季已放的各家的名称 / 首领 / 老巢 / 半径 / 持城数。
  * 开关关闭时返回 enabled=false 与空列表（关闭时不得有任何势力内容）；开了但本季还没生成老巢时同样为空。
+ * 当季启用时因玩家城没放的那几家不在 factions 里（AISLG-243）。
  */
 export async function loadFactionView(
   q: Queryable,
@@ -182,7 +220,9 @@ export async function loadFactionView(
     return { enabled: false, day: 0, radius: 0, serverTime, factions: [] };
   }
   const rows = await loadFactionRows(q);
-  const day = seasonStart ? factionDayAt(seasonStart, now) : 1;
+  // v102（AISLG-243）：天数从势力起点算（max(本季开始时间, 势力启用时间)），当季启用时就是第 1 天
+  const epochStart = seasonStart ? await loadFactionEpochStart(q, seasonStart) : null;
+  const day = epochStart ? factionDayAt(epochStart, now) : 1;
   const radius = factionRadiusForDay(day);
   if (rows.length === 0) {
     return { enabled: true, day, radius, serverTime, factions: [] };

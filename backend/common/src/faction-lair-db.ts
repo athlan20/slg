@@ -36,13 +36,17 @@ const LAIR_COLUMNS = `key, camps_total, camps_remaining, remaining, remaining_at
 /**
  * 生成本季五家的老巢战况行（幂等；开关关闭时调用方本就不会走到这里）。
  * 开季全服没有部队，每营战力就是下限 10,000（每天由 Worker 按前 10 名刷新）。
+ * keys 缺省为五家；当季启用（AISLG-243）时只给本季真放下的那几家建行，跳过的势力不留任何战况数据。
  */
-export async function ensureFactionLairs(client: pg.PoolClient): Promise<number> {
+export async function ensureFactionLairs(
+  client: pg.PoolClient,
+  keys: readonly FactionKey[] = FACTIONS.map((def) => def.key),
+): Promise<number> {
   let created = 0;
-  for (const def of FACTIONS) {
+  for (const key of keys) {
     const res = await client.query(
       `INSERT INTO faction_lairs (key) VALUES ($1) ON CONFLICT (key) DO NOTHING RETURNING key`,
-      [def.key],
+      [key],
     );
     if (res.rowCount) {
       created += 1;

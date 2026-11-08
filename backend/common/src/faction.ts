@@ -98,6 +98,26 @@ export function factionLairAt(x: number, y: number): FactionDef | null {
   return FACTIONS.find((def) => def.lair.x === x && def.lair.y === y) ?? null;
 }
 
+/** 这家老巢保护范围的包围盒（老巢格 + 周围 FACTION_LAIR_CLEAR_RADIUS 格）：当季启用时查「有没有玩家城」用 */
+export function factionLairClearanceBox(def: FactionDef): { minX: number; maxX: number; minY: number; maxY: number } {
+  const r = FACTION_LAIR_CLEAR_RADIUS;
+  return { minX: def.lair.x - r, maxX: def.lair.x + r, minY: def.lair.y - r, maxY: def.lair.y + r };
+}
+
+/**
+ * 这家本季能不能放（AISLG-243，v102）：老巢格上或周围 5 格（切比雪夫，含老巢本身）内有玩家城就不放——
+ * 本季不存在（不吞城、不围攻、不上面板与图层），也不为让位迁玩家的城，下季换季再生成。
+ * 纯函数，玩家城坐标由调用方给出（数据库按 factionLairClearanceBox 查同一范围）。
+ */
+export function factionLairBlocked(def: FactionDef, cities: Iterable<{ x: number; y: number }>): boolean {
+  for (const city of cities) {
+    if (chebyshevDistance(def.lair, city) <= FACTION_LAIR_CLEAR_RADIUS) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // ---- 势力范围：半径随本季天数变大 ----
 
 /** 本季第 1 天起算的天数时长（真实时间，**不随 time_scale 变化**） */
@@ -114,9 +134,27 @@ export const FACTION_RADIUS_STEPS: ReadonlyArray<{ fromDay: number; radius: numb
   { fromDay: 22, radius: 250 },
 ];
 
-/** 本季第几天（1 起算；按本季实际开始时间，与 time_scale 无关；开始前按第 1 天算） */
-export function factionDayAt(seasonStart: Date, now: Date): number {
-  const elapsed = now.getTime() - seasonStart.getTime();
+/**
+ * 势力的起点（AISLG-243，v102）：本季开始时间与「势力启用时间」的较晚者。换季启用时两者相同（行为不变）；
+ * 赛季中途打开开关时从启用当天算第 1 天。半径、开季吞城、围攻起算日、GET_FACTIONS 的 day 都用它，
+ * 调用方一律先取这个起点再传给 factionDayAt / factionRadiusAt，不要各处复制这段逻辑。
+ * startedAt 缺省（null / 非法日期）= 没启用过，按本季开始时间算。
+ */
+export function factionEpochStart(seasonStart: Date, startedAt: Date | null | undefined): Date {
+  if (!startedAt || !Number.isFinite(startedAt.getTime())) {
+    return seasonStart;
+  }
+  if (!Number.isFinite(seasonStart.getTime())) {
+    return startedAt;
+  }
+  return startedAt.getTime() > seasonStart.getTime() ? startedAt : seasonStart;
+}
+
+/**
+ * 势力的第几天（1 起算；epochStart 是 factionEpochStart 给的势力起点，与 time_scale 无关；起点之前按第 1 天算）
+ */
+export function factionDayAt(epochStart: Date, now: Date): number {
+  const elapsed = now.getTime() - epochStart.getTime();
   if (!Number.isFinite(elapsed) || elapsed <= 0) {
     return 1;
   }
@@ -134,9 +172,9 @@ export function factionRadiusForDay(day: number): number {
   return radius;
 }
 
-/** 当前时刻的势力范围半径（天数按本季实际开始时间算） */
-export function factionRadiusAt(seasonStart: Date, now: Date): number {
-  return factionRadiusForDay(factionDayAt(seasonStart, now));
+/** 当前时刻的势力范围半径（天数按势力起点算，见 factionEpochStart） */
+export function factionRadiusAt(epochStart: Date, now: Date): number {
+  return factionRadiusForDay(factionDayAt(epochStart, now));
 }
 
 /**

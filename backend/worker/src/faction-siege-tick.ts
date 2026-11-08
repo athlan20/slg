@@ -12,6 +12,7 @@ import { beaconLeadMultiplier, warningIntel } from '../../common/src/building-ef
 import { factionBannerOf, factionDayAt, factionRadiusAt, factionDefOf, type FactionDef } from '../../common/src/faction';
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { loadFactionRows } from '../../common/src/faction-db';
+import { loadFactionEpochStart } from '../../common/src/faction-start';
 import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
 import {
   FACTION_SIEGE_WEEKLY_CAP,
@@ -93,11 +94,14 @@ export async function runFactionSiegeTick(pool: pg.Pool, now: Date = new Date())
   if (!season) {
     return result;
   }
-  const day = factionDayAt(season.startAt, now);
-  const radius = factionRadiusAt(season.startAt, now);
-  const week = factionSiegeWeekOf(season.startAt, now);
+  // v102（AISLG-243）：天数 / 半径 / 围攻起算日与周界都从「势力起点」算（max(本季开始时间, 势力启用时间)），
+  // 当季启用时从启用当天算第 1 天：满 7 天才开始围攻、之后每周 +50 格
+  const epochStart = await loadFactionEpochStart(pool, season.startAt);
+  const day = factionDayAt(epochStart, now);
+  const radius = factionRadiusAt(epochStart, now);
+  const week = factionSiegeWeekOf(epochStart, now);
 
-  result.resolved = await resolveDueFactionSieges(pool, { now, seasonStart: season.startAt });
+  result.resolved = await resolveDueFactionSieges(pool, { now, epochStart });
   if (!week) {
     return result;
   }

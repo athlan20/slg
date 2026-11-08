@@ -137,7 +137,8 @@ export async function createSiegeFixture(baseUrl: string, label: string): Promis
       );
       const notifies: TileNotify[] = [];
       const pushes: Array<{ accountId: string; data: Record<string, unknown> }> = [];
-      const outcome = await resolveOneSiege(conn, res.rows[0], { now, seasonStart }, notifies, pushes);
+      // v102（AISLG-243）：围攻起算日按势力起点算；这里没有中途启用，起点就是本季开始时间
+      const outcome = await resolveOneSiege(conn, res.rows[0], { now, epochStart: seasonStart }, notifies, pushes);
       await conn.query('COMMIT');
       return outcome;
     } catch (err) {

@@ -818,5 +818,17 @@
  *   reason = attacked / recovered / destroyed，全服广播）；新事件 faction_lair_battle / faction_lair_reward /
  *   faction_lair_destroyed；新全服播报 faction_lair_destroyed（必达）；战报 kind 新增 faction_lair。
  *   新表 faction_lairs / faction_contrib（均换季清空）。faction_enabled 关闭时以上全部不出现。
+ * v102（势力当季启用，AISLG-243，只加不改；开关 faction_enabled 关闭时行为与上线前一致）：
+ *   一、启用时间：新增 settings 的 faction_started_at（开关第一次打开、或换季 / 世界重建生成老巢时记下当时时刻）。
+ *   势力的「第几天」改为从 max(本季开始时间, 启用时间) 算起：换季启用时两者相同、行为完全不变；赛季中途打开开关时
+ *   从开启当天算第 1 天（半径 100 格、满 7 天即第 8 天才开始围攻、之后每周 +50 格），玩家有一周准备。
+ *   受影响的只有计算口径：势力范围半径、半径扩大播报、围攻起算日与每周吞城上限的周界、GET_FACTIONS 的 day / radius。
+ *   二、当季启用：开关打开后不等换季，Worker 一旦发现开关已开而 faction_started_at 还没记录，就在一个事务内放一次老巢
+ *   （写启用时间、打老巢标记、插 factions 行、吞周围 25 格内的 NPC 城）。老巢格上或周围 5 格（切比雪夫）内有玩家城的那家
+ *   本季不放：不吞城、不围攻、不出现在 GET_FACTIONS 与地图图层、原范围内的 NPC 袭击也不带它的旗号；不为让位迁玩家的城，
+ *   下季换季再生成。只执行一次（以 faction_started_at 是否已有记录为准）：关掉再打开不重复放老巢，也不补放当初跳过的那家。
+ *   启用后发一条公告：说明天数从开启当天算第 1 天，以及是哪几家本季没放（原因：该处已有玩家城）。
+ *   三、换季路径不变：换季后五家照旧全部生成，faction_started_at 重置为新赛季开始时间，天数从新赛季开始算
+ *   （开关在换季时关着的则删掉记录）。协议结构无变化，只有 GET_FACTIONS 的 day 语义改为「势力的第几天」。
  */
-export const PROTOCOL_VERSION = 101;
+export const PROTOCOL_VERSION = 102;
