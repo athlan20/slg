@@ -134,6 +134,10 @@ export async function runFactionStart(pool: pg.Pool, now: Date = new Date()): Pr
   if (!result.started) {
     return result;
   }
+  // 存量势力只补记启用时间（没放老巢、没跳过谁）：势力早就在跑了，不发"本季启用"公告
+  if (result.placed === 0 && result.skipped.length === 0) {
+    return result;
+  }
   console.log(`faction season start: placed ${result.placed} lair(s), skipped ${result.skipped.length}`);
   const { titleZh, bodyZh } = factionStartAnnouncement(result);
   try {
