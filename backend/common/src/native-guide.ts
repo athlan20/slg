@@ -5,6 +5,7 @@
 
 import { TROOP_KINDS, type TroopKind } from './protocol';
 import { nativeGarrisonBase, resolveBattle } from './battle';
+import { scaleCrushLosses } from './battle-crush';
 import { PLUNDERABLE_KEYS, loadByCarry } from './plunder';
 import { EXCHANGE_INPUT_PER_GOLD } from './rules';
 import { TROOP_INFO, armyCarryCapacity } from './troops';
@@ -78,7 +79,11 @@ export function nativeAttackGuide(): NativeGuideRow[] {
       let wins = 0;
       let netSum = 0;
       for (let i = 0; i < GUIDE_RUNS; i++) {
-        const result = resolveBattle(army, garrison, { rng: mulberry32(level * 100003 + multiple * 1009 + i) });
+        // AISLG-244：与实战同口径——打野地原住守军兵力碾压（r > 3）时按占比折算战损
+        const result = scaleCrushLosses(
+          resolveBattle(army, garrison, { rng: mulberry32(level * 100003 + multiple * 1009 + i) }),
+          garrison,
+        );
         let net = 0;
         for (const kind of TROOP_KINDS) {
           net -= (result.attacker.losses[kind] ?? 0) * goldEquivalentCost(kind);

@@ -28,6 +28,7 @@ import {
   type BattleResult,
 } from '../../common/src/battle';
 import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { scaleCrushLosses } from '../../common/src/battle-crush';
 import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import type { ScoutIntel } from '../../common/src/protocol-battle';
 import type { DefenseScoutView } from '../../common/src/protocol-defense';
@@ -78,13 +79,19 @@ export async function resolveBattleArrival(
   const wall = npc ? wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0) : 0;
   // v36（AISLG-114）：随队武将加成（按部队规模折算，见 heroBattleBonus）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  const result = resolveBattle(troops, defender, {
-    wallDefensePercent: wall,
-    siege: tile.kind === 'npc_city',
-    attackerHero: hero?.engine ?? null,
-    // v72（AISLG-192）：世界地图战斗吃攻方科技乘数；NPC 守方不吃
-    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
-  });
+  // AISLG-244：打野地原住守军 / NPC 城池兵力碾压（r > 3）时按占比折算攻方战损；
+  // attackerWon、守方一侧与回合数保持引擎原值（战报 / 伤兵 / 俘虏 / 武将经验 / 幸存部队
+  // 都吃折算后的 result）
+  const result = scaleCrushLosses(
+    resolveBattle(troops, defender, {
+      wallDefensePercent: wall,
+      siege: tile.kind === 'npc_city',
+      attackerHero: hero?.engine ?? null,
+      // v72（AISLG-192）：世界地图战斗吃攻方科技乘数；NPC 守方不吃
+      attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+    }),
+    defender,
+  );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   // v85（AISLG-212）：世界地图战斗统一拆分伤兵 / 俘虏——攻方是玩家、守方是 NPC；
   // 攻方伤兵与俘虏都进出发城（战斗结算时立即入账，不用等返程）
