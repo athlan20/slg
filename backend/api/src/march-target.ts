@@ -114,7 +114,8 @@ export interface MarchTargetVerdict {
   purpose: 'plunder' | 'occupy' | 'reinforce' | 'transfer' | 'transport' | 'intercept' | 'assist' | null;
   reason?:
     | 'MOVING_TARGET_GONE'
-    | 'TARGET_NOT_ATTACKABLE' | 'INVALID_PARAMS' | 'TASK_INVALID_FOR_TARGET' | 'PLUNDER_COOLDOWN' | 'TERRITORY_LIMIT'
+    | 'TARGET_NOT_ATTACKABLE' | 'INVALID_PARAMS' | 'TASK_INVALID_FOR_TARGET' | 'WILD_HERO_UNOCCUPIABLE'
+    | 'PLUNDER_COOLDOWN' | 'TERRITORY_LIMIT'
     | OccupyCityDenial | 'OUTER_NOT_CLEARED' | 'NOBILITY_TOO_LOW' | 'LUOYANG_CLOSED' | 'ASSIST_NOT_ALLY' | 'ASSIST_LIMIT'
     | 'NEWBIE_PROTECTED' | 'TARGET_IN_TRUCE' | 'SELF_TRUCE_ACTIVE' | 'TILE_PROTECTED'
     | 'ALLY_NOT_ATTACKABLE' | 'FACTION_LAIR_TARGET';
@@ -191,6 +192,11 @@ export async function resolveMarchTarget(
     return { purpose: 'transport', targetCityId: targetId };
   }
   if (tile.kind === 'wilderness') {
+    // v103（AISLG-245）：在野名将所在野地不能被占领——占下来别人就再也打不到守军、拿不到结交资格。
+    // 存量已被占领的地块不处理（已在别人名下，按他人野地的现有规则走）
+    if (!tile.owner_city_id && tile.wild_hero && task === 'occupy') {
+      return { purpose: null, reason: 'WILD_HERO_UNOCCUPIABLE' };
+    }
     // v29（AISLG-76）：黄巾营地 / 老巢所在格——出征同打野地（掠夺任务），不能占领、不受掠夺冷却限制
     if (!tile.owner_city_id && (await loadCampAt(client, tile.x, tile.y))) {
       return task === 'occupy' ? { purpose: null, reason: 'TASK_INVALID_FOR_TARGET' } : { purpose: 'plunder' };

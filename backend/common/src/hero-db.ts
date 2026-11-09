@@ -1,7 +1,8 @@
-// 武将的数据库存取（v36，AISLG-114/115/116；v54 AISLG-144 加点 / 历练 / 赏赐 / 洗点）：API（查询 /
+// 武将的数据库存取（v36，AISLG-114/115/116；v54 AISLG-144 加点 / 历练 / 赏赐 / 洗点）；API（查询 /
 // 招募 / 解雇 / 城守 / 出征校验）与 Worker（俸禄 / 战斗加成与经验 / 名将授予 / 历练结算）共用。
-// 酒馆候选按 refreshed_at 惰性刷新（读取时过期才重摇，无后台任务）；名将全服唯一靠
-// famous_heroes.name 主键 + ON CONFLICT。培养相关的每日计数在 hero-growth-db.ts。
+// 酒馆候选按 refreshed_at 惰性刷新（读取时过期才重摇，无后台任务）；v103（AISLG-245）名将唯一性：
+// 29 名在野名将只到「同一账号不能有两个」（famous_heroes 主键 (name, owner_account_id) + ON CONFLICT），
+// 名城 / 黄巾 / 势力首领 16 名仍全服唯一（部分唯一索引 + 授予前先查）。培养相关的每日计数在 hero-growth-db.ts。
 
 import pg from 'pg';
 import { scaledMs, scaledRate } from './time-scale';
@@ -265,14 +266,18 @@ export async function insertHero(
   return ins.rows[0] as AccountHeroRow;
 }
 
-/** 解雇：直接删除（名将的 famous_heroes 归属行随外键级联删除 → 名将回到可获得状态） */
+/** 解雇：直接删除（名将的 famous_heroes 归属行随外键级联删除 → 该账号可重新获得） */
 export async function deleteHero(client: Writer, heroId: string): Promise<void> {
   await client.query(`DELETE FROM account_heroes WHERE id = $1`, [heroId]);
 }
 
 /**
- * 授予名将（v36，AISLG-115；v54 在野名将带固定属性）：全服唯一——famous_heroes.name 主键 + ON CONFLICT
- * DO NOTHING；已被他人获得（或本账号名将 ≥ 3 名）返回 null，不产生副作用。成功返回新武将行。
+ * 授予名将（v36，AISLG-115；v54 在野名将带固定属性；v103 AISLG-245 在野名将每账号各一份）：
+ * - 在野名将（source.kind='wild'）：唯一性只到「同一账号不能有两个」——famous_heroes 主键
+ *   (name, owner_account_id) + ON CONFLICT DO NOTHING，别的账号有没有同名名将与本账号无关；
+ * - 名城 8 / 黄巾 3 / 势力首领 5（16 名）：仍全服唯一——先查同名行，已被任何人获得即返回 null；
+ *   并发下由 uq_famous_heroes_sole_owner 部分唯一索引兜底（ON CONFLICT DO NOTHING 让后来者失败）。
+ * 本账号名将 ≥ 3 名返回 null，不产生副作用。成功返回新武将行。
  * attrs 缺省时随机（名城 / 黄巾）；在野名将传入其落位时固定的属性（侦察看到的就是它）。
  */
 export async function grantFamousHero(
@@ -288,12 +293,20 @@ export async function grantFamousHero(
   if ((count.rows[0] as { n: number }).n >= FAMOUS_HERO_CAP) {
     return null;
   }
+  // 非在野名将仍全服唯一：先查再插（并发下由部分唯一索引兜底）
+  if (def.source.kind !== 'wild') {
+    const taken = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1`, [def.name]);
+    if (taken.rowCount) {
+      return null;
+    }
+  }
   const rolled = attrs ?? rollFamousAttrs(Math.random);
   // v94（AISLG-228）：在野名将带忠诚度 100，名城 / 黄巾名将为 null
   const hero = await insertHero(client, accountId, { name: def.name, famous: true, ...rolled, loyalty: initialLoyalty(def.name) });
+  // 不带冲突目标：主键 (name, owner_account_id)（本账号已有）与部分唯一索引（非在野名将已有）都覆盖
   const claim = await client.query(
     `INSERT INTO famous_heroes (name, source, hero_id, owner_account_id)
-     VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO NOTHING RETURNING name`,
+     VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING name`,
     [def.name, famousSourceKey(def.source), hero.id, accountId],
   );
   if (!claim.rowCount) {
@@ -303,9 +316,11 @@ export async function grantFamousHero(
   return hero;
 }
 
-/** famous_heroes JOIN accounts 的一行（已被获得的名将） */
+/** 名将归属的一行（已被获得的同一名将可能有多行：v103 起在野名将每账号一份） */
 export interface FamousClaimRow {
   name: string;
+  /** 全服拥有该名将的账号数（1 = 唯一持有人；在野名将可多人各有一份） */
+  owner_count: number;
   granted_at: Date;
   username: string;
 }
@@ -319,30 +334,41 @@ export interface WildTileRow {
 }
 
 /**
- * 名将归属视图的纯组装（loadFamousClaims 与单测共用）。在野名将只有被获得之后才给落位坐标：
- * 未被获得时 wildAt 为 null，避免一次接口调用就拿到全部藏身位置；名城 / 黄巾名将没有落位，恒为 null。
+ * 名将归属视图的纯组装（loadFamousClaims 与单测共用）：
+ * - 在野名将（v103）：不再显示单一持有人——ownerUsername 恒为 null，ownerCount 为全服拥有人数；
+ *   只要已有 ≥ 1 人拥有就给出落位坐标（未被获得时 wildAt 为 null，避免一次接口调用就拿到全部藏身位置）。
+ * - 名城 / 黄巾 / 首领 16 名：仍全服唯一，ownerUsername 为持有人（未被获得为 null）；没有落位坐标。
  */
 export function buildFamousClaims(claims: FamousClaimRow[], wildTiles: WildTileRow[]): FamousClaimView[] {
   const owned = new Map(claims.map((row) => [row.name, row]));
   const wildAt = new Map(wildTiles.map((row) => [row.wild_hero, row]));
   return ALL_FAMOUS_HEROES.map((def) => {
+    const wild = def.source.kind === 'wild';
     const claim = owned.get(def.name);
-    const tile = claim && def.source.kind === 'wild' ? wildAt.get(def.name) : undefined;
+    const tile = claim && wild ? wildAt.get(def.name) : undefined;
     return {
       name: def.name,
       sourceLabel: famousSourceLabel(def.source),
-      ownerUsername: claim?.username ?? null,
+      ownerUsername: wild ? null : claim?.username ?? null,
+      ownerCount: claim?.owner_count ?? 0,
       grantedAt: claim ? claim.granted_at.toISOString() : null,
       wildAt: tile ? { x: tile.x, y: tile.y, level: tile.level } : null,
     };
   });
 }
 
-/** 全部名将的归属视图（未被获得的也列出，ownerUsername 为 null；在野名将仅被获得后附落位坐标） */
+/**
+ * 全部名将的归属视图（未被获得的也列出）：按名将聚合——owner_count 为全服拥有人数，granted_at 取最早一次，
+ * username 仅供非在野名将使用（在野名将的展示口径是人数，见 buildFamousClaims）。
+ */
 export async function loadFamousClaims(q: Queryable): Promise<FamousClaimView[]> {
   const res = await q.query(
-    `SELECT f.name, f.granted_at, a.username
-     FROM famous_heroes f JOIN accounts a ON a.id = f.owner_account_id`,
+    `SELECT f.name,
+            count(*)::int AS owner_count,
+            min(f.granted_at) AS granted_at,
+            (array_agg(a.username ORDER BY f.granted_at, f.owner_account_id))[1] AS username
+     FROM famous_heroes f JOIN accounts a ON a.id = f.owner_account_id
+     GROUP BY f.name`,
   );
   const wild = await q.query(`SELECT wild_hero, x, y, level FROM world_tiles WHERE wild_hero IS NOT NULL`);
   return buildFamousClaims(res.rows as FamousClaimRow[], wild.rows as WildTileRow[]);

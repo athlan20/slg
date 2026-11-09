@@ -1,5 +1,5 @@
-// 名将忠诚度的数据库存取（v94，AISLG-228）：设置忠诚度（含 30 线提醒）与下野（删除武将、清除全服归属、
-// 撤城守、好感从头算）。调用方必须已对该武将行加锁（FOR UPDATE）；下野还要求武将不在行军 / 历练中。
+// 名将忠诚度的数据库存取（v94，AISLG-228）：设置忠诚度（含 30 线提醒）与下野（删除武将、清除本账号的归属、
+// 撤城守、本账号的好感从头算）。调用方必须已对该武将行加锁（FOR UPDATE）；下野还要求武将不在行军 / 历练中。
 // Worker（忠诚度 tick、欠饷扣减）与 API（赏赐、赎回）共用。
 
 import type pg from 'pg';
@@ -41,8 +41,9 @@ export interface DepartOutcome {
 }
 
 /**
- * 下野（v94，AISLG-228）：与解雇同一条删除路径——撤城守、删除武将（famous_heroes 归属随级联清除，名将回到
- * 可获得状态；world_tiles.wild_hero 不变）、清空该名将全服所有账号的结交进度（好感从头算）。
+ * 下野（v94，AISLG-228；v103 AISLG-245 改为「只动本账号」）：与解雇同一条删除路径——撤城守、删除武将
+ * （本账号的 famous_heroes 归属行随级联清除，别的账号的同名名将与结交进度不变；world_tiles.wild_hero 不变）、
+ * 清空**本账号**对该名将的结交进度（好感从头算）。
  * cause = captive_expired 时胜方获得结交资格（grantUnlock 重复调用无副作用）。
  * 行军 / 历练中返回 'busy'（不删、不发事件，等结束后由 tick 再次尝试）；武将已不存在（并发下野）返回 null，不重复发事件。
  */
@@ -63,7 +64,8 @@ export async function departHero(
   if (!del.rowCount) {
     return null;
   }
-  await client.query(`DELETE FROM hero_friendship WHERE hero_name = $1`, [hero.name]);
+  // v103（AISLG-245）：只清本账号的结交进度；别的账号的同名名将进度不受影响
+  await client.query(`DELETE FROM hero_friendship WHERE hero_name = $1 AND account_id = $2`, [hero.name, hero.account_id]);
   const ownerRes = await client.query(`SELECT username FROM accounts WHERE id = $1`, [hero.account_id]);
   const ownerUsername = (ownerRes.rows[0] as { username: string } | undefined)?.username ?? null;
   await insertEvent(client, {

@@ -286,6 +286,10 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '该任务类型不适用于此目标（v16 起；v24 起 NPC 城池也可 task=occupy，本码当前不再由出征返回，保留兼容；玩家城池占领随玩家对抗阶段设计）。',
     action: '改用 task=plunder（或不带 task，缺省即掠夺）。',
   },
+  WILD_HERO_UNOCCUPIABLE: {
+    desc: '在野名将所在的野地不能被占领（v103，AISLG-245）：这些野地要留给所有玩家反复挑战守军拿结交资格，地块被占后别人就打不了了。',
+    action: '改用 task=plunder 打守军（打赢即得结交资格）；想占野地请挑没有名将标记（tile.wildFamous 为 false 或无此字段）的野地。',
+  },
   TERRITORY_LIMIT: {
     desc: '该城占领的野地数已达官府等级上限（v16：上限 = 官府等级，MARCH task=occupy 发起时初核，Worker 到达时复核——胜利后超限不改归属、幸存部队返程）。',
     action: '升级官府提高上限、召回一块野地驻军，或改用 task=plunder（掠夺不受占领上限限制）。',
@@ -447,7 +451,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '直接 RECRUIT_FAMOUS_HERO 招揽。',
   },
   FAMOUS_CLAIMED: {
-    desc: '（v54，AISLG-144）该名将已被他人获得（全服唯一）。',
+    desc: '（v54，AISLG-144；v103 AISLG-245 收窄）本账号已经拥有该名将——同一账号不能有两个同名名将；别的账号接手不影响本账号招揽。',
     action: '换一名在野名将；GET_HEROES 的 famousClaims 可查归属。',
   },
   GUARD_ASSIGN_DENIED: {

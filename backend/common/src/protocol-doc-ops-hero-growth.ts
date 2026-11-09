@@ -27,7 +27,7 @@ const HERO_ID = '5b1f9a2c-0000-4000-8000-0000000000a1';
 
 const GROWTH_RULES = `培养（v54，AISLG-144）：升一级获得自由点数（普通将 ${heroPointsPerLevel(false)}、名将 ${heroPointsPerLevel(true)}），由玩家分到统率 / 武力 / 智力，等级上限 ${HERO_LEVEL_MAX}；升级不再自动加属性。洗点花 等级 × ${RESET_GOLD_PER_LEVEL} 金币，已分配点数全部退回，每个武将每游戏日 ${RESET_DAILY_LIMIT} 次。历练派出去 1 / 4 / 12 小时基准（随时间缩放），到点经验 = 基础经验 × 武将等级 ÷ 10（基础 ${TRAINING_TIERS[1].baseExp} / ${TRAINING_TIERS[2].baseExp} / ${TRAINING_TIERS[3].baseExp}），到点自动到账，离线也结算。赏赐每次花 ${GIFT_GOLD} 金币 → ${GIFT_EXP} 经验，每个武将每游戏日最多 ${GIFT_DAILY_LIMIT} 次。加点 / 洗点 / 历练 / 解雇 / 出征 / 任城守都要求武将不在外出、不在城守、不在历练（赏赐不受限）。`;
 
-const WILD_RULES = `在野名将（v54，AISLG-144）：29 名名将隐居在 Lv${WILD_HERO_MIN_LEVEL} 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 ${WILD_GARRISON_MULTIPLIER} 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 ${BEFRIEND_GOLD_PER_LEVEL} × 野地等级，好感 +${BEFRIEND_FAVOR_PER_TIME}，每个名将每游戏日最多 ${BEFRIEND_DAILY_LIMIT} 次，同时结交（好感未满、未被招揽）最多 ${BEFRIEND_ACTIVE_CAP} 名。好感满 ${RECRUIT_FAVOR_REQUIRED} 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。`;
+const WILD_RULES = `在野名将（v54，AISLG-144）：29 名名将隐居在 Lv${WILD_HERO_MIN_LEVEL} 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 ${WILD_GARRISON_MULTIPLIER} 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 ${BEFRIEND_GOLD_PER_LEVEL} × 野地等级，好感 +${BEFRIEND_FAVOR_PER_TIME}，每个名将每游戏日最多 ${BEFRIEND_DAILY_LIMIT} 次，同时结交（好感未满、未被招揽）最多 ${BEFRIEND_ACTIVE_CAP} 名。好感满 ${RECRUIT_FAVOR_REQUIRED} 后招揽（RECRUIT_FAMOUS_HERO）。**v103（AISLG-245）起每个账号各拿一个**：29 名在野名将的唯一性只到「同一账号不能有两个」，不同账号各走一遍流程互不影响（先到先得不再成立）；本账号招到之后结交进度清空，名将解雇 / 下野后本账号可从头再来（别人的同名名将与进度不受影响）。`;
 
 export const REQUEST_ALLOCATE_HERO_POINTS: RequestOpDoc = {
   kind: 'request',
@@ -173,7 +173,7 @@ export const REQUEST_RECRUIT_FAMOUS_HERO: RequestOpDoc = {
   name: 'RECRUIT_FAMOUS_HERO',
   title: '招揽在野名将（v54，AISLG-144）',
   preAuth: false,
-  summary: `好感满 ${RECRUIT_FAVOR_REQUIRED} 后招揽该在野名将，加入账号为名将（名将上限 3 名，不占普通将上限）。全服唯一：已被他人获得返回 FAMOUS_CLAIMED；成功后全服播报（hero_granted）。名将的三项属性在落位时已固定，侦察看到的就是它。`,
+  summary: `好感满 ${RECRUIT_FAVOR_REQUIRED} 后招揽该在野名将，加入账号为名将（名将上限 3 名，不占普通将上限）。v103（AISLG-245）起每个账号各一份：本账号已经拥有该名将返回 FAMOUS_CLAIMED（别的账号有没有与你无关）；成功后全服播报（hero_granted）。名将的三项属性在落位时已固定，侦察看到的就是它。`,
   requestFields: [{ name: 'heroName', type: 'string', desc: '在野名将名。' }],
   dataFields: [{ name: 'hero', type: 'object', desc: '新名将的武将视图。' }],
   errors: ['INVALID_PARAMS', 'HERO_NOT_UNLOCKED', 'HERO_FAVOR_INSUFFICIENT', 'FAMOUS_CLAIMED', 'HERO_CAP_REACHED'],
@@ -184,7 +184,7 @@ export const REQUEST_RECRUIT_FAMOUS_HERO: RequestOpDoc = {
       responses: [{ op: Op.RECRUIT_FAMOUS_HERO, seq: 35, ok: true, data: { hero: { id: HERO_ID, name: '关羽', famous: true } } }],
     },
   ],
-  agentNote: '招揽是全服竞争：好感满的那一刻就去招，慢一步就会被 FAMOUS_CLAIMED。',
+  agentNote: '好感满就可以招，不必抢：每个账号各拿一个，别的账号招走不影响你；被拒只有「本账号已有该名将」（FAMOUS_CLAIMED）与「名将已满 3 名」（HERO_CAP_REACHED）两种情况。',
 };
 
 /** 供 protocol-doc-ops.ts 注册：六个新协议号的文档（v71 起另加取消历练 CANCEL_TRAINING） */

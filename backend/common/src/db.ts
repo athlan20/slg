@@ -685,7 +685,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tech_research_one_active ON tech_research 
 -- v36（AISLG-114/115/116）：武将。account_heroes = 账号级武将（普通将从酒馆招募、名将从 PvE 获得）；
 -- tavern_candidates = 酒馆候选武将（读取时按 refreshed_at 惰性刷新，每 4 小时基准一批）；
 -- v87（AISLG-217）：酒馆只在主城建造，候选账号只有一份——city_id 固定为主城 id（上线迁移与换主城均已收敛）。
--- famous_heroes = 名将全服归属（name 即名将主键；解雇武将级联删除归属行 → 名将回到可获得状态）。
+-- famous_heroes = 名将归属（v103，AISLG-245：主键 (name, owner_account_id)——29 名在野名将每个账号各能获得一份，
+-- 同名多行；名城 / 黄巾 / 势力首领 16 名仍全服唯一，由 hero-schema 的部分唯一索引保证。
+-- 解雇 / 下野武将级联删除归属行 → 该账号可重新获得）。
 -- cities.guard_hero_id = 城守；marches.hero_id = 随队武将（返程行军沿用，回城后自然释放）
 CREATE TABLE IF NOT EXISTS account_heroes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -715,11 +717,12 @@ CREATE TABLE IF NOT EXISTS tavern_candidates (
 );
 CREATE INDEX IF NOT EXISTS idx_tavern_candidates_city ON tavern_candidates (city_id);
 CREATE TABLE IF NOT EXISTS famous_heroes (
-  name text PRIMARY KEY,
+  name text NOT NULL,
   source text NOT NULL,
   hero_id uuid NOT NULL REFERENCES account_heroes(id) ON DELETE CASCADE,
   owner_account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-  granted_at timestamptz NOT NULL DEFAULT now()
+  granted_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (name, owner_account_id)
 );
 ALTER TABLE cities ADD COLUMN IF NOT EXISTS guard_hero_id uuid;
 ALTER TABLE marches ADD COLUMN IF NOT EXISTS hero_id uuid;

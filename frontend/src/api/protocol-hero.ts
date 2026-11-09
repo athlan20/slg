@@ -20,7 +20,7 @@ export interface HeroView {
   specialtyBonus?: { atkPercent: number; defPercent: number; siegeOnly: boolean } | null;
   id: string;
   name: string;
-  /** 名将（全服唯一、从 PvE 获得；普通将 false） */
+  /** 名将（从 PvE 获得；普通将 false。29 名在野名将每账号各一份） */
   famous: boolean;
   lead: number;
   force: number;
@@ -81,15 +81,18 @@ export interface HeroCandidateView {
   refreshedAt: string;
 }
 
-/** 名将全服归属视图（GET_HEROES 一并返回，公开信息） */
+/** 名将归属视图（GET_HEROES 一并返回，公开信息；v103 AISLG-245：在野名将按人数展示） */
 export interface FamousClaimView {
   name: string;
   /** 来源的人读描述，如「首占名城『洛阳』」 */
   sourceLabel: string;
-  /** 当前主人用户名；null = 尚未被获得（可争取） */
+  /** 当前主人用户名：只对名城 / 黄巾 / 势力首领（全服唯一）有意义；29 名在野名将恒为 null */
   ownerUsername: string | null;
+  /** 全服拥有该名将的账号数（在野名将可多人各有一份；0 = 还没人获得；其余 16 名为 0 或 1） */
+  ownerCount: number;
+  /** 最早一次获得时刻；未被获得为 null */
   grantedAt: string | null;
-  /** 在野名将的落位野地（坐标与等级）：未被获得（ownerUsername 为 null）时为 null，被获得后给出落位；名城 / 黄巾恒为 null */
+  /** 在野名将的落位野地（坐标与等级）：还没人获得（ownerCount 为 0）时为 null，有人获得后给出落位；名城 / 黄巾 / 首领恒为 null */
   wildAt: { x: number; y: number; level: number } | null;
 }
 

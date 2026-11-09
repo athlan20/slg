@@ -395,6 +395,28 @@ export async function resolveOccupyArrival(
     }
   }
 
+  // v103（AISLG-245）：在野名将所在野地不能被占领（发起时已拒，这里兜住在途 / 旧客户端的行军）——
+  // 打赢只拿结交资格，地块保持无主、幸存部队返程，免得占下来后别的玩家再也打不到守军
+  if (target.wild_hero) {
+    await markMarchArrived(client, march.id);
+    const returning = await createReturnMarch(client, march, result.attacker.survivors, settled, march.initiator);
+    await completeMarchEvent(client, march, 'battle_won', {
+      troops,
+      survivors: result.attacker.survivors,
+      losses: result.attacker.losses,
+      occupied: false,
+      denial: 'WILD_HERO_UNOCCUPIABLE',
+      rounds: result.rounds,
+      endReason: result.endReason,
+      attackerPower: armyPower(troops),
+      defenderPower: armyPower(defender),
+      reportId,
+      returning,
+    });
+    notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
+    return;
+  }
+
   // 胜利：到达复核占领上限（官府等级；发起时已初核，期间可能经他块占领 / 增援变化）
   const limit = territoryLimit(await governmentLevel(client, march.from_city_id));
   const ownedRes = await client.query(

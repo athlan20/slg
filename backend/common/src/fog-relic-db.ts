@@ -85,14 +85,21 @@ export interface HeroSiteRow {
   claimed: boolean;
 }
 
-/** 视窗内的名将处所（8 处；claimed = 名将已被招揽） */
-export async function heroSitesInWindow(q: Queryable, x: number, y: number, w: number, h: number): Promise<HeroSiteRow[]> {
+/** 视窗内的名将处所（8 处；claimed = **本账号**已拥有该名将，v103 AISLG-245 起按账号判） */
+export async function heroSitesInWindow(
+  q: Queryable,
+  accountId: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): Promise<HeroSiteRow[]> {
   const res = await q.query(
     `SELECT wt.x, wt.y, wt.wild_hero AS hero,
-            EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero) AS claimed
+            EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero AND fh.owner_account_id = $6) AS claimed
      FROM world_tiles wt
      WHERE wt.wild_hero = ANY($1::text[]) AND wt.x >= $2 AND wt.x < $2 + $4 AND wt.y >= $3 AND wt.y < $3 + $5`,
-    [HERO_SITES.map((site) => site.hero), x, y, w, h],
+    [HERO_SITES.map((site) => site.hero), x, y, w, h, accountId],
   );
   return (res.rows as Array<{ x: number; y: number; hero: string; claimed: boolean }>).map((row) => ({
     x: row.x,
