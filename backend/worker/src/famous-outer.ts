@@ -8,6 +8,7 @@ import pg from 'pg';
 import type { TroopKind } from '../../common/src/protocol';
 import { armyPower, resolveBattle } from '../../common/src/battle';
 import { splitBattleCasualties } from '../../common/src/battle-casualties';
+import { scaleCrushLosses } from '../../common/src/battle-crush';
 import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
@@ -41,12 +42,16 @@ export async function resolveFamousOuterArrival(
   const defender = famous.outerGarrison;
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  const result = resolveBattle(troops, defender, {
-    wallDefensePercent: 0,
-    siege: false,
-    attackerHero: hero?.engine ?? null,
-    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
-  });
+  // AISLG-244：名城同属 NPC 城池，兵力碾压（r > 3）时同样按占比折算攻方战损
+  const result = scaleCrushLosses(
+    resolveBattle(troops, defender, {
+      wallDefensePercent: 0,
+      siege: false,
+      attackerHero: hero?.engine ?? null,
+      attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+    }),
+    defender,
+  );
   const naming = await loadCityNaming(client, march.from_city_id);
   const attackerName = naming ? `${naming.username} · ${naming.cityName}` : '出征部队';
   // v85（AISLG-212）：名城外围野战——攻方伤兵与俘虏（胜时）进出发城
