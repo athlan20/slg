@@ -52,7 +52,7 @@ export function starTowerBaseAttr(floor: number): number {
 
 /**
  * 某层的敌方阵容（按层号确定，固定种子）。普通层用随机武将名；Boss 层用名将的「幻影」——
- * 只借名将的名字做展示，不对应真实武将，不影响名将全服唯一的规则。
+ * 只借名将的名字做展示，不对应真实武将，不影响名将的归属规则。
  */
 export function starTowerFloorEnemies(floor: number): ArenaFighter[] {
   const rng = seededRng(0x5a7 * 1000 + floor);

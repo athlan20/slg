@@ -1,5 +1,6 @@
 // 武将系统的共用规则（v36，AISLG-114/115/116；v54 AISLG-144 加点 / 洗点 / 历练 / 赏赐 / 结交）：
-// 酒馆招将、带兵加成、俸禄与重伤、名将（全服唯一、从 PvE 或在野结交获得）、城守、经验与成长。
+// 酒馆招将、带兵加成、俸禄与重伤、名将（从 PvE 或在野结交获得；29 名在野名将每账号各一份，
+// 名城 / 黄巾 / 势力首领 16 名全服唯一）、城守、经验与成长。
 // 旧游戏只取玩法结构，不照搬数值。
 // API（招募 / 解雇 / 城守 / 出征配将校验）、Worker（俸禄 / 战斗结算 / 名将授予）与
 // 前端镜像共用本文件，不各自再实现一套数值；全部数值为占位，上线后按数据调整。
@@ -89,7 +90,7 @@ export function rollNormalHero(rng: () => number): { name: string } & HeroAttrs 
   };
 }
 
-/** 随机一名名将（三项各 45–65；名字由授予方指定，全服唯一） */
+/** 随机一名名将（三项各 45–65；名字由授予方指定；唯一性见 famous_heroes 主键） */
 export function rollFamousAttrs(rng: () => number): HeroAttrs {
   return {
     lead: rollAttr(rng, FAMOUS_ATTR_MIN, FAMOUS_ATTR_MAX),
@@ -187,7 +188,7 @@ export type FamousHeroSource =
   | { kind: 'wild' };
 
 export interface FamousHeroDef {
-  /** 名将名（全服唯一键） */
+  /** 名将名（在野名将按 (名字, 账号) 唯一；其余 16 名全服唯一） */
   name: string;
   source: FamousHeroSource;
 }

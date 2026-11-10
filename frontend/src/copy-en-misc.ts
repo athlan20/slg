@@ -171,6 +171,7 @@ export const ERRORS_EN = {
     invalidParams: 'Invalid march parameters (coordinates out of bounds, empty formation, or invalid task value)',
     plunderCooldown: 'This tile was just plundered successfully and is in plunder cooldown (occupying is not limited by the cooldown)',
     taskInvalidForTarget: 'This task does not apply to that target (NPC cities support plunder only)',
+    wildHeroUnoccupiable: 'A wilderness tile holding a wild famous hero cannot be occupied: defeating its garrison only earns the right to befriend that hero, and the tile stays unowned',
     territoryLimit: 'Wilderness occupancy has reached the cap set by your Government level (upgrade the Government or recall a tile before occupying another)',
     fallback: 'Operation failed',
   },

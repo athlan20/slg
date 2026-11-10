@@ -1,5 +1,6 @@
 // 名将授予（v36，AISLG-115）：只从 PvE 获得——名城首占 / 黄巾老巢首杀 / 贡献榜前二。
-// 全服唯一靠 famous_heroes.name 主键（grantFamousHero 内 ON CONFLICT 守卫）；获得时
+// 唯一性靠 famous_heroes 主键 (name, owner_account_id) 与部分唯一索引（grantFamousHero 内的检查 +
+// ON CONFLICT 守卫）：在野名将每账号各一份，其余 16 名仍全服唯一；获得时
 // 全服播报（force 必达）+ 账号事件 + hero_state 推送。Worker 各结算点共用。
 
 import pg from 'pg';
@@ -20,7 +21,7 @@ export interface GrantOutcome {
 
 /**
  * 授予一名名将并广播（调用方事务内；notifies 收集 hero_state 推送、broadcasts 收集
- * 全服播报，提交后由调用方发 pg_notify）。全服唯一：名将已被他人获得时静默跳过。
+ * 全服播报，提交后由调用方发 pg_notify）。名将已不可授予（非在野名将已被他人获得 / 本账号名将已满）时静默跳过。
  */
 export async function grantFamousHeroWithBroadcast(
   client: pg.PoolClient,

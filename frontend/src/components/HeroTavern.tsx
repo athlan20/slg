@@ -1,5 +1,6 @@
 /** 酒馆候选 + 名将归属（v36 AISLG-114/115）：三名候选横排成卡片（属性 / 招募费），金币或上限不足时禁用并说明；
- *  下次刷新时刻；名将归属（11 名名将的来源与当前主人，全服唯一）点开弹窗看，不占常驻空间。
+ *  下次刷新时刻；名将归属（各名将的来源与归属：在野名将显示全服已有 N 人拥有，其余 16 名显示主人）
+ *  点开弹窗看，不占常驻空间。
  */
 
 import { useState } from 'react';
@@ -103,8 +104,15 @@ export function HeroTavern({ state, city, isMain, onGoMain, busy, onRecruit }: H
                   {tName(claim.name)}
                   <span className="ml-1 text-faint">{tHeroSource(claim.sourceLabel)}</span>
                 </span>
-                <span className={`shrink-0 ${claim.ownerUsername ? 'text-accent' : 'text-faint'}`}>
-                  {claim.ownerUsername ? HERO_COPY.famous.owner(claim.ownerUsername) : HERO_COPY.famous.free}
+                <span
+                  role={`武将面板-名将归属-${claim.name}`}
+                  className={`shrink-0 ${claim.ownerUsername || claim.ownerCount > 0 ? 'text-accent' : 'text-faint'}`}
+                >
+                  {claim.ownerUsername
+                    ? HERO_COPY.famous.owner(claim.ownerUsername)
+                    : claim.ownerCount > 0
+                      ? HERO_COPY.famous.owners(claim.ownerCount)
+                      : HERO_COPY.famous.free}
                 </span>
               </p>
             )}

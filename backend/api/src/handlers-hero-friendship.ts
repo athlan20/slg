@@ -1,6 +1,8 @@
 // 在野名将的结交与招揽（v54，AISLG-144）：BEFRIEND_HERO（结交）/ RECRUIT_FAMOUS_HERO（招揽）。
 // 前提是结交资格（打赢过其所在野地的原住守军，见 battle-tick 的解锁钩子）。结交花主城金币
-// （500 × 野地等级），好感 +10，好感满 100 才能招揽；招揽走 grantFamousHero，全服唯一由它保证。
+// （500 × 野地等级），好感 +10，好感满 100 才能招揽；招揽走 grantFamousHero。
+// v104（AISLG-245）：唯一性只到「同一账号不能有两个」——别的账号是否已招走不影响本账号，判定与展示统一看
+// 「本账号是否已拥有」。
 // 锁序：主城行（花金币）→ 结交进度行 → 名将归属（famous_heroes 主键）。
 
 import pg from 'pg';
@@ -45,7 +47,7 @@ async function fail(
   respondError(ctx.registry, conn, op, seq, code, data);
 }
 
-/** BEFRIEND_HERO：结交一次（需结交资格、未被招揽、同时结交 ≤ 2、当日 ≤ 5、好感未满、金币足够） */
+/** BEFRIEND_HERO：结交一次（需结交资格、本账号未拥有、同时结交 ≤ 2、当日 ≤ 5、好感未满、金币足够） */
 export async function handleBefriendHero(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -72,7 +74,11 @@ export async function handleBefriendHero(
     if (!tile || !unlocked.rowCount) {
       return await fail(ctx, conn, client, op, seq, 'HERO_NOT_UNLOCKED');
     }
-    const claimed = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1`, [def.name]);
+    // v104（AISLG-245）：只看本账号是否已拥有
+    const claimed = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1 AND owner_account_id = $2`, [
+      def.name,
+      accountId,
+    ]);
     if (claimed.rowCount) {
       return await fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
     }
@@ -135,7 +141,7 @@ export async function handleBefriendHero(
   }
 }
 
-/** RECRUIT_FAMOUS_HERO：好感满 100 招揽在野名将（全服唯一；名将满 3 名或已被他人获得则拒绝） */
+/** RECRUIT_FAMOUS_HERO：好感满 100 招揽在野名将（每个账号各一份；本账号已拥有或名将满 3 名则拒绝） */
 export async function handleRecruitFamousHero(
   ctx: HandlerContext,
   conn: ConnInfo,
@@ -170,7 +176,10 @@ export async function handleRecruitFamousHero(
     if (!attrs) {
       return await fail(ctx, conn, client, op, seq, 'HERO_NOT_UNLOCKED');
     }
-    const claimed = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1`, [def.name]);
+    const claimed = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1 AND owner_account_id = $2`, [
+      def.name,
+      accountId,
+    ]);
     if (claimed.rowCount) {
       return await fail(ctx, conn, client, op, seq, 'FAMOUS_CLAIMED');
     }

@@ -77,10 +77,11 @@ export const HERO_COPY = {
       `${name}：守城攻击 +${atk}% · 减伤 ${def}% · 产量 +${prod}%`,
   },
   famous: {
-    title: '名将归属（全服唯一）',
+    title: '名将归属',
     toggleShow: '展开',
     toggleHide: '收起',
     owner: (name: string) => `主人：${name}`,
+    owners: (count: number) => `全服已有 ${count} 人拥有`,
     free: '尚未被获得',
   },
   picker: {
@@ -162,7 +163,7 @@ export const HERO_COPY = {
     todayLeft: (n: number) => `今日剩 ${n}`,
     befriend: '结交',
     recruit: '招揽',
-    lost: '已被他人招揽，好感作废',
+    lost: '已拥有该名将，好感作废',
     unlocked: '可结交',
   },
   errors: {

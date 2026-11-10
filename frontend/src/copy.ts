@@ -851,6 +851,7 @@ const ERRORS = {
     invalidParams: '出征参数不合法（坐标越界、编队为空或任务值非法）',
     plunderCooldown: '该地块已被成功掠夺，处于掠夺冷却（占领不受冷却限制）',
     taskInvalidForTarget: '该任务不适用于此目标（NPC 城池仅支持掠夺）',
+    wildHeroUnoccupiable: '在野名将所在的野地不能被占领：打下来只能拿到结交资格，地块保持无主',
     territoryLimit: '占领野地数已达官府等级上限（升级官府或召回一块野地后再占领）',
     fallback: '操作失败',
   },

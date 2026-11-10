@@ -18,7 +18,7 @@ export async function applySiteViews(req: FogRequest, tiles: TileView[], x: numb
     relics.set(`${row.x},${row.y}`, { tier: row.tier, kind: row.kind });
   }
   const sites = new Map<string, HeroSiteView>();
-  for (const row of await heroSitesInWindow(req.client, x, y, w, h)) {
+  for (const row of await heroSitesInWindow(req.client, req.accountId, x, y, w, h)) {
     const site = HERO_SITES.find((entry) => entry.hero === row.hero);
     if (site) {
       sites.set(`${row.x},${row.y}`, { name: site.name, hero: row.hero, claimed: row.claimed });

@@ -79,10 +79,11 @@ export const HERO_COPY_EN = {
       `${name}: attack +${atk}% · damage taken reduced by ${def}% · output +${prod}%`,
   },
   famous: {
-    title: 'Famous Hero ownership (unique server-wide)',
+    title: 'Famous Hero ownership',
     toggleShow: 'Show',
     toggleHide: 'Hide',
     owner: (name: string) => `Owner: ${name}`,
+    owners: (count: number) => `${count} player(s) server-wide have this hero`,
     free: 'Not obtained yet',
   },
   picker: {
@@ -164,7 +165,7 @@ export const HERO_COPY_EN = {
     todayLeft: (n: number) => `${n} left today`,
     befriend: 'Befriend',
     recruit: 'Recruit',
-    lost: 'Recruited by someone else — favor voided',
+    lost: 'You already have this hero — favor voided',
     unlocked: 'Can befriend',
   },
   errors: {
