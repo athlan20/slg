@@ -23,7 +23,6 @@ import { EventType, type InitiatorRole, type Resources, type TroopKind } from '.
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
 import { splitBattleCasualties } from '../../common/src/battle-casualties';
-import { scaleCrushLosses } from '../../common/src/battle-crush';
 import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { grantUnlock } from '../../common/src/hero-friendship-db';
 import { clearNativeGarrison, loadNativeGarrison, saveNativeGarrison } from '../../common/src/native-garrison';
@@ -139,16 +138,13 @@ export async function resolvePlunderArrival(
   const wall = npc ? wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0) : 0;
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  // AISLG-244：打野地原住守军 / NPC 城池兵力碾压（r > 3）时按占比折算攻方战损
-  const result = scaleCrushLosses(
-    resolveBattle(troops, defender, {
-      wallDefensePercent: wall,
-      siege: npc !== null,
-      attackerHero: hero?.engine ?? null,
-      attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
-    }),
-    defender,
-  );
+  // v105（AISLG-246）：战损折算在 resolveBattle 内统一处理（所有战斗、攻守对称）
+  const result = resolveBattle(troops, defender, {
+    wallDefensePercent: wall,
+    siege: npc !== null,
+    attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+  });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   // v85（AISLG-212）：掠夺野地 / NPC 城——攻方是玩家、守方是 NPC；伤兵与俘虏（胜时
   // 从守军损失抓 10%）进出发城
@@ -325,16 +321,13 @@ export async function resolveOccupyArrival(
   const defender = await loadNativeGarrison(client, target);
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  // AISLG-244：打野地原住守军兵力碾压（r > 3）时按占比折算攻方战损
-  const result = scaleCrushLosses(
-    resolveBattle(troops, defender, {
-      wallDefensePercent: 0,
-      siege: false,
-      attackerHero: hero?.engine ?? null,
-      attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
-    }),
-    defender,
-  );
+  // v105（AISLG-246）：战损折算在 resolveBattle 内统一处理（所有战斗、攻守对称）
+  const result = resolveBattle(troops, defender, {
+    wallDefensePercent: 0,
+    siege: false,
+    attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+  });
   const heroSettle = await settleMarchHero(client, march, result, notifies);
   // v85（AISLG-212）：占领野地——攻方是玩家、守方是 NPC；伤兵与俘虏（胜时）进出发城
   const occupyCasualties = splitBattleCasualties(result, false, true);

@@ -5,7 +5,7 @@
 // 数据库存取在 arena-db.ts，API 与 Worker 共用，两侧不得各自另算。
 
 import type { TroopKind } from './protocol';
-import { simulateBattle, type BattleResult } from './battle-engine';
+import { resolveBattle, type BattleResult } from './battle';
 import { heroBattleBonus, rollHeroName, type HeroAttrs } from './hero';
 import { getTimeScale } from './time-scale';
 import { formationArmy, type FormationKind } from './army-formation';
@@ -189,7 +189,9 @@ export function fightRound(
   // 不传兵数：加成按 scale = 1 计算，不摊薄（竞技场专用，PvE 仍走 heroBattleBonus 的摊薄口径）
   const bonusC = heroBattleBonus(attrsOf(challenger));
   const bonusD = heroBattleBonus(attrsOf(defender));
-  const result = simulateBattle(armyC, armyD, {
+  // v105（AISLG-246）：走统一结算出口 resolveBattle——竞技场 / 将星塔也在「所有战斗按兵力
+  // 占比对称折算战损」的范围内（只影响战报里的损失数，胜负判定不受影响）
+  const result = resolveBattle(armyC, armyD, {
     attackerHero: { atkPercent: bonusC.atkPercent, defPercent: bonusC.defPercent, specialty: challenger.specialty },
     defenderHero: { atkPercent: bonusD.atkPercent, defPercent: bonusD.defPercent, specialty: defender.specialty },
     rng,

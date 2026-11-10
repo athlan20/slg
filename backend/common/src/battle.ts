@@ -8,6 +8,7 @@
 import { TROOP_KINDS, type ArmyCounts, type TroopKind } from './protocol';
 import { wallBasePercent } from './rules';
 import { simulateBattle, type BattleOptions, type BattleResult, type CombatTechBonus } from './battle-engine';
+import { scaleCrushLosses } from './battle-crush';
 
 // 消费方的历史引用面保持在 './battle'（引擎与兵种属性经本文件重导出）
 export * from './battle-engine';
@@ -157,17 +158,28 @@ export function wallDefensePercent(wallLevel: number, extraPercent = 0): number 
   return wallBasePercent(wallLevel) + Math.max(0, extraPercent);
 }
 
+export interface ResolveBattleOptions extends BattleOptions {
+  /** 是否按兵力占比对称折算战损（v105，AISLG-246）：缺省 true = 所有战斗统一口径。
+   *  只有需要「引擎原始战损」的场合（校准脚本）才显式传 false——出口处不要再自己包一层
+   *  scaleCrushLosses，否则同一结果被折算两次会二次缩小。 */
+  crush?: boolean;
+}
+
 /**
  * 一次攻防结算（野地遭遇战：守方编成迎面推进、无城墙）。攻方败 = 未能歼灭守方
  * （守方全灭攻方或回合耗尽）；败方幸存者由调用方结算去向（出征败退撤回出发城），
  * 胜方幸存 ≥ 1（占领语义）。
+ * v105（AISLG-246）：所有战斗的唯一结算出口——默认在这里按兵力占比对称折算双方战损
+ * （见 battle-crush.ts），战斗出口不必各自换算。
  */
 export function resolveBattle(
   attacker: Partial<Record<TroopKind, number>>,
   defender: Partial<Record<TroopKind, number>>,
-  opts: BattleOptions = {},
+  opts: ResolveBattleOptions = {},
 ): BattleResult {
-  return simulateBattle(attacker, defender, { siege: false, ...opts });
+  const { crush = true, ...engineOptions } = opts;
+  const result = simulateBattle(attacker, defender, { siege: false, ...engineOptions });
+  return crush ? scaleCrushLosses(result) : result;
 }
 
 export interface NpcRaidOutcome {
@@ -181,6 +193,7 @@ export interface NpcRaidOutcome {
  * NPC 袭击占领野地的结算（野地遭遇战结构）：NPC 部队为攻方。守住（攻方未歼灭
  * 驻军）时驻军必有幸存（引擎保证：守方胜 ⇔ 驻军存活）；失守 = 驻军全灭、占领失效。
  * NPC 部队回合耗久未能突破时视为撤退消失（NPC 编队不落库，无需撤回行军）。
+ * v105（AISLG-246）：与其它战斗同一出口，默认对称折算双方战损（NPC 袭击也在范围内）。
  */
 export function resolveNpcRaid(
   garrison: Partial<Record<TroopKind, number>>,
@@ -188,7 +201,9 @@ export function resolveNpcRaid(
   rng?: () => number,
   /** v72（AISLG-192）：守方（被袭击野地的驻军主）科技乘数；NPC 一方不传 */
   defenderTech: CombatTechBonus | null = null,
+  /** 是否折算战损（缺省 true；校准脚本要引擎原始战损时传 false） */
+  crush = true,
 ): NpcRaidOutcome {
-  const result = simulateBattle(npcRaidArmy(level), garrison, { siege: false, rng, defenderTech });
+  const result = resolveBattle(npcRaidArmy(level), garrison, { rng, defenderTech, crush });
   return { defended: !result.attackerWon, result };
 }

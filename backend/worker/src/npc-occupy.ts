@@ -13,7 +13,6 @@ import { EventType, RESOURCE_KEYS, type InitiatorRole, type Resources, type Troo
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
 import { splitBattleCasualties } from '../../common/src/battle-casualties';
-import { scaleCrushLosses } from '../../common/src/battle-crush';
 import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
@@ -113,16 +112,13 @@ export async function resolveNpcOccupyArrival(
   const wall = wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0);
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
-  // AISLG-244：打 NPC 城池兵力碾压（r > 3）时按占比折算攻方战损
-  const result = scaleCrushLosses(
-    resolveBattle(troops, npc.garrison, {
-      wallDefensePercent: wall,
-      siege: true,
-      attackerHero: hero?.engine ?? null,
-      attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
-    }),
-    npc.garrison,
-  );
+  // v105（AISLG-246）：战损折算在 resolveBattle 内统一处理（所有战斗、攻守对称）
+  const result = resolveBattle(troops, npc.garrison, {
+    wallDefensePercent: wall,
+    siege: true,
+    attackerHero: hero?.engine ?? null,
+    attackerTech: combatTechBonus(await loadTechLevels(client, march.account_id)),
+  });
   const naming = await loadCityNaming(client, march.from_city_id);
   const attackerName = naming ? `${naming.username} · ${naming.cityName}` : '出征部队';
   // v85（AISLG-212）：占领 NPC 城（含名城城守阶段）——攻方伤兵与俘虏（胜时从守军损失抓 10%）进出发城
