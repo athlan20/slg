@@ -121,7 +121,8 @@ function runRaidScenario(name: string, garrison: Army, level: number, runs: numb
   let lossSum = 0;
   const seed = hashString(name);
   for (let i = 0; i < runs; i += 1) {
-    const raid = resolveNpcRaid(garrison, level, mulberry32(seed + i));
+    // 校准记录是「引擎原始战损」口径（v105 起出口默认按兵力占比折算双方战损）：显式关闭
+    const raid = resolveNpcRaid(garrison, level, mulberry32(seed + i), null, false);
     if (raid.defended) {
       defended += 1;
     }
