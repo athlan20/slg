@@ -192,7 +192,7 @@ export async function resolveMarchTarget(
     return { purpose: 'transport', targetCityId: targetId };
   }
   if (tile.kind === 'wilderness') {
-    // v103（AISLG-245）：在野名将所在野地不能被占领——占下来别人就再也打不到守军、拿不到结交资格。
+    // v104（AISLG-245）：在野名将所在野地不能被占领——占下来别人就再也打不到守军、拿不到结交资格。
     // 存量已被占领的地块不处理（已在别人名下，按他人野地的现有规则走）
     if (!tile.owner_city_id && tile.wild_hero && task === 'occupy') {
       return { purpose: null, reason: 'WILD_HERO_UNOCCUPIABLE' };

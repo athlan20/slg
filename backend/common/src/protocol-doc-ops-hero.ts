@@ -82,7 +82,7 @@ const FAMOUS_CLAIM_VIEW = {
   wildAt: null,
 } as const;
 
-const HERO_RULES = `武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 ${HERO_ATTR_MIN}–${HERO_ATTR_MAX} 随机；招募费 = ${RECRUIT_BASE_GOLD} + 三项合计 × ${RECRUIT_GOLD_PER_ATTR}（金币，从主城扣）。**名将**（三项各 ${FAMOUS_ATTR_MIN}–${FAMOUS_ATTR_MAX}）只从 PvE 获得：29 名在野名将每个账号各能有一份（v103，AISLG-245，同账号同名唯一），名城 8 / 黄巾 3 / 势力首领 5 仍全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × ${ATK_PERCENT_PER_FORCE}%、全军受到伤害 − 智力 × ${DEF_PERCENT_PER_WIT}%，各自封顶 ${HERO_BONUS_CAP_PERCENT}%；能吃到加成的兵数 = 统率 × ${LEAD_TROOPS_PER_POINT}，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 ${SALARY_PER_LEVEL_NORMAL} × 等级、名将 ${SALARY_PER_LEVEL_FAMOUS} × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 ${WOUND_HOURS} 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 ${heroPointsPerLevel(false)}、名将 ${heroPointsPerLevel(true)}，由玩家分到三项属性，v54 起升级不再自动加属性），上限 ${HERO_LEVEL_MAX} 级——加成仍受 ${HERO_BONUS_CAP_PERCENT}% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。${WILD_FAMOUS_RULES_DESC}`;
+const HERO_RULES = `武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 ${HERO_ATTR_MIN}–${HERO_ATTR_MAX} 随机；招募费 = ${RECRUIT_BASE_GOLD} + 三项合计 × ${RECRUIT_GOLD_PER_ATTR}（金币，从主城扣）。**名将**（三项各 ${FAMOUS_ATTR_MIN}–${FAMOUS_ATTR_MAX}）只从 PvE 获得：29 名在野名将每个账号各能有一份（v104，AISLG-245，同账号同名唯一），名城 8 / 黄巾 3 / 势力首领 5 仍全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × ${ATK_PERCENT_PER_FORCE}%、全军受到伤害 − 智力 × ${DEF_PERCENT_PER_WIT}%，各自封顶 ${HERO_BONUS_CAP_PERCENT}%；能吃到加成的兵数 = 统率 × ${LEAD_TROOPS_PER_POINT}，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 ${SALARY_PER_LEVEL_NORMAL} × 等级、名将 ${SALARY_PER_LEVEL_FAMOUS} × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 ${WOUND_HOURS} 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 ${heroPointsPerLevel(false)}、名将 ${heroPointsPerLevel(true)}，由玩家分到三项属性，v54 起升级不再自动加属性），上限 ${HERO_LEVEL_MAX} 级——加成仍受 ${HERO_BONUS_CAP_PERCENT}% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。${WILD_FAMOUS_RULES_DESC}`;
 
 export const REQUEST_GET_HEROES: RequestOpDoc = {
   kind: 'request',
@@ -101,9 +101,9 @@ export const REQUEST_GET_HEROES: RequestOpDoc = {
     { name: 'famousCap / famousCount', type: 'number', desc: `名将上限（固定 ${FAMOUS_HERO_CAP}，不占普通将上限）与当前数量。` },
     { name: 'heroes', type: 'array', desc: `账号全部武将：{ id, name, famous, lead, force, wit, level, exp, expNext 距下一级, salaryPerHour 已随时间缩放, arrears 欠饷, woundedUntil 重伤恢复时刻或 null, guardCityId 正在城守的城或 null, marchingMarchId 正在随行的行军或 null, bonus { atkPercent, defPercent, leadCap }（满编口径）, guardProductionPercent 城守产量加成, loyalty 忠诚度 0..100（v94，只有 29 位在野名将有，其余为 null；30 及以下应标红提醒）, captive 被俘囚禁 { capturedUntil 截止时刻, ransomGold 赎金 } 或 null（v94；被俘时不能出征 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计，可用 RANSOM_HERO 赎回） }。` },
     { name: 'candidates', type: 'array', desc: `主城酒馆当前候选（v87 起账号只有一份）：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；主城酒馆未建为空数组。` },
-    { name: 'famousClaims', type: 'array', desc: '全部名将归属（v103 AISLG-245）：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人用户名（只对名城 8 / 黄巾 3 / 势力首领 5 有意义，29 名在野名将恒为 null）, ownerCount 全服拥有该名将的账号数（在野名将可多人各有一份，0 = 还没人获得；其余 16 名为 0 或 1）, grantedAt 最早一次获得时刻, wildAt 在野名将有人获得后的落位 { x, y, level }（还没人获得时为 null，不泄露藏身位置）}。' },
-    { name: 'friendships', type: 'array', desc: `结交进度（v54；v103 起作废只看本账号）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 本账号已拥有该名将（作废，别的账号招走不会让你作废）}。` },
-    { name: 'unlocks', type: 'string[]', desc: '结交资格（v54；v103 起按账号）：打赢过其野地守军、且本账号还没拥有的在野名将名。' },
+    { name: 'famousClaims', type: 'array', desc: '全部名将归属（v104 AISLG-245）：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人用户名（只对名城 8 / 黄巾 3 / 势力首领 5 有意义，29 名在野名将恒为 null）, ownerCount 全服拥有该名将的账号数（在野名将可多人各有一份，0 = 还没人获得；其余 16 名为 0 或 1）, grantedAt 最早一次获得时刻, wildAt 在野名将有人获得后的落位 { x, y, level }（还没人获得时为 null，不泄露藏身位置）}。' },
+    { name: 'friendships', type: 'array', desc: `结交进度（v54；v104 起作废只看本账号）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 本账号已拥有该名将（作废，别的账号招走不会让你作废）}。` },
+    { name: 'unlocks', type: 'string[]', desc: '结交资格（v54；v104 起按账号）：打赢过其野地守军、且本账号还没拥有的在野名将名。' },
     { name: 'friendshipCap', type: 'number', desc: `同时结交上限（v54，固定 ${BEFRIEND_ACTIVE_CAP}）。` },
   ],
   errors: [],
@@ -174,7 +174,7 @@ export const REQUEST_DISMISS_HERO: RequestOpDoc = {
       responses: [{ op: Op.DISMISS_HERO, seq: 23, ok: true, data: { heroId: HERO_ID } }],
     },
   ],
-  agentNote: '俸禄是持续成本（欠饷武将不能出征），低属性武将留着不划算；在野名将解雇后本账号可以重新结交招揽（v103 起别的账号本来也各有一份），名城 / 黄巾 / 首领名将解雇就没了、全服会被别人拿走。',
+  agentNote: '俸禄是持续成本（欠饷武将不能出征），低属性武将留着不划算；在野名将解雇后本账号可以重新结交招揽（v104 起别的账号本来也各有一份），名城 / 黄巾 / 首领名将解雇就没了、全服会被别人拿走。',
 };
 
 export const REQUEST_ASSIGN_HERO: RequestOpDoc = {

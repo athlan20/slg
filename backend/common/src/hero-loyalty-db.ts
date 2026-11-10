@@ -41,7 +41,7 @@ export interface DepartOutcome {
 }
 
 /**
- * 下野（v94，AISLG-228；v103 AISLG-245 改为「只动本账号」）：与解雇同一条删除路径——撤城守、删除武将
+ * 下野（v94，AISLG-228；v104 AISLG-245 改为「只动本账号」）：与解雇同一条删除路径——撤城守、删除武将
  * （本账号的 famous_heroes 归属行随级联清除，别的账号的同名名将与结交进度不变；world_tiles.wild_hero 不变）、
  * 清空**本账号**对该名将的结交进度（好感从头算）。
  * cause = captive_expired 时胜方获得结交资格（grantUnlock 重复调用无副作用）。
@@ -64,7 +64,7 @@ export async function departHero(
   if (!del.rowCount) {
     return null;
   }
-  // v103（AISLG-245）：只清本账号的结交进度；别的账号的同名名将进度不受影响
+  // v104（AISLG-245）：只清本账号的结交进度；别的账号的同名名将进度不受影响
   await client.query(`DELETE FROM hero_friendship WHERE hero_name = $1 AND account_id = $2`, [hero.name, hero.account_id]);
   const ownerRes = await client.query(`SELECT username FROM accounts WHERE id = $1`, [hero.account_id]);
   const ownerUsername = (ownerRes.rows[0] as { username: string } | undefined)?.username ?? null;

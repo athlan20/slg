@@ -138,7 +138,7 @@ export const Op = {
   GIFT_HERO: 80,
   /** C→S 结交在野名将（v54，AISLG-144：data.heroName；需结交资格，花 500 × 野地等级金币，好感 +10，每日 5 次） */
   BEFRIEND_HERO: 81,
-  /** C→S 招揽在野名将（v54，AISLG-144：data.heroName；好感满 100 才能招揽；v103 AISLG-245 起每账号各一份） */
+  /** C→S 招揽在野名将（v54，AISLG-144：data.heroName；好感满 100 才能招揽；v104 AISLG-245 起每账号各一份） */
   RECRUIT_FAMOUS_HERO: 82,
   /** C→S 查询任务与签到状态（v56，AISLG-200：今日日常任务进度 / 领取状态 + 签到状态） */
   GET_DAILY: 86,
@@ -428,7 +428,7 @@ export const ErrorCode = {
   PLUNDER_COOLDOWN: 'PLUNDER_COOLDOWN',
   /** 该任务类型不适用于此目标（v16：NPC 城池仅支持掠夺 task='plunder'） */
   TASK_INVALID_FOR_TARGET: 'TASK_INVALID_FOR_TARGET',
-  /** 在野名将所在的野地不能被占领（v103，AISLG-245）：打下来只给结交资格，地块保持无主，免得挡住别人拿资格 */
+  /** 在野名将所在的野地不能被占领（v104，AISLG-245）：打下来只给结交资格，地块保持无主，免得挡住别人拿资格 */
   WILD_HERO_UNOCCUPIABLE: 'WILD_HERO_UNOCCUPIABLE',
   /** 占领野地数已达官府等级上限（v16：上限 = 官府等级；到达结算同样复核） */
   TERRITORY_LIMIT: 'TERRITORY_LIMIT',

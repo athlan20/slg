@@ -7,7 +7,7 @@
 // 的结算锚点）、loyalty_warned（已发过 30 线提醒）、loyalty_arrears_at（欠饷每小时 −1 的锚点）、
 // captured_by / captured_until（被俘的胜方账号与囚禁截止）。上线时已有的在野名将忠诚度 100，锚点为迁移时刻。
 // hero_capture_limits = 每账号最近一次被俘时刻（7 天内最多被俘 1 名）。
-// v103（AISLG-245 在野名将各账号独立）：famous_heroes 主键从 (name) 放宽到 (name, owner_account_id)——
+// v104（AISLG-245 在野名将各账号独立）：famous_heroes 主键从 (name) 放宽到 (name, owner_account_id)——
 // 29 名在野名将每个账号各能获得一份；名城 / 黄巾 / 势力首领 16 名仍全服唯一（source <> 'wild' 的部分唯一索引）。
 
 import { WILD_FAMOUS_NAMES } from './hero-wild';
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS hero_friendship (
   PRIMARY KEY (account_id, hero_name)
 );
 
--- v103（AISLG-245 在野名将各账号独立）：famous_heroes 主键从 (name) 放宽到 (name, owner_account_id)——
+-- v104（AISLG-245 在野名将各账号独立）：famous_heroes 主键从 (name) 放宽到 (name, owner_account_id)——
 -- 29 名在野名将每个账号各能获得一份（同名多行），存量行原样保留、可直接使用；同账号同名唯一即主键本身。
 -- 名城 8 / 黄巾 3 / 势力首领 5 共 16 名仍全服唯一：source <> 'wild' 的部分唯一索引兜底，
 -- 应用层（grantFamousHero）对非在野名将先查后插，冲突语义仍是「已被他人获得即失败」。

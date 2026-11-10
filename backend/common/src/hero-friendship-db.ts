@@ -1,5 +1,5 @@
 // 在野名将的结交（v54，AISLG-144）：结交资格（hero_unlocks，打赢过其所在野地的原住守军）与结交进度
-// （hero_friendship，好感与当日次数）。v103（AISLG-245）起名将归属按账号判——29 名在野名将每个账号各能
+// （hero_friendship，好感与当日次数）。v104（AISLG-245）起名将归属按账号判——29 名在野名将每个账号各能
 // 获得一份，所以「本账号是否已拥有」才决定结交进度是否作废，别的账号有没有招走与本账号无关。
 
 import type pg from 'pg';
@@ -37,7 +37,7 @@ export async function unlockedHeroNames(q: Queryable, accountId: string): Promis
   return (res.rows as Array<{ hero_name: string }>).map((row) => row.hero_name);
 }
 
-/** 账号全部结交进度（含已作废的；作废 = 本账号已拥有该名将，v103 起不再看别的账号） */
+/** 账号全部结交进度（含已作废的；作废 = 本账号已拥有该名将，v104 起不再看别的账号） */
 export async function loadFriendships(q: Queryable, accountId: string, now = new Date()): Promise<FriendshipView[]> {
   const res = await q.query(
     `SELECT h.hero_name, h.favor, h.day, h.day_count, w.level AS tile_level,

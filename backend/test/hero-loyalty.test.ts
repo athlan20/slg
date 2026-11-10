@@ -269,7 +269,7 @@ describe('名将忠诚度（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '
     assert.equal((claims.rows[0] as { n: number }).n, 0, '本账号归属清除');
     const guard = await pool.query(`SELECT guard_hero_id FROM cities WHERE account_id = $1`, [owner]);
     assert.equal((guard.rows[0] as { guard_hero_id: string | null }).guard_hero_id, null, '城守撤掉');
-    // v103（AISLG-245）：只清本账号的结交进度，别的账号的同名进度不受影响
+    // v104（AISLG-245）：只清本账号的结交进度，别的账号的同名进度不受影响
     const mine = await pool.query(`SELECT count(*)::int AS n FROM hero_friendship WHERE hero_name = $1 AND account_id = $2`, [name, owner]);
     assert.equal((mine.rows[0] as { n: number }).n, 0, '本账号好感从头算');
     const otherFriend = await pool.query(`SELECT favor FROM hero_friendship WHERE hero_name = $1 AND account_id = $2`, [name, other]);
@@ -288,7 +288,7 @@ describe('名将忠诚度（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '
     assert.equal(again.loyalty, 100);
     assert.equal(again.level, 1);
     assert.equal(again.free_points, 0);
-    // v103：别的账号也各能拿到同一名将（同名多行），互不影响
+    // v104：别的账号也各能拿到同一名将（同名多行），互不影响
     const otherHero = await recruitWild(other, name);
     assert.notEqual(otherHero.id, again.id);
     const rows = await pool.query(`SELECT count(*)::int AS n FROM famous_heroes WHERE name = $1`, [name]);

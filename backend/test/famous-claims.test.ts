@@ -1,4 +1,4 @@
-// 名将归属视图（AISLG-223；v103 AISLG-245 在野名将按人数展示）：
+// 名将归属视图（AISLG-223；v104 AISLG-245 在野名将按人数展示）：
 // 在野名将不再显示单一持有人（ownerUsername 恒为 null，改给 ownerCount = 全服拥有人数），还没人获得时
 // wildAt 为 null、有人获得后才给落位坐标；名城 / 黄巾 / 势力首领 16 名仍显示持有人且 wildAt 恒为 null。
 // 纯组装见 buildFamousClaims，loadFamousClaims 只负责查库后交给它。

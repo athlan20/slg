@@ -1,6 +1,6 @@
 // 武将的数据库存取（v36，AISLG-114/115/116；v54 AISLG-144 加点 / 历练 / 赏赐 / 洗点）；API（查询 /
 // 招募 / 解雇 / 城守 / 出征校验）与 Worker（俸禄 / 战斗加成与经验 / 名将授予 / 历练结算）共用。
-// 酒馆候选按 refreshed_at 惰性刷新（读取时过期才重摇，无后台任务）；v103（AISLG-245）名将唯一性：
+// 酒馆候选按 refreshed_at 惰性刷新（读取时过期才重摇，无后台任务）；v104（AISLG-245）名将唯一性：
 // 29 名在野名将只到「同一账号不能有两个」（famous_heroes 主键 (name, owner_account_id) + ON CONFLICT），
 // 名城 / 黄巾 / 势力首领 16 名仍全服唯一（部分唯一索引 + 授予前先查）。培养相关的每日计数在 hero-growth-db.ts。
 
@@ -272,7 +272,7 @@ export async function deleteHero(client: Writer, heroId: string): Promise<void> 
 }
 
 /**
- * 授予名将（v36，AISLG-115；v54 在野名将带固定属性；v103 AISLG-245 在野名将每账号各一份）：
+ * 授予名将（v36，AISLG-115；v54 在野名将带固定属性；v104 AISLG-245 在野名将每账号各一份）：
  * - 在野名将（source.kind='wild'）：唯一性只到「同一账号不能有两个」——famous_heroes 主键
  *   (name, owner_account_id) + ON CONFLICT DO NOTHING，别的账号有没有同名名将与本账号无关；
  * - 名城 8 / 黄巾 3 / 势力首领 5（16 名）：仍全服唯一——先查同名行，已被任何人获得即返回 null；
@@ -316,7 +316,7 @@ export async function grantFamousHero(
   return hero;
 }
 
-/** 名将归属的一行（已被获得的同一名将可能有多行：v103 起在野名将每账号一份） */
+/** 名将归属的一行（已被获得的同一名将可能有多行：v104 起在野名将每账号一份） */
 export interface FamousClaimRow {
   name: string;
   /** 全服拥有该名将的账号数（1 = 唯一持有人；在野名将可多人各有一份） */
@@ -335,7 +335,7 @@ export interface WildTileRow {
 
 /**
  * 名将归属视图的纯组装（loadFamousClaims 与单测共用）：
- * - 在野名将（v103）：不再显示单一持有人——ownerUsername 恒为 null，ownerCount 为全服拥有人数；
+ * - 在野名将（v104）：不再显示单一持有人——ownerUsername 恒为 null，ownerCount 为全服拥有人数；
  *   只要已有 ≥ 1 人拥有就给出落位坐标（未被获得时 wildAt 为 null，避免一次接口调用就拿到全部藏身位置）。
  * - 名城 / 黄巾 / 首领 16 名：仍全服唯一，ownerUsername 为持有人（未被获得为 null）；没有落位坐标。
  */

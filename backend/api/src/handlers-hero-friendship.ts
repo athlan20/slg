@@ -1,7 +1,7 @@
 // 在野名将的结交与招揽（v54，AISLG-144）：BEFRIEND_HERO（结交）/ RECRUIT_FAMOUS_HERO（招揽）。
 // 前提是结交资格（打赢过其所在野地的原住守军，见 battle-tick 的解锁钩子）。结交花主城金币
 // （500 × 野地等级），好感 +10，好感满 100 才能招揽；招揽走 grantFamousHero。
-// v103（AISLG-245）：唯一性只到「同一账号不能有两个」——别的账号是否已招走不影响本账号，判定与展示统一看
+// v104（AISLG-245）：唯一性只到「同一账号不能有两个」——别的账号是否已招走不影响本账号，判定与展示统一看
 // 「本账号是否已拥有」。
 // 锁序：主城行（花金币）→ 结交进度行 → 名将归属（famous_heroes 主键）。
 
@@ -74,7 +74,7 @@ export async function handleBefriendHero(
     if (!tile || !unlocked.rowCount) {
       return await fail(ctx, conn, client, op, seq, 'HERO_NOT_UNLOCKED');
     }
-    // v103（AISLG-245）：只看本账号是否已拥有
+    // v104（AISLG-245）：只看本账号是否已拥有
     const claimed = await client.query(`SELECT 1 FROM famous_heroes WHERE name = $1 AND owner_account_id = $2`, [
       def.name,
       accountId,

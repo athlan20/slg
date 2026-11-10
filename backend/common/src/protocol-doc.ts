@@ -287,7 +287,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '改用 task=plunder（或不带 task，缺省即掠夺）。',
   },
   WILD_HERO_UNOCCUPIABLE: {
-    desc: '在野名将所在的野地不能被占领（v103，AISLG-245）：这些野地要留给所有玩家反复挑战守军拿结交资格，地块被占后别人就打不了了。',
+    desc: '在野名将所在的野地不能被占领（v104，AISLG-245）：这些野地要留给所有玩家反复挑战守军拿结交资格，地块被占后别人就打不了了。',
     action: '改用 task=plunder 打守军（打赢即得结交资格）；想占野地请挑没有名将标记（tile.wildFamous 为 false 或无此字段）的野地。',
   },
   TERRITORY_LIMIT: {
@@ -451,7 +451,7 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '直接 RECRUIT_FAMOUS_HERO 招揽。',
   },
   FAMOUS_CLAIMED: {
-    desc: '（v54，AISLG-144；v103 AISLG-245 收窄）本账号已经拥有该名将——同一账号不能有两个同名名将；别的账号接手不影响本账号招揽。',
+    desc: '（v54，AISLG-144；v104 AISLG-245 收窄）本账号已经拥有该名将——同一账号不能有两个同名名将；别的账号接手不影响本账号招揽。',
     action: '换一名在野名将；GET_HEROES 的 famousClaims 可查归属。',
   },
   GUARD_ASSIGN_DENIED: {

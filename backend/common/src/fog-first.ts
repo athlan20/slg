@@ -125,7 +125,7 @@ async function firstHeroSite(client: pg.PoolClient, trip: FirstExploreTrip, targ
     return;
   }
   await grantRewards(client, trip.accountId, HERO_SITE_FIRST_REWARD);
-  // 本账号已拥有该名将则只发资源（结交资格不给）；否则获得结交资格，不用打守军（v103，AISLG-245：按账号判，
+  // 本账号已拥有该名将则只发资源（结交资格不给）；否则获得结交资格，不用打守军（v104，AISLG-245：按账号判，
   // 别的账号招走不影响）
   const unlocked = !target.claimed;
   if (unlocked) {

@@ -284,7 +284,7 @@ describe('名城与名将处所首探（需 TEST_DATABASE_URL）', { skip: dbUrl
     assert.equal((await pool.query(`SELECT 1 FROM hero_unlocks WHERE account_id = $1 AND hero_name = '诸葛亮'`, [A])).rowCount, 0, '首探只归 B');
   });
 
-  // v103（AISLG-245）：claimed 改为按账号判——本账号已拥有该名将才不给结交资格（别的账号招走不影响）
+  // v104（AISLG-245）：claimed 改为按账号判——本账号已拥有该名将才不给结交资格（别的账号招走不影响）
   test('本账号已拥有该名将：处所与名字保留（claimed），首探只发资源，不给结交资格', async () => {
     const site = (await pool.query(`SELECT x, y FROM world_tiles WHERE wild_hero = '关羽'`)).rows[0] as { x: number; y: number };
     const hero = (await pool.query(

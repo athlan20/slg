@@ -63,7 +63,7 @@ export function isInterestingFact(fact: TileFact): boolean {
   return fact.kind === 'city' || fact.kind === 'npc_city' || fact.ownerCityId !== null || fact.wildFamous;
 }
 
-/** 一批坐标的地块事实（不加锁；坐标不存在的行不返回）。accountId = 查谁的视角（v103 AISLG-245：
+/** 一批坐标的地块事实（不加锁；坐标不存在的行不返回）。accountId = 查谁的视角（v104 AISLG-245：
  *  在野名将标记按账号判——本账号已拥有的名将不再显示标记） */
 export async function loadTileFacts(q: Queryable, coords: readonly Coord[], accountId: string): Promise<TileFact[]> {
   if (coords.length === 0) {

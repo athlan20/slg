@@ -26,7 +26,7 @@ export interface HeroView {
   specialtyBonus: { atkPercent: number; defPercent: number; siegeOnly: boolean } | null;
   id: string;
   name: string;
-  /** 名将（从 PvE 获得；普通将 false。v103 AISLG-245：29 名在野名将每个账号各能有一份，同期全服可有多份） */
+  /** 名将（从 PvE 获得；普通将 false。v104 AISLG-245：29 名在野名将每个账号各能有一份，同期全服可有多份） */
   famous: boolean;
   lead: number;
   force: number;
@@ -70,7 +70,7 @@ export interface FriendshipView {
   todayLeft: number;
   /** 下一次结交的金币花费（= 500 × 野地等级） */
   cost: number;
-  /** 作废：本账号已拥有该名将，好感不再有用（不计入同时结交上限）。v103（AISLG-245）起只看本账号——
+  /** 作废：本账号已拥有该名将，好感不再有用（不计入同时结交上限）。v104（AISLG-245）起只看本账号——
    *  别的账号招走同一名将不再让本账号的进度作废 */
   lost: boolean;
 }
@@ -88,15 +88,15 @@ export interface HeroCandidateView {
   refreshedAt: string;
 }
 
-/** 名将归属视图（GET_HEROES 一并返回，公开信息；v103 AISLG-245：在野名将按人数展示，其余 16 名仍显示持有人） */
+/** 名将归属视图（GET_HEROES 一并返回，公开信息；v104 AISLG-245：在野名将按人数展示，其余 16 名仍显示持有人） */
 export interface FamousClaimView {
   name: string;
   /** 来源的人读描述，如「首占名城『洛阳』」 */
   sourceLabel: string;
   /** 当前主人用户名：只对名城 8 / 黄巾 3 / 势力首领 5（全服唯一）有意义；null = 尚未被获得。
-   *  v103 起 29 名在野名将恒为 null（不再显示单一持有人），看 ownerCount */
+   *  v104 起 29 名在野名将恒为 null（不再显示单一持有人），看 ownerCount */
   ownerUsername: string | null;
-  /** 全服拥有该名将的账号数（v103，AISLG-245）：在野名将可多人各有一份，0 = 还没人获得；
+  /** 全服拥有该名将的账号数（v104，AISLG-245）：在野名将可多人各有一份，0 = 还没人获得；
    *  名城 / 黄巾 / 首领最多 1（0 或 1） */
   ownerCount: number;
   /** 最早一次获得时刻；未被获得为 null */
@@ -134,7 +134,7 @@ export interface HeroStateView {
   famousClaims: FamousClaimView[];
   /** 结交进度（v54）：本账号结交过的在野名将 */
   friendships: FriendshipView[];
-  /** 结交资格（v54）：打赢过其所在野地守军、且本账号还没拥有的在野名将名（v103 起按账号判） */
+  /** 结交资格（v54）：打赢过其所在野地守军、且本账号还没拥有的在野名将名（v104 起按账号判） */
   unlocks: string[];
   /** 同时结交上限（v54，固定 2） */
   friendshipCap: number;

@@ -81,7 +81,7 @@ export interface HeroCandidateView {
   refreshedAt: string;
 }
 
-/** 名将归属视图（GET_HEROES 一并返回，公开信息；v103 AISLG-245：在野名将按人数展示） */
+/** 名将归属视图（GET_HEROES 一并返回，公开信息；v104 AISLG-245：在野名将按人数展示） */
 export interface FamousClaimView {
   name: string;
   /** 来源的人读描述，如「首占名城『洛阳』」 */

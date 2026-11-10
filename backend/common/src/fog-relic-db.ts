@@ -85,7 +85,7 @@ export interface HeroSiteRow {
   claimed: boolean;
 }
 
-/** 视窗内的名将处所（8 处；claimed = **本账号**已拥有该名将，v103 AISLG-245 起按账号判） */
+/** 视窗内的名将处所（8 处；claimed = **本账号**已拥有该名将，v104 AISLG-245 起按账号判） */
 export async function heroSitesInWindow(
   q: Queryable,
   accountId: string,
