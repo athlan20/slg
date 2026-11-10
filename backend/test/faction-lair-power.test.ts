@@ -15,7 +15,7 @@ import {
 } from '../common/src/faction-lair';
 import { FACTION_LAIR_SCHEMA_SQL } from '../common/src/faction-lair-schema';
 import { loadFactionLairRow, refreshFactionLairPower } from '../common/src/faction-lair-db';
-import { serverPowerRank } from '../common/src/faction-lair-rank-db';
+import { serverAnchorPowers, serverPowerRank } from '../common/src/faction-lair-rank-db';
 import { FACTIONS } from '../common/src/faction';
 import { createFlowFixture, HOUR, type FlowFixture } from './faction-lair-fixture';
 
@@ -193,7 +193,7 @@ describe('老巢的战力锚点每天刷新（需 TEST_DATABASE_URL）', { skip:
   });
 
   test('迁移向后兼容、可重复执行：旧行用旧 camp_power 回填 G1 = G20', async () => {
-    await fx.pool.query(`UPDATE faction_lairs SET camp_power = 234567 WHERE key = $1`, [KEY]);
+    await fx.pool.query(`UPDATE faction_lairs SET camp_power = 90000000 WHERE key = $1`, [KEY]);
     // 模拟 v101 的旧表：只有 camp_power，没有两个锚点列
     await fx.pool.query(`ALTER TABLE faction_lairs DROP COLUMN camp_power_g1`);
     await fx.pool.query(`ALTER TABLE faction_lairs DROP COLUMN camp_power_g20`);
@@ -201,13 +201,25 @@ describe('老巢的战力锚点每天刷新（需 TEST_DATABASE_URL）', { skip:
       // 跑第二遍确认幂等（ALTER ... IF NOT EXISTS + 回填）
       await fx.pool.query(FACTION_LAIR_SCHEMA_SQL);
       const lair = await loadFactionLairRow(fx.pool, KEY);
-      assert.equal(lair?.camp_power_g1, 234_567, '旧行的 G1 = 旧 camp_power');
-      assert.equal(lair?.camp_power_g20, 234_567, '旧行的 G20 = 旧 camp_power');
+      assert.equal(lair?.camp_power_g1, 90_000_000, '旧行的 G1 = 旧 camp_power');
+      assert.equal(lair?.camp_power_g20, 90_000_000, '旧行的 G20 = 旧 camp_power');
     }
     // 旧库行为：两个锚点相同 → 20 营同一强度（与升级前一致）
     for (let campNo = 1; campNo <= FACTION_LAIR_CAMPS; campNo += 1) {
-      assert.equal(factionLairCampPowerAt(234_567, 234_567, campNo), 234_567);
+      assert.equal(factionLairCampPowerAt(90_000_000, 90_000_000, campNo), 90_000_000);
     }
+    // 回填后 power_at 置空，Worker 下一轮立刻刷新；旧的 23.8 万级平坦强度不被“只升不降”锁住，
+    // 第一次刷新直接换成新锚点（一次性下调），之后才各自只升不降
+    assert.equal((await loadFactionLairRow(fx.pool, KEY))?.power_at, null, '回填的旧行等着立刻刷新');
+    const now = new Date();
+    const anchors = await serverAnchorPowers(fx.pool);
+    const expected = factionLairAnchorPower(anchors.r10, anchors.r3);
+    assert.ok(expected.g20 < 90_000_000, '测试前提：新锚点低于旧的平坦强度');
+    const refreshed = await refresh(now);
+    assert.equal(refreshed.refreshed >= 1, true);
+    const after = await row();
+    assert.equal(after.g1, expected.g1, '旧行第一次刷新换成新的 G1');
+    assert.equal(after.g20, expected.g20, '旧行第一次刷新换成新的 G20');
     // 新行用默认值（下限 10,000）补齐
     const nexKey = FACTIONS[4].key;
     await fx.pool.query(`DELETE FROM faction_lairs WHERE key = $1`, [nexKey]);

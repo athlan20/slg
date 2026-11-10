@@ -7,7 +7,7 @@
 
 import type pg from 'pg';
 import type { TroopKind } from './protocol';
-import { FACTION_LAIR_CAMPS, factionLairAnchorPower, factionLairCampNo, factionLairCampPowerAt, factionLairPowerRefreshMs, factionLairRecoveredCamps, factionLairRecoverMs, rescaledLairRemaining } from './faction-lair';
+import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairAnchorPower, factionLairCampNo, factionLairCampPowerAt, factionLairPowerRefreshMs, factionLairRecoveredCamps, factionLairRecoverMs, rescaledLairRemaining } from './faction-lair';
 import { serverAnchorPowers } from './faction-lair-rank-db';
 import { FACTIONS } from './faction';
 import type { FactionKey } from './protocol-faction';
@@ -126,8 +126,12 @@ export async function refreshFactionLairPower(
   const next = factionLairAnchorPower(anchors.r10, anchors.r3);
   for (const row of due) {
     // 只升不降：两个锚点各自取历史最大；G20 不会低于 G1
-    const g1 = Math.max(row.camp_power_g1, next.g1);
-    const g20 = Math.max(row.camp_power_g20, next.g20, g1);
+    // 迁移回填的旧行（G1 = G20 = v101 的单一 camp_power，且高于下限）是 v101 的 23.8 万级平坦强度，
+    // 第一次刷新直接换成新锚点（一次性下调，否则「只升不降」会把梯度永远锁在旧值上）；此后各自只升不降
+    const legacy = row.camp_power > FACTION_LAIR_MIN_CAMP_POWER
+      && row.camp_power_g1 === row.camp_power && row.camp_power_g20 === row.camp_power;
+    const g1 = legacy ? next.g1 : Math.max(row.camp_power_g1, next.g1);
+    const g20 = legacy ? next.g20 : Math.max(row.camp_power_g20, next.g20, g1);
     const campNo = factionLairCampNo(row.camps_total || FACTION_LAIR_CAMPS, row.camps_remaining);
     const oldPower = factionLairCampPowerAt(row.camp_power_g1, row.camp_power_g20, campNo);
     const newPower = factionLairCampPowerAt(g1, g20, campNo);

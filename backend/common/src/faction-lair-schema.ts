@@ -39,10 +39,10 @@ CREATE TABLE IF NOT EXISTS faction_contrib (
 );
 -- AISLG-247（v106）：20 营由弱到强，用两个锚点存（G1 = 第 1 营、G20 = 第 20 营）。
 -- 迁移向后兼容、可重复执行：先加可空列，旧行用旧的单一 camp_power 回填（G1 = G20 = camp_power，
--- 旧库行为与升级前完全一致，直到下一次每日刷新才变成梯度），再补默认值与 NOT NULL。
+-- 旧库行为与升级前一致；power_at 置空让 Worker 下一轮立刻刷新成梯度，该次刷新不受“只升不降”限制），再补默认值与 NOT NULL。
 ALTER TABLE faction_lairs ADD COLUMN IF NOT EXISTS camp_power_g1 integer;
 ALTER TABLE faction_lairs ADD COLUMN IF NOT EXISTS camp_power_g20 integer;
-UPDATE faction_lairs SET camp_power_g1 = camp_power, camp_power_g20 = camp_power
+UPDATE faction_lairs SET camp_power_g1 = camp_power, camp_power_g20 = camp_power, power_at = NULL
  WHERE camp_power_g1 IS NULL OR camp_power_g20 IS NULL;
 ALTER TABLE faction_lairs ALTER COLUMN camp_power_g1 SET DEFAULT 10000;
 ALTER TABLE faction_lairs ALTER COLUMN camp_power_g20 SET DEFAULT 10000;
