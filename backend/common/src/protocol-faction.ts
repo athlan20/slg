@@ -54,7 +54,7 @@ export interface FactionView {
   campsRemaining: number;
   /** 当前营剩余守军百分比（0..100；满营 100，已灭亡 0） */
   campRemainingPercent: number;
-  /** 每营守军参考战力（毁灭前最后一次刷新值；已灭亡仍给最后的值） */
+  /** 当前营守军参考战力（v106，AISLG-247：按营序号递增——第 1 营最弱、第 20 营最强；已灭亡仍给最后的值） */
   campPower: number;
 }
 

@@ -1,22 +1,25 @@
-// 老巢的定时任务（AISLG-241，v101）：每天刷新一次每营战力（全服前 10 名合计 ÷ 15，只升不降），
-// 以及「连续 24 小时没人进攻恢复 1 营」。两者都放在 Worker 的独立定时器里、单独一个事务，
-// 不进战斗结算的事务（需求「全服战力前 10 名每天算一次，放 Worker，不要放进战斗结算的事务里」）。
+// 老巢的定时任务（AISLG-241，v101；AISLG-247 起刷新的是 20 营的两个战力锚点）：每天刷新一次
+// 第 1 / 第 20 营的战力锚点（由全服战力第 10 名 / 第 3 名算出，各自只升不降），以及「连续 24 小时没人进攻恢复 1 营」。
+// 两者都放在 Worker 的独立定时器里、单独一个事务，不进战斗结算的事务
+// （需求「全服战力前 10 名每天算一次，放 Worker，不要放进战斗结算的事务里」）。
 // 参照 faction-tick / faction-siege-tick 的链式 setTimeout + season-busy：换季进行中不做（世界即将清空）。
 // faction_enabled 关闭时整个模块不动作，行为与上线前完全一致。
 
 import pg from 'pg';
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { factionBannerOf } from '../../common/src/faction';
-import { FACTION_LAIR_CAMPS, factionLairRemainingPercent } from '../../common/src/faction-lair';
+import { FACTION_LAIR_CAMPS, factionLairCurrentCampPower, factionLairRemainingPercent } from '../../common/src/faction-lair';
 import { loadFactionLairs, recoverFactionLairs, refreshFactionLairPower } from '../../common/src/faction-lair-db';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
 
 export interface FactionLairTickResult {
-  /** 本次刷新了每营战力的老巢数 */
+  /** 本次刷新了战力锚点的老巢数 */
   refreshed: number;
-  /** 本次刷新后的每营战力（没有刷新时为 0） */
-  power: number;
+  /** 本轮算出的第 1 营战力（没有刷新时为 0） */
+  g1: number;
+  /** 本轮算出的第 20 营战力（没有刷新时为 0） */
+  g20: number;
   /** 本次恢复的营数合计 */
   recovered: number;
 }
@@ -26,7 +29,7 @@ export interface FactionLairTickResult {
  * now 可注入（测试直接调，不必等真实钟点；数据库里的比较也都用这个 now）。
  */
 export async function runFactionLairTick(pool: pg.Pool, now: Date = new Date()): Promise<FactionLairTickResult> {
-  const result: FactionLairTickResult = { refreshed: 0, power: 0, recovered: 0 };
+  const result: FactionLairTickResult = { refreshed: 0, g1: 0, g20: 0, recovered: 0 };
   if (!getFactionEnabled()) {
     return result;
   }
@@ -36,7 +39,8 @@ export async function runFactionLairTick(pool: pg.Pool, now: Date = new Date()):
     await client.query('BEGIN');
     const refreshed = await refreshFactionLairPower(client, now);
     result.refreshed = refreshed.refreshed;
-    result.power = refreshed.power;
+    result.g1 = refreshed.g1;
+    result.g20 = refreshed.g20;
     result.recovered = await recoverFactionLairs(client, now);
     if (result.recovered > 0) {
       // 恢复 1 营后各营数变了：把变化告诉全服（面板 / 地图不等到下一次轮询）
@@ -52,7 +56,7 @@ export async function runFactionLairTick(pool: pg.Pool, now: Date = new Date()):
             faction: banner,
             campsTotal: row.camps_total || FACTION_LAIR_CAMPS,
             campsRemaining: row.camps_remaining,
-            campRemainingPercent: factionLairRemainingPercent(row.remaining, row.camp_power),
+            campRemainingPercent: factionLairRemainingPercent(row.remaining, factionLairCurrentCampPower(row)),
             destroyed: false,
           },
         });
@@ -92,7 +96,7 @@ export function startFactionLairTimer(pool: pg.Pool): () => void {
         runFactionLairTick(pool)
           .then((tick) => {
             if (tick.refreshed > 0 || tick.recovered > 0) {
-              console.log(`faction lair: power refreshed ${tick.refreshed} (${tick.power}), recovered camps ${tick.recovered}`);
+              console.log(`faction lair: power refreshed ${tick.refreshed} (G1 ${tick.g1}, G20 ${tick.g20}), recovered camps ${tick.recovered}`);
             }
           })
           .catch((err) => {
