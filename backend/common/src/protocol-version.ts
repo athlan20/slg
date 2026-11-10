@@ -835,5 +835,24 @@
  *   幸存部队同步增加；胜负、守方伤亡、回合数、逐回合战报不变。r ≤ 3 与其余战斗（PvP、竞技场、将星塔、
  *   剧本战场、NPC 袭击、势力老巢 / 围攻、黄巾营地等）一律不变。协议结构无变化，只有「野地进攻口径」表的
  *   期望净收益随口径重算，且表格说明新增该规则。
+ *
+ * v104（在野名将改为每个账号各自可得，AISLG-245，只加不改）：
+ *   一、唯一性：29 名在野名将（wild）从「全服唯一」改为「同一账号不能有两个」——famous_heroes 主键从 (name)
+ *   放宽到 (name, owner_account_id)，同名多行；存量行原样保留、可直接用。名城 8 / 黄巾 3 / 势力首领 5 共 16 名
+ *   仍全服唯一（source <> 'wild' 的部分唯一索引 + 授予前先查）。获取流程与数值都不变（打赢守军 → 结交 →
+ *   好感 100 → 招揽；每日 5 次、同时结交 ≤ 2、名将上限 3 照旧）。
+ *   二、字段语义（结构只加一个字段）：
+ *   - GET_HEROES 的 famousClaims[]：新增 ownerCount（全服拥有该名将的账号数）；ownerUsername 对 29 名在野名将
+ *     恒为 null（不再显示单一持有人，界面显示「全服已有 N 人拥有」），名城 / 黄巾 / 首领仍给持有人；
+ *     grantedAt 改为最早一次获得时刻；wildAt 改为「已有 ≥ 1 人拥有」时给出。
+ *   - friendships[].lost 与 unlocks：只看本账号——本账号已拥有该名将才作废 / 从资格列表消失，别的账号招走
+ *     不再影响（原来「被他人招揽 → 进度作废」的口径取消）。
+ *   - MARCH / GET_WORLD_MAP / GET_TILE：TASK_INVALID_FOR_TARGET 之外新增错误码 WILD_HERO_UNOCCUPIABLE——
+ *     在野名将所在野地不能被占领（打下来只拿结交资格，地块保持无主；存量已被占的地块不处理）。
+ *   - tiles[].wildFamous / tile.wildFamousIntel / 战争迷雾的 heroSite.claimed 改为按请求账号判：本账号已拥有
+ *     该名将就不再显示标记 / 情报（原来是「被任何人招走即撤下」）。
+ *   三、下野（v94 被俘超时 / 忠诚度归零）改为只清本账号：删除本账号的武将与本账号的 famous_heroes 归属行、
+ *   只清本账号对该名将的结交进度；别的账号的同名名将与进度不变（原来清该名将全服所有账号的进度）。
+ *   四、RECRUIT_FAMOUS_HERO / BEFRIEND_HERO 的 FAMOUS_CLAIMED 语义收窄为「本账号已拥有该名将」。
  */
-export const PROTOCOL_VERSION = 103;
+export const PROTOCOL_VERSION = 104;

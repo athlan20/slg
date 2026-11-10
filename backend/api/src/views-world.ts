@@ -84,7 +84,7 @@ interface TileQueryRow extends TileRow {
   /** 望楼（v97，AISLG-232）：地块上的设施类别与已建成等级（还在建第一级时 level 为 0）；没有设施为 null */
   facility_kind?: string | null;
   facility_level?: number | null;
-  /** 在野名将落位（v54）：名字 / 属性；wild_claimed 为该名将已被任何人获得 */
+  /** 在野名将落位（v54）：名字 / 属性；wild_claimed = **本账号**已拥有该名将（v104，AISLG-245 起按账号判） */
   wild_hero?: string | null;
   wild_lead?: number | null;
   wild_force?: number | null;
@@ -119,7 +119,7 @@ const TILE_SELECT = `
          fl.destroyed_at AS lair_destroyed_at,
          wt.reserve, wt.reserve_at, c.settled_at AS owner_settled_at,
          wf.kind AS facility_kind, wf.level AS facility_level,
-         EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero) AS wild_claimed
+         EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero AND fh.owner_account_id = $1) AS wild_claimed
   FROM world_tiles wt
   LEFT JOIN cities c ON c.id = wt.owner_city_id
   LEFT JOIN accounts a ON a.id = c.account_id
@@ -335,7 +335,8 @@ function facilityOf(row: Pick<TileQueryRow, 'facility_kind' | 'facility_level'>)
   );
 }
 
-/** 在野名将标记（v54）：落位在此且尚未被获得（获得后标记撤下，名将归属见 GET_HEROES） */
+/** 在野名将标记（v54；v104 AISLG-245 改为按账号）：落位在此且**本账号**尚未拥有（已拥有则标记撤下，
+ *  名将归属见 GET_HEROES 的 famousClaims） */
 function wildFamousMarked(row: TileQueryRow): boolean {
   return Boolean(row.wild_hero) && !row.wild_claimed;
 }
@@ -456,7 +457,7 @@ async function assistsOf(
   return own || side ? await loadCityAssists(q, row.owner_city_id) : null;
 }
 
-/** 在野名将详情（v54）：未被获得才给出；名字与属性只对侦察过的账号开放 */
+/** 在野名将详情（v54；v104 按账号）：本账号未拥有才给出；名字与属性只对侦察过的账号开放 */
 function wildFamousDetail(row: TileQueryRow, scouted: boolean): TileDetailView['wildFamousIntel'] {
   if (!wildFamousMarked(row)) {
     return null;

@@ -17,7 +17,7 @@ export async function fogOverviewWithSites(req: FogRequest, rows: readonly Overv
       points.push([relic.x, relic.y, 'relic']);
     }
   }
-  for (const site of await heroSitesInWindow(req.client, 0, 0, WORLD_SIZE, WORLD_SIZE)) {
+  for (const site of await heroSitesInWindow(req.client, req.accountId, 0, 0, WORLD_SIZE, WORLD_SIZE)) {
     if (known(site.x, site.y)) {
       points.push([site.x, site.y, site.claimed ? 'hero_site_claimed' : 'hero_site']);
     }

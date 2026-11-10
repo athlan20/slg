@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**103** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**104** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 103）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 104）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 103,
+    "protocolVersion": 104,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 103,
+    "protocolVersion": 104,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/100 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/101 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 100,
+    "docVersion": 101,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 103,
-    "docNotice": "接口文档已从 v100 更新到 v103：请 GET /agent-api/changes/100 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 104,
+    "docNotice": "接口文档已从 v101 更新到 v104：请 GET /agent-api/changes/101 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -4176,7 +4176,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tiles[].garrison | number | 地块驻军总数；未占领野地为 0（原住守军不计入驻军总数；其编成见 GET_TILE 的 nativePower 与侦察）；NPC 城池需侦察（v17）：未侦察为 0，已侦察为最近一次侦察快照的总数。 |
 | tiles[].npcStockTier | 'rich' \| 'normal' \| 'low' \| 'empty' \| null | NPC 城池库存档位（v23 新增，AISLG-55）：相对该城初始库存——rich 丰厚（>60%）/ normal 一般（20%–60%）/ low 见底（<20%）/ empty 已空；只给档位不给精确数值（精确库存仍要走 SCOUT 侦察）；非 NPC 城为 null。掠夺后档位随库存变化，全服看到的档位一致。 |
 | tiles[].camp | object \| null | 黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出 { tier: small\|medium\|large\|boss, label, level 守军强度对应的野地等级口径, garrisonTotal { min, max } 守军总兵力大概范围（当前存量 ±20%）, nextGrowAt 下次升档时刻（大营 / 老巢为 null）, boss? { stage: outer\|keeper, recoversAt } }；其余为 null。营地格不显示野地原住守军，出征用 MARCH 掠夺任务（占领被拒）。详见 GET_YELLOW_TURBAN。 |
-| tiles[].wildFamous | boolean | 在野名将标记（v54，AISLG-144）：该野地落有尚未被获得的在野名将（公开，名字与属性需侦察）。被获得后标记撤下，名将归属见 GET_HEROES 的 famousClaims。 |
+| tiles[].wildFamous | boolean | 在野名将标记（v54，AISLG-144）：该野地落有**本账号还没拥有**的在野名将（公开，名字与属性需侦察）。v104（AISLG-245）起按账号判：本账号已拥有该名将后标记撤下，别的账号看到的不受影响；名将归属见 GET_HEROES 的 famousClaims。这类野地不能被占领（task=occupy 返回 WILD_HERO_UNOCCUPIABLE）。 |
 | tiles[].reserve | object \| null | 野地储量（v61，AISLG-165）：{ tier 档位 ample 充足 >60% / normal 一般 20%–60% / depleted 枯竭 <20%（所有人可见）, current 当前储量, cap 上限, eta { kind empty 预计采空 / full 预计回满, at } }；current / cap / eta 仅归属方与侦察过该地块的账号可见，其余为 null。储量与上限为基准单位（bonusRate、gatherRate 同口径）；采集与恢复速率随 time_scale 放大，eta 为真实时刻（采空 / 回满随之缩短）。非野地为 null。 |
 | tiles[].famous | object \| null | 名城信息（v24 新增，AISLG-56）：{ name 名城名, stage 当前阶段（outer 外围阶段须先清外围 / keeper 外围已清、可攻城守并占领）, bonusPercent 占领后的独占加成（该城产量 +N%）, recoversAt 城守阶段外围恢复满编的时刻（超时无人攻下城守则恢复；外围阶段为 null）, effect 占领后的名城独有效果 { kind wall / tower / territory / march / warehouse, percent, resources 仅 territory 有：野地产出的资源列表，其余为 null }（v62，AISLG-166） }；全图 8 座名城，对全服可见；非名城为 null。 |
 
@@ -4294,7 +4294,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | tile.durability | number \| null | 他人分城的当前城防值（v40，AISLG-124）：0..100，按「免战截止前不回涨、之后每小时 +10」惰性结算展示；非 null 即可被 task=occupy 攻打的分城，归零一击换主。主城 / 野地 / NPC 城 / 自己的城为 null。 |
 | tile.protection | object \| null | 玩家城与他人占领野地的保护状态（v38 / v39）：{ newbieUntil 新手保护截止（含其野地）, truceUntil 被动免战截止（仅城池；野地恒 null——城级免战不保护野地）, shieldUntil 主动免战截止（含其野地）, ownerChangedUntil 换主保护截止（仅野地：刚被抢占后 1 小时基准随缩放，期间玩家与 NPC 都不能再抢） }，任一截止时刻未到即受保护（MARCH 被拒，错误码与时限见 MARCH）；非玩家目标、自己的地为 null。到期自动失效，无事件。 |
 | tile.reserve | object \| null | 野地储量（v61，AISLG-165）：{ tier 档位 ample 充足 >60% / normal 一般 20%–60% / depleted 枯竭 <20%（所有人可见）, current 当前储量, cap 上限, eta { kind empty 预计采空 / full 预计回满, at } }；current / cap / eta 仅归属方与侦察过该地块的账号可见，其余为 null。储量与上限为基准单位（bonusRate、gatherRate 同口径）；采集与恢复速率随 time_scale 放大，eta 为真实时刻（采空 / 回满随之缩短）。非野地为 null。 |
-| tile.wildFamousIntel | object \| null | 在野名将情报（v54，AISLG-144）：未被获得的在野名将所在野地才有 { scouted, name, attrs { lead, force, wit } }；未侦察过时 scouted=false、name / attrs 为 null，侦察后（SCOUT 完成）给出名字与三项属性。其余为 null。 |
+| tile.wildFamousIntel | object \| null | 在野名将情报（v54，AISLG-144）：本账号还没拥有的在野名将所在野地才有 { scouted, name, attrs { lead, force, wit } }（v104 起按账号判）；未侦察过时 scouted=false、name / attrs 为 null，侦察后（SCOUT 完成）给出名字与三项属性。其余为 null。 |
 | tile.plunderedAt | string \| null | 最近一次成功掠夺（攻方胜利）的时间（v16，ISO 8601）：距其 24 小时内该地块处于掠夺冷却（基准值，实际受全局时间缩放等比缩短；MARCH task='plunder' 被拒，PLUNDER_COOLDOWN）；从未被掠为 null。 |
 
 **可能错误**：`INVALID_PARAMS`、`TILE_UNEXPLORED`（处置建议见第 4 节）
@@ -4415,9 +4415,9 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | march.targetId | string \| null | 截击的移动目标 id（v28，AISLG-78）：purpose=intercept 及其撤回后的返程行军有值，其余为 null。 |
 | march.cargo | object \| null | 随行运送的资源（v26，Resources 形）：运输行军及其被撤回 / 目标失效后的返程行军携带，其余为 null。 |
 
-**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_RESOURCES`、`CARGO_OVER_CAPACITY`、`DEPLOY_LIMIT`、`MOVING_TARGET_GONE`、`TARGET_NOT_ATTACKABLE`、`INSUFFICIENT_TROOPS`、`PLUNDER_COOLDOWN`、`TASK_INVALID_FOR_TARGET`、`TERRITORY_LIMIT`、`GOVERNMENT_TOO_LOW`、`BRANCH_LIMIT`、`DISCARD_COOLDOWN`、`TARGET_LEVEL_TOO_HIGH`、`OUTER_NOT_CLEARED`、`NEWBIE_PROTECTED`、`TARGET_IN_TRUCE`、`SELF_TRUCE_ACTIVE`、`TILE_PROTECTED`、`ALLY_NOT_ATTACKABLE`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_RESOURCES`、`CARGO_OVER_CAPACITY`、`DEPLOY_LIMIT`、`MOVING_TARGET_GONE`、`TARGET_NOT_ATTACKABLE`、`INSUFFICIENT_TROOPS`、`PLUNDER_COOLDOWN`、`TASK_INVALID_FOR_TARGET`、`TERRITORY_LIMIT`、`GOVERNMENT_TOO_LOW`、`BRANCH_LIMIT`、`DISCARD_COOLDOWN`、`TARGET_LEVEL_TOO_HIGH`、`OUTER_NOT_CLEARED`、`NEWBIE_PROTECTED`、`TARGET_IN_TRUCE`、`SELF_TRUCE_ACTIVE`、`TILE_PROTECTED`、`ALLY_NOT_ATTACKABLE`、`WILD_HERO_UNOCCUPIABLE`（处置建议见第 4 节）
 
-**Agent 提示**：到达结算产生 march_completed 事件（purpose=plunder 时 outcome=plunder_won：含 loot 战利品、carry 负重、returning 返程行军 id；purpose=occupy 时 outcome=battle_won：含 occupied（false 时附 denial：野地为 TERRITORY_LIMIT，NPC 城为 GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH；NPC 城占领成功另含 cityId）），战斗另生成战报。掠夺量由幸存部队的负重封顶——想多带资源就多派民夫（单兵 carry 500，其余兵种 50–100）；同一地块 24 小时（基准）只能成功掠夺一次（GET_TILE 的 plunderedAt 可判冷却截止），占领不受冷却限制但受官府等级上限。**黄巾营地 / 老巢（v29，AISLG-76）**：目标格有进行中的营地（TileView.camp 非 null）时，MARCH 的掠夺任务即清剿营地——野战（无城墙）打营地当前守军（战后存量每小时恢复 25%），歼灭的黄巾单位数累计为贡献（输赢都算）；普通营地打赢消失并按幸存部队负重（含负重科技）装填掉落池（金 + 四资源）即时入账，清剿数 +1，达到 80% 出现老巢；老巢外围阶段打赢 = 外围清空（无战利品，限时内进入城守阶段），城守阶段打赢 = 老巢被击破（掉落 + 首杀播报 + 事件收场）；输方幸存部队撤回。task=occupy 返回 TASK_INVALID_FOR_TARGET，不受掠夺冷却限制。战报 kind='yellow_turban'，事件 march_completed 的 outcome=camp_won / camp_lost / boss_outer_cleared / boss_won（含 killed 歼敌数、campTier、stage）。**截击移动目标（带 targetId，v28，AISLG-78；v35 AISLG-112 改为「到了先埋伏」）**：目标路线与时刻表固定，发起时就把 arriveAt 定为预计接战时刻 = max(部队到达时刻, 目标进入选定格相邻范围（Chebyshev 距离 ≤ 1）的时刻)——部队提前到达则原地埋伏（MarchView.ambushAt 为埋伏开始时刻）等目标经过再开打，不必掐点；到达时目标已走出范围（太晚）→ 按到达时刻结算、「扑空」返程。接战为野战（无城墙，守军即目标守军，打赢目标消失，按幸存部队负重（含负重科技）装填其携带的资源即时入账，不钳储量上限；打输幸存部队撤回、目标原样留存）；目标已被他人击败或过时 → 「目标消失」，不接战、部队返程。埋伏期间部队照常占校场名额、按在外口径耗粮，可 RECALL_MARCH 撤回。三种结果都有战报（kind='intercept'，扑空 / 消失时 contact='missed' / 'gone'、endReason='no_contact'、rounds=0）与 march_completed 事件（outcome=intercepted / intercept_lost / intercept_missed / intercept_gone）。**运输（task=transport，v26，AISLG-79）**：目标必须是本账号的另一座城（出发城自身 / 野地 / NPC 城 / 他人城池返回 TASK_INVALID_FOR_TARGET）。发起即从出发城扣除 cargo 与派出部队；到达后货物**即时入账**目标城（与掠夺所得同规则：不钳储量上限），部队自动返程回出发城；运输队不会被 NPC 拦截（与「NPC 不攻击行军中的部队」同口径）；途中 RECALL_MARCH 撤回时货物随部队回到出发城，到达目标前目标城失效（如账号重置）同理带回。到达产生两条 march_completed 事件：出发城一条 outcome='transported'（含 cargo / cityId / cityName / returning），目标城一条 outcome='transport_received'（cityId 指向目标城，含 cargo / fromCityName）。同账号在线连接还会收到 PUSH_MARCH_STATE / PUSH_TILE_STATE / PUSH_BATTLE_REPORT。离线期间服务端照常结算，上线后用 GET_EVENTS（sinceId）补读。行军途中可 RECALL_MARCH 折返；城内驻军在 city.army，出征中的部队不在其中。
+**Agent 提示**：到达结算产生 march_completed 事件（purpose=plunder 时 outcome=plunder_won：含 loot 战利品、carry 负重、returning 返程行军 id；purpose=occupy 时 outcome=battle_won：含 occupied（false 时附 denial：野地为 TERRITORY_LIMIT 或 WILD_HERO_UNOCCUPIABLE（在野名将所在野地不可占领，v104），NPC 城为 GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH；NPC 城占领成功另含 cityId）），战斗另生成战报。掠夺量由幸存部队的负重封顶——想多带资源就多派民夫（单兵 carry 500，其余兵种 50–100）；同一地块 24 小时（基准）只能成功掠夺一次（GET_TILE 的 plunderedAt 可判冷却截止），占领不受冷却限制但受官府等级上限。**黄巾营地 / 老巢（v29，AISLG-76）**：目标格有进行中的营地（TileView.camp 非 null）时，MARCH 的掠夺任务即清剿营地——野战（无城墙）打营地当前守军（战后存量每小时恢复 25%），歼灭的黄巾单位数累计为贡献（输赢都算）；普通营地打赢消失并按幸存部队负重（含负重科技）装填掉落池（金 + 四资源）即时入账，清剿数 +1，达到 80% 出现老巢；老巢外围阶段打赢 = 外围清空（无战利品，限时内进入城守阶段），城守阶段打赢 = 老巢被击破（掉落 + 首杀播报 + 事件收场）；输方幸存部队撤回。task=occupy 返回 TASK_INVALID_FOR_TARGET，不受掠夺冷却限制。战报 kind='yellow_turban'，事件 march_completed 的 outcome=camp_won / camp_lost / boss_outer_cleared / boss_won（含 killed 歼敌数、campTier、stage）。**截击移动目标（带 targetId，v28，AISLG-78；v35 AISLG-112 改为「到了先埋伏」）**：目标路线与时刻表固定，发起时就把 arriveAt 定为预计接战时刻 = max(部队到达时刻, 目标进入选定格相邻范围（Chebyshev 距离 ≤ 1）的时刻)——部队提前到达则原地埋伏（MarchView.ambushAt 为埋伏开始时刻）等目标经过再开打，不必掐点；到达时目标已走出范围（太晚）→ 按到达时刻结算、「扑空」返程。接战为野战（无城墙，守军即目标守军，打赢目标消失，按幸存部队负重（含负重科技）装填其携带的资源即时入账，不钳储量上限；打输幸存部队撤回、目标原样留存）；目标已被他人击败或过时 → 「目标消失」，不接战、部队返程。埋伏期间部队照常占校场名额、按在外口径耗粮，可 RECALL_MARCH 撤回。三种结果都有战报（kind='intercept'，扑空 / 消失时 contact='missed' / 'gone'、endReason='no_contact'、rounds=0）与 march_completed 事件（outcome=intercepted / intercept_lost / intercept_missed / intercept_gone）。**运输（task=transport，v26，AISLG-79）**：目标必须是本账号的另一座城（出发城自身 / 野地 / NPC 城 / 他人城池返回 TASK_INVALID_FOR_TARGET）。发起即从出发城扣除 cargo 与派出部队；到达后货物**即时入账**目标城（与掠夺所得同规则：不钳储量上限），部队自动返程回出发城；运输队不会被 NPC 拦截（与「NPC 不攻击行军中的部队」同口径）；途中 RECALL_MARCH 撤回时货物随部队回到出发城，到达目标前目标城失效（如账号重置）同理带回。到达产生两条 march_completed 事件：出发城一条 outcome='transported'（含 cargo / cityId / cityName / returning），目标城一条 outcome='transport_received'（cityId 指向目标城，含 cargo / fromCityName）。同账号在线连接还会收到 PUSH_MARCH_STATE / PUSH_TILE_STATE / PUSH_BATTLE_REPORT。离线期间服务端照常结算，上线后用 GET_EVENTS（sinceId）补读。行军途中可 RECALL_MARCH 折返；城内驻军在 city.army，出征中的部队不在其中。
 
 **示例**
 
@@ -6681,7 +6681,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（v87 AISLG-217 起：酒馆只在主城建造、候选账号只有一份，固定为主城那座，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限、全部 45 名名将的全服归属（famousClaims，未被获得的 ownerUsername 为 null；在野名将未被获得时 wildAt 为 null，被获得后才给出落位 wildAt），以及在野名将的结交进度（friendships）与结交资格（unlocks）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从主城扣）。**名将**（三项各 45–65）只从 PvE 获得、全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 3、名将 5，由玩家分到三项属性，v54 起升级不再自动加属性），上限 40 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。
+返回账号全部武将（含属性、等级 / 经验、自由点数、俸禄、欠饷 / 重伤 / 历练状态、占用关系、今日剩余次数）、当前（或指定）城酒馆的候选（v87 AISLG-217 起：酒馆只在主城建造、候选账号只有一份，固定为主城那座，每 4 小时基准随时间缩放刷新 3 名）、普通将 / 名将数量与上限、全部 45 名名将的归属（famousClaims：29 名在野名将按全服拥有人数 ownerCount 展示、ownerUsername 恒为 null，还没人获得时 wildAt 为 null、被获得后才给出落位；名城 8 / 黄巾 3 / 势力首领 5 仍显示单一持有人 ownerUsername），以及在野名将的结交进度（friendships）与结交资格（unlocks）。武将规则（数值均为占位）：**普通将**从酒馆招募，三项属性（统率 lead / 武力 force / 智力 wit）各 10–40 随机；招募费 = 500 + 三项合计 × 20（金币，从主城扣）。**名将**（三项各 45–65）只从 PvE 获得：29 名在野名将每个账号各能有一份（v104，AISLG-245，同账号同名唯一），名城 8 / 黄巾 3 / 势力首领 5 仍全服唯一（见 famousClaims）。带兵加成：全军攻击 + 武力 × 0.3%、全军受到伤害 − 智力 × 0.3%，各自封顶 20%；能吃到加成的兵数 = 统率 × 20，部队超出时按比例摊薄（统率是带大军的关键）。俸禄每小时从主城扣（普通将 20 × 等级、名将 100 × 等级金币，随全局时间缩放），主城金币不够即「欠饷」（arrears=true，不能出征），扣款成功自动恢复。带队战败（攻方失败或全灭）武将重伤 2 小时（随缩放），期间不能出征、不会死亡。经验（v36 AISLG-116）：带队参战（含城守守城）获得经验 = 本场歼灭敌军的参考战力，战败减半；升到 L+1 级需 100 × L²，每升一级获得自由点数（普通将 3、名将 5，由玩家分到三项属性，v54 起升级不再自动加属性），上限 40 级——加成仍受 20% 封顶，高等级的主要收益是统率提高（带更多兵吃满加成）。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO）。**v104（AISLG-245）起每个账号各拿一个**：29 名在野名将的唯一性只到「同一账号不能有两个」，不同账号各走一遍流程互不影响（先到先得不再成立）；本账号招到之后结交进度清空，名将解雇 / 下野后本账号可从头再来（别人的同名名将与进度不受影响）。
 
 **请求字段**
 
@@ -6701,9 +6701,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | famousCap / famousCount | number | 名将上限（固定 3，不占普通将上限）与当前数量。 |
 | heroes | array | 账号全部武将：{ id, name, famous, lead, force, wit, level, exp, expNext 距下一级, salaryPerHour 已随时间缩放, arrears 欠饷, woundedUntil 重伤恢复时刻或 null, guardCityId 正在城守的城或 null, marchingMarchId 正在随行的行军或 null, bonus { atkPercent, defPercent, leadCap }（满编口径）, guardProductionPercent 城守产量加成, loyalty 忠诚度 0..100（v94，只有 29 位在野名将有，其余为 null；30 及以下应标红提醒）, captive 被俘囚禁 { capturedUntil 截止时刻, ransomGold 赎金 } 或 null（v94；被俘时不能出征 / 任城守 / 历练 / 赏赐 / 解雇 / 加点 / 洗点 / 施计，可用 RANSOM_HERO 赎回） }。 |
 | candidates | array | 主城酒馆当前候选（v87 起账号只有一份）：{ id, name, lead, force, wit, cost 招募费, refreshedAt 本批刷新时刻 }；主城酒馆未建为空数组。 |
-| famousClaims | array | 全部名将归属：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人或 null, grantedAt, wildAt 在野名将被获得后的落位 { x, y, level }；未被获得的在野名将与名城 / 黄巾名将为 null（未被获得时不泄露藏身位置）}。 |
-| friendships | array | 结交进度（v54）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 已被他人招揽（作废）}。 |
-| unlocks | string[] | 结交资格（v54）：打赢过其野地守军、且尚未被他人获得的在野名将名。 |
+| famousClaims | array | 全部名将归属（v104 AISLG-245）：{ name, sourceLabel 来源人读描述, ownerUsername 当前主人用户名（只对名城 8 / 黄巾 3 / 势力首领 5 有意义，29 名在野名将恒为 null）, ownerCount 全服拥有该名将的账号数（在野名将可多人各有一份，0 = 还没人获得；其余 16 名为 0 或 1）, grantedAt 最早一次获得时刻, wildAt 在野名将有人获得后的落位 { x, y, level }（还没人获得时为 null，不泄露藏身位置）}。 |
+| friendships | array | 结交进度（v54；v104 起作废只看本账号）：{ heroName, favor 好感 0–100, todayLeft 今日还能结交的次数, cost 下次结交花费, lost 本账号已拥有该名将（作废，别的账号招走不会让你作废）}。 |
+| unlocks | string[] | 结交资格（v54；v104 起按账号）：打赢过其野地守军、且本账号还没拥有的在野名将名。 |
 | friendshipCap | number | 同时结交上限（v54，固定 2）。 |
 
 **Agent 提示**：培养与结交：加点 / 洗点 / 历练 / 赏赐见 ALLOCATE_HERO_POINTS 等协议；结交与招揽见 BEFRIEND_HERO / RECRUIT_FAMOUS_HERO（先看 unlocks）。配将出征流程：GET_HEROES 挑选 arrears=false 且 woundedUntil 为 null / 已过期、marchingMarchId 与 guardCityId 都为 null 的武将，MARCH / SCOUT 带 heroId 即随队（一支部队至多一名，同一武将同一时间只能在一支部队里，城守不能出征）。经验与等级在 heroes[] 里实时可查（expNext = 距下一级还差多少）。名将归属见 famousClaims——未被获得的名将按 sourceLabel 的条件争取（首占名城 / 老巢首杀 / 贡献前二）。收到 PUSH_HERO_STATE 后重拉本协议对齐。
@@ -6791,6 +6791,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "name": "吕布",
         "sourceLabel": "首占名城「洛阳」",
         "ownerUsername": null,
+        "ownerCount": 0,
         "grantedAt": null,
         "wildAt": null
       },
@@ -6908,7 +6909,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 **可能错误**：`INVALID_PARAMS`、`HERO_NOT_FOUND`、`HERO_BUSY`（处置建议见第 4 节）
 
-**Agent 提示**：俸禄是持续成本（欠饷武将不能出征），低属性武将留着不划算；解雇名将前想清楚——全服唯一，放手就是别人的了。
+**Agent 提示**：俸禄是持续成本（欠饷武将不能出征），低属性武将留着不划算；在野名将解雇后本账号可以重新结交招揽（v104 起别的账号本来也各有一份），名城 / 黄巾 / 首领名将解雇就没了、全服会被别人拿走。
 
 **示例**
 
@@ -8725,7 +8726,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-对已获得结交资格（GET_HEROES 的 unlocks 里）的在野名将结交一次：花 500 × 野地等级 金币（主城扣），好感 +10（上限 100）。每个名将每游戏日最多 5 次；同时结交的名将最多 2 名。好感满 100 后不能再结交，改用 RECRUIT_FAMOUS_HERO。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO），全服唯一，先到先得；别人先招揽走，你的结交进度作废（lost=true，金币不退）。名将解雇后回到可获得状态。
+对已获得结交资格（GET_HEROES 的 unlocks 里）的在野名将结交一次：花 500 × 野地等级 金币（主城扣），好感 +10（上限 100）。每个名将每游戏日最多 5 次；同时结交的名将最多 2 名。好感满 100 后不能再结交，改用 RECRUIT_FAMOUS_HERO。在野名将（v54，AISLG-144）：29 名名将隐居在 Lv3 以上的野地里（开服时分配，之后不变）。地图上该野地带 wildFamous 标记；派部队打赢它的原住守军（守军为同级野地的 2 倍）即获得该名将的结交资格（GET_HEROES 的 unlocks）。结交（BEFRIEND_HERO）花主城金币 500 × 野地等级，好感 +10，每个名将每游戏日最多 5 次，同时结交（好感未满、未被招揽）最多 2 名。好感满 100 后招揽（RECRUIT_FAMOUS_HERO）。**v104（AISLG-245）起每个账号各拿一个**：29 名在野名将的唯一性只到「同一账号不能有两个」，不同账号各走一遍流程互不影响（先到先得不再成立）；本账号招到之后结交进度清空，名将解雇 / 下野后本账号可从头再来（别人的同名名将与进度不受影响）。
 
 **请求字段**
 
@@ -8782,7 +8783,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-好感满 100 后招揽该在野名将，加入账号为名将（名将上限 3 名，不占普通将上限）。全服唯一：已被他人获得返回 FAMOUS_CLAIMED；成功后全服播报（hero_granted）。名将的三项属性在落位时已固定，侦察看到的就是它。
+好感满 100 后招揽该在野名将，加入账号为名将（名将上限 3 名，不占普通将上限）。v104（AISLG-245）起每个账号各一份：本账号已经拥有该名将返回 FAMOUS_CLAIMED（别的账号有没有与你无关）；成功后全服播报（hero_granted）。名将的三项属性在落位时已固定，侦察看到的就是它。
 
 **请求字段**
 
@@ -8798,7 +8799,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 **可能错误**：`INVALID_PARAMS`、`HERO_NOT_UNLOCKED`、`HERO_FAVOR_INSUFFICIENT`、`FAMOUS_CLAIMED`、`HERO_CAP_REACHED`（处置建议见第 4 节）
 
-**Agent 提示**：招揽是全服竞争：好感满的那一刻就去招，慢一步就会被 FAMOUS_CLAIMED。
+**Agent 提示**：好感满就可以招，不必抢：每个账号各拿一个，别的账号招走不影响你；被拒只有「本账号已有该名将」（FAMOUS_CLAIMED）与「名将已满 3 名」（HERO_CAP_REACHED）两种情况。
 
 **示例**
 
@@ -21116,6 +21117,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `MARCH_NOT_RECALLABLE` | 行军不存在、不属于本账号、不在行军途中或已是返程，无法撤回（v13）。 | 用 GET_STATE 的 city.marches 核对行军 id 与状态，只对 status=marching 且 purpose 不是 return 的行军发起 RECALL_MARCH。 |
 | `PLUNDER_COOLDOWN` | 目标地块处于掠夺冷却中（基准 24 小时，实际受全局时间缩放等比缩短；v16：该地块已被成功掠夺，冷却记录见 GET_TILE 的 tile.plunderedAt；冷却内发起掠夺被拒，在途到达仍战斗但资源为零）。 | 读 tile.plunderedAt 判断冷却截止时间，到点后重试掠夺；或改用 task=occupy（占领不受冷却限制）。 |
 | `TASK_INVALID_FOR_TARGET` | 该任务类型不适用于此目标（v16 起；v24 起 NPC 城池也可 task=occupy，本码当前不再由出征返回，保留兼容；玩家城池占领随玩家对抗阶段设计）。 | 改用 task=plunder（或不带 task，缺省即掠夺）。 |
+| `WILD_HERO_UNOCCUPIABLE` | 在野名将所在的野地不能被占领（v104，AISLG-245）：这些野地要留给所有玩家反复挑战守军拿结交资格，地块被占后别人就打不了了。 | 改用 task=plunder 打守军（打赢即得结交资格）；想占野地请挑没有名将标记（tile.wildFamous 为 false 或无此字段）的野地。 |
 | `TERRITORY_LIMIT` | 该城占领的野地数已达官府等级上限（v16：上限 = 官府等级，MARCH task=occupy 发起时初核，Worker 到达时复核——胜利后超限不改归属、幸存部队返程）。 | 升级官府提高上限、召回一块野地驻军，或改用 task=plunder（掠夺不受占领上限限制）。 |
 | `GOVERNMENT_TOO_LOW` | 占领 NPC 城（MARCH task=occupy 目标为 NPC 城池）需要主城官府 ≥ 3 级（v24，AISLG-58）。 | 先升级主城官府到 3 级；或对该 NPC 城改用 task=plunder 掠夺。 |
 | `BRANCH_LIMIT` | 分城数已达上限（v24 起：上限 = floor(主城官府等级 ÷ 2)，v57 由 ÷3 放宽，名城同样计入；发起时初核，Worker 到达时复核——胜利后超限不建分城、幸存部队返程，事件记录 denial=BRANCH_LIMIT）。 | 升级主城官府（每升 2 级多 1 个名额），或放弃一座不需要的分城（DISCARD_CITY），或改用 task=plunder 掠夺。 |
@@ -21156,7 +21158,7 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `HERO_FRIENDSHIP_LIMIT` | （v54，AISLG-144）同时结交的在野名将已达上限 2 名（好感未满且未被他人招揽的才计入）。 | 等其中一名好感满 100 并招揽，或它已被他人获得，腾出名额后再结交。 |
 | `HERO_FAVOR_INSUFFICIENT` | （v54，AISLG-144）好感度未满 100，不能招揽（附 favor）。 | 继续 BEFRIEND_HERO 结交（每次 +10，每日最多 5 次）。 |
 | `HERO_FAVOR_FULL` | （v54，AISLG-144）好感度已满 100，不能再结交。 | 直接 RECRUIT_FAMOUS_HERO 招揽。 |
-| `FAMOUS_CLAIMED` | （v54，AISLG-144）该名将已被他人获得（全服唯一）。 | 换一名在野名将；GET_HEROES 的 famousClaims 可查归属。 |
+| `FAMOUS_CLAIMED` | （v54，AISLG-144；v104 AISLG-245 收窄）本账号已经拥有该名将——同一账号不能有两个同名名将；别的账号接手不影响本账号招揽。 | 换一名在野名将；GET_HEROES 的 famousClaims 可查归属。 |
 | `GUARD_ASSIGN_DENIED` | （v36，AISLG-115）城守不能同时出征；城守只能任命未随行出征的本账号武将。 | 先撤任（ASSIGN_HERO heroId=null）再出征，或换其他武将带队。 |
 | `NEWBIE_PROTECTED` | （v38，AISLG-122；门槛 v42 校准为 8 级）目标玩家处于新手保护期（注册后 3 天或任一城官府升到 8 级，先到为准），不能被侦察 / 攻击（SCOUT 与 MARCH 均返回本码）。data.until / data.retryAfterSeconds 为截止时刻与剩余秒数。 | 等保护期结束后再打（按 retryAfterSeconds 睡满后重发），或换目标。新手玩家主动侦察 / 攻击其他玩家会立即失去保护。 |
 | `TARGET_IN_TRUCE` | （v38，AISLG-122）目标处于免战期：城被攻破 / 被抢后的被动免战（4 小时基准）或目标自己开启的主动免战（12 小时基准），玩家与 NPC 都不能再攻击。data.until / data.retryAfterSeconds 为截止时刻与剩余秒数。 | 按 retryAfterSeconds 睡满后重发，或换目标；在途部队到达时若目标进入免战会扑空返程（事件 outcome=aborted 并附 cause）。 |
@@ -22860,7 +22862,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 103。
+- 协议版本随对外协议内容的每次变化递增；当前为 104。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 
