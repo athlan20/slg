@@ -1,13 +1,14 @@
-// 攻破老巢的数据库读写（AISLG-241，v101）：本季老巢战况、贡献榜、全服战力前 10 名、
-// 每天刷新每营战力、24 小时无人进攻恢复 1 营。纯规则与数值在 faction-lair.ts。
+// 攻破老巢的数据库读写（AISLG-241，v101；AISLG-247 起每营战力按营序号取梯度值）：本季老巢战况、
+// 贡献榜、每天刷新两个战力锚点、24 小时无人进攻恢复 1 营。纯规则与数值在 faction-lair.ts，
+// 全服战力第 3 / 第 10 名的查询在 faction-lair-rank-db.ts。
 // 表结构见 faction-lair-schema.ts：faction_lairs / faction_contrib，都随换季清空。
 // 注意：战斗结算的事务在 worker/src/faction-lair-battle.ts，每日刷新与恢复由 Worker 的定时器调用，
 // 不放进战斗结算的事务里（需求「全服战力前 10 名每天算一次，放 Worker」）。
 
 import type pg from 'pg';
-import { TROOP_KINDS, type TroopKind } from './protocol';
-import { TROOP_POWER } from './battle';
-import { FACTION_LAIR_TOP_PLAYERS, factionLairCampPower, factionLairPowerRefreshMs, factionLairRecoveredCamps, factionLairRecoverMs, rescaledLairRemaining } from './faction-lair';
+import type { TroopKind } from './protocol';
+import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairAnchorPower, factionLairCampNo, factionLairCampPowerAt, factionLairPowerRefreshMs, factionLairRecoveredCamps, factionLairRecoverMs, rescaledLairRemaining } from './faction-lair';
+import { serverAnchorPowers } from './faction-lair-rank-db';
 import { FACTIONS } from './faction';
 import type { FactionKey } from './protocol-faction';
 
@@ -22,7 +23,12 @@ export interface FactionLairRow {
   /** 当前营的残血编成（null = 满营） */
   remaining: Partial<Record<TroopKind, number>> | null;
   remaining_at: Date | null;
+  /** v101 的单一「每营战力」（前 10 名合计 ÷ 15）：AISLG-247 起不再写入，只留给迁移回填与排查 */
   camp_power: number;
+  /** 第 1 营战力锚点 G1（只升不降，下限 10,000） */
+  camp_power_g1: number;
+  /** 第 20 营战力锚点 G20（只升不降，不小于 G1） */
+  camp_power_g20: number;
   power_at: Date | null;
   /** 最后一次被玩家进攻的时刻（从没被打过为 null；恢复 1 营后按恢复的时刻往后推） */
   last_battle_at: Date | null;
@@ -30,12 +36,13 @@ export interface FactionLairRow {
   destroyed_by: string | null;
 }
 
-const LAIR_COLUMNS = `key, camps_total, camps_remaining, remaining, remaining_at, camp_power, power_at,
+const LAIR_COLUMNS = `key, camps_total, camps_remaining, remaining, remaining_at, camp_power,
+                      camp_power_g1, camp_power_g20, power_at,
                       last_battle_at, destroyed_at, destroyed_by`;
 
 /**
  * 生成本季五家的老巢战况行（幂等；开关关闭时调用方本就不会走到这里）。
- * 开季全服没有部队，每营战力就是下限 10,000（每天由 Worker 按前 10 名刷新）。
+ * 开季全服没有部队，两个锚点都是下限 10,000（每天由 Worker 按第 3 / 第 10 名的战力刷新）。
  * keys 缺省为五家；当季启用（AISLG-243）时只给本季真放下的那几家建行，跳过的势力不留任何战况数据。
  */
 export async function ensureFactionLairs(
@@ -72,7 +79,7 @@ export async function loadFactionLairRow(q: Queryable, key: string): Promise<Fac
 
 /**
  * 加行锁读一家老巢（战斗结算用；调用方持有事务）。
- * 本季中途打开开关（老巢已放、战况行还没生成）时补一行默认值（20 营、每营 10,000），
+ * 本季中途打开开关（老巢已放、战况行还没生成）时补一行默认值（20 营、两个锚点都是 10,000），
  * 不让「数据没生成」变成「老巢打不了」。
  */
 export async function lockFactionLairRow(client: pg.PoolClient, key: string): Promise<FactionLairRow | null> {
@@ -96,55 +103,16 @@ export async function destroyedFactionKeys(q: Queryable): Promise<Set<string>> {
   return new Set((res.rows as Array<{ key: string }>).map((row) => row.key));
 }
 
-/** 兵种战力的 SQL 值表（与 common/src/battle.ts 的 TROOP_POWER 同源，不在 SQL 里再抄一份） */
-function troopPowerValuesSql(): string {
-  return TROOP_KINDS.map((kind) => `('${kind}'::text, ${Math.max(0, Number(TROOP_POWER[kind] ?? 0))}::bigint)`).join(', ');
-}
-
 /**
- * 全服战力前 N 名账号的合计（需求「全服战力要算城内、野地驻军、行军中和协防的全部部队」）：
- * - 城内：city_army（经 cities.account_id）；
- * - 野地驻军：tile_army（经 world_tiles.owner_city_id 归到城 / 账号）；
- * - 协防：city_assist.troops（驻在别人的城里，仍算自己的战力）；
- * - 行军中：marches.troops（status='marching'）。
- */
-export async function serverTopPowerTotal(q: Queryable, limit: number = FACTION_LAIR_TOP_PLAYERS): Promise<number> {
-  const res = await q.query(
-    `WITH tp(troop, power) AS (VALUES ${troopPowerValuesSql()}),
-     army AS (
-       SELECT c.account_id, ca.troop, ca.count::bigint AS count
-       FROM city_army ca JOIN cities c ON c.id = ca.city_id
-       UNION ALL
-       SELECT c.account_id, ta.troop, ta.count::bigint AS count
-       FROM tile_army ta
-       JOIN world_tiles wt ON wt.x = ta.x AND wt.y = ta.y
-       JOIN cities c ON c.id = wt.owner_city_id
-       UNION ALL
-       SELECT ca.account_id, e.key AS troop, e.value::bigint AS count
-       FROM city_assist ca, jsonb_each_text(ca.troops) AS e(key, value)
-       UNION ALL
-       SELECT m.account_id, e.key AS troop, e.value::bigint AS count
-       FROM marches m, jsonb_each_text(m.troops) AS e(key, value)
-       WHERE m.status = 'marching'
-     ),
-     per_account AS (
-       SELECT army.account_id, sum(tp.power * greatest(army.count, 0))::bigint AS power
-       FROM army JOIN tp ON tp.troop = army.troop
-       GROUP BY army.account_id
-     )
-     SELECT coalesce(sum(power), 0)::bigint AS total
-     FROM (SELECT power FROM per_account ORDER BY power DESC LIMIT $1) top`,
-    [Math.max(1, Math.floor(limit))],
-  );
-  return Number((res.rows[0] as { total: string | number }).total ?? 0);
-}
-
-/**
- * 每天刷新一次每营战力（只升不降，下限 10,000），没打掉的营按新值、当前营保留残血比例。
- * 只有到了刷新时刻（faction_lair.power_at + 间隔）的行才更新；返回本次的每营战力（无更新时为 0）。
+ * 每天刷新一次 20 营的战力锚点（两个锚点各自只升不降，下限 10,000），当前营保留残血比例。
+ * 只有到了刷新时刻（faction_lairs.power_at + 间隔）的行才更新；返回本轮的锚点（无更新时都为 0）。
+ * 残血缩放按“当前营序号”取新旧锚点对应的 Gk：旧行（G1 = G20 = 旧 camp_power）行为与 v101 一致。
  * 调用方持有事务：Worker 的定时器（faction-lair-tick.ts）单独一个事务，不在战斗结算里算。
  */
-export async function refreshFactionLairPower(client: pg.PoolClient, now: Date): Promise<{ refreshed: number; power: number }> {
+export async function refreshFactionLairPower(
+  client: pg.PoolClient,
+  now: Date,
+): Promise<{ refreshed: number; g1: number; g20: number }> {
   const res = await client.query(
     `SELECT ${LAIR_COLUMNS} FROM faction_lairs WHERE destroyed_at IS NULL FOR UPDATE`,
   );
@@ -152,20 +120,30 @@ export async function refreshFactionLairPower(client: pg.PoolClient, now: Date):
   const refreshMs = factionLairPowerRefreshMs();
   const due = rows.filter((row) => !row.power_at || now.getTime() - row.power_at.getTime() >= refreshMs);
   if (due.length === 0) {
-    return { refreshed: 0, power: 0 };
+    return { refreshed: 0, g1: 0, g20: 0 };
   }
-  const next = factionLairCampPower(await serverTopPowerTotal(client));
+  const anchors = await serverAnchorPowers(client);
+  const next = factionLairAnchorPower(anchors.r10, anchors.r3);
   for (const row of due) {
-    const power = Math.max(row.camp_power, next);
-    const remaining = power > row.camp_power ? rescaledLairRemaining(row.remaining, row.camp_power, power) : row.remaining;
+    // 只升不降：两个锚点各自取历史最大；G20 不会低于 G1
+    // 迁移回填的旧行（G1 = G20 = v101 的单一 camp_power，且高于下限）是 v101 的 23.8 万级平坦强度，
+    // 第一次刷新直接换成新锚点（一次性下调，否则「只升不降」会把梯度永远锁在旧值上）；此后各自只升不降
+    const legacy = row.camp_power > FACTION_LAIR_MIN_CAMP_POWER
+      && row.camp_power_g1 === row.camp_power && row.camp_power_g20 === row.camp_power;
+    const g1 = legacy ? next.g1 : Math.max(row.camp_power_g1, next.g1);
+    const g20 = legacy ? next.g20 : Math.max(row.camp_power_g20, next.g20, g1);
+    const campNo = factionLairCampNo(row.camps_total || FACTION_LAIR_CAMPS, row.camps_remaining);
+    const oldPower = factionLairCampPowerAt(row.camp_power_g1, row.camp_power_g20, campNo);
+    const newPower = factionLairCampPowerAt(g1, g20, campNo);
+    const remaining = newPower === oldPower ? row.remaining : rescaledLairRemaining(row.remaining, oldPower, newPower);
     await client.query(
-      `UPDATE faction_lairs SET camp_power = $2, power_at = $3, remaining = $4::jsonb,
-              remaining_at = CASE WHEN $4::jsonb IS NULL THEN NULL ELSE remaining_at END
+      `UPDATE faction_lairs SET camp_power_g1 = $2, camp_power_g20 = $3, power_at = $4, remaining = $5::jsonb,
+              remaining_at = CASE WHEN $5::jsonb IS NULL THEN NULL ELSE remaining_at END
        WHERE key = $1`,
-      [row.key, power, now, remaining ? JSON.stringify(remaining) : null],
+      [row.key, g1, g20, now, remaining ? JSON.stringify(remaining) : null],
     );
   }
-  return { refreshed: due.length, power: next };
+  return { refreshed: due.length, g1: next.g1, g20: next.g20 };
 }
 
 /**

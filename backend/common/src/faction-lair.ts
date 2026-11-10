@@ -4,10 +4,13 @@
 // 数据库读写见 faction-lair-db.ts，战斗结算见 worker/src/faction-lair-battle.ts，
 // 灭亡联动见 worker/src/faction-lair-destroy.ts。
 //
-// 数值来源（需求 AISLG-241「数值是怎么定的」）：老巢分 20 营，每次进攻只打当前一营、走守城战、
-// 城墙减伤 50%；每营战力 = 全服战力前 10 名合计 ÷ 15，每天刷新一次、只升不降、最低 10,000；
+// 数值来源（需求 AISLG-241「数值是怎么定的」，AISLG-247 改为梯度）：老巢分 20 营，每次进攻只打当前一营、
+// 走守城战、城墙减伤 50%；20 营由弱到强等比递增（第 1 营最弱、第 20 营最强），由两个锚点定：
+// G1 = max(10,000, R10 × 0.35)、G20 = max(G1, R3 × 0.35)、Gk = G1 × (G20 / G1)^((k-1)/19)，
+// R10 / R3 = 全服战力第 10 / 第 3 名账号的单人战力；每天刷新一次、两个锚点各自只升不降、最低 10,000；
 // 编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放（与势力围城军同一比例）；
 // 歼灭奖励 = 每点守军战力金币 2、四种资源各 10；声望按歼灭战力的 1%；灭亡榜单是黄巾之乱同名次的 3 倍。
+// 注意：营的守军 / 满编战力一律按「当前营序号」取 Gk，没有单一的「每营战力」了。
 
 import { armyPower } from './battle';
 import { factionSiegeArmy } from './faction-siege';
@@ -17,11 +20,14 @@ import { scaledMs } from './time-scale';
 /** 老巢的营数（每次只打当前一营，打掉的营不会回来） */
 export const FACTION_LAIR_CAMPS = 20;
 
-/** 每营战力 = 全服战力前 N 名合计 ÷ 除数（需求：前 10 名 ÷ 15） */
-export const FACTION_LAIR_TOP_PLAYERS = 10;
-export const FACTION_LAIR_POWER_DIVISOR = 15;
+/** 锚点用的排名（AISLG-247）：第 10 名定最弱的第 1 营，第 3 名定最强的第 20 营 */
+export const FACTION_LAIR_R10_RANK = 10;
+export const FACTION_LAIR_R3_RANK = 3;
 
-/** 每营战力下限（开季全服没有部队时也是这个值，保证开局就能打） */
+/** 锚点系数（百分数，需求「0.35」）：G1 = R10 × 35%、G20 = R3 × 35% */
+export const FACTION_LAIR_ANCHOR_PERCENT = 35;
+
+/** 战力下限：G1 / G20 都不低于它（开季全服没有部队时两个锚点都是这个值，保证开局就能打） */
 export const FACTION_LAIR_MIN_CAMP_POWER = 10_000;
 
 /** 老巢守城战的城墙减伤（百分数；需求「城墙减伤 50%」，与玩家城的城墙等级无关） */
@@ -50,10 +56,40 @@ export function factionLairRecoverMs(): number {
   return Math.max(1000, scaledMs(FACTION_LAIR_RECOVER_MS));
 }
 
-/** 每营战力（全服战力前 10 名合计 ÷ 15，向下取整，不低于下限 10,000） */
-export function factionLairCampPower(topPlayersTotal: number): number {
-  const total = Number.isFinite(topPlayersTotal) ? Math.max(0, Math.floor(topPlayersTotal)) : 0;
-  return Math.max(FACTION_LAIR_MIN_CAMP_POWER, Math.floor(total / FACTION_LAIR_POWER_DIVISOR));
+/** 取整后的战力值（NaN / 负数按 0；数据库的 bigint 可能以字符串返回） */
+function sanePower(power: number): number {
+  return Number.isFinite(power) ? Math.max(0, Math.floor(power)) : 0;
+}
+
+/**
+ * 两个锚点（AISLG-247）：R10 = 全服战力第 10 名、R3 = 第 3 名账号的单人战力。
+ * - G1 = max(10,000, R10 × 0.35)，G20 = max(G1, R3 × 0.35)；
+ * - 系数是 0.35，乘法结果四舍五入到整数（需求验收给的 47,068 → 16,474、443,174 → 155,111 就是四舍五入；
+ *   向下取整会得到 16,473 / 155,110）；
+ * - 是不是「历史最大值」由调用方（每日刷新）负责，这里只算这一轮的锚点；
+ * - 全服没有部队（R3 = R10 = 0）时两个锚点都是下限 10,000。
+ */
+export function factionLairAnchorPower(r10: number, r3: number): { g1: number; g20: number } {
+  const anchor = (power: number): number =>
+    Math.round((sanePower(power) * FACTION_LAIR_ANCHOR_PERCENT) / 100);
+  const g1 = Math.max(FACTION_LAIR_MIN_CAMP_POWER, anchor(r10));
+  const g20 = Math.max(g1, anchor(r3));
+  return { g1, g20 };
+}
+
+/**
+ * 第 campNo 营的战力 Gk（AISLG-247）：Gk = G1 × (G20 / G1)^((k − 1) / 19)，向下取整。
+ * 营序号从 1 起算、夹在 1..20；G20 < G1 时按 G1 处理（锚点只会由 round 与 max 保证，这里兜底）。
+ */
+export function factionLairCampPowerAt(g1: number, g20: number, campNo: number): number {
+  const base = Math.max(FACTION_LAIR_MIN_CAMP_POWER, sanePower(g1));
+  const top = Math.max(base, sanePower(g20));
+  const no = Math.max(1, Math.min(FACTION_LAIR_CAMPS, Math.floor(campNo) || 1));
+  if (top <= base) {
+    return base;
+  }
+  const step = (no - 1) / (FACTION_LAIR_CAMPS - 1);
+  return Math.max(base, Math.min(top, Math.floor(base * Math.pow(top / base, step))));
 }
 
 /**
@@ -69,17 +105,35 @@ export function factionLairGarrisonPower(garrison: Partial<Record<TroopKind, num
   return armyPower(garrison);
 }
 
+/** 一行老巢战况里「当前营」的战力：先按剩余营数得到营序号，再取该营的 Gk（AISLG-247） */
+export function factionLairCurrentCampPower(row: {
+  camps_total: number;
+  camps_remaining: number;
+  camp_power_g1: number;
+  camp_power_g20: number;
+}): number {
+  const campNo = factionLairCampNo(row.camps_total || FACTION_LAIR_CAMPS, row.camps_remaining);
+  return factionLairCampPowerAt(row.camp_power_g1, row.camp_power_g20, campNo);
+}
+
 /**
- * 侦察老巢时看到的当前营守军（v101）：残血按未回满的实况给，满营就是满编。
+ * 侦察老巢时看到的当前营守军（v101）：残血按未回满的实况给，满营就是当前营的满编（按营序号取 Gk）。
  * 已经灭亡的废墟直接给空编队（调用方本就不会放侦察进去）。
  */
 export function factionLairScoutGarrison(
-  lair: { remaining: Partial<Record<TroopKind, number>> | null; camp_power: number; destroyed_at: Date | null } | null,
+  lair: {
+    camps_total: number;
+    camps_remaining: number;
+    remaining: Partial<Record<TroopKind, number>> | null;
+    camp_power_g1: number;
+    camp_power_g20: number;
+    destroyed_at: Date | null;
+  } | null,
 ): Partial<Record<TroopKind, number>> {
   if (!lair || lair.destroyed_at) {
     return {};
   }
-  return lair.remaining ?? factionLairGarrison(lair.camp_power);
+  return lair.remaining ?? factionLairGarrison(factionLairCurrentCampPower(lair));
 }
 
 /** 当前营剩余百分比（整数 0..100；满编 = 100，空营 = 0） */
