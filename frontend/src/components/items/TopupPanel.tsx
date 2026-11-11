@@ -1,14 +1,14 @@
 // 充值面板（v108 AISLG-251；AISLG-255 把兑换码并入本面板）：道具弹窗里点「充值」后替换列表。
-// 从上到下：Creem 商品卡（1.99 美元 = 1000 元宝，一次性付款；紧凑一行 + 右侧「购买」）→ 淘宝券号卡片
-// （中文界面且配了 PUBLIC_TAOBAO_URL 时才显示）→ 兑换码区块 → 底部元宝用途说明（链到服务条款与定价页，AISLG-252）。
-// 三块都做紧凑样式：道具弹窗是固定高度且不加滚动条，说明性小字在窗口很矮时隐藏。
+// 从上到下：Creem 商品卡（1.99 美元 = 1000 元宝，一次性付款；紧凑一行 + 右侧「购买」）→ 兑换码区块
+// （AISLG-255：淘宝购买入口改成兑换码区块里「兑换」左边的「购买」锚点）→ 底部元宝用途说明
+// （链到服务条款与定价页，AISLG-252）。三块都做紧凑样式：道具弹窗是固定高度且不加滚动条，
+// 说明性小字在窗口很矮时隐藏。
 
 import { useCopy } from '../../i18n/bundle';
 import { TOPUP_INGOT } from '../../api/topupProduct';
 import { isSafeCheckoutUrl, type TopupSession } from '../../state/topupSession';
 import type { RedeemSession } from '../../state/redeemSession';
 import { RedeemCodeSection } from './RedeemCodeSection';
-import { TopupTaobaoCard } from './TopupTaobaoCard';
 
 interface TopupPanelProps {
   topup: TopupSession;
@@ -47,7 +47,7 @@ export function TopupPanel({ topup, redeem }: TopupPanelProps) {
             <span role="topup-product-price" className="font-mono text-[15px] tabular-nums text-accent">
               {TOPUP_COPY.productPrice}
             </span>
-            {/* 窗口很矮时不显示小字，避免挤压下面的淘宝卡片与兑换码区块（不加滚动条） */}
+            {/* 窗口很矮时不显示小字，避免挤压下面的兑换码区块（不加滚动条） */}
             <small role="topup-product-note" className="text-[11.5px] text-dim [@media(max-height:560px)]:hidden">
               {TOPUP_COPY.productNote}
             </small>
@@ -94,7 +94,6 @@ export function TopupPanel({ topup, redeem }: TopupPanelProps) {
           {topup.notice}
         </p>
       ) : null}
-      <TopupTaobaoCard />
       <RedeemCodeSection redeem={redeem} />
       <p role="topup-note" className="shrink-0 text-[11.5px] leading-relaxed text-faint">
         {TOPUP_COPY.note} {TOPUP_COPY.noteLinks.prefix}{' '}

@@ -1,9 +1,11 @@
-// 兑换码区块（v109 AISLG-253；AISLG-255 起从独立面板改成充值面板里的内嵌区块，放在淘宝卡片下面）。
-// 小标题 + 一行「输入框 + 兑换按钮」（窄屏换行，走原生 form 提交，回车也能兑换）+ 本次结果 / 错误 + 底部一行小字。
+// 兑换码区块（v109 AISLG-253；AISLG-255 起从独立面板改成充值面板里的内嵌区块，紧跟 Creem 商品卡）。
+// 小标题 + 一行「输入框 + 购买 + 兑换」（窄屏换行，走原生 form 提交，回车也能兑换）+ 本次结果 / 错误 + 底部一行小字。
+// AISLG-255：「购买」是兑换码区块里指向淘宝商品的 <a target="_blank" rel="noopener noreferrer">（锚点点击天然不会
+// 被拦，所以不用 window.open）；只在中文界面且配了合规的 PUBLIC_TAOBAO_URL 时显示，否则只有「输入框 + 兑换」。
 // 码原样发给服务端：不 trim、不转大小写、不校验格式；输入长度上限见 state/redeemSession.ts。
 // 成功时余额与背包由状态层写回（useCityList.applyItems），其他在线连接靠 PUSH_ACCOUNT_STATE 同步。
 
-import { useCopy } from '../../i18n/bundle';
+import { useCopy, useLang } from '../../i18n/bundle';
 import { TAOBAO_SHOP_URL, isSafeShopUrl } from '../../api/shopUrl';
 import { REDEEM_CODE_MAX_LENGTH, type RedeemSession } from '../../state/redeemSession';
 
@@ -13,6 +15,9 @@ interface RedeemCodeSectionProps {
 
 export function RedeemCodeSection({ redeem }: RedeemCodeSectionProps) {
   const { REDEEM_COPY } = useCopy();
+  const lang = useLang();
+  // 淘宝买家是中文用户：英文界面不显示购买入口（与已删掉的淘宝卡片判断一致）
+  const showBuy = lang === 'zh' && isSafeShopUrl(TAOBAO_SHOP_URL);
   const canSubmit = redeem.code.trim().length > 0 && !redeem.busy;
   const submit = () => {
     if (canSubmit) {
@@ -48,6 +53,17 @@ export function RedeemCodeSection({ redeem }: RedeemCodeSectionProps) {
           aria-label={REDEEM_COPY.placeholder}
           className="min-w-[8rem] flex-1 basis-[10rem] rounded border border-line bg-panel px-2 py-1 font-mono text-[13px] tracking-wider text-fg outline-none placeholder:text-faint focus:border-accent-dim"
         />
+        {showBuy ? (
+          <a
+            role="redeem-code-buy-link"
+            href={TAOBAO_SHOP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center rounded border border-accent-dim bg-panel px-3 py-1 text-[12.5px] text-accent"
+          >
+            {REDEEM_COPY.buy}
+          </a>
+        ) : null}
         <button
           type="submit"
           role="redeem-code-submit"

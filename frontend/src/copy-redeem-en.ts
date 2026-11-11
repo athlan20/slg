@@ -5,6 +5,7 @@ export const REDEEM_COPY_EN = {
   sectionTitle: 'Redeem code',
   placeholder: 'Enter your code',
   submit: 'Redeem',
+  buy: 'Buy',
   submitting: 'Redeeming…',
   hint: 'A code from a shop or event. Case-insensitive, hyphens optional.',
   hintTaobao: 'Find your code in your order; case-insensitive, hyphens optional.',
