@@ -3,15 +3,24 @@
 // - redeem_batches：一个批次一份奖励包（rewards 是 jsonb）+ 类型（single 一次性码 / shared 通用码）
 //   + 可选的过期时间 + 停用标记；通用码必填 max_redemptions（最多兑换人数），一次性码为 null。
 // - redeem_codes：码（规范化后的 16 位大写字符）→ 批次；码只在运营脚本创建 / 导出时可见。
-// - redeem_claims：谁在哪个批次领过。唯一约束 (batch_id, account_id) 保证「同一账号同一批次只领一次」；
-//   冗余 kind 后建的部分唯一索引（code WHERE kind = 'single'）保证一次性码只被用一次，
-//   通用码同一个 code 允许多行。码只在已领取时写入，所以这里不对 redeem_codes 建外键（码行永不清）。
+// - redeem_claims：谁在哪个批次领过。两个部分唯一索引分开管两类码：
+//   code WHERE kind = 'single' 保证一次性码只被一个账号用一次；
+//   (batch_id, account_id) WHERE kind = 'shared' 保证通用码每个账号同一批次只领一次。
+//   一次性码**没有**「同一账号同一批次只领一次」的限制（AISLG-256）：买家一次买多张券号时每个码都能用。
+//   通用码一个批次只有一个码，所以「同批同账号」就是「同码同账号」。
+//   冗余 kind 后建的部分唯一索引让通用码同一个 code 允许多行。
+//   码只在已领取时写入，所以这里不对 redeem_codes 建外键（码行永不清）。
 // - redeem_attempts：兑换尝试（ok = 是否成功），用来统计每账号每小时的失败次数；保留 7 天，由 Worker 清理。
 // 四张表都**不进** season-tables.ts 的 RESET_TABLES：兑换记录不随换季清空（见 KEEP_TABLES）。
 //
 // AISLG-255（淘宝渠道配套）只加两列，都用 ADD COLUMN IF NOT EXISTS，存量行为 null、不改旧数据：
 // - redeem_batches.channel：渠道标记（如 taobao），对账时按渠道汇总；
 // - redeem_codes.voided_at：作废时刻（买家退款时客服作废未兑换的码），兑换按 CODE_INVALID 处理。
+//
+// AISLG-256（礼券 / 券号）放开一次性码的「同一批次每人只能兑一张」：
+// - 旧库有的 redeem_claims_batch_account_key UNIQUE (batch_id, account_id) 用 DROP CONSTRAINT IF EXISTS 删掉；
+// - 换成部分唯一索引 uq_redeem_claims_shared_account ... WHERE kind = 'shared'（通用码每人一次照旧）；
+// - 新建库的 CREATE TABLE 不再带那条约束。两条路径最终规则一致，存量 claim 行都满足新规则、不改数据。
 
 export const REDEEM_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS redeem_batches (
@@ -49,11 +58,14 @@ CREATE TABLE IF NOT EXISTS redeem_claims (
   code text NOT NULL,
   kind text NOT NULL,
   account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-  claimed_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT redeem_claims_batch_account_key UNIQUE (batch_id, account_id)
+  claimed_at timestamptz NOT NULL DEFAULT now()
 );
 -- 一次性码：一个码只能被一个账号兑换一次。通用码同一个 code 可以有多行，所以用部分唯一索引。
 CREATE UNIQUE INDEX IF NOT EXISTS uq_redeem_claims_single_code ON redeem_claims (code) WHERE kind = 'single';
+-- AISLG-256：一次性码不再限制「同一账号同一批次只领一张」，删掉旧库上的整表唯一约束；
+-- 改为只约束通用码（一个批次只有一个码，所以「同批同账号」即「同码同账号」）。重复启动是幂等的。
+ALTER TABLE redeem_claims DROP CONSTRAINT IF EXISTS redeem_claims_batch_account_key;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_redeem_claims_shared_account ON redeem_claims (batch_id, account_id) WHERE kind = 'shared';
 
 CREATE TABLE IF NOT EXISTS redeem_attempts (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
