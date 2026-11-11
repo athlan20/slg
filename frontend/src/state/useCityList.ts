@@ -13,6 +13,14 @@ export interface GiftView {
   seasonGrant: number;
 }
 
+/** 道具 / 货币变化的增量（只含给出的字段） */
+export interface ItemsUpdate {
+  items?: Partial<ItemCounts>;
+  paidCounts?: Partial<ItemCounts>;
+  gift?: number;
+  ingot?: number;
+}
+
 export interface CityList {
   cities: CityRefView[];
   branch: BranchInfoView | null;
@@ -22,14 +30,18 @@ export interface CityList {
   gift: GiftView | null;
   /** 道具背包数量（v90，AISLG-222；GET_STATE 的 items，未拉到为 null） */
   items: ItemCounts | null;
+  /** 每种道具里元宝买的张数（v108，AISLG-251；换季保留，未拉到为 null） */
+  paidCounts: ItemCounts | null;
+  /** 元宝余额（v108，AISLG-251；永久保留，未拉到为 null） */
+  ingot: number | null;
   /** 城池迁移视图（v91，AISLG-220；GET_STATE 的 moveCity，未拉到为 null） */
   moveCity: MoveCityView | null;
   /** 当前正在操作的城池 id（null = 尚未获取） */
   activeCityId: string | null;
   /** 吸收一次 GET_STATE 响应的 cities / branch；选中的城已不存在时复位主城 */
   applyState: (data: Record<string, unknown> | undefined) => void;
-  /** 吸收道具变化（BUY_ITEM 响应、PUSH_ACCOUNT_STATE items_changed）：只改给出的字段，礼金余额保留每季额度 */
-  applyItems: (update: { items?: Partial<ItemCounts>; gift?: number }) => void;
+  /** 吸收道具变化（BUY_ITEM / GET_ITEMS 响应、PUSH_ACCOUNT_STATE items_changed / ingot_changed）：只改给出的字段，礼金余额保留每季额度 */
+  applyItems: (update: ItemsUpdate) => void;
   /** 登录 / 登出 / 重置时复位 */
   reset: () => void;
   /** 切换操作城池：改请求注入、清掉旧城状态，随后由调用方重拉 */
@@ -42,6 +54,8 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
   const [capitalSwap, setCapitalSwap] = useState<CapitalSwapView | null>(null);
   const [gift, setGift] = useState<GiftView | null>(null);
   const [items, setItems] = useState<ItemCounts | null>(null);
+  const [paidCounts, setPaidCounts] = useState<ItemCounts | null>(null);
+  const [ingot, setIngot] = useState<number | null>(null);
   const [moveCity, setMoveCity] = useState<MoveCityView | null>(null);
   const [activeCityId, setActive] = useState<string | null>(null);
 
@@ -69,6 +83,13 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     if (bag && typeof bag === 'object') {
       setItems(bag);
     }
+    const paid = data?.paidCounts as ItemCounts | undefined;
+    if (paid && typeof paid === 'object') {
+      setPaidCounts(paid);
+    }
+    if (typeof data?.ingot === 'number') {
+      setIngot(data.ingot);
+    }
     const move = data?.moveCity as MoveCityView | undefined;
     if (move && Array.isArray(move.cities)) {
       setMoveCity(move);
@@ -79,10 +100,17 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     }
   }, []);
 
-  const applyItems = useCallback((update: { items?: Partial<ItemCounts>; gift?: number }) => {
+  const applyItems = useCallback((update: ItemsUpdate) => {
     if (update.items) {
       const patch = update.items;
       setItems((prev) => ({ ...(prev ?? ({} as ItemCounts)), ...patch }) as ItemCounts);
+    }
+    if (update.paidCounts) {
+      const patch = update.paidCounts;
+      setPaidCounts((prev) => ({ ...(prev ?? ({} as ItemCounts)), ...patch }) as ItemCounts);
+    }
+    if (typeof update.ingot === 'number') {
+      setIngot(update.ingot);
     }
     if (typeof update.gift === 'number') {
       const balance = update.gift;
@@ -98,6 +126,8 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     setCapitalSwap(null);
     setGift(null);
     setItems(null);
+    setPaidCounts(null);
+    setIngot(null);
     setMoveCity(null);
     setActive(null);
   }, []);
@@ -116,5 +146,5 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     [cities, activeCityId, setCity],
   );
 
-  return { cities, branch, capitalSwap, gift, items, moveCity, activeCityId, applyState, applyItems, reset, select };
+  return { cities, branch, capitalSwap, gift, items, paidCounts, ingot, moveCity, activeCityId, applyState, applyItems, reset, select };
 }

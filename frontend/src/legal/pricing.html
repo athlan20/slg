@@ -1,0 +1,331 @@
+<!doctype html>
+<!-- 定价说明（AISLG-252）：静态页，构建后平铺到站点根 /pricing.html，不经过前端路由、不依赖登录态。
+     客服邮箱不写进仓库：源码里用 {{SUPPORT_EMAIL}} 占位，构建 / dev 时由 tools/legal-pages.ts 用
+     环境变量 PUBLIC_SUPPORT_EMAIL 替换（未配置时显示占位文案，构建不失败）。
+     价格与 AISLG-251（充值元宝）保持一致：1.99 美元 = 1000 元宝，一次性付款、无订阅。 -->
+<html lang="en" data-legal-page="pricing">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pricing · SLG</title>
+    <meta
+      name="description"
+      content="SLG pricing: US$1.99 for 1,000 Ingots, a one-time purchase with no subscription. What Ingots buy and how refunds work."
+    />
+    <meta name="robots" content="index,follow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      /* 与游戏登录页（暗夜皮肤）保持同一套颜色，页面自带样式，不引入外部依赖。 */
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0a0d12;
+        color: #d7dee8;
+        font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      a {
+        color: #2dd4bf;
+      }
+      header[role='legal-page-header'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: baseline;
+        justify-content: space-between;
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.25rem 1.25rem 0.75rem;
+        border-bottom: 1px solid #1e2733;
+        font-size: 13px;
+      }
+      nav[role='legal-page-nav'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.9rem;
+      }
+      nav[role='legal-page-nav'] a {
+        color: #7c8898;
+        text-decoration: none;
+      }
+      nav[role='legal-page-nav'] a:hover,
+      nav[role='legal-page-nav'] a[aria-current='page'] {
+        color: #2dd4bf;
+      }
+      nav[role='legal-page-lang-switch'] {
+        color: #4d5866;
+      }
+      nav[role='legal-page-lang-switch'] a {
+        color: #7c8898;
+        text-decoration: none;
+      }
+      nav[role='legal-page-lang-switch'] a[aria-current='true'] {
+        color: #2dd4bf;
+      }
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 4rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin: 0.5rem 0 0.25rem;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 2rem 0 0.5rem;
+        color: #f1f5f9;
+      }
+      p[role='legal-meta'] {
+        margin: 0 0 1.5rem;
+        color: #4d5866;
+        font-size: 13px;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 0.35rem 0;
+      }
+      /* 价目卡片：与游戏内面板同色（panel / panel-2 + 细边框） */
+      div[role='pricing-package'] {
+        margin: 1.25rem 0;
+        padding: 1rem 1.25rem;
+        border: 1px solid #1e2733;
+        border-radius: 6px;
+        background: #10151d;
+      }
+      div[role='pricing-package'] strong[role='pricing-price'] {
+        display: block;
+        font-size: 1.4rem;
+        color: #2dd4bf;
+      }
+      p[role='pricing-status'] {
+        margin: 0.75rem 0 0;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #1e2733;
+        border-radius: 6px;
+        background: #141a24;
+        font-size: 14px;
+      }
+      footer[role='legal-page-footer'] {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.25rem;
+        border-top: 1px solid #1e2733;
+        color: #7c8898;
+        font-size: 13px;
+      }
+      footer[role='legal-page-footer'] a {
+        margin-right: 0.9rem;
+      }
+      section[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body role="pricing-page">
+    <header role="legal-page-header">
+      <nav role="legal-page-nav">
+        <a href="/" role="legal-nav-home" data-label-en="← SLG" data-label-zh="← SLG 游戏">← SLG</a>
+        <a href="/privacy.html" role="legal-nav-privacy" data-label-en="Privacy Policy" data-label-zh="隐私政策"
+          >Privacy Policy</a
+        >
+        <a href="/terms.html" role="legal-nav-terms" data-label-en="Terms of Service" data-label-zh="服务条款"
+          >Terms of Service</a
+        >
+        <a
+          href="/pricing.html"
+          role="legal-nav-pricing"
+          aria-current="page"
+          data-label-en="Pricing"
+          data-label-zh="定价"
+          >Pricing</a
+        >
+      </nav>
+      <nav role="legal-page-lang-switch" aria-label="Language">
+        <a href="#en" role="legal-lang-en" data-legal-lang="en">English</a>
+        <span aria-hidden="true">|</span>
+        <a href="#zh-CN" role="legal-lang-zh" data-legal-lang="zh">中文</a>
+      </nav>
+    </header>
+
+    <main>
+      <section lang="en" id="en" role="pricing-en">
+        <h1>Pricing</h1>
+        <p role="legal-meta">Last updated: 2026-11-11</p>
+
+        <p>
+          SLG is free to play: sign in with Google or GitHub and the whole game — cities, armies, seasons — is yours at
+          no cost. Ingots are an optional extra that buys convenience items only. There is no paywall, no subscription
+          and nothing auto-renews.
+        </p>
+
+        <div role="pricing-package">
+          <strong role="pricing-price">US$1.99 = 1,000 Ingots</strong>
+          <span role="pricing-terms">One-time payment · no subscription</span>
+        </div>
+
+        <p role="pricing-status">
+          <strong>Coming soon.</strong> The purchase flow is still being finalized. The price above is final and will not
+          change when it launches.
+        </p>
+
+        <h2>What Ingots buy</h2>
+        <ul role="pricing-items">
+          <li><strong>City Move Order</strong> — 30 Ingots. Moves one of your cities to a random free tile.</li>
+          <li>
+            <strong>Advanced City Move Order</strong> — 50 Ingots. Moves one of your cities to coordinates you choose.
+          </li>
+        </ul>
+        <p>
+          Ingots are only used for convenience items like these. They never expire and are <strong>not</strong> reset
+          when a season changes. Gift credits are different: they are free, granted every season, and reset to zero when
+          the season ends.
+        </p>
+
+        <h2>Payment and taxes</h2>
+        <p>
+          Payments will be processed by Creem, acting as Merchant of Record. Depending on where you live, taxes may be
+          added at checkout or already included in the displayed price — the final amount is always shown on Creem's
+          checkout page before you confirm the payment.
+        </p>
+
+        <h2>Refunds</h2>
+        <p>
+          If you bought Ingots and have not used them, you can request a refund within 7 days of the purchase by writing
+          to <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> from the email address linked to your account.
+          Ingots you have already spent are not refundable. The full rules are in the
+          <a href="/terms.html">Terms of Service</a>.
+        </p>
+
+        <h2>Questions</h2>
+        <p>
+          Anything unclear about pricing or a charge?
+          <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>. See also the
+          <a href="/privacy.html">Privacy Policy</a>.
+        </p>
+      </section>
+
+      <section lang="zh-CN" id="zh-CN" role="pricing-zh">
+        <h1>定价说明</h1>
+        <p role="legal-meta">最后更新：2026-11-11</p>
+
+        <p>
+          SLG 可以免费玩：用 Google 或 GitHub 登录后，全部玩法——城池、军队、赛季——都不花钱。元宝是可选的额外消费，
+          只用来买便利道具。没有付费墙、没有订阅，也不会有任何自动续费。
+        </p>
+
+        <div role="pricing-package">
+          <strong role="pricing-price">1.99 美元 = 1000 元宝</strong>
+          <span role="pricing-terms">一次性付款 · 无订阅</span>
+        </div>
+
+        <p role="pricing-status">
+          <strong>即将推出。</strong> 充值功能仍在收尾。上面的价格已确定，上线时不会改变。
+        </p>
+
+        <h2>元宝能买什么</h2>
+        <ul role="pricing-items">
+          <li><strong>迁城令</strong> — 30 元宝。把一座城随机迁到一块空野地。</li>
+          <li><strong>高级迁城令</strong> — 50 元宝。把一座城迁到你指定的坐标。</li>
+        </ul>
+        <p>
+          元宝只用于这类便利道具，不会过期，<strong>不</strong>随换季清零。礼金不同：礼金是免费资源，每赛季发放，
+          赛季结束后清零。
+        </p>
+
+        <h2>付款与税费</h2>
+        <p>
+          付款由 Creem 作为 Merchant of Record（记录商户）处理。按你所在地区的规定，税费可能在结账时加收，也可能已包含在
+          显示价格中——最终金额始终会在 Creem 结账页、你确认付款之前显示。
+        </p>
+
+        <h2>退款</h2>
+        <p>
+          充值后<strong>未使用</strong>的元宝，可在购买后 7 天内发邮件到
+          <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> 申请退款（请用与账号绑定的邮箱发送）。已使用的部分
+          不予退还。完整规则见<a href="/terms.html">服务条款</a>。
+        </p>
+
+        <h2>问题咨询</h2>
+        <p>
+          对定价或某笔扣款有疑问？<a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>。另见
+          <a href="/privacy.html">隐私政策</a>。
+        </p>
+      </section>
+    </main>
+
+    <footer role="legal-page-footer">
+      <a href="/privacy.html" data-label-en="Privacy Policy" data-label-zh="隐私政策">Privacy Policy</a>
+      <a href="/terms.html" data-label-en="Terms of Service" data-label-zh="服务条款">Terms of Service</a>
+      <a href="/pricing.html" data-label-en="Pricing" data-label-zh="定价">Pricing</a>
+      <a href="mailto:{{SUPPORT_EMAIL}}" role="legal-footer-support">{{SUPPORT_EMAIL}}</a>
+    </footer>
+
+    <script>
+      // 中英文同页：按语言只显示一段；没有 JS 时两段都显示（两段都能读，不影响抓取器）。
+      // 语言优先取游戏的 localStorage 选择（slg-lang），否则按浏览器语言：zh 开头用中文，其余英文。
+      (function () {
+        var sections = {
+          en: document.getElementById('en'),
+          zh: document.getElementById('zh-CN'),
+        };
+        if (!sections.en || !sections.zh) return;
+
+        function applyLabels(lang) {
+          var nodes = document.querySelectorAll('[data-label-en]');
+          for (var i = 0; i < nodes.length; i += 1) {
+            var node = nodes[i];
+            node.textContent = lang === 'zh' ? node.getAttribute('data-label-zh') : node.getAttribute('data-label-en');
+          }
+        }
+
+        function show(lang) {
+          var isZh = lang === 'zh';
+          sections.en.hidden = isZh;
+          sections.zh.hidden = !isZh;
+          document.documentElement.lang = isZh ? 'zh-CN' : 'en';
+          applyLabels(lang);
+          var links = document.querySelectorAll('[data-legal-lang]');
+          for (var i = 0; i < links.length; i += 1) {
+            links[i].setAttribute('aria-current', String(links[i].getAttribute('data-legal-lang') === lang));
+          }
+        }
+
+        function detect() {
+          var stored = null;
+          try {
+            stored = localStorage.getItem('slg-lang');
+          } catch (error) {
+            /* 隐私模式下 localStorage 可能不可用，回落到浏览器语言 */
+          }
+          if (stored === 'zh' || stored === 'en') return stored;
+          var tags = navigator.languages || [navigator.language || ''];
+          for (var i = 0; i < tags.length; i += 1) {
+            if (typeof tags[i] === 'string' && tags[i].toLowerCase().indexOf('zh') === 0) return 'zh';
+          }
+          return 'en';
+        }
+
+        show(detect());
+
+        // 「English | 中文」：有 JS 时只切换显示，不跳转（锚点仅作为无 JS 时的定位手段）
+        var switches = document.querySelectorAll('[data-legal-lang]');
+        for (var i = 0; i < switches.length; i += 1) {
+          switches[i].addEventListener('click', function (event) {
+            event.preventDefault();
+            show(this.getAttribute('data-legal-lang'));
+            window.scrollTo(0, 0);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

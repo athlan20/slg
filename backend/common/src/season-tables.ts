@@ -22,6 +22,22 @@ export const KEEP_TABLES: readonly string[] = [
   'alliance_members',
   // 联盟外交关系（v77，AISLG-195）：与联盟一致跨季保留
   'alliance_relations',
+  // 道具背包（v108，AISLG-251 起从 RESET 移到 KEEP）：元宝买的道具是真金白银，不能季末作废——
+  // 换季只用 UPDATE 把 count 收敛到 paid_count、删掉 count = 0 的行（见 worker/src/season-reset.ts），
+  // 不整表清空。礼金买的 / 发放的仍然换季作废（paid_count = 0，换季后收敛成 0 并被删除）。
+  'user_items',
+  // 充值订单与回调去重（v108，AISLG-251）：跨季保留——退款 / 拒付可能在赛季结束之后才到，
+  // 收据与去重记录也不能随换季消失（accounts.ingot 更不会被重置）
+  'topup_orders',
+  'payment_webhook_events',
+  // 兑换码（v109，AISLG-253）：批次、码、领取记录与兑换尝试全部跨季保留——兑换记录不能随换季消失
+  //（一次性码只被用一次、通用码每个账号只领一次这两条约束靠它们；一次性码不限制同账号兑同批多张，AISLG-256），
+  // 尝试记录只按 7 天保留期清理。
+  // 福利发的道具走 grantItem（只加 count），那部分仍然随换季作废，元宝（accounts.ingot）不清零。
+  'redeem_batches',
+  'redeem_codes',
+  'redeem_claims',
+  'redeem_attempts',
 ];
 
 /** 换季时清空的表：世界级 + 账号级游戏态 + 榜单快照 */
@@ -104,8 +120,6 @@ export const RESET_TABLES: readonly string[] = [
   'account_stratagem_tokens',
   'city_stratagem_effects',
   'stratagem_immunity',
-  // 道具背包（v90，AISLG-222）：数量随换季清空，与礼金同口径
-  'user_items',
   // 战争迷雾（v92，AISLG-224）：探索位图与上次看到的快照随赛季清空（fog_enabled 设置保留在 settings）
   'fog_explored',
   'fog_seen',

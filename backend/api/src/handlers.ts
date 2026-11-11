@@ -99,8 +99,12 @@ import { handleDiscardCity } from './handlers-discard';
 import { handleSetCapital } from './handlers-capital';
 import { loadCapitalSwapView } from '../../common/src/capital-swap-db';
 import { loadGift } from '../../common/src/gift-db';
-import { loadItems } from '../../common/src/items-db';
+import { loadItems, loadPaidCounts } from '../../common/src/items-db';
+import { loadIngot } from '../../common/src/ingot-db';
+import type { PaymentService } from '../../common/src/payments';
 import { handleBuyItem, handleGetItems } from './handlers-items';
+import { handleRedeemCode } from './handlers-redeem';
+import { handleCreateTopup } from './handlers-topup';
 import { handleMoveCity } from './handlers-move-city';
 import { loadMoveCityView } from '../../common/src/move-city-db';
 import { SEASON_GIFT } from '../../common/src/gift';
@@ -120,6 +124,9 @@ export interface HandlerContext {
   /** 关闭密码登录的站点 Host（v47，AISLG-130：PASSWORD_LOGIN_DISABLED_HOSTS，如国际站
    *  slg.yuntianyou.cc）；这些 Host 上的连接发 LOGIN 密码登录返回 PASSWORD_LOGIN_DISABLED */
   passwordDisabledHosts: ReadonlySet<string>;
+  /** 支付渠道（v108，AISLG-251）：没配置商户密钥 / 商品 id 时为 null——CREATE_TOPUP 返回
+   *  TOPUP_UNAVAILABLE、回调路由回 503，其余功能（含礼金买道具）不受影响 */
+  payments?: PaymentService | null;
 }
 
 /** 登录前即可发送的协议：LOGIN、微信扫码登录一组（WX_QR_CREATE 的 bind 用途在处理器内要求已登录）、
@@ -485,12 +492,20 @@ async function dispatchOp(
       await handleDismissAssist(ctx, conn, op, seq, data);
       break;
     case Op.GET_ITEMS:
-      // v90（AISLG-222）：道具背包 / 目录 / 礼金余额，只读
+      // v90（AISLG-222）：道具背包 / 目录 / 礼金余额，只读；v108 加元宝价与换季保留数
       await handleGetItems(ctx, conn, op, seq);
+      break;
+    case Op.CREATE_TOPUP:
+      // v108（AISLG-251）：发起充值（仅玩家连接；Agent 返回 AGENT_FORBIDDEN）
+      await handleCreateTopup(ctx, conn, op, seq, data);
       break;
     case Op.BUY_ITEM:
       // v90（AISLG-222）：礼金买道具
       await handleBuyItem(ctx, conn, op, seq, data);
+      break;
+    case Op.REDEEM_CODE:
+      // v109（AISLG-253）：兑换码（玩家与 Agent 通用；失败次数限制在 redeem-db.ts）
+      await handleRedeemCode(ctx, conn, op, seq, data);
       break;
     case Op.MOVE_CITY:
       // v91（AISLG-220）：城池迁移（随机迁 / 指定坐标迁，支持 preview）
@@ -713,9 +728,23 @@ async function handleGetState(
   const gift = await loadGift(ctx.pool, accountId);
   // v90（AISLG-222）：道具背包数量（与 GET_ITEMS 的 items 同口径）
   const items = await loadItems(ctx.pool, accountId);
+  // v108（AISLG-251）：每种道具里元宝买的张数（换季保留）与元宝余额（永久保留、换季不清零）
+  const paidCounts = await loadPaidCounts(ctx.pool, accountId);
+  const ingot = await loadIngot(ctx.pool, accountId);
   // v91（AISLG-220）：逐城迁城不可迁原因、出限截止时刻与两种令的持有数
   const moveCity = await loadMoveCityView(ctx.pool, accountId, items);
-  respondOk(ctx.registry, conn, op, seq, { city, cities, branch, capitalSwap, gift, giftSeasonGrant: SEASON_GIFT, items, moveCity });
+  respondOk(ctx.registry, conn, op, seq, {
+    city,
+    cities,
+    branch,
+    capitalSwap,
+    gift,
+    giftSeasonGrant: SEASON_GIFT,
+    items,
+    paidCounts,
+    ingot,
+    moveCity,
+  });
 }
 
 async function handleGetEvents(

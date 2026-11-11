@@ -160,6 +160,7 @@ cp backend/.env.example backend/.env    # 填入 DATABASE_URL
 - [Agent API 参考](docs/agent-api.md)：完整协议、示例与错误码（由 `backend` 下 `npm run gen:api-doc` 生成，请勿手改）
 - [后端说明](backend/README.md)：运行方式、环境变量、关键机制与数值
 - [前端说明](frontend/README.md)：命令、目录结构与皮肤
+- [兑换码（礼券）运维手册](docs/redeem-ops.md)：批量生成、导出、查码、作废、对账，面向运维
 - [玩家对抗规则](docs/phase-3-pvp.md)：PvP 的设计取舍与具体数值
 - [战斗数值校准](docs/battle-calibration.md)：战斗与掠夺数值是怎么模拟定下来的
 - [第一期功能范围](docs/phase-1-launch-scope.md)、[早期最小闭环设计](docs/phase-1-mvp.md)：项目早期的设计记录

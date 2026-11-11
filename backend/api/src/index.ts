@@ -29,6 +29,8 @@ import {
   readPasswordDisabledHosts,
 } from './site-config';
 import { registerGithubCallbackRoute } from './github-callback';
+import { registerPayWebhookRoute } from './pay-creem-webhook';
+import { createPaymentService } from '../../common/src/payments';
 import { requestLogSerializer } from './request-log';
 import { startDbProbe, startLoopLagMonitor } from '../../common/src/diag-probe';
 import { registerAgentApiRoutes } from './agent-api-routes';
@@ -104,6 +106,17 @@ async function main(): Promise<void> {
   const wxTtl = Number(process.env.WX_TICKET_TTL_SECONDS || 180);
   const wx = createWxService(wechatConfig ? createWechatClient(wechatConfig) : null, Number.isFinite(wxTtl) && wxTtl > 0 ? wxTtl : 180);
   const ctx: HandlerContext = { pool, registry, wx, passwordDisabledHosts: readPasswordDisabledHosts() };
+  // 充值（v108，AISLG-251）：没配 CREEM_* 时整体关闭——CREATE_TOPUP 返回 TOPUP_UNAVAILABLE，
+  // 回调路由回 503，其余功能（含礼金买道具）照常
+  ctx.payments = createPaymentService();
+  console.log(
+    ctx.payments
+      ? `slg-api topup enabled (provider=${ctx.payments.provider.provider})`
+      : 'slg-api topup disabled (CREEM_API_KEY / CREEM_WEBHOOK_SECRET / CREEM_PRODUCT_TOPUP_1000 not all set)',
+  );
+  if (ctx.payments?.provider.provider === 'fake') {
+    console.warn('slg-api topup uses the FAKE payment provider (PAYMENT_PROVIDER=fake): 只允许测试环境');
+  }
   console.log(
     wechatConfig
       ? `slg-api wechat qr login enabled (env=${wechatConfig.envVersion}, ticket ttl=${wxTtl}s)`
@@ -181,12 +194,15 @@ async function main(): Promise<void> {
   });
   // GitHub OAuth 回调（v45）：302 回前端；此路由不能被 CDN 缓存（README 部署注意）
   registerGithubCallbackRoute(app, { github, ctx });
+  // 充值回调（v108，AISLG-251）：POST /pay/creem/webhook，验签用原始请求体；此路由不能被 CDN 缓存
+  registerPayWebhookRoute(app, { ctx });
 
   app.get('/ws', { websocket: true }, (socket: WebSocket, request) => {
     const conn: ConnInfo = {
       socket,
       ip: request.ip || null,
       host: hostFromHeaders(request.headers, TRUST_PROXY !== false),
+      origin: typeof request.headers.origin === 'string' ? request.headers.origin : null,
       accountId: null,
       username: null,
       role: null,

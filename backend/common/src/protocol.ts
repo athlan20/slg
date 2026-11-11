@@ -274,6 +274,14 @@ export const Op = {
   /** C→S 查询五方势力（v99，AISLG-239：无参数、只读；五家的名称 / 首领 / 老巢坐标 / 当前半径 / 持城数，
    *  玩家与 Agent 通用。开关 faction_enabled 关闭时 enabled=false、factions 为空数组） */
   GET_FACTIONS: 154,
+  /** C→S 发起充值（v108，AISLG-251：data.productId 目前只接受 topup_199 = 1.99 美元 / 1000 元宝；返回
+   *  { orderId, checkoutUrl } 让玩家在新窗口打开渠道结账页。**仅玩家连接**：付款必须真人在浏览器里完成，
+   *  Agent 连接返回 AGENT_FORBIDDEN 且不进 agent-api 文档） */
+  CREATE_TOPUP: 155,
+  /** C→S 兑换码兑换（v109，AISLG-253：data.code 是玩家输入的原文，大小写 / 空格 / 横线不敏感；
+   *  成功返回 { rewards, ingot, items }。玩家与 Agent 通用；每账号每小时最多失败 10 次，超过返回
+   *  CODE_RATE_LIMITED） */
+  REDEEM_CODE: 156,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -327,7 +335,8 @@ export const Op = {
   PUSH_WX_QR_STATUS: 2018,
   /** S→C 推送：聊天新消息（v51；世界频道按屏蔽关系过滤，私聊推给双方的玩家连接；Agent 连接不收） */
   PUSH_CHAT_MESSAGE: 2019,
-  /** S→C 推送：账号级状态变化（v52：account_renamed=昵称被 SET_NICKNAME 修改；账号全部在线连接收到，含 Agent） */
+  /** S→C 推送：账号级状态变化（v52：account_renamed=昵称被 SET_NICKNAME 修改；v90 items_changed=道具 / 礼金变化；
+   *  v108 ingot_changed=元宝余额变化（充值入账 / 退款回收，不新增推送号）；账号全部在线连接收到，含 Agent） */
   PUSH_ACCOUNT_STATE: 2020,
   /** S→C 推送：竞技场状态变化（v53：challenged 被挑战 / daily_reward 每日奖励到账 / milestone 首次进入新名次档；账号全部在线连接收到，含 Agent） */
   PUSH_ARENA_STATE: 2021,
@@ -729,6 +738,28 @@ export const ErrorCode = {
   CITY_AMBUSHED: 'CITY_AMBUSHED',
   /** 礼金不足（v89，AISLG-221）：扣除失败，余额与其他数据都不变（响应附 balance） */
   INSUFFICIENT_GIFT: 'INSUFFICIENT_GIFT',
+  /** 元宝不足（v108，AISLG-251）：扣除失败，余额与其他数据都不变（响应附 balance / cost） */
+  INSUFFICIENT_INGOT: 'INSUFFICIENT_INGOT',
+  /** 充值商品不存在（v108，AISLG-251）：productId 不在服务端商品表里（目前只有 topup_199） */
+  TOPUP_PRODUCT_INVALID: 'TOPUP_PRODUCT_INVALID',
+  /** 本月（UTC 自然月）成功充值已达上限 10 次，拒绝创建订单（v108，AISLG-251；响应附 limit / used） */
+  TOPUP_MONTHLY_LIMIT: 'TOPUP_MONTHLY_LIMIT',
+  /** 最近 1 小时创建的订单已达上限 5 个，拒绝创建（v108，AISLG-251；响应附 limit / used） */
+  TOPUP_TOO_MANY_PENDING: 'TOPUP_TOO_MANY_PENDING',
+  /** 充值渠道不可用（v108，AISLG-251）：服务端没配商户密钥 / 商品 id，或调用渠道失败——前端把充值按钮置灰 */
+  TOPUP_UNAVAILABLE: 'TOPUP_UNAVAILABLE',
+  /** 兑换码无效（v109，AISLG-253）：码不存在、格式不对（规范化后不是 16 位）、批次已停用 */
+  CODE_INVALID: 'CODE_INVALID',
+  /** 兑换码所属批次已过期（v109，AISLG-253） */
+  CODE_EXPIRED: 'CODE_EXPIRED',
+  /** 一次性码已被兑换（v109，AISLG-253；兑换后作废） */
+  CODE_USED: 'CODE_USED',
+  /** 本账号已经兑换过这个通用码（v109，AISLG-253；AISLG-256 起只在通用码出现，一次性的同批其它码可以继续兑） */
+  CODE_BATCH_CLAIMED: 'CODE_BATCH_CLAIMED',
+  /** 通用码的兑换人数已达上限（v109，AISLG-253；附 limit / used） */
+  CODE_EXHAUSTED: 'CODE_EXHAUSTED',
+  /** 输错次数太多（v109，AISLG-253）：每账号每小时最多失败 10 次，超过后 1 小时内所有兑换请求返回本码（附 retryAfterSeconds） */
+  CODE_RATE_LIMITED: 'CODE_RATE_LIMITED',
   /** 道具不足（v90，AISLG-222）：消耗失败，数量不变（附 itemId、count） */
   INSUFFICIENT_ITEM: 'INSUFFICIENT_ITEM',
   /** 道具堆叠上限（v90，AISLG-222）：购买后会超过 stackMax，不扣礼金（附 stackMax、have、canBuy） */
@@ -1438,6 +1469,15 @@ export type {
   BuyItemResponseData,
   ItemsStatePushData,
 } from './protocol-items';
+// 充值（v108，AISLG-251）：CREATE_TOPUP（op 155）与元宝推送（PUSH_ACCOUNT_STATE reason = ingot_changed）
+export type {
+  CreateTopupRequestData,
+  CreateTopupResponseData,
+  TopupProductView,
+  IngotStatePushData,
+} from './protocol-topup';
+// 兑换码（v109，AISLG-253）：REDEEM_CODE（op 156）
+export type { RedeemCodeRequestData, RedeemCodeResponseData } from './protocol-redeem';
 export type { FacilityBuildRequestData, FacilityBuildResponseData } from './protocol-facility';
 export { FACILITY_KINDS, isFacilityKind } from './facility';
 export type { FacilityKind } from './facility';

@@ -1,0 +1,449 @@
+<!doctype html>
+<!-- 服务条款（AISLG-252）：静态页，构建后平铺到站点根 /terms.html，不经过前端路由、不依赖登录态。
+     客服邮箱不写进仓库：源码里用 {{SUPPORT_EMAIL}} 占位，构建 / dev 时由 tools/legal-pages.ts 用
+     环境变量 PUBLIC_SUPPORT_EMAIL 替换（未配置时显示占位文案，构建不失败）。
+     虚拟货币与退款条款须与 AISLG-251（充值元宝）保持一致：1.99 美元 = 1000 元宝、不可转让不可提现、
+     7 天内未使用可退。 -->
+<html lang="en" data-legal-page="terms">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Terms of Service · SLG</title>
+    <meta
+      name="description"
+      content="SLG terms of service: accounts, fair play, agent tokens, virtual currency, refunds and contact."
+    />
+    <meta name="robots" content="index,follow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      /* 与游戏登录页（暗夜皮肤）保持同一套颜色，页面自带样式，不引入外部依赖。 */
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0a0d12;
+        color: #d7dee8;
+        font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      a {
+        color: #2dd4bf;
+      }
+      header[role='legal-page-header'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: baseline;
+        justify-content: space-between;
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.25rem 1.25rem 0.75rem;
+        border-bottom: 1px solid #1e2733;
+        font-size: 13px;
+      }
+      nav[role='legal-page-nav'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.9rem;
+      }
+      nav[role='legal-page-nav'] a {
+        color: #7c8898;
+        text-decoration: none;
+      }
+      nav[role='legal-page-nav'] a:hover,
+      nav[role='legal-page-nav'] a[aria-current='page'] {
+        color: #2dd4bf;
+      }
+      nav[role='legal-page-lang-switch'] {
+        color: #4d5866;
+      }
+      nav[role='legal-page-lang-switch'] a {
+        color: #7c8898;
+        text-decoration: none;
+      }
+      nav[role='legal-page-lang-switch'] a[aria-current='true'] {
+        color: #2dd4bf;
+      }
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 4rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin: 0.5rem 0 0.25rem;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 2rem 0 0.5rem;
+        color: #f1f5f9;
+      }
+      p[role='legal-meta'] {
+        margin: 0 0 1.5rem;
+        color: #4d5866;
+        font-size: 13px;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 0.35rem 0;
+      }
+      footer[role='legal-page-footer'] {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.25rem;
+        border-top: 1px solid #1e2733;
+        color: #7c8898;
+        font-size: 13px;
+      }
+      footer[role='legal-page-footer'] a {
+        margin-right: 0.9rem;
+      }
+      section[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body role="legal-terms-page">
+    <header role="legal-page-header">
+      <nav role="legal-page-nav">
+        <a href="/" role="legal-nav-home" data-label-en="← SLG" data-label-zh="← SLG 游戏">← SLG</a>
+        <a href="/privacy.html" role="legal-nav-privacy" data-label-en="Privacy Policy" data-label-zh="隐私政策"
+          >Privacy Policy</a
+        >
+        <a
+          href="/terms.html"
+          role="legal-nav-terms"
+          aria-current="page"
+          data-label-en="Terms of Service"
+          data-label-zh="服务条款"
+          >Terms of Service</a
+        >
+        <a href="/pricing.html" role="legal-nav-pricing" data-label-en="Pricing" data-label-zh="定价">Pricing</a>
+      </nav>
+      <nav role="legal-page-lang-switch" aria-label="Language">
+        <a href="#en" role="legal-lang-en" data-legal-lang="en">English</a>
+        <span aria-hidden="true">|</span>
+        <a href="#zh-CN" role="legal-lang-zh" data-legal-lang="zh">中文</a>
+      </nav>
+    </header>
+
+    <main>
+      <section lang="en" id="en" role="legal-terms-en">
+        <h1>Terms of Service</h1>
+        <p role="legal-meta">Last updated: 2026-11-11</p>
+
+        <p>
+          These terms are the agreement between you and the independent developer who runs SLG (the "game"). By creating
+          an account or playing, you accept them. If you do not agree with them, please do not use the game.
+        </p>
+
+        <h2>1. Your account</h2>
+        <ul>
+          <li>
+            You sign in with Google or GitHub. One account per person, and you must be at least 13 years old (or the
+            minimum age where you live).
+          </li>
+          <li>
+            You are responsible for everything done through your account, including anything your AI agent does with
+            your agent token.
+          </li>
+          <li>Do not share, sell, rent or transfer accounts.</li>
+          <li>
+            You can have your account deleted at any time by writing to
+            <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>.
+          </li>
+        </ul>
+
+        <h2>2. Fair play</h2>
+        <p>The game is meant to be fun for everyone. Do not:</p>
+        <ul>
+          <li>use cheats, bots, scripts, modified clients, exploits or bugs to gain an advantage;</li>
+          <li>attack, overload, scrape aggressively or otherwise disrupt the servers or other players' connections;</li>
+          <li>try to access other players' accounts or data;</li>
+          <li>
+            use city names, alliance names or messages to post illegal, hateful, harassing or sexually explicit content,
+            or to spam.
+          </li>
+        </ul>
+        <p>
+          Playing through your own AI client with an agent token is explicitly allowed — that is what the game is built
+          for. We may warn, reset, suspend or close accounts that break these rules; where the situation is unclear we
+          will try to talk to you first.
+        </p>
+
+        <h2>3. Agent tokens</h2>
+        <ul>
+          <li>Agent tokens let an MCP or API client play your account. Treat a token like a password.</li>
+          <li>Tokens are personal and non-transferable: only you may use yours.</li>
+          <li>
+            You are responsible for every action taken with your token, including actions by a third-party AI client you
+            connect. If a token leaks, revoke it in game immediately; we are not responsible for losses caused by a
+            leaked token.
+          </li>
+        </ul>
+
+        <h2>4. Virtual items and currency</h2>
+        <p>
+          <strong>Ingots</strong> (元宝) are the game's virtual currency. When purchases are live you will be able to buy
+          them with real money, and they exist only inside this game.
+        </p>
+        <ul>
+          <li>Ingots can only be used inside the game, to buy convenience items such as city move orders.</li>
+          <li>
+            Ingots cannot be transferred, gifted, traded or sold to anyone else, cannot be withdrawn, cannot be exchanged
+            for cash or any other currency, and are not connected to any other game or platform.
+          </li>
+          <li>Ingots never expire and are <strong>not</strong> reset when a season changes.</li>
+          <li>
+            <strong>Gift credits</strong> are a free resource granted each season. They are reset to zero when the
+            season ends, and they have no cash value.
+          </li>
+          <li>
+            Item prices in Ingots may change over time. The price shown in the shop at the moment you buy is the one that
+            applies.
+          </li>
+        </ul>
+
+        <h2>5. Purchases and refunds</h2>
+        <ul>
+          <li>
+            Current pricing: <strong>US$1.99 for 1,000 Ingots</strong>, a one-time payment with no subscription. Details
+            are on the <a href="/pricing.html">pricing page</a>.
+          </li>
+          <li>
+            Payments are processed by Creem acting as Merchant of Record. Taxes and the final amount are shown on the
+            checkout page before you pay.
+          </li>
+          <li>
+            <strong>Refunds:</strong> if you have bought Ingots and have not used them, you can request a refund within
+            7 days of the purchase by writing to
+            <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> from the email address linked to your account.
+            Ingots you have already spent are not refundable.
+          </li>
+          <li>Gift credits are free and never refundable.</li>
+        </ul>
+
+        <h2>6. Changes and shutdown</h2>
+        <p>
+          The game is a work in progress: rules, numbers, features and content may change, and the service may be
+          interrupted for maintenance or investigation.
+        </p>
+        <p>
+          We may suspend or end the game. If we permanently shut the game down, we refund unused purchased Ingots at the
+          price you paid, using the original payment method where possible.
+        </p>
+
+        <h2>7. No warranty, and limits on liability</h2>
+        <p>
+          The game is provided "as is" and "as available", without warranties of any kind. We do not promise that it will
+          be uninterrupted or error free, or that saved state is never lost (we do keep backups). To the extent the law
+          allows, we are not liable for indirect or consequential losses, and our total liability is limited to what you
+          paid us in the 12 months before the claim. Nothing in these terms limits rights you have under mandatory
+          consumer law where you live.
+        </p>
+
+        <h2>8. Applicable law and disputes</h2>
+        <p>
+          Please contact us first — most problems are solved by a single email. We will try to resolve any dispute
+          quickly, in good faith and in a friendly way. If we cannot, the dispute is handled under the laws that apply
+          to the operator of the game; we do not require you to bring it to a particular court.
+        </p>
+
+        <h2>9. Changes to these terms</h2>
+        <p>
+          If these terms change we update the date at the top of this page, and we announce material changes in game.
+          Continuing to play after a change means you accept the updated terms.
+        </p>
+
+        <h2>10. Contact</h2>
+        <p>
+          Questions about these terms, purchases or refunds:
+          <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>. See also the
+          <a href="/privacy.html">Privacy Policy</a> and <a href="/pricing.html">Pricing</a>.
+        </p>
+      </section>
+
+      <section lang="zh-CN" id="zh-CN" role="legal-terms-zh">
+        <h1>服务条款</h1>
+        <p role="legal-meta">最后更新：2026-11-11</p>
+
+        <p>
+          本条款是你与 SLG（下称“本游戏”）的运营者——一位个人开发者——之间的约定。注册账号或开始游戏即表示你接受本条款；
+          如不接受，请不要使用本游戏。
+        </p>
+
+        <h2>一、账号规则</h2>
+        <ul>
+          <li>
+            使用 Google 或 GitHub 登录。一人一号，且你需年满 13 周岁（或你所在地区规定的最低年龄）。
+          </li>
+          <li>通过你账号进行的一切行为由你负责，包括你的 AI Agent 使用你的令牌所做的操作。</li>
+          <li>账号不得共享、出售、出租或转让。</li>
+          <li>
+            你随时可以发邮件到 <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> 申请删除账号。
+          </li>
+        </ul>
+
+        <h2>二、公平游戏</h2>
+        <p>游戏是为了大家都玩得开心。请不要：</p>
+        <ul>
+          <li>使用外挂、机器人、脚本、改版客户端，或利用漏洞、Bug 获取优势；</li>
+          <li>攻击、压垮、高频抓取或以其他方式干扰服务器或其他玩家的连接；</li>
+          <li>试图访问其他玩家的账号或数据；</li>
+          <li>用城名、联盟名或聊天发布违法、仇恨、骚扰、色情内容，或刷屏。</li>
+        </ul>
+        <p>
+          使用自己的 Agent 令牌、通过自己的 AI 客户端来玩是被明确允许的——本游戏就是为此而做。违反上述规则的账号，我们
+          可能警告、重置、封停或关闭；情况不清楚时，我们会先尝试与你沟通。
+        </p>
+
+        <h2>三、Agent 令牌使用规则</h2>
+        <ul>
+          <li>Agent 令牌用于让 MCP 或 API 客户端代你操作账号。请像对待密码一样对待令牌。</li>
+          <li>令牌仅限本人使用，不可转让。</li>
+          <li>
+            使用你的令牌所做的一切操作由你负责，包括你接入的第三方 AI 客户端的行为。令牌一旦泄露，请立即在游戏内吊销；
+            因令牌泄露造成的损失我们不承担责任。
+          </li>
+        </ul>
+
+        <h2>四、虚拟物品与虚拟货币</h2>
+        <p>
+          <strong>元宝</strong>（Ingots）是本游戏的虚拟货币。充值功能上线后你可以用真实货币购买，它只存在于本游戏之内。
+        </p>
+        <ul>
+          <li>元宝只能在本游戏内使用，用于购买便利道具，例如迁城令。</li>
+          <li>
+            元宝不可转让、不可赠送、不可交易、不可出售给他人，不可提现，不可兑换成现金或任何其他货币，也与任何第三方
+            游戏或平台无关。
+          </li>
+          <li>元宝不会过期，<strong>不</strong>随换季清零。</li>
+          <li>
+            <strong>礼金</strong>是每赛季发放的免费资源，赛季结束后清零，没有现金价值。
+          </li>
+          <li>道具的元宝价格可能调整；以你购买时商店内显示的价格为准。</li>
+        </ul>
+
+        <h2>五、充值与退款</h2>
+        <ul>
+          <li>
+            当前定价：<strong>1.99 美元 = 1000 元宝</strong>，一次性付款，无订阅。详见
+            <a href="/pricing.html">定价说明</a>。
+          </li>
+          <li>付款由 Creem 作为 Merchant of Record（记录商户）处理；税费与最终金额在结账页付款前显示。</li>
+          <li>
+            <strong>退款规则：</strong>充值后<strong>未使用</strong>的元宝，可在购买后 7 天内发邮件到
+            <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> 申请退款（请用与账号绑定的邮箱发送）；已使用的
+            部分不予退还。
+          </li>
+          <li>礼金是免费发放的，任何情况下都不退款。</li>
+        </ul>
+
+        <h2>六、服务调整与终止</h2>
+        <p>
+          游戏仍在持续开发：规则、数值、功能与内容都可能调整，服务也可能因维护或排查而中断。
+        </p>
+        <p>
+          我们可能暂停或终止本游戏。若永久关服，我们会按你购买时的原价，对尚未使用的元宝退款（尽可能按原支付方式退回）。
+        </p>
+
+        <h2>七、免责与责任限制</h2>
+        <p>
+          本游戏按“现状”与“现有可用”提供，不作任何形式的保证。我们不承诺服务不中断、无错误，也不承诺存档永不丢失
+          （我们会做备份）。在法律允许的范围内，我们不承担间接或后果性损失的责任，总责任上限为你提出主张前 12 个月内
+          向我们支付的金额。本条款不排除你依所在地强制性消费者保护法享有的权利。
+        </p>
+
+        <h2>八、适用法律与争议处理</h2>
+        <p>
+          请先联系我们——绝大多数问题一封邮件就能解决。我们会本着善意、友好、尽快地处理任何争议。如确实无法解决，争议
+          按适用于本游戏运营者的法律处理；我们不要求你必须到某个特定法院解决。
+        </p>
+
+        <h2>九、条款更新</h2>
+        <p>
+          本条款如有修改，会更新页面顶部的日期；重要变更会在游戏内公告。修改后继续游戏即视为接受更新后的条款。
+        </p>
+
+        <h2>十、联系方式</h2>
+        <p>
+          关于本条款、充值或退款的问题：<a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>。另见
+          <a href="/privacy.html">隐私政策</a> 与 <a href="/pricing.html">定价说明</a>。
+        </p>
+      </section>
+    </main>
+
+    <footer role="legal-page-footer">
+      <a href="/privacy.html" data-label-en="Privacy Policy" data-label-zh="隐私政策">Privacy Policy</a>
+      <a href="/terms.html" data-label-en="Terms of Service" data-label-zh="服务条款">Terms of Service</a>
+      <a href="/pricing.html" data-label-en="Pricing" data-label-zh="定价">Pricing</a>
+      <a href="mailto:{{SUPPORT_EMAIL}}" role="legal-footer-support">{{SUPPORT_EMAIL}}</a>
+    </footer>
+
+    <script>
+      // 中英文同页：按语言只显示一段；没有 JS 时两段都显示（两段都能读，不影响抓取器）。
+      // 语言优先取游戏的 localStorage 选择（slg-lang），否则按浏览器语言：zh 开头用中文，其余英文。
+      (function () {
+        var sections = {
+          en: document.getElementById('en'),
+          zh: document.getElementById('zh-CN'),
+        };
+        if (!sections.en || !sections.zh) return;
+
+        function applyLabels(lang) {
+          var nodes = document.querySelectorAll('[data-label-en]');
+          for (var i = 0; i < nodes.length; i += 1) {
+            var node = nodes[i];
+            node.textContent = lang === 'zh' ? node.getAttribute('data-label-zh') : node.getAttribute('data-label-en');
+          }
+        }
+
+        function show(lang) {
+          var isZh = lang === 'zh';
+          sections.en.hidden = isZh;
+          sections.zh.hidden = !isZh;
+          document.documentElement.lang = isZh ? 'zh-CN' : 'en';
+          applyLabels(lang);
+          var links = document.querySelectorAll('[data-legal-lang]');
+          for (var i = 0; i < links.length; i += 1) {
+            links[i].setAttribute('aria-current', String(links[i].getAttribute('data-legal-lang') === lang));
+          }
+        }
+
+        function detect() {
+          var stored = null;
+          try {
+            stored = localStorage.getItem('slg-lang');
+          } catch (error) {
+            /* 隐私模式下 localStorage 可能不可用，回落到浏览器语言 */
+          }
+          if (stored === 'zh' || stored === 'en') return stored;
+          var tags = navigator.languages || [navigator.language || ''];
+          for (var i = 0; i < tags.length; i += 1) {
+            if (typeof tags[i] === 'string' && tags[i].toLowerCase().indexOf('zh') === 0) return 'zh';
+          }
+          return 'en';
+        }
+
+        show(detect());
+
+        // 「English | 中文」：有 JS 时只切换显示，不跳转（锚点仅作为无 JS 时的定位手段）
+        var switches = document.querySelectorAll('[data-legal-lang]');
+        for (var i = 0; i < switches.length; i += 1) {
+          switches[i].addEventListener('click', function (event) {
+            event.preventDefault();
+            show(this.getAttribute('data-legal-lang'));
+            window.scrollTo(0, 0);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

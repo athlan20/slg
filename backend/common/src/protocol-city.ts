@@ -200,10 +200,20 @@ export const EventType = {
   GIFT_SPENT: 'gift_spent',
   /** v90（AISLG-222）：道具发放（detail = { itemId, requested, granted, reason }；超出堆叠上限的部分作废） */
   ITEM_GRANTED: 'item_granted',
-  /** v90（AISLG-222）：道具消耗（detail = { itemId, amount, left, reason }；数量不足不写） */
+  /** v90（AISLG-222）：道具消耗（detail = { itemId, amount, left, paidLeft, reason }；数量不足不写） */
   ITEM_USED: 'item_used',
-  /** v90（AISLG-222）：礼金购买道具（detail = { itemId, count, price, cost, owned, gift }） */
+  /** v90（AISLG-222）：礼金购买道具（detail = { itemId, count, price, cost, owned, gift }；v108 起带 currency 与余额） */
   ITEM_BOUGHT: 'item_bought',
+  /** v108（AISLG-251）：元宝扣除（detail = { reason, amount, balance }；扣除失败不写事件） */
+  INGOT_SPENT: 'ingot_spent',
+  /** v109（AISLG-253）：元宝发放（兑换码福利等；detail = { reason, amount, balance }；与充值元宝同账户、永久保留） */
+  INGOT_GRANTED: 'ingot_granted',
+  /** v109（AISLG-253）：兑换码兑换成功（detail = { batchId, codeTail, kind, rewards, ingot, items }；**码只记后 4 位**） */
+  CODE_REDEEMED: 'code_redeemed',
+  /** v108（AISLG-251）：充值入账（detail = { orderId, productId, usdCents, amountPaidCents, ingot, balance, provider }；不含任何支付敏感信息） */
+  TOPUP_PAID: 'topup_paid',
+  /** v108（AISLG-251）：充值退款 / 拒付回收（detail = { orderId, provider, dispute, refundedCents, amountPaidCents, clawed, shortfall, balance, orderStatus }） */
+  TOPUP_REFUNDED: 'topup_refunded',
   /** v91（AISLG-220）：城池迁移（detail = { cityId, mode, from, to, distance, item, oldTile }） */
   CITY_MOVED: 'city_moved',
   /** v9：账号数据被一键重置（游戏数据回到开号初始状态） */

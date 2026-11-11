@@ -116,7 +116,7 @@ season_honors(              -- 荣誉称号
 换季中推 `phase:'resetting'`（进入维护态时）、`phase:'started'`（新赛季开始时）。离线的 Agent 下次连上用 `GET_SEASON` 查到。
 
 预告文案里要带一句“礼金将随换季清零”（AISLG-221）：前端换季预告弹窗（`换季预告弹窗`）的正文已带上这句，英文版同步。礼金规则见 `backend/common/src/gift.ts`：每季开始发 1000，换季清零，不能转让。
-道具背包（AISLG-222）与礼金同口径：换季时 `user_items` 整表清空（`RESET_TABLES`），道具配置见 `backend/common/src/items.ts`。
+道具背包（AISLG-222）：礼金买的 / 任务发放的道具与礼金同口径，换季作废；元宝（AISLG-251，付费货币）买的道具**换季保留**——`user_items.paid_count` 记其中多少张是元宝买的，换季时 `user_items` 只做 `SET count = paid_count`、删掉 `count = 0` 的行（表本身在 `KEEP_TABLES`），`accounts.ingot` 换季不清零。道具配置见 `backend/common/src/items.ts`。
 
 ## 5. 协议（版本 64 → 65，只加不改）
 

@@ -886,6 +886,26 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v89，AISLG-221）礼金余额不足，扣除被拒；响应附 balance（当前余额）。不扣、不写事件，其他数据不变。礼金每赛季固定发 1000，换季清零，不能转让或兑换。',
     action: '等下一个赛季（换季后重新登录即回到 1000）或改用金币等其他方式；用 GET_STATE 的 gift 查看当前余额。',
   },
+  INSUFFICIENT_INGOT: {
+    desc: '（v108，AISLG-251）元宝余额不足，BUY_ITEM（currency = ingot）被拒；响应附 balance（当前余额）与 cost（本次花费）。不扣、不加道具、不写事件，其他数据不变。元宝只能充值获得（1.99 美元 = 1000 元宝），永久保留、换季不清零。',
+    action: '用 GET_STATE 的 ingot 看当前余额；不够就让玩家在道具商店页点「充值」，不要替玩家发起充值（Agent 无权充值，付款必须真人在浏览器里完成）。也可以改用礼金支付（BUY_ITEM 带 currency = gift 或不带 currency）。',
+  },
+  TOPUP_PRODUCT_INVALID: {
+    desc: '（v108，AISLG-251）CREATE_TOPUP 的 productId 不在服务端商品表里；目前只有 topup_199（1.99 美元 = 1000 元宝）。不落订单。',
+    action: '按文档里列出的商品 id 重发；不要自己编商品 id 或金额（服务端只认配置里的档位）。',
+  },
+  TOPUP_MONTHLY_LIMIT: {
+    desc: '（v108，AISLG-251）本账号本月（UTC 自然月）已成功充值 10 次，CREATE_TOPUP 被拒；响应附 limit 与 used。不落订单。',
+    action: '下个自然月再充（前端把充值按钮置灰并提示本月已达上限）；已有的元宝照常可用。',
+  },
+  TOPUP_TOO_MANY_PENDING: {
+    desc: '（v108，AISLG-251）最近 1 小时内创建的订单已达 5 个，CREATE_TOPUP 被拒；响应附 limit 与 used。不落订单。',
+    action: '稍后再试；频繁创建通常是玩家反复点「购买」或前端没复用未支付订单。',
+  },
+  TOPUP_UNAVAILABLE: {
+    desc: '（v108，AISLG-251）充值渠道不可用：服务端没配置商户密钥 / 商品 id，或调用渠道创建结账会话失败（失败时订单已置 expired，不留 pending）。',
+    action: '前端把充值按钮置灰；其余功能（礼金买道具等）不受影响。稍后再试或联系客服，不要用别的接口绕开。',
+  },
   INSUFFICIENT_ITEM: {
     desc: '（v90，AISLG-222）道具数量不足，消耗被拒；响应附 itemId 与 count（当前数量）。不扣、不写事件，其他数据不变。',
     action: '先用 GET_ITEMS 确认数量；不够时用 BUY_ITEM 用礼金买，或等获得途径（任务 / 活动）发放。',
@@ -897,6 +917,30 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
   ITEM_PRICE_CHANGED: {
     desc: '（v90，AISLG-222）BUY_ITEM 的 expectedPrice 与当前单价不一致（道具调价过）；响应附 price（当前单价）。不扣礼金、不加道具。',
     action: '用 GET_ITEMS 刷新目录，把新单价告诉玩家，让玩家重新确认后带新单价重发；不要自动用新价重试。',
+  },
+  CODE_INVALID: {
+    desc: '（v109，AISLG-253）兑换码无效：码不存在、输入规范化后不是 16 位（或含字符集外的字符）、所属批次已停用（运营停用后未兑换的码立即失效）。什么都不发，也算一次失败（影响每小时的失败次数限制）。',
+    action: '核对玩家给的码（不区分大小写，空格与横线可以带）；确实是这个码就说明它无效或这一批已停用，让运营确认。不要猜码重试。',
+  },
+  CODE_EXPIRED: {
+    desc: '（v109，AISLG-253）兑换码所属批次已过期（过期后兑换返回本码）；什么都不发，也算一次失败。',
+    action: '告诉玩家这批福利已过期；不要重复尝试。',
+  },
+  CODE_USED: {
+    desc: '（v109，AISLG-253）一次性码已经被兑换过（每个一次性码只能被一个账号兑换一次，兑换后作废）；什么都不发，也算一次失败。',
+    action: '告诉玩家这个码已被使用；让发码的人换一个没用过的码。',
+  },
+  CODE_BATCH_CLAIMED: {
+    desc: '（v109，AISLG-253；AISLG-256 起仅通用码）本账号已经兑换过这个通用码（每个账号每个通用码只能兑一次）；什么都不发，也算一次失败。一次性码不再返回本码：同一账号可以兑同批次的多张一次性码。',
+    action: '告诉玩家这个兑换码已经兑过了；不要重复尝试（会累积失败次数）。',
+  },
+  CODE_EXHAUSTED: {
+    desc: '（v109，AISLG-253）通用码的兑换人数已达上限（批次创建时设的最多兑换人数）；响应附 limit 与 used。什么都不发，也算一次失败。',
+    action: '告诉玩家这个通用码已经领完；等运营开新的一批。',
+  },
+  CODE_RATE_LIMITED: {
+    desc: '（v109，AISLG-253）每账号每小时最多失败 10 次（码不存在 / 格式不对 / 已被使用 / 过期 / 同一通用码已兑过 / 已被领完都算），超过后 1 小时内所有兑换请求都返回本码，即使码是正确的；响应附 retryAfterSeconds。成功兑换不计入失败次数，本码自身也不再累加计数。',
+    action: '按 retryAfterSeconds 等待后再兑换；不要继续尝试（只会让窗口继续被占满）。',
   },
   MOVE_CITY_FAMOUS: {
     desc: '（v91，AISLG-220）名城（特殊城池）不能迁移；不扣令、不改任何数据。',

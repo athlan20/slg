@@ -39,6 +39,8 @@ import { processAlliances } from './alliance-tick';
 import { processInactiveTerritories } from './inactive-tick';
 import { processBattlefield } from './battlefield-tick';
 import { processMarketOrders } from './market-tick';
+import { processTopupOrders } from './topup-tick';
+import { processRedeemAttempts } from './redeem-tick';
 import { processLuoyang } from './luoyang-tick';
 import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
@@ -137,6 +139,18 @@ async function main(): Promise<void> {
       await processStarvation(pool);
     } catch (err) {
       console.error('worker starvation tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v108（AISLG-251）：把超过 24 小时仍未支付的充值订单置 expired（内部节流到每分钟一次）
+      await processTopupOrders(pool);
+    } catch (err) {
+      console.error('worker topup tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v109（AISLG-253）：清理超过 7 天保留期的兑换尝试记录（内部节流到每小时一次）
+      await processRedeemAttempts(pool);
+    } catch (err) {
+      console.error('worker redeem tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v85（AISLG-212）：伤兵 / 俘虏 / 逃兵过期清理（读取侧也过滤，这里周期删行兜底）

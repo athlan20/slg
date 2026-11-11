@@ -9,6 +9,10 @@ interface ImportMetaEnv {
   readonly PUBLIC_UMAMI_SCRIPT?: string;
   /** 页面域名 → umami website-id 映射（JSON），见 analytics.ts */
   readonly PUBLIC_UMAMI_BY_HOST?: string;
+  /** 客服邮箱（AISLG-252）：登录页页脚与法务页 / 或 index.html 静态介绍；未配置时不显示邮箱项 */
+  readonly PUBLIC_SUPPORT_EMAIL?: string;
+  /** 淘宝券号购买入口（AISLG-255）：完整商品链接（https、taobao.com / tmall.com 或其子域）；未配置不显示入口 */
+  readonly PUBLIC_TAOBAO_URL?: string;
 }
 
 interface ImportMeta {
