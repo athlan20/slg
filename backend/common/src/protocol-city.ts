@@ -206,6 +206,10 @@ export const EventType = {
   ITEM_BOUGHT: 'item_bought',
   /** v108（AISLG-251）：元宝扣除（detail = { reason, amount, balance }；扣除失败不写事件） */
   INGOT_SPENT: 'ingot_spent',
+  /** v109（AISLG-253）：元宝发放（兑换码福利等；detail = { reason, amount, balance }；与充值元宝同账户、永久保留） */
+  INGOT_GRANTED: 'ingot_granted',
+  /** v109（AISLG-253）：兑换码兑换成功（detail = { batchId, codeTail, kind, rewards, ingot, items }；**码只记后 4 位**） */
+  CODE_REDEEMED: 'code_redeemed',
   /** v108（AISLG-251）：充值入账（detail = { orderId, productId, usdCents, amountPaidCents, ingot, balance, provider }；不含任何支付敏感信息） */
   TOPUP_PAID: 'topup_paid',
   /** v108（AISLG-251）：充值退款 / 拒付回收（detail = { orderId, provider, dispute, refundedCents, amountPaidCents, clawed, shortfall, balance, orderStatus }） */
