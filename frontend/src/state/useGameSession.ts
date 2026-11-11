@@ -157,7 +157,7 @@ export interface GameSession {
   items: ItemsSession;
   /** 充值（v108，AISLG-251）：道具弹窗里的充值面板、结账页与到账提示 */
   topup: TopupSession;
-  /** 兑换码（v109，AISLG-253）：道具弹窗里的兑换面板、提交与结果 */
+  /** 兑换码（v109 AISLG-253；AISLG-255 并入充值面板）：区块输入、提交与结果 */
   redeem: RedeemSession;
   /** 城池迁移（v91，AISLG-220）：指定坐标迁的选点、预览与执行 */
   moveCity: MoveCitySession;
@@ -465,7 +465,7 @@ export function useGameSession(): GameSession {
     notify: (text) => appendLocalEvent('system', text),
   });
   const { clear: topupClear, onIngotPush } = topup;
-  // 兑换码（v109 AISLG-253）：码原样发给服务端，成功后自带全量背包与余额，直接写回 cityList
+  // 兑换码（v109 AISLG-253，AISLG-255 并入充值面板）：码原样发给服务端，成功后自带全量背包与余额，直接写回 cityList
   const redeem = useRedeemSession(clientRef, { applyItems: applyCityItems });
   const { clear: redeemClear } = redeem;
   // 城池迁移切片（v91）：迁城后重拉城池列表与状态
