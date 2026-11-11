@@ -70,6 +70,8 @@ import { GIFT_COPY } from '../copy-gift';
 import { GIFT_COPY_EN } from '../copy-gift-en';
 import { ITEM_COPY } from '../copy-items';
 import { ITEM_COPY_EN } from '../copy-items-en';
+import { TOPUP_COPY } from '../copy-topup';
+import { TOPUP_COPY_EN } from '../copy-topup-en';
 import { MOVE_CITY_COPY } from '../copy-move-city';
 import { MOVE_CITY_COPY_EN } from '../copy-move-city-en';
 
@@ -129,6 +131,7 @@ const ZH = {
   STRATAGEM_COPY,
   ITEM_COPY,
   MOVE_CITY_COPY,
+  TOPUP_COPY,
 };
 
 export type Bundle = typeof ZH;
@@ -189,6 +192,7 @@ const EN: Bundle = {
   STRATAGEM_COPY: STRATAGEM_COPY_EN,
   ITEM_COPY: ITEM_COPY_EN,
   MOVE_CITY_COPY: MOVE_CITY_COPY_EN,
+  TOPUP_COPY: TOPUP_COPY_EN,
 };
 
 const BUNDLES: Record<Lang, Bundle> = { zh: ZH, en: EN };
