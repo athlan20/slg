@@ -34,6 +34,10 @@ export const REDEEM_ITEM_COUNT_MIN = 1;
 export const REDEEM_ITEM_COUNT_MAX = 99;
 /** 单批次一次性码的最大数量 */
 export const REDEEM_BATCH_MAX_CODES = 10_000;
+/** 渠道标记的长度上限（AISLG-255）：字母、数字、连字符，最长 20 个字符 */
+export const REDEEM_CHANNEL_MAX = 20;
+const REDEEM_CHANNEL_PATTERN = /^[a-z0-9-]+$/;
+
 /** 批次名的长度上限（运营看的名字） */
 export const REDEEM_BATCH_NAME_MAX = 60;
 /** 通用码必须设的最多兑换人数上限（只做参数上限保护，实际值由运营填） */
@@ -202,6 +206,52 @@ export function formatRedeemRewards(rewards: RedeemRewards): string {
   }
   return parts.join('、');
 }
+/**
+ * 规范化渠道标记（AISLG-255）：去首尾空白、转小写；只允许字母、数字与连字符，最长 20 个字符。
+ * 不合规返回 null（脚本直接报错退出，不写入库）。转小写是为了 stats 的 --channel 与 create 的值
+ * 能对上（运营难免打成 Taobao）。
+ */
+export function normalizeRedeemChannel(input: string): string | null {
+  const normalized = input.trim().toLowerCase();
+  if (normalized.length < 1 || normalized.length > REDEEM_CHANNEL_MAX) {
+    return null;
+  }
+  return REDEEM_CHANNEL_PATTERN.test(normalized) ? normalized : null;
+}
+
+/** 渠道值是否合规（库里存量值 / 脚本参数都走这里） */
+export function isRedeemChannel(value: unknown): value is string {
+  return typeof value === 'string' && normalizeRedeemChannel(value) === value;
+}
+
+/**
+ * 客服看的用户名打码（AISLG-255）：只保留前 2 位与后 2 位，中间一律用 `*`。
+ * - 长度 ≥ 4：前 2 + 至少 2 个 `*`（正好 4 位时中间也要有掩码，否则 4 位的用户名会被完整显示）+ 后 2；
+ * - 长度 2..3：只留第 1 位，后面全 `*`（2 位 → 1 个 `*`，3 位 → 2 个 `*`）；
+ * - 长度 0..1：只有一个字符，留着就等于公开，直接给 `*`。
+ * 绝不返回完整用户名。
+ */
+export function maskUsername(username: string): string {
+  if (username.length <= 1) {
+    return '*';
+  }
+  if (username.length < 4) {
+    return username.slice(0, 1) + '*'.repeat(username.length - 1);
+  }
+  const hidden = Math.max(2, username.length - 4);
+  return `${username.slice(0, 2)}${'*'.repeat(hidden)}${username.slice(-2)}`;
+}
+
+/**
+ * 运营看的 UTC+8 时间（AISLG-255）：`2026-11-11 15:30:12`。
+ * 直接按 +8 小时换算再取 UTC 字段：Asia/Shanghai 自 1991 年起没有夏令时，与 SQL 的
+ * `AT TIME ZONE 'Asia/Shanghai'` 等价；不依赖运行环境的 ICU 数据。
+ */
+export function formatUtc8DateTime(date: Date): string {
+  const shifted = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  return shifted.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 /**
  * 运营脚本 `--expires` 的解析：`2026-12-31` = 当天 UTC 结束（23:59:59.999Z），其他形式按 ISO 时间；
  * 不是合法时间抛错（脚本直接报错退出）。不给 --expires 时调用方不调用本函数（不过期）。

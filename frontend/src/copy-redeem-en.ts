@@ -2,13 +2,13 @@
 import { REDEEM_COPY } from './copy-redeem';
 
 export const REDEEM_COPY_EN = {
-  entry: 'Redeem code',
-  title: 'Redeem code',
-  backToShop: 'Back to shop',
+  sectionTitle: 'Redeem code',
   placeholder: 'Enter your code',
   submit: 'Redeem',
+  buy: 'Buy',
   submitting: 'Redeeming…',
   hint: 'A code from a shop or event. Case-insensitive, hyphens optional.',
+  hintTaobao: 'Find your code in your order; case-insensitive, hyphens optional.',
   success: (rewards: string) => `Redeemed: ${rewards}`,
   rewardIngot: (amount: number) => `Ingots +${amount}`,
   rewardItem: (name: string, count: number) => `${name} ×${count}`,

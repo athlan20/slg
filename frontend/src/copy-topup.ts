@@ -23,6 +23,7 @@ export const TOPUP_COPY = {
   arrived: (amount: number) => `元宝到账 +${amount}`,
   /** 从付款页跳回（?topup=return）后的提示 */
   returnPending: '付款处理中，元宝到账后会自动更新',
+  /** 淘宝券号入口（AISLG-255）：购买入口已移到兑换码区块（copy-redeem.ts 的 buy），这里不再有淘宝文案 */
   note: '元宝只能在游戏内买便利道具，不可转让、不可提现。',
   noteLinks: { prefix: '详见', terms: '服务条款', pricing: '定价说明', joiner: '、', end: '。' },
   errors: {

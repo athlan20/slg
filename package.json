@@ -10,7 +10,7 @@
     "test:google": "cd backend && npx tsx --test ../test/google/google-login.test.ts",
     "test:github": "cd backend && npx tsx --test ../test/github/github-login.test.ts",
     "test:pay": "cd backend && npx tsx --test ../test/pay/topup.test.ts ../test/pay/dispute.test.ts",
-    "test:redeem": "cd backend && npx tsx --test ../test/redeem/redeem.test.ts",
+    "test:redeem": "cd backend && npx tsx --test ../test/redeem/redeem.test.ts ../test/redeem/taobao.test.ts",
     "test:minigame": "node --test wechat-minigame/test/match-logic.test.js"
   },
   "devDependencies": {

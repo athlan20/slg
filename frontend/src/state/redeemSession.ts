@@ -1,4 +1,5 @@
-// 兑换码切片（v109，AISLG-253）：道具弹窗里「兑换码」面板的开关、输入原文、REDEEM_CODE（op 156）提交与结果 / 错误。
+// 兑换码切片（v109 AISLG-253，AISLG-255 起并入充值面板）：输入原文、REDEEM_CODE（op 156）提交与结果 / 错误；
+// 充值面板关闭时由界面调用 reset() 清空输入与结果。
 // 码原样发送：不 trim、不转大小写、不校验格式（规范化由服务端负责，见 backend/common/src/redeem-code.ts），
 // 前端只在输入为空时不提交、并限制输入长度（够带空格与横线的码，留出富余）。
 // 成功响应自带全量背包与元宝余额，直接写回 useCityList（applyItems）；其他在线连接走 PUSH_ACCOUNT_STATE。
@@ -15,10 +16,6 @@ import type { CityList } from './useCityList';
 export const REDEEM_CODE_MAX_LENGTH = 40;
 
 export interface RedeemSession {
-  /** 兑换码面板是否替换背包 / 商店列表 */
-  panelOpen: boolean;
-  openPanel: () => void;
-  closePanel: () => void;
   /** 输入框原文（原样发给服务端） */
   code: string;
   setCode: (text: string) => void;
@@ -28,6 +25,8 @@ export interface RedeemSession {
   /** 失败提示；成功为 null */
   error: string | null;
   submit: () => Promise<void>;
+  /** 清空输入、结果与错误（充值面板关闭时调用；不碰输入中的提交） */
+  reset: () => void;
   clear: () => void;
 }
 
@@ -38,7 +37,6 @@ export interface RedeemSessionOptions {
 
 export function useRedeemSession(clientRef: { current: ApiClient | null }, options: RedeemSessionOptions): RedeemSession {
   const { applyItems } = options;
-  const [panelOpen, setPanelOpen] = useState(false);
   const [code, setCodeState] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -51,14 +49,8 @@ export function useRedeemSession(clientRef: { current: ApiClient | null }, optio
     setResult(null);
   }, []);
 
-  const openPanel = useCallback(() => {
-    setPanelOpen(true);
-    setError(null);
-    setResult(null);
-  }, []);
-
-  const closePanel = useCallback(() => {
-    setPanelOpen(false);
+  const reset = useCallback(() => {
+    setCodeState('');
     setError(null);
     setResult(null);
   }, []);
@@ -96,7 +88,6 @@ export function useRedeemSession(clientRef: { current: ApiClient | null }, optio
   }, [clientRef, code, applyItems]);
 
   const clear = useCallback(() => {
-    setPanelOpen(false);
     setCodeState('');
     setBusy(false);
     setResult(null);
@@ -104,7 +95,7 @@ export function useRedeemSession(clientRef: { current: ApiClient | null }, optio
   }, []);
 
   return useMemo(
-    () => ({ panelOpen, openPanel, closePanel, code, setCode, busy, result, error, submit, clear }),
-    [panelOpen, openPanel, closePanel, code, setCode, busy, result, error, submit, clear],
+    () => ({ code, setCode, busy, result, error, submit, reset, clear }),
+    [code, setCode, busy, result, error, submit, reset, clear],
   );
 }
