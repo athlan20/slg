@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**108** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**109** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 108）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 109）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 108,
+    "protocolVersion": 109,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 108,
+    "protocolVersion": 109,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/105 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/106 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 105,
+    "docVersion": 106,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 108,
-    "docNotice": "接口文档已从 v105 更新到 v108：请 GET /agent-api/changes/105 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 109,
+    "docNotice": "接口文档已从 v106 更新到 v109：请 GET /agent-api/changes/106 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -19283,6 +19283,193 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 156 · REDEEM_CODE — 兑换码兑换（v109，AISLG-253）
+
+`C→S` 请求-响应 · 需登录后发送
+
+输入运营发出的兑换码领取福利（元宝与 / 或道具），成功返回本次领到的奖励包与领取后的余额、背包。码是 16 位（字符集是去掉 I / L / O / U 的 32 个字符：0123456789ABCDEFGHJKMNPQRSTVWXYZ），玩家看到的显示形式是 XXXX-XXXX-XXXX-XXXX；输入不区分大小写，空格与横线都可以带（`abcd efgh-ijkl mnop` 与 `ABCDEFGHIJKLMNOP` 等价）。两种码：一次性码（每个码只能被一个账号兑换一次，兑换后作废）与通用码（同一个码多人都能兑，每人一次，有兑换人数上限）。**同一账号在同一批次里只能兑换一次**：拿到同一批的另一个码时返回 CODE_BATCH_CLAIMED，那个码本身不作废、可以给别人。奖励与码无关，由批次决定：元宝 1..100000（与充值元宝同账户、永久保留、不可转让）与 / 或道具 ×1..99（按普通道具发放，超出堆叠上限 99 时整次兑换失败返回 ITEM_STACK_FULL，码不作废、也没有元宝）。福利发的道具换季会清空，福利发的元宝不会。失败次数限制：每账号每小时最多失败 10 次（码不存在、格式不对、已被使用、过期、同批已领、已被领完都算），超过后 60 分钟内所有兑换请求返回 CODE_RATE_LIMITED；成功兑换不计入失败次数。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| code | string | 必填。玩家输入的兑换码原文（大小写、空格、横线都不敏感，全角空格 / 横线也可以）。非字符串 → INVALID_PARAMS；规范化后不是 16 位 → CODE_INVALID（含字符集外的字符时不可能对上任何码，同样返回 CODE_INVALID）。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| rewards | object | 本次领到的奖励包：{ ingot?: 元宝数, items?: [{ itemId, count }] }，至少一项。 |
+| ingot | number | 领取后的元宝余额（与 GET_STATE 的 ingot 同口径，永久保留）。 |
+| items | object | 领取后的背包全量 { [itemId]: count }，每种已定义道具都有键（缺省 0），与 GET_STATE / GET_ITEMS 的 items 同口径（总数）。 |
+
+**可能错误**：`INVALID_PARAMS`、`CODE_INVALID`、`CODE_EXPIRED`、`CODE_USED`、`CODE_BATCH_CLAIMED`、`CODE_EXHAUSTED`、`CODE_RATE_LIMITED`、`ITEM_STACK_FULL`（处置建议见第 4 节）
+
+**Agent 提示**：码是玩家自己拿到的，可以替玩家兑换（账号是本人的）。玩家把码贴给你时直接调用，不用先确认；成功后把 rewards 报给玩家。不要猜码或批量尝试：每账号每小时最多失败 10 次，超过后 1 小时内连正确的码都会被拒（CODE_RATE_LIMITED，按返回的 retryAfterSeconds 等待）。CODE_BATCH_CLAIMED 表示这个号已经领过这一批，换别的码没用；ITEM_STACK_FULL 提示玩家先消耗一些同种道具再兑换，码仍然有效。
+
+**示例**
+
+**兑换成功：元宝 ×500、迁城令 ×2**
+
+请求：
+
+```json
+{
+  "op": 156,
+  "seq": 91,
+  "data": {
+    "code": "abcd efgh-ijkl mnop"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 156,
+  "seq": 91,
+  "ok": true,
+  "data": {
+    "rewards": {
+      "ingot": 500,
+      "items": [
+        {
+          "itemId": "city_order",
+          "count": 2
+        }
+      ]
+    },
+    "ingot": 1500,
+    "items": {
+      "city_order": 4,
+      "city_order_adv": 0
+    }
+  }
+}
+```
+
+**一次性码已被别人兑换：CODE_USED**
+
+请求：
+
+```json
+{
+  "op": 156,
+  "seq": 92,
+  "data": {
+    "code": "ABCD-EFGH-JKMN-PQRS"
+  }
+}
+```
+
+失败响应（`CODE_USED`）：
+
+```json
+{
+  "op": 156,
+  "seq": 92,
+  "ok": false,
+  "error": {
+    "code": "CODE_USED",
+    "message": "这个兑换码已经被使用过了"
+  }
+}
+```
+
+**同批次已经领过一次：CODE_BATCH_CLAIMED（这个码本身还有效，可以给别人）**
+
+请求：
+
+```json
+{
+  "op": 156,
+  "seq": 93,
+  "data": {
+    "code": "TVWX-YZ01-2345-6789"
+  }
+}
+```
+
+失败响应（`CODE_BATCH_CLAIMED`）：
+
+```json
+{
+  "op": 156,
+  "seq": 93,
+  "ok": false,
+  "error": {
+    "code": "CODE_BATCH_CLAIMED",
+    "message": "这一批福利你已经领过了，同批次的其它码可以给其他玩家"
+  }
+}
+```
+
+**输错次数太多：CODE_RATE_LIMITED（附 retryAfterSeconds）**
+
+请求：
+
+```json
+{
+  "op": 156,
+  "seq": 94,
+  "data": {
+    "code": "0000-0000-0000-0000"
+  }
+}
+```
+
+失败响应（`CODE_RATE_LIMITED`）：
+
+```json
+{
+  "op": 156,
+  "seq": 94,
+  "ok": false,
+  "error": {
+    "code": "CODE_RATE_LIMITED",
+    "message": "输错次数太多，请稍后再试（每账号每小时最多 10 次）"
+  },
+  "data": {
+    "retryAfterSeconds": 1800
+  }
+}
+```
+
+**背包里迁城令已满 99 张：ITEM_STACK_FULL（整单回滚，码不作废、元宝没发）**
+
+请求：
+
+```json
+{
+  "op": 156,
+  "seq": 95,
+  "data": {
+    "code": "ABCD-EFGH-JKMN-PQRS"
+  }
+}
+```
+
+失败响应（`ITEM_STACK_FULL`）：
+
+```json
+{
+  "op": 156,
+  "seq": 95,
+  "ok": false,
+  "error": {
+    "code": "ITEM_STACK_FULL",
+    "message": "该道具已达堆叠上限，不能再买这么多"
+  },
+  "data": {
+    "itemId": "city_order",
+    "stackMax": 99,
+    "have": 99,
+    "canGrant": 0
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -21372,6 +21559,12 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `INSUFFICIENT_ITEM` | （v90，AISLG-222）道具数量不足，消耗被拒；响应附 itemId 与 count（当前数量）。不扣、不写事件，其他数据不变。 | 先用 GET_ITEMS 确认数量；不够时用 BUY_ITEM 用礼金买，或等获得途径（任务 / 活动）发放。 |
 | `ITEM_STACK_FULL` | （v90，AISLG-222）购买后会超过该道具的堆叠上限，购买被拒；响应附 stackMax、have（当前数量）、canBuy（还能买几张，已满为 0）。礼金与道具都不变。 | 把购买数量降到 canBuy 以内；已满时先用掉道具再买。 |
 | `ITEM_PRICE_CHANGED` | （v90，AISLG-222）BUY_ITEM 的 expectedPrice 与当前单价不一致（道具调价过）；响应附 price（当前单价）。不扣礼金、不加道具。 | 用 GET_ITEMS 刷新目录，把新单价告诉玩家，让玩家重新确认后带新单价重发；不要自动用新价重试。 |
+| `CODE_INVALID` | （v109，AISLG-253）兑换码无效：码不存在、输入规范化后不是 16 位（或含字符集外的字符）、所属批次已停用（运营停用后未兑换的码立即失效）。什么都不发，也算一次失败（影响每小时的失败次数限制）。 | 核对玩家给的码（不区分大小写，空格与横线可以带）；确实是这个码就说明它无效或这一批已停用，让运营确认。不要猜码重试。 |
+| `CODE_EXPIRED` | （v109，AISLG-253）兑换码所属批次已过期（过期后兑换返回本码）；什么都不发，也算一次失败。 | 告诉玩家这批福利已过期；不要重复尝试。 |
+| `CODE_USED` | （v109，AISLG-253）一次性码已经被兑换过（每个一次性码只能被一个账号兑换一次，兑换后作废）；什么都不发，也算一次失败。 | 告诉玩家这个码已被使用；让发码的人换一个没用过的码。 |
+| `CODE_BATCH_CLAIMED` | （v109，AISLG-253）本账号已经领过这一批的福利（同一账号在同一批次里只能领一次，即使拿到该批次的多个一次性码）；什么都不发，**那个码本身不作废**，可以给别人兑。 | 告诉玩家这一批已经领过，换别的码没用；不要重复尝试（会累积失败次数）。 |
+| `CODE_EXHAUSTED` | （v109，AISLG-253）通用码的兑换人数已达上限（批次创建时设的最多兑换人数）；响应附 limit 与 used。什么都不发，也算一次失败。 | 告诉玩家这个通用码已经领完；等运营开新的一批。 |
+| `CODE_RATE_LIMITED` | （v109，AISLG-253）每账号每小时最多失败 10 次（码不存在 / 格式不对 / 已被使用 / 过期 / 同批已领 / 已被领完都算），超过后 1 小时内所有兑换请求都返回本码，即使码是正确的；响应附 retryAfterSeconds。成功兑换不计入失败次数，本码自身也不再累加计数。 | 按 retryAfterSeconds 等待后再兑换；不要继续尝试（只会让窗口继续被占满）。 |
 | `MOVE_CITY_FAMOUS` | （v91，AISLG-220）名城（特殊城池）不能迁移；不扣令、不改任何数据。 | 换一座非名城的城迁移；名城只能靠攻占 / 经营保有。 |
 | `MOVE_CITY_ARMY_OUTSIDE` | （v91，AISLG-220）这座城有部队在外：本城发出的行军（出征 / 返程 / 运输 / 调兵）或派去别人城里的协防。响应附 count。 | 等部队回到本城（或用 RECALL_MARCH 召回、DISMISS_ASSIST 撤回协防）后再迁。驻守自己野地的部队不算在外。 |
 | `MOVE_CITY_HAS_ALLY_FORCE` | （v91，AISLG-220）盟友的部队正在协防这座城；响应附 count。迁城时不会自动遣返。 | 请盟友召回协防，或城主用 DISMISS_ASSIST 遣返后再迁。 |
@@ -22979,7 +23172,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 108。
+- 协议版本随对外协议内容的每次变化递增；当前为 109。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

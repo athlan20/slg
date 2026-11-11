@@ -89,6 +89,7 @@ import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 import { useStratagemSession, type StratagemSession } from './stratagemSession';
 import { useItemsSession, type ItemsSession } from './itemsSession';
 import { useTopupSession, type TopupSession } from './topupSession';
+import { useRedeemSession, type RedeemSession } from './redeemSession';
 import { takeTopupReturn } from './topupReturn';
 import { useMoveCitySession, type MoveCitySession } from './moveCitySession';
 import { clearExplorationReports, pushExplorationReport, type ExplorationReport } from './explorationReport';
@@ -156,6 +157,8 @@ export interface GameSession {
   items: ItemsSession;
   /** 充值（v108，AISLG-251）：道具弹窗里的充值面板、结账页与到账提示 */
   topup: TopupSession;
+  /** 兑换码（v109，AISLG-253）：道具弹窗里的兑换面板、提交与结果 */
+  redeem: RedeemSession;
   /** 城池迁移（v91，AISLG-220）：指定坐标迁的选点、预览与执行 */
   moveCity: MoveCitySession;
   /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
@@ -462,6 +465,9 @@ export function useGameSession(): GameSession {
     notify: (text) => appendLocalEvent('system', text),
   });
   const { clear: topupClear, onIngotPush } = topup;
+  // 兑换码（v109 AISLG-253）：码原样发给服务端，成功后自带全量背包与余额，直接写回 cityList
+  const redeem = useRedeemSession(clientRef, { applyItems: applyCityItems });
+  const { clear: redeemClear } = redeem;
   // 城池迁移切片（v91）：迁城后重拉城池列表与状态
   const moveCity = useMoveCitySession(clientRef, { onMoved: () => void syncAll('initial') });
   const { cancelPick: moveCityCancelPick } = moveCity;
@@ -750,13 +756,14 @@ export function useGameSession(): GameSession {
       stratagemClear();
       itemsClear();
       topupClear();
+      redeemClear();
       moveCityCancelPick();
       allianceClear();
       allianceMarksClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, topupClear, moveCityCancelPick],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, topupClear, redeemClear, moveCityCancelPick],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -787,10 +794,11 @@ export function useGameSession(): GameSession {
     stratagemClear();
     itemsClear();
     topupClear();
+    redeemClear();
     moveCityCancelPick();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, topupClear, moveCityCancelPick]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, topupClear, redeemClear, moveCityCancelPick]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -1486,6 +1494,7 @@ export function useGameSession(): GameSession {
     stratagem,
     items,
     topup,
+    redeem,
     moveCity,
     craftDefense,
     cancelDefenseCraft,

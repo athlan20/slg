@@ -68,6 +68,23 @@ DATABASE_URL=postgresql://slg@127.0.0.1:17251/slg npm run test:pay   # 根目录
   没配渠道时 `TOPUP_UNAVAILABLE` / 回调 503；Agent 令牌调用 `CREATE_TOPUP` 被拒。
 - 需要可写的 PostgreSQL，**不要对共享开发库跑**（临时集群做法见 `docs/dev-test-workflow.md` 的「隔离自测」）。
 
+## 兑换码联调（`test/redeem/`）
+
+形态同充值联调：`redeem/harness.ts` 起真实 API 进程（临时端口），运营侧用**真实脚本**生成码
+（子进程跑 `backend/scripts/redeem-codes.ts`，与运维用的命令一致），玩家侧用 WebSocket 客户端兑换。
+
+```bash
+DATABASE_URL=postgresql://slg@127.0.0.1:17253/slg npm run test:redeem   # 根目录执行
+```
+
+- `redeem.test.ts`：脚本 `create` 100 个一次性码与 `export` / `list` 一致（0/100）；小写带空格横线与大写无分隔
+  等价；兑换后 `GET_STATE.ingot` +500、背包 +2 张迁城令、事件流有 `code_redeemed` 与 `ingot_granted`；
+  `CODE_USED` / `CODE_BATCH_CLAIMED`（那个码仍可给别人）/ `CODE_EXPIRED` / 停用后 `CODE_INVALID`（已领的不收回）；
+  背包满时 `ITEM_STACK_FULL`（整单回滚、码不作废）；连续输错 10 次后 `CODE_RATE_LIMITED`（成功不计数）；
+  Agent 令牌会话也能调用 `REDEEM_CODE`。
+- 需要可写的 PostgreSQL，**不要对共享开发库跑**（临时集群做法见 `docs/dev-test-workflow.md` 的「隔离自测」）。
+  后端侧的规则与并发单测在 `backend/test/redeem-code.test.ts` 与 `backend/test/redeem.test.ts`。
+
 ## Google 登录联调（`test/google/`）
 
 形态同微信联调：`google/harness.ts` 起假 JWKS 服务（本地 RSA 公钥）+ 真实 API 进程（临时端口，经 `GOOGLE_CERTS_URL` 指向假公钥），测试用同一把私钥签 Google ID Token。

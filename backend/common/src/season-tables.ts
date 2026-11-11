@@ -30,6 +30,13 @@ export const KEEP_TABLES: readonly string[] = [
   // 收据与去重记录也不能随换季消失（accounts.ingot 更不会被重置）
   'topup_orders',
   'payment_webhook_events',
+  // 兑换码（v109，AISLG-253）：批次、码、领取记录与兑换尝试全部跨季保留——兑换记录不能随换季消失
+  //（同一账号同一批次只能领一次、一次性码只被用一次这几条约束靠它们），尝试记录只按 7 天保留期清理。
+  // 福利发的道具走 grantItem（只加 count），那部分仍然随换季作废，元宝（accounts.ingot）不清零。
+  'redeem_batches',
+  'redeem_codes',
+  'redeem_claims',
+  'redeem_attempts',
 ];
 
 /** 换季时清空的表：世界级 + 账号级游戏态 + 榜单快照 */

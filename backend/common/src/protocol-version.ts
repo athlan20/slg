@@ -932,5 +932,24 @@
  *   TOPUP_UNAVAILABLE；新事件 INGOT_SPENT（ingot_spent）/ TOPUP_PAID（topup_paid）/ TOPUP_REFUNDED（topup_refunded）。
  *   七、支付渠道适配器在 common/src/payments/（PaymentProvider 接口 + Creem 实现 + 测试用 FakeProvider），
  *   以后加别家渠道只加适配器，不动订单与入账。
+ * v109（兑换码，AISLG-253，只加不改）：
+ *   一、新 op REDEEM_CODE（op 156，玩家与 Agent 通用）：请求 { code }（玩家输入的原文，大小写、空格、
+ *   横线都不敏感：去空格与横线、转大写后必须是 16 位且字符都在 32 个字符的集合里——0-9 与 A-Z 去掉
+ *   I / L / O / U；显示形式 XXXX-XXXX-XXXX-XXXX）。成功返回 { rewards: { ingot?, items? }, ingot, items }
+ *   （本次奖励包、领取后的元宝余额、领取后的背包全量）。失败返回新错误码 CODE_INVALID（不存在 / 格式不对 /
+ *   批次已停用）、CODE_EXPIRED（批次过期）、CODE_USED（一次性码已被用）、CODE_BATCH_CLAIMED（本账号已领过这一批，
+ *   那个码不作废）、CODE_EXHAUSTED（通用码人数已满，附 limit / used）、CODE_RATE_LIMITED（每账号每小时最多
+ *   失败 10 次，超过后 1 小时内全部拒绝，附 retryAfterSeconds）、ITEM_STACK_FULL（奖励含道具且发放后会超过
+ *   堆叠上限：整次兑换回滚，码不作废、元宝也不发；响应附 itemId / stackMax / have / canGrant）。
+ *   同一账号在同一批次里只能领一次；一次性码兑换后作废，通用码可继续被其他人兑换。
+ *   奖励由批次决定：元宝 1..100000（与充值元宝同账户、永久保留，退款 / 拒付不回收它）与 / 或道具 1..99
+ *   （按普通道具 grantItem 发放——只加 count 不加 paid_count，所以换季会清空）。
+ *   二、新事件 INGOT_GRANTED（ingot_granted，detail = { reason, amount, balance }）与 CODE_REDEEMED
+ *   （code_redeemed，detail = { batchId, codeTail, kind, rewards, ingot, items }；**码只记后 4 位**）。
+ *   兑换成功后向该账号其他在线连接推 PUSH_ACCOUNT_STATE（reason = items_changed，不新增推送号）。
+ *   三、新表 redeem_batches / redeem_codes / redeem_claims / redeem_attempts，四张表都跨季保留
+ *   （不进 RESET_TABLES：同一账号同批次只能领一次、一次性码只能被用一次这两条约束靠它们）；
+ *   redeem_attempts 保留 7 天，由 Worker 定期清理。运营侧用 backend/scripts/redeem-codes.ts
+ *   （create / list / export / disable 四个子命令），没有网页后台。
  */
-export const PROTOCOL_VERSION = 108;
+export const PROTOCOL_VERSION = 109;

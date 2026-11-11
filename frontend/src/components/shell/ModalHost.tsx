@@ -87,6 +87,7 @@ export function ModalHost(props: ModalHostProps) {
         <ItemsModal
           session={session.items}
           topup={session.topup}
+          redeem={session.redeem}
           counts={session.cityList.items}
           paidCounts={session.cityList.paidCounts}
           gift={session.cityList.gift}

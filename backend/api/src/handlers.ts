@@ -103,6 +103,7 @@ import { loadItems, loadPaidCounts } from '../../common/src/items-db';
 import { loadIngot } from '../../common/src/ingot-db';
 import type { PaymentService } from '../../common/src/payments';
 import { handleBuyItem, handleGetItems } from './handlers-items';
+import { handleRedeemCode } from './handlers-redeem';
 import { handleCreateTopup } from './handlers-topup';
 import { handleMoveCity } from './handlers-move-city';
 import { loadMoveCityView } from '../../common/src/move-city-db';
@@ -501,6 +502,10 @@ async function dispatchOp(
     case Op.BUY_ITEM:
       // v90（AISLG-222）：礼金买道具
       await handleBuyItem(ctx, conn, op, seq, data);
+      break;
+    case Op.REDEEM_CODE:
+      // v109（AISLG-253）：兑换码（玩家与 Agent 通用；失败次数限制在 redeem-db.ts）
+      await handleRedeemCode(ctx, conn, op, seq, data);
       break;
     case Op.MOVE_CITY:
       // v91（AISLG-220）：城池迁移（随机迁 / 指定坐标迁，支持 preview）
