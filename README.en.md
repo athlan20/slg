@@ -184,6 +184,7 @@ A few deliberate trade-offs:
 - [MCP server](mcp/README.md) — config snippets for Claude Desktop, Cursor, and Claude Code
 - [Backend guide](backend/README.md) — running locally, environment variables, key mechanics and numbers *(Chinese)*
 - [Frontend guide](frontend/README.md) — commands, structure, and themes *(Chinese)*
+- [Redeem code operations manual](docs/redeem-ops.md) — bulk generate, export, look up, void and reconcile codes *(Chinese)*
 - [PvP rules](docs/phase-3-pvp.md) · [Battle calibration](docs/battle-calibration.md) · [Phase-1 scope](docs/phase-1-launch-scope.md) · [Phase-1 MVP notes](docs/phase-1-mvp.md) *(Chinese)*
 
 ## Contributing
