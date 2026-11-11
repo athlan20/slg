@@ -18450,7 +18450,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 需登录后发送
 
-返回账号的道具背包 items（每种道具的总数）、每种道具里元宝买的张数 paidCounts（= 换季后保留的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice、元宝单价 ingotPrice，null 表示该货币不卖，堆叠上限 stackMax）、礼金余额 gift 与元宝余额 ingot。商店出售的是 shopPrice 或 ingotPrice 非 null 的道具：迁城令（city_order，礼金 50 / 元宝 50，堆叠上限 99）；高级迁城令（city_order_adv，礼金 100 / 元宝 100，堆叠上限 99）。礼金是每季免费发的，换季清零、礼金买的道具也换季作废；元宝是付费货币，永久保留、元宝买的道具换季保留（paidCounts）。
+返回账号的道具背包 items（每种道具的总数）、每种道具里元宝买的张数 paidCounts（= 换季后保留的数量）、全部道具定义 catalog（名称、说明、礼金单价 shopPrice、元宝单价 ingotPrice，null 表示该货币不卖，堆叠上限 stackMax）、礼金余额 gift 与元宝余额 ingot。商店出售的是 shopPrice 或 ingotPrice 非 null 的道具：迁城令（city_order，礼金 30 / 元宝 30，堆叠上限 99）；高级迁城令（city_order_adv，礼金 50 / 元宝 50，堆叠上限 99）。礼金是每季免费发的，换季清零、礼金买的道具也换季作废；元宝是付费货币，永久保留、元宝买的道具换季保留（paidCounts）。
 
 **请求字段**
 
@@ -18506,8 +18506,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "desc": "消耗 1 张，随机迁城一次。",
         "descEn": "Uses 1 order to relocate the city once to a random spot.",
         "kind": "order",
-        "shopPrice": 50,
-        "ingotPrice": 50,
+        "shopPrice": 30,
+        "ingotPrice": 30,
         "stackMax": 99
       },
       {
@@ -18517,8 +18517,8 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
         "desc": "消耗 1 张，指定坐标迁城一次。",
         "descEn": "Uses 1 order to relocate the city once to chosen coordinates.",
         "kind": "order",
-        "shopPrice": 100,
-        "ingotPrice": 100,
+        "shopPrice": 50,
+        "ingotPrice": 50,
         "stackMax": 99
       }
     ],
@@ -18563,7 +18563,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 **示例**
 
-**买 2 张迁城令（单价 50）**
+**买 2 张迁城令（单价 30）**
 
 请求：
 
@@ -18574,7 +18574,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "data": {
     "itemId": "city_order",
     "count": 2,
-    "expectedPrice": 50
+    "expectedPrice": 30
   }
 }
 ```
@@ -18592,15 +18592,15 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
     "count": 4,
     "paidCount": 0,
     "currency": "gift",
-    "price": 50,
-    "cost": 100,
-    "gift": 900,
+    "price": 30,
+    "cost": 60,
+    "gift": 940,
     "ingot": 1000
   }
 }
 ```
 
-**用元宝买 1 张高级迁城令（128 → 28）**
+**用元宝买 1 张高级迁城令（1000 → 950）**
 
 请求：
 
@@ -18611,7 +18611,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "data": {
     "itemId": "city_order_adv",
     "count": 1,
-    "expectedPrice": 100,
+    "expectedPrice": 50,
     "currency": "ingot"
   }
 }
@@ -18630,10 +18630,10 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
     "count": 1,
     "paidCount": 1,
     "currency": "ingot",
-    "price": 100,
-    "cost": 100,
+    "price": 50,
+    "cost": 50,
     "gift": 900,
-    "ingot": 900
+    "ingot": 950
   }
 }
 ```
@@ -18649,7 +18649,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   "data": {
     "itemId": "city_order_adv",
     "count": 1,
-    "expectedPrice": 100,
+    "expectedPrice": 50,
     "currency": "ingot"
   }
 }
@@ -18668,13 +18668,13 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
   },
   "data": {
     "balance": 0,
-    "cost": 100,
+    "cost": 50,
     "currency": "ingot"
   }
 }
 ```
 
-**单价已变：返回当前单价，不扣不改**
+**单价已变（客户端还拿着调价前的旧价 50）：返回当前单价，不扣不改**
 
 请求：
 
@@ -18702,7 +18702,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
     "message": "道具单价已变化，请刷新后重新确认"
   },
   "data": {
-    "price": 250
+    "price": 30
   }
 }
 ```
