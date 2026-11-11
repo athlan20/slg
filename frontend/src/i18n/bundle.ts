@@ -74,6 +74,8 @@ import { TOPUP_COPY } from '../copy-topup';
 import { TOPUP_COPY_EN } from '../copy-topup-en';
 import { MOVE_CITY_COPY } from '../copy-move-city';
 import { MOVE_CITY_COPY_EN } from '../copy-move-city-en';
+import { LEGAL_COPY } from '../copy-legal';
+import { LEGAL_COPY_EN } from '../copy-legal-en';
 
 /** 中文文案全集（结构基准）：英文 Bundle 必须与之同构 */
 const ZH = {
@@ -131,6 +133,7 @@ const ZH = {
   STRATAGEM_COPY,
   ITEM_COPY,
   MOVE_CITY_COPY,
+  LEGAL_COPY,
   TOPUP_COPY,
 };
 
@@ -192,6 +195,7 @@ const EN: Bundle = {
   STRATAGEM_COPY: STRATAGEM_COPY_EN,
   ITEM_COPY: ITEM_COPY_EN,
   MOVE_CITY_COPY: MOVE_CITY_COPY_EN,
+  LEGAL_COPY: LEGAL_COPY_EN,
   TOPUP_COPY: TOPUP_COPY_EN,
 };
 
