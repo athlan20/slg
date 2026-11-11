@@ -53,6 +53,21 @@ npm run test:minigame                                                      # 小
 - `minigame-flow.test.ts`：用假 `wx` 驱动 `wechat-minigame/js/login-flow.js` 对真实 API 联调，保证小游戏发出的帧与服务端协议对得上。
 - 需要可写的 PostgreSQL。**不要对共享开发库跑**：用 `initdb` 在临时目录起一个本机库（端口 18999、socket 用短路径），`DATABASE_URL` 指过去；没有 `DATABASE_URL` 时这两个文件整体跳过。
 
+## 充值联调（`test/pay/`）
+
+形态同微信 / Google 联调：`pay/harness.ts` 起真实 API 进程（临时端口），支付渠道用假实现
+（`PAYMENT_PROVIDER=fake`，验签算法与 Creem 一致：头 `creem-signature` = HMAC-SHA256(原始请求体)）。
+测试用客户端的回调体走真实路由、真实入账。
+
+```bash
+DATABASE_URL=postgresql://slg@127.0.0.1:17251/slg npm run test:pay   # 根目录执行
+```
+
+- `topup.test.ts`：`CREATE_TOPUP` → 签名回调 → `GET_STATE.ingot` +1000、订单 paid；同一回调重复 3 次只入账一次；
+  篡改 / 缺少签名 400 不入账；元宝买高级迁城令与 `INSUFFICIENT_INGOT`；整单退款回收到 0、后台重发不重复入账；
+  没配渠道时 `TOPUP_UNAVAILABLE` / 回调 503；Agent 令牌调用 `CREATE_TOPUP` 被拒。
+- 需要可写的 PostgreSQL，**不要对共享开发库跑**（临时集群做法见 `docs/dev-test-workflow.md` 的「隔离自测」）。
+
 ## Google 登录联调（`test/google/`）
 
 形态同微信联调：`google/harness.ts` 起假 JWKS 服务（本地 RSA 公钥）+ 真实 API 进程（临时端口，经 `GOOGLE_CERTS_URL` 指向假公钥），测试用同一把私钥签 Google ID Token。

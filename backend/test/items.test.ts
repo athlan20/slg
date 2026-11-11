@@ -169,10 +169,10 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const id = await newAccount('consume-ok');
     await give(id, 'city_order', 2);
     const result = await inTx((c) => consumeItem(c, id, 'city_order', 1, 'move'));
-    assert.deepEqual(result, { ok: true, count: 1 });
+    assert.deepEqual(result, { ok: true, count: 1, paidCount: 0 });
     assert.equal((await loadItems(pool, id)).city_order, 1);
     const events = await eventsOf(id, 'item_used');
-    assert.deepEqual(events[0].detail, { itemId: 'city_order', amount: 1, left: 1, reason: 'move' });
+    assert.deepEqual(events[0].detail, { itemId: 'city_order', amount: 1, left: 1, paidLeft: 0, reason: 'move' });
   });
 
   test('consumeItem 数量不够：返回 INSUFFICIENT_ITEM，数量不变，不写事件', async () => {
@@ -228,11 +228,31 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const id = await newAccount('buy-ok');
     const frame = await buy(id, { itemId: 'city_order', count: 2, expectedPrice: 50 });
     assert.equal(frame.ok, true, JSON.stringify(frame));
-    assert.deepEqual(frame.data, { itemId: 'city_order', bought: 2, count: 2, price: 50, cost: 100, gift: SEASON_GIFT - 100 });
+    assert.deepEqual(frame.data, {
+      itemId: 'city_order',
+      bought: 2,
+      count: 2,
+      paidCount: 0,
+      currency: 'gift',
+      price: 50,
+      cost: 100,
+      gift: SEASON_GIFT - 100,
+      ingot: 0,
+    });
     assert.equal(await giftOf(id), SEASON_GIFT - 100);
     assert.equal((await loadItems(pool, id)).city_order, 2);
     const bought = await eventsOf(id, 'item_bought');
-    assert.deepEqual(bought[0].detail, { itemId: 'city_order', count: 2, price: 50, cost: 100, owned: 2, gift: SEASON_GIFT - 100 });
+    assert.deepEqual(bought[0].detail, {
+      itemId: 'city_order',
+      count: 2,
+      price: 50,
+      cost: 100,
+      currency: 'gift',
+      owned: 2,
+      paidCount: 0,
+      gift: SEASON_GIFT - 100,
+      ingot: 0,
+    });
     // 礼金扣除与道具发放各自也有事件
     assert.equal((await eventsOf(id, 'gift_spent')).length, 1);
     assert.equal((await eventsOf(id, 'item_granted')).length, 1);
@@ -285,7 +305,7 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
       const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 });
       assert.equal(frame.ok, false);
       assert.equal(frame.error?.code, 'ITEM_PRICE_CHANGED');
-      assert.deepEqual(frame.data, { price: 80 });
+      assert.deepEqual(frame.data, { price: 80, currency: 'gift' });
       assert.equal(await giftOf(id), gift, '礼金不变');
       assert.equal((await loadItems(pool, id)).city_order, 1, '道具不变');
       // 带新价通过；已有道具数量不因调价变化
@@ -324,7 +344,7 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const id = await newAccount('buy-gift');
     const frame = await buy(id, { itemId: 'city_order_adv', count: 11, expectedPrice: 100 });
     assert.equal(frame.error?.code, 'INSUFFICIENT_GIFT');
-    assert.deepEqual(frame.data, { balance: SEASON_GIFT, cost: 1100 });
+    assert.deepEqual(frame.data, { balance: SEASON_GIFT, cost: 1100, currency: 'gift' });
     assert.equal(await giftOf(id), SEASON_GIFT);
     assert.equal((await loadItems(pool, id)).city_order_adv, 0);
     assert.equal((await eventsOf(id, 'item_bought')).length, 0);
@@ -359,7 +379,13 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const push = sentB.find((f) => f.op === Op.PUSH_ACCOUNT_STATE) as unknown as { push: boolean; data: Record<string, unknown> };
     assert.ok(push, '其他连接收到推送');
     assert.equal(push.push, true);
-    assert.deepEqual(push.data, { reason: 'items_changed', items: { city_order: 1, city_order_adv: 0 }, gift: SEASON_GIFT - 50 });
+    assert.deepEqual(push.data, {
+      reason: 'items_changed',
+      items: { city_order: 1, city_order_adv: 0 },
+      paidCounts: { city_order: 0, city_order_adv: 0 },
+      gift: SEASON_GIFT - 50,
+      ingot: 0,
+    });
   });
 
   test('GET_ITEMS 与 GET_STATE.items 一致；catalog 含全部定义，shopPrice 与配置一致', async () => {
@@ -367,9 +393,17 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100 });
     const items = await callAs(id, Op.GET_ITEMS, {});
     assert.equal(items.ok, true, JSON.stringify(items));
-    const data = items.data as { items: Record<string, number>; catalog: Array<{ id: string; shopPrice: number | null }>; gift: number };
+    const data = items.data as {
+      items: Record<string, number>;
+      catalog: Array<{ id: string; shopPrice: number | null; ingotPrice: number | null }>;
+      gift: number;
+      ingot: number;
+    };
     assert.deepEqual(data.items, { city_order: 0, city_order_adv: 1 });
-    assert.deepEqual(data.catalog.map((c) => [c.id, c.shopPrice]), [['city_order', 50], ['city_order_adv', 100]]);
+    assert.deepEqual(data.catalog.map((c) => [c.id, c.shopPrice, c.ingotPrice]), [
+      ['city_order', 50, 50],
+      ['city_order_adv', 100, 100],
+    ]);
     assert.equal(data.gift, SEASON_GIFT - 100);
     const state = await callAs(id, Op.GET_STATE, undefined);
     assert.deepEqual((state.data as { items: unknown }).items, data.items);

@@ -8,6 +8,7 @@ import {
   Op,
   type AccountStatePushData,
   type ItemsStatePushData,
+  type IngotStatePushData,
   type AgentInfoView,
   type AgentPlanPushData,
   type BattleReportCommentPushData,
@@ -87,6 +88,8 @@ import { useAllianceMarks, type AllianceMarksSession } from './allianceMarks';
 import { useHallOfFame, type HallOfFameSession } from './hallOfFame';
 import { useStratagemSession, type StratagemSession } from './stratagemSession';
 import { useItemsSession, type ItemsSession } from './itemsSession';
+import { useTopupSession, type TopupSession } from './topupSession';
+import { takeTopupReturn } from './topupReturn';
 import { useMoveCitySession, type MoveCitySession } from './moveCitySession';
 import { clearExplorationReports, pushExplorationReport, type ExplorationReport } from './explorationReport';
 
@@ -151,6 +154,8 @@ export interface GameSession {
   stratagem: StratagemSession;
   /** 背包与商店（v90，AISLG-222）：弹窗、目录、礼金购买 */
   items: ItemsSession;
+  /** 充值（v108，AISLG-251）：道具弹窗里的充值面板、结账页与到账提示 */
+  topup: TopupSession;
   /** 城池迁移（v91，AISLG-220）：指定坐标迁的选点、预览与执行 */
   moveCity: MoveCitySession;
   /** 打造城防器械（v73）：count 件，成本 = 单件 × 件数；库存上限 = 城墙等级 × 60 */
@@ -296,6 +301,8 @@ export function useGameSession(): GameSession {
   const aliveRef = useRef(true);
   // GitHub 授权回跳的绑定 / 失败结果（v45）：登录成功后作为本地事件补显（见 tokenLogin）
   const oauthNoticeRef = useRef<string | null>(null);
+  /** 本次启动是否从充值付款页回跳（v108，AISLG-251）：登录成功后提示一次 */
+  const topupReturnRef = useRef(false);
   // 「最新回调」桥：让连接关闭回调与重连定时器引用每次渲染后的函数而不产生依赖环
   const attemptReconnectRef = useRef<() => void>(() => undefined);
   const reconnectTriggerRef = useRef<() => void>(() => undefined);
@@ -448,6 +455,13 @@ export function useGameSession(): GameSession {
   const { clear: stratagemClear, onPush: onStratagemPush } = stratagem;
   const items = useItemsSession(clientRef, { applyItems: applyCityItems });
   const { clear: itemsClear } = items;
+  const topup = useTopupSession(clientRef, {
+    ingot: cityList.ingot,
+    applyItems: applyCityItems,
+    refreshItems: items.refresh,
+    notify: (text) => appendLocalEvent('system', text),
+  });
+  const { clear: topupClear, onIngotPush } = topup;
   // 城池迁移切片（v91）：迁城后重拉城池列表与状态
   const moveCity = useMoveCitySession(clientRef, { onMoved: () => void syncAll('initial') });
   const { cancelPick: moveCityCancelPick } = moveCity;
@@ -644,7 +658,10 @@ export function useGameSession(): GameSession {
         } else if (data.reason === 'items_changed') {
           // v90（AISLG-222）：道具背包 / 礼金变化（其他连接买了道具、或消耗方扣了道具）：按推送直接更新，不重拉
           const push = frame.data as unknown as ItemsStatePushData;
-          applyCityItems({ items: push.items, gift: push.gift });
+          applyCityItems({ items: push.items, paidCounts: push.paidCounts, gift: push.gift, ingot: push.ingot });
+        } else if (data.reason === 'ingot_changed' && typeof data.ingot === 'number') {
+          // v108（AISLG-251）：充值到账（付款成功后服务端入账推送）：更新元宝余额，比旧的多时提示到账
+          onIngotPush((frame.data as unknown as IngotStatePushData).ingot);
         }
       } else if (frame.op === Op.PUSH_STRATAGEM) {
         // v86（AISLG-211）：被施计警报——目标方即时弹窗；等价文案由服务端 stratagem_received
@@ -671,7 +688,7 @@ export function useGameSession(): GameSession {
       }
       scheduleSync();
     },
-    [scheduleSync, syncAll, applyCityItems, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, fetchFactions, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
+    [scheduleSync, syncAll, applyCityItems, onIngotPush, onMarchPush, onTilePush, onBattleReportPush, onBattleReportCommentPush, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, fetchFactions, onTechPush, onArenaPush, onHeroPush, onMovingPush, onYtPush, onBattlefieldPush, onAnnouncementPush, onSeasonPush, onAlliancePush, onAllianceMarkPush, onStratagemPush],
   );
 
   const ensureClient = useCallback((): ApiClient => {
@@ -732,13 +749,14 @@ export function useGameSession(): GameSession {
       hallClear();
       stratagemClear();
       itemsClear();
+      topupClear();
       moveCityCancelPick();
       allianceClear();
       allianceMarksClear();
       clientRef.current?.close();
       clientRef.current = null;
     },
-    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, moveCityCancelPick],
+    [clearTimers, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, resetCityList, seasonClear, hallClear, stratagemClear, itemsClear, topupClear, moveCityCancelPick],
   );
 
   /** 清空游戏态缓存（登录 / 新赛季重连前调用）：世界、科技、竞技场等切片与事件流都回到初始状态 */
@@ -768,10 +786,11 @@ export function useGameSession(): GameSession {
     hallClear();
     stratagemClear();
     itemsClear();
+    topupClear();
     moveCityCancelPick();
     allianceClear();
     allianceMarksClear();
-  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, moveCityCancelPick]);
+  }, [resetCityList, resetNpcWarnings, resetAnnouncements, worldClear, techClear, arenaClear, starTowerClear, heroClear, movingClear, ytClear, factionClear, battlefieldClear, nobilityClear, marketClear, luoyangClear, questClear, hallClear, allianceClear, allianceMarksClear, topupClear, moveCityCancelPick]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimerRef.current !== null || !aliveRef.current) {
@@ -937,6 +956,10 @@ export function useGameSession(): GameSession {
           appendLocalEvent('system', oauthNoticeRef.current);
           oauthNoticeRef.current = null;
         }
+        if (topupReturnRef.current) {
+          appendLocalEvent('system', getCopy().TOPUP_COPY.returnPending);
+          topupReturnRef.current = false;
+        }
       } catch (err) {
         setConnection('idle');
         setLoginError(
@@ -1028,6 +1051,10 @@ export function useGameSession(): GameSession {
     // code 优先于本地保存的令牌——用户刚授权的是哪个号就进哪个号；绑定 / 失败结果在登录
     // 成功后进事件流，未登录场景由登录页的 loginError 显示。
     const oauthReturn = takeOauthReturn();
+    // 充值付款后的回跳（v108，AISLG-251）：先记下，登录成功后补一条提示（余额由登录后的 GET_STATE 刷新）
+    if (takeTopupReturn()) {
+      topupReturnRef.current = true;
+    }
     if (oauthReturn?.kind === 'code') {
       setBooting(true);
       void loginWithOauthCode(oauthReturn.code).finally(() => {
@@ -1458,6 +1485,7 @@ export function useGameSession(): GameSession {
     releaseTroops,
     stratagem,
     items,
+    topup,
     moveCity,
     craftDefense,
     cancelDefenseCraft,

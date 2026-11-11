@@ -123,9 +123,15 @@ export async function runSeasonReset(pool: pg.Pool, options: SeasonResetOptions 
       await archiveSeason(client, old.id, old.name);
       await enter('clear');
       await client.query(`TRUNCATE ${RESET_TABLES.join(', ')}`);
+      // v108（AISLG-251）：道具背包不再整表清空——元宝买的道具换季保留，count 收敛到 paid_count
+      // （= 其中元宝买的张数），freeCount 为 0 的行（礼金买的 / 发放的）随之删除。
+      // user_items 已从 RESET_TABLES 移到 KEEP_TABLES，这里必须先于 accounts 的重置执行（ingot 不动）。
+      await client.query(`UPDATE user_items SET count = paid_count, updated_at = now() WHERE count <> paid_count`);
+      await client.query(`DELETE FROM user_items WHERE count = 0`);
       await client.query(
         `UPDATE alliances SET luoyang_holder = false, decree_kind = NULL, decree_until = NULL, decree_next_at = NULL`,
       );
+      // 注意（v108，AISLG-251）：这里**不动 accounts.ingot**——元宝是付费货币，永久保留、换季不清零
       await client.query(
         `UPDATE accounts
          SET season_id = NULL, plunder_total = 0, prestige = 0, nobility = 0, newbie_until = NULL,
