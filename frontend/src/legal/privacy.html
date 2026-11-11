@@ -1,0 +1,407 @@
+<!doctype html>
+<!-- 隐私政策（AISLG-252）：静态页，构建后平铺到站点根 /privacy.html，不经过前端路由、不依赖登录态。
+     客服邮箱不写进仓库：源码里用 {{SUPPORT_EMAIL}} 占位，构建 / dev 时由 tools/legal-pages.ts 用
+     环境变量 PUBLIC_SUPPORT_EMAIL 替换（未配置时显示占位文案，构建不失败）。
+     中英文同页：<section lang="en"> 与 <section lang="zh-CN">，无 JS 时两段都显示。 -->
+<html lang="en" data-legal-page="privacy">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy · SLG</title>
+    <meta
+      name="description"
+      content="What SLG collects, how it is used, who it is shared with, and how to have your account deleted."
+    />
+    <meta name="robots" content="index,follow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      /* 与游戏登录页（暗夜皮肤）保持同一套颜色，页面自带样式，不引入外部依赖。 */
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0a0d12;
+        color: #d7dee8;
+        font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      a {
+        color: #2dd4bf;
+      }
+      header[role='legal-page-header'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: baseline;
+        justify-content: space-between;
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.25rem 1.25rem 0.75rem;
+        border-bottom: 1px solid #1e2733;
+        font-size: 13px;
+      }
+      nav[role='legal-page-nav'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.9rem;
+      }
+      nav[role='legal-page-nav'] a {
+        color: #7c8898;
+        text-decoration: none;
+      }
+      nav[role='legal-page-nav'] a:hover,
+      nav[role='legal-page-nav'] a[aria-current='page'] {
+        color: #2dd4bf;
+      }
+      nav[role='legal-page-lang-switch'] {
+        color: #4d5866;
+      }
+      nav[role='legal-page-lang-switch'] a {
+        color: #7c8898;
+        text-decoration: none;
+      }
+      nav[role='legal-page-lang-switch'] a[aria-current='true'] {
+        color: #2dd4bf;
+      }
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 4rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin: 0.5rem 0 0.25rem;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 2rem 0 0.5rem;
+        color: #f1f5f9;
+      }
+      p[role='legal-meta'] {
+        margin: 0 0 1.5rem;
+        color: #4d5866;
+        font-size: 13px;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 0.35rem 0;
+      }
+      footer[role='legal-page-footer'] {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.25rem;
+        border-top: 1px solid #1e2733;
+        color: #7c8898;
+        font-size: 13px;
+      }
+      footer[role='legal-page-footer'] a {
+        margin-right: 0.9rem;
+      }
+      section[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body role="legal-privacy-page">
+    <header role="legal-page-header">
+      <nav role="legal-page-nav">
+        <a href="/" role="legal-nav-home" data-label-en="← SLG" data-label-zh="← SLG 游戏">← SLG</a>
+        <a
+          href="/privacy.html"
+          role="legal-nav-privacy"
+          aria-current="page"
+          data-label-en="Privacy Policy"
+          data-label-zh="隐私政策"
+          >Privacy Policy</a
+        >
+        <a href="/terms.html" role="legal-nav-terms" data-label-en="Terms of Service" data-label-zh="服务条款"
+          >Terms of Service</a
+        >
+        <a href="/pricing.html" role="legal-nav-pricing" data-label-en="Pricing" data-label-zh="定价">Pricing</a>
+      </nav>
+      <nav role="legal-page-lang-switch" aria-label="Language">
+        <a href="#en" role="legal-lang-en" data-legal-lang="en">English</a>
+        <span aria-hidden="true">|</span>
+        <a href="#zh-CN" role="legal-lang-zh" data-legal-lang="zh">中文</a>
+      </nav>
+    </header>
+
+    <main>
+      <section lang="en" id="en" role="legal-privacy-en">
+        <h1>Privacy Policy</h1>
+        <p role="legal-meta">Last updated: 2026-11-11</p>
+
+        <p>
+          SLG is a free browser strategy game run by an independent developer. This page explains, in plain language,
+          what we collect when you play, why we need it, and what you can ask us to do with it.
+        </p>
+
+        <h2>1. What we collect</h2>
+        <ul>
+          <li>
+            <strong>Sign-in information.</strong> If you sign in with Google or GitHub, we receive your email address,
+            your display name or nickname and an account identifier from that provider. We never receive the password
+            for those accounts.
+          </li>
+          <li>
+            <strong>Game data.</strong> Your cities, resources, buildings, troops, marches, messages and in-game event
+            history, and the agent tokens you create so an AI client can play for you.
+          </li>
+          <li>
+            <strong>Technical data.</strong> IP address, browser user agent, request time and the pages or API calls you
+            make. We keep this as server logs to run the service, diagnose failures and stop abuse.
+          </li>
+          <li>
+            <strong>Local storage in your browser.</strong> A session token so you stay signed in, your language and
+            theme choices, and the name of the last account you used. We do not use advertising or cross-site tracking
+            cookies.
+          </li>
+        </ul>
+
+        <h2>2. How we use it</h2>
+        <ul>
+          <li>To run the game and keep your account working: sign-in, saving your empire, seasons, rankings.</li>
+          <li>To protect the service: rate limiting, cheat and abuse detection, security investigations.</li>
+          <li>To answer your support, refund and account-deletion requests.</li>
+          <li>To see rough usage numbers and decide what to build next.</li>
+        </ul>
+        <p>We do not use your data for advertising or profiling.</p>
+
+        <h2>3. What we never do</h2>
+        <p>
+          <strong>We do not sell your personal information</strong>, and we do not share it for advertising or marketing
+          purposes.
+        </p>
+
+        <h2>4. Third parties</h2>
+        <ul>
+          <li>
+            <strong>Google</strong> and <strong>GitHub</strong>: optional sign-in providers. If you use them, the
+            sign-in happens on their side under their own privacy policies.
+          </li>
+          <li>
+            <strong>Creem</strong>: our payment platform and Merchant of Record for Ingot purchases. Card numbers and
+            billing details are entered on Creem's checkout and handled by Creem — <strong>we never see or store your
+            card details</strong>. We only receive confirmation of the order and the amount paid.
+          </li>
+          <li>
+            <strong>Hosting and infrastructure providers</strong> that run the servers and store the database on our
+            behalf.
+          </li>
+        </ul>
+        <p>These providers only get the data they need to provide the service.</p>
+
+        <h2>5. Retention and deletion</h2>
+        <p>
+          Account and game data is kept while your account exists. Server logs are kept for a limited period and then
+          discarded.
+        </p>
+        <p>
+          You can have your account deleted at any time by writing to
+          <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> from the email address linked to the account (or by
+          telling us which sign-in provider you used). We then delete the account and its game data. Two exceptions: we
+          may keep basic purchase records for as long as tax and accounting rules require, and we may keep what is
+          needed to resolve an open dispute or abuse case.
+        </p>
+
+        <h2>6. Children</h2>
+        <p>
+          The game is not directed at children under 13 (or the minimum age where you live). If you believe a child has
+          created an account, write to us and we will delete it.
+        </p>
+
+        <h2>7. Your choices</h2>
+        <p>
+          Depending on where you live, you may have the right to access, correct, export or delete your personal data,
+          or to object to how it is processed. Write to
+          <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> and we will handle it. You can also clear your
+          browser's storage at any time to remove the saved session from that device.
+        </p>
+
+        <h2>8. Security</h2>
+        <p>
+          Traffic is served over HTTPS and database access is limited to the developer. No service is perfectly secure,
+          but we keep the surface small: we ask you for no password of our own and store no payment details.
+        </p>
+
+        <h2>9. Changes to this policy</h2>
+        <p>
+          If this policy changes we update the date at the top of this page, and we announce material changes in game.
+        </p>
+
+        <h2>10. Contact</h2>
+        <p>
+          Privacy questions or deletion requests:
+          <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>. See also the
+          <a href="/terms.html">Terms of Service</a> and <a href="/pricing.html">Pricing</a>.
+        </p>
+      </section>
+
+      <section lang="zh-CN" id="zh-CN" role="legal-privacy-zh">
+        <h1>隐私政策</h1>
+        <p role="legal-meta">最后更新：2026-11-11</p>
+
+        <p>
+          SLG 是一款由个人开发者运营的免费网页策略游戏。本页用直白的话说明：你玩游戏时我们会收集什么、为什么需要这些
+          信息，以及你可以要求我们做什么。
+        </p>
+
+        <h2>一、我们收集什么</h2>
+        <ul>
+          <li>
+            <strong>登录信息。</strong> 使用 Google 或 GitHub 登录时，我们会拿到你的邮箱地址、昵称以及该平台提供的账号
+            标识。我们不会拿到这些账号的密码。
+          </li>
+          <li>
+            <strong>游戏数据。</strong> 你的城池、资源、建筑、军队、行军、聊天与游戏内事件记录，以及你为让 AI 客户端
+            代玩而生成的 Agent 令牌。
+          </li>
+          <li>
+            <strong>技术数据。</strong> IP 地址、浏览器标识、访问时间与请求的页面或接口。这些作为访问日志保留，用于
+            运行服务、排查故障和阻止滥用。
+          </li>
+          <li>
+            <strong>浏览器本地存储。</strong> 用于保持登录的会话令牌、语言与皮肤选择、上次使用的账号名。我们不使用广告
+            或跨站跟踪 Cookie。
+          </li>
+        </ul>
+
+        <h2>二、我们怎么用</h2>
+        <ul>
+          <li>运行游戏、保证账号正常使用：登录、存档、赛季与排行。</li>
+          <li>保护服务：限流、外挂与滥用检测、安全问题排查。</li>
+          <li>回复你的客服、退款与删除账号请求。</li>
+          <li>了解大致的使用量，决定接下来做什么功能。</li>
+        </ul>
+        <p>我们不会把你的数据用于广告投放或用户画像。</p>
+
+        <h2>三、我们不会做的事</h2>
+        <p><strong>我们不出售你的个人信息</strong>，也不会为广告或营销目的向他人提供。</p>
+
+        <h2>四、第三方</h2>
+        <ul>
+          <li>
+            <strong>Google</strong> 与 <strong>GitHub</strong>：可选的登录服务商。使用它们的登录在其一侧完成，受其
+            各自的隐私政策约束。
+          </li>
+          <li>
+            <strong>Creem</strong>：元宝充值的支付平台与 Merchant of Record（记录商户）。银行卡号与账单信息在
+            Creem 的结账页填写并由 Creem 处理——<strong>我们看不到也不存储你的银行卡信息</strong>，只会收到订单
+            确认与支付金额。
+          </li>
+          <li><strong>托管与基础设施服务商</strong>：代我们运行服务器、存储数据库。</li>
+        </ul>
+        <p>这些服务商只拿到为其服务所必需的数据。</p>
+
+        <h2>五、保留与删除</h2>
+        <p>账号与游戏数据在账号存在期间保留；访问日志保留有限时间后删除。</p>
+        <p>
+          你随时可以发邮件到 <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> 申请删除账号（请用与账号绑定的
+          邮箱发送，或说明你使用的登录方式）。我们会删除账号及其游戏数据。两个例外：购买记录可能按税务与会计要求保留
+          一段时间；正在处理的争议或滥用事件所需的数据可能保留。
+        </p>
+
+        <h2>六、儿童</h2>
+        <p>
+          本游戏不面向 13 岁以下儿童（或你所在地区规定的最低年龄）。如果你认为有儿童注册了账号，请联系我们，我们会
+          删除该账号。
+        </p>
+
+        <h2>七、你的选择</h2>
+        <p>
+          按你所在地区的规定，你可能有权查阅、更正、导出或删除自己的个人数据，或反对某些处理方式。发邮件到
+          <a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a> 即可，我们来处理。你也可以随时清除浏览器存储，
+          移除该设备上保存的登录状态。
+        </p>
+
+        <h2>八、安全</h2>
+        <p>
+          访问全程使用 HTTPS，数据库访问仅限开发者本人。没有服务能做到绝对安全，但我们把面收得很小：不要求你设置我们
+          自己的密码，也不存储任何支付信息。
+        </p>
+
+        <h2>九、政策更新</h2>
+        <p>本政策如有修改，会更新页面顶部的日期；重要变更会在游戏内公告。</p>
+
+        <h2>十、联系方式</h2>
+        <p>
+          隐私问题或删除账号申请：<a href="mailto:{{SUPPORT_EMAIL}}">{{SUPPORT_EMAIL}}</a>。另见
+          <a href="/terms.html">服务条款</a> 与 <a href="/pricing.html">定价说明</a>。
+        </p>
+      </section>
+    </main>
+
+    <footer role="legal-page-footer">
+      <a href="/privacy.html" data-label-en="Privacy Policy" data-label-zh="隐私政策">Privacy Policy</a>
+      <a href="/terms.html" data-label-en="Terms of Service" data-label-zh="服务条款">Terms of Service</a>
+      <a href="/pricing.html" data-label-en="Pricing" data-label-zh="定价">Pricing</a>
+      <a href="mailto:{{SUPPORT_EMAIL}}" role="legal-footer-support">{{SUPPORT_EMAIL}}</a>
+    </footer>
+
+    <script>
+      // 中英文同页：按语言只显示一段；没有 JS 时两段都显示（两段都能读，不影响抓取器）。
+      // 语言优先取游戏的 localStorage 选择（slg-lang），否则按浏览器语言：zh 开头用中文，其余英文。
+      (function () {
+        var sections = {
+          en: document.getElementById('en'),
+          zh: document.getElementById('zh-CN'),
+        };
+        if (!sections.en || !sections.zh) return;
+
+        function applyLabels(lang) {
+          var nodes = document.querySelectorAll('[data-label-en]');
+          for (var i = 0; i < nodes.length; i += 1) {
+            var node = nodes[i];
+            node.textContent = lang === 'zh' ? node.getAttribute('data-label-zh') : node.getAttribute('data-label-en');
+          }
+        }
+
+        function show(lang) {
+          var isZh = lang === 'zh';
+          sections.en.hidden = isZh;
+          sections.zh.hidden = !isZh;
+          document.documentElement.lang = isZh ? 'zh-CN' : 'en';
+          applyLabels(lang);
+          var links = document.querySelectorAll('[data-legal-lang]');
+          for (var i = 0; i < links.length; i += 1) {
+            links[i].setAttribute('aria-current', String(links[i].getAttribute('data-legal-lang') === lang));
+          }
+        }
+
+        function detect() {
+          var stored = null;
+          try {
+            stored = localStorage.getItem('slg-lang');
+          } catch (error) {
+            /* 隐私模式下 localStorage 可能不可用，回落到浏览器语言 */
+          }
+          if (stored === 'zh' || stored === 'en') return stored;
+          var tags = navigator.languages || [navigator.language || ''];
+          for (var i = 0; i < tags.length; i += 1) {
+            if (typeof tags[i] === 'string' && tags[i].toLowerCase().indexOf('zh') === 0) return 'zh';
+          }
+          return 'en';
+        }
+
+        show(detect());
+
+        // 「English | 中文」：有 JS 时只切换显示，不跳转（锚点仅作为无 JS 时的定位手段）
+        var switches = document.querySelectorAll('[data-legal-lang]');
+        for (var i = 0; i < switches.length; i += 1) {
+          switches[i].addEventListener('click', function (event) {
+            event.preventDefault();
+            show(this.getAttribute('data-legal-lang'));
+            window.scrollTo(0, 0);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

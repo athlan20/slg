@@ -32,6 +32,8 @@ npm run typecheck  # tsc --noEmit
 | `src/styles/index.css` | Tailwind 引入、主题变量映射、面板等公共组件类 |
 | `src/theme.ts` | 皮肤读写：`<html data-theme>` + localStorage |
 | `tools/prototypes-preview.ts` | 仅开发时生效：把 `prototypes/` 挂到 dev server 的 `/prototypes/*` |
+| `tools/legal-pages.ts` | 法务静态页（AISLG-252）：把 `src/legal/*.html` 渲染后输出到 `dist/` 根（`/privacy.html`、`/terms.html`、`/pricing.html`），并在 dev 下用同一套逻辑返回；同时替换 `{{SUPPORT_EMAIL}}` 占位 |
+| `src/legal/` | 隐私政策 / 服务条款 / 定价说明的静态页源文件（中英文同页，样式内联），不经过前端路由 |
 | `prototypes/` | 早期静态样稿，仅供视觉参考，不参与构建 |
 
 ## 现在能做什么
@@ -52,6 +54,14 @@ npm run typecheck  # tsc --noEmit
 前端固定以玩家（player）身份登录；Agent 由玩家用同一账号另行走协议接入，不经本界面。协议细节以 `docs/agent-api.md` 为准（含示例帧与错误处置建议）。
 
 **后端未启动时**：登录表单提交会提示连接失败；保存过令牌的话会先尝试自动登录再提示失败，令牌保留，后端恢复后刷新页面即可。
+
+## 公开法务页面（AISLG-252）
+
+`/privacy.html`（隐私政策）、`/terms.html`（服务条款）、`/pricing.html`（定价）三个公开静态页，不登录即可访问，中英文同页（`<section lang="en">` / `<section lang="zh-CN">`，顶部“English | 中文”切换；无 JS 时两段都显示）。
+
+- 源文件在 `src/legal/`，样式内联，不引入依赖；构建后由 `tools/legal-pages.ts` 平铺到 `dist/` 根目录，不依赖服务端把未知路径回退到 `index.html`。dev 下由同一套逻辑的中间件返回，效果与线上一致。
+- 客服邮箱不写进仓库：源文件用 `{{SUPPORT_EMAIL}}` 占位，构建 / dev 时用环境变量 `PUBLIC_SUPPORT_EMAIL` 替换（未配置时显示 `(support email not configured)`，构建不失败）；`index.html` 静态介绍与登录页页脚（`components/SiteFooter.tsx`，`role="site-footer"`）用同一个变量，未配置时邮箱项不显示。
+- 三个页面已加入 `public/sitemap.xml`。
 
 ## 样稿预览
 
