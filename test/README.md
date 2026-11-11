@@ -79,7 +79,8 @@ DATABASE_URL=postgresql://slg@127.0.0.1:17253/slg npm run test:redeem   # 根目
 
 - `redeem.test.ts`：脚本 `create` 100 个一次性码与 `export` / `list` 一致（0/100）；小写带空格横线与大写无分隔
   等价；兑换后 `GET_STATE.ingot` +500、背包 +2 张迁城令、事件流有 `code_redeemed` 与 `ingot_granted`；
-  `CODE_USED` / `CODE_BATCH_CLAIMED`（那个码仍可给别人）/ `CODE_EXPIRED` / 停用后 `CODE_INVALID`（已领的不收回）；
+  同一账号兑同一一次性码批次的 3 张全成功（元宝累计 +600，AISLG-256）、用过的码再兑 `CODE_USED`；
+  通用码同账号第二次 `CODE_BATCH_CLAIMED`、第三个账号 `CODE_EXHAUSTED`；`CODE_EXPIRED` / 停用后 `CODE_INVALID`（已领的不收回）；
   背包满时 `ITEM_STACK_FULL`（整单回滚、码不作废）；连续输错 10 次后 `CODE_RATE_LIMITED`（成功不计数）；
   Agent 令牌会话也能调用 `REDEEM_CODE`。
 - 需要可写的 PostgreSQL，**不要对共享开发库跑**（临时集群做法见 `docs/dev-test-workflow.md` 的「隔离自测」）。
