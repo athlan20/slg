@@ -6,7 +6,7 @@
 //   规范化 → 每账号一张咨询锁（同一账号的兑换串行，限流判定才准）→ 失败次数 → 按 code 找码与批次
 //   （不存在 / 停用 / 已作废 → CODE_INVALID，过期 → CODE_EXPIRED）→ 通用码先 FOR UPDATE 锁批次行再数已领人数
 //   （≥ max_redemptions → CODE_EXHAUSTED）→ 插 redeem_claims（ON CONFLICT DO NOTHING + 判断 rowCount：
-//   同批次已领 → CODE_BATCH_CLAIMED，一次性码已被用 → CODE_USED）→ 预检道具堆叠（超上限 → ITEM_STACK_FULL，
+//   只有通用码会把「本批已领」报成 CODE_BATCH_CLAIMED，其余冲突（一次性码已被用）一律 CODE_USED）→ 预检道具堆叠（超上限 → ITEM_STACK_FULL，
 //   整次回滚、码不作废、也不算已领）→ 发奖励（道具 grantItem、元宝 grantIngot）→ 写 CODE_REDEEMED。
 // 锁序：批次行（仅通用码）→ redeem_codes 行（FOR SHARE，只有作废会改它）→ user_items（grantItem 内部锁）→
 // accounts（grantIngot 的 UPDATE），与 handlers-items.ts 的「先 user_items 再 accounts」一致；
@@ -398,14 +398,22 @@ export async function redeemCode(
       [batch.id, normalized, batch.kind, accountId, now],
     );
     if (!claim.rowCount) {
-      // 冲突了：先看是不是本账号已经领过这一批（一次性码被同账号的另一个码领过也走这里）
-      const claimed = await client.query(
-        `SELECT 1 FROM redeem_claims WHERE batch_id = $1 AND account_id = $2`,
-        [batch.id, accountId],
-      );
+      // 冲突了（AISLG-256）：只有通用码才有「同一账号同一批次只领一次」的限制，撞 uq_redeem_claims_shared_account
+      // 时再看一眼本账号在本批是否已有 claim → CODE_BATCH_CLAIMED；一次性码撞的是 uq_redeem_claims_single_code
+      // （这个码已经被别人用过），一律 CODE_USED —— 本账号领过同批的其它码不再影响结论。
+      let code: RedeemErrorCode = 'CODE_USED';
+      if (batch.kind === 'shared') {
+        const claimed = await client.query(
+          `SELECT 1 FROM redeem_claims WHERE batch_id = $1 AND account_id = $2`,
+          [batch.id, accountId],
+        );
+        if (claimed.rowCount) {
+          code = 'CODE_BATCH_CLAIMED';
+        }
+      }
       await client.query('ROLLBACK');
       await recordFailure(client, accountId, now);
-      return { ok: false, code: claimed.rowCount ? 'CODE_BATCH_CLAIMED' : 'CODE_USED' };
+      return { ok: false, code };
     }
 
     // 第 5 步：预检道具堆叠（超上限整单回滚：码不作废、元宝也不发），再发奖励

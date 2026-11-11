@@ -1,5 +1,7 @@
 // 淘宝渠道配套（AISLG-255）：渠道标记、export --unused 的口径、lookup 各状态与用户名打码、
 // void 各分支、stats 的 UTC+8 分日汇总、void 与兑换的并发（30 轮），以及两个新列的迁移幂等。
+// AISLG-256 的迁移（删掉 redeem_claims_batch_account_key、换成只看通用码的部分唯一索引）也在这里验证：
+// 空库建表、模拟旧库后重跑迁移、连跑两次幂等、存量 claim 行不变。
 // 直接调用 redeem-db.ts / redeem-ops-db.ts 里新增的导出函数（与运营脚本共用同一份实现，不另起子进程）。
 // 需要真实 PostgreSQL：设置 TEST_DATABASE_URL（临时集群，测试在其中新建独立库），否则跳过。
 
@@ -27,6 +29,7 @@ import {
   maskUsername,
   normalizeRedeemChannel,
 } from '../common/src/redeem-code';
+import { loadIngot } from '../common/src/ingot-db';
 import { insertAccountWithCity } from '../api/src/auth';
 
 import { createTempDatabase, type TempDatabase } from './season-test-db';
@@ -70,6 +73,32 @@ describe('淘宝券号渠道配套（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
       });
       return created.id;
     });
+  }
+
+  /** 迁移用例的辅助：在任意一个（临时）库上开事务 / 建一个不需要主城的账号 / 读某批的 claim 行 */
+  async function inTxOn<T>(q: pg.Pool, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+    const client = await q.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await fn(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async function accountOn(q: pg.Pool, name: string): Promise<string> {
+    const res = await q.query(`INSERT INTO accounts (username, password_hash) VALUES ($1, 'x') RETURNING id`, [name]);
+    return (res.rows[0] as { id: string }).id;
+  }
+
+  async function claimRows(q: pg.Pool, batchId: string): Promise<Array<{ code: string; kind: string }>> {
+    const res = await q.query(`SELECT code, kind FROM redeem_claims WHERE batch_id = $1 ORDER BY code`, [batchId]);
+    return res.rows as Array<{ code: string; kind: string }>;
   }
 
   async function newBatch(
@@ -147,6 +176,78 @@ describe('淘宝券号渠道配套（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
       res.rows.map((row) => `${row.table_name}.${row.column_name}`),
       ['redeem_batches.channel', 'redeem_codes.voided_at'],
     );
+  });
+
+  // ---- AISLG-256：一次性码放开「同一批次每人只能兑一张」的迁移 ----
+
+  /** 旧库上的整表唯一约束是否还在（AISLG-256 应当把它删掉） */
+  async function hasBatchAccountConstraint(q: pg.Pool): Promise<boolean> {
+    const res = await q.query(`SELECT 1 FROM pg_constraint WHERE conname = 'redeem_claims_batch_account_key'`);
+    return (res.rowCount ?? 0) > 0;
+  }
+
+  test('AISLG-256 迁移：空库建表后没有整表唯一约束，只有通用码的部分唯一索引；同账号能兑同批两个一次性码', async () => {
+    await ensureSchema(pool);
+    assert.equal(await hasBatchAccountConstraint(pool), false, '新建库不应带 UNIQUE (batch_id, account_id)');
+    const index = await pool.query(`SELECT indexdef FROM pg_indexes WHERE indexname = 'uq_redeem_claims_shared_account'`);
+    assert.equal(index.rowCount, 1, '通用码的部分唯一索引应存在');
+    assert.match((index.rows[0] as { indexdef: string }).indexdef, /UNIQUE .*\(batch_id, account_id\).*WHERE.*kind = 'shared'/);
+
+    const id = await newAccount('mig-empty');
+    const { codes } = await newBatch({ count: 2, rewards: { ingot: 100 } });
+    assert.equal((await redeem(id, codes[0])).ok, true);
+    assert.equal((await redeem(id, codes[1])).ok, true, '空库路径下同批第二张也能兑');
+    assert.equal(await loadIngot(pool, id), 200);
+  });
+
+  test('AISLG-256 迁移：模拟旧库（手工加回 UNIQUE 约束）后重跑建表 → 约束消失、存量 claim 不变、同批第二张能兑', async () => {
+    const legacy = await createTempDatabase(dbUrl as string, 'redeem-legacy');
+    const legacyPool = new pg.Pool({ connectionString: legacy.url });
+    try {
+      await ensureSchema(legacyPool);
+      // 模拟 AISLG-253 时代的库：把整表唯一约束加回去
+      await legacyPool.query(
+        `ALTER TABLE redeem_claims ADD CONSTRAINT redeem_claims_batch_account_key UNIQUE (batch_id, account_id)`,
+      );
+      assert.equal(await hasBatchAccountConstraint(legacyPool), true, '模拟旧库应带旧约束');
+
+      const created = await inTxOn(legacyPool, (client) =>
+        createRedeemBatch(client, {
+          name: `${tag}-legacy`,
+          kind: 'single',
+          rewards: { ingot: 100 },
+          maxRedemptions: null,
+          expiresAt: null,
+          count: 3,
+        }),
+      );
+      const [first, second] = await Promise.all([
+        accountOn(legacyPool, `${tag}-legacy-1`),
+        accountOn(legacyPool, `${tag}-legacy-2`),
+      ]);
+      // 旧约束下：不同账号各兑一张是合法的，存量数据要原样留住
+      assert.equal((await redeemCode(legacyPool, { accountId: first, code: created.codes[0], now: NOW })).ok, true);
+      assert.equal((await redeemCode(legacyPool, { accountId: second, code: created.codes[1], now: NOW })).ok, true);
+      const before = await claimRows(legacyPool, created.batchId);
+      assert.equal(before.length, 2);
+
+      // 重跑建表 / 迁移：约束删掉、部分唯一索引建上，连跑两次都不报错
+      await ensureSchema(legacyPool);
+      await ensureSchema(legacyPool);
+      assert.equal(await hasBatchAccountConstraint(legacyPool), false, '迁移后旧约束应消失');
+      const index = await legacyPool.query(`SELECT 1 FROM pg_indexes WHERE indexname = 'uq_redeem_claims_shared_account'`);
+      assert.equal(index.rowCount, 1);
+      assert.deepEqual(await claimRows(legacyPool, created.batchId), before, '存量 claim 行不改');
+
+      // 迁移后同一账号能兑同批第二个码（旧约束下会失败）
+      const after = await redeemCode(legacyPool, { accountId: first, code: created.codes[2], now: NOW });
+      assert.equal(after.ok, true, '迁移后同账号同批第二张能兑');
+      const rows = await claimRows(legacyPool, created.batchId);
+      assert.equal(rows.length, 3);
+    } finally {
+      await legacyPool.end();
+      await legacy.drop();
+    }
   });
 
   // ---- 导出 ----
