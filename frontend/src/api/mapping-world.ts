@@ -597,6 +597,14 @@ export function serverBroadcastText(view: {
           ? String(view.detail.leaderEn ?? view.detail.leader ?? '')
           : String(view.detail.leader ?? view.detail.leaderEn ?? ''),
       );
+    case 'faction_suppressed': {
+      // v107（AISLG-249）：某家势力的压制档变化（升档「被压制到 N 档」/ 营恢复导致的降档）
+      const name = factionBannerName(view.detail.faction);
+      const level = Number(view.detail.level ?? 0);
+      return view.detail.direction === 'down'
+        ? EXTRA_MAP.faction.broadcastSuppressionEased(name, level)
+        : EXTRA_MAP.faction.broadcastSuppressed(name, level);
+    }
     case 'announcement':
       // v60 AISLG-162：运维发布公告时的一句标题（标题取中文原文）
       return ANNOUNCEMENT_COPY.broadcast.text(String(view.detail.title ?? ''));

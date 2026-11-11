@@ -21,6 +21,7 @@ import { FACTION_KEYS, type FactionKey, type FactionView, type GetFactionsRespon
 import type { NpcCitySnapshot } from './world';
 import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairCurrentCampPower, factionLairRemainingPercent } from './faction-lair';
 import { destroyedFactionKeys, ensureFactionLairs, loadFactionLairRow, loadFactionLairs } from './faction-lair-db';
+import { suppressionView } from './faction-suppression';
 
 type Queryable = pg.Pool | pg.PoolClient;
 
@@ -255,6 +256,8 @@ export async function loadFactionView(
       campsRemaining: destroyed ? 0 : campsRemaining,
       campRemainingPercent: destroyed ? 0 : factionLairRemainingPercent(lair?.remaining ?? null, campPower),
       campPower,
+      // v107（AISLG-249）：压制档由剩余营数现算；已灭亡的势力不再有压制（按 0 档展示，不留数据）
+      suppression: suppressionView(campsTotal, destroyed ? campsTotal : campsRemaining),
     });
   }
   return { enabled: true, day, radius, serverTime, factions };

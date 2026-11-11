@@ -147,6 +147,16 @@ export async function refreshFactionLairPower(
 }
 
 /**
+ * 一家本轮的营恢复明细（AISLG-249：调用方按它比对前后压制档）
+ */
+export interface LairRecovery {
+  key: string;
+  campsTotal: number;
+  campsBefore: number;
+  campsAfter: number;
+}
+
+/**
  * 单行「24 小时没人进攻恢复 1 营」：返回更新后的行（不恢复则原样返回）。
  * 战斗结算与定时器共用同一口径（faction-lair.ts 的 factionLairRecoveredCamps）。
  */
@@ -189,21 +199,24 @@ export async function recoverLairRow(
 
 /**
  * 连续 24 小时（随缩放）没人进攻的老巢恢复 1 营，当前营残血同时回满（总数不超过 20）。
- * 从没被打过的老巢不恢复。返回本次恢复的营数合计。
+ * 从没被打过的老巢不恢复。返回本轮的逐家明细（谁恢复了几营）——
+ * 调用方据此比对前后压制档，换档时发全服播报（AISLG-249）；总恢复营数 = Σ (campsAfter − campsBefore)。
  */
-export async function recoverFactionLairs(client: Queryable, now: Date): Promise<number> {
+export async function recoverFactionLairs(client: Queryable, now: Date): Promise<LairRecovery[]> {
   const res = await client.query(
     `SELECT ${LAIR_COLUMNS} FROM faction_lairs
      WHERE destroyed_at IS NULL AND last_battle_at IS NOT NULL AND camps_remaining < camps_total
      FOR UPDATE`,
   );
-  let recovered = 0;
+  const recoveries: LairRecovery[] = [];
   for (const row of res.rows as FactionLairRow[]) {
     const before = row.camps_remaining;
     const next = await recoverLairRow(client, row, now);
-    recovered += next.camps_remaining - before;
+    if (next.camps_remaining > before) {
+      recoveries.push({ key: row.key, campsTotal: row.camps_total, campsBefore: before, campsAfter: next.camps_remaining });
+    }
   }
-  return recovered;
+  return recoveries;
 }
 
 /** 贡献榜：给某人累加歼灭的守军战力（每场战斗结算时写） */

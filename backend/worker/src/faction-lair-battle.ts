@@ -43,6 +43,7 @@ import {
   type TileNotify,
 } from './tick-shared';
 import { destroyFactionLair } from './faction-lair-destroy';
+import { notifySuppressionChange } from './faction-suppression-notify';
 import type { TroopKind } from '../../common/src/protocol';
 import type { FactionKey } from '../../common/src/protocol-faction';
 
@@ -170,6 +171,20 @@ export async function resolveFactionLairBattle(
       `UPDATE faction_lairs SET remaining = $2::jsonb, remaining_at = $3, last_battle_at = $3 WHERE key = $1`,
       [args.key, JSON.stringify(result.defender.survivors), args.now],
     );
+  }
+
+  // 8.5) v107（AISLG-249）：打掉一营跨过档位（第 5 / 10 / 15 营）时全服播报一句；
+  // 最后一击的灭亡另有 faction_lair_destroyed，不在这里重复播
+  if (!destroyed) {
+    const suppression = await notifySuppressionChange(client, {
+      key: args.key,
+      campsTotal,
+      campsBefore: lair.camps_remaining,
+      campsAfter: campsRemaining,
+    });
+    if (suppression) {
+      notifies.push({ reason: 'server_broadcast', accountId: '', broadcast: suppression.broadcast });
+    }
   }
 
   // 9) 行军收尾：幸存部队（可能为 0）返程；战败也保留残血与奖励
