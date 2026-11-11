@@ -4,6 +4,7 @@
 // 成功时余额与背包由状态层写回（useCityList.applyItems），其他在线连接靠 PUSH_ACCOUNT_STATE 同步。
 
 import { useCopy } from '../../i18n/bundle';
+import { TAOBAO_SHOP_URL, isSafeShopUrl } from '../../api/shopUrl';
 import { REDEEM_CODE_MAX_LENGTH, type RedeemSession } from '../../state/redeemSession';
 
 interface RedeemCodePanelProps {
@@ -70,8 +71,9 @@ export function RedeemCodePanel({ redeem }: RedeemCodePanelProps) {
           {redeem.error}
         </p>
       ) : null}
+      {/* 配了淘宝入口时提示「券号在淘宝订单里查看」，没配置的环境不提到淘宝（AISLG-255） */}
       <p role="redeem-code-hint" className="mt-auto shrink-0 text-[11.5px] leading-relaxed text-faint">
-        {REDEEM_COPY.hint}
+        {isSafeShopUrl(TAOBAO_SHOP_URL) ? REDEEM_COPY.hintTaobao : REDEEM_COPY.hint}
       </p>
     </section>
   );
