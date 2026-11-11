@@ -27,7 +27,10 @@ export interface ItemDef {
   stackMax: number;
 }
 
-/** 道具配置表（数值已定，AISLG-222 需求单）。测试可临时改 shopPrice 验证调价，用完还原。 */
+/**
+ * 道具配置表（数值已定：AISLG-254 迁城令 30 / 高级迁城令 50，礼金价与元宝价 1:1）。
+ * 测试可临时改 shopPrice 验证调价，用完还原。
+ */
 export const ITEM_DEFS: ItemDef[] = [
   {
     id: 'city_order',
@@ -36,8 +39,8 @@ export const ITEM_DEFS: ItemDef[] = [
     desc: '消耗 1 张，随机迁城一次。',
     descEn: 'Uses 1 order to relocate the city once to a random spot.',
     kind: 'order',
-    shopPrice: 50,
-    ingotPrice: 50,
+    shopPrice: 30,
+    ingotPrice: 30,
     stackMax: 99,
   },
   {
@@ -47,8 +50,8 @@ export const ITEM_DEFS: ItemDef[] = [
     desc: '消耗 1 张，指定坐标迁城一次。',
     descEn: 'Uses 1 order to relocate the city once to chosen coordinates.',
     kind: 'order',
-    shopPrice: 100,
-    ingotPrice: 100,
+    shopPrice: 50,
+    ingotPrice: 50,
     stackMax: 99,
   },
 ];
