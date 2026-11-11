@@ -49,8 +49,8 @@ export const REQUEST_GET_ITEMS: RequestOpDoc = {
             items: { city_order: 2, city_order_adv: 0 },
             paidCounts: { city_order: 1, city_order_adv: 0 },
             catalog: [
-              { id: 'city_order', name: '迁城令', nameEn: 'City Move Order', desc: '消耗 1 张，随机迁城一次。', descEn: 'Uses 1 order to relocate the city once to a random spot.', kind: 'order', shopPrice: 50, ingotPrice: 50, stackMax: 99 },
-              { id: 'city_order_adv', name: '高级迁城令', nameEn: 'Advanced City Move Order', desc: '消耗 1 张，指定坐标迁城一次。', descEn: 'Uses 1 order to relocate the city once to chosen coordinates.', kind: 'order', shopPrice: 100, ingotPrice: 100, stackMax: 99 },
+              { id: 'city_order', name: '迁城令', nameEn: 'City Move Order', desc: '消耗 1 张，随机迁城一次。', descEn: 'Uses 1 order to relocate the city once to a random spot.', kind: 'order', shopPrice: 30, ingotPrice: 30, stackMax: 99 },
+              { id: 'city_order_adv', name: '高级迁城令', nameEn: 'Advanced City Move Order', desc: '消耗 1 张，指定坐标迁城一次。', descEn: 'Uses 1 order to relocate the city once to chosen coordinates.', kind: 'order', shopPrice: 50, ingotPrice: 50, stackMax: 99 },
             ],
             gift: 600,
             ingot: 1000,
@@ -88,44 +88,44 @@ export const REQUEST_BUY_ITEM: RequestOpDoc = {
   errors: ['INVALID_PARAMS', 'ITEM_PRICE_CHANGED', 'ITEM_STACK_FULL', 'INSUFFICIENT_GIFT', 'INSUFFICIENT_INGOT'],
   examples: [
     {
-      caption: '买 2 张迁城令（单价 50）',
-      request: { op: Op.BUY_ITEM, seq: 62, data: { itemId: 'city_order', count: 2, expectedPrice: 50 } },
+      caption: '买 2 张迁城令（单价 30）',
+      request: { op: Op.BUY_ITEM, seq: 62, data: { itemId: 'city_order', count: 2, expectedPrice: 30 } },
       responses: [
         {
           op: Op.BUY_ITEM,
           seq: 62,
           ok: true,
-          data: { itemId: 'city_order', bought: 2, count: 4, paidCount: 0, currency: 'gift', price: 50, cost: 100, gift: 900, ingot: 1000 },
+          data: { itemId: 'city_order', bought: 2, count: 4, paidCount: 0, currency: 'gift', price: 30, cost: 60, gift: 940, ingot: 1000 },
         },
       ],
     },
     {
-      caption: '用元宝买 1 张高级迁城令（128 → 28）',
-      request: { op: Op.BUY_ITEM, seq: 64, data: { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'ingot' } },
+      caption: '用元宝买 1 张高级迁城令（1000 → 950）',
+      request: { op: Op.BUY_ITEM, seq: 64, data: { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'ingot' } },
       responses: [
         {
           op: Op.BUY_ITEM,
           seq: 64,
           ok: true,
-          data: { itemId: 'city_order_adv', bought: 1, count: 1, paidCount: 1, currency: 'ingot', price: 100, cost: 100, gift: 900, ingot: 900 },
+          data: { itemId: 'city_order_adv', bought: 1, count: 1, paidCount: 1, currency: 'ingot', price: 50, cost: 50, gift: 900, ingot: 950 },
         },
       ],
     },
     {
       caption: '元宝不够：INSUFFICIENT_INGOT（余额与背包都不变）',
-      request: { op: Op.BUY_ITEM, seq: 65, data: { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'ingot' } },
+      request: { op: Op.BUY_ITEM, seq: 65, data: { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'ingot' } },
       responses: [
         {
           op: Op.BUY_ITEM,
           seq: 65,
           ok: false,
           error: { code: 'INSUFFICIENT_INGOT', message: '元宝不足以支付这次购买' },
-          data: { balance: 0, cost: 100, currency: 'ingot' },
+          data: { balance: 0, cost: 50, currency: 'ingot' },
         },
       ],
     },
     {
-      caption: '单价已变：返回当前单价，不扣不改',
+      caption: '单价已变（客户端还拿着调价前的旧价 50）：返回当前单价，不扣不改',
       request: { op: Op.BUY_ITEM, seq: 63, data: { itemId: 'city_order', count: 1, expectedPrice: 50 } },
       responses: [
         {
@@ -133,7 +133,7 @@ export const REQUEST_BUY_ITEM: RequestOpDoc = {
           seq: 63,
           ok: false,
           error: { code: 'ITEM_PRICE_CHANGED', message: '道具单价已变化，请刷新后重新确认' },
-          data: { price: 250 },
+          data: { price: 30 },
         },
       ],
     },
