@@ -73,16 +73,41 @@ export async function startHarness(options: HarnessOptions): Promise<Harness> {
   };
 }
 
-/** 跑一次运营脚本（与运维用同一条命令），返回标准输出 */
-export async function runScript(args: string[]): Promise<string> {
+function scriptEnv(): NodeJS.ProcessEnv {
   const databaseUrl = process.env.DATABASE_URL;
   assert.ok(databaseUrl, '需要 DATABASE_URL（指向临时库）');
+  return { ...process.env, DATABASE_URL: databaseUrl };
+}
+
+/** 跑一次运营脚本（与运维用同一条命令），返回标准输出 */
+export async function runScript(args: string[]): Promise<string> {
   const { stdout } = await run('npx', ['tsx', '--env-file=.env', 'scripts/redeem-codes.ts', ...args], {
     cwd: backendDir,
-    env: { ...process.env, DATABASE_URL: databaseUrl },
+    env: scriptEnv(),
     maxBuffer: 8 * 1024 * 1024,
   });
   return stdout;
+}
+
+/** 跑一次运营脚本并保留退出码与 stderr：void 在「已被兑换 / 不存在」时退出码是 1，测试要能看到输出 */
+export async function runScriptResult(
+  args: string[],
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  try {
+    const { stdout, stderr } = await run('npx', ['tsx', '--env-file=.env', 'scripts/redeem-codes.ts', ...args], {
+      cwd: backendDir,
+      env: scriptEnv(),
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    return { code: 0, stdout, stderr };
+  } catch (err) {
+    const failure = err as { code?: number; stdout?: string; stderr?: string };
+    return {
+      code: typeof failure.code === 'number' ? failure.code : 1,
+      stdout: failure.stdout ?? '',
+      stderr: failure.stderr ?? '',
+    };
+  }
 }
 
 export interface CreatedBatch {
