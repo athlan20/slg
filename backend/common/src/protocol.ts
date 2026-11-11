@@ -278,6 +278,10 @@ export const Op = {
    *  { orderId, checkoutUrl } 让玩家在新窗口打开渠道结账页。**仅玩家连接**：付款必须真人在浏览器里完成，
    *  Agent 连接返回 AGENT_FORBIDDEN 且不进 agent-api 文档） */
   CREATE_TOPUP: 155,
+  /** C→S 兑换码兑换（v109，AISLG-253：data.code 是玩家输入的原文，大小写 / 空格 / 横线不敏感；
+   *  成功返回 { rewards, ingot, items }。玩家与 Agent 通用；每账号每小时最多失败 10 次，超过返回
+   *  CODE_RATE_LIMITED） */
+  REDEEM_CODE: 156,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -744,6 +748,18 @@ export const ErrorCode = {
   TOPUP_TOO_MANY_PENDING: 'TOPUP_TOO_MANY_PENDING',
   /** 充值渠道不可用（v108，AISLG-251）：服务端没配商户密钥 / 商品 id，或调用渠道失败——前端把充值按钮置灰 */
   TOPUP_UNAVAILABLE: 'TOPUP_UNAVAILABLE',
+  /** 兑换码无效（v109，AISLG-253）：码不存在、格式不对（规范化后不是 16 位）、批次已停用 */
+  CODE_INVALID: 'CODE_INVALID',
+  /** 兑换码所属批次已过期（v109，AISLG-253） */
+  CODE_EXPIRED: 'CODE_EXPIRED',
+  /** 一次性码已被兑换（v109，AISLG-253；兑换后作废） */
+  CODE_USED: 'CODE_USED',
+  /** 本账号已经领过这一批的福利（v109，AISLG-253；同批次的其它码仍然有效，可给别人兑） */
+  CODE_BATCH_CLAIMED: 'CODE_BATCH_CLAIMED',
+  /** 通用码的兑换人数已达上限（v109，AISLG-253；附 limit / used） */
+  CODE_EXHAUSTED: 'CODE_EXHAUSTED',
+  /** 输错次数太多（v109，AISLG-253）：每账号每小时最多失败 10 次，超过后 1 小时内所有兑换请求返回本码（附 retryAfterSeconds） */
+  CODE_RATE_LIMITED: 'CODE_RATE_LIMITED',
   /** 道具不足（v90，AISLG-222）：消耗失败，数量不变（附 itemId、count） */
   INSUFFICIENT_ITEM: 'INSUFFICIENT_ITEM',
   /** 道具堆叠上限（v90，AISLG-222）：购买后会超过 stackMax，不扣礼金（附 stackMax、have、canBuy） */
@@ -1460,6 +1476,8 @@ export type {
   TopupProductView,
   IngotStatePushData,
 } from './protocol-topup';
+// 兑换码（v109，AISLG-253）：REDEEM_CODE（op 156）
+export type { RedeemCodeRequestData, RedeemCodeResponseData } from './protocol-redeem';
 export type { FacilityBuildRequestData, FacilityBuildResponseData } from './protocol-facility';
 export { FACILITY_KINDS, isFacilityKind } from './facility';
 export type { FacilityKind } from './facility';
