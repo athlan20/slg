@@ -898,5 +898,39 @@
  *   weeklyBranchCap }；新全服播报 faction_suppressed（必达，压制档变化时播一次，升档与降档都播，
  *   detail = { faction, factionName, level, previousLevel, direction, campsTotal, campsRemaining }）。
  *   无新增 op / 推送号 / 错误码 / 表字段。
+ *
+ * v108（元宝与第一版充值，AISLG-251，只加不改；礼金的规则一个字不改）：
+ *   一、元宝：账号新增付费货币 accounts.ingot（integer，默认 0，不回填）。只能充值获得，**永久保留**——
+ *   换季不清零（season-reset.ts 那一行 UPDATE 不碰 ingot）、玩家自己重置账号也不动，不能转让 / 赠送 / 交易；
+ *   用途与礼金相同（道具商店买便利道具），不买战力、不买资源。GET_STATE 新增 ingot。
+ *   二、道具两种货币：ITEM_DEFS 新增字段 ingotPrice（数值与 shopPrice 1:1：迁城令 50 / 高级迁城令 100）。
+ *   GET_ITEMS 的 catalog 每项新增 ingotPrice、响应新增 ingot 与 paidCounts（每种道具里元宝买的张数）；
+ *   BUY_ITEM 新增请求参数 currency（'gift' / 'ingot'，缺省 'gift'，旧客户端行为不变），expectedPrice 按所选
+ *   货币的单价核对，不一致仍返回 ITEM_PRICE_CHANGED（附 price 与 currency）；**不自动混用两种货币**，选哪种
+ *   就只扣哪种，不够返回对应的 INSUFFICIENT_GIFT / INSUFFICIENT_INGOT。返回新增 currency / paidCount / ingot。
+ *   三、元宝买的道具换季保留（用户拍板方案 1）：user_items 新增 paid_count（count 里有多少张是元宝买的，
+ *   CHECK 0 ≤ paid_count ≤ count），count 仍是总数、堆叠上限 99 仍按 count 算；元宝购买时 count 与 paid_count
+ *   同时加，礼金购买与其他来源发放只加 count；consumeItem **优先消耗免费的那部分**，用完才动元宝买的；
+ *   换季时 user_items 从 RESET_TABLES 移到 KEEP_TABLES，重置事务里改成 UPDATE user_items SET count = paid_count
+ *   再删 count = 0 的行（礼金买的 / 发放的照旧作废）。事件 item_used 的 detail 新增 paidLeft。
+ *   四、充值（只做国际站一个渠道 Creem）：新 op CREATE_TOPUP（op 155，请求 { productId }，目前只接受
+ *   topup_199 = 1.99 美元 = 1000 元宝）——落 pending 订单、调渠道建结账会话、返回 { orderId, checkoutUrl }；
+ *   **仅玩家连接**（Agent 返回 AGENT_FORBIDDEN，不进 agent-api 文档 / MCP 清单）。限额：每账号每个自然月（UTC）
+ *   最多成功充值 10 次（TOPUP_MONTHLY_LIMIT）、同一账号同时最多 1 个未支付订单（新建会把旧的 pending 作废）、
+ *   每账号滚动 1 小时最多创建 5 个订单（TOPUP_TOO_MANY_PENDING）；未支付订单 24 小时后由 Worker 置 expired。
+ *   渠道不可用（没配 CREEM_API_KEY / CREEM_WEBHOOK_SECRET / CREEM_PRODUCT_TOPUP_199，或调渠道失败）返回
+ *   TOPUP_UNAVAILABLE。新表 topup_orders（订单）与 payment_webhook_events（provider + event_id 联合唯一，
+ *   回调去重），两张表都跨季保留（不进 RESET_TABLES）。
+ *   五、回调：HTTP POST /pay/creem/webhook（API 进程，响应 no-store、不被 CDN 缓存）。验签用原始请求体
+ *   （头 creem-signature = HMAC-SHA256(raw body) 的十六进制串），签名不对一律 400；先按事件 id 去重，
+ *   再按订单状态幂等。checkout.completed：用渠道商品 id 对照 topup_199 校验（不用金额），订单为 pending 或
+ *   expired（迟到的成功回调也入账）时事务内订单置 paid、ingot += ingot_amount、写 TOPUP_PAID。
+ *   refund.created / dispute.created：按比例回收（floor(refund_amount ÷ amount_paid × ingot_amount)，拒付按整单），
+ *   ingot 最多减到 0，减不够的部分记 clawback_short，不收回已买的道具、不动礼金、不自动封号，写 TOPUP_REFUNDED。
+ *   入账 / 回收后给在线玩家推 PUSH_ACCOUNT_STATE（reason = ingot_changed，不新增推送号）。
+ *   六、新错误码 INSUFFICIENT_INGOT / TOPUP_PRODUCT_INVALID / TOPUP_MONTHLY_LIMIT / TOPUP_TOO_MANY_PENDING /
+ *   TOPUP_UNAVAILABLE；新事件 INGOT_SPENT（ingot_spent）/ TOPUP_PAID（topup_paid）/ TOPUP_REFUNDED（topup_refunded）。
+ *   七、支付渠道适配器在 common/src/payments/（PaymentProvider 接口 + Creem 实现 + 测试用 FakeProvider），
+ *   以后加别家渠道只加适配器，不动订单与入账。
  */
-export const PROTOCOL_VERSION = 107;
+export const PROTOCOL_VERSION = 108;

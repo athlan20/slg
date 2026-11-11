@@ -26,7 +26,7 @@ export function itemEventText(view: EventView): string | null {
   }
 }
 
-/** 道具协议的错误码 → 提示（ITEM_PRICE_CHANGED / ITEM_STACK_FULL 的数据由调用方另行处理） */
+/** 道具协议的错误码 → 提示（v108 加 INSUFFICIENT_INGOT；ITEM_PRICE_CHANGED / ITEM_STACK_FULL 的数据由调用方另行处理） */
 export function itemErrorText(code: ErrorCode | undefined, message: string | undefined): string {
   const { errors } = getCopy().ITEM_COPY;
   switch (code) {
@@ -34,6 +34,8 @@ export function itemErrorText(code: ErrorCode | undefined, message: string | und
       return errors.INVALID_PARAMS;
     case 'INSUFFICIENT_GIFT':
       return errors.INSUFFICIENT_GIFT;
+    case 'INSUFFICIENT_INGOT':
+      return errors.INSUFFICIENT_INGOT;
     case 'INSUFFICIENT_ITEM':
       return errors.INSUFFICIENT_ITEM;
     case 'ITEM_STACK_FULL':

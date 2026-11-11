@@ -1,10 +1,10 @@
-// 道具切片（v90，AISLG-222）：背包 / 商店弹窗的开关、目录（GET_ITEMS）与礼金购买（BUY_ITEM）。
-// 背包数量与礼金余额落在 useCityList（applyItems），与账号菜单的礼金行、推送共用同一份状态。
-// 单价以服务端为准：BUY_ITEM 带上页面显示的单价，收到 ITEM_PRICE_CHANGED 只刷新目录并提示，不自动重试。
+// 道具切片（v90，AISLG-222；v108 AISLG-251 加元宝购买）：背包 / 商店弹窗的开关、目录（GET_ITEMS）与购买（BUY_ITEM）。
+// 背包数量与礼金 / 元宝余额落在 useCityList（applyItems），与账号菜单的礼金行、推送共用同一份状态。
+// 单价以服务端为准：BUY_ITEM 带上页面显示的单价与所选货币，收到 ITEM_PRICE_CHANGED 只刷新目录并提示，不自动重试。
 
 import { useCallback, useMemo, useState } from 'react';
 import type { ApiClient } from '../api/client';
-import { Op, type BuyItemResponseData, type GetItemsResponseData, type ItemCounts, type ItemDefView, type ItemId } from '../api/protocol';
+import { Op, type BuyItemResponseData, type GetItemsResponseData, type ItemCurrency, type ItemDefView, type ItemId } from '../api/protocol';
 import { itemErrorText } from '../api/itemText';
 import { getCopy } from '../i18n/bundle';
 import type { CityList } from './useCityList';
@@ -26,7 +26,7 @@ export interface ItemsSession {
   openPanel: () => void;
   closePanel: () => void;
   refresh: () => Promise<void>;
-  buy: (itemId: ItemId, count: number, expectedPrice: number) => Promise<void>;
+  buy: (itemId: ItemId, count: number, expectedPrice: number, currency: ItemCurrency) => Promise<void>;
   clear: () => void;
 }
 
@@ -51,7 +51,7 @@ export function useItemsSession(clientRef: { current: ApiClient | null }, option
       if (res.ok) {
         const data = res.data as unknown as GetItemsResponseData;
         setCatalog(data.catalog);
-        applyItems({ items: data.items as ItemCounts, gift: data.gift });
+        applyItems({ items: data.items, paidCounts: data.paidCounts, gift: data.gift, ingot: data.ingot });
         setError(null);
       } else {
         setError(itemErrorText(res.error?.code, res.error?.message));
@@ -77,7 +77,7 @@ export function useItemsSession(clientRef: { current: ApiClient | null }, option
   }, []);
 
   const buy = useCallback(
-    async (itemId: ItemId, count: number, expectedPrice: number) => {
+    async (itemId: ItemId, count: number, expectedPrice: number, currency: ItemCurrency) => {
       const { ITEM_COPY } = getCopy();
       const client = clientRef.current;
       if (!client?.connected) {
@@ -88,16 +88,26 @@ export function useItemsSession(clientRef: { current: ApiClient | null }, option
       setError(null);
       setNotice(null);
       try {
-        const res = await client.request(Op.BUY_ITEM, { itemId, count, expectedPrice });
+        const res = await client.request(Op.BUY_ITEM, { itemId, count, expectedPrice, currency });
         if (res.ok) {
           const data = res.data as unknown as BuyItemResponseData;
-          applyItems({ items: { [itemId]: data.count }, gift: data.gift });
-          setNotice(ITEM_COPY.bought(ITEM_COPY.names[itemId], data.bought, data.gift));
+          applyItems({
+            items: { [itemId]: data.count },
+            paidCounts: { [itemId]: data.paidCount },
+            gift: data.gift,
+            ingot: data.ingot,
+          });
+          const name = ITEM_COPY.names[itemId];
+          setNotice(
+            data.currency === 'ingot'
+              ? ITEM_COPY.boughtIngot(name, data.bought, data.ingot)
+              : ITEM_COPY.bought(name, data.bought, data.gift),
+          );
           return;
         }
         if (res.error?.code === 'ITEM_PRICE_CHANGED') {
           const price = Number((res.data as { price?: unknown } | undefined)?.price ?? expectedPrice);
-          setError(ITEM_COPY.priceChanged(price));
+          setError(ITEM_COPY.priceChanged(price, currency));
         } else {
           setError(itemErrorText(res.error?.code, res.error?.message));
         }

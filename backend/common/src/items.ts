@@ -18,6 +18,11 @@ export interface ItemDef {
   kind: ItemKind;
   /** 礼金单价；null = 不卖（只能靠任务 / 活动获得） */
   shopPrice: number | null;
+  /**
+   * 元宝单价（v108，AISLG-251）：独立字段，数值目前与礼金价 1:1（用户拍板），以后某个道具要分开定价
+   * 时不用改结构。null = 不收元宝（只能礼金买 / 任务获得）。
+   */
+  ingotPrice: number | null;
   /** 每种道具的堆叠上限（发放超出的部分作废） */
   stackMax: number;
 }
@@ -32,6 +37,7 @@ export const ITEM_DEFS: ItemDef[] = [
     descEn: 'Uses 1 order to relocate the city once to a random spot.',
     kind: 'order',
     shopPrice: 50,
+    ingotPrice: 50,
     stackMax: 99,
   },
   {
@@ -42,9 +48,33 @@ export const ITEM_DEFS: ItemDef[] = [
     descEn: 'Uses 1 order to relocate the city once to chosen coordinates.',
     kind: 'order',
     shopPrice: 100,
+    ingotPrice: 100,
     stackMax: 99,
   },
 ];
+
+/**
+ * 购买时选用的货币（v108，AISLG-251）：礼金（免费，换季清零）或元宝（付费，永久保留）。
+ * 不自动混用——选哪种就只扣哪种，不够就返回对应的 INSUFFICIENT_GIFT / INSUFFICIENT_INGOT。
+ * 缺省 gift，保证旧客户端不受影响。
+ */
+export type ItemCurrency = 'gift' | 'ingot';
+
+export const ITEM_CURRENCIES: readonly ItemCurrency[] = ['gift', 'ingot'];
+
+export function isItemCurrency(value: unknown): value is ItemCurrency {
+  return value === 'gift' || value === 'ingot';
+}
+
+/** 该货币下这个道具的单价（null = 这个货币不卖这个道具） */
+export function itemPrice(def: ItemDef, currency: ItemCurrency): number | null {
+  return currency === 'ingot' ? def.ingotPrice : def.shopPrice;
+}
+
+/** 在某个货币下可买的道具（null 单价的不算），按配置表顺序 */
+export function shopItemDefsFor(currency: ItemCurrency): ItemDef[] {
+  return ITEM_DEFS.filter((def) => itemPrice(def, currency) !== null);
+}
 
 /** 购买数量的合法范围（整数）；堆叠上限另由每种道具的 stackMax 决定 */
 export const BUY_COUNT_MIN = 1;

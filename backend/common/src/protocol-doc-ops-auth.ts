@@ -203,16 +203,21 @@ export const PUSH_ACCOUNT_STATE: PushOpDoc = {
   name: 'PUSH_ACCOUNT_STATE',
   title: '推送：账号级状态变化',
   summary:
-    '账号级状态变化时推送给该账号全部在线连接（发起连接除外，含 Agent 连接）：account_renamed=昵称被 SET_NICKNAME 修改（v52）。推送只携带变化摘要，完整现状按需查询。',
+    '账号级状态变化时推送给该账号全部在线连接（发起连接除外，含 Agent 连接）：account_renamed=昵称被 SET_NICKNAME 修改（v52）；items_changed=道具背包或礼金 / 元宝余额变化（v90）；ingot_changed=元宝余额被充值入账或退款回收（v108，AISLG-251；服务端回调里推，不新增推送号）。推送只携带变化摘要，完整现状按需查询。',
   dataFields: [
-    { name: 'reason', type: "'account_renamed' | 'items_changed'", desc: '触发本次推送的状态变化。items_changed（v90，AISLG-222）：道具背包或礼金余额变化，data 另带 items（每种道具的数量）与 gift（礼金余额）。' },
-    { name: 'username', type: 'string', desc: '账号的新昵称（即新 username）；reason = items_changed 时无此字段。' },
+    { name: 'reason', type: "'account_renamed' | 'items_changed' | 'ingot_changed'", desc: '触发本次推送的状态变化。items_changed（v90，AISLG-222）：道具背包或礼金余额变化，data 另带 items（每种道具的总数）、paidCounts（v108：每种道具里元宝买的张数）、gift（礼金余额）与 ingot（元宝余额）。ingot_changed（v108，AISLG-251）：元宝余额变化（充值入账 / 退款回收），data 另带 ingot（变化后的余额）。' },
+    { name: 'username', type: 'string', desc: '账号的新昵称（即新 username）；reason = items_changed / ingot_changed 时无此字段。' },
   ],
   examples: [
     {
       op: Op.PUSH_ACCOUNT_STATE,
       push: true,
       data: { reason: 'account_renamed', username: '卧龙先生' },
+    },
+    {
+      op: Op.PUSH_ACCOUNT_STATE,
+      push: true,
+      data: { reason: 'ingot_changed', ingot: 1000 },
     },
   ],
   agentNote: '收到 account_renamed 后，本地缓存的 username 已过期：后续展示（聊天、地图归属、排行榜）与对外称呼一律用新昵称。',

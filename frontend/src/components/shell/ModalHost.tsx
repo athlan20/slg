@@ -83,7 +83,16 @@ export function ModalHost(props: ModalHostProps) {
         <StratagemAlertModal data={session.stratagem.alerts[0]} onDismiss={session.stratagem.dismissAlert} />
       ) : null}
       {/* v90（AISLG-222）：背包与商店（账号菜单打开） */}
-      {session.items.open ? <ItemsModal session={session.items} counts={session.cityList.items} gift={session.cityList.gift} /> : null}
+      {session.items.open ? (
+        <ItemsModal
+          session={session.items}
+          topup={session.topup}
+          counts={session.cityList.items}
+          paidCounts={session.cityList.paidCounts}
+          gift={session.cityList.gift}
+          ingot={session.cityList.ingot}
+        />
+      ) : null}
       {session.season.warning ? <SeasonWarningModal warning={session.season.warning} onConfirm={session.season.dismissWarning} /> : null}
       {announcements.open ? <AnnouncementModal slice={announcements} onClose={announcements.closeList} /> : null}
       {session.alliance.open ? (
