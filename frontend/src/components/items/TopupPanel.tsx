@@ -3,7 +3,7 @@
 
 import { useCopy } from '../../i18n/bundle';
 import { TOPUP_INGOT } from '../../api/topupProduct';
-import type { TopupSession } from '../../state/topupSession';
+import { isSafeCheckoutUrl, type TopupSession } from '../../state/topupSession';
 
 interface TopupPanelProps {
   topup: TopupSession;
@@ -46,6 +46,22 @@ export function TopupPanel({ topup }: TopupPanelProps) {
         <p role="topup-unavailable" className="shrink-0 text-[12px] text-st-error">
           {TOPUP_COPY.unavailableBadge}
         </p>
+      ) : null}
+      {topup.popupBlocked ? (
+        <p role="topup-popup-blocked" className="shrink-0 text-[12px] text-st-error">
+          {TOPUP_COPY.popupBlocked}
+        </p>
+      ) : null}
+      {isSafeCheckoutUrl(topup.manualCheckoutUrl) ? (
+        <a
+          role="topup-checkout-link"
+          href={topup.manualCheckoutUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-[13px] text-accent underline"
+        >
+          {TOPUP_COPY.manualLink}
+        </a>
       ) : null}
       {topup.error ? (
         <p role="topup-error" className="shrink-0 text-[12px] text-st-error">

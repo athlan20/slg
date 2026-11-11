@@ -12,6 +12,11 @@ export const TOPUP_COPY = {
   productNote: '一次性付款，不是订阅',
   buy: '购买',
   buying: '正在创建订单…',
+  /** 购买时先开的空白窗口里显示的一行字（结账地址到达后再跳转） */
+  redirecting: '正在跳转到付款页面…',
+  /** 浏览器拦截了新窗口：购买前就提示，并改为面板内手动打开链接 */
+  popupBlocked: '浏览器拦截了新窗口，请允许本站弹出窗口后重试',
+  manualLink: '点此打开付款页面',
   unavailableBadge: '充值暂不可用：支付渠道还没配置好或暂时连不上，请稍后再试',
   opened: '请在新打开的页面完成付款，付完回到这里，余额会自动更新',
   /** 到账提示（PUSH_ACCOUNT_STATE ingot_changed，新余额 > 旧余额时） */

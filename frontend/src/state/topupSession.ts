@@ -1,7 +1,8 @@
 // 充值切片（v108，AISLG-251）：道具弹窗里充值面板的开关、CREATE_TOPUP（结账页在新窗口打开）、
 // 到账推送（PUSH_ACCOUNT_STATE ingot_changed）与提示、本次会话内渠道不可用的置灰。
 // 只有玩家连接有这个入口：网页端固定以玩家身份登录（见 useGameSession），Agent 令牌不经本界面。
-// 结账地址只接受 https，且原样交给 window.open，前端不拼接支付地址。
+// 结账地址只接受 https，原样导航到服务端返回的地址，前端不拼接支付地址。
+// 购买时先同步开一个空白窗口（避免被拦截）；失败则关掉它，被拦截则面板里给手动链接。
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '../api/client';
@@ -23,6 +24,10 @@ export interface TopupSession {
   notice: string | null;
   /** 已打开结账页、等待付款回来（期间回到页面时会重拉一次余额） */
   awaiting: boolean;
+  /** 本次购买时浏览器拦截了新窗口：面板提示用户允许弹窗，并改用手动链接 */
+  popupBlocked: boolean;
+  /** 被拦截时拿到的结账地址（仅 https），面板里显示「点此打开付款页面」 */
+  manualCheckoutUrl: string | null;
   buy: () => Promise<void>;
   /** PUSH_ACCOUNT_STATE（ingot_changed）：写入新余额；比旧的多时提示「元宝到账 +N」 */
   onIngotPush: (balance: number) => void;
@@ -51,6 +56,29 @@ export function isSafeCheckoutUrl(url: unknown): url is string {
   }
 }
 
+/**
+ * 点购买的同步部分里先开一个空白窗口（仍在用户点击的调用栈内，不会被当成弹窗拦截）。
+ * 不带 noopener：要拿到窗口句柄，拿到地址后再 opener = null 并导航。返回 null 表示被拦截。
+ */
+function openPlaceholderWindow(text: string): Window | null {
+  let win: Window | null;
+  try {
+    win = window.open('', '_blank');
+  } catch {
+    return null;
+  }
+  if (!win) {
+    return null;
+  }
+  try {
+    win.document.title = text;
+    win.document.body.textContent = text;
+  } catch {
+    // 写不进空白页不影响后续跳转
+  }
+  return win;
+}
+
 export function useTopupSession(clientRef: { current: ApiClient | null }, options: TopupSessionOptions): TopupSession {
   const { ingot, applyItems, refreshItems, notify } = options;
   const [panelOpen, setPanelOpen] = useState(false);
@@ -59,6 +87,8 @@ export function useTopupSession(clientRef: { current: ApiClient | null }, option
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [awaiting, setAwaiting] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
+  const [manualCheckoutUrl, setManualCheckoutUrl] = useState<string | null>(null);
   // 余额镜像：推送到达时同步读取旧值算差额（state 异步，不能直接用）
   const balanceRef = useRef<number | null>(ingot);
   const refreshRef = useRef(refreshItems);
@@ -115,12 +145,16 @@ export function useTopupSession(clientRef: { current: ApiClient | null }, option
     setPanelOpen(true);
     setError(null);
     setNotice(null);
+    setPopupBlocked(false);
+    setManualCheckoutUrl(null);
   }, []);
 
   const closePanel = useCallback(() => {
     setPanelOpen(false);
     setError(null);
     setNotice(null);
+    setPopupBlocked(false);
+    setManualCheckoutUrl(null);
   }, []);
 
   const buy = useCallback(async () => {
@@ -130,9 +164,14 @@ export function useTopupSession(clientRef: { current: ApiClient | null }, option
       setError(TOPUP_COPY.errors.fallback);
       return;
     }
+    // 同步部分（发请求之前）：先开空白窗口，保证仍在点击的用户激活内
+    const win = openPlaceholderWindow(TOPUP_COPY.redirecting);
+    setPopupBlocked(win === null);
+    setManualCheckoutUrl(null);
     setBusy(true);
     setError(null);
     setNotice(null);
+    let handedOff = false;
     try {
       const res = await client.request(Op.CREATE_TOPUP, { productId: TOPUP_PRODUCT_ID });
       if (!res.ok) {
@@ -148,13 +187,24 @@ export function useTopupSession(clientRef: { current: ApiClient | null }, option
         setError(TOPUP_COPY.errors.fallback);
         return;
       }
-      // noopener 时 window.open 恒返回 null，无法据此判断是否被拦截；拦截时玩家重按购买即可（旧订单作废）
-      window.open(data.checkoutUrl, '_blank', 'noopener');
       setAwaiting(true);
-      setNotice(TOPUP_COPY.opened);
+      if (win) {
+        // 原样使用服务端返回的地址；先断开 opener，付款页不能反向操作本页
+        win.opener = null;
+        win.location.href = data.checkoutUrl;
+        handedOff = true;
+        setNotice(TOPUP_COPY.opened);
+      } else {
+        // 被拦截：面板里给手动链接（已在上面提示过允许弹窗）
+        setManualCheckoutUrl(data.checkoutUrl);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : TOPUP_COPY.errors.fallback);
     } finally {
+      // 任何没把窗口交给结账页的路径（失败、异常、非 https）都关掉空白窗口
+      if (win && !handedOff) {
+        win.close();
+      }
       setBusy(false);
     }
   }, [clientRef]);
@@ -166,10 +216,26 @@ export function useTopupSession(clientRef: { current: ApiClient | null }, option
     setError(null);
     setNotice(null);
     setAwaiting(false);
+    setPopupBlocked(false);
+    setManualCheckoutUrl(null);
   }, []);
 
   return useMemo(
-    () => ({ panelOpen, openPanel, closePanel, unavailable, busy, error, notice, awaiting, buy, onIngotPush, clear }),
-    [panelOpen, openPanel, closePanel, unavailable, busy, error, notice, awaiting, buy, onIngotPush, clear],
+    () => ({
+      panelOpen,
+      openPanel,
+      closePanel,
+      unavailable,
+      busy,
+      error,
+      notice,
+      awaiting,
+      popupBlocked,
+      manualCheckoutUrl,
+      buy,
+      onIngotPush,
+      clear,
+    }),
+    [panelOpen, openPanel, closePanel, unavailable, busy, error, notice, awaiting, popupBlocked, manualCheckoutUrl, buy, onIngotPush, clear],
   );
 }
