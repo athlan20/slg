@@ -5,7 +5,7 @@ import type { CityGuardView } from './protocol-hero';
 import type { CityStratagemView } from './protocol-stratagem';
 import { RESOURCE_KEYS } from './protocol-wire';
 
-export const PROTOCOL_VERSION = 108;
+export const PROTOCOL_VERSION = 109;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
@@ -232,6 +232,8 @@ export const Op = {
   BUY_ITEM: 149,
   /** 发起充值（v108，AISLG-251；仅玩家连接）：data.productId，返回渠道结账页 checkoutUrl，玩家在新窗口付款 */
   CREATE_TOPUP: 155,
+  /** 兑换码兑换（v109，AISLG-253）：data.code 是玩家输入的原文，成功返回奖励包 + 领取后的元宝与背包 */
+  REDEEM_CODE: 156,
   /** 城池迁移（v91，AISLG-220）：随机迁（迁城令）/ 指定坐标迁（高级迁城令），preview 只预览 */
   MOVE_CITY: 150,
   /** 赎回被俘名将（v94，AISLG-228）：data.heroId，赎金 = 2000 × 等级从主城扣 */
@@ -497,6 +499,14 @@ export type ErrorCode =
   | 'TOPUP_UNAVAILABLE'
   /** 充值：商品 id 无效（v108） */
   | 'TOPUP_PRODUCT_INVALID'
+  /** 兑换码（v109，AISLG-253）：码不存在 / 格式不对 / 已过期 / 已被使用 / 同批已领 / 已被领完 */
+  | 'CODE_INVALID'
+  | 'CODE_EXPIRED'
+  | 'CODE_USED'
+  | 'CODE_BATCH_CLAIMED'
+  | 'CODE_EXHAUSTED'
+  /** 兑换码：输错次数太多（v109；响应附 retryAfterSeconds，期间所有兑换都被拒） */
+  | 'CODE_RATE_LIMITED'
   /** 城池迁移（v91，AISLG-220）：名城不能迁 / 本城有部队在外 / 盟友驻军 / 战乱 / 目标格不合法 / 太近 / 无空地 / 抢先占格 / 出征限制 */
   | 'MOVE_CITY_FAMOUS'
   | 'MOVE_CITY_ARMY_OUTSIDE'
@@ -524,6 +534,7 @@ export * from './protocol-season';
 export * from './protocol-stratagem';
 export * from './protocol-items';
 export * from './protocol-topup';
+export * from './protocol-redeem';
 export * from './protocol-move-city';
 export * from './protocol-faction';
 
