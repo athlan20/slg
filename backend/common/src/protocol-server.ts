@@ -53,6 +53,8 @@ export const SERVER_BROADCAST_TYPES = [
   'faction_city_swallowed',
   // v101（AISLG-241）攻破老巢：某家势力本季灭亡（大事，必达；带最后一击的玩家名）
   'faction_lair_destroyed',
+  // v107（AISLG-249）压制档变化：老巢被打到跨档（升档）/ 营恢复导致降档，必达（一季每家最多几次）
+  'faction_suppressed',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];

@@ -38,6 +38,23 @@ export interface FactionView {
   campRemainingPercent: number;
   /** 当前营守军参考战力（v106，AISLG-247：按营序号递增，第 1 营最弱、第 20 营最强） */
   campPower: number;
+  /** v107（AISLG-249）：这家当前的压制档与三项效果（完全由剩余营数算出） */
+  suppression: FactionSuppressionView;
+}
+
+/**
+ * 势力的压制档（v107，AISLG-249）：老巢被打掉的营越多，这家越虚——围城军更弱、吞 NPC 城更慢、
+ * 3 档时每周吞玩家分城的上限从 2 座降到 1 座。每打掉 5 营升一档、最多 3 档；营恢复后自动降档。
+ */
+export interface FactionSuppressionView {
+  /** 压制档 0~3（0 = 没有被压制；已灭亡的势力恒为 0） */
+  level: number;
+  /** 围城军战力百分比（100 / 75 / 50 / 25） */
+  siegePercent: number;
+  /** 吞一座 NPC 城的基准间隔小时数（6 / 9 / 12 / 15，未随 time_scale 缩放） */
+  swallowIntervalHours: number;
+  /** 每周最多吞下的玩家分城数（0~2 档 2 座，3 档 1 座） */
+  weeklyBranchCap: number;
 }
 
 /** GET_FACTIONS 响应（开关关闭时 enabled = false、factions 为空数组） */

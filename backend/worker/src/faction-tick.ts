@@ -1,6 +1,8 @@
 // 五方势力的吞城定时器（AISLG-239，v99）：每家每 6 小时（随全局时间缩放）在当前势力范围里
 // 随机吞一座无主 NPC 城；半径扩大时写一条全服播报（每周最多一次）。
 // v102（AISLG-243）：每轮先看一眼开关——开关刚打开而本季还没启用过时，先把老巢放下来（worker/src/faction-start.ts）。
+// v107（AISLG-249）：吞城间隔按「这一家」的压制档取 6 / 9 / 12 / 15 小时基准（老巢被打掉的营越多越慢），
+// 仍随 time_scale 缩放；每家独立取值，已经计时中的下一次按「上次吞城时刻 + 新间隔」往后算，不立刻补吞。
 // 参照 npc-raid-timer 的链式 setTimeout + season-busy：换季进行中不吞城（世界即将清空），顺延再试。
 // 开季的「老巢周围 25 格全部归该势力」不在这里，在世界生成 / 换季 / 当季启用的事务里（common/src/faction-db.ts）。
 
@@ -9,7 +11,9 @@ import { getFactionEnabled } from '../../common/src/faction-config';
 import { factionDayAt, factionDefOf, factionRadiusAt, factionSwallowIntervalMs } from '../../common/src/faction';
 import { loadFactionRows, swallowRandom } from '../../common/src/faction-db';
 import { loadFactionEpochStart } from '../../common/src/faction-start';
-import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
+import { FACTION_LAIR_CAMPS } from '../../common/src/faction-lair';
+import { loadFactionLairs } from '../../common/src/faction-lair-db';
+import { suppressionLevel, suppressionSwallowIntervalMs } from '../../common/src/faction-suppression';
 import { getCurrentSeason } from '../../common/src/season-db';
 import { insertServerBroadcast } from '../../common/src/server-broadcast';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
@@ -38,13 +42,15 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
   if (rows.length === 0) {
     return result;
   }
-  // v101（AISLG-241）：本季已灭亡的势力不再吞城
-  const destroyed = await destroyedFactionKeys(pool);
-  // v102（AISLG-243）：半径按「势力起点」与真实天数算（起点 = max(本季开始时间, 势力启用时间)，不随 time_scale 变化）；
-  // 吞城间隔随缩放
+  // v101（AISLG-241）：本季已灭亡的势力不再吞城（范围也不画）
+  // v107（AISLG-249）：同时按每家的剩余营数算压制档，决定这家的吞城间隔
+  const lairs = new Map((await loadFactionLairs(pool)).map((row) => [row.key as string, row]));
+  const destroyed = new Set(
+    [...lairs.values()].filter((row) => row.destroyed_at).map((row) => row.key as string),
+  );
+  // v102（AISLG-243）：半径按「势力起点」与真实天数算（起点 = max(本季开始时间, 势力启用时间)，不随 time_scale 变化）
   const epochStart = await loadFactionEpochStart(pool, season.startAt);
   const radius = factionRadiusAt(epochStart, now);
-  const intervalMs = factionSwallowIntervalMs();
 
   const client = await pool.connect();
   try {
@@ -53,7 +59,11 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
       if (destroyed.has(row.key)) {
         continue;
       }
-      if (now.getTime() < row.last_swallow_at.getTime() + intervalMs) {
+      // v107（AISLG-249）：这家按自己的压制档取间隔（没有老巢行的按满营 = 0 档）；
+      // 判定仍是「上次吞城时刻 + 间隔」，所以档位变了只是下一次的到点时刻跟着变，不补吞
+      const lair = lairs.get(row.key);
+      const level = lair ? suppressionLevel(lair.camps_total || FACTION_LAIR_CAMPS, lair.camps_remaining) : 0;
+      if (now.getTime() < row.last_swallow_at.getTime() + suppressionSwallowIntervalMs(level)) {
         continue;
       }
       const def = factionDefOf(row.key);
@@ -100,7 +110,8 @@ export async function runFactionTick(pool: pg.Pool, now: Date = new Date()): Pro
 const MAX_CHECK_MS = 60_000;
 const MIN_CHECK_MS = 5_000;
 
-/** 下一次该检查的时刻隔多久（毫秒）：按吞城间隔的四分之一估，钳到 5 秒 ~ 60 秒 */
+/** 下一次该检查的时刻隔多久（毫秒）：按最短的那档吞城间隔（0 档 6 小时，随缩放）的四分之一估，
+ *  钳到 5 秒 ~ 60 秒。压制档只会把间隔拉长（9 / 12 / 15 小时），所以按 0 档算就是最密的那一档，不会漏掉到点的家。 */
 function checkDelayMs(): number {
   return Math.min(MAX_CHECK_MS, Math.max(MIN_CHECK_MS, Math.floor(factionSwallowIntervalMs() / 4)));
 }

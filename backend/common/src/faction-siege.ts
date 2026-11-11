@@ -7,6 +7,8 @@
 // 数值来源（需求 AISLG-240「数值是怎么定的」）：围城军战力 = 分城官府等级 × 倍率（第 8~14 天 100、
 // 15~21 天 150、22 天起 200），编成按 3 级 NPC 城守军的比例（义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12）；
 // 每次打赢扣 35 城防（沿用 siegeDamage，围城军不带冲车），城防 100 → 0 要连赢 6 次、跨约 30 小时。
+// AISLG-249（v107）起另受「压制档」影响：老巢被打掉 15 营以上（3 档）时每周上限降为 1 座、
+// 围城军战力按压制比例打折（factionSiegeSuppressedPower），压制档本身见 faction-suppression.ts。
 
 import { beaconLeadMultiplier } from './building-effects';
 import { MAX_BUILDING_LEVEL } from './rules';
@@ -40,8 +42,19 @@ export function factionSiegeMultiplierForDay(day: number): number {
   return multiplier;
 }
 
-/** 每家每周最多吞下的玩家分城数（达到上限后本周不再发起围攻） */
+/** 每家每周最多吞下的玩家分城数（达到上限后本周不再发起围攻）：0~2 档 2 座（AISLG-240 现状） */
 export const FACTION_SIEGE_WEEKLY_CAP = 2;
+
+/** 3 档（老巢被打掉 15 营以上，AISLG-249）的每周上限：1 座（减掉一半，只影响拼灭亡的阶段） */
+export const FACTION_SIEGE_WEEKLY_CAP_AT_MAX_SUPPRESSION = 1;
+
+/** 压制档上限 3（与 faction-suppression.ts 的 FACTION_SUPPRESSION_MAX_LEVEL 同值，这里只用来判上限档） */
+const MAX_SUPPRESSION_LEVEL = 3;
+
+/** 按这家当前的压制档取每周吞分城上限（AISLG-249）：0~2 档 2 座，3 档 1 座 */
+export function factionSiegeWeeklyCap(suppressionLevel: number): number {
+  return suppressionLevel >= MAX_SUPPRESSION_LEVEL ? FACTION_SIEGE_WEEKLY_CAP_AT_MAX_SUPPRESSION : FACTION_SIEGE_WEEKLY_CAP;
+}
 
 /** 一周的时长（真实天数，不随 time_scale 变化）：一周按本季第 8 / 15 / 22 天起算 */
 export const FACTION_SIEGE_WEEK_DAYS = 7;
@@ -138,6 +151,16 @@ export function factionSiegeBasePower(): number {
  */
 export function factionSiegePower(governmentLevel: number, multiplier: number): number {
   return Math.max(1, Math.floor(governmentLevel)) * Math.max(0, Math.floor(multiplier));
+}
+
+/**
+ * 压制后的围城军战力（AISLG-249）= 原战力 × 压制档比例（100 / 75 / 50 / 25），向下取整、不低于 1。
+ * 在围攻发起那一刻算（worker/src/faction-siege-tick.ts）：已出发的围城军不变，缺口留到下一次发起。
+ */
+export function factionSiegeSuppressedPower(power: number, siegePercent: number): number {
+  const base = Math.max(1, Math.floor(Number.isFinite(power) ? power : 0));
+  const percent = Math.max(0, Math.min(100, Math.floor(Number.isFinite(siegePercent) ? siegePercent : 100)));
+  return Math.max(1, Math.floor((base * percent) / 100));
 }
 
 /**

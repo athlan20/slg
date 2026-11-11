@@ -10,8 +10,10 @@ import { getFactionEnabled } from '../../common/src/faction-config';
 import { factionBannerOf } from '../../common/src/faction';
 import { FACTION_LAIR_CAMPS, factionLairCurrentCampPower, factionLairRemainingPercent } from '../../common/src/faction-lair';
 import { loadFactionLairs, recoverFactionLairs, refreshFactionLairPower } from '../../common/src/faction-lair-db';
+import type { ServerBroadcastCreated } from '../../common/src/server-broadcast';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { isSeasonResetting, trackWorkerJob } from './season-busy';
+import { notifySuppressionChange } from './faction-suppression-notify';
 
 export interface FactionLairTickResult {
   /** 本次刷新了战力锚点的老巢数 */
@@ -35,13 +37,28 @@ export async function runFactionLairTick(pool: pg.Pool, now: Date = new Date()):
   }
   const client = await pool.connect();
   const pushes: Array<{ key: string; data: Record<string, unknown> }> = [];
+  /** v107（AISLG-249）：恢复导致压制档降档时的全服播报（提交后统一 pg_notify） */
+  const broadcasts: ServerBroadcastCreated[] = [];
   try {
     await client.query('BEGIN');
     const refreshed = await refreshFactionLairPower(client, now);
     result.refreshed = refreshed.refreshed;
     result.g1 = refreshed.g1;
     result.g20 = refreshed.g20;
-    result.recovered = await recoverFactionLairs(client, now);
+    const recoveries = await recoverFactionLairs(client, now);
+    result.recovered = recoveries.reduce((sum, row) => sum + (row.campsAfter - row.campsBefore), 0);
+    for (const recovery of recoveries) {
+      // 营恢复后压制档可能降（例：已打掉 15 营的 3 档，一天没人打回到 14 营 → 2 档）：降档也播一次
+      const change = await notifySuppressionChange(client, {
+        key: recovery.key,
+        campsTotal: recovery.campsTotal,
+        campsBefore: recovery.campsBefore,
+        campsAfter: recovery.campsAfter,
+      });
+      if (change) {
+        broadcasts.push(change.broadcast);
+      }
+    }
     if (result.recovered > 0) {
       // 恢复 1 营后各营数变了：把变化告诉全服（面板 / 地图不等到下一次轮询）
       for (const row of await loadFactionLairs(client)) {
@@ -63,6 +80,12 @@ export async function runFactionLairTick(pool: pg.Pool, now: Date = new Date()):
       }
     }
     await client.query('COMMIT');
+    for (const broadcast of broadcasts) {
+      await pool.query('SELECT pg_notify($1, $2)', [
+        NOTIFY_CHANNEL,
+        JSON.stringify({ reason: 'server_broadcast', accountId: '', broadcast }),
+      ]);
+    }
     for (const push of pushes) {
       await pool.query('SELECT pg_notify($1, $2)', [
         NOTIFY_CHANNEL,

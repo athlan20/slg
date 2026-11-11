@@ -293,6 +293,18 @@ export const EXTRA_MAP = {
     campRemaining: (percent: number) => `当前营 ${percent}%`,
     /** 面板：本季已灭亡 */
     destroyed: '已灭亡',
+    /** 面板：压制那两行的悬浮说明（老巢被打掉的营越多越虚，营恢复后自动降档） */
+    suppressionHint: '老巢每被打掉 5 营升一档压制：围城军更弱、吞 NPC 城更慢，3 档时每周吞玩家分城从 2 座降到 1 座；营恢复后自动降档',
+    /** 面板：压制档（v107，AISLG-249）：老巢被打掉的营越多，这家越虚 */
+    suppression: (level: number) => (level > 0 ? `压制 ${level} 档` : '无压制'),
+    /** 面板：压制档的三项效果（围城军战力百分比 / 吞 NPC 城基准小时数 / 每周吞分城上限） */
+    suppressionEffects: (siegePercent: number, hours: number, weeklyCap: number) =>
+      `围城军 ${siegePercent}% · 吞城 ${hours} 小时 · 每周 ${weeklyCap} 座`,
+    /** 全服播报：老巢被打到跨档（升档） */
+    broadcastSuppressed: (faction: string, level: number) => `${faction}被压制到 ${level} 档`,
+    /** 全服播报：营恢复导致降档（降到 0 档 = 压制解除） */
+    broadcastSuppressionEased: (faction: string, level: number) =>
+      level > 0 ? `${faction}的压制降到 ${level} 档（老巢营已恢复）` : `${faction}的压制已解除（老巢营已恢复）`,
     /** 战报类别名（打老巢） */
     reportKind: '势力老巢',
     /** 全服播报：这家势力被攻破（带最后一击的玩家名） */

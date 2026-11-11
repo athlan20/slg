@@ -224,6 +224,15 @@ export const EXTRA_MAP_EN = {
     camps: (remaining: number, total: number) => `${remaining}/${total} camps`,
     campRemaining: (percent: number) => `current camp ${percent}%`,
     destroyed: 'Destroyed',
+    suppressionHint: 'Every 5 lair camps knocked out raises the suppression level by one: siege armies get weaker, NPC cities are swallowed more slowly, and at level 3 the weekly branch-city cap drops from 2 to 1. Levels drop again as camps recover',
+    suppression: (level: number) => (level > 0 ? `Suppression lv${level}` : 'No suppression'),
+    suppressionEffects: (siegePercent: number, hours: number, weeklyCap: number) =>
+      `siege army ${siegePercent}% · swallows every ${hours}h · ${weeklyCap}/week`,
+    broadcastSuppressed: (faction: string, level: number) => `${faction} is suppressed to level ${level}`,
+    broadcastSuppressionEased: (faction: string, level: number) =>
+      level > 0
+        ? `${faction} suppression eased to level ${level} (lair camps recovering)`
+        : `${faction} is no longer suppressed (lair camps recovering)`,
     reportKind: 'Faction lair',
     broadcastDestroyed: (actor: string, faction: string, leader: string) =>
       `${actor} broke the ${faction} lair: the faction is destroyed this season and its leader ${leader} joins them`,
