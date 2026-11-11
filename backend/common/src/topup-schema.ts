@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS topup_orders (
 CREATE INDEX IF NOT EXISTS idx_topup_orders_account ON topup_orders (account_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_topup_orders_pending ON topup_orders (status, created_at);
 CREATE INDEX IF NOT EXISTS idx_topup_orders_checkout ON topup_orders (provider, provider_checkout_id);
+CREATE INDEX IF NOT EXISTS idx_topup_orders_provider_order ON topup_orders (provider, provider_order_id);
 
 CREATE TABLE IF NOT EXISTS payment_webhook_events (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

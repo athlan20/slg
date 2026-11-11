@@ -65,26 +65,35 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
 
-/** 从 checkout 对象里取 request_id / metadata.orderId / transaction.amount_paid / checkout.request_id */
+/**
+ * 退款 / 拒付事件里找订单用的字段。request_id / metadata 只在部分事件里有（Creem 拒付文档示例里
+ * object.checkout 没有它们），所以另取渠道的结账会话 id（object.checkout.id）与订单 id
+ * （object.order.id，没有再取 object.transaction.order）；订单表里存的是创建结账时的 checkout id 与入账时的 order id。
+ */
 function readCheckoutRefs(object: Record<string, unknown>): {
   requestId: string | null;
   metadataOrderId: string | null;
   amountPaidCents: number | null;
+  providerCheckoutId: string | null;
+  providerOrderId: string | null;
 } {
   const checkout = asRecord(object.checkout);
   const metadata = asRecord(object.metadata) ?? (checkout ? asRecord(checkout.metadata) : null);
   const transaction = asRecord(object.transaction);
+  const order = asRecord(object.order);
   return {
     requestId: readString(object.request_id) ?? (checkout ? readString(checkout.request_id) : null),
     metadataOrderId: metadata ? readString(metadata.orderId) : null,
     amountPaidCents: transaction ? readCents(transaction.amount_paid) : null,
+    providerCheckoutId: checkout ? readString(checkout.id) : null,
+    providerOrderId: (order ? readString(order.id) : null) ?? (transaction ? readString(transaction.order) : null),
   };
 }
 
 /**
  * 把 Creem 回调体解析成我们的事件（已验签之后调用）。结构不对返回 null（调用方按 400 处理）。
  * checkout.completed：object.request_id（我们的订单 id）、object.metadata.orderId、
- * object.order.amount_paid、object.product.id。
+ * object.order.amount_paid、object.product.id、object.order.id（渠道订单 id，入账时存下，拒付 / 退款靠它兜底找单）。
  */
 export function parseCreemEvent(payload: unknown): PaymentEvent | null {
   const body = asRecord(payload);
@@ -111,7 +120,7 @@ export function parseCreemEvent(payload: unknown): PaymentEvent | null {
       metadataOrderId: metadata ? readString(metadata.orderId) : null,
       providerProductId: product ? readString(product.id) : null,
       amountPaidCents: order ? readCents(order.amount_paid) : readCents(object.amount_paid),
-      providerOrderId: order ? readString(order.order_id) ?? readString(order.id) : null,
+      providerOrderId: order ? readString(order.id) ?? readString(order.order_id) : null,
     };
   }
   if (eventType === 'refund.created') {
@@ -125,6 +134,8 @@ export function parseCreemEvent(payload: unknown): PaymentEvent | null {
       eventId,
       requestId: refs.requestId,
       metadataOrderId: refs.metadataOrderId,
+      providerCheckoutId: refs.providerCheckoutId,
+      providerOrderId: refs.providerOrderId,
       refundCents,
       amountPaidCents: refs.amountPaidCents,
     };
@@ -136,6 +147,8 @@ export function parseCreemEvent(payload: unknown): PaymentEvent | null {
       eventId,
       requestId: refs.requestId,
       metadataOrderId: refs.metadataOrderId,
+      providerCheckoutId: refs.providerCheckoutId,
+      providerOrderId: refs.providerOrderId,
       amountCents: readCents(object.amount) ?? 0,
       amountPaidCents: refs.amountPaidCents,
     };

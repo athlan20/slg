@@ -39,6 +39,10 @@ export type PaymentEvent =
       eventId: string;
       requestId: string | null;
       metadataOrderId: string | null;
+      /** 渠道结账会话 id（object.checkout.id），request_id 缺失时用它找订单；缺省视为 null */
+      providerCheckoutId?: string | null;
+      /** 渠道订单 id（object.order.id / object.transaction.order），前两者都对不上时兜底；缺省视为 null */
+      providerOrderId?: string | null;
       /** 本次退款金额（分），可能是部分退款 */
       refundCents: number;
       amountPaidCents: number | null;
@@ -48,6 +52,9 @@ export type PaymentEvent =
       eventId: string;
       requestId: string | null;
       metadataOrderId: string | null;
+      /** 同 refund 事件：拒付回调里没有 request_id / metadata 时靠它们找订单（缺省视为 null） */
+      providerCheckoutId?: string | null;
+      providerOrderId?: string | null;
       /** 拒付金额（分） */
       amountCents: number;
       amountPaidCents: number | null;

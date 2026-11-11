@@ -9,12 +9,14 @@
 // 退款 / 拒付：按比例回收元宝（部分退款），累计退款达到整单才置 refunded；ingot 最多减到 0，
 //   减不够的部分记 clawback_short；不收回已买的道具（含 paid_count 部分）、不动礼金、不自动封号。
 // 锁序（与创建订单一致）：先锁订单行，再锁 accounts 行——两条路径顺序相同，不会互相死锁。
+// 找订单（request_id → 渠道结账会话 id → 渠道订单 id）在 topup-lookup.ts；在写去重表之前完成，去重表里记的是解析出的订单 id。
 
 import type pg from 'pg';
 import { EventType } from './protocol-city';
 import { insertEvent } from './events';
 import { topupProduct } from './ingot';
 import { recordWebhookEvent, topupOrderFromRow, type RawOrderRow, type TopupOrder } from './topup-db';
+import { resolveTopupOrderId } from './topup-lookup';
 import type { PaymentEvent, PaymentProvider } from './payments/types';
 
 type CheckoutEvent = Extract<PaymentEvent, { kind: 'checkout_completed' }>;
@@ -57,14 +59,6 @@ async function inTransaction<T>(pool: pg.Pool, work: (client: pg.PoolClient) => 
   }
 }
 
-/** 回调里用来找订单的 id：request_id 优先，metadata.orderId 兜底（账号归属一律以订单行为准） */
-export function eventOrderId(event: PaymentEvent): string | null {
-  if (event.kind === 'ignored') {
-    return null;
-  }
-  return event.requestId ?? event.metadataOrderId;
-}
-
 async function lockOrder(client: pg.PoolClient, orderId: string): Promise<TopupOrder | null> {
   const res = await client.query(
     `SELECT id, account_id, product_id, usd_cents, ingot_amount, status, provider,
@@ -75,15 +69,15 @@ async function lockOrder(client: pg.PoolClient, orderId: string): Promise<TopupO
   return res.rowCount ? topupOrderFromRow(res.rows[0] as RawOrderRow) : null;
 }
 
-/** 支付成功入账（事务内）。返回 credited / ignored */
+/** 支付成功入账（事务内）。orderId 是已解析出的订单 id（null = 三种方式都找不到）。返回 credited / ignored */
 async function settleCheckoutInTx(
   client: pg.PoolClient,
   event: CheckoutEvent,
   provider: PaymentProvider,
+  orderId: string | null,
 ): Promise<SettleOutcome> {
-  const orderId = eventOrderId(event);
   if (!orderId) {
-    return { status: 'ignored', orderId: null, reason: 'no_request_id' };
+    return { status: 'ignored', orderId: null, reason: 'order_not_found' };
   }
   const order = await lockOrder(client, orderId);
   if (!order) {
@@ -153,11 +147,14 @@ async function clawback(
 }
 
 /** 退款（refund.created，Creem 在退款成功后发；事务内）：按比例回收，累计退满整单才置 refunded */
-async function settleRefundInTx(client: pg.PoolClient, event: RefundEvent): Promise<SettleOutcome> {
+async function settleRefundInTx(
+  client: pg.PoolClient,
+  event: RefundEvent,
+  orderId: string | null,
+): Promise<SettleOutcome> {
   const refundCents = event.refundCents;
-  const orderId = eventOrderId(event);
   if (!orderId) {
-    return { status: 'ignored', orderId: null, reason: 'no_request_id' };
+    return { status: 'ignored', orderId: null, reason: 'order_not_found' };
   }
   if (!Number.isInteger(refundCents) || refundCents <= 0) {
     return { status: 'ignored', orderId, reason: 'refund_amount_invalid' };
@@ -200,10 +197,13 @@ async function settleRefundInTx(client: pg.PoolClient, event: RefundEvent): Prom
 }
 
 /** 拒付（dispute.created；事务内）：按整单回收，订单置 refunded（没有单独的 disputed 状态） */
-async function settleDisputeInTx(client: pg.PoolClient, event: DisputeEvent): Promise<SettleOutcome> {
-  const orderId = eventOrderId(event);
+async function settleDisputeInTx(
+  client: pg.PoolClient,
+  event: DisputeEvent,
+  orderId: string | null,
+): Promise<SettleOutcome> {
   if (!orderId) {
-    return { status: 'ignored', orderId: null, reason: 'no_request_id' };
+    return { status: 'ignored', orderId: null, reason: 'order_not_found' };
   }
   const order = await lockOrder(client, orderId);
   if (!order) {
@@ -240,14 +240,34 @@ async function settleDisputeInTx(client: pg.PoolClient, event: DisputeEvent): Pr
   return { status: 'refunded', orderId: order.id, accountId: order.accountId, clawed, shortfall, balance };
 }
 
-/** 单个回调的完整处理：同一事务里「事件去重 + 结算」。回调路由只调这一个函数 */
+/** 按事件类型分派到对应的结算（事务内；orderId 已由调用方按 topup-lookup 的顺序解析好） */
+async function settleEventInTx(
+  client: pg.PoolClient,
+  event: PaymentEvent,
+  provider: PaymentProvider,
+  orderId: string | null,
+): Promise<SettleOutcome> {
+  if (event.kind === 'checkout_completed') {
+    return settleCheckoutInTx(client, event, provider, orderId);
+  }
+  if (event.kind === 'refund') {
+    return settleRefundInTx(client, event, orderId);
+  }
+  if (event.kind === 'dispute') {
+    return settleDisputeInTx(client, event, orderId);
+  }
+  return { status: 'ignored', orderId: null, reason: `ignored_${event.eventType}` };
+}
+
+/** 单个回调的完整处理：同一事务里「找订单 → 事件去重 → 结算」。回调路由只调这一个函数 */
 export async function handlePaymentEvent(
   pool: pg.Pool,
   event: PaymentEvent,
   provider: PaymentProvider,
 ): Promise<PaymentEventResult> {
   return inTransaction(pool, async (client) => {
-    const orderId = eventOrderId(event);
+    // 先找订单（只读 id），去重表里记的是解析出的订单 id（找不到记 null）
+    const orderId = await resolveTopupOrderId(client, provider.provider, event);
     if (event.kind !== 'ignored' && event.eventId) {
       const fresh = await recordWebhookEvent(client, {
         provider: provider.provider,
@@ -259,33 +279,34 @@ export async function handlePaymentEvent(
         return { duplicate: true, outcome: { status: 'ignored', orderId, reason: 'duplicate' } };
       }
     }
-    const outcome =
-      event.kind === 'checkout_completed'
-        ? await settleCheckoutInTx(client, event, provider)
-        : event.kind === 'refund'
-          ? await settleRefundInTx(client, event)
-          : event.kind === 'dispute'
-            ? await settleDisputeInTx(client, event)
-            : ({ status: 'ignored', orderId: null, reason: `ignored_${event.eventType}` } as SettleOutcome);
+    const outcome = await settleEventInTx(client, event, provider, orderId);
     return { duplicate: false, outcome };
   });
 }
 
-/** 单独入账（测试与人工补单用；回调路径请用 handlePaymentEvent，它还会写去重表） */
-export async function settleCheckoutCompleted(
+/** 单独结算（测试与人工补单用；回调路径请用 handlePaymentEvent，它还会写去重表） */
+async function settleStandalone(pool: pg.Pool, event: PaymentEvent, provider: PaymentProvider): Promise<SettleOutcome> {
+  return inTransaction(pool, async (client) => {
+    const orderId = await resolveTopupOrderId(client, provider.provider, event);
+    return settleEventInTx(client, event, provider, orderId);
+  });
+}
+
+/** 单独入账（同上） */
+export function settleCheckoutCompleted(
   pool: pg.Pool,
   event: CheckoutEvent,
   provider: PaymentProvider,
 ): Promise<SettleOutcome> {
-  return inTransaction(pool, (client) => settleCheckoutInTx(client, event, provider));
+  return settleStandalone(pool, event, provider);
 }
 
 /** 单独处理退款（同上） */
-export async function settleRefund(pool: pg.Pool, event: RefundEvent): Promise<SettleOutcome> {
-  return inTransaction(pool, (client) => settleRefundInTx(client, event));
+export function settleRefund(pool: pg.Pool, event: RefundEvent, provider: PaymentProvider): Promise<SettleOutcome> {
+  return settleStandalone(pool, event, provider);
 }
 
 /** 单独处理拒付（同上） */
-export async function settleDispute(pool: pg.Pool, event: DisputeEvent): Promise<SettleOutcome> {
-  return inTransaction(pool, (client) => settleDisputeInTx(client, event));
+export function settleDispute(pool: pg.Pool, event: DisputeEvent, provider: PaymentProvider): Promise<SettleOutcome> {
+  return settleStandalone(pool, event, provider);
 }
