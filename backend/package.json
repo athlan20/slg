@@ -17,6 +17,7 @@
     "smoke:chat": "tsx --env-file=.env scripts/smoke-chat.ts",
     "chat:mute": "tsx --env-file=.env scripts/chat-mute.ts",
     "season": "tsx --env-file=.env scripts/season.ts",
+    "redeem": "tsx --env-file=.env scripts/redeem-codes.ts",
     "calibrate:battle": "tsx scripts/battle-calibration.ts",
     "calibrate:troops": "tsx scripts/troop-calibration.ts",
     "calibrate:tower": "tsx scripts/tower-calibration.ts",

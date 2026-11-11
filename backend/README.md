@@ -33,6 +33,7 @@ Worker 到期结算、跨进程状态通知、按需查询。
 | `scripts/smoke-world.ts` | 世界玩法冒烟（v12）：出征占领、NPC 袭击、召回、NPC 城池战败与重置清理。 |
 | `scripts/gen-agent-api.ts` | Agent API 文档一键生成与漂移检查（见「协议」一节）。 |
 | `scripts/set-time-scale.ts` | 查看 / 设置全局时间缩放（AISLG-38，v20）：`set-time-scale.ts [n]`，缺省查看；改动存 settings 表，API 与 Worker 缓存 TTL 10s 内生效、无需重启。 |
+| `scripts/redeem-codes.ts` | 兑换码运营（AISLG-253，v109）：`create` 批量生成、`list` 查看批次、`export` 导出 CSV、`disable` 停用；没有网页后台。规则见 `common/src/redeem-code.ts`，兑换事务见 `common/src/redeem-db.ts`。 |
 | `scripts/repair-city-tiles.ts` | 一次性修复「坐标在而地块缺失」的城池（幂等，ensureWorld 启动时亦会自愈）。 |
 | `api/src/wechat*.ts` · `wx-*.ts` | 微信扫码登录（v43）：微信接口封装（`wechat.ts`）、ticket 内存状态机与限频（`wx-tickets.ts`）、微信身份与建号 / 绑定（`wx-accounts.ts`）、WX_* 协议处理（`handlers-wechat.ts`）。设计见 `docs/wechat-qr-login.md`。 |
 | `api/src/agent-token.ts` · `handlers-agent-token.ts` | 永久 Agent 令牌（v46，AISLG-129）：每账号一个 `sk_` 令牌（建号自动生成、永不过期、原文可反复查看；表存哈希 + 原文），GET_AGENT_TOKEN / RESET_AGENT_TOKEN 协议处理（仅玩家连接；重置换新并断开旧令牌的在线连接）。 |
@@ -152,6 +153,24 @@ Host 传下来，否则两站会被当成同一个站）：
 - **限频**：同一账号、同一频道每 10 秒一条（世界与私聊各自计算）。世界频道需主城官府 ≥ 3 级。
 - **仅限玩家**：聊天协议对 Agent 连接一律返回 `AGENT_FORBIDDEN`，对外 Agent 文档不收录（见 `protocol-doc-ops-chat.ts`）。
 - **冒烟**：`npm run smoke:chat` 与 `npm run smoke` 一样读 `backend/.env`（本机开发库与 8080 API）。要跑在临时库上，用环境变量覆盖 `DATABASE_URL` 与 `WS_URL`（进程环境优先于 `.env`，见 `--env-file` 的约定）。会在库里新建 `chat_` 前缀的测试账号；`CHAT_SMOKE_PRUNE=1` 才会按保留期清理整张消息表，只在临时库上设。
+
+### 兑换码运营须知（v109，AISLG-253）
+
+- **生成 / 查看 / 导出 / 停用**（只做命令行，没有网页后台）：
+
+  ```bash
+  npm run redeem -- create --name "11月补偿" --kind single --count 100 --ingot 500 --item city_order:2 --expires 2026-12-31
+  npm run redeem -- create --name "社群口令" --kind shared --max 200 --ingot 100 --expires 2026-11-30
+  npm run redeem -- list                       # 名称、类型、奖励、已兑换/总数、过期时间、是否停用
+  npm run redeem -- export --batch <id> > codes.csv
+  npm run redeem -- disable --batch <id>       # 未兑换的码立即失效，已领的奖励不收回
+  ```
+
+- **参数**：`--ingot` 1..100000、`--item itemId:count` 可重复（count 1..99，道具必须在售），至少给一项；`--expires 2026-12-31` = 当天 UTC 结束（也可给 ISO 时间，不给则不过期）；`--kind single` 要 `--count`（1..10000），`--kind shared` 要 `--max`（最多兑换人数，一个批次只有一个码）。
+- **码的可见性**：只在 `create` 的输出与 `export` 里出现；库里存的是规范化后的 16 位大写明文（字符集 0-9 与 A-Z 去掉 I/L/O/U），数据库权限要按敏感数据对待。日志与事件里只记后 4 位。
+- **规则**：一次性码每个只能被一个账号兑换一次；通用码多人都能兑、每人一次、到人数上限为止；同一账号在同一批次里只能领一次（拿到同批的另一个码返回 `CODE_BATCH_CLAIMED`，那个码不作废）。奖励由批次决定：元宝与充值元宝同账户、永久保留，福利道具按普通道具发放（换季清空）。
+- **防猜码**：每账号每小时最多失败 10 次（码不存在 / 格式不对 / 已被用 / 过期 / 同批已领 / 已领完都算），超过后 1 小时内所有兑换请求返回 `CODE_RATE_LIMITED`；成功兑换不计入失败次数。兑换尝试记录保留 7 天，由 Worker 每小时清理一次。
+- **自测**：脚本与其他脚本一样读 `backend/.env`，用 `DATABASE_URL=...` 覆盖指向临时库（进程环境优先于 `.env`）。不要在需求目录直接连共用库。
 
 ### 全局时间缩放 time_scale（v20，AISLG-38）——部署与运维须知
 
