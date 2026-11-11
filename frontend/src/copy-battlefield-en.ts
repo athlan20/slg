@@ -53,6 +53,8 @@ export const BATTLEFIELD_COPY_EN = {
     submitted: 'Entered — waiting for the battle to start',
     over: 'Over the population limit',
     empty: 'Bring at least 1 unit',
+    formation: (parts: string, total: number, population: number) =>
+      `Entry formation: ${parts} (${total} units, population ${population})`,
   },
   squads: {
     title: 'My squads',
@@ -61,6 +63,8 @@ export const BATTLEFIELD_COPY_EN = {
     selected: 'Selected',
     status: { marching: 'Marching', idle: 'Idle', garrison: 'Garrison' },
     troops: (n: number) => `${n} units`,
+    troopPart: (name: string, n: number) => `${name} ${n}`,
+    noneAlive: 'No surviving squads',
     arrive: (text: string) => `Arrives ${text}`,
     march: 'March / Attack',
     split: 'Split',
