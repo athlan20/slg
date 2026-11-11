@@ -4,12 +4,16 @@
 //
 // 兑换（redeemCode）全部在一个事务里完成，失败一律回滚：
 //   规范化 → 每账号一张咨询锁（同一账号的兑换串行，限流判定才准）→ 失败次数 → 按 code 找码与批次
-//   （不存在 / 停用 → CODE_INVALID，过期 → CODE_EXPIRED）→ 通用码先 FOR UPDATE 锁批次行再数已领人数
+//   （不存在 / 停用 / 已作废 → CODE_INVALID，过期 → CODE_EXPIRED）→ 通用码先 FOR UPDATE 锁批次行再数已领人数
 //   （≥ max_redemptions → CODE_EXHAUSTED）→ 插 redeem_claims（ON CONFLICT DO NOTHING + 判断 rowCount：
 //   同批次已领 → CODE_BATCH_CLAIMED，一次性码已被用 → CODE_USED）→ 预检道具堆叠（超上限 → ITEM_STACK_FULL，
 //   整次回滚、码不作废、也不算已领）→ 发奖励（道具 grantItem、元宝 grantIngot）→ 写 CODE_REDEEMED。
-// 锁序：批次行（仅通用码）→ user_items（grantItem 内部锁）→ accounts（grantIngot 的 UPDATE），
-// 与 handlers-items.ts 的「先 user_items 再 accounts」一致；redeem_claims 在发奖励之前插入，不引入反向等待。
+// 锁序：批次行（仅通用码）→ redeem_codes 行（FOR SHARE，只有作废会改它）→ user_items（grantItem 内部锁）→
+// accounts（grantIngot 的 UPDATE），与 handlers-items.ts 的「先 user_items 再 accounts」一致；
+// redeem_claims 在发奖励之前插入，不引入反向等待。
+// AISLG-255：客服作废（voidRedeemCode，在 redeem-ops-db.ts）与兑换同时发生时只能有一个成功。兑换事务在
+// 读码时对该 redeem_codes 行加 FOR SHARE 并拿到 voided_at，作废先 SELECT ... FOR UPDATE 锁同一行、拿到锁后
+// 再查 redeem_claims：两边要么先后串行（后到的看到对方的结果），要么一个等另一个提交，不会都成功。
 // 第 1、3、4 步的错误在事务回滚后单独记一条 redeem_attempts(ok = false)；成功记 ok = true。
 // ITEM_STACK_FULL 与 CODE_RATE_LIMITED 不计失败次数（背包满不是猜码，超限期间记账会让封禁无限延长）。
 
@@ -20,6 +24,8 @@ import { grantItem, loadItems, lockItemStack } from './items-db';
 import { itemDef, type ItemId } from './items';
 import { grantIngot, loadIngot } from './ingot-db';
 import type { InitiatorRole } from './protocol';
+import { BATCH_COLUMNS, toBatchRow, type BatchLookupRow, type RedeemBatchRow } from './redeem-batch-row';
+import { normalizeRedeemChannel } from './redeem-code';
 import {
   REDEEM_BATCH_MAX_CODES,
   REDEEM_FAIL_LIMIT,
@@ -27,7 +33,6 @@ import {
   REDEEM_ATTEMPT_RETENTION_MS,
   codeTail,
   generateRedeemCode,
-  isRedeemBatchKind,
   normalizeRedeemCode,
   validateRedeemRewards,
   type RedeemBatchKind,
@@ -49,17 +54,21 @@ export const REDEEM_ERROR_CODES = [
 ] as const;
 export type RedeemErrorCode = (typeof REDEEM_ERROR_CODES)[number];
 
-/** 批次（库里的一行） */
-export interface RedeemBatchRow {
-  id: string;
-  name: string;
-  kind: RedeemBatchKind;
-  rewards: RedeemRewards;
-  maxRedemptions: number | null;
-  expiresAt: Date | null;
-  disabled: boolean;
-  createdAt: Date;
-}
+// 批次的行结构、列清单与映射在 redeem-batch-row.ts（运营侧的查询也要用）；AISLG-253 时它在本文件里。
+export type { RedeemBatchRow } from './redeem-batch-row';
+// AISLG-255 的运营侧查询（lookup / void / stats）在 redeem-ops-db.ts；这里转出，调用方与测试只用本文件。
+export {
+  lookupRedeemCode,
+  channelRedeemStats,
+  voidRedeemCode,
+  voidRedeemCodes,
+  isRedeemVoidFailure,
+  type RedeemCodeLookup,
+  type RedeemCodeState,
+  type RedeemChannelDayStat,
+  type RedeemChannelStats,
+  type RedeemVoidOutcome,
+} from './redeem-ops-db';
 
 /** 运营脚本 list 用的批次摘要 */
 export interface RedeemBatchSummary extends RedeemBatchRow {
@@ -67,6 +76,8 @@ export interface RedeemBatchSummary extends RedeemBatchRow {
   codeCount: number;
   /** 已兑换人数（一次性码是已用掉的码数，通用码是已领人数） */
   claimCount: number;
+  /** 已作废的码数（AISLG-255） */
+  voidedCount: number;
 }
 
 export interface CreateRedeemBatchInput {
@@ -78,6 +89,8 @@ export interface CreateRedeemBatchInput {
   expiresAt: Date | null;
   /** 一次性码的生成数量（1..10000）；通用码固定 1 */
   count: number;
+  /** 渠道标记（AISLG-255，可省）：字母、数字、连字符，最长 20 个字符；对账按渠道汇总 */
+  channel?: string | null;
 }
 
 export interface CreatedRedeemBatch {
@@ -101,32 +114,17 @@ export type RedeemResult =
   | { ok: true; rewards: RedeemRewards; ingot: number; items: Record<ItemId, number> }
   | { ok: false; code: RedeemErrorCode; detail?: RedeemErrorDetail };
 
-interface BatchLookupRow {
-  id: string;
-  name: string;
-  kind: string;
-  rewards: unknown;
-  max_redemptions: number | null;
-  expires_at: Date | null;
-  disabled: boolean;
-  created_at: Date;
+function requireChannel(channel: string | null | undefined): string | null {
+  if (channel === undefined || channel === null) {
+    return null;
+  }
+  const normalized = normalizeRedeemChannel(channel);
+  if (!normalized) {
+    throw new Error(`createRedeemBatch: 渠道只允许字母、数字与连字符（最长 20 位），收到 ${channel}`);
+  }
+  return normalized;
 }
 
-function toBatchRow(row: BatchLookupRow): RedeemBatchRow {
-  const validated = validateRedeemRewards(row.rewards);
-  return {
-    id: row.id,
-    name: row.name,
-    kind: isRedeemBatchKind(row.kind) ? row.kind : 'single',
-    rewards: validated.ok ? validated.rewards : {},
-    maxRedemptions: row.max_redemptions,
-    expiresAt: row.expires_at,
-    disabled: row.disabled,
-    createdAt: row.created_at,
-  };
-}
-
-const BATCH_COLUMNS = `id, name, kind, rewards, max_redemptions, expires_at, disabled, created_at`;
 /**
  * 创建批次并生成码（调用方事务内）。一次性码按 count 随机生成，遇到唯一约束冲突就重新生成
  * （32^16 的空间里实际上不会撞）；通用码只生成 1 个。
@@ -146,9 +144,9 @@ export async function createRedeemBatch(
     throw new Error(`createRedeemBatch: 码数量必须是 1..${REDEEM_BATCH_MAX_CODES}，收到 ${input.count}`);
   }
   const res = await client.query(
-    `INSERT INTO redeem_batches (name, kind, rewards, max_redemptions, expires_at)
-     VALUES ($1, $2, $3::jsonb, $4, $5) RETURNING id`,
-    [input.name, input.kind, JSON.stringify(input.rewards), input.maxRedemptions, input.expiresAt],
+    `INSERT INTO redeem_batches (name, kind, rewards, max_redemptions, expires_at, channel)
+     VALUES ($1, $2, $3::jsonb, $4, $5, $6) RETURNING id`,
+    [input.name, input.kind, JSON.stringify(input.rewards), input.maxRedemptions, input.expiresAt, requireChannel(input.channel)],
   );
   const batchId = (res.rows[0] as { id: string }).id;
 
@@ -183,25 +181,47 @@ export async function createRedeemBatch(
 /** 批次列表（运营脚本 list）：名称 / 类型 / 奖励 / 已兑换 / 总数 / 过期时间 / 是否停用 */
 export async function listRedeemBatches(q: Queryable): Promise<RedeemBatchSummary[]> {
   const res = await q.query(
-    `SELECT b.id, b.name, b.kind, b.rewards, b.max_redemptions, b.expires_at, b.disabled, b.created_at,
+    `SELECT b.id, b.name, b.kind, b.rewards, b.max_redemptions, b.expires_at, b.disabled, b.channel, b.created_at,
             (SELECT count(*) FROM redeem_codes c WHERE c.batch_id = b.id) AS code_count,
+            (SELECT count(*) FROM redeem_codes c WHERE c.batch_id = b.id AND c.voided_at IS NOT NULL) AS voided_count,
             (SELECT count(*) FROM redeem_claims cl WHERE cl.batch_id = b.id) AS claim_count
      FROM redeem_batches b
      ORDER BY b.created_at DESC`,
   );
   return res.rows.map((row) => {
-    const typed = row as BatchLookupRow & { code_count: number | string; claim_count: number | string };
+    const typed = row as BatchLookupRow & {
+      code_count: number | string;
+      claim_count: number | string;
+      voided_count: number | string;
+    };
     return {
       ...toBatchRow(typed),
       codeCount: Number(typed.code_count),
       claimCount: Number(typed.claim_count),
+      voidedCount: Number(typed.voided_count),
     };
   });
 }
 
-/** 某个批次的全部码（存储形式，运营脚本 export 用；批次不存在返回空数组） */
-export async function listRedeemCodes(q: Queryable, batchId: string): Promise<string[]> {
-  const res = await q.query(`SELECT code FROM redeem_codes WHERE batch_id = $1 ORDER BY created_at, code`, [batchId]);
+/**
+ * 某个批次的码（存储形式，运营脚本 export 用；批次不存在返回空数组）。
+ * `unused = true`（AISLG-255）只给还没被兑换、也还没被作废的码：补发货 / 重新导入淘宝发货工具时用，
+ * 避免把已用掉或已作废的码再发出去。批次停用不在排除之列（停用是批次级操作，运营自己清楚）。
+ */
+export async function listRedeemCodes(
+  q: Queryable,
+  batchId: string,
+  options: { unused?: boolean } = {},
+): Promise<string[]> {
+  const res = options.unused
+    ? await q.query(
+        `SELECT c.code FROM redeem_codes c
+         WHERE c.batch_id = $1 AND c.voided_at IS NULL
+           AND NOT EXISTS (SELECT 1 FROM redeem_claims cl WHERE cl.code = c.code)
+         ORDER BY c.created_at, c.code`,
+        [batchId],
+      )
+    : await q.query(`SELECT code FROM redeem_codes WHERE batch_id = $1 ORDER BY created_at, code`, [batchId]);
   return res.rows.map((row) => (row as { code: string }).code);
 }
 
@@ -325,15 +345,19 @@ export async function redeemCode(
       };
     }
 
-    // 第 3 步：按 code 找码与批次
+    // 第 3 步：按 code 找码与批次。FOR SHARE 锁住码行直到事务结束（AISLG-255）：作废（void）要 UPDATE
+    // 同一行，会等到本事务提交后才看得到最新的 voided_at，反过来本事务也能看到作废后的 voided_at。
     const lookup = await client.query(
-      `SELECT b.id, b.name, b.kind, b.rewards, b.max_redemptions, b.expires_at, b.disabled, b.created_at
+      `SELECT b.id, b.name, b.kind, b.rewards, b.max_redemptions, b.expires_at, b.disabled, b.channel,
+              b.created_at, c.voided_at
        FROM redeem_codes c JOIN redeem_batches b ON b.id = c.batch_id
-       WHERE c.code = $1`,
+       WHERE c.code = $1
+       FOR SHARE OF c`,
       [normalized],
     );
-    const row = lookup.rows[0] as BatchLookupRow | undefined;
-    if (!row || row.disabled) {
+    const row = lookup.rows[0] as (BatchLookupRow & { voided_at: Date | null }) | undefined;
+    if (!row || row.disabled || row.voided_at) {
+      // 已作废的码与停用批次走同一分支：对玩家一律 CODE_INVALID，并记一次失败尝试
       await client.query('ROLLBACK');
       await recordFailure(client, accountId, now);
       return { ok: false, code: 'CODE_INVALID' };
