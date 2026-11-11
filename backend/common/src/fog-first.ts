@@ -69,9 +69,10 @@ export async function recordFirstExplores(
 ): Promise<void> {
   const famous = await client.query(`SELECT name, x, y FROM famous_cities`);
   const sites = await client.query(
-    `SELECT wt.wild_hero AS hero, wt.x, wt.y, EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero) AS claimed
+    `SELECT wt.wild_hero AS hero, wt.x, wt.y,
+            EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero AND fh.owner_account_id = $2) AS claimed
      FROM world_tiles wt WHERE wt.wild_hero = ANY($1::text[])`,
-    [HERO_SITES.map((site) => site.hero)],
+    [HERO_SITES.map((site) => site.hero), trip.accountId],
   );
   const targets: Target[] = [
     ...(famous.rows as Array<{ name: string; x: number; y: number }>).map((row) => ({ kind: 'famous' as const, ...row })),
@@ -124,7 +125,8 @@ async function firstHeroSite(client: pg.PoolClient, trip: FirstExploreTrip, targ
     return;
   }
   await grantRewards(client, trip.accountId, HERO_SITE_FIRST_REWARD);
-  // 名将已被招揽则只发资源（结交资格不给）；否则获得结交资格，不用打守军
+  // 本账号已拥有该名将则只发资源（结交资格不给）；否则获得结交资格，不用打守军（v104，AISLG-245：按账号判，
+  // 别的账号招走不影响）
   const unlocked = !target.claimed;
   if (unlocked) {
     await grantUnlock(client, trip.accountId, target.hero);

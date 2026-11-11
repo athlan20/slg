@@ -1,17 +1,22 @@
-// 攻破老巢的纯规则（v101，AISLG-241）：20 营、每营战力公式、编成比例、歼灭奖励 / 声望、
-// 灭亡榜单（黄巾之乱同名次的 3 倍）、24 小时恢复、每天刷新后的残血比例。
+// 攻破老巢的纯规则（v101，AISLG-241；v106，AISLG-247 改为 20 营由弱到强）：20 营、两个锚点与营序号的
+// 战力公式、编成比例、歼灭奖励 / 声望、灭亡榜单（黄巾之乱同名次的 3 倍）、24 小时恢复、每天刷新后的残血比例。
 // 事务流程见 faction-lair-flow.test.ts（需 TEST_DATABASE_URL）。
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
+  FACTION_LAIR_ANCHOR_PERCENT,
   FACTION_LAIR_CAMPS,
   FACTION_LAIR_DESTROY_TIERS,
   FACTION_LAIR_MIN_CAMP_POWER,
   FACTION_LAIR_PRESTIGE_PERCENT,
+  FACTION_LAIR_R10_RANK,
+  FACTION_LAIR_R3_RANK,
   FACTION_LAIR_RECOVER_MS,
   FACTION_LAIR_WALL_PERCENT,
+  factionLairAnchorPower,
   factionLairCampNo,
-  factionLairCampPower,
+  factionLairCampPowerAt,
+  factionLairCurrentCampPower,
   factionLairDestroyReward,
   factionLairGarrison,
   factionLairRecoveredCamps,
@@ -26,20 +31,65 @@ import { YT_REWARD_TIERS } from '../common/src/yellow-turban';
 import { armyPower } from '../common/src/battle';
 
 describe('攻破老巢的纯规则（无需数据库）', () => {
-  test('老巢共 20 营，城墙减伤 50%，每营战力下限 10,000', () => {
+  test('老巢共 20 营，城墙减伤 50%，每营战力下限 10,000，锚点排名第 10 / 第 3 名，系数 0.35', () => {
     assert.equal(FACTION_LAIR_CAMPS, 20);
     assert.equal(FACTION_LAIR_WALL_PERCENT, 50);
     assert.equal(FACTION_LAIR_MIN_CAMP_POWER, 10_000);
+    assert.equal(FACTION_LAIR_R10_RANK, 10);
+    assert.equal(FACTION_LAIR_R3_RANK, 3);
+    assert.equal(FACTION_LAIR_ANCHOR_PERCENT, 35);
   });
 
-  test('每营战力 = 全服前 10 名合计 ÷ 15（向下取整），不低于 10,000', () => {
-    // 需求「线上实测」：前 10 名合计约 385 万 → 约 25.6 万
-    assert.equal(factionLairCampPower(3_850_000), Math.floor(3_850_000 / 15));
-    assert.equal(factionLairCampPower(0), 10_000);
-    assert.equal(factionLairCampPower(149_999), 10_000);
-    assert.equal(factionLairCampPower(150_000), 10_000);
-    assert.equal(factionLairCampPower(150_001), 10_000);
-    assert.equal(factionLairCampPower(Number.NaN), 10_000);
+  test('两个锚点：G1 = max(10,000, R10 × 0.35)、G20 = max(G1, R3 × 0.35)', () => {
+    // 需求验收：线上快照 R10 = 47,068、R3 = 443,174 → G1 = 16,474、G20 = 155,111
+    const anchors = factionLairAnchorPower(47_068, 443_174);
+    assert.equal(anchors.g1, 16_474);
+    assert.equal(anchors.g20, 155_111);
+    // 系数为 0.35、结果四舍五入到整数：47,068 × 0.35 = 16,473.8 → 16,474；443,174 × 0.35 = 155,110.9 → 155,111
+    assert.deepEqual(factionLairAnchorPower(100_000, 200_000), { g1: 35_000, g20: 70_000 });
+    // 全服无兵：两个锚点都是下限 10,000
+    assert.deepEqual(factionLairAnchorPower(0, 0), { g1: 10_000, g20: 10_000 });
+    assert.deepEqual(factionLairAnchorPower(Number.NaN, Number.NaN), { g1: 10_000, g20: 10_000 });
+    // R3 < R10（榜单异常 / 只有一两个人有兵）：G20 不低于 G1，不会出现后一营比前一营弱
+    assert.deepEqual(factionLairAnchorPower(50_000, 10_000), { g1: 17_500, g20: 17_500 });
+    // 低于下限的小榜单：都是 10,000（除法取整后也不低于下限）
+    assert.deepEqual(factionLairAnchorPower(1_000, 2_000), { g1: 10_000, g20: 10_000 });
+  });
+
+  test('第 k 营战力 Gk = G1 × (G20 ÷ G1)^((k−1) ÷ 19)，向下取整，第 1 营最弱、第 20 营最强', () => {
+    const { g1, g20 } = factionLairAnchorPower(47_068, 443_174);
+    assert.equal(factionLairCampPowerAt(g1, g20, 1), 16_474, '第 1 营 = G1');
+    assert.equal(factionLairCampPowerAt(g1, g20, 20), 155_111, '第 20 营 = G20');
+    // 需求表里的近似值：第 5 营约 26,400、第 10 营约 47,500、第 15 营约 86,000
+    assert.equal(factionLairCampPowerAt(g1, g20, 5), 26_413);
+    assert.equal(factionLairCampPowerAt(g1, g20, 10), 47_653);
+    assert.equal(factionLairCampPowerAt(g1, g20, 15), 85_974);
+    // 单调递增、20 营各不相同（锚点拉开时）
+    const powers = Array.from({ length: FACTION_LAIR_CAMPS }, (_, index) => factionLairCampPowerAt(g1, g20, index + 1));
+    for (let index = 1; index < powers.length; index += 1) {
+      assert.ok(powers[index] > powers[index - 1], `第 ${index + 1} 营应比第 ${index} 营强`);
+    }
+    // 两个锚点相同时（开季 / 旧库回填）：20 营同一强度，等于下限
+    for (let campNo = 1; campNo <= FACTION_LAIR_CAMPS; campNo += 1) {
+      assert.equal(factionLairCampPowerAt(10_000, 10_000, campNo), 10_000);
+    }
+    // 营序号越界按 1 / 20 夹住；G20 < G1 时按 G1 兜底
+    assert.equal(factionLairCampPowerAt(g1, g20, 0), g1);
+    assert.equal(factionLairCampPowerAt(g1, g20, 99), g20);
+    assert.equal(factionLairCampPowerAt(120_000, 30_000, 20), 120_000);
+  });
+
+  test('当前营战力按剩余营数取 Gk：20 营全在是第 1 营，只剩 1 营是第 20 营', () => {
+    const row = (campsRemaining: number) => ({
+      camps_total: 20,
+      camps_remaining: campsRemaining,
+      camp_power_g1: 16_474,
+      camp_power_g20: 155_111,
+    });
+    assert.equal(factionLairCurrentCampPower(row(20)), 16_474);
+    assert.equal(factionLairCurrentCampPower(row(19)), 18_537);
+    assert.equal(factionLairCurrentCampPower(row(1)), 155_111);
+    assert.equal(factionLairCampNo(20, 19), 2);
   });
 
   test('编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放（与势力围城军同一比例）', () => {
@@ -100,13 +150,21 @@ describe('攻破老巢的纯规则（无需数据库）', () => {
     assert.equal(factionLairCampNo(20, 1), 20);
   });
 
-  test('侦察老巢看到的是当前营守军：满营给满编、打输给残血、废墟给空编队', () => {
-    const power = 100_000;
-    const full = factionLairGarrison(power);
-    assert.deepEqual(factionLairScoutGarrison({ remaining: null, camp_power: power, destroyed_at: null }), full);
+  test('侦察老巢看到的是当前营守军：满营给当前营的满编、打输给残血、废墟给空编队', () => {
+    const lair = (campsRemaining: number, remaining: Record<string, number> | null, destroyed: Date | null = null) => ({
+      camps_total: 20,
+      camps_remaining: campsRemaining,
+      remaining,
+      camp_power_g1: 16_474,
+      camp_power_g20: 155_111,
+      destroyed_at: destroyed,
+    });
+    // 20 营全在 → 第 1 营（最弱）；只剩 1 营 → 第 20 营（最强）
+    assert.deepEqual(factionLairScoutGarrison(lair(20, null)), factionLairGarrison(16_474));
+    assert.deepEqual(factionLairScoutGarrison(lair(1, null)), factionLairGarrison(155_111));
     const half = { militia: 10 };
-    assert.deepEqual(factionLairScoutGarrison({ remaining: half, camp_power: power, destroyed_at: null }), half);
-    assert.deepEqual(factionLairScoutGarrison({ remaining: half, camp_power: power, destroyed_at: new Date() }), {});
+    assert.deepEqual(factionLairScoutGarrison(lair(20, half)), half);
+    assert.deepEqual(factionLairScoutGarrison(lair(20, half, new Date())), {});
     assert.deepEqual(factionLairScoutGarrison(null), {});
   });
 

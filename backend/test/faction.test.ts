@@ -162,6 +162,7 @@ describe('五方势力的纯规则（无需数据库）', () => {
       campsRemaining: 20,
       campRemainingPercent: 100,
       campPower: 10000,
+      suppression: { level: 0, siegePercent: 100, swallowIntervalHours: 6, weeklyBranchCap: 2 },
     }));
     for (const radius of [100, 150, 200, 250]) {
       for (const view of views) {

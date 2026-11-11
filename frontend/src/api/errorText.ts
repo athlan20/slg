@@ -308,6 +308,8 @@ export function marchErrorText(code: ErrorCode | undefined, message: string | un
       return COPY.errors.world.plunderCooldown;
     case 'TASK_INVALID_FOR_TARGET':
       return COPY.errors.world.taskInvalidForTarget;
+    case 'WILD_HERO_UNOCCUPIABLE':
+      return COPY.errors.world.wildHeroUnoccupiable;
     case 'NEWBIE_PROTECTED':
       return EXTRA_STATE.errorText.newbieProtected;
     case 'TARGET_IN_TRUCE':

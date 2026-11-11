@@ -63,8 +63,9 @@ export function isInterestingFact(fact: TileFact): boolean {
   return fact.kind === 'city' || fact.kind === 'npc_city' || fact.ownerCityId !== null || fact.wildFamous;
 }
 
-/** 一批坐标的地块事实（不加锁；坐标不存在的行不返回） */
-export async function loadTileFacts(q: Queryable, coords: readonly Coord[]): Promise<TileFact[]> {
+/** 一批坐标的地块事实（不加锁；坐标不存在的行不返回）。accountId = 查谁的视角（v104 AISLG-245：
+ *  在野名将标记按账号判——本账号已拥有的名将不再显示标记） */
+export async function loadTileFacts(q: Queryable, coords: readonly Coord[], accountId: string): Promise<TileFact[]> {
   if (coords.length === 0) {
     return [];
   }
@@ -74,14 +75,15 @@ export async function loadTileFacts(q: Queryable, coords: readonly Coord[]): Pro
     `SELECT wt.x, wt.y, wt.kind, wt.terrain, wt.level, wt.owner_city_id,
             c.account_id AS owner_account_id, a.username AS owner_username, c.name AS owner_city_name,
             (wt.npc -> 'famous') IS NOT NULL AS famous,
-            (wt.wild_hero IS NOT NULL AND NOT EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero)) AS wild_famous,
+            (wt.wild_hero IS NOT NULL
+             AND NOT EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero AND fh.owner_account_id = $3)) AS wild_famous,
             COALESCE(wf.level, 0) AS facility_level
      FROM unnest($1::int[], $2::int[]) AS t(x, y)
      JOIN world_tiles wt ON wt.x = t.x AND wt.y = t.y
      LEFT JOIN cities c ON c.id = wt.owner_city_id
      LEFT JOIN accounts a ON a.id = c.account_id
      LEFT JOIN wilderness_facilities wf ON wf.x = wt.x AND wf.y = wt.y`,
-    [xs, ys],
+    [xs, ys, accountId],
   );
   return (res.rows as Array<Record<string, unknown>>).map((row) => ({
     x: row.x as number,
@@ -107,7 +109,7 @@ export async function syncSeenTiles(client: pg.PoolClient, accountId: string, co
   if (coords.length === 0) {
     return [];
   }
-  const facts = await loadTileFacts(client, coords);
+  const facts = await loadTileFacts(client, coords, accountId);
   const interesting = facts.filter(isInterestingFact);
   const interestingKeys = new Set(interesting.map((fact) => `${fact.x},${fact.y}`));
   const dropped = coords.filter((coord) => !interestingKeys.has(`${coord.x},${coord.y}`));

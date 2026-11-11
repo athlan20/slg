@@ -138,6 +138,7 @@ export async function resolvePlunderArrival(
   const wall = npc ? wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0) : 0;
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
+  // v105（AISLG-246）：战损折算在 resolveBattle 内统一处理（所有战斗、攻守对称）
   const result = resolveBattle(troops, defender, {
     wallDefensePercent: wall,
     siege: npc !== null,
@@ -320,6 +321,7 @@ export async function resolveOccupyArrival(
   const defender = await loadNativeGarrison(client, target);
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
+  // v105（AISLG-246）：战损折算在 resolveBattle 内统一处理（所有战斗、攻守对称）
   const result = resolveBattle(troops, defender, {
     wallDefensePercent: 0,
     siege: false,
@@ -393,6 +395,28 @@ export async function resolveOccupyArrival(
         notifies.push({ reason: 'server_broadcast', accountId: '', broadcast });
       }
     }
+  }
+
+  // v104（AISLG-245）：在野名将所在野地不能被占领（发起时已拒，这里兜住在途 / 旧客户端的行军）——
+  // 打赢只拿结交资格，地块保持无主、幸存部队返程，免得占下来后别的玩家再也打不到守军
+  if (target.wild_hero) {
+    await markMarchArrived(client, march.id);
+    const returning = await createReturnMarch(client, march, result.attacker.survivors, settled, march.initiator);
+    await completeMarchEvent(client, march, 'battle_won', {
+      troops,
+      survivors: result.attacker.survivors,
+      losses: result.attacker.losses,
+      occupied: false,
+      denial: 'WILD_HERO_UNOCCUPIABLE',
+      rounds: result.rounds,
+      endReason: result.endReason,
+      attackerPower: armyPower(troops),
+      defenderPower: armyPower(defender),
+      reportId,
+      returning,
+    });
+    notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
+    return;
   }
 
   // 胜利：到达复核占领上限（官府等级；发起时已初核，期间可能经他块占领 / 增援变化）

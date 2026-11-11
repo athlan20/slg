@@ -21,6 +21,7 @@ import {
   FACTION_LAIR_WALL_PERCENT,
   factionLairCampLabel,
   factionLairCampNo,
+  factionLairCurrentCampPower,
   factionLairGarrison,
   factionLairKillReward,
   factionLairPrestige,
@@ -42,6 +43,7 @@ import {
   type TileNotify,
 } from './tick-shared';
 import { destroyFactionLair } from './faction-lair-destroy';
+import { notifySuppressionChange } from './faction-suppression-notify';
 import type { TroopKind } from '../../common/src/protocol';
 import type { FactionKey } from '../../common/src/protocol-faction';
 
@@ -85,7 +87,9 @@ export async function resolveFactionLairBattle(
   lair = await recoverLairRow(client, lair, args.now);
   const campsTotal = lair.camps_total || FACTION_LAIR_CAMPS;
   const campNo = factionLairCampNo(campsTotal, lair.camps_remaining);
-  const defender = lair.remaining ?? factionLairGarrison(lair.camp_power);
+  // v106（AISLG-247）：守军按「当前营序号」取 Gk（20 营由弱到强），没有单一的每营战力了
+  const campPower = factionLairCurrentCampPower(lair);
+  const defender = lair.remaining ?? factionLairGarrison(campPower);
 
   // 3) 守城战（城墙减伤 50%，攻方随队武将与科技生效；守方是 NPC，无武将 / 科技 / 城防器械）
   const hero = await loadMarchHeroBonus(client, march, Object.values(troops).reduce((sum, n) => sum + Math.max(0, n ?? 0), 0));
@@ -169,6 +173,20 @@ export async function resolveFactionLairBattle(
     );
   }
 
+  // 8.5) v107（AISLG-249）：打掉一营跨过档位（第 5 / 10 / 15 营）时全服播报一句；
+  // 最后一击的灭亡另有 faction_lair_destroyed，不在这里重复播
+  if (!destroyed) {
+    const suppression = await notifySuppressionChange(client, {
+      key: args.key,
+      campsTotal,
+      campsBefore: lair.camps_remaining,
+      campsAfter: campsRemaining,
+    });
+    if (suppression) {
+      notifies.push({ reason: 'server_broadcast', accountId: '', broadcast: suppression.broadcast });
+    }
+  }
+
   // 9) 行军收尾：幸存部队（可能为 0）返程；战败也保留残血与奖励
   await markMarchArrived(client, march.id);
   const returning = await createReturnMarch(client, march, result.attacker.survivors, args.settled, march.initiator);
@@ -223,7 +241,7 @@ export async function resolveFactionLairBattle(
           ? 0
           : result.attackerWon
             ? 100
-            : factionLairRemainingPercent(result.defender.survivors, lair.camp_power),
+            : factionLairRemainingPercent(result.defender.survivors, campPower),
         destroyed,
       },
     });

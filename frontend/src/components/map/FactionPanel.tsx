@@ -1,6 +1,7 @@
-/** 五方势力面板（v99，AISLG-239；v101，AISLG-241 加营数）：地图页右栏的卡片——五家的名称、首领、
- *  老巢坐标、当前半径、持城数与老巢剩余营数 / 当前营剩余百分比（已灭亡的写「已灭亡」）。数据来自 GET_FACTIONS（会话切片在 state/factionSession.ts，每分钟重拉）；
- *  开关关闭（enabled=false）或本季还没有老巢时整块不渲染，界面上没有任何势力内容。
+/** 五方势力面板（v99，AISLG-239；v101，AISLG-241 加营数；v107，AISLG-249 加压制档）：地图页右栏的卡片——
+ *  五家的名称、首领、老巢坐标、当前半径、持城数与老巢剩余营数 / 当前营剩余百分比（已灭亡的写「已灭亡」），
+ *  以及当前压制档与三项效果（围城军比例 / 吞城间隔 / 每周吞分城上限）。数据来自 GET_FACTIONS
+ *  （会话切片在 state/factionSession.ts，每分钟重拉）；开关关闭（enabled=false）或本季还没有老巢时整块不渲染。
  *  老巢坐标对全服公开（不受战争迷雾影响），这里直接给出。中文 / 英文名都来自服务端字段，随界面语言取。
  */
 
@@ -16,11 +17,20 @@ interface FactionPanelProps {
   onFocusLair?: (lair: { x: number; y: number }) => void;
 }
 
-/** 一行的文案：名称 / 首领 / 老巢 / 半径 / 持城 / 营数（F 为 copy-extra-map 的 faction 文案组） */
+/** 一行的文案：名称 / 首领 / 老巢 / 半径 / 持城 / 营数 / 压制档（F 为 copy-extra-map 的 faction 文案组） */
 function rowText(
   faction: FactionView,
   F: ReturnType<typeof useCopy>['EXTRA_MAP']['faction'],
-): { name: string; leader: string; lair: string; radius: string; cities: string; camps: string } {
+): {
+  name: string;
+  leader: string;
+  lair: string;
+  radius: string;
+  cities: string;
+  camps: string;
+  suppression: string;
+  suppressionEffects: string;
+} {
   const lang = getLang();
   return {
     name: factionName(faction, lang),
@@ -32,6 +42,13 @@ function rowText(
     camps: faction.destroyed
       ? F.destroyed
       : `${F.camps(faction.campsRemaining, faction.campsTotal)} · ${F.campRemaining(faction.campRemainingPercent)}`,
+    // v107（AISLG-249）：当前压制档 + 三项效果（老巢被打掉的营越多越虚；已灭亡不给压制）
+    suppression: F.suppression(faction.suppression?.level ?? 0),
+    suppressionEffects: F.suppressionEffects(
+      faction.suppression?.siegePercent ?? 100,
+      faction.suppression?.swallowIntervalHours ?? 6,
+      faction.suppression?.weeklyBranchCap ?? 2,
+    ),
   };
 }
 
@@ -47,6 +64,8 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
       <div role="势力面板-列表" aria-label={F.panelAria} className="flex flex-col gap-0.5">
         {factions.map((faction) => {
           const text = rowText(faction, F);
+          // v107（AISLG-249）：被压制（有档位）的行用醒目色，0 档 / 已灭亡保持暗淡
+          const suppressed = !faction.destroyed && (faction.suppression?.level ?? 0) > 0;
           return (
             <button
               key={faction.key}
@@ -71,6 +90,17 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
                 className={`col-start-2 col-end-4 truncate font-mono text-[11px] ${faction.destroyed ? 'text-danger' : 'text-dim'}`}
               >
                 {text.camps}
+              </span>
+              <span
+                role="势力面板-压制"
+                title={F.suppressionHint}
+                className={`col-start-2 col-end-4 truncate text-[11px] ${suppressed ? 'text-warn' : 'text-faint'}`}
+              >
+                <span role="势力面板-压制档">{text.suppression}</span>
+                {' · '}
+                <span role="势力面板-压制效果" className="font-mono">
+                  {text.suppressionEffects}
+                </span>
               </span>
             </button>
           );

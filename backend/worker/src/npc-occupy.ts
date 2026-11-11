@@ -112,6 +112,7 @@ export async function resolveNpcOccupyArrival(
   const wall = wallDefensePercent((npc.buildings?.wall as number | undefined) ?? 0);
   // v36（AISLG-114）：随队武将加成（按部队规模折算）
   const hero = await loadMarchHeroBonus(client, march, armyTotal(troops));
+  // v105（AISLG-246）：战损折算在 resolveBattle 内统一处理（所有战斗、攻守对称）
   const result = resolveBattle(troops, npc.garrison, {
     wallDefensePercent: wall,
     siege: true,

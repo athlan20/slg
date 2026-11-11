@@ -78,6 +78,7 @@ export function nativeAttackGuide(): NativeGuideRow[] {
       let wins = 0;
       let netSum = 0;
       for (let i = 0; i < GUIDE_RUNS; i++) {
+        // v105（AISLG-246）：与实战同口径——resolveBattle 已按兵力占比对称折算战损
         const result = resolveBattle(army, garrison, { rng: mulberry32(level * 100003 + multiple * 1009 + i) });
         let net = 0;
         for (const kind of TROOP_KINDS) {

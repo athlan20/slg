@@ -11,7 +11,14 @@ import {
   recoverFactionLairs,
 } from '../common/src/faction-lair-db';
 import { loadFactionView } from '../common/src/faction-db';
-import { factionLairDestroyReward, factionLairKillReward } from '../common/src/faction-lair';
+import {
+  factionLairCampPowerAt,
+  factionLairDestroyReward,
+  factionLairGarrison,
+  factionLairKillReward,
+  factionLairScoutGarrison,
+} from '../common/src/faction-lair';
+import { armyPower } from '../common/src/battle';
 import { resolveMarchTarget } from '../api/src/march-target';
 import { loadTileDetail } from '../api/src/views-world';
 import { FACTIONS } from '../common/src/faction';
@@ -95,7 +102,11 @@ describe('攻破老巢的主流程（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
 
     // 3) 连续 24 小时没人进攻 → 恢复 1 营、残血回满，总数不超过 20
     const recoveredAt = new Date((afterWin?.last_battle_at as Date).getTime() + 25 * HOUR);
-    assert.equal(await recoverFactionLairs(fx.pool, recoveredAt), 1);
+    // AISLG-249：恢复函数返回逐家明细（调用方据此比对前后压制档），总恢复营数 = Σ 差值
+    const recoveries = await recoverFactionLairs(fx.pool, recoveredAt);
+    assert.equal(recoveries.length, 1, '这一轮只有被打过的那家恢复');
+    assert.equal(recoveries[0].key, NANMAN.key);
+    assert.equal(recoveries[0].campsAfter - recoveries[0].campsBefore, 1);
     const afterRecover = await loadFactionLairRow(fx.pool, NANMAN.key);
     assert.equal(afterRecover?.camps_remaining, 20);
     assert.equal(afterRecover?.remaining, null);
@@ -188,5 +199,47 @@ describe('攻破老巢的主流程（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
     assert.equal(onRuins.killedPower, 0);
     const goldAfterRuins = Number((await fx.pool.query(`SELECT gold FROM cities WHERE id = $1`, [p1.cityId])).rows[0].gold);
     assert.equal(goldAfterRuins, goldBeforeRuins, '废墟不发奖');
+  });
+
+  test('面板与侦察的当前营守军按营序号取 Gk（20 营由弱到强）', async () => {
+    // 换一家没被打过的（凉州军），直接写入一次每日刷新后的锚点：
+    // 第 1 营 16,474、第 20 营 155,111（需求验收用的线上快照口径）
+    const key = FACTIONS[0].key;
+    await fx.pool.query(`UPDATE faction_lairs SET camp_power_g1 = $2, camp_power_g20 = $3 WHERE key = $1`, [
+      key,
+      16_474,
+      155_111,
+    ]);
+    const view = async () =>
+      (await loadFactionView(fx.pool, fx.seasonStart, new Date())).factions.find((faction) => faction.key === key);
+
+    // 20 营全在 → 当前营是第 1 营（最弱）
+    assert.equal((await view())?.campsRemaining, 20);
+    assert.equal((await view())?.campPower, 16_474);
+    assert.equal((await view())?.campRemainingPercent, 100);
+
+    // 打掉 9 营 → 当前营是第 10 营（约 47,500）
+    await fx.pool.query(`UPDATE faction_lairs SET camps_remaining = 11 WHERE key = $1`, [key]);
+    assert.equal((await view())?.campPower, 47_653);
+    assert.equal((await view())?.campPower, factionLairCampPowerAt(16_474, 155_111, 10));
+
+    // 侦察：满营 = 当前营的满编守军，战力对上 Gk
+    const lairRow = await loadFactionLairRow(fx.pool, key);
+    const garrison = factionLairScoutGarrison(lairRow);
+    assert.deepEqual(garrison, factionLairGarrison(47_653));
+    assert.equal(armyPower(garrison), armyPower(factionLairGarrison(47_653)));
+
+    // 半血：面板百分比按当前营的满编算
+    const full = factionLairGarrison(47_653);
+    const half = Object.fromEntries(Object.entries(full).map(([kind, count]) => [kind, Math.floor((count as number) / 2)]));
+    await fx.pool.query(`UPDATE faction_lairs SET remaining = $2::jsonb WHERE key = $1`, [key, JSON.stringify(half)]);
+    const percent = (await view())?.campRemainingPercent as number;
+    assert.ok(percent > 45 && percent < 55, `半血 = ${percent}`);
+    assert.deepEqual(factionLairScoutGarrison(await loadFactionLairRow(fx.pool, key)), half, '侦察给残血实况');
+
+    // 只剩 1 营 → 当前营是第 20 营（最强）
+    await fx.pool.query(`UPDATE faction_lairs SET camps_remaining = 1, remaining = NULL WHERE key = $1`, [key]);
+    assert.equal((await view())?.campPower, 155_111);
+    assert.deepEqual(factionLairScoutGarrison(await loadFactionLairRow(fx.pool, key)), factionLairGarrison(155_111));
   });
 });

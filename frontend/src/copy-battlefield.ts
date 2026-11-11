@@ -51,6 +51,8 @@ export const BATTLEFIELD_COPY = {
     submitted: '已入场，等待开战',
     over: '超过人口上限',
     empty: '至少带 1 个兵',
+    /** 入场编成（AISLG-250）：parts 为「刀盾兵 600 · 弓箭兵 400」，随后总兵数与总人口 */
+    formation: (parts: string, total: number, population: number) => `入场编成：${parts}（共 ${total} 兵，人口 ${population}）`,
   },
   squads: {
     title: '我的队伍',
@@ -59,6 +61,10 @@ export const BATTLEFIELD_COPY = {
     selected: '已选',
     status: { marching: '行军中', idle: '待命', garrison: '据守' },
     troops: (n: number) => `${n} 兵`,
+    /** 兵种明细的一项（AISLG-250）：兵种名 + 数量，多项用「 · 」连 */
+    troopPart: (name: string, n: number) => `${name} ${n}`,
+    /** me.squads 为空表示没有存活队伍（全灭即从列表消失） */
+    noneAlive: '无存活队伍',
     arrive: (text: string) => `到达 ${text}`,
     march: '行军 / 攻打',
     split: '拆队',
