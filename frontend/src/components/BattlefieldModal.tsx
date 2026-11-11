@@ -2,20 +2,20 @@
  *  赤壁额外有风向、火攻与连锁战船。数据来自会话切片（GET_BATTLEFIELD + PUSH_BATTLEFIELD_STATE 重拉）；所有操作以服务端判定为准。
  *  入口：顶栏「战场」胶囊（报名中 / 进行中高亮）。 */
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { formatClock } from '../api/format';
 import {
-  TROOP_INFO,
   TROOP_KINDS,
   type BattlefieldCamp,
   type BattlefieldShopItem,
   type BattlefieldShopItemView,
-  type BattlefieldSquadView,
   type TroopKind,
 } from '../api/protocol';
 import { useCopy } from '../i18n/bundle';
 import { tName } from '../i18n/names';
 import { useGame } from '../state/GameContext';
+import { BattlefieldMapGrid } from './BattlefieldMapGrid';
+import { BattlefieldEntryFormation, BattlefieldSquadTroops, populationOf, sumTroops } from './BattlefieldTroopSummary';
 import { Modal } from './ui/Modal';
 
 type Tab = 'map' | 'squads' | 'shop' | 'merit';
@@ -25,27 +25,9 @@ const CAMP_COLOR: Record<BattlefieldCamp, string> = {
   cao: 'bg-st-error',
 };
 
-function ownerClass(camp: BattlefieldCamp | null): string {
-  if (camp === 'yuan') {
-    return 'border-accent bg-accent-soft text-accent';
-  }
-  if (camp === 'cao') {
-    return 'border-st-error bg-st-error/15 text-st-error';
-  }
-  return 'border-line bg-panel-2 text-dim';
-}
-
 /** 火攻 / 连锁的军功花费（与服务端 common/src/battlefield.ts 的 BATTLEFIELD_FIRE_MERIT_COST / BATTLEFIELD_CHAIN_MERIT_COST 一致） */
 const FIRE_MERIT_COST = 300;
 const CHAIN_MERIT_COST = 200;
-
-function sumTroops(troops: Partial<Record<TroopKind, number>>): number {
-  return TROOP_KINDS.reduce((sum, kind) => sum + Math.max(0, Math.floor(troops[kind] ?? 0)), 0);
-}
-
-function populationOf(troops: Partial<Record<TroopKind, number>>): number {
-  return TROOP_KINDS.reduce((sum, kind) => sum + Math.max(0, Math.floor(troops[kind] ?? 0)) * TROOP_INFO[kind].population, 0);
-}
 
 export function BattlefieldModal({ onClose }: { onClose: () => void }) {
   const { session } = useGame();
@@ -77,45 +59,6 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
   const entryPopulation = populationOf(entry);
   const entryUnits = sumTroops(entry);
   const splitUnits = sumTroops(split);
-
-  const mySquadsAt = useMemo(() => {
-    const map = new Map<string, BattlefieldSquadView[]>();
-    for (const squad of squads) {
-      const key = `${squad.x},${squad.y}`;
-      const list = map.get(key) ?? [];
-      list.push(squad);
-      map.set(key, list);
-    }
-    return map;
-  }, [squads]);
-
-  const mapCells = [];
-  for (let y = 0; y < 30; y += 1) {
-    for (let x = 0; x < 30; x += 1) {
-      const stronghold = strongholds.find((item) => item.x === x && item.y === y) ?? null;
-      const mine = mySquadsAt.get(`${x},${y}`) ?? [];
-      const river = x === 15 && !stronghold;
-      const classes = stronghold
-        ? `${ownerClass(stronghold.ownerCamp)} border`
-        : river
-          ? 'bg-st-info/40'
-          : 'bg-panel-2/40';
-      mapCells.push(
-        <button
-          key={`${x}-${y}`}
-          type="button"
-          tabIndex={stronghold ? 0 : -1}
-          title={stronghold ? `${stronghold.name}（${x},${y}）` : undefined}
-          onClick={() => stronghold && setSelectedStronghold(stronghold.id)}
-          className={`relative aspect-square min-w-0 rounded-[1px] ${classes} ${stronghold ? 'cursor-pointer' : 'cursor-default'} ${
-            stronghold && !stronghold.unlocked ? 'opacity-40' : ''
-          } ${selectedStronghold === stronghold?.id ? 'ring-1 ring-gold' : ''}`}
-        >
-          {mine.length > 0 ? <span className="absolute inset-[2px] rounded-full border border-gold" /> : null}
-        </button>,
-      );
-    }
-  }
 
   // 讨董是单阵营合作本：只给一个加入按钮（服务端统一记为讨董联军）
   const signupCamps: readonly BattlefieldCamp[] = script === 'dongzhuo' ? ['yuan'] : ['yuan', 'cao'];
@@ -225,13 +168,12 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
           <span>{B.map.legend}</span>
           <span>{B.map.title}</span>
         </div>
-        <div
-          role="战场-地图"
-          className="grid w-full max-w-[320px] self-center overflow-hidden rounded border border-line"
-          style={{ gridTemplateColumns: 'repeat(30, minmax(0, 1fr))' }}
-        >
-          {mapCells}
-        </div>
+        <BattlefieldMapGrid
+          strongholds={strongholds}
+          squads={squads}
+          selectedStronghold={selectedStronghold}
+          onSelect={setSelectedStronghold}
+        />
         <p className="truncate text-[11.5px] text-faint">{B.squads.targetHint}</p>
       </div>
       <div className="flex w-full shrink-0 flex-col gap-1.5 text-[12.5px] sm:w-[190px]">
@@ -277,7 +219,17 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
 
   const squadsTab = (
     <div role="战场-队伍页签" className="flex min-h-0 flex-1 flex-col gap-1.5">
-      {squads.length === 0 ? <p className="text-[12.5px] text-faint">{B.squads.none}</p> : null}
+      {squads.length === 0 ? (
+        me?.entered ? (
+          <p role="战场-无存活队伍" className="text-[12.5px] text-faint">
+            {B.squads.noneAlive}
+          </p>
+        ) : (
+          <p role="战场-无队伍" className="text-[12.5px] text-faint">
+            {B.squads.none}
+          </p>
+        )
+      ) : null}
       <div className="flex min-h-0 flex-col gap-1 overflow-hidden">
         {squads.map((squad) => (
           <button
@@ -288,16 +240,19 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
               setSelectedSquad(squad.id);
               setSplit({});
             }}
-            className={`flex cursor-pointer items-center justify-between gap-2 rounded border px-2 py-1 text-left text-[12.5px] ${
+            className={`flex cursor-pointer flex-col gap-0.5 rounded border px-2 py-1 text-left text-[12.5px] ${
               selectedSquad === squad.id ? 'border-accent bg-accent-soft' : 'border-line-soft hover:border-accent-dim'
             }`}
           >
-            <span className="min-w-0 truncate">
-              ({squad.x},{squad.y}) · {B.squads.status[squad.status]} · {B.squads.troops(sumTroops(squad.troops))}
+            <span className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate">
+                ({squad.x},{squad.y}) · {B.squads.status[squad.status]} · {B.squads.troops(sumTroops(squad.troops))}
+              </span>
+              <span className="shrink-0 text-[11.5px] text-faint">
+                {squad.arriveAt ? B.squads.arrive(formatClock(squad.arriveAt)) : selectedSquad === squad.id ? B.squads.selected : B.squads.select}
+              </span>
             </span>
-            <span className="shrink-0 text-[11.5px] text-faint">
-              {squad.arriveAt ? B.squads.arrive(formatClock(squad.arriveAt)) : selectedSquad === squad.id ? B.squads.selected : B.squads.select}
-            </span>
+            <BattlefieldSquadTroops troops={squad.troops} />
           </button>
         ))}
       </div>
@@ -481,7 +436,12 @@ export function BattlefieldModal({ onClose }: { onClose: () => void }) {
 
       {signupOpen && !me ? signupButtons : null}
       {signupOpen && me && !me.entered ? entryForm : null}
-      {signupOpen && me && me.entered ? <p className="shrink-0 text-[12.5px] text-ok">{B.entry.submitted}</p> : null}
+      {signupOpen && me && me.entered ? (
+        <div role="战场-入场状态" className="flex shrink-0 flex-wrap items-baseline gap-2">
+          <p className="text-[12.5px] text-ok">{B.entry.submitted}</p>
+          <BattlefieldEntryFormation squads={squads} />
+        </div>
+      ) : null}
 
       {!signupOpen ? (
         <>
