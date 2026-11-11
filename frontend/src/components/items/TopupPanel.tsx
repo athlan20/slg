@@ -1,9 +1,11 @@
 // 充值面板（v108，AISLG-251）：道具弹窗里点「充值」后替换列表。一张商品卡（1.99 美元 = 1000 元宝，一次性付款）与「购买」按钮；
-// 点购买时服务端创建订单，结账页在新窗口打开。底部是元宝用途说明，链到服务条款与定价页（AISLG-252 提供）。
+// 点购买时服务端创建订单，结账页在新窗口打开。下面是淘宝券号入口（AISLG-255，中文界面且配了
+// PUBLIC_TAOBAO_URL 时才显示）。底部是元宝用途说明，链到服务条款与定价页（AISLG-252 提供）。
 
 import { useCopy } from '../../i18n/bundle';
 import { TOPUP_INGOT } from '../../api/topupProduct';
 import { isSafeCheckoutUrl, type TopupSession } from '../../state/topupSession';
+import { TopupTaobaoCard } from './TopupTaobaoCard';
 
 interface TopupPanelProps {
   topup: TopupSession;
@@ -42,6 +44,7 @@ export function TopupPanel({ topup }: TopupPanelProps) {
           {topup.busy ? TOPUP_COPY.buying : TOPUP_COPY.buy}
         </button>
       </div>
+      <TopupTaobaoCard />
       {topup.unavailable ? (
         <p role="topup-unavailable" className="shrink-0 text-[12px] text-st-error">
           {TOPUP_COPY.unavailableBadge}

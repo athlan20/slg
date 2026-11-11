@@ -9,6 +9,7 @@ export const REDEEM_COPY_EN = {
   submit: 'Redeem',
   submitting: 'Redeeming…',
   hint: 'A code from a shop or event. Case-insensitive, hyphens optional.',
+  hintTaobao: 'Find your code in your order; case-insensitive, hyphens optional.',
   success: (rewards: string) => `Redeemed: ${rewards}`,
   rewardIngot: (amount: number) => `Ingots +${amount}`,
   rewardItem: (name: string, count: number) => `${name} ×${count}`,

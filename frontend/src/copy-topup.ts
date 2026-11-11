@@ -23,6 +23,10 @@ export const TOPUP_COPY = {
   arrived: (amount: number) => `元宝到账 +${amount}`,
   /** 从付款页跳回（?topup=return）后的提示 */
   returnPending: '付款处理中，元宝到账后会自动更新',
+  /** 淘宝券号入口（AISLG-255）：只在中文界面、且配了 PUBLIC_TAOBAO_URL 时显示；卡片里不写价格 */
+  taobaoTitle: '在淘宝购买券号',
+  taobaoNote: '拍下后在淘宝订单里查看券号，回到这里点「兑换码」输入即可',
+  taobaoButton: '前往淘宝',
   note: '元宝只能在游戏内买便利道具，不可转让、不可提现。',
   noteLinks: { prefix: '详见', terms: '服务条款', pricing: '定价说明', joiner: '、', end: '。' },
   errors: {

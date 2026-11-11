@@ -33,7 +33,7 @@ Worker 到期结算、跨进程状态通知、按需查询。
 | `scripts/smoke-world.ts` | 世界玩法冒烟（v12）：出征占领、NPC 袭击、召回、NPC 城池战败与重置清理。 |
 | `scripts/gen-agent-api.ts` | Agent API 文档一键生成与漂移检查（见「协议」一节）。 |
 | `scripts/set-time-scale.ts` | 查看 / 设置全局时间缩放（AISLG-38，v20）：`set-time-scale.ts [n]`，缺省查看；改动存 settings 表，API 与 Worker 缓存 TTL 10s 内生效、无需重启。 |
-| `scripts/redeem-codes.ts` | 兑换码运营（AISLG-253，v109）：`create` 批量生成、`list` 查看批次、`export` 导出 CSV、`disable` 停用；没有网页后台。规则见 `common/src/redeem-code.ts`，兑换事务见 `common/src/redeem-db.ts`。 |
+| `scripts/redeem-codes.ts` | 兑换码运营（AISLG-253，v109；AISLG-255 加淘宝渠道配套）：`create` 批量生成、`list` 查看批次、`export` 导出 CSV / txt、`disable` 停用批次、`lookup` 客服查码、`void` 作废单个码、`stats` 按渠道对账；没有网页后台，各子命令实现分在 `scripts/redeem/` 下。规则见 `common/src/redeem-code.ts`，兑换事务见 `common/src/redeem-db.ts`，运营侧查询见 `common/src/redeem-ops-db.ts`。 |
 | `scripts/repair-city-tiles.ts` | 一次性修复「坐标在而地块缺失」的城池（幂等，ensureWorld 启动时亦会自愈）。 |
 | `api/src/wechat*.ts` · `wx-*.ts` | 微信扫码登录（v43）：微信接口封装（`wechat.ts`）、ticket 内存状态机与限频（`wx-tickets.ts`）、微信身份与建号 / 绑定（`wx-accounts.ts`）、WX_* 协议处理（`handlers-wechat.ts`）。设计见 `docs/wechat-qr-login.md`。 |
 | `api/src/agent-token.ts` · `handlers-agent-token.ts` | 永久 Agent 令牌（v46，AISLG-129）：每账号一个 `sk_` 令牌（建号自动生成、永不过期、原文可反复查看；表存哈希 + 原文），GET_AGENT_TOKEN / RESET_AGENT_TOKEN 协议处理（仅玩家连接；重置换新并断开旧令牌的在线连接）。 |
@@ -154,19 +154,37 @@ Host 传下来，否则两站会被当成同一个站）：
 - **仅限玩家**：聊天协议对 Agent 连接一律返回 `AGENT_FORBIDDEN`，对外 Agent 文档不收录（见 `protocol-doc-ops-chat.ts`）。
 - **冒烟**：`npm run smoke:chat` 与 `npm run smoke` 一样读 `backend/.env`（本机开发库与 8080 API）。要跑在临时库上，用环境变量覆盖 `DATABASE_URL` 与 `WS_URL`（进程环境优先于 `.env`，见 `--env-file` 的约定）。会在库里新建 `chat_` 前缀的测试账号；`CHAT_SMOKE_PRUNE=1` 才会按保留期清理整张消息表，只在临时库上设。
 
-### 兑换码运营须知（v109，AISLG-253）
+### 兑换码运营须知（v109，AISLG-253；淘宝渠道配套 AISLG-255）
 
-- **生成 / 查看 / 导出 / 停用**（只做命令行，没有网页后台）：
+- **生成 / 查看 / 导出 / 停用 / 查码 / 作废 / 对账**（只做命令行，没有网页后台）：
 
   ```bash
+  # 253：内部福利码
   npm run redeem -- create --name "11月补偿" --kind single --count 100 --ingot 500 --item city_order:2 --expires 2026-12-31
   npm run redeem -- create --name "社群口令" --kind shared --max 200 --ingot 100 --expires 2026-11-30
-  npm run redeem -- list                       # 名称、类型、奖励、已兑换/总数、过期时间、是否停用
+  npm run redeem -- list                       # 名称、类型、渠道、奖励、已兑换/总数、已作废、过期时间、是否停用
   npm run redeem -- export --batch <id> > codes.csv
   npm run redeem -- disable --batch <id>       # 未兑换的码立即失效，已领的奖励不收回
+
+  # 255：淘宝券号渠道
+  npm run redeem -- create --name "淘宝-1000元宝-01" --kind single --count 500 --ingot 1000 --channel taobao
+  npm run redeem -- export --batch <id> --format txt > codes.txt   # 淘宝发货工具导入用（无表头）
+  npm run redeem -- export --batch <id> --format txt --unused      # 只给还没兑换、没作废的码
+  npm run redeem -- lookup --code XXXX-XXXX-XXXX-XXXX              # 客服查一个码
+  npm run redeem -- void --code XXXX-XXXX-XXXX-XXXX                # 买家退款：作废未兑换的码
+  npm run redeem -- void --file refund.txt                          # 每行一个码，批量作废
+  npm run redeem -- stats --channel taobao --since 2026-11-01 --until 2026-11-30
   ```
 
-- **参数**：`--ingot` 1..100000、`--item itemId:count` 可重复（count 1..99，道具必须在售），至少给一项；`--expires 2026-12-31` = 当天 UTC 结束（也可给 ISO 时间，不给则不过期）；`--kind single` 要 `--count`（1..10000），`--kind shared` 要 `--max`（最多兑换人数，一个批次只有一个码）。
+- **参数**：
+  - `--ingot` 1..100000、`--item itemId:count` 可重复（count 1..99，道具必须在售），至少给一项；`--expires 2026-12-31` = 当天 UTC 结束（也可给 ISO 时间，不给则不过期）；`--kind single` 要 `--count`（1..10000），`--kind shared` 要 `--max`（最多兑换人数，一个批次只有一个码）。
+  - `--channel <渠道>`（255）：只允许字母、数字与连字符、最长 20 个字符，统一存小写（`Taobao` 也存成 `taobao`）；对账按它汇总。存量批次没有渠道，`list` 里显示 `-`。
+  - `--format csv|txt`（255）：缺省 `csv`（第一行表头 `code`）；`txt` 是**淘宝发货工具**用的格式——没有表头、没有引号、不带批次信息，每行一个 `XXXX-XXXX-XXXX-XXXX`。`--unused` 只导出还没兑换且没作废的码（批次停用不影响它：停用是批次级操作，运营自己清楚）。
+- **淘宝发货工具导入**（255）：商品是「1000 元宝」券号，奖励包固定 `{ ingot: 1000 }`、一次性码、不设过期时间（买家可能很久以后才兑换）。**建议每批 500 个**：一批码一旦外泄就等于 500 × 1000 = 50 万元宝被人白领，批次小可以控制损失，用完再生成下一批（`create` 单次上限仍是 10000）。流程：`create --channel taobao` → `export --format txt` 得到 codes.txt → 整个文件导入淘宝自动发货工具；补货（部分码已用掉）时用 `export --format txt --unused` 重新导一份，避免把已兑换的码再发出去。
+- **客服查码**（255）：`lookup --code <券号>` 打印批次名、渠道、奖励、状态（未兑换 / 已兑换 / 批次已停用 / 已作废 / 已过期，同时命中多个时按「已兑换 > 已作废 > 批次已停用 > 已过期 > 未兑换」显示一个，其余列在「其它命中的状态」）、已兑换的兑换时间（UTC+8）与**打码后**的用户名（只显示前 2 位与后 2 位，中间是 `*`；绝不输出完整用户名 / 邮箱 / 账号 id）。库里的码不存在输出「不存在」并以退出码 1 结束。输入的码按 253 的规则规范化，买家发来的任何大小写 / 带不带横线都能查。
+- **作废单个码**（255，买家退款时）：`void --code A --code B`（可重复）或 `void --file codes.txt`（每行一个，空行忽略）。只作废**还没被兑换**的码，之后兑换返回 `CODE_INVALID`；已兑换的码不能作废——输出「已被兑换，不能作废」并给出兑换时间，**已兑换的不收回元宝**（与商品页「不支持 7 天无理由退货」一致）。一个码失败不影响其余；退出码：全部成功 0，有任意一个失败（不存在 / 已被兑换）1，本来就已经作废算成功（重复执行同一个文件不报错）。
+- **对账**（255）：`stats --channel taobao [--since 2026-11-01] [--until 2026-11-30]`，按 **UTC+8 自然日**汇总该渠道每天的已兑换码数与折合元宝总数（只算奖励里的 `ingot`），最后一行合计；再输出渠道的批次总数、码总数、已兑换数、未兑换数、已作废数（这几项不受日期窗口影响）。日期含边界、格式必须是 `YYYY-MM-DD`。拿它和淘宝后台的订单数对：淘宝订单数应当 ≥ 已兑换码数，差额是买家还没兑换的。
+- **并发**：作废与兑换对同一个码同时发生时只有一个成功（兑换事务在读码时对该 `redeem_codes` 行加 `FOR SHARE`，作废先 `SELECT ... FOR UPDATE` 锁同一行再查 `redeem_claims`）。作废后 `export --unused` 与 `list` 的「已作废」列都能看到。
 - **码的可见性**：只在 `create` 的输出与 `export` 里出现；库里存的是规范化后的 16 位大写明文（字符集 0-9 与 A-Z 去掉 I/L/O/U），数据库权限要按敏感数据对待。日志与事件里只记后 4 位。
 - **规则**：一次性码每个只能被一个账号兑换一次；通用码多人都能兑、每人一次、到人数上限为止；同一账号在同一批次里只能领一次（拿到同批的另一个码返回 `CODE_BATCH_CLAIMED`，那个码不作废）。奖励由批次决定：元宝与充值元宝同账户、永久保留，福利道具按普通道具发放（换季清空）。
 - **防猜码**：每账号每小时最多失败 10 次（码不存在 / 格式不对 / 已被用 / 过期 / 同批已领 / 已领完都算），超过后 1 小时内所有兑换请求返回 `CODE_RATE_LIMITED`；成功兑换不计入失败次数。兑换尝试记录保留 7 天，由 Worker 每小时清理一次。

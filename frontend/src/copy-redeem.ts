@@ -9,8 +9,10 @@ export const REDEEM_COPY = {
   placeholder: '输入兑换码',
   submit: '兑换',
   submitting: '正在兑换…',
-  /** 面板里的一行小字：码从哪来、怎么输 */
+  /** 面板里的一行小字：码从哪来、怎么输（没有淘宝入口的环境用这一句） */
   hint: '从店铺或活动获得的券号；不区分大小写，可以带横线。',
+  /** 配了淘宝入口（PUBLIC_TAOBAO_URL）时换成这一句：券号从淘宝订单里看 */
+  hintTaobao: '券号在淘宝订单里查看；不区分大小写，可以带横线。',
   /** 成功摘要的前缀，后面接「元宝 +500、迁城令 ×2」 */
   success: (rewards: string) => `兑换成功：${rewards}`,
   rewardIngot: (amount: number) => `元宝 +${amount}`,

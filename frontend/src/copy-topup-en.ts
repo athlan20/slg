@@ -18,6 +18,10 @@ export const TOPUP_COPY_EN = {
   opened: 'Finish paying in the page that just opened. Come back here when you are done, and your balance will update automatically.',
   arrived: (amount: number) => `Ingots received +${amount}`,
   returnPending: 'Payment is being processed. Your ingots will update automatically once they arrive.',
+  // 英文界面不渲染淘宝卡片（AISLG-255），但类型要求与中文同构，值仍写成英文说明
+  taobaoTitle: 'Buy a code on Taobao',
+  taobaoNote: 'Find your code in your Taobao order, then come back here and open “Redeem code”.',
+  taobaoButton: 'Go to Taobao',
   note: 'Ingots can only be spent in the game on convenience items. They cannot be transferred or cashed out.',
   noteLinks: { prefix: 'See the', terms: 'Terms of Service', pricing: 'Pricing', joiner: ' and ', end: '.' },
   errors: {
