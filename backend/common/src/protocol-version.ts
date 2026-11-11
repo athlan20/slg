@@ -942,6 +942,8 @@
  *   失败 10 次，超过后 1 小时内全部拒绝，附 retryAfterSeconds）、ITEM_STACK_FULL（奖励含道具且发放后会超过
  *   堆叠上限：整次兑换回滚，码不作废、元宝也不发；响应附 itemId / stackMax / have / canGrant）。
  *   同一账号在同一批次里只能领一次；一次性码兑换后作废，通用码可继续被其他人兑换。
+ *   （AISLG-256 只放行规则、不改协议：一次性码不再限制同一账号同一批次只能领一张，可兑同批多张；
+ *   「同一账号同一批次只领一次」只对通用码继续生效，CODE_BATCH_CLAIMED 只在通用码出现。）
  *   奖励由批次决定：元宝 1..100000（与充值元宝同账户、永久保留，退款 / 拒付不回收它）与 / 或道具 1..99
  *   （按普通道具 grantItem 发放——只加 count 不加 paid_count，所以换季会清空）。
  *   二、新事件 INGOT_GRANTED（ingot_granted，detail = { reason, amount, balance }）与 CODE_REDEEMED

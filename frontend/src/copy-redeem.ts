@@ -26,7 +26,8 @@ export const REDEEM_COPY = {
     CODE_INVALID: '没有这个兑换码，请检查是不是输错了',
     CODE_EXPIRED: '这个兑换码已经过期了',
     CODE_USED: '这个兑换码已经被使用过了',
-    CODE_BATCH_CLAIMED: '这一批福利你已经领过了，同批次的其它码可以给其他玩家',
+    /** 同一个通用码已经兑过（AISLG-256：只在通用码出现；一次性码可以兑同批多张） */
+    CODE_BATCH_CLAIMED: '这个兑换码你已经兑换过了',
     CODE_EXHAUSTED: '这个兑换码已经被领完了',
     /** 输错次数太多：分钟数已向上取整、至少 1 分钟 */
     CODE_RATE_LIMITED: (minutes: number) => `输错次数太多了，请 ${minutes} 分钟后再试`,

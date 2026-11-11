@@ -1,7 +1,8 @@
 // 兑换码联调（AISLG-253，v109）：真实 API 进程 + 真实运营脚本（子进程跑 backend/scripts/redeem-codes.ts）
 // + PostgreSQL，走完整的「脚本生成码 → 玩家 WebSocket REDEEM_CODE → GET_STATE / 背包」链路。
 // 覆盖验收口径 1（生成 / 导出 / list）、2（大小写与分隔符）、3（元宝 + 道具 + 事件流）、4（CODE_USED /
-// CODE_BATCH_CLAIMED）、6（过期 / 停用）、7（ITEM_STACK_FULL 整单回滚）、8（限流）、10（Agent 令牌）。
+// 同账号兑同批多张 / 通用码 CODE_BATCH_CLAIMED 与 CODE_EXHAUSTED）、6（过期 / 停用）、7（ITEM_STACK_FULL
+// 整单回滚）、8（限流）、10（Agent 令牌）。AISLG-256：一次性码只保证一码一用，同账号可兑同批多张。
 // 运行（需要 DATABASE_URL 指向可写的**临时**库，见 test/README.md；别指向共用开发库）：
 //   DATABASE_URL=postgresql://slg@127.0.0.1:17253/slg npm run test:redeem
 // 没有 DATABASE_URL 时整体跳过。
@@ -130,23 +131,39 @@ test('验收 2 + 3：小写带空格与横线、大写无分隔都能兑；元�
   assert.ok(types.includes('ingot_granted'), `事件流里应有 ingot_granted：${types.join(',')}`);
 });
 
-test('验收 4：一次性码第二次 → CODE_USED；同账号拿同批另一个码 → CODE_BATCH_CLAIMED，那个码仍可给别人', opts, async () => {
-  const batch = await createBatch(['--name', `联调-重复-${RUN_ID}`, '--kind', 'single', '--count', '2', '--ingot', '10']);
+test('验收 4（AISLG-256）：同账号兑同一一次性码批次的 3 张全成功、元宝累计 +600；用过的码别人再兑是 CODE_USED', opts, async () => {
+  const batch = await createBatch(['--name', `联调-重复-${RUN_ID}`, '--kind', 'single', '--count', '3', '--ingot', '200']);
   const first = await loginPlayer('dup1');
   const second = await loginPlayer('dup2');
 
-  const used = await redeem(first.client, batch.codes[0]);
-  assert.ok(used.ok, JSON.stringify(used));
-  const again = await redeem(second.client, batch.codes[0]);
-  assert.equal(again.ok, false);
-  assert.equal(again.error?.code, 'CODE_USED');
+  for (const [i, code] of batch.codes.entries()) {
+    const result = await redeem(first.client, code);
+    assert.ok(result.ok, `第 ${i + 1} 张应当能兑：${JSON.stringify(result)}`);
+  }
+  assert.equal((await stateOf(first.client)).ingot, 600, '三张累计 +600');
 
-  const other = await redeem(first.client, batch.codes[1]);
-  assert.equal(other.ok, false);
-  assert.equal(other.error?.code, 'CODE_BATCH_CLAIMED');
-  // 那个码没作废
-  const byOther = await redeem(second.client, batch.codes[1]);
-  assert.ok(byOther.ok, JSON.stringify(byOther));
+  // 用过的码：别人再兑、本账号再兑都是 CODE_USED（不是 CODE_BATCH_CLAIMED）
+  const byOther = await redeem(second.client, batch.codes[0]);
+  assert.equal(byOther.error?.code, 'CODE_USED');
+  const again = await redeem(first.client, batch.codes[0]);
+  assert.equal(again.error?.code, 'CODE_USED');
+});
+
+test('验收 4（AISLG-256）：通用码同账号第二次 → CODE_BATCH_CLAIMED；两个账号兑完后第三个 → CODE_EXHAUSTED', opts, async () => {
+  const batch = await createBatch(['--name', `联调-通用-${RUN_ID}`, '--kind', 'shared', '--max', '2', '--ingot', '10']);
+  assert.equal(batch.codes.length, 1, '通用码一个批次只有一个码');
+  const [first, second, third] = await Promise.all([
+    loginPlayer('shared1'),
+    loginPlayer('shared2'),
+    loginPlayer('shared3'),
+  ]);
+  assert.ok((await redeem(first.client, batch.codes[0])).ok);
+  const repeat = await redeem(first.client, batch.codes[0]);
+  assert.equal(repeat.error?.code, 'CODE_BATCH_CLAIMED');
+  assert.ok((await redeem(second.client, batch.codes[0])).ok);
+  const exhausted = await redeem(third.client, batch.codes[0]);
+  assert.equal(exhausted.error?.code, 'CODE_EXHAUSTED');
+  assert.equal((await stateOf(first.client)).ingot, 10, '同账号只入账一次');
 });
 
 test('验收 6：过期 → CODE_EXPIRED；disable 之后 → CODE_INVALID，已领的不收回', opts, async () => {

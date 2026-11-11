@@ -754,7 +754,7 @@ export const ErrorCode = {
   CODE_EXPIRED: 'CODE_EXPIRED',
   /** 一次性码已被兑换（v109，AISLG-253；兑换后作废） */
   CODE_USED: 'CODE_USED',
-  /** 本账号已经领过这一批的福利（v109，AISLG-253；同批次的其它码仍然有效，可给别人兑） */
+  /** 本账号已经兑换过这个通用码（v109，AISLG-253；AISLG-256 起只在通用码出现，一次性的同批其它码可以继续兑） */
   CODE_BATCH_CLAIMED: 'CODE_BATCH_CLAIMED',
   /** 通用码的兑换人数已达上限（v109，AISLG-253；附 limit / used） */
   CODE_EXHAUSTED: 'CODE_EXHAUSTED',

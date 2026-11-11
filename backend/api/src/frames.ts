@@ -22,7 +22,7 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   CODE_INVALID: '兑换码无效：没有这个码，或这一批已经停用',
   CODE_EXPIRED: '这个兑换码已过期',
   CODE_USED: '这个兑换码已经被使用过了',
-  CODE_BATCH_CLAIMED: '这一批福利你已经领过了，同批次的其它码可以给其他玩家',
+  CODE_BATCH_CLAIMED: '这个兑换码你已经兑换过了',
   CODE_EXHAUSTED: '这个兑换码的兑换人数已经满了',
   CODE_RATE_LIMITED: '输错次数太多，请稍后再试（每账号每小时最多 10 次）',
   UNKNOWN_OP: '协议号不存在',

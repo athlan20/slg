@@ -1,6 +1,7 @@
 // 兑换码（AISLG-253，v109）：批次创建 / 列表 / 导出 / 停用，兑换成功（元宝 + 道具、事件），
-// 每个错误码（不存在 / 过期 / 一次性码已被用 / 同批已领 / 通用码领完 / 限流 / 道具超堆叠），
-// 两类并发（一次性码 20 账号抢 1 个、同账号抢同批 2 个、通用码人数上限），失败次数与 7 天清理。
+// 每个错误码（不存在 / 过期 / 一次性码已被用 / 通用码同账号第二次兑 / 通用码领完 / 限流 / 道具超堆叠），
+// 两类并发（一次性码 20 账号抢 1 个、同账号抢同批 2 个都成功、通用码人数上限），失败次数与 7 天清理。
+// AISLG-256：一次性码只保证「一码一用」，同一账号可以兑同一批次的多张，不设上限。
 // 需要真实 PostgreSQL：设置 TEST_DATABASE_URL（临时集群，测试在其中新建独立库），否则跳过。
 
 import assert from 'node:assert/strict';
@@ -232,25 +233,43 @@ describe('兑换码（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设
     assert.equal((await redeem(other, codes[0], new Date(NOW.getTime() + 999))).ok, true);
   });
 
-  test('一次性码第二次被任意账号兑换 → CODE_USED', async () => {
+  test('一次性码第二次被任意账号兑换 → CODE_USED（同一账号重复兑同一个码也是 CODE_USED）', async () => {
     const first = await newAccount('used-1');
     const second = await newAccount('used-2');
     const { codes } = await newBatch({ count: 1 });
     assert.equal((await redeem(first, codes[0])).ok, true);
     assert.deepEqual(await redeem(second, codes[0]), { ok: false, code: 'CODE_USED' });
+    assert.deepEqual(await redeem(first, codes[0]), { ok: false, code: 'CODE_USED' }, '本账号重兑不是 CODE_BATCH_CLAIMED');
     assert.equal(await loadIngot(pool, second), 0);
   });
 
-  test('同账号拿同批次另一个码 → CODE_BATCH_CLAIMED，那个码仍可被别人兑换', async () => {
-    const first = await newAccount('batch-1');
-    const second = await newAccount('batch-2');
-    const { codes } = await newBatch({ count: 2, rewards: { ingot: 50 } });
+  test('验收 1 + 2：同一账号兑同批 3 张一次性码全成功（元宝累计 +600），同批第 4 张不再受限', async () => {
+    const id = await newAccount('multi-single');
+    const { codes } = await newBatch({ count: 3, rewards: { ingot: 200 } });
+    for (const [i, code] of codes.entries()) {
+      assert.equal((await redeem(id, code)).ok, true, `第 ${i + 1} 张应当能兑`);
+    }
+    assert.equal(await loadIngot(pool, id), 600, '三张累计 +600');
+    const redeemed = await eventsOf(id, 'code_redeemed');
+    assert.equal(redeemed.length, 3, '每次兑换都有 code_redeemed 事件');
+    assert.equal(new Set(redeemed.map((row) => row.detail.codeTail)).size, 3);
+    // 验收 2：同一个码别人再兑、本账号再兑都是 CODE_USED（不是 CODE_BATCH_CLAIMED）
+    const other = await newAccount('multi-single-other');
+    assert.deepEqual(await redeem(other, codes[0]), { ok: false, code: 'CODE_USED' });
+    assert.deepEqual(await redeem(id, codes[0]), { ok: false, code: 'CODE_USED' });
+  });
+
+  test('验收 3：通用码同账号第二次兑 → CODE_BATCH_CLAIMED；两个账号兑完后第三个 → CODE_EXHAUSTED', async () => {
+    const { codes } = await newBatch({ kind: 'shared', maxRedemptions: 2, rewards: { ingot: 20 } });
+    const first = await newAccount('shared-again-1');
     assert.equal((await redeem(first, codes[0])).ok, true);
-    assert.deepEqual(await redeem(first, codes[1]), { ok: false, code: 'CODE_BATCH_CLAIMED' });
-    // 码本身没作废
-    assert.equal((await redeem(second, codes[1])).ok, true);
-    assert.equal(await loadIngot(pool, first), 50);
-    assert.equal(await loadIngot(pool, second), 50);
+    assert.deepEqual(await redeem(first, codes[0]), { ok: false, code: 'CODE_BATCH_CLAIMED' });
+    const second = await newAccount('shared-again-2');
+    assert.equal((await redeem(second, codes[0])).ok, true);
+    // 名额已满：第三个账号（以及再试一次的本账号）都是 CODE_EXHAUSTED
+    const third = await newAccount('shared-again-3');
+    assert.deepEqual(await redeem(third, codes[0]), { ok: false, code: 'CODE_EXHAUSTED', detail: { limit: 2, used: 2 } });
+    assert.equal(await loadIngot(pool, first), 20, '同账号只入账一次');
   });
 
   test('通用码达到 max 后第 N+1 个账号 → CODE_EXHAUSTED（附 limit / used）', async () => {
@@ -298,6 +317,30 @@ describe('兑换码（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设
     });
     assert.equal((await redeem(id, codes[0])).ok, true);
     assert.equal(await loadIngot(pool, id), 500);
+    assert.equal((await loadItems(pool, id)).city_order, 92);
+  });
+
+  test('验收 6：同批第 2 张道具奖码在背包已满时整单回滚（码不作废），腾出位置后同一个码能兑', async () => {
+    const id = await newAccount('stack-second');
+    const { codes } = await newBatch({ count: 2, rewards: { ingot: 500, items: [{ itemId: 'city_order', count: 2 }] } });
+    assert.equal((await redeem(id, codes[0])).ok, true, '同批第 1 张成功');
+    assert.equal((await loadItems(pool, id)).city_order, 2);
+    await give(id, 'city_order', 97); // 2 + 97 = 99，满了
+    const blocked = await redeem(id, codes[1]);
+    assert.equal(blocked.ok, false);
+    if (blocked.ok) {
+      return;
+    }
+    assert.equal(blocked.code, 'ITEM_STACK_FULL');
+    assert.equal(await loadIngot(pool, id), 500, '第 2 张的元宝没发（整单回滚）');
+    assert.equal((await loadItems(pool, id)).city_order, 99);
+    assert.equal((await eventsOf(id, 'code_redeemed')).length, 1, '失败的兑换没有事件');
+    assert.equal((await countRecentFailures(pool, id, NOW)).count, 0, '背包满不算猜码失败');
+    await inTx(async (client) => {
+      await client.query(`UPDATE user_items SET count = 90 WHERE account_id = $1 AND item_id = 'city_order'`, [id]);
+    });
+    assert.equal((await redeem(id, codes[1])).ok, true, '腾出位置后第 2 个码仍可兑');
+    assert.equal(await loadIngot(pool, id), 1000, '两张共 +1000');
     assert.equal((await loadItems(pool, id)).city_order, 92);
   });
 
@@ -356,20 +399,17 @@ describe('兑换码（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设
     assert.equal(Number(claimed.rows[0].count), 1);
   });
 
-  test('并发：同一账号同时兑换同批次 2 个码，恰好 1 个成功（另一个 CODE_BATCH_CLAIMED）', async () => {
+  test('并发：同一账号同时兑换同批次 2 个码，两个都成功（AISLG-256 前恰好 1 个）', async () => {
     const id = await newAccount('race-account');
     const { codes } = await newBatch({ count: 2, rewards: { ingot: 40 } });
     const results = await Promise.all(codes.map((code) => redeem(id, code)));
-    assert.equal(results.filter((result) => result.ok).length, 1);
-    const failed = results.filter((result) => !result.ok) as Array<{ code: string }>;
-    assert.equal(failed.length, 1);
-    assert.equal(failed[0].code, 'CODE_BATCH_CLAIMED');
-    assert.equal(await loadIngot(pool, id), 40, '只入账一次');
-    // 没成功的那个码仍然可以给别人
+    assert.equal(results.filter((result) => result.ok).length, 2, '两个码都能兑');
+    assert.equal(await loadIngot(pool, id), 80, '两次都入账');
+    const claims = await pool.query(`SELECT count(*) AS count FROM redeem_claims WHERE account_id = $1`, [id]);
+    assert.equal(Number(claims.rows[0].count), 2);
+    // 再拿第三个账号兑同一个码仍然是 CODE_USED
     const other = await newAccount('race-account-other');
-    const used = results.findIndex((result) => result.ok);
-    const leftover = codes[used === 0 ? 1 : 0];
-    assert.equal((await redeem(other, leftover)).ok, true);
+    assert.deepEqual(await redeem(other, codes[0]), { ok: false, code: 'CODE_USED' });
   });
 
   test('并发：通用码 max=200，300 个账号同时兑换，成功数恰好 200（验收口径 5）', async () => {
@@ -420,7 +460,7 @@ describe('兑换码（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设
     assert.equal(event.length, 1);
   });
 
-  test('换季：福利元宝保留、福利道具清空，兑换记录与批次跨季保留（同一批次不能重领）', async () => {
+  test('换季：福利元宝保留、福利道具清空，兑换记录与批次跨季保留（同批多张仍可兑）', async () => {
     const id = await newAccount('season');
     const { batchId, codes } = await newBatch({ count: 2, rewards: { ingot: 300, items: [{ itemId: 'city_order', count: 2 }] } });
     assert.equal((await redeem(id, codes[0])).ok, true);
@@ -436,9 +476,11 @@ describe('兑换码（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设
     const claims = await pool.query(`SELECT count(*) AS count FROM redeem_claims WHERE batch_id = $1`, [batchId]);
     assert.equal(Number(claims.rows[0].count), 1, '兑换记录跨季保留');
     assert.equal((await listRedeemCodes(pool, batchId)).length, 2, '码跨季保留');
-    // 换季后同一个账号仍然领不了这一批，另一个账号还能用那个码
-    assert.deepEqual(await redeem(id, codes[1]), { ok: false, code: 'CODE_BATCH_CLAIMED' });
-    const other = await newAccount('season-other');
-    assert.equal((await redeem(other, codes[1])).ok, true);
+    // 换季后同批的另一个一次性码照样能兑（AISLG-256：不再限制一人一张），元宝继续累加
+    assert.equal((await redeem(id, codes[1])).ok, true);
+    assert.equal(await loadIngot(pool, id), 600);
+    assert.equal((await loadItems(pool, id)).city_order, 2);
+    const after = await pool.query(`SELECT count(*) AS count FROM redeem_claims WHERE batch_id = $1`, [batchId]);
+    assert.equal(Number(after.rows[0].count), 2);
   });
 });

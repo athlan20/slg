@@ -499,7 +499,7 @@ export type ErrorCode =
   | 'TOPUP_UNAVAILABLE'
   /** 充值：商品 id 无效（v108） */
   | 'TOPUP_PRODUCT_INVALID'
-  /** 兑换码（v109，AISLG-253）：码不存在 / 格式不对 / 已过期 / 已被使用 / 同批已领 / 已被领完 */
+  /** 兑换码（v109，AISLG-253）：码不存在 / 格式不对 / 已过期 / 已被使用 / 同一个通用码已兑过 / 已被领完 */
   | 'CODE_INVALID'
   | 'CODE_EXPIRED'
   | 'CODE_USED'
