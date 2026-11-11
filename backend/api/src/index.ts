@@ -112,7 +112,7 @@ async function main(): Promise<void> {
   console.log(
     ctx.payments
       ? `slg-api topup enabled (provider=${ctx.payments.provider.provider})`
-      : 'slg-api topup disabled (CREEM_API_KEY / CREEM_WEBHOOK_SECRET / CREEM_PRODUCT_TOPUP_199 not all set)',
+      : 'slg-api topup disabled (CREEM_API_KEY / CREEM_WEBHOOK_SECRET / CREEM_PRODUCT_TOPUP_1000 not all set)',
   );
   if (ctx.payments?.provider.provider === 'fake') {
     console.warn('slg-api topup uses the FAKE payment provider (PAYMENT_PROVIDER=fake): 只允许测试环境');
