@@ -144,6 +144,7 @@ import { REQUEST_GET_QUESTS, REQUEST_CLAIM_QUEST, REQUEST_GET_ACTIVITIES, REQUES
 import { GIFT_STATE_FIELDS } from './protocol-doc-gift';
 import { ITEMS_STATE_FIELDS, REQUEST_BUY_ITEM, REQUEST_GET_ITEMS } from './protocol-doc-ops-items';
 import { INGOT_STATE_FIELDS, REQUEST_CREATE_TOPUP } from './protocol-doc-ops-topup';
+import { REQUEST_REDEEM_CODE } from './protocol-doc-ops-redeem';
 import { MOVE_CITY_STATE_FIELDS, REQUEST_MOVE_CITY } from './protocol-doc-ops-move-city';
 import { REQUEST_RANSOM_HERO } from './protocol-doc-ops-hero-loyalty';
 
@@ -489,6 +490,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   // 充值（v108，AISLG-251）：仅玩家连接，不进 Agent 文档（见 protocol-doc-ops-topup.ts 的 TOPUP_AGENT_HIDDEN_OPS）
   [Op.CREATE_TOPUP]: REQUEST_CREATE_TOPUP,
   [Op.BUY_ITEM]: REQUEST_BUY_ITEM,
+  // 兑换码（v109，AISLG-253）：玩家与 Agent 通用（不进隐藏列表，MCP 会生成对应工具）
+  [Op.REDEEM_CODE]: REQUEST_REDEEM_CODE,
   [Op.MOVE_CITY]: REQUEST_MOVE_CITY,
   [Op.RANSOM_HERO]: REQUEST_RANSOM_HERO,
   [Op.CAST_STRATAGEM]: REQUEST_CAST_STRATAGEM,
