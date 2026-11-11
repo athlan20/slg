@@ -236,7 +236,7 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
   test('BUY_ITEM 用元宝：扣元宝、count 与 paidCount 同时加，写三个事件，返回带新余额', async () => {
     const id = await newAccount('buy-ingot-ok');
     await setIngot(id, 1000);
-    const frame = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'ingot' });
+    const frame = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'ingot' });
     assert.equal(frame.ok, true, JSON.stringify(frame));
     assert.deepEqual(frame.data, {
       itemId: 'city_order_adv',
@@ -244,12 +244,12 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
       count: 1,
       paidCount: 1,
       currency: 'ingot',
-      price: 100,
-      cost: 100,
+      price: 50,
+      cost: 50,
       gift: SEASON_GIFT,
-      ingot: 900,
+      ingot: 950,
     });
-    assert.equal(await loadIngot(pool, id), 900);
+    assert.equal(await loadIngot(pool, id), 950);
     assert.equal(await loadGift(pool, id), SEASON_GIFT, '礼金不动');
     assert.equal((await loadItems(pool, id)).city_order_adv, 1);
     assert.equal((await loadPaidCounts(pool, id)).city_order_adv, 1);
@@ -258,17 +258,17 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const bought = (await eventsOf(id, 'item_bought'))[0].detail;
     assert.equal(bought.currency, 'ingot');
     assert.equal(bought.paidCount, 1);
-    assert.equal(bought.ingot, 900);
+    assert.equal(bought.ingot, 950);
   });
 
-  test('元宝不够（99 买 100 的令）：INSUFFICIENT_INGOT，余额与背包都不变', async () => {
+  test('元宝不够（49 买 50 的令）：INSUFFICIENT_INGOT，余额与背包都不变', async () => {
     const id = await newAccount('buy-ingot-short');
-    await setIngot(id, 99);
-    const frame = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'ingot' });
+    await setIngot(id, 49);
+    const frame = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'ingot' });
     assert.equal(frame.ok, false);
     assert.equal(frame.error?.code, 'INSUFFICIENT_INGOT');
-    assert.deepEqual(frame.data, { balance: 99, cost: 100, currency: 'ingot' });
-    assert.equal(await loadIngot(pool, id), 99);
+    assert.deepEqual(frame.data, { balance: 49, cost: 50, currency: 'ingot' });
+    assert.equal(await loadIngot(pool, id), 49);
     assert.equal((await loadItems(pool, id)).city_order_adv, 0);
     assert.equal((await eventsOf(id, 'item_bought')).length, 0);
   });
@@ -277,21 +277,21 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const id = await newAccount('buy-currency-choice');
     await setIngot(id, 100);
     await inTx((client) => spendGift(client, id, SEASON_GIFT, 'drain'));
-    const giftBuy = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'gift' });
+    const giftBuy = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'gift' });
     assert.equal(giftBuy.error?.code, 'INSUFFICIENT_GIFT');
     assert.equal(await loadIngot(pool, id), 100, '礼金不够时不扣元宝（不自动混用）');
-    const ingotBuy = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'ingot' });
+    const ingotBuy = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'ingot' });
     assert.equal(ingotBuy.ok, true, JSON.stringify(ingotBuy));
-    assert.equal(await loadIngot(pool, id), 0);
+    assert.equal(await loadIngot(pool, id), 50);
   });
 
   test('不传 currency 时按礼金支付（旧客户端行为不变）', async () => {
     const id = await newAccount('buy-default-gift');
     await setIngot(id, 1000);
-    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30 });
     assert.equal(frame.ok, true, JSON.stringify(frame));
     assert.equal((frame.data as { currency: string }).currency, 'gift');
-    assert.equal(await loadGift(pool, id), SEASON_GIFT - 50);
+    assert.equal(await loadGift(pool, id), SEASON_GIFT - 30);
     assert.equal(await loadIngot(pool, id), 1000, '元宝不动');
     assert.equal((await loadPaidCounts(pool, id)).city_order, 0, '礼金买的不算换季保留');
   });
@@ -299,7 +299,7 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
   test('非法 currency（如 topup）返回 INVALID_PARAMS，什么都不改', async () => {
     const id = await newAccount('buy-currency-invalid');
     await setIngot(id, 1000);
-    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50, currency: 'gold' });
+    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30, currency: 'gold' });
     assert.equal(frame.error?.code, 'INVALID_PARAMS');
     assert.equal(await loadIngot(pool, id), 1000);
     assert.equal(await loadGift(pool, id), SEASON_GIFT);
@@ -310,7 +310,7 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     await setIngot(id, 1000);
     const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 999, currency: 'ingot' });
     assert.equal(frame.error?.code, 'ITEM_PRICE_CHANGED');
-    assert.deepEqual(frame.data, { price: 50, currency: 'ingot' });
+    assert.deepEqual(frame.data, { price: 30, currency: 'ingot' });
     assert.equal(await loadIngot(pool, id), 1000);
   });
 
@@ -318,7 +318,7 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const id = await newAccount('buy-ingot-stack');
     await setIngot(id, 1000);
     await givePaid(id, 'city_order', 99);
-    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50, currency: 'ingot' });
+    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30, currency: 'ingot' });
     assert.equal(frame.error?.code, 'ITEM_STACK_FULL');
     assert.equal(await loadIngot(pool, id), 1000);
     assert.equal((await loadItems(pool, id)).city_order, 99);
@@ -417,8 +417,8 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     assert.deepEqual(
       itemsData.catalog.map((def) => [def.id, def.shopPrice, def.ingotPrice]),
       [
-        ['city_order', 50, 50],
-        ['city_order_adv', 100, 100],
+        ['city_order', 30, 30],
+        ['city_order_adv', 50, 50],
       ],
     );
   });
@@ -428,8 +428,58 @@ describe('元宝（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     await setIngot(id, 200);
     const state = await callAs(id, Op.GET_STATE, undefined, 'agent');
     assert.equal((state.data as { ingot: number }).ingot, 200);
-    const frame = await callAs(id, Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 50, currency: 'ingot' }, 'agent');
+    const frame = await callAs(id, Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 30, currency: 'ingot' }, 'agent');
     assert.equal(frame.ok, true, JSON.stringify(frame));
-    assert.equal(await loadIngot(pool, id), 150);
+    assert.equal(await loadIngot(pool, id), 170);
+  });
+
+  // ---- 迁城令降价（AISLG-254）----
+
+  test('迁城令调价：目录 30 / 30 / 50 / 50，礼金买扣 30、元宝买扣 50；旧价（50 / 100）作 expectedPrice 返回 ITEM_PRICE_CHANGED 且不扣不加', async () => {
+    const id = await newAccount('price-cut');
+    await setIngot(id, 100);
+
+    // 一、GET_ITEMS 目录：迁城令 30 / 30，高级迁城令 50 / 50
+    const items = await callAs(id, Op.GET_ITEMS);
+    assert.equal(items.ok, true, JSON.stringify(items));
+    const catalog = (items.data as { catalog: Array<{ id: string; shopPrice: number | null; ingotPrice: number | null }> }).catalog;
+    assert.deepEqual(
+      catalog.map((def) => [def.id, def.shopPrice, def.ingotPrice]),
+      [
+        ['city_order', 30, 30],
+        ['city_order_adv', 50, 50],
+      ],
+    );
+
+    // 二、客户端还拿着调价前的旧价（50 / 100）：ITEM_PRICE_CHANGED，礼金 / 元宝 / 背包都不变
+    const staleGift = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+    assert.equal(staleGift.error?.code, 'ITEM_PRICE_CHANGED');
+    assert.deepEqual(staleGift.data, { price: 30, currency: 'gift' }, '返回当前礼金单价');
+    const staleIngot = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'ingot' });
+    assert.equal(staleIngot.error?.code, 'ITEM_PRICE_CHANGED');
+    assert.deepEqual(staleIngot.data, { price: 50, currency: 'ingot' }, '返回当前元宝单价');
+    assert.equal(await loadGift(pool, id), SEASON_GIFT, '礼金不变');
+    assert.equal(await loadIngot(pool, id), 100, '元宝不变');
+    assert.deepEqual(await loadItems(pool, id), { city_order: 0, city_order_adv: 0 }, '不加道具');
+
+    // 三、礼金买一张迁城令扣 30
+    const byGift = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30 });
+    assert.equal(byGift.ok, true, JSON.stringify(byGift));
+    assert.deepEqual(
+      { currency: (byGift.data as { currency: string }).currency, cost: (byGift.data as { cost: number }).cost, gift: (byGift.data as { gift: number }).gift },
+      { currency: 'gift', cost: 30, gift: SEASON_GIFT - 30 },
+    );
+    assert.equal(await loadGift(pool, id), SEASON_GIFT - 30);
+
+    // 四、元宝买一张高级迁城令扣 50
+    const byIngot = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'ingot' });
+    assert.equal(byIngot.ok, true, JSON.stringify(byIngot));
+    assert.deepEqual(
+      { currency: (byIngot.data as { currency: string }).currency, cost: (byIngot.data as { cost: number }).cost, ingot: (byIngot.data as { ingot: number }).ingot },
+      { currency: 'ingot', cost: 50, ingot: 50 },
+    );
+    assert.equal(await loadIngot(pool, id), 50);
+    assert.equal(await loadGift(pool, id), SEASON_GIFT - 30, '元宝付款不动礼金');
+    assert.deepEqual(await loadItems(pool, id), { city_order: 1, city_order_adv: 1 });
   });
 });

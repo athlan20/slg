@@ -478,7 +478,7 @@ describe('充值订单与入账（需 TEST_DATABASE_URL）', { skip: dbUrl ? fal
     const id = await newAccount('create-unavailable');
     const frame = await callAs(id, Op.CREATE_TOPUP, { productId: 'topup_199' }, 'player', null);
     assert.equal(frame.error?.code, 'TOPUP_UNAVAILABLE');
-    const buy = await callAs(id, Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 50 }, 'player', null);
+    const buy = await callAs(id, Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 30 }, 'player', null);
     assert.equal(buy.ok, true, JSON.stringify(buy));
   });
 

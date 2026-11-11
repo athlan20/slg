@@ -119,7 +119,7 @@ test('篡改签名 / 缺少签名：400，不入账', opts, async () => {
   assert.equal((await loadOrderRow(DB_URL as string, orderId))?.status, 'pending');
 });
 
-test('用元宝买高级迁城令：扣 100 元宝；礼金不够时选元宝仍成功，缺省按礼金', opts, async () => {
+test('用元宝买高级迁城令：扣 50 元宝；礼金不够时选元宝仍成功，缺省按礼金', opts, async () => {
   const { client } = await loginPlayer('item');
   const created = await client.call(Op.CREATE_TOPUP, { productId: 'topup_199' });
   const { orderId } = created.data as { orderId: string };
@@ -129,7 +129,7 @@ test('用元宝买高级迁城令：扣 100 元宝；礼金不够时选元宝仍
   const entry = (catalog.data as { catalog: Array<{ id: string; ingotPrice: number | null }> }).catalog.find(
     (def) => def.id === 'city_order_adv',
   );
-  assert.equal(entry?.ingotPrice, 100);
+  assert.equal(entry?.ingotPrice, 50);
 
   const bought = await client.call(Op.BUY_ITEM, {
     itemId: 'city_order_adv',
@@ -138,19 +138,19 @@ test('用元宝买高级迁城令：扣 100 元宝；礼金不够时选元宝仍
     currency: 'ingot',
   });
   assert.ok(bought.ok, JSON.stringify(bought));
-  assert.equal((bought.data as { ingot: number }).ingot, 900);
+  assert.equal((bought.data as { ingot: number }).ingot, 950);
   assert.equal((bought.data as { paidCount: number }).paidCount, 1);
-  assert.equal(await ingotOf(client), 900);
+  assert.equal(await ingotOf(client), 950);
 
-  // 元宝 99 时再买：INSUFFICIENT_INGOT，余额与背包都不变
-  await client.call(Op.BUY_ITEM, { itemId: 'city_order_adv', count: 9, expectedPrice: 100, currency: 'ingot' });
-  const short = await client.call(Op.BUY_ITEM, { itemId: 'city_order_adv', count: 1, expectedPrice: 100, currency: 'ingot' });
-  // 9 张 = 900 元宝，正好花光；随后 1 张不够
+  // 剩下 950 元宝再买 19 张正好花光，之后 1 张不够：INSUFFICIENT_INGOT，余额与背包都不变
+  await client.call(Op.BUY_ITEM, { itemId: 'city_order_adv', count: 19, expectedPrice: 50, currency: 'ingot' });
+  const short = await client.call(Op.BUY_ITEM, { itemId: 'city_order_adv', count: 1, expectedPrice: 50, currency: 'ingot' });
+  // 19 张 = 950 元宝，正好花光；随后 1 张不够
   assert.equal(short.error?.code, 'INSUFFICIENT_INGOT');
   assert.equal(await ingotOf(client), 0);
 
   // 缺省 currency 按礼金付（旧客户端行为不变）
-  const giftBuy = await client.call(Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+  const giftBuy = await client.call(Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 30 });
   assert.ok(giftBuy.ok, JSON.stringify(giftBuy));
   assert.equal((giftBuy.data as { currency: string }).currency, 'gift');
   assert.equal(await ingotOf(client), 0);
@@ -195,7 +195,7 @@ test('没配置支付渠道：CREATE_TOPUP 返回 TOPUP_UNAVAILABLE、回调 503
   assert.equal(created.error?.code, 'TOPUP_UNAVAILABLE');
   const response = await postWebhook(API_PORT + 1, checkoutCompletedBody(`evt-off-${RUN_ID}`, 'x'));
   assert.equal(response.status, 503);
-  const bought = await client.call(Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+  const bought = await client.call(Op.BUY_ITEM, { itemId: 'city_order', count: 1, expectedPrice: 30 });
   assert.ok(bought.ok, JSON.stringify(bought));
 });
 

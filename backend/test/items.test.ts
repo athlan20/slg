@@ -23,12 +23,12 @@ import { createTempDatabase, type TempDatabase } from './season-test-db';
 
 // ---- 纯规则（不需要数据库）----
 
-test('道具配置：首批两种，价格与堆叠上限按需求单（50 / 100，上限 99）', () => {
+test('道具配置：首批两种，价格与堆叠上限按需求单（礼金 / 元宝 30·30 / 50·50，上限 99）', () => {
   assert.deepEqual(
-    ITEM_DEFS.map((def) => [def.id, def.name, def.shopPrice, def.stackMax]),
+    ITEM_DEFS.map((def) => [def.id, def.name, def.shopPrice, def.ingotPrice, def.stackMax]),
     [
-      ['city_order', '迁城令', 50, 99],
-      ['city_order_adv', '高级迁城令', 100, 99],
+      ['city_order', '迁城令', 30, 30, 99],
+      ['city_order_adv', '高级迁城令', 50, 50, 99],
     ],
   );
   assert.equal(shopItemDefs().length, 2);
@@ -206,7 +206,7 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     await give(id, 'city_order', 4);
     const jobs: Array<Promise<unknown>> = [];
     for (let i = 0; i < 10; i += 1) {
-      jobs.push(buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 }));
+      jobs.push(buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30 }));
       jobs.push(inTx((c) => consumeItem(c, id, 'city_order', 1, 'mix')));
     }
     const settled = await Promise.all(jobs);
@@ -218,7 +218,7 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     assert.equal(count, 4 + bought - consumed, '数量 = 原有 + 买入 - 消耗');
     assert.ok(count >= 0);
     const gift = await giftOf(id);
-    assert.equal(gift, SEASON_GIFT - 50 * bought);
+    assert.equal(gift, SEASON_GIFT - 30 * bought);
     assert.ok(gift >= 0);
   });
 
@@ -226,7 +226,7 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
 
   test('BUY_ITEM 成功：礼金按 单价 × 数量 扣，道具增加，写 item_bought，响应带新数量与余额', async () => {
     const id = await newAccount('buy-ok');
-    const frame = await buy(id, { itemId: 'city_order', count: 2, expectedPrice: 50 });
+    const frame = await buy(id, { itemId: 'city_order', count: 2, expectedPrice: 30 });
     assert.equal(frame.ok, true, JSON.stringify(frame));
     assert.deepEqual(frame.data, {
       itemId: 'city_order',
@@ -234,23 +234,23 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
       count: 2,
       paidCount: 0,
       currency: 'gift',
-      price: 50,
-      cost: 100,
-      gift: SEASON_GIFT - 100,
+      price: 30,
+      cost: 60,
+      gift: SEASON_GIFT - 60,
       ingot: 0,
     });
-    assert.equal(await giftOf(id), SEASON_GIFT - 100);
+    assert.equal(await giftOf(id), SEASON_GIFT - 60);
     assert.equal((await loadItems(pool, id)).city_order, 2);
     const bought = await eventsOf(id, 'item_bought');
     assert.deepEqual(bought[0].detail, {
       itemId: 'city_order',
       count: 2,
-      price: 50,
-      cost: 100,
+      price: 30,
+      cost: 60,
       currency: 'gift',
       owned: 2,
       paidCount: 0,
-      gift: SEASON_GIFT - 100,
+      gift: SEASON_GIFT - 60,
       ingot: 0,
     });
     // 礼金扣除与道具发放各自也有事件
@@ -261,11 +261,11 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
   test('BUY_ITEM 参数校验：未知 / 不卖的道具、count 非法、expectedPrice 缺失，都是 INVALID_PARAMS 且不改数据', async () => {
     const id = await newAccount('buy-invalid');
     const cases: Array<Record<string, unknown>> = [
-      { itemId: 'no_such', count: 1, expectedPrice: 50 },
-      { count: 1, expectedPrice: 50 },
-      { itemId: 'city_order', count: 0, expectedPrice: 50 },
-      { itemId: 'city_order', count: 100, expectedPrice: 50 },
-      { itemId: 'city_order', count: 1.5, expectedPrice: 50 },
+      { itemId: 'no_such', count: 1, expectedPrice: 30 },
+      { count: 1, expectedPrice: 30 },
+      { itemId: 'city_order', count: 0, expectedPrice: 30 },
+      { itemId: 'city_order', count: 100, expectedPrice: 30 },
+      { itemId: 'city_order', count: 1.5, expectedPrice: 30 },
       { itemId: 'city_order', count: 1 },
       { itemId: 'city_order', count: 1, expectedPrice: 'abc' },
     ];
@@ -282,10 +282,10 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const id = await newAccount('buy-unsold');
     setPrice('city_order_adv', null);
     try {
-      const frame = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100 });
+      const frame = await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 50 });
       assert.equal(frame.error?.code, 'INVALID_PARAMS');
     } finally {
-      setPrice('city_order_adv', 100);
+      setPrice('city_order_adv', 50);
     }
     assert.equal(await giftOf(id), SEASON_GIFT);
   });
@@ -298,11 +298,11 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
 
   test('BUY_ITEM 单价已变：ITEM_PRICE_CHANGED（附当前 price），礼金与道具都不变', async () => {
     const id = await newAccount('buy-price');
-    await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+    await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30 });
     const gift = await giftOf(id);
     setPrice('city_order', 80);
     try {
-      const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+      const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30 });
       assert.equal(frame.ok, false);
       assert.equal(frame.error?.code, 'ITEM_PRICE_CHANGED');
       assert.deepEqual(frame.data, { price: 80, currency: 'gift' });
@@ -314,20 +314,20 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
       assert.equal((ok.data as { cost: number }).cost, 80);
       assert.equal((await loadItems(pool, id)).city_order, 2);
     } finally {
-      setPrice('city_order', 50);
+      setPrice('city_order', 30);
     }
   });
 
   test('BUY_ITEM 超过堆叠上限：ITEM_STACK_FULL（附 canBuy），礼金与道具都不变', async () => {
     const id = await newAccount('buy-stack');
     await give(id, 'city_order', 95);
-    const frame = await buy(id, { itemId: 'city_order', count: 10, expectedPrice: 50 });
+    const frame = await buy(id, { itemId: 'city_order', count: 10, expectedPrice: 30 });
     assert.equal(frame.error?.code, 'ITEM_STACK_FULL');
     assert.deepEqual(frame.data, { stackMax: 99, have: 95, canBuy: 4 });
     assert.equal(await giftOf(id), SEASON_GIFT);
     assert.equal((await loadItems(pool, id)).city_order, 95);
     // 正好买到上限可以
-    const exact = await buy(id, { itemId: 'city_order', count: 4, expectedPrice: 50 });
+    const exact = await buy(id, { itemId: 'city_order', count: 4, expectedPrice: 30 });
     assert.equal(exact.ok, true);
     assert.equal((await loadItems(pool, id)).city_order, 99);
   });
@@ -336,15 +336,15 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     const id = await newAccount('buy-order-stack');
     await give(id, 'city_order', 99);
     await inTx((c) => spendGift(c, id, SEASON_GIFT, 'drain'));
-    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+    const frame = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30 });
     assert.equal(frame.error?.code, 'ITEM_STACK_FULL');
   });
 
   test('BUY_ITEM 礼金不足：INSUFFICIENT_GIFT（附 balance / cost），礼金与道具都不变', async () => {
     const id = await newAccount('buy-gift');
-    const frame = await buy(id, { itemId: 'city_order_adv', count: 11, expectedPrice: 100 });
+    const frame = await buy(id, { itemId: 'city_order_adv', count: 21, expectedPrice: 50 });
     assert.equal(frame.error?.code, 'INSUFFICIENT_GIFT');
-    assert.deepEqual(frame.data, { balance: SEASON_GIFT, cost: 1100, currency: 'gift' });
+    assert.deepEqual(frame.data, { balance: SEASON_GIFT, cost: 1050, currency: 'gift' });
     assert.equal(await giftOf(id), SEASON_GIFT);
     assert.equal((await loadItems(pool, id)).city_order_adv, 0);
     assert.equal((await eventsOf(id, 'item_bought')).length, 0);
@@ -352,10 +352,10 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
 
   test('BUY_ITEM 恰好花光礼金可以；之后再买报 INSUFFICIENT_GIFT', async () => {
     const id = await newAccount('buy-exact');
-    const first = await buy(id, { itemId: 'city_order_adv', count: 10, expectedPrice: 100 });
+    const first = await buy(id, { itemId: 'city_order_adv', count: 20, expectedPrice: 50 });
     assert.equal(first.ok, true);
     assert.equal(await giftOf(id), 0);
-    const second = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 50 });
+    const second = await buy(id, { itemId: 'city_order', count: 1, expectedPrice: 30 });
     assert.equal(second.error?.code, 'INSUFFICIENT_GIFT');
   });
 
@@ -373,7 +373,7 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     registry.bind(connA, id);
     registry.bind(connB, id);
     const ctx: HandlerContext = { pool, registry, passwordDisabledHosts: new Set() };
-    await handleMessage(ctx, connA, JSON.stringify({ op: Op.BUY_ITEM, seq: 9, data: { itemId: 'city_order', count: 1, expectedPrice: 50 } }));
+    await handleMessage(ctx, connA, JSON.stringify({ op: Op.BUY_ITEM, seq: 9, data: { itemId: 'city_order', count: 1, expectedPrice: 30 } }));
     assert.equal(sentA.filter((f) => f.op === Op.BUY_ITEM && f.ok).length, 1);
     assert.equal(sentA.filter((f) => f.op === Op.PUSH_ACCOUNT_STATE).length, 0, '发起连接不收推送');
     const push = sentB.find((f) => f.op === Op.PUSH_ACCOUNT_STATE) as unknown as { push: boolean; data: Record<string, unknown> };
@@ -383,14 +383,14 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
       reason: 'items_changed',
       items: { city_order: 1, city_order_adv: 0 },
       paidCounts: { city_order: 0, city_order_adv: 0 },
-      gift: SEASON_GIFT - 50,
+      gift: SEASON_GIFT - 30,
       ingot: 0,
     });
   });
 
   test('GET_ITEMS 与 GET_STATE.items 一致；catalog 含全部定义，shopPrice 与配置一致', async () => {
     const id = await newAccount('get-items');
-    await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 100 });
+    await buy(id, { itemId: 'city_order_adv', count: 1, expectedPrice: 50 });
     const items = await callAs(id, Op.GET_ITEMS, {});
     assert.equal(items.ok, true, JSON.stringify(items));
     const data = items.data as {
@@ -401,10 +401,10 @@ describe('道具（需 TEST_DATABASE_URL）', { skip: dbUrl ? false : '未设置
     };
     assert.deepEqual(data.items, { city_order: 0, city_order_adv: 1 });
     assert.deepEqual(data.catalog.map((c) => [c.id, c.shopPrice, c.ingotPrice]), [
-      ['city_order', 50, 50],
-      ['city_order_adv', 100, 100],
+      ['city_order', 30, 30],
+      ['city_order_adv', 50, 50],
     ]);
-    assert.equal(data.gift, SEASON_GIFT - 100);
+    assert.equal(data.gift, SEASON_GIFT - 50);
     const state = await callAs(id, Op.GET_STATE, undefined);
     assert.deepEqual((state.data as { items: unknown }).items, data.items);
   });
