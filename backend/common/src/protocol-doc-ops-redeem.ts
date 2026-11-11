@@ -28,12 +28,13 @@ export const REQUEST_REDEEM_CODE: RequestOpDoc = {
     `输入运营发出的兑换码领取福利（元宝与 / 或道具），成功返回本次领到的奖励包与领取后的余额、背包。` +
     `码是 ${CODE_LENGTH} 位（字符集是去掉 I / L / O / U 的 32 个字符：${CODE_ALPHABET}），玩家看到的显示形式是 XXXX-XXXX-XXXX-XXXX；` +
     `输入不区分大小写，空格与横线都可以带（\`abcd efgh-ijkl mnop\` 与 \`ABCDEFGHIJKLMNOP\` 等价）。` +
-    `两种码：一次性码（每个码只能被一个账号兑换一次，兑换后作废）与通用码（同一个码多人都能兑，每人一次，有兑换人数上限）。` +
-    `**同一账号在同一批次里只能兑换一次**：拿到同一批的另一个码时返回 CODE_BATCH_CLAIMED，那个码本身不作废、可以给别人。` +
+    `两种码：一次性码（每个码只能被一个账号兑换一次，兑换后作废；同一玩家可以兑同一批次的任意多张码）与通用码（同一个码多人都能兑，每人只能兑一次，有兑换人数上限）。` +
+    `**同一个通用码** 每个账号只能兑一次：重复兑换返回 CODE_BATCH_CLAIMED，那个码本身不作废、可以给别人。` +
+    `一次性码没有「同一批次只能兑一张」的限制：拿到同一批的另一个码照样能兑。` +
     `奖励与码无关，由批次决定：元宝 ${REDEEM_INGOT_MIN}..${REDEEM_INGOT_MAX}（与充值元宝同账户、永久保留、不可转让）与 / 或道具 ×${REDEEM_ITEM_COUNT_MIN}..${REDEEM_ITEM_COUNT_MAX}` +
     `（按普通道具发放，超出堆叠上限 ${REDEEM_ITEM_COUNT_MAX} 时整次兑换失败返回 ITEM_STACK_FULL，码不作废、也没有元宝）。` +
     `福利发的道具换季会清空，福利发的元宝不会。` +
-    `失败次数限制：每账号每小时最多失败 ${REDEEM_FAIL_LIMIT} 次（码不存在、格式不对、已被使用、过期、同批已领、已被领完都算），` +
+    `失败次数限制：每账号每小时最多失败 ${REDEEM_FAIL_LIMIT} 次（码不存在、格式不对、已被使用、过期、同一个通用码已兑过、已被领完都算），` +
     `超过后 ${WINDOW_MINUTES} 分钟内所有兑换请求返回 CODE_RATE_LIMITED；成功兑换不计入失败次数。`,
   requestFields: [
     {
@@ -95,7 +96,7 @@ export const REQUEST_REDEEM_CODE: RequestOpDoc = {
       ],
     },
     {
-      caption: '同批次已经领过一次：CODE_BATCH_CLAIMED（这个码本身还有效，可以给别人）',
+      caption: '同一个通用码已经兑过一次：CODE_BATCH_CLAIMED（这个码本身还有效，可以给别人）',
       request: { op: Op.REDEEM_CODE, seq: 93, data: { code: 'TVWX-YZ01-2345-6789' } },
       responses: [
         {
@@ -104,7 +105,7 @@ export const REQUEST_REDEEM_CODE: RequestOpDoc = {
           ok: false,
           error: {
             code: 'CODE_BATCH_CLAIMED',
-            message: '这一批福利你已经领过了，同批次的其它码可以给其他玩家',
+            message: '这个兑换码你已经兑换过了',
           },
         },
       ],
@@ -139,6 +140,7 @@ export const REQUEST_REDEEM_CODE: RequestOpDoc = {
   agentNote:
     '码是玩家自己拿到的，可以替玩家兑换（账号是本人的）。玩家把码贴给你时直接调用，不用先确认；成功后把 rewards 报给玩家。' +
     `不要猜码或批量尝试：每账号每小时最多失败 ${REDEEM_FAIL_LIMIT} 次，超过后 1 小时内连正确的码都会被拒（CODE_RATE_LIMITED，` +
-    '按返回的 retryAfterSeconds 等待）。CODE_BATCH_CLAIMED 表示这个号已经领过这一批，换别的码没用；' +
+    '按返回的 retryAfterSeconds 等待）。CODE_BATCH_CLAIMED 只会出现在通用码上：这个号已经兑过这个码，换别的码没用；' +
+    '一次性码可以兑同一批次的多张，拿到新码直接兑就行。' +
     'ITEM_STACK_FULL 提示玩家先消耗一些同种道具再兑换，码仍然有效。',
 };

@@ -17,7 +17,7 @@ export const REDEEM_COPY_EN = {
     CODE_INVALID: 'That code does not exist. Check for typos.',
     CODE_EXPIRED: 'That code has expired.',
     CODE_USED: 'That code has already been used.',
-    CODE_BATCH_CLAIMED: 'You have already claimed this batch of rewards. Other codes from the same batch can go to other players.',
+    CODE_BATCH_CLAIMED: 'You have already redeemed this code.',
     CODE_EXHAUSTED: 'That code has been fully claimed.',
     CODE_RATE_LIMITED: (minutes: number) => `Too many wrong codes. Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
     ITEM_STACK_FULL: (name: string, canGrant: number, stackMax: number) =>
