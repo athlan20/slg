@@ -36,7 +36,7 @@ export interface FactionView {
   campsRemaining: number;
   /** 当前营剩余守军百分比 0~100 */
   campRemainingPercent: number;
-  /** 每营守军参考战力 */
+  /** 当前营守军参考战力（v106，AISLG-247：按营序号递增，第 1 营最弱、第 20 营最强） */
   campPower: number;
 }
 

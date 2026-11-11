@@ -21,6 +21,7 @@ import {
   FACTION_LAIR_WALL_PERCENT,
   factionLairCampLabel,
   factionLairCampNo,
+  factionLairCurrentCampPower,
   factionLairGarrison,
   factionLairKillReward,
   factionLairPrestige,
@@ -85,7 +86,9 @@ export async function resolveFactionLairBattle(
   lair = await recoverLairRow(client, lair, args.now);
   const campsTotal = lair.camps_total || FACTION_LAIR_CAMPS;
   const campNo = factionLairCampNo(campsTotal, lair.camps_remaining);
-  const defender = lair.remaining ?? factionLairGarrison(lair.camp_power);
+  // v106（AISLG-247）：守军按「当前营序号」取 Gk（20 营由弱到强），没有单一的每营战力了
+  const campPower = factionLairCurrentCampPower(lair);
+  const defender = lair.remaining ?? factionLairGarrison(campPower);
 
   // 3) 守城战（城墙减伤 50%，攻方随队武将与科技生效；守方是 NPC，无武将 / 科技 / 城防器械）
   const hero = await loadMarchHeroBonus(client, march, Object.values(troops).reduce((sum, n) => sum + Math.max(0, n ?? 0), 0));
@@ -223,7 +226,7 @@ export async function resolveFactionLairBattle(
           ? 0
           : result.attackerWon
             ? 100
-            : factionLairRemainingPercent(result.defender.survivors, lair.camp_power),
+            : factionLairRemainingPercent(result.defender.survivors, campPower),
         destroyed,
       },
     });

@@ -19,7 +19,7 @@ import { getFactionEnabled } from './faction-config';
 import { loadFactionEpochStart } from './faction-start';
 import { FACTION_KEYS, type FactionKey, type FactionView, type GetFactionsResponseData } from './protocol-faction';
 import type { NpcCitySnapshot } from './world';
-import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairRemainingPercent } from './faction-lair';
+import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairCurrentCampPower, factionLairRemainingPercent } from './faction-lair';
 import { destroyedFactionKeys, ensureFactionLairs, loadFactionLairRow, loadFactionLairs } from './faction-lair-db';
 
 type Queryable = pg.Pool | pg.PoolClient;
@@ -239,7 +239,8 @@ export async function loadFactionView(
     const destroyed = !!(lair && lair.destroyed_at);
     const campsTotal = lair?.camps_total ?? FACTION_LAIR_CAMPS;
     const campsRemaining = lair?.camps_remaining ?? FACTION_LAIR_CAMPS;
-    const campPower = lair?.camp_power ?? FACTION_LAIR_MIN_CAMP_POWER;
+    // v106（AISLG-247）：campPower 现在是「当前营」的战力（按营序号从两个锚点算出，越往后越强）
+    const campPower = lair ? factionLairCurrentCampPower(lair) : FACTION_LAIR_MIN_CAMP_POWER;
     factions.push({
       key: def.key,
       name: def.name,
