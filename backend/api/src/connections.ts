@@ -11,6 +11,8 @@ export interface ConnInfo {
   /** 连接访问的站点 Host（握手 Host 头，TRUST_PROXY 时优先 X-Forwarded-Host；小写去端口）。
    *  双站点（v47）按它区分国内 / 国际站：连哪个域名就算哪个站 */
   host: string | null;
+  /** 握手的 Origin 头（v108，AISLG-251：拼充值的 success_url 用，没配 PUBLIC_SITE_URL 时兜底） */
+  origin?: string | null;
   accountId: string | null;
   username: string | null;
   role: InitiatorRole | null;

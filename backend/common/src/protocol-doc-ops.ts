@@ -143,6 +143,7 @@ import { REQUEST_GET_DAILY, REQUEST_CLAIM_DAILY, REQUEST_GET_SIGNIN, REQUEST_SIG
 import { REQUEST_GET_QUESTS, REQUEST_CLAIM_QUEST, REQUEST_GET_ACTIVITIES, REQUEST_CLAIM_ACTIVITY } from './protocol-doc-ops-quests';
 import { GIFT_STATE_FIELDS } from './protocol-doc-gift';
 import { ITEMS_STATE_FIELDS, REQUEST_BUY_ITEM, REQUEST_GET_ITEMS } from './protocol-doc-ops-items';
+import { INGOT_STATE_FIELDS, REQUEST_CREATE_TOPUP } from './protocol-doc-ops-topup';
 import { MOVE_CITY_STATE_FIELDS, REQUEST_MOVE_CITY } from './protocol-doc-ops-move-city';
 import { REQUEST_RANSOM_HERO } from './protocol-doc-ops-hero-loyalty';
 
@@ -200,6 +201,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.territory', type: 'array', desc: '本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）, facility 这块地上的望楼（v97 新增，AISLG-232；{ kind（恒为 watchtower）, level 已建成等级 0..3, visionRadius 视野半径 1 级 6 / 2 级 8 / 3 级 10 格（丘陵上的野地各 +2：8 / 10 / 12，上限 12；level 为 0 时 0，AISLG-233）, building: { toLevel, finishAt } | null 进行中的建造 / 升级 }，没盖为 null）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。' },
     ...GIFT_STATE_FIELDS,
     ...ITEMS_STATE_FIELDS,
+    ...INGOT_STATE_FIELDS,
     ...MOVE_CITY_STATE_FIELDS,
     { name: 'cities', type: 'array', desc: 'v12 新增：账号全部城池 { id, name, level, x, y, isMain, title 城池称号, nobility 爵位 }，主城在前；v24 起 level = 各城官府等级。未占领 NPC 城池时只有主城一座。' },
     { name: 'branch', type: 'object', desc: 'v24 新增（AISLG-58）：分城名额 { count 现有分城数（不含主城）, limit 上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）, minGovernment 占领 NPC 城所需的主城官府最低等级（3） }。名城（AISLG-56）同样计入。' },
@@ -484,6 +486,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.DISMISS_ASSIST]: REQUEST_DISMISS_ASSIST,
   [Op.GET_STRATAGEMS]: REQUEST_GET_STRATAGEMS,
   [Op.GET_ITEMS]: REQUEST_GET_ITEMS,
+  // 充值（v108，AISLG-251）：仅玩家连接，不进 Agent 文档（见 protocol-doc-ops-topup.ts 的 TOPUP_AGENT_HIDDEN_OPS）
+  [Op.CREATE_TOPUP]: REQUEST_CREATE_TOPUP,
   [Op.BUY_ITEM]: REQUEST_BUY_ITEM,
   [Op.MOVE_CITY]: REQUEST_MOVE_CITY,
   [Op.RANSOM_HERO]: REQUEST_RANSOM_HERO,
