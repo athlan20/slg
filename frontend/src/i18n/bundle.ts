@@ -72,6 +72,8 @@ import { ITEM_COPY } from '../copy-items';
 import { ITEM_COPY_EN } from '../copy-items-en';
 import { TOPUP_COPY } from '../copy-topup';
 import { TOPUP_COPY_EN } from '../copy-topup-en';
+import { REDEEM_COPY } from '../copy-redeem';
+import { REDEEM_COPY_EN } from '../copy-redeem-en';
 import { MOVE_CITY_COPY } from '../copy-move-city';
 import { MOVE_CITY_COPY_EN } from '../copy-move-city-en';
 
@@ -132,6 +134,7 @@ const ZH = {
   ITEM_COPY,
   MOVE_CITY_COPY,
   TOPUP_COPY,
+  REDEEM_COPY,
 };
 
 export type Bundle = typeof ZH;
@@ -193,6 +196,7 @@ const EN: Bundle = {
   ITEM_COPY: ITEM_COPY_EN,
   MOVE_CITY_COPY: MOVE_CITY_COPY_EN,
   TOPUP_COPY: TOPUP_COPY_EN,
+  REDEEM_COPY: REDEEM_COPY_EN,
 };
 
 const BUNDLES: Record<Lang, Bundle> = { zh: ZH, en: EN };
