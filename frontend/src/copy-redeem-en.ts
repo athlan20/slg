@@ -2,9 +2,7 @@
 import { REDEEM_COPY } from './copy-redeem';
 
 export const REDEEM_COPY_EN = {
-  entry: 'Redeem code',
-  title: 'Redeem code',
-  backToShop: 'Back to shop',
+  sectionTitle: 'Redeem code',
   placeholder: 'Enter your code',
   submit: 'Redeem',
   submitting: 'Redeeming…',

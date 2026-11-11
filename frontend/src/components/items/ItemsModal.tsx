@@ -1,6 +1,7 @@
-/** 背包与商店弹窗（v90，AISLG-222；v108 AISLG-251 加元宝余额、双价购买与充值面板；v109 AISLG-253 加兑换码面板）：
+/** 背包与商店弹窗（v90 AISLG-222；v108 AISLG-251 加元宝余额、双价购买与充值面板；v109 AISLG-253 加兑换码；
+ *  AISLG-255 把兑换码并入充值面板，不再单独占一个页签入口）：
  *  账号菜单「背包 / 商店」打开。固定高度不滚动：列表用 PagedList 分页（每页最多 6 种）。顶部余额条放礼金与元宝余额和「充值」入口；
- *  页签行右侧是「兑换码」入口。点「充值」或「兑换码」时面板替换背包 / 商店列表。底部常驻换季说明。role 按功能命名（AGENTS 前端规范）。
+ *  点「充值」时面板替换背包 / 商店列表（充值面板内是 Creem 商品卡、淘宝卡片与兑换码区块）。底部常驻换季说明。role 按功能命名（AGENTS 前端规范）。
  */
 
 import { useCopy } from '../../i18n/bundle';
@@ -13,7 +14,6 @@ import { Modal } from '../ui/Modal';
 import { PagedList } from '../ui/PagedList';
 import { ItemShopRow } from './ItemShopRow';
 import { ItemBalanceStrip } from './ItemBalanceStrip';
-import { RedeemCodePanel } from './RedeemCodePanel';
 import { TopupPanel } from './TopupPanel';
 
 interface ItemsModalProps {
@@ -27,7 +27,7 @@ interface ItemsModalProps {
 }
 
 export function ItemsModal({ session, topup, redeem, counts, paidCounts, gift, ingot }: ItemsModalProps) {
-  const { ITEM_COPY, REDEEM_COPY } = useCopy();
+  const { ITEM_COPY } = useCopy();
   const catalog = session.catalog ?? [];
   const shop = catalog.filter((def) => def.shopPrice !== null || def.ingotPrice !== null);
   const ownedOf = (id: ItemId) => counts?.[id] ?? 0;
@@ -51,26 +51,13 @@ export function ItemsModal({ session, topup, redeem, counts, paidCounts, gift, i
   return (
     <Modal role="背包商店" title={ITEM_COPY.title} onClose={session.closePanel} fill>
       <ItemBalanceStrip gift={balances.gift} ingot={ingot} topup={topup} />
-      {redeem.panelOpen ? (
-        <RedeemCodePanel redeem={redeem} />
-      ) : topup.panelOpen ? (
-        <TopupPanel topup={topup} />
+      {topup.panelOpen ? (
+        <TopupPanel topup={topup} redeem={redeem} />
       ) : (
         <>
           <div role="背包商店-页签" className="flex shrink-0 items-center gap-1.5">
             {tabButton('bag', '背包商店-页签-背包', ITEM_COPY.tabBag)}
             {tabButton('shop', '背包商店-页签-商店', ITEM_COPY.tabShop)}
-            <button
-              type="button"
-              role="redeem-code-entry-button"
-              onClick={() => {
-                topup.closePanel();
-                redeem.openPanel();
-              }}
-              className="ml-auto cursor-pointer rounded border border-accent-dim bg-accent-soft px-2.5 py-0.5 text-[12px] text-accent"
-            >
-              {REDEEM_COPY.entry}
-            </button>
           </div>
           {session.tab === 'bag' ? (
             <PagedList<ItemDefView>
