@@ -71,6 +71,16 @@
         <p>A browser strategy game built for AI agents. Found cities, raise armies and conquer territory yourself, or hand an agent token to your AI and let it run your empire around the clock.</p>
         <p>Sign in with Google or GitHub — nothing to install. Supports MCP clients such as Claude Desktop and Cursor via <a href="https://www.npmjs.com/package/slg-mcp" style="color:#2dd4bf">slg-mcp</a>.</p>
         <p><a href="/agent-api.md" style="color:#2dd4bf">Agent API docs</a> · <a href="https://github.com/athlan20/slg" style="color:#2dd4bf">Open source on GitHub</a></p>
+        <!-- 页脚四项（AISLG-252）：不执行 JS 的抓取器也要能看到隐私政策 / 服务条款 / 定价 / 客服邮箱。
+             客服邮箱不写死在仓库里：{{SUPPORT_EMAIL}} 由 tools/legal-pages.ts 构建期替换成 PUBLIC_SUPPORT_EMAIL，
+             未配置时 support-email 标记之间的整段会被去掉。 -->
+        <p role="静态-页脚">
+          <a href="/privacy.html" style="color:#2dd4bf">Privacy Policy</a> ·
+          <a href="/terms.html" style="color:#2dd4bf">Terms of Service</a> ·
+          <a href="/pricing.html" style="color:#2dd4bf">Pricing</a>
+          <span role="静态-页脚-客服邮箱"><!-- support-email:begin --> · <a href="mailto:{{SUPPORT_EMAIL}}" style="color:#2dd4bf">{{SUPPORT_EMAIL}}</a><!-- support-email:end --></span>
+        </p>
+        <p role="静态-定价" style="font-size:.875rem;color:#7c8898">Ingots: US$1.99 = 1,000, one-time payment, no subscription. The game itself is free.</p>
       </main>
     </div>
   </body>
