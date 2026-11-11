@@ -1,7 +1,8 @@
 // 势力围攻分城的定时器（AISLG-240，v100）：
 // - 发起：每家势力在本季满 7 天后、同一时间最多围 1 座城，选范围内离老巢最近的玩家分城
 //   （主城 / 名城 / 保护中 / 免战中的不入池），每次提前 60 分钟（× 烽火台加成）发预警；
-// - 每周上限：第 8、15、22 天起算的一周里，每家最多吞下 2 座玩家分城；
+// - 每周上限：第 8、15、22 天起算的一周里，每家最多吞下 2 座玩家分城（v107 / AISLG-249：老巢被打掉 15 营
+//   以上的 3 档降为 1 座）；
 // - 到达结算不在这里：见 faction-siege-battle.ts（守城战 + 城防值 + 吞城）。
 // 参照 faction-tick / npc-raid-timer 的链式 setTimeout + season-busy：换季进行中不发起（世界即将清空）。
 // faction_enabled 关闭时整个模块不动作，行为与上线前完全一致。
@@ -13,9 +14,9 @@ import { factionBannerOf, factionDayAt, factionRadiusAt, factionDefOf, type Fact
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { loadFactionRows } from '../../common/src/faction-db';
 import { loadFactionEpochStart } from '../../common/src/faction-start';
-import { destroyedFactionKeys } from '../../common/src/faction-lair-db';
+import { FACTION_LAIR_CAMPS } from '../../common/src/faction-lair';
+import { destroyedFactionKeys, loadFactionLairRow } from '../../common/src/faction-lair-db';
 import {
-  FACTION_SIEGE_WEEKLY_CAP,
   factionSiegeArmy,
   factionSiegeArrival,
   factionSiegeIntervalMs,
@@ -23,9 +24,12 @@ import {
   factionSiegeMaxLeadMs,
   factionSiegeMultiplierForDay,
   factionSiegePower,
+  factionSiegeSuppressedPower,
   factionSiegeWarningMs,
   factionSiegeWeekOf,
+  factionSiegeWeeklyCap,
 } from '../../common/src/faction-siege';
+import { suppressionLevel, suppressionSiegePercent } from '../../common/src/faction-suppression';
 import {
   countWeekSwallows,
   hasActiveSiege,
@@ -56,6 +60,8 @@ export interface SiegeStartPlan {
   multiplier: number;
   weekIndex: number;
   swallows: number;
+  /** 这家当前的压制档（v107，AISLG-249：由剩余营数现算，决定每周上限与围城军战力） */
+  suppressionLevel: number;
 }
 
 /** 是否现在该给这家发起围攻（不含目标是否存在）：满 7 天、没在围、本周没吞满 */
@@ -73,11 +79,14 @@ export async function planSiegeStart(
   if (await hasActiveSiege(q, args.def.key)) {
     return null;
   }
+  // v107（AISLG-249）：压制档由老巢的剩余营数现算（没有老巢行按满营 = 0 档），3 档每周上限降为 1 座
+  const lair = await loadFactionLairRow(q, args.def.key);
+  const level = lair ? suppressionLevel(lair.camps_total || FACTION_LAIR_CAMPS, lair.camps_remaining) : 0;
   const swallows = await countWeekSwallows(q, args.def.key, args.weekIndex);
-  if (swallows >= FACTION_SIEGE_WEEKLY_CAP) {
+  if (swallows >= factionSiegeWeeklyCap(level)) {
     return null;
   }
-  return { def: args.def, radius: args.radius, multiplier, weekIndex: args.weekIndex, swallows };
+  return { def: args.def, radius: args.radius, multiplier, weekIndex: args.weekIndex, swallows, suppressionLevel: level };
 }
 
 /**
@@ -148,7 +157,12 @@ async function startOneSiege(pool: pg.Pool, plan: SiegeStartPlan, now: Date): Pr
       await client.query('COMMIT');
       return false;
     }
-    const power = factionSiegePower(target.governmentLevel, plan.multiplier);
+    // v107（AISLG-249）：围城军战力 = 原公式（官府等级 × 周倍率）× 压制档比例，向下取整、不低于 1。
+    // 发起这一刻定，已出发的围城军不受之后升 / 降档影响（预警 / 战报里的 power 就是这个实际值）
+    const power = factionSiegeSuppressedPower(
+      factionSiegePower(target.governmentLevel, plan.multiplier),
+      suppressionSiegePercent(plan.suppressionLevel),
+    );
     const army = factionSiegeArmy(power);
     // 预警提前量 = 60 分钟（随缩放）× 烽火台加成；敌情详细度也按烽火台等级分档（与来袭预警同一套）
     const beacon = (await loadBuildingLevels(client, target.cityId)).beacon;

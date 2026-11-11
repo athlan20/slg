@@ -880,5 +880,23 @@
  *   三、协议：GET_FACTIONS 的 factions[].campPower 语义从「每营同一个战力」改为「当前营的战力」
  *   （按营序号递增）——结构与字段都没变，客户端与 Agent 推当前营序号（campsTotal − campsRemaining + 1）即可。
  *   表结构：faction_lairs 新增两个锚点列（旧行用旧 camp_power 回填，旧库行为不变）。
+ *
+ * v107（势力压制档，AISLG-249；只加不改，只影响压制生效的取值点与 GET_FACTIONS 一个字段）：
+ *   一、规则：老巢被打掉的营越多，这家势力越虚——每打掉 5 营升一档「压制」，最多 3 档：
+ *   suppressionLevel = clamp(floor((campsTotal − campsRemaining) ÷ 5), 0, 3)。压制档完全由剩余营数算出，
+ *   不存库、不加表字段：营恢复（24 小时没人进攻恢复 1 营）后自动降档；势力灭亡后不再有压制
+ *   （灭亡的势力本来就不再围攻 / 吞城）。
+ *   二、三项效果（0 / 1 / 2 / 3 档）：
+ *   - 围城军战力 = 原公式（分城官府等级 × 周倍率）× 100 / 75 / 50 / 25%，向下取整、不低于 1；
+ *     在围攻发起那一刻定，已出发的围城军不变（预警 / 战报里的 power 就是这个压制后的实际值）；
+ *   - 吞 NPC 城间隔 = 6 / 9 / 12 / 15 小时基准（仍随 time_scale 缩放、不低于 1 秒），每家按自己的档位取值，
+ *     已经计时中的下一次按「上次吞城时刻 + 新间隔」往后算，不立刻补吞；
+ *   - 每周最多吞下的玩家分城数 = 2 / 2 / 2 / 1 座（只有 3 档降为 1；本周已经吞满的不回溯）。
+ *   不变的：袭击频率与强度、势力范围半径、围攻节奏（同一座城 6 小时一次、打输 24 小时冷却）、
+ *   老巢规则（20 营由弱到强、城墙减伤 50%、24 小时恢复 1 营、歼灭奖励、灭亡与换季重生）。
+ *   三、协议：GET_FACTIONS 的 factions[] 新增 suppression = { level, siegePercent, swallowIntervalHours（未缩放的基准小时数）,
+ *   weeklyBranchCap }；新全服播报 faction_suppressed（必达，压制档变化时播一次，升档与降档都播，
+ *   detail = { faction, factionName, level, previousLevel, direction, campsTotal, campsRemaining }）。
+ *   无新增 op / 推送号 / 错误码 / 表字段。
  */
-export const PROTOCOL_VERSION = 106;
+export const PROTOCOL_VERSION = 107;

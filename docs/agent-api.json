@@ -1,5 +1,5 @@
 {
-  "version": 106,
+  "version": 107,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -873,7 +873,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 106,
+                "protocolVersion": 107,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -922,7 +922,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 106,
+                "protocolVersion": 107,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -942,14 +942,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/103 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/104 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 103,
+              "docVersion": 104,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -964,8 +964,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 106,
-                "docNotice": "接口文档已从 v103 更新到 v106：请 GET /agent-api/changes/103 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 107,
+                "docNotice": "接口文档已从 v104 更新到 v107：请 GET /agent-api/changes/104 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -6735,13 +6735,13 @@
         },
         {
           "name": "broadcasts[].type",
-          "type": "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished' | 'hero_granted' | 'city_conquered' | 'arena_champion' | 'star_tower_cleared' | 'announcement' | 'battlefield_signup' | 'battlefield_started' | 'battlefield_stronghold' | 'battlefield_finished' | 'nobility_promoted' | 'alliance_diplomacy' | 'luoyang_window' | 'famous_first_explored' | 'hero_site_first_explored' | 'legendary_relic_claimed' | 'hero_left' | 'hero_captured' | 'faction_expanded' | 'faction_city_swallowed' | 'faction_lair_destroyed'",
-          "desc": "播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；alliance_diplomacy 为 v77 结成友盟 / 宣布敌对；announcement 为 v60 公告播报；luoyang_window 为 v79 洛阳窗口预告 / 开始 / 结束 / 易主 / 政令；famous_first_explored / hero_site_first_explored / legendary_relic_claimed 为 v93 战争迷雾的名城首探、名将处所首探、传说遗迹领取；以上均必达、不受每分钟 3 条限频；hero_left 为 v94 名将下野（忠诚度归零，或被俘后囚禁到期未赎回）；hero_captured 为 v94 名将被俘；这两类走普通限频；faction_expanded 为 v99 五方势力的势力范围半径扩大（必达，每周最多一次）；faction_city_swallowed 为 v100 势力围攻吞下玩家分城（必达，detail = { username（原主人）, cityName, faction, factionName, x, y }）；faction_lair_destroyed 为 v101 某家势力的老巢被攻破、本季灭亡（必达，detail = { username（最后一击的玩家）, faction, factionName, leader, leaderEn }））。"
+          "type": "'npc_city_emptied' | 'gold_mine_first' | 'city_broken' | 'win_streak' | 'yt_started' | 'yt_grown' | 'yt_boss' | 'yt_boss_first_kill' | 'yt_finished' | 'hero_granted' | 'city_conquered' | 'arena_champion' | 'star_tower_cleared' | 'announcement' | 'battlefield_signup' | 'battlefield_started' | 'battlefield_stronghold' | 'battlefield_finished' | 'nobility_promoted' | 'alliance_diplomacy' | 'luoyang_window' | 'famous_first_explored' | 'hero_site_first_explored' | 'legendary_relic_claimed' | 'hero_left' | 'hero_captured' | 'faction_expanded' | 'faction_city_swallowed' | 'faction_lair_destroyed' | 'faction_suppressed'",
+          "desc": "播报类型（yt_* 为 v29 黄巾之乱：起事 / 坐大 / 老巢出现 / 老巢首杀 / 收场；hero_granted 为 v36 获得名将；city_conquered 为 v40 分城易主；arena_champion 为 v53 竞技场登上第 1 名；star_tower_cleared 为 v55 将星塔 Boss 层首通；battlefield_* 为 v75 剧本战场报名 / 开战 / 据点易手 / 收场；nobility_promoted 为 v76 升到大夫及以上；alliance_diplomacy 为 v77 结成友盟 / 宣布敌对；announcement 为 v60 公告播报；luoyang_window 为 v79 洛阳窗口预告 / 开始 / 结束 / 易主 / 政令；famous_first_explored / hero_site_first_explored / legendary_relic_claimed 为 v93 战争迷雾的名城首探、名将处所首探、传说遗迹领取；以上均必达、不受每分钟 3 条限频；hero_left 为 v94 名将下野（忠诚度归零，或被俘后囚禁到期未赎回）；hero_captured 为 v94 名将被俘；这两类走普通限频；faction_expanded 为 v99 五方势力的势力范围半径扩大（必达，每周最多一次）；faction_city_swallowed 为 v100 势力围攻吞下玩家分城（必达，detail = { username（原主人）, cityName, faction, factionName, x, y }）；faction_lair_destroyed 为 v101 某家势力的老巢被攻破、本季灭亡（必达，detail = { username（最后一击的玩家）, faction, factionName, leader, leaderEn }）；faction_suppressed 为 v107（AISLG-249）某家势力的压制档变化——老巢被打到跨档（升档）或营恢复导致降档（必达，不受每分钟限频））。"
         },
         {
           "name": "broadcasts[].detail",
           "type": "object",
-          "desc": "按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }；alliance_diplomacy = { kind: friendly|hostile|neutral, actorAlliance, actorAllianceName, otherAlliance, otherAllianceName }；hero_granted = { username, heroName, source }（source 为获得途径文字，如「首占名城「X」」「黄巾老巢首杀」「黄巾之乱贡献榜第 N 名」「在野名将（打赢守军后结交招揽）」「结交招揽」）；city_conquered = { username（攻方）, cityName, from（守方用户名）, x, y }；announcement = { announcementId, title }（title 为公告中文标题）；luoyang_window = { phase, ... }：phase = holder 洛阳易主（allianceId, allianceName, username）｜ soon 窗口前预告（startAt, endAt）｜ started 窗口开始（startAt, endAt）｜ ended 窗口结束（startAt, endAt）｜ decree 盟主发政令（allianceId, decreeKind = recruit|march|research, until）；famous_first_explored = { username, name }（name 为名城名，不带坐标）；hero_site_first_explored = { username, name, hero }（name 为处所名，hero 为名将名，不带坐标）；legendary_relic_claimed = { username, kind }（kind 为遗迹种类，当前唯一的传说遗迹为 mausoleum，不带坐标）；hero_left = { username, heroName }（username 为主人用户名，查不到时为 null）；hero_captured = { ownerUsername, captorUsername, heroName }（主人与胜方用户名，查不到时为 null）；faction_expanded = { radius, day }（五家的势力范围半径同时扩大到 radius 格，day 为本季第几天；不带坐标）；faction_city_swallowed = { username, cityName, faction, factionName, x, y }（username 为失城玩家，cityName 为失城名，faction / factionName 为吞下它的势力）；faction_lair_destroyed = { username, faction, factionName, leader, leaderEn }（username 为最后一击的玩家，faction / factionName 为被攻破的势力，leader 为它的首领名将名）。"
+          "desc": "按类型解释：npc_city_emptied = { username, cityName, x, y, level }；gold_mine_first = { username, cityName, x, y }；city_broken = { username, cityName, x, y }；win_streak = { username, cityName, streak }；yt_started = { totalCamps, endsAt }；yt_grown = { count, tier, label }（count 个营地升到 tier 档）；yt_boss = { x, y }（老巢坐标）；yt_boss_first_kill = { username, cityName }；yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }（人名可能是玩家本人，也可能是其 Agent 打出的成绩——成绩记在账号上）；arena_champion = { username, previous }（username 登上第 1 名，previous 为被取代的原第 1 名，可能是守擂者）；star_tower_cleared = { username, floor }（floor 为刚首通的 Boss 层）；battlefield_signup = { eventId, signupStartAt, startAt, endAt }；battlefield_started = { eventId, startAt, endAt }；battlefield_stronghold = { eventId, strongholdId, name, camp, username, firstCapture, reportId }（据点易手，camp 为新归属）；battlefield_finished = { eventId, winner, reason: score|base_captured, scoreYuan, scoreCao }；nobility_promoted = { accountId, username, nobility, name, prestige }；alliance_diplomacy = { kind: friendly|hostile|neutral, actorAlliance, actorAllianceName, otherAlliance, otherAllianceName }；hero_granted = { username, heroName, source }（source 为获得途径文字，如「首占名城「X」」「黄巾老巢首杀」「黄巾之乱贡献榜第 N 名」「在野名将（打赢守军后结交招揽）」「结交招揽」）；city_conquered = { username（攻方）, cityName, from（守方用户名）, x, y }；announcement = { announcementId, title }（title 为公告中文标题）；luoyang_window = { phase, ... }：phase = holder 洛阳易主（allianceId, allianceName, username）｜ soon 窗口前预告（startAt, endAt）｜ started 窗口开始（startAt, endAt）｜ ended 窗口结束（startAt, endAt）｜ decree 盟主发政令（allianceId, decreeKind = recruit|march|research, until）；famous_first_explored = { username, name }（name 为名城名，不带坐标）；hero_site_first_explored = { username, name, hero }（name 为处所名，hero 为名将名，不带坐标）；legendary_relic_claimed = { username, kind }（kind 为遗迹种类，当前唯一的传说遗迹为 mausoleum，不带坐标）；hero_left = { username, heroName }（username 为主人用户名，查不到时为 null）；hero_captured = { ownerUsername, captorUsername, heroName }（主人与胜方用户名，查不到时为 null）；faction_expanded = { radius, day }（五家的势力范围半径同时扩大到 radius 格，day 为本季第几天；不带坐标）；faction_city_swallowed = { username, cityName, faction, factionName, x, y }（username 为失城玩家，cityName 为失城名，faction / factionName 为吞下它的势力）；faction_lair_destroyed = { username, faction, factionName, leader, leaderEn }（username 为最后一击的玩家，faction / factionName 为被攻破的势力，leader 为它的首领名将名）；faction_suppressed = { faction, factionName, level, previousLevel, direction: up|down, campsTotal, campsRemaining }（level 为变化后的压制档 0~3，previousLevel 为变化前的档位，direction = up 表示被打到升档、down 表示营恢复导致降档；不带坐标与玩家名）。"
         },
         {
           "name": "broadcasts[].createdAt",
@@ -20702,7 +20702,7 @@
       "name": "GET_FACTIONS",
       "title": "查询五方势力（v99，AISLG-239；v102 起可当季启用）",
       "preAuth": false,
-      "summary": "查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：凉州军（Liangzhou Rebels，首领韩遂）在 (80, 80)；乌桓（Wuhuan，首领蹋顿）在 (920, 80)；南蛮（Nanman，首领孟获）在 (80, 920)；山越（Shanyue，首领费栈）在 (920, 920)；黑山军（Heishan Army，首领张燕）在 (500, 500)。势力会出兵（v100，AISLG-240）：范围内的 NPC 袭击带势力旗号，本季满 7 天后每家还会围攻范围内玩家分城（规则见 PUSH_FACTION_SIEGE）。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随势力天数变大（第 1~7 天 100 格、第 8~14 天 150 格、第 15~21 天 200 格、第 22 天起 250 格，按势力起点算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 25 格内的 NPC 城全部归该势力，之后每家每 6 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 1.5 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响；v101（AISLG-241）起老巢可以打：每家老巢分 20 营，每次进攻只打当前一营（守城战、城墙减伤 50%），当前营打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营），20 营由弱到强（v106，AISLG-247）：第 1 营战力 G1 = max(10,000, 全服战力第 10 名 × 0.35)、第 20 营 G20 = max(G1, 第 3 名 × 0.35)，中间按等比递增 Gk = G1 × (G20 ÷ G1)^((k−1) ÷ 19)（向下取整），两个锚点每天刷新、各自只升不降；20 营全部清空这家本季灭亡（不再吞城 / 围攻、势力城变回普通 NPC 城、老巢变废墟，最后一击的玩家拿首领名将）。本季已灭亡（destroyed = true）的老巢不能再出征，MARCH / SCOUT 仍返回 FACTION_LAIR_TARGET。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。v102（AISLG-243）起开关可以在赛季中途打开：打开当天就生成老巢、不等换季，势力的「第几天」从开启当天重新算第 1 天（半径 100 格、满 7 天才开始围攻、之后每周 +50 格，与换季启用完全一样）；老巢格上或周围 5 格内有玩家城的那家本季不生成（不吞城、不围攻、不在 factions 里、地图上也没有它的范围与老巢），下季换季再生成，系统会发公告说明是哪几家。",
+      "summary": "查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：凉州军（Liangzhou Rebels，首领韩遂）在 (80, 80)；乌桓（Wuhuan，首领蹋顿）在 (920, 80)；南蛮（Nanman，首领孟获）在 (80, 920)；山越（Shanyue，首领费栈）在 (920, 920)；黑山军（Heishan Army，首领张燕）在 (500, 500)。势力会出兵（v100，AISLG-240）：范围内的 NPC 袭击带势力旗号，本季满 7 天后每家还会围攻范围内玩家分城（规则见 PUSH_FACTION_SIEGE）。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随势力天数变大（第 1~7 天 100 格、第 8~14 天 150 格、第 15~21 天 200 格、第 22 天起 250 格，按势力起点算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 25 格内的 NPC 城全部归该势力，之后每家每 6 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 1.5 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响；v101（AISLG-241）起老巢可以打：每家老巢分 20 营，每次进攻只打当前一营（守城战、城墙减伤 50%），当前营打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营），20 营由弱到强（v106，AISLG-247）：第 1 营战力 G1 = max(10,000, 全服战力第 10 名 × 0.35)、第 20 营 G20 = max(G1, 第 3 名 × 0.35)，中间按等比递增 Gk = G1 × (G20 ÷ G1)^((k−1) ÷ 19)（向下取整），两个锚点每天刷新、各自只升不降；20 营全部清空这家本季灭亡（不再吞城 / 围攻、势力城变回普通 NPC 城、老巢变废墟，最后一击的玩家拿首领名将）。v107（AISLG-249）起老巢被打掉得越多这家越虚——每打掉 5 营升一档压制（最多 3 档，完全由剩余营数算出、营恢复后自动降档）：围城军战力 100 / 75 / 50 / 25%、吞 NPC 城间隔 6 / 9 / 12 / 15 小时、每周吞玩家分城 2 / 2 / 2 / 1 座，当前档位与三项效果见 factions[].suppression。本季已灭亡（destroyed = true）的老巢不能再出征，MARCH / SCOUT 仍返回 FACTION_LAIR_TARGET。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。v102（AISLG-243）起开关可以在赛季中途打开：打开当天就生成老巢、不等换季，势力的「第几天」从开启当天重新算第 1 天（半径 100 格、满 7 天才开始围攻、之后每周 +50 格，与换季启用完全一样）；老巢格上或周围 5 格内有玩家城的那家本季不生成（不吞城、不围攻、不在 factions 里、地图上也没有它的范围与老巢），下季换季再生成，系统会发公告说明是哪几家。",
       "requestFields": [],
       "dataFields": [
         {
@@ -20794,6 +20794,31 @@
           "name": "factions[].campPower",
           "type": "number",
           "desc": "（v101；v106 改为当前营的战力）当前营守军的参考战力：20 营由弱到强，第 1 营最弱（= G1）、第 20 营最强（= G20），按剩余营数推当前营序号即可对上（当前营序号 = campsTotal − campsRemaining + 1）。每天刷新、两个锚点各自只升不降、最低 10,000；已灭亡仍给最后的值。侦察（SCOUT）拿到的当前营守军与它同口径。"
+        },
+        {
+          "name": "factions[].suppression",
+          "type": "object",
+          "desc": "（v107，AISLG-249）这家当前的压制档与三项效果的当前值 { level, siegePercent, swallowIntervalHours, weeklyBranchCap }。压制档完全由剩余营数算出（每打掉 5 营升一档、最多 3 档），不存库：营恢复（24 小时没人进攻）后自动降档；已灭亡的势力四项都是 0 档的值（不再有压制）。"
+        },
+        {
+          "name": "factions[].suppression.level",
+          "type": "number",
+          "desc": "压制档 0~3：已打掉 0~4 营 = 0 档、5~9 = 1 档、10~14 = 2 档、15~19 = 3 档（打掉第 20 营就是灭亡）。"
+        },
+        {
+          "name": "factions[].suppression.siegePercent",
+          "type": "number",
+          "desc": "围城军战力百分比（0 / 1 / 2 档 = 100 / 75 / 50，3 档 = 25）：围攻发起时按当时档位乘在原公式上、向下取整且不低于 1，已出发的围城军不变。PUSH_FACTION_SIEGE 的 power 与战报里的围城军战力就是这个压制后的实际值。"
+        },
+        {
+          "name": "factions[].suppression.swallowIntervalHours",
+          "type": "number",
+          "desc": "吞一座 NPC 城的基准间隔小时数（未随 time_scale 缩放，便于展示）：0 / 1 / 2 / 3 档 = 6 / 9 / 12 / 15 小时（实际时长按部署的 time_scale 缩放）。每家独立取值，已经计时中的下一次按新间隔往后算。"
+        },
+        {
+          "name": "factions[].suppression.weeklyBranchCap",
+          "type": "number",
+          "desc": "每周最多吞下的玩家分城数：0~2 档 2 座，3 档 1 座（本周已经吞满的不回溯）。"
         }
       ],
       "errors": [],
@@ -20830,9 +20855,15 @@
                     "cityCount": 51,
                     "destroyed": false,
                     "campsTotal": 20,
-                    "campsRemaining": 17,
+                    "campsRemaining": 15,
                     "campRemainingPercent": 42,
-                    "campPower": 256000
+                    "campPower": 29721,
+                    "suppression": {
+                      "level": 1,
+                      "siegePercent": 75,
+                      "swallowIntervalHours": 9,
+                      "weeklyBranchCap": 2
+                    }
                   }
                 ]
               }
@@ -20862,7 +20893,7 @@
           ]
         }
       ],
-      "agentNote": "势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 1.5 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 5 格内没有玩家城，所以别把坐标 (80, 80) / (920, 80) / (80, 920) / (920, 920) / (500, 500) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。v101（AISLG-241）起老巢可以打：MARCH（task=plunder）指向老巢坐标，一次只打当前一营（守城战、城墙减伤 50%），当前营守军打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营）；20 营由弱到强（v106，AISLG-247）：第 1 营战力 G1 = max(10,000, 全服战力第 10 名 × 0.35)、第 20 营 G20 = max(G1, 第 3 名 × 0.35)，中间按等比递增 Gk = G1 × (G20 ÷ G1)^((k−1) ÷ 19)（向下取整），两个锚点每天刷新、各自只升不降，编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。每场按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重），声望按歼灭战力的 1%；打掉最后一营的玩家拿该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，全服唯一），灭亡时按贡献（累计歼灭守军战力）名次再发一次（数额是黄巾之乱同名次的 3 倍）。任何玩家都能打，不要求入盟、不算攻击玩家、不破新手保护；打之前先 SCOUT 看当前营守军，SCOUT / GET_FACTIONS 都能看到剩余营数与当前营百分比。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。"
+      "agentNote": "势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 1.5 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 5 格内没有玩家城，所以别把坐标 (80, 80) / (920, 80) / (80, 920) / (920, 920) / (500, 500) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。v101（AISLG-241）起老巢可以打：MARCH（task=plunder）指向老巢坐标，一次只打当前一营（守城战、城墙减伤 50%），当前营守军打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营）；20 营由弱到强（v106，AISLG-247）：第 1 营战力 G1 = max(10,000, 全服战力第 10 名 × 0.35)、第 20 营 G20 = max(G1, 第 3 名 × 0.35)，中间按等比递增 Gk = G1 × (G20 ÷ G1)^((k−1) ÷ 19)（向下取整），两个锚点每天刷新、各自只升不降，编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。每场按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重），声望按歼灭战力的 1%；打掉最后一营的玩家拿该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，全服唯一），灭亡时按贡献（累计歼灭守军战力）名次再发一次（数额是黄巾之乱同名次的 3 倍）。任何玩家都能打，不要求入盟、不算攻击玩家、不破新手保护；打之前先 SCOUT 看当前营守军，SCOUT / GET_FACTIONS 都能看到剩余营数与当前营百分比。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。v107（AISLG-249）起打老巢有直接回报：每打掉 5 营升一档压制（factions[].suppression），围城军更弱、吞城更慢、3 档时每周吞分城从 2 座降到 1 座——不去打老巢，这家就一直维持最强。"
     },
     {
       "op": 2000,
@@ -22750,7 +22781,7 @@
       "kind": "push",
       "name": "PUSH_FACTION_SIEGE",
       "title": "推送：势力围攻分城（v100，AISLG-240）",
-      "summary": "五方势力出兵打玩家分城：本季满 7 天后，每家势力在自己范围内选**离老巢最近的玩家分城**围攻（同一时间最多围 1 座，同一座城 6 小时最多打一次）。每次围攻提前 60 分钟预警（吃烽火台加成，敌情详细度也按烽火台等级分档，与 NPC 袭击预警同一套），预警时给出**当前城防值**。围城军战力 = 该分城官府等级 × 倍率（第 8~14 天 100、15~21 天 150、22 天起 200，随 time_scale 无关），编成按 3 级 NPC 城守军的比例（义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12）缩放，不带冲车；战斗走守城战，城墙 / 箭塔 / 城防器械 / 城守 / 协防全部生效。势力打赢（全灭守军）扣 35 城防、城进入 4 小时被动免战、不掠夺资源；城防归零时城被吞，变成该势力的 NPC 城。被围城的主人与驻扎在该城的协防方都会收到本推送（reason 相同、内容相同）。等价事件：faction_siege_warning（预警）/ faction_siege（结算）/ faction_city_lost（失城）。",
+      "summary": "五方势力出兵打玩家分城：本季满 7 天后，每家势力在自己范围内选**离老巢最近的玩家分城**围攻（同一时间最多围 1 座，同一座城 6 小时最多打一次）。每次围攻提前 60 分钟预警（吃烽火台加成，敌情详细度也按烽火台等级分档，与 NPC 袭击预警同一套），预警时给出**当前城防值**。围城军战力 = 该分城官府等级 × 倍率（第 8~14 天 100、15~21 天 150、22 天起 200，随 time_scale 无关）× 该家的压制档比例（v107，AISLG-249：0 / 1 / 2 / 3 档 = 100 / 75 / 50 / 25%，向下取整且不低于 1，发起那一刻定），编成按 3 级 NPC 城守军的比例（义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12）缩放，不带冲车；战斗走守城战，城墙 / 箭塔 / 城防器械 / 城守 / 协防全部生效。势力打赢（全灭守军）扣 35 城防、城进入 4 小时被动免战、不掠夺资源；城防归零时城被吞，变成该势力的 NPC 城。被围城的主人与驻扎在该城的协防方都会收到本推送（reason 相同、内容相同）。等价事件：faction_siege_warning（预警）/ faction_siege（结算）/ faction_city_lost（失城）。",
       "dataFields": [
         {
           "name": "reason",
@@ -22896,7 +22927,7 @@
           }
         }
       ],
-      "agentNote": "收到 warning 时先看 durability：城防 100 起，每次被围城军打赢扣 35（两次之间只回涨一点点），所以城防 ≤ 35 的城下一轮就会丢。增援要在 arriveAt 之前进城门（MARCH task=reinforce / 协防 MARCH task=assist 都可，守城战里协防部队与城主驻军合并成守方）；把驻军塞满通常就能守住——常规驻军（义兵 30 × 官府等级 + 弓箭 8 × 官府等级）对上 1.0 倍围城军时全灭概率很低，而驻军只剩一半时大概率失守。守住的城该势力 24 小时内不会再来。城被吞（swallowed）后：建筑与等级留在城里、剩余资源变成这座势力城的可掠夺库存，任何玩家都能按占领 NPC 城的流程打下它并接收建筑与库存；原主人腾出分城名额，且打回来不受放弃分城冷却限制。每家势力每周最多吞 2 座城（一周按本季第 8、15、22 天起算），主城与名城分城永远不会被围攻。"
+      "agentNote": "收到 warning 时先看 durability：城防 100 起，每次被围城军打赢扣 35（两次之间只回涨一点点），所以城防 ≤ 35 的城下一轮就会丢。增援要在 arriveAt 之前进城门（MARCH task=reinforce / 协防 MARCH task=assist 都可，守城战里协防部队与城主驻军合并成守方）；把驻军塞满通常就能守住——常规驻军（义兵 30 × 官府等级 + 弓箭 8 × 官府等级）对上 1.0 倍围城军时全灭概率很低，而驻军只剩一半时大概率失守。守住的城该势力 24 小时内不会再来。城被吞（swallowed）后：建筑与等级留在城里、剩余资源变成这座势力城的可掠夺库存，任何玩家都能按占领 NPC 城的流程打下它并接收建筑与库存；原主人腾出分城名额，且打回来不受放弃分城冷却限制。每家势力每周最多吞 2 座城（一周按本季第 8、15、22 天起算；v107，AISLG-249：这家被压制到 3 档时降为 1 座，见 GET_FACTIONS 的 factions[].suppression），主城与名城分城永远不会被围攻。"
     },
     {
       "op": 2031,

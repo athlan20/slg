@@ -102,7 +102,11 @@ describe('攻破老巢的主流程（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
 
     // 3) 连续 24 小时没人进攻 → 恢复 1 营、残血回满，总数不超过 20
     const recoveredAt = new Date((afterWin?.last_battle_at as Date).getTime() + 25 * HOUR);
-    assert.equal(await recoverFactionLairs(fx.pool, recoveredAt), 1);
+    // AISLG-249：恢复函数返回逐家明细（调用方据此比对前后压制档），总恢复营数 = Σ 差值
+    const recoveries = await recoverFactionLairs(fx.pool, recoveredAt);
+    assert.equal(recoveries.length, 1, '这一轮只有被打过的那家恢复');
+    assert.equal(recoveries[0].key, NANMAN.key);
+    assert.equal(recoveries[0].campsAfter - recoveries[0].campsBefore, 1);
     const afterRecover = await loadFactionLairRow(fx.pool, NANMAN.key);
     assert.equal(afterRecover?.camps_remaining, 20);
     assert.equal(afterRecover?.remaining, null);
