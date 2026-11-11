@@ -96,7 +96,7 @@ export async function startHarness(options: HarnessOptions): Promise<Harness> {
             PAYMENT_PROVIDER: 'fake',
             CREEM_WEBHOOK_SECRET: WEBHOOK_SECRET,
             CREEM_API_KEY: 'fake-api-key',
-            CREEM_PRODUCT_TOPUP_199: 'topup_199',
+            CREEM_PRODUCT_TOPUP_1000: 'topup_199',
             PUBLIC_SITE_URL: 'https://slg.example.test',
           }
         : {}),

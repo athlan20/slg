@@ -1,7 +1,7 @@
 // 支付渠道的选择与配置（AISLG-251，v108）。所有密钥与商品 id 都只从环境变量读（项目开源，不进仓库）：
 // - CREEM_API_KEY：Creem API Key（测试模式用独立的测试 Key）
 // - CREEM_WEBHOOK_SECRET：回调验签用的 Webhook Secret
-// - CREEM_PRODUCT_TOPUP_199：Creem 后台建的 1.99 美元商品 id
+// - CREEM_PRODUCT_TOPUP_1000：Creem 后台建的 1.99 美元商品 id
 // - CREEM_API_BASE：缺省 https://api.creem.io；测试模式 https://test-api.creem.io
 // - PUBLIC_SITE_URL：拼 success_url 用（玩家付完款回游戏的站点），缺省用请求的 Origin 头
 // - PAYMENT_PROVIDER：缺省 creem；只有显式写 fake 才用假渠道（测试用，见 ./fake.ts）
@@ -60,11 +60,11 @@ export function readPaymentConfig(env: Env = process.env): PaymentConfig | null 
     };
   }
   const apiKey = readEnv(env, 'CREEM_API_KEY');
-  const productTopup199 = readEnv(env, 'CREEM_PRODUCT_TOPUP_199');
-  if (!apiKey || !productTopup199) {
+  const productTopup1000 = readEnv(env, 'CREEM_PRODUCT_TOPUP_1000');
+  if (!apiKey || !productTopup1000) {
     return null;
   }
-  productIds.topup_199 = productTopup199;
+  productIds.topup_199 = productTopup1000;
   return {
     kind: 'creem',
     apiKey,

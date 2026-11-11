@@ -918,7 +918,7 @@
  *   **仅玩家连接**（Agent 返回 AGENT_FORBIDDEN，不进 agent-api 文档 / MCP 清单）。限额：每账号每个自然月（UTC）
  *   最多成功充值 10 次（TOPUP_MONTHLY_LIMIT）、同一账号同时最多 1 个未支付订单（新建会把旧的 pending 作废）、
  *   每账号滚动 1 小时最多创建 5 个订单（TOPUP_TOO_MANY_PENDING）；未支付订单 24 小时后由 Worker 置 expired。
- *   渠道不可用（没配 CREEM_API_KEY / CREEM_WEBHOOK_SECRET / CREEM_PRODUCT_TOPUP_199，或调渠道失败）返回
+ *   渠道不可用（没配 CREEM_API_KEY / CREEM_WEBHOOK_SECRET / CREEM_PRODUCT_TOPUP_1000，或调渠道失败）返回
  *   TOPUP_UNAVAILABLE。新表 topup_orders（订单）与 payment_webhook_events（provider + event_id 联合唯一，
  *   回调去重），两张表都跨季保留（不进 RESET_TABLES）。
  *   五、回调：HTTP POST /pay/creem/webhook（API 进程，响应 no-store、不被 CDN 缓存）。验签用原始请求体
