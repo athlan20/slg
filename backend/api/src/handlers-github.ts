@@ -133,18 +133,18 @@ export async function handleOauthRedeem(
     respondError(ctx.registry, conn, op, seq, 'INVALID_PARAMS');
     return;
   }
-  const github = ctx.github;
-  if (!github || github.sites.defaultSite === null) {
-    respondError(ctx.registry, conn, op, seq, 'GITHUB_UNAVAILABLE');
-    return;
-  }
   if (conn.accountId) {
     respondError(ctx.registry, conn, op, seq, 'ALREADY_LOGGED_IN');
     return;
   }
-  const payload = github.codes.take(code, github.now());
+  // 码可能来自 GitHub 或 Linux.do 回调（两家各自的一次性码库）：任一库里取到即用，不依赖哪家已配置
+  const now = ctx.github?.now() ?? ctx.linuxdo?.now() ?? Date.now();
+  const payload = ctx.github?.codes.take(code, now) ?? ctx.linuxdo?.codes.take(code, now) ?? null;
   if (!payload) {
-    respondError(ctx.registry, conn, op, seq, 'OAUTH_CODE_INVALID');
+    // 两家都没配置时保持既有的 GITHUB_UNAVAILABLE；配置了任一家则是无效 / 过期 / 已用过的码
+    const githubOn = (ctx.github?.sites.byHost.size ?? 0) > 0;
+    const linuxdoOn = ctx.linuxdo !== undefined && ctx.linuxdo.minTrustLevel !== null && ctx.linuxdo.sites.byHost.size > 0;
+    respondError(ctx.registry, conn, op, seq, githubOn || linuxdoOn ? 'OAUTH_CODE_INVALID' : 'GITHUB_UNAVAILABLE');
     return;
   }
   const session = await issueSessionToken(ctx.pool, payload.accountId);

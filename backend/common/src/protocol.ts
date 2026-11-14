@@ -282,6 +282,7 @@ export const Op = {
    *  成功返回 { rewards, ingot, items }。玩家与 Agent 通用；每账号每小时最多失败 10 次，超过返回
    *  CODE_RATE_LIMITED） */
   REDEEM_CODE: 156,
+  OAUTH_AUTH_START: 157,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -563,6 +564,8 @@ export const ErrorCode = {
   OAUTH_CODE_INVALID: 'OAUTH_CODE_INVALID',
   /** 绑定 GitHub 时，该 GitHub 账号已绑了别的号，或当前账号已绑了别的 GitHub 账号（v45） */
   GITHUB_ALREADY_BOUND: 'GITHUB_ALREADY_BOUND',
+  LINUXDO_UNAVAILABLE: 'LINUXDO_UNAVAILABLE',
+  LINUXDO_ALREADY_BOUND: 'LINUXDO_ALREADY_BOUND',
   /** 请求过于频繁（v43：二维码生成 / Google 登录尝试 / GitHub 授权发起均按 IP 限频，20 次/分钟） */
   RATE_LIMITED: 'RATE_LIMITED',
   // AGENT_TOKEN_LIMIT（v43，多令牌上限）已随 v46 移除：每账号一个永久令牌，无上限概念。

@@ -368,6 +368,11 @@ export function githubErrorText(code: ErrorCode | undefined, message: string | u
   return (code ? GITHUB_COPY.errors.byCode[code] : undefined) ?? message ?? GITHUB_COPY.errors.fallback;
 }
 
+export function linuxdoErrorText(code: ErrorCode | undefined, message: string | undefined): string {
+  const { LINUXDO_COPY } = getCopy();
+  return (code ? LINUXDO_COPY.errors.byCode[code] : undefined) ?? message ?? LINUXDO_COPY.errors.fallback;
+}
+
 /**
  * 联盟操作失败的人读提示（AISLG-186）：冷却类按服务端下发的 retryAfterSeconds（缺省时由 until 推算）拼剩余时长；
  * scene 为邀请 / 申请时，个别错误码（如 ALLIANCE_NOT_FOUND 在邀请里指昵称对不上）用场景文案覆盖。

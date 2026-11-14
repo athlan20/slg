@@ -113,6 +113,9 @@ export interface GetAgentInfoResponseData {
   githubBound: boolean;
   /** 绑定的 GitHub 用户名（v45；未绑定为 null） */
   githubLogin: string | null;
+  /** Linux.do 绑定状态及用户名（旧服务端可能不返回） */
+  linuxdoBound?: boolean;
+  linuxdoLogin?: string | null;
 }
 
 export interface AgentStatusPushData {
