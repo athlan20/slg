@@ -89,6 +89,10 @@ Agent API 文档：`GET /agent-api.md` 与 `GET /agent-api.json`（运行时从�
 | `GOOGLE_CLIENT_ID` | 不配置 | Google 一键登录的 OAuth Client ID（v44）。不配置时功能整体关闭：`GOOGLE_LOGIN` / `GOOGLE_BIND` 返回 `GOOGLE_UNAVAILABLE`、`/auth/config` 的 `googleClientId=null`（前端不显示 Google 入口）。 |
 | `GOOGLE_CERTS_URL` | `https://www.googleapis.com/oauth2/v3/certs` | Google 公钥（JWKS）地址，仅联调测试时指向假 JWKS 服务（`test/google/harness.ts`），线上不要配置。 |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_REDIRECT_URI` / `FRONTEND_URL` | 不配置 | GitHub 一键登录（v45）：在 GitHub 上建一个 **OAuth App**（不是 GitHub App），回调地址填 `GITHUB_REDIRECT_URI`（如 `https://slgws.example.cn/auth/github/callback`）。四项缺一即整体关闭：`GITHUB_AUTH_START` 返回 `GITHUB_UNAVAILABLE`、`/auth/config` 的 `githubEnabled=false`。`FRONTEND_URL` 为授权完成 / 取消后 302 跳回的前端地址。Secret 只放 `.env`，不要提交。**v47 起改按站点分套**，这四个变量成为任何 Host 都能用的 `default` 套（既有部署不用改）。 |
+| `LINUXDO_CLIENT_ID` / `LINUXDO_CLIENT_SECRET` / `LINUXDO_REDIRECT_URI` / `FRONTEND_URL` | 不配置 | Linux.do Connect OAuth 四项缺一则关闭；回调路径 `/auth/linuxdo/callback`。secret 只在服务端保存。 |
+| `LINUXDO_SITES` | 不配置 | 按 Host 配置 JSON（`clientId`、`clientSecret`、`redirectUri`、`frontendUrl`，可选 `apiBase`），可设 `default`；未命中回落到全局配置。 |
+| `LINUXDO_MIN_TRUST_LEVEL` | `1` | 非负整数；配置非法时关闭 Linux.do。用户须 active、未 silenced 且信任等级不低于该值。 |
+| `LINUXDO_API_BASE` | `https://connect.linux.do` | 联调假服务可覆盖；沿用 Node 的 `NODE_USE_ENV_PROXY` / `HTTPS_PROXY`。 |
 | `GITHUB_SITES` | 不配置 | **v47 双站点**：GitHub OAuth App 按站点分开配置（一个 OAuth App 只能填一个回调地址），JSON 形如 `{"slg.example.cn":{...},"slg.yuntianyou.cc":{...}}`，键为站点 Host，值同上一栏四项（另可加 `apiBase`）；也接受 `"default"` 键作为兜底。某 Host 没配则回落到 `default` 套，两者都没有则该站 `githubEnabled=false`。授权 `state` 会记住发起站点，回调按它选配置套并 302 回该站前端。 |
 | `PASSWORD_LOGIN_DISABLED_HOSTS` | 不配置 | **v47 双站点**：整站关闭账号密码登录的 Host 列表，逗号分隔（如 `slg.yuntianyou.cc`；带端口 / 大小写不影响匹配）。列出的站点上 `LOGIN` 的密码分支返回 `PASSWORD_LOGIN_CLOSED`（绕过界面直发也一样），`/auth/config` 下发 `passwordLogin=false`、`wechatEnabled=false`，前端隐藏密码表单与微信入口，只剩 Google / GitHub。Agent 用账号密码登录在任何站都会被拒（`AGENT_PASSWORD_FORBIDDEN`，与本站配置无关）。 |
 | `CHAT_BANNED_WORDS_FILE` | 不配置（用 `backend/config/chat-banned-words.txt`，没有则用仓库内示例表） | 聊天屏蔽词表路径（v51，AISLG-138）：词表放在默认位置就不用配；放在别处才配这一项。UTF-8（可带 BOM），CRLF / LF 均可，每行一个词。词表是运营数据，只放服务器，不进仓库（`.gitignore` 已忽略 `backend/config/chat-banned-words.txt`）。配置了路径却读不到则 API 启动失败（不在没有过滤的状态下开放聊天）；改词表需重启 API。 |
@@ -113,6 +117,7 @@ Google 在国内不可直连，Google 登录涉及两段出站访问，**部署�
 
 - **GitHub 在国内大多能访问但时快时慢**：API 服务器要调 `github.com`（换令牌）与 `api.github.com`
   （取用户），访问不稳定时与 Google 同一套代理（`NODE_USE_ENV_PROXY=1` + `HTTPS_PROXY`）。
+- **`/auth/linuxdo/callback` 必须在所有站点的 CDN 配为不缓存 / 直接回源**；服务端也返回 `cache-control: no-store`。state 和一次性码存在 API 单进程内存，重启或多实例不共享；state 10 分钟有效、登录码 60 秒有效。
 - **`/auth/github/callback` 不能被又拍云 CDN 缓存**：该路由响应已带 `cache-control: no-store`，但 CDN
   可能按自身规则缓存 302——需在又拍云控制台对 `/auth/github/callback` 设置**不缓存 / 直接回源**，否则
   玩家可能拿到别人缓存的一次性码（会因一次性自然失效，但表现为「登录失败」）。

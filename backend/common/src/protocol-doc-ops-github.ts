@@ -44,7 +44,7 @@ export const REQUEST_OAUTH_REDEEM: RequestOpDoc = {
   name: 'OAUTH_REDEEM',
   title: '用一次性登录码换会话令牌（v45）',
   preAuth: true,
-  summary: `${GITHUB_ONLY_NOTE}OAuth 回跳的第二步：GitHub 授权成功后浏览器被 302 回前端（?oauth=github&code=…），网页解析出 code 经本协议换成会话令牌，保存后走 LOGIN {token, asAgent: false}，再用 history.replaceState 把 code 从地址栏抹掉。code 由回调时生成：60 秒有效、一次性（OAUTH_CODE_INVALID = 无效 / 过期 / 已用过），承载的账号信息由服务端持有。已登录连接调用返回 ALREADY_LOGGED_IN。`,
+  summary: `${GITHUB_ONLY_NOTE}OAuth 回跳的第二步：GitHub 或 Linux.do 授权成功后浏览器被 302 回前端（?oauth=github&code=…），网页解析出 code 经本协议换成会话令牌，保存后走 LOGIN {token, asAgent: false}，再用 history.replaceState 把 code 从地址栏抹掉。code 由回调时生成：60 秒有效、一次性（OAUTH_CODE_INVALID = 无效 / 过期 / 已用过），承载的账号信息由服务端持有。已登录连接调用返回 ALREADY_LOGGED_IN。`,
   requestFields: [
     { name: 'code', type: 'string', desc: '必填。回跳地址里的一次性登录码（1..128 字符）。' },
   ],

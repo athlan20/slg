@@ -1,5 +1,5 @@
 {
-  "version": 109,
+  "version": 110,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -873,7 +873,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 109,
+                "protocolVersion": 110,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -922,7 +922,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 109,
+                "protocolVersion": 110,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -942,14 +942,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/106 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/107 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 106,
+              "docVersion": 107,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -964,8 +964,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 109,
-                "docNotice": "接口文档已从 v106 更新到 v109：请 GET /agent-api/changes/106 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 110,
+                "docNotice": "接口文档已从 v107 更新到 v110：请 GET /agent-api/changes/107 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -2936,6 +2936,16 @@
           "name": "githubLogin",
           "type": "string | null",
           "desc": "绑定的 GitHub 用户名（v45 新增；未绑定为 null）。用户名可在 GitHub 改名，绑定键是数字 id，此处仅展示。"
+        },
+        {
+          "name": "linuxdoBound",
+          "type": "boolean",
+          "desc": "是否已绑定 Linux.do（v110）。"
+        },
+        {
+          "name": "linuxdoLogin",
+          "type": "string | null",
+          "desc": "Linux.do 展示用户名；绑定键是不可变数字 id（v110）。"
         }
       ],
       "errors": [],
@@ -8418,7 +8428,7 @@
       "name": "OAUTH_REDEEM",
       "title": "用一次性登录码换会话令牌（v45）",
       "preAuth": true,
-      "summary": "**仅供网页前端使用，Agent 无需调用。**OAuth 回跳的第二步：GitHub 授权成功后浏览器被 302 回前端（?oauth=github&code=…），网页解析出 code 经本协议换成会话令牌，保存后走 LOGIN {token, asAgent: false}，再用 history.replaceState 把 code 从地址栏抹掉。code 由回调时生成：60 秒有效、一次性（OAUTH_CODE_INVALID = 无效 / 过期 / 已用过），承载的账号信息由服务端持有。已登录连接调用返回 ALREADY_LOGGED_IN。",
+      "summary": "**仅供网页前端使用，Agent 无需调用。**OAuth 回跳的第二步：GitHub 或 Linux.do 授权成功后浏览器被 302 回前端（?oauth=github&code=…），网页解析出 code 经本协议换成会话令牌，保存后走 LOGIN {token, asAgent: false}，再用 history.replaceState 把 code 从地址栏抹掉。code 由回调时生成：60 秒有效、一次性（OAUTH_CODE_INVALID = 无效 / 过期 / 已用过），承载的账号信息由服务端持有。已登录连接调用返回 ALREADY_LOGGED_IN。",
       "requestFields": [
         {
           "name": "code",
@@ -21178,6 +21188,68 @@
       "agentNote": "码是玩家自己拿到的，可以替玩家兑换（账号是本人的）。玩家把码贴给你时直接调用，不用先确认；成功后把 rewards 报给玩家。不要猜码或批量尝试：每账号每小时最多失败 10 次，超过后 1 小时内连正确的码都会被拒（CODE_RATE_LIMITED，按返回的 retryAfterSeconds 等待）。CODE_BATCH_CLAIMED 只会出现在通用码上：这个号已经兑过这个码，换别的码没用；一次性码可以兑同一批次的多张，拿到新码直接兑就行。ITEM_STACK_FULL 提示玩家先消耗一些同种道具再兑换，码仍然有效。"
     },
     {
+      "op": 157,
+      "kind": "request",
+      "name": "OAUTH_AUTH_START",
+      "title": "发起第三方 OAuth 授权（v110）",
+      "preAuth": true,
+      "summary": "仅网页使用。provider 为 linuxdo 或 github，purpose 为 login 或 bind；login 在登录前发起，bind 需已登录的玩家连接。成功后整页跳转 authUrl。Linux.do 需满足服务端最低信任等级、active 且未被禁言，资格不足回跳 ?oauth=linuxdo&error=not_eligible；失败还可能是 canceled、expired、unavailable、already_bound。登录成功回跳一次性 code，通过 OAUTH_REDEEM 兑换；绑定成功回跳 bind=ok。state 有效 10 分钟，一次性 code 有效 60 秒。GitHub 旧 op 62 继续支持。",
+      "requestFields": [
+        {
+          "name": "provider",
+          "type": "'linuxdo' | 'github'",
+          "desc": "必填。第三方登录提供商。"
+        },
+        {
+          "name": "purpose",
+          "type": "'login' | 'bind'",
+          "desc": "必填。登录或给当前账号绑定。"
+        }
+      ],
+      "dataFields": [
+        {
+          "name": "authUrl",
+          "type": "string",
+          "desc": "OAuth 授权地址；网页整页跳转。"
+        }
+      ],
+      "errors": [
+        "INVALID_PARAMS",
+        "NOT_LOGGED_IN",
+        "ALREADY_LOGGED_IN",
+        "AGENT_FORBIDDEN",
+        "GITHUB_UNAVAILABLE",
+        "GITHUB_ALREADY_BOUND",
+        "LINUXDO_UNAVAILABLE",
+        "LINUXDO_ALREADY_BOUND",
+        "RATE_LIMITED"
+      ],
+      "examples": [
+        {
+          "caption": "登录前发起 Linux.do 授权",
+          "request": {
+            "op": 157,
+            "seq": 1,
+            "data": {
+              "provider": "linuxdo",
+              "purpose": "login"
+            }
+          },
+          "responses": [
+            {
+              "op": 157,
+              "seq": 1,
+              "ok": true,
+              "data": {
+                "authUrl": "https://connect.linux.do/oauth2/authorize?client_id=example&state=example"
+              }
+            }
+          ]
+        }
+      ],
+      "agentNote": "Agent 使用玩家签发的 Agent 令牌登录，不调用本协议。"
+    },
+    {
       "op": 2000,
       "kind": "push",
       "name": "PUSH_BUILD_STATE",
@@ -23662,6 +23734,14 @@
     "GITHUB_ALREADY_BOUND": {
       "desc": "（v45）绑定 GitHub 时，该 GitHub 账号已绑了别的号，或当前账号已绑了别的 GitHub 账号。",
       "action": "用该 GitHub 账号直接登录它已绑定的号，或换一个 GitHub 账号绑定；暂不支持解绑。Agent 不涉及。"
+    },
+    "LINUXDO_UNAVAILABLE": {
+      "desc": "（v110）Linux.do 登录未配置或暂不可用。",
+      "action": "稍后重试或改用其他登录方式。"
+    },
+    "LINUXDO_ALREADY_BOUND": {
+      "desc": "（v110）该 Linux.do 身份已被绑定，或当前账号已绑定 Linux.do。",
+      "action": "登录已绑定的账号，或使用其他 Linux.do 身份。"
     },
     "RATE_LIMITED": {
       "desc": "（v43）请求过于频繁：同一 IP 每分钟最多生成 20 张微信二维码（v44 起 Google 登录尝试、v45 起 GitHub 授权发起同样限频，各 20 次/分钟）。",

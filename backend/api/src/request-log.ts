@@ -4,7 +4,7 @@
 
 const REDACTED = '[redacted]';
 /** 查询串里含敏感参数的路由（末尾斜杠视为同一路由） */
-const SENSITIVE_PATHS = new Set(['/auth/github/callback']);
+const SENSITIVE_PATHS = new Set(['/auth/github/callback', '/auth/linuxdo/callback']);
 const SECRET_PARAMS = new Set(['code', 'state']);
 
 function safeDecode(text: string): string {

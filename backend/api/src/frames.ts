@@ -120,6 +120,8 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   GITHUB_UNAVAILABLE: 'GitHub 登录暂不可用（未配置或连不上 GitHub）',
   OAUTH_CODE_INVALID: '登录码无效或已过期，请重新发起登录',
   GITHUB_ALREADY_BOUND: '该 GitHub 账号已绑定其他账号，或当前账号已绑定了别的 GitHub 账号',
+  LINUXDO_UNAVAILABLE: 'Linux.do 登录暂不可用',
+  LINUXDO_ALREADY_BOUND: '该 Linux.do 账号已绑定其他账号，或当前账号已绑定了别的 Linux.do 账号',
   RATE_LIMITED: '请求过于频繁，请稍后再试',
   CHAT_GOVERNMENT_TOO_LOW: '主城官府需达到 3 级才能在世界频道发言',
   CHAT_MUTED: '账号已被禁言，暂时不能发言',

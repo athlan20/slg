@@ -1,4 +1,4 @@
-// 请求日志脱敏（AISLG-173）：GitHub 回调查询串里的 code / state 在日志里替换为 [redacted]，
+// 请求日志脱敏（AISLG-173）：GitHub / Linux.do 回调查询串里的 code / state 在日志里替换为 [redacted]，
 // 其他路由的日志不受影响。用真实 fastify 实例 + 内存日志流核对输出。
 
 import test from 'node:test';
@@ -17,6 +17,13 @@ test('redactRequestUrl：回调地址的 code / state 被替换，其他参数�
   );
   // 编码过的参数名同样识别
   assert.equal(redactRequestUrl('/auth/github/callback?%63ode=AUTHCODE123'), '/auth/github/callback?%63ode=[redacted]');
+});
+
+test('redactRequestUrl：Linux.do 回调同样脱敏 code / state（AISLG-258）', () => {
+  assert.equal(
+    redactRequestUrl('/auth/linuxdo/callback?code=AUTHCODE123&state=STATE456'),
+    '/auth/linuxdo/callback?code=[redacted]&state=[redacted]',
+  );
 });
 
 test('redactRequestUrl：其他路由与无查询串的地址原样保留', () => {

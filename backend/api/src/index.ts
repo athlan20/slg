@@ -29,6 +29,10 @@ import {
   readPasswordDisabledHosts,
 } from './site-config';
 import { registerGithubCallbackRoute } from './github-callback';
+import { createLinuxdoService, linuxdoEntryFor } from './handlers-linuxdo';
+import { readLinuxdoSites } from './linuxdo-sites';
+import { readLinuxdoMinTrustLevel } from './linuxdo';
+import { registerLinuxdoCallbackRoute } from './linuxdo-callback';
 import { registerPayWebhookRoute } from './pay-creem-webhook';
 import { createPaymentService } from '../../common/src/payments';
 import { requestLogSerializer } from './request-log';
@@ -125,6 +129,12 @@ async function main(): Promise<void> {
   const wxSweeper = setInterval(() => {
     sweepWxTickets(ctx);
     sweepGithubOauth(ctx.github);
+    if (ctx.linuxdo) {
+      const now = ctx.linuxdo.now();
+      ctx.linuxdo.states.sweep(now);
+      ctx.linuxdo.codes.sweep(now);
+      ctx.linuxdo.limiter.prune(now);
+    }
   }, 5_000);
   // v66（AISLG-181）：在线心跳，刷新 last_active_at（联盟盟主不活跃判断）；AISLG-236 起 Agent 连接同样算在线
   const activeHeartbeat = startActiveHeartbeat(ctx);
@@ -140,6 +150,12 @@ async function main(): Promise<void> {
   const githubSites = readGithubSites();
   const github = createGithubService(githubSites);
   ctx.github = github;
+  const linuxdoMinTrustLevel = readLinuxdoMinTrustLevel();
+  if (linuxdoMinTrustLevel === null) {
+    console.error('LINUXDO_MIN_TRUST_LEVEL 配置非法（应为非负整数），Linux.do 登录已关闭');
+  }
+  const linuxdo = createLinuxdoService(readLinuxdoSites(), linuxdoMinTrustLevel);
+  ctx.linuxdo = linuxdo;
   console.log(
     githubSites.defaultSite || githubSites.byHost.size > 0
       ? `slg-api github login enabled (sites: ${[...githubSites.byHost.keys()].join(', ') || 'default'})`
@@ -191,9 +207,11 @@ async function main(): Promise<void> {
     trustProxy: TRUST_PROXY !== false,
     isPasswordLoginDisabled: (host) => isPasswordLoginDisabled(host, passwordDisabledHosts),
     githubSiteForHost: (host) => githubSiteFor(host, githubSites),
+    linuxdoEnabledForHost: (host) => linuxdoEntryFor(linuxdo, host) !== null,
   });
   // GitHub OAuth 回调（v45）：302 回前端；此路由不能被 CDN 缓存（README 部署注意）
   registerGithubCallbackRoute(app, { github, ctx });
+  registerLinuxdoCallbackRoute(app, { linuxdo, ctx });
   // 充值回调（v108，AISLG-251）：POST /pay/creem/webhook，验签用原始请求体；此路由不能被 CDN 缓存
   registerPayWebhookRoute(app, { ctx });
 

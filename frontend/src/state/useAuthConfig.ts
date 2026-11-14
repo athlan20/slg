@@ -5,19 +5,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { AUTH_CONFIG_URL } from '../api/client';
-
-export interface AuthConfig {
-  /** null = 服务端没配置 Google，前端不显示任何 Google 入口 */
-  googleClientId: string | null;
-  /** false = 服务端没配置微信，登录页不显示「微信扫码」分页 */
-  wechatEnabled: boolean;
-  /** false = 服务端没配置 GitHub OAuth App，前端不显示 GitHub 入口（v45） */
-  githubEnabled: boolean;
-  /** false = 本站在 PASSWORD_LOGIN_DISABLED_HOSTS 里（国际站），不显示用户名密码表单（v47） */
-  passwordLogin: boolean;
-}
-
-const FALLBACK: AuthConfig = { googleClientId: null, wechatEnabled: false, githubEnabled: false, passwordLogin: true };
+import { parseAuthConfig, FALLBACK } from './authConfig';
+export type { AuthConfig } from './authConfig';
+import type { AuthConfig } from './authConfig';
 
 let cached: AuthConfig | null = null;
 let inflight: Promise<AuthConfig> | null = null;
@@ -28,14 +18,7 @@ async function fetchAuthConfig(): Promise<AuthConfig> {
     if (!res.ok) {
       return FALLBACK;
     }
-    const body = (await res.json()) as Partial<AuthConfig>;
-    return {
-      googleClientId: typeof body.googleClientId === 'string' && body.googleClientId ? body.googleClientId : null,
-      wechatEnabled: body.wechatEnabled === true,
-      githubEnabled: body.githubEnabled === true,
-      // v47：国际站返回 false；旧后端没有该字段时按 true（保持原行为）
-      passwordLogin: body.passwordLogin !== false,
-    };
+    return parseAuthConfig(await res.json());
   } catch {
     return FALLBACK;
   }

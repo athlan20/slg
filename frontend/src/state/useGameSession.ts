@@ -45,7 +45,7 @@ import {
 import { buildErrorText, formatClock, loginErrorText, renameErrorText, toSessionEvent } from '../api/mapping';
 import { useAccountSecurity, type AccountSecurity } from './useAccountSecurity';
 import { getCopy } from '../i18n/bundle';
-import { githubErrorText } from '../api/errorText';
+import { githubErrorText, linuxdoErrorText } from '../api/errorText';
 import { takeOauthReturn } from './oauthReturn';
 import {
   clearStoredToken,
@@ -257,8 +257,8 @@ export interface GameSession {
   loginWithWechatToken: (sessionToken: string) => Promise<void>;
   /** Google 一键登录（v44）：GOOGLE_LOGIN 换到会话令牌后走令牌登录 */
   loginWithGoogleToken: (sessionToken: string) => Promise<void>;
-  /** GitHub 一键登录（v45）：OAuth 回跳带回来的一次性码换会话令牌后走令牌登录 */
-  loginWithOauthCode: (code: string) => Promise<void>;
+  /** OAuth 回跳的一次性码换会话令牌后走令牌登录 */
+  loginWithOauthCode: (code: string, provider: 'github' | 'linuxdo') => Promise<void>;
 }
 
 function field<T>(data: Record<string, unknown> | undefined, key: string): T | undefined {
@@ -926,8 +926,8 @@ export function useGameSession(): GameSession {
 
   /** 页面加载时的令牌自动登录；网络失败保留令牌，会话失效则清除并回落表单 */
   const tokenLogin = useCallback(
-    async (token: string, source: 'auto' | 'wechat' | 'google' | 'github' = 'auto') => {
-      const { COPY, WECHAT_COPY, GOOGLE_COPY, GITHUB_COPY } = getCopy();
+    async (token: string, source: 'auto' | 'wechat' | 'google' | 'github' | 'linuxdo' = 'auto') => {
+      const { COPY, WECHAT_COPY, GOOGLE_COPY, GITHUB_COPY, LINUXDO_COPY } = getCopy();
       try {
         setConnection('connecting');
         const client = ensureClient();
@@ -957,9 +957,11 @@ export function useGameSession(): GameSession {
               ? GOOGLE_COPY.session.googleLoginSuccess(data.username)
               : source === 'github'
                 ? GITHUB_COPY.session.githubLoginSuccess(data.username)
-                : COPY.session.autoLoginSuccess(data.username);
+                : source === 'linuxdo'
+                  ? LINUXDO_COPY.session.loginSuccess(data.username)
+                  : COPY.session.autoLoginSuccess(data.username);
         appendLocalEvent('system', loginText);
-        // GitHub 授权回跳的绑定 / 失败结果（v45）：自动登录成功后补进事件流（未登录场景在登录页由 loginError 显示）
+        // 授权回跳的绑定 / 失败结果：自动登录成功后补进事件流（未登录场景在登录页由 loginError 显示）
         if (oauthNoticeRef.current) {
           appendLocalEvent('system', oauthNoticeRef.current);
           oauthNoticeRef.current = null;
@@ -1010,13 +1012,14 @@ export function useGameSession(): GameSession {
     },
     [tokenLogin],
   );
-  // GitHub 一键登录（v45）：OAuth 回跳带回一次性码（地址栏已由 oauthReturn.ts 抹掉），
+  // OAuth 回跳带回一次性码（地址栏已由 oauthReturn.ts 抹掉），
   // 建未登录连接发 OAUTH_REDEEM 换会话令牌，再走令牌登录；失败提示留在登录页。
   const loginWithOauthCode = useCallback(
-    async (code: string) => {
+    async (code: string, provider: 'github' | 'linuxdo') => {
       setLoginBusy(true);
       setLoginError(null);
-      const { COPY, GITHUB_COPY } = getCopy();
+      const { COPY, GITHUB_COPY, LINUXDO_COPY } = getCopy();
+      const oauthCopy = provider === 'linuxdo' ? LINUXDO_COPY : GITHUB_COPY;
       try {
         const client = ensureClient();
         await client.connect();
@@ -1025,23 +1028,23 @@ export function useGameSession(): GameSession {
           setConnection('idle');
           setLoginError(
             res.error?.code === 'OAUTH_CODE_INVALID'
-              ? GITHUB_COPY.return.redeemFailed
-              : githubErrorText(res.error?.code, res.error?.message),
+              ? oauthCopy.return.redeemFailed
+              : provider === 'linuxdo' ? linuxdoErrorText(res.error?.code, res.error?.message) : githubErrorText(res.error?.code, res.error?.message),
           );
           return;
         }
         const sessionToken = res.data?.sessionToken;
         if (typeof sessionToken !== 'string') {
           setConnection('idle');
-          setLoginError(GITHUB_COPY.errors.fallback);
+          setLoginError(oauthCopy.errors.fallback);
           return;
         }
-        await tokenLogin(sessionToken, 'github');
+        await tokenLogin(sessionToken, provider);
       } catch (err) {
         setConnection('idle');
-        // 超时 / 连接断开：登录码可能已被服务端用掉，原始报错对玩家没有用，统一提示重新点 GitHub 登录
+        // 超时 / 连接断开：登录码可能已被服务端用掉，提示重新发起登录
         if (err instanceof ConnectionError) {
-          setLoginError(GITHUB_COPY.errors.interrupted);
+          setLoginError(oauthCopy.errors.interrupted);
         } else {
           setLoginError(err instanceof Error ? err.message : COPY.errors.login.fallback);
         }
@@ -1055,7 +1058,7 @@ export function useGameSession(): GameSession {
 
   useEffect(() => {
     aliveRef.current = true;
-    // GitHub OAuth 回跳（v45）：地址栏带一次性码 / 绑定结果（oauthReturn.ts 已顺手把参数抹掉）。
+    // OAuth 回跳：地址栏带一次性码 / 绑定结果（oauthReturn.ts 已顺手把参数抹掉）。
     // code 优先于本地保存的令牌——用户刚授权的是哪个号就进哪个号；绑定 / 失败结果在登录
     // 成功后进事件流，未登录场景由登录页的 loginError 显示。
     const oauthReturn = takeOauthReturn();
@@ -1065,7 +1068,7 @@ export function useGameSession(): GameSession {
     }
     if (oauthReturn?.kind === 'code') {
       setBooting(true);
-      void loginWithOauthCode(oauthReturn.code).finally(() => {
+      void loginWithOauthCode(oauthReturn.code, oauthReturn.provider).finally(() => {
         setBooting(false);
       });
       return () => {
@@ -1076,19 +1079,16 @@ export function useGameSession(): GameSession {
       };
     }
     if (oauthReturn) {
-      const { GITHUB_COPY } = getCopy();
+      const { GITHUB_COPY, LINUXDO_COPY } = getCopy();
+      const text = oauthReturn.provider === 'linuxdo' ? LINUXDO_COPY.return : GITHUB_COPY.return;
       const notice =
-        oauthReturn.kind === 'bindOk'
-          ? GITHUB_COPY.return.bindOk
-          : oauthReturn.reason === 'canceled'
-            ? GITHUB_COPY.return.canceled
-            : oauthReturn.reason === 'expired'
-              ? GITHUB_COPY.return.expired
-              : oauthReturn.reason === 'already_bound'
-                ? GITHUB_COPY.return.alreadyBound
-                : oauthReturn.reason === 'unavailable'
-                  ? GITHUB_COPY.return.unavailable
-                  : GITHUB_COPY.return.unknown;
+        oauthReturn.kind === 'bindOk' ? text.bindOk
+          : oauthReturn.reason === 'canceled' ? text.canceled
+          : oauthReturn.reason === 'expired' ? text.expired
+          : oauthReturn.reason === 'already_bound' ? text.alreadyBound
+          : oauthReturn.reason === 'unavailable' ? text.unavailable
+          : oauthReturn.reason === 'not_eligible' && oauthReturn.provider === 'linuxdo' ? LINUXDO_COPY.return.notEligible
+          : text.unknown;
       oauthNoticeRef.current = notice;
       setLoginError(notice);
     }

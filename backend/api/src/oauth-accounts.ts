@@ -9,7 +9,7 @@ import pg from 'pg';
 import { insertAccountWithCity } from './auth';
 
 /** 支持的第三方登录提供商（oauth_identities.provider 的取值） */
-export type OauthProvider = 'google' | 'github';
+export type OauthProvider = 'google' | 'github' | 'linuxdo';
 
 export interface OauthIdentityInput {
   provider: OauthProvider;
@@ -64,6 +64,20 @@ export async function oauthDisplayName(
   return res.rowCount ? res.rows[0].display_name : null;
 }
 
+/** 登录时刷新第三方展示名（用户改名后）；绑定键始终是不可变的数字 subject，不受影响 */
+export async function updateOauthDisplayName(
+  pool: pg.Pool,
+  provider: OauthProvider,
+  subject: string,
+  displayName: string,
+): Promise<void> {
+  await pool.query(`UPDATE oauth_identities SET display_name = $1 WHERE provider = $2 AND subject = $3`, [
+    displayName,
+    provider,
+    subject,
+  ]);
+}
+
 export async function accountHasOauth(pool: pg.Pool, provider: OauthProvider, accountId: string): Promise<boolean> {
   const res = await pool.query(`SELECT 1 FROM oauth_identities WHERE provider = $1 AND account_id = $2`, [
     provider,
@@ -80,7 +94,7 @@ export async function loginWithOauth(
   pool: pg.Pool,
   identity: OauthIdentityInput,
   signupIp: string | null,
-  makeUsername: () => string = () => randomOauthUsername(identity.provider === 'github' ? 'gh' : 'g'),
+  makeUsername: () => string = () => randomOauthUsername(identity.provider === 'github' ? 'gh' : identity.provider === 'linuxdo' ? 'ld' : 'g'),
 ): Promise<OauthLoginAccount> {
   for (let attempt = 0; attempt < MAX_CREATE_ATTEMPTS; attempt += 1) {
     const existing = await findAccountByOauth(pool, identity.provider, identity.subject);
