@@ -7,6 +7,7 @@ import { useCopy } from '../../i18n/bundle';
 import { Modal } from '../ui/Modal';
 import { AgentTokenBlock } from './AgentTokenBlock';
 import { GithubBindBlock } from './GithubBindBlock';
+import { LinuxdoBindBlock } from './LinuxdoBindBlock';
 import { GoogleBindBlock } from './GoogleBindBlock';
 import { NicknameBlock } from './NicknameBlock';
 import { WechatBindBlock } from './WechatBindBlock';
@@ -28,6 +29,7 @@ export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
         <WechatBindBlock />
         <GoogleBindBlock />
         <GithubBindBlock />
+        <LinuxdoBindBlock />
         <AgentTokenBlock />
       </div>
     </Modal>

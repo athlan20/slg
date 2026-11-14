@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**109** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**110** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 109）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 110）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -576,7 +576,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 109,
+    "protocolVersion": 110,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -642,7 +642,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 109,
+    "protocolVersion": 110,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -666,7 +666,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/106 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/107 补读增量）**
 
 请求：
 
@@ -677,7 +677,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 106,
+    "docVersion": 107,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -696,8 +696,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 109,
-    "docNotice": "接口文档已从 v106 更新到 v109：请 GET /agent-api/changes/106 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 110,
+    "docNotice": "接口文档已从 v107 更新到 v110：请 GET /agent-api/changes/107 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -2417,6 +2417,8 @@
 | googleBound | boolean | 账号是否已绑定 Google（v44 新增）；服务端没配置 GOOGLE_CLIENT_ID 时恒为 false。 |
 | githubBound | boolean | 账号是否已绑定 GitHub（v45 新增）；服务端没配置 GitHub OAuth App 时恒为 false。 |
 | githubLogin | string \| null | 绑定的 GitHub 用户名（v45 新增；未绑定为 null）。用户名可在 GitHub 改名，绑定键是数字 id，此处仅展示。 |
+| linuxdoBound | boolean | 是否已绑定 Linux.do（v110）。 |
+| linuxdoLogin | string \| null | Linux.do 展示用户名；绑定键是不可变数字 id（v110）。 |
 
 **Agent 提示**：玩家网页用它渲染 Agent 面板；Agent 也可用它确认同账号的其他 Agent 连接是否在线。
 
@@ -7580,7 +7582,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 
 `C→S` 请求-响应 · 登录前即可发送
 
-**仅供网页前端使用，Agent 无需调用。**OAuth 回跳的第二步：GitHub 授权成功后浏览器被 302 回前端（?oauth=github&code=…），网页解析出 code 经本协议换成会话令牌，保存后走 LOGIN {token, asAgent: false}，再用 history.replaceState 把 code 从地址栏抹掉。code 由回调时生成：60 秒有效、一次性（OAUTH_CODE_INVALID = 无效 / 过期 / 已用过），承载的账号信息由服务端持有。已登录连接调用返回 ALREADY_LOGGED_IN。
+**仅供网页前端使用，Agent 无需调用。**OAuth 回跳的第二步：GitHub 或 Linux.do 授权成功后浏览器被 302 回前端（?oauth=github&code=…），网页解析出 code 经本协议换成会话令牌，保存后走 LOGIN {token, asAgent: false}，再用 history.replaceState 把 code 从地址栏抹掉。code 由回调时生成：60 秒有效、一次性（OAUTH_CODE_INVALID = 无效 / 过期 / 已用过），承载的账号信息由服务端持有。已登录连接调用返回 ALREADY_LOGGED_IN。
 
 **请求字段**
 
@@ -19470,6 +19472,59 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 }
 ```
 
+### op 157 · OAUTH_AUTH_START — 发起第三方 OAuth 授权（v110）
+
+`C→S` 请求-响应 · 登录前即可发送
+
+仅网页使用。provider 为 linuxdo 或 github，purpose 为 login 或 bind；login 在登录前发起，bind 需已登录的玩家连接。成功后整页跳转 authUrl。Linux.do 需满足服务端最低信任等级、active 且未被禁言，资格不足回跳 ?oauth=linuxdo&error=not_eligible；失败还可能是 canceled、expired、unavailable、already_bound。登录成功回跳一次性 code，通过 OAUTH_REDEEM 兑换；绑定成功回跳 bind=ok。state 有效 10 分钟，一次性 code 有效 60 秒。GitHub 旧 op 62 继续支持。
+
+**请求字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| provider | 'linuxdo' \| 'github' | 必填。第三方登录提供商。 |
+| purpose | 'login' \| 'bind' | 必填。登录或给当前账号绑定。 |
+
+**响应 data 字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| authUrl | string | OAuth 授权地址；网页整页跳转。 |
+
+**可能错误**：`INVALID_PARAMS`、`NOT_LOGGED_IN`、`ALREADY_LOGGED_IN`、`AGENT_FORBIDDEN`、`GITHUB_UNAVAILABLE`、`GITHUB_ALREADY_BOUND`、`LINUXDO_UNAVAILABLE`、`LINUXDO_ALREADY_BOUND`、`RATE_LIMITED`（处置建议见第 4 节）
+
+**Agent 提示**：Agent 使用玩家签发的 Agent 令牌登录，不调用本协议。
+
+**示例**
+
+**登录前发起 Linux.do 授权**
+
+请求：
+
+```json
+{
+  "op": 157,
+  "seq": 1,
+  "data": {
+    "provider": "linuxdo",
+    "purpose": "login"
+  }
+}
+```
+
+成功响应：
+
+```json
+{
+  "op": 157,
+  "seq": 1,
+  "ok": true,
+  "data": {
+    "authUrl": "https://connect.linux.do/oauth2/authorize?client_id=example&state=example"
+  }
+}
+```
+
 ### op 2000 · PUSH_BUILD_STATE — 推送：建筑建造状态变化
 
 `S→C` 服务端推送 · 无 `seq`
@@ -21481,6 +21536,8 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `GITHUB_UNAVAILABLE` | （v45）GitHub 登录暂不可用：服务端没配 GitHub OAuth App 凭证（GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / GITHUB_REDIRECT_URI / FRONTEND_URL 缺一即关闭），或调 GitHub 接口失败。 | 稍后重试或改用其他登录方式；持续出现向运营方反馈（服务器访问 GitHub 可能需要配代理）。Agent 不涉及。 |
 | `OAUTH_CODE_INVALID` | （v45）一次性登录码无效、已过期（60 秒有效）或已被使用（只能用一次）。 | 回登录页重新点一次 GitHub 登录拿新码；不要重放旧码（刷新页面不会重复报错，码已从地址栏抹掉）。Agent 不涉及。 |
 | `GITHUB_ALREADY_BOUND` | （v45）绑定 GitHub 时，该 GitHub 账号已绑了别的号，或当前账号已绑了别的 GitHub 账号。 | 用该 GitHub 账号直接登录它已绑定的号，或换一个 GitHub 账号绑定；暂不支持解绑。Agent 不涉及。 |
+| `LINUXDO_UNAVAILABLE` | （v110）Linux.do 登录未配置或暂不可用。 | 稍后重试或改用其他登录方式。 |
+| `LINUXDO_ALREADY_BOUND` | （v110）该 Linux.do 身份已被绑定，或当前账号已绑定 Linux.do。 | 登录已绑定的账号，或使用其他 Linux.do 身份。 |
 | `RATE_LIMITED` | （v43）请求过于频繁：同一 IP 每分钟最多生成 20 张微信二维码（v44 起 Google 登录尝试、v45 起 GitHub 授权发起同样限频，各 20 次/分钟）。 | 等待一分钟后再试；不要连续重试。 |
 | `NICKNAME_TAKEN` | （v52）SET_NICKNAME 的昵称已被其他账号占用：昵称即账号 username，全服唯一。仅玩家连接可用。 | 换一个昵称重试。Agent 无权改名（AGENT_FORBIDDEN），需要时提示玩家本人在网页改。 |
 | `ARENA_NOT_JOINED` | （v53，AISLG-145）竞技场：账号还没入榜（从未保存过阵容），或阵容里一名武将都没有，不能发起挑战。 | 先 SET_ARENA_LINEUP 保存至少 1 名武将的阵容（第一次保存即入榜，排在最后一名），再挑战。 |
@@ -23172,7 +23229,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 109。
+- 协议版本随对外协议内容的每次变化递增；当前为 110。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

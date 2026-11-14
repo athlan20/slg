@@ -953,5 +953,13 @@
  *   （不进 RESET_TABLES：同一账号同批次只能领一次、一次性码只能被用一次这两条约束靠它们）；
  *   redeem_attempts 保留 7 天，由 Worker 定期清理。运营侧用 backend/scripts/redeem-codes.ts
  *   （create / list / export / disable 四个子命令），没有网页后台。
+ * v110（Linux.do 登录与绑定，AISLG-258，只加不改）：
+ *   一、新 op OAUTH_AUTH_START（op 157，登录前可发；bind 需已登录的玩家连接）：请求 { provider: 'linuxdo' | 'github',
+ *   purpose: 'login' | 'bind' }，返回 { authUrl }，网页整页跳转。GITHUB_AUTH_START（op 62）保留为兼容入口，行为不变。
+ *   二、Linux.do 资格：信任等级不低于服务端 LINUXDO_MIN_TRUST_LEVEL（默认 1），且 active、未被禁言；不满足时
+ *   回跳 error=not_eligible，不建号、不绑定。绑定键是不可变的数字 id；登录时刷新展示名。OAUTH_REDEEM 同时兑换
+ *   GitHub 与 Linux.do 回调签发的一次性码（60 秒、一次性），不分 provider。
+ *   三、GET_AGENT_INFO 新增 linuxdoBound / linuxdoLogin；/auth/config 按站点新增 linuxdoEnabled。
+ *   四、新错误码 LINUXDO_UNAVAILABLE / LINUXDO_ALREADY_BOUND。无新表、无数据库迁移（oauth_identities.provider 为 text）。
  */
-export const PROTOCOL_VERSION = 109;
+export const PROTOCOL_VERSION = 110;

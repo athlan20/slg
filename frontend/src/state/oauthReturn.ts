@@ -1,12 +1,13 @@
-// GitHub OAuth 回跳的一次性解析（v45，AISLG-128）：整页跳转授权后，前端被 302 回
-// /?oauth=github&code=…（或 &bind=ok / &error=…）。本模块在应用启动时解析一次并立即用
+// OAuth 回跳的一次性解析：整页授权后被 302 回
+// /?oauth=github|linuxdo&code=…（或 &bind=ok / &error=…）。本模块在应用启动时解析一次并立即用
 // history.replaceState 把参数从地址栏抹掉——一次性码不留在浏览器历史里，刷新页面
 // 也不会重放（验收 6）。再调用返回 null。
 
+export type OauthProvider = 'github' | 'linuxdo';
 export type OauthReturn =
-  | { kind: 'code'; code: string }
-  | { kind: 'bindOk' }
-  | { kind: 'error'; reason: 'canceled' | 'expired' | 'unavailable' | 'already_bound' | 'unknown' };
+  | { provider: OauthProvider; kind: 'code'; code: string }
+  | { provider: OauthProvider; kind: 'bindOk' }
+  | { provider: OauthProvider; kind: 'error'; reason: 'canceled' | 'expired' | 'unavailable' | 'already_bound' | 'not_eligible' | 'unknown' };
 
 let consumed = false;
 
@@ -16,7 +17,8 @@ export function takeOauthReturn(): OauthReturn | null {
   }
   consumed = true;
   const url = new URL(window.location.href);
-  if (url.searchParams.get('oauth') !== 'github') {
+  const provider = url.searchParams.get('oauth');
+  if (provider !== 'github' && provider !== 'linuxdo') {
     return null;
   }
   const code = url.searchParams.get('code');
@@ -31,13 +33,13 @@ export function takeOauthReturn(): OauthReturn | null {
   window.history.replaceState(null, '', `${url.pathname}${search ? `?${search}` : ''}${url.hash}`);
 
   if (code) {
-    return { kind: 'code', code };
+    return { provider, kind: 'code', code };
   }
   if (bind === 'ok') {
-    return { kind: 'bindOk' };
+    return { provider, kind: 'bindOk' };
   }
-  if (error === 'canceled' || error === 'expired' || error === 'unavailable' || error === 'already_bound') {
-    return { kind: 'error', reason: error };
+  if (error === 'canceled' || error === 'expired' || error === 'unavailable' || error === 'already_bound' || error === 'not_eligible') {
+    return { provider, kind: 'error', reason: error };
   }
-  return { kind: 'error', reason: 'unknown' };
+  return { provider, kind: 'error', reason: 'unknown' };
 }

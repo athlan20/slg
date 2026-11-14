@@ -39,12 +39,13 @@ export async function handleGetAgentInfo(
 ): Promise<void> {
   const accountId = conn.accountId as string;
   const agentConns = ctx.registry.agentConnections(accountId);
-  const [recentRows, plan, wechatBound, googleBound, githubLogin] = await Promise.all([
+  const [recentRows, plan, wechatBound, googleBound, githubLogin, linuxdoLogin] = await Promise.all([
     listEvents(ctx.pool, accountId, { limit: 10, initiator: 'agent' }),
     loadAgentPlan(ctx.pool, accountId),
     isWechatBound(ctx, accountId),
     isOauthBound(ctx, 'google', accountId),
     githubEnabled(ctx) ? oauthDisplayName(ctx.pool, 'github', accountId) : Promise.resolve(null),
+    oauthDisplayName(ctx.pool, 'linuxdo', accountId),
   ]);
   respondOk(ctx.registry, conn, op, seq, {
     agentOnline: agentConns.length > 0,
@@ -55,6 +56,8 @@ export async function handleGetAgentInfo(
     googleBound,
     githubBound: githubLogin !== null,
     githubLogin,
+    linuxdoBound: linuxdoLogin !== null,
+    linuxdoLogin,
   });
 }
 
