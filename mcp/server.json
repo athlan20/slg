@@ -8,12 +8,12 @@
     "subfolder": "mcp"
   },
   "websiteUrl": "https://slg.yuntianyou.cc",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "slg-mcp",
-      "version": "0.2.8",
+      "version": "0.2.9",
       "transport": {
         "type": "stdio"
       },
