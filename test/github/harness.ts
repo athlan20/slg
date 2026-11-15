@@ -124,7 +124,7 @@ export async function startHarness(options: HarnessOptions): Promise<Harness> {
       WX_APPSECRET: '',
       GOOGLE_CLIENT_ID: '',
       ...(options.githubEnabled === false
-        ? { GITHUB_CLIENT_ID: '', GITHUB_CLIENT_SECRET: '' }
+        ? { GITHUB_CLIENT_ID: '', GITHUB_CLIENT_SECRET: '', GITHUB_SITES: '' }
         : {}),
       LOG_LEVEL: 'warn',
     },

@@ -5,6 +5,7 @@ import { useAuthConfig } from '../state/useAuthConfig';
 import { WechatLoginTab } from './wechat/WechatLoginTab';
 import { GoogleLoginSection } from './google/GoogleLoginSection';
 import { GithubLoginButton } from './github/GithubLoginButton';
+import { LinuxdoLoginButton } from './LinuxdoLoginButton';
 import { SiteFooter } from './SiteFooter';
 
 // 登录表单：仅未登录时由 App 渲染（登录后的账号信息与切换入口在顶栏）。
@@ -33,10 +34,11 @@ export function LoginPanel({ booting, loginBusy, loginError, lastUsername, onLog
   const wechatEnabled = config?.wechatEnabled ?? false;
   const googleClientId = config?.googleClientId ?? null;
   // v47：国际站（服务端 /auth/config 的 passwordLogin=false）不显示用户名密码表单，
-  // 登录页只剩 Google / GitHub 入口
+  // 登录页只剩已配置的第三方入口
   const passwordLoginEnabled = config?.passwordLogin ?? true;
   const githubEnabled = config?.githubEnabled ?? false;
-  const thirdPartyEnabled = googleClientId !== null || githubEnabled;
+  const linuxdoEnabled = config?.linuxdoEnabled ?? false;
+  const thirdPartyEnabled = googleClientId !== null || githubEnabled || linuxdoEnabled;
   const [tab, setTab] = useState<LoginTab>('password');
   const [username, setUsername] = useState(lastUsername);
   const [password, setPassword] = useState('');
@@ -74,6 +76,7 @@ export function LoginPanel({ booting, loginBusy, loginError, lastUsername, onLog
         <GoogleLoginSection clientId={googleClientId} connect={connectForWechat} onToken={onGoogleToken} />
       ) : null}
       {githubEnabled ? <GithubLoginButton connect={connectForWechat} /> : null}
+      {linuxdoEnabled ? <LinuxdoLoginButton connect={connectForWechat} /> : null}
     </div>
   ) : null;
 

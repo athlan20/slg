@@ -9,7 +9,7 @@ import type { ApiClient } from '../api/client';
 import { Op } from '../api/protocol';
 import type { AgentInfoView } from '../api/protocol';
 import type { AgentTokenData } from '../api/protocol-wechat';
-import { githubErrorText, googleErrorText, nicknameErrorText } from '../api/errorText';
+import { githubErrorText, googleErrorText, linuxdoErrorText, nicknameErrorText } from '../api/errorText';
 import { getCopy } from '../i18n/bundle';
 import type { AccountInfo } from './useGameSession';
 
@@ -24,6 +24,8 @@ export interface AccountSecurity {
   bindGoogle: (credential: string) => Promise<string | null>;
   /** 发起 GitHub 绑定授权（v45）：成功拿到授权地址返回 null 并由调用方整页跳转；失败返回人读提示 */
   startGithubBind: () => Promise<string | null>;
+  /** 发起 Linux.do 绑定授权 */
+  startLinuxdoBind: () => Promise<string | null>;
   /** 修改账号昵称（v52 AISLG-142）：成功返回 null（account.username 已按响应更新），失败返回人读提示 */
   setNickname: (nickname: string) => Promise<string | null>;
 }
@@ -117,6 +119,22 @@ export function useAccountSecurity({ clientRef, setAgent, setAccount }: Options)
     }
   }, [clientRef]);
 
+  const startLinuxdoBind = useCallback(async (): Promise<string | null> => {
+    const { LINUXDO_COPY } = getCopy();
+    const client = clientRef.current;
+    if (!client?.connected) return LINUXDO_COPY.errors.connect;
+    try {
+      const res = await client.request(Op.OAUTH_AUTH_START, { provider: 'linuxdo', purpose: 'bind' });
+      if (!res.ok) return linuxdoErrorText(res.error?.code, res.error?.message);
+      const authUrl = res.data?.authUrl;
+      if (typeof authUrl !== 'string' || !authUrl) return LINUXDO_COPY.errors.fallback;
+      window.location.href = authUrl;
+      return null;
+    } catch (err) {
+      return err instanceof Error ? err.message : LINUXDO_COPY.errors.fallback;
+    }
+  }, [clientRef]);
+
   /** 修改昵称（v52）：发起连接按响应更新账号名；同账号其他连接走 PUSH_ACCOUNT_STATE */
   const setNickname = useCallback(
     async (nickname: string): Promise<string | null> => {
@@ -142,5 +160,5 @@ export function useAccountSecurity({ clientRef, setAgent, setAccount }: Options)
     [clientRef, setAccount],
   );
 
-  return { refresh, getAgentToken, resetAgentToken, bindGoogle, startGithubBind, setNickname };
+  return { refresh, getAgentToken, resetAgentToken, bindGoogle, startGithubBind, startLinuxdoBind, setNickname };
 }

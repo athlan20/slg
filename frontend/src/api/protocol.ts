@@ -250,6 +250,8 @@ export const Op = {
   GOOGLE_BIND: 61,
   /** 发起 GitHub 授权（v45）：data.purpose = login | bind；返回 GitHub 授权地址由网页整页跳转 */
   GITHUB_AUTH_START: 62,
+  /** 发起第三方 OAuth 授权：data.provider 与 data.purpose */
+  OAUTH_AUTH_START: 157,
   /** 用一次性登录码换会话令牌（v45）：data.code；OAuth 回跳进页面时使用 */
   OAUTH_REDEEM: 63,
   PUSH_BUILD_STATE: 2000,
@@ -445,6 +447,8 @@ export type ErrorCode =
   | 'GITHUB_UNAVAILABLE'
   | 'OAUTH_CODE_INVALID'
   | 'GITHUB_ALREADY_BOUND'
+  | 'LINUXDO_UNAVAILABLE'
+  | 'LINUXDO_ALREADY_BOUND'
   | 'RATE_LIMITED'
   | 'AGENT_PASSWORD_FORBIDDEN'
   | 'PASSWORD_LOGIN_CLOSED'

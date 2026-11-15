@@ -530,6 +530,14 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '（v45）绑定 GitHub 时，该 GitHub 账号已绑了别的号，或当前账号已绑了别的 GitHub 账号。',
     action: '用该 GitHub 账号直接登录它已绑定的号，或换一个 GitHub 账号绑定；暂不支持解绑。Agent 不涉及。',
   },
+  LINUXDO_UNAVAILABLE: {
+    desc: '（v110）Linux.do 登录未配置或暂不可用。',
+    action: '稍后重试或改用其他登录方式。',
+  },
+  LINUXDO_ALREADY_BOUND: {
+    desc: '（v110）该 Linux.do 身份已被绑定，或当前账号已绑定 Linux.do。',
+    action: '登录已绑定的账号，或使用其他 Linux.do 身份。',
+  },
   RATE_LIMITED: {
     desc: '（v43）请求过于频繁：同一 IP 每分钟最多生成 20 张微信二维码（v44 起 Google 登录尝试、v45 起 GitHub 授权发起同样限频，各 20 次/分钟）。',
     action: '等待一分钟后再试；不要连续重试。',

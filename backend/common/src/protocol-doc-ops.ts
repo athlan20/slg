@@ -70,6 +70,7 @@ import {
 } from './protocol-doc-ops-wechat';
 import { REQUEST_GOOGLE_BIND, REQUEST_GOOGLE_LOGIN } from './protocol-doc-ops-google';
 import { REQUEST_GITHUB_AUTH_START, REQUEST_OAUTH_REDEEM } from './protocol-doc-ops-github';
+import { REQUEST_OAUTH_AUTH_START } from './protocol-doc-ops-linuxdo';
 import { PUSH_YELLOW_TURBAN_STATE, REQUEST_GET_YELLOW_TURBAN } from './protocol-doc-ops-yt';
 import { PUSH_MOVING_TARGET_STATE, REQUEST_GET_MOVING_TARGETS } from './protocol-doc-ops-moving';
 import {
@@ -384,6 +385,8 @@ const REQUEST_GET_AGENT_INFO: RequestOpDoc = {
     { name: 'googleBound', type: 'boolean', desc: '账号是否已绑定 Google（v44 新增）；服务端没配置 GOOGLE_CLIENT_ID 时恒为 false。' },
     { name: 'githubBound', type: 'boolean', desc: '账号是否已绑定 GitHub（v45 新增）；服务端没配置 GitHub OAuth App 时恒为 false。' },
     { name: 'githubLogin', type: 'string | null', desc: '绑定的 GitHub 用户名（v45 新增；未绑定为 null）。用户名可在 GitHub 改名，绑定键是数字 id，此处仅展示。' },
+    { name: 'linuxdoBound', type: 'boolean', desc: '是否已绑定 Linux.do（v110）。' },
+    { name: 'linuxdoLogin', type: 'string | null', desc: 'Linux.do 展示用户名；绑定键是不可变数字 id（v110）。' },
   ],
   errors: [],
   examples: [
@@ -555,6 +558,7 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.GOOGLE_LOGIN]: REQUEST_GOOGLE_LOGIN,
   [Op.GOOGLE_BIND]: REQUEST_GOOGLE_BIND,
   [Op.GITHUB_AUTH_START]: REQUEST_GITHUB_AUTH_START,
+  [Op.OAUTH_AUTH_START]: REQUEST_OAUTH_AUTH_START,
   [Op.OAUTH_REDEEM]: REQUEST_OAUTH_REDEEM,
   [Op.RESEARCH_TECH]: withCityId(REQUEST_RESEARCH_TECH),
   [Op.CANCEL_RESEARCH]: REQUEST_CANCEL_RESEARCH,
