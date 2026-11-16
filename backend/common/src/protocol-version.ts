@@ -961,5 +961,49 @@
  *   GitHub 与 Linux.do 回调签发的一次性码（60 秒、一次性），不分 provider。
  *   三、GET_AGENT_INFO 新增 linuxdoBound / linuxdoLogin；/auth/config 按站点新增 linuxdoEnabled。
  *   四、新错误码 LINUXDO_UNAVAILABLE / LINUXDO_ALREADY_BOUND。无新表、无数据库迁移（oauth_identities.provider 为 text）。
+ * v111（名城任期轮换，AISLG-259，只加不改）：
+ *   一、名城不再永久：每账号同一时间最多占 1 座名城（NPC 名城与他人名城都算），任期 7 天（按时间缩放）。
+ *   任期到期该城回到「无主 NPC 名城」（外围满编 + 城守守军，与主动放弃分城后一致），城里驻军、该城名下野地驻军、
+ *   在外部队全部回原主人主城，建筑 / 库存 / 建造征兵研究队列随城作废不退（城内资源不回主城），
+ *   协防友军遣返。被玩家打下来不算到期：新主人任期重新从 7 天算，原主人不受限制。
+ *   二、到期前 24 小时 / 1 小时各提醒一次（事件 famous_expiring，stage 1/2，用 famous_warn_stage 去重），
+ *   到期事件 famous_expired（给原主人）与全服播报 famous_expired（某名城重归无主）。
+ *   三、到期失去该城的原主人 48 小时（按缩放）内不能再占回这一座：新错误码 FAMOUS_BANNED（附 bannedUntil /
+ *   retryAfterSeconds），FAMOUS_LIMIT（已有 1 座名城）。两者都在 MARCH task=occupy 发起时初核、Worker 到达复核；
+ *   NPC 名城到达被拒与分城名额同形态（幸存部队返程，事件 occupied=false + denial），
+ *   玩家名城到达被拒只降城防不换主。掠夺 / 打外围不受限。
+ *   四、CityView 新增 famousExpiresAt；TileView 新增 famousExpiresAt / bannedUntil（后者只对本次请求账号的封禁给出，
+ *   否则 null）；GET_STATE 的 branch 新增 famousCount / famousLimit。
+ *   五、PUSH_CITY_STATE 新增 reason famous_expiring（附 stage / expiresAt）/ famous_expired；
+ *   新事件 famous_expiring / famous_expired；新播报种类 famous_expired。
+ *   六、新表 famous_expiry_bans 与 cities.famous_expires_at / famous_warn_stage（只加列加表；存量名城启动时回填
+ *   7 天任期，不会上线就掉，已有名城的账号保留到到期，但不能再占新的）。换季随 RESET_TABLES 清空。
+ * v112（公告只留人工发布，活动消息进聊天「活动」页签，AISLG-260；只加不改）：
+ *   一、公告不再由游戏自动发：Worker 不再往公告表写剧本战场报名 / 开战前 1 小时提醒、赤壁风向预告、
+ *   五方势力本季启用、赛季即将结束这四处内容（publishAnnouncement 与运维脚本 backend/scripts/announcement.ts 不变，
+ *   公告的 event 分类留给运营手写）。存量旧自动公告在迁移里幂等撤回（status='withdrawn'，记录保留，
+ *   只动 category='event' 且 title_zh 以「剧本战场「」或「赤壁战场：」开头的；势力启用与赛季预告是 system 公告，不动）。
+ *   二、这四处内容改走既有的全服播报通道（server_broadcasts + PUSH_SERVER_BROADCAST + GET_SERVER_BROADCASTS，
+ *   不新建表 / 频道），新增 4 个播报类型（均必达，不受每分钟 3 条限频）：
+ *   battlefield_start_soon = { eventId, script, startAt }（开战前 1 小时提醒；原先的强提醒弹窗取消）；
+ *   battlefield_wind = { eventId, script, switchAt, nextWind: se|nw }（赤壁风向切换前 30 分钟预告）；
+ *   faction_season_started = { placed, skipped: [{ key, name, nameEn }] }（五方势力本季启用、哪几家没放）；
+ *   season_ending = { seasonId, seasonName, endAt, stage: T-3d|T-1d|T-1h|T-10m }（原先的强提醒弹窗取消，
+ *   PUSH_SEASON reason=season_warning 与赛季遮罩照旧）。
+ *   三、播报分类：新增 serverBroadcastCategory(type) = 'event' | 'war'（唯一出处在 common/src/protocol-server.ts，
+ *   前端镜像同构）。event（活动 / 玩法节点）：battlefield_signup / battlefield_start_soon / battlefield_started /
+ *   battlefield_stronghold / battlefield_wind / battlefield_finished、luoyang_window、yt_started / yt_grown / yt_boss /
+ *   yt_boss_first_kill / yt_finished、faction_season_started / faction_expanded / faction_city_swallowed /
+ *   faction_lair_destroyed / faction_suppressed、season_ending；其余（城被掠空、连胜、占领分城、名将获得、爵位晋升、
+ *   竞技场第一、将星塔、公告类 announcement、迷雾类等）为 war。GET_SERVER_BROADCASTS 请求新增可选 category（后端过滤，
+ *   响应结构不变，非法值 INVALID_PARAMS）；PUSH_SERVER_BROADCAST 不变（客户端按 type 自行分流）。
+ *   四、已有类型的 detail 补充：battlefield_signup / battlefield_started 新发记录带 script（官渡 / 讨董 / 赤壁），
+ *   旧记录没有 script，客户端按不显示剧本名降级。
+ *   五、聊天窗口新增「活动」页签（顺序：世界 / 联盟 / 活动 / 系统播报 / 私聊，只读），前端拆两份播报列表：
+ *   「系统播报」只显示 war，「活动」只显示 event；聊天按钮红点看「活动」未读数，已读位置存本机 localStorage（键带账号 id），
+ *   不新增服务端字段 / 表。
+ *   六、Agent 侧：原先能从公告读到这些提醒，现在改为读播报（GET_SERVER_BROADCASTS + PUSH_SERVER_BROADCAST），时间与风向
+ *   仍可从 GET_BATTLEFIELD（event.signupStartAt / startAt / endAt / wind.direction / wind.nextAt / wind.noticeAt、
+ *   nextSignupAt / nextScript）拿到，字段无变化。
  */
-export const PROTOCOL_VERSION = 110;
+export const PROTOCOL_VERSION = 112;

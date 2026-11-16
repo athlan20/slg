@@ -24,7 +24,7 @@ import { alignFactionStartedAtForSeason, loadFactionEpochStart, loadFactionStart
 import { loadFactionLairs } from '../common/src/faction-lair-db';
 import { getCurrentSeason } from '../common/src/season-db';
 import { npcSnapshot } from '../common/src/world';
-import { ensureFactionSeasonStart, factionStartAnnouncement, runFactionStart } from '../worker/src/faction-start';
+import { ensureFactionSeasonStart, factionStartBroadcastDetail, runFactionStart } from '../worker/src/faction-start';
 import { createTempDatabase, type TempDatabase } from './season-test-db';
 
 const dbUrl = process.env.TEST_DATABASE_URL;
@@ -117,16 +117,15 @@ describe('势力起点与当季启用的计算（无需数据库）', () => {
     assert.equal(factionLairBlocked(def, [far.lair]), false);
   });
 
-  test('启用公告：说明天数从开启当天算第 1 天，并写明本季没放的势力与原因', () => {
+  test('启用播报的 detail：落位数与本季没放的势力（带中英文名，文案由前端拼）', () => {
     const nanman = factionDefOf('nanman');
     assert.ok(nanman);
-    const partial = factionStartAnnouncement({ started: true, placed: 4, skipped: [nanman] });
-    assert.ok(partial.bodyZh.includes('第 1 天'));
-    assert.ok(partial.bodyZh.includes('南蛮'));
-    assert.ok(partial.bodyZh.includes('该处已有玩家城'));
-    const full = factionStartAnnouncement({ started: true, placed: 5, skipped: [] });
-    assert.ok(full.bodyZh.includes('全部登场'));
-    assert.ok(!full.bodyZh.includes('该处已有玩家城'));
+    const partial = factionStartBroadcastDetail({ started: true, placed: 4, skipped: [nanman] });
+    assert.equal(partial.placed, 4);
+    assert.deepEqual(partial.skipped, [{ key: 'nanman', name: '南蛮', nameEn: 'Nanman' }]);
+    const full = factionStartBroadcastDetail({ started: true, placed: 5, skipped: [] });
+    assert.equal(full.placed, 5);
+    assert.deepEqual(full.skipped, []);
   });
 });
 
@@ -211,13 +210,14 @@ describe('势力当季启用的事务规则（需 TEST_DATABASE_URL）', { skip:
     assert.deepEqual(view.factions.map((faction) => faction.key), ['liangzhou', 'shanyue', 'heishan']);
     // 本季不存在的势力：袭击不带旗号、不画范围
     assert.deepEqual([...(await inactiveFactionKeys(pool))].sort(), ['nanman', 'wuhuan']);
-    // 启用公告
-    const announcement = await pool.query(`SELECT title_zh, body_zh FROM announcements ORDER BY id DESC LIMIT 1`);
-    assert.ok(announcement.rowCount);
-    const body = (announcement.rows[0] as { body_zh: string }).body_zh;
-    assert.ok(body.includes('第 1 天'));
-    assert.ok(body.includes('乌桓') && body.includes('南蛮'));
-    assert.ok(body.includes('该处已有玩家城'));
+    // 启用播报（v112 起不再写公告表）：detail 带落位数与跳过的势力
+    const broadcast = await pool.query(`SELECT detail FROM server_broadcasts WHERE type = 'faction_season_started' ORDER BY id DESC LIMIT 1`);
+    assert.ok(broadcast.rowCount);
+    const detail = (broadcast.rows[0] as { detail: { placed: number; skipped: Array<{ key: string; name: string }> } }).detail;
+    assert.equal(detail.placed, 3);
+    assert.deepEqual(detail.skipped.map((item) => item.key).sort(), ['nanman', 'wuhuan']);
+    assert.ok(detail.skipped.some((item) => item.name === '南蛮') && detail.skipped.some((item) => item.name === '乌桓'));
+    assert.equal((await pool.query(`SELECT count(*)::int AS n FROM announcements`)).rows[0].n, 0, '启用不再发公告');
   });
 
   test('关掉再打开不重复放老巢，也不补放当初跳过的那家', async () => {

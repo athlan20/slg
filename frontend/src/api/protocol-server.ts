@@ -1,5 +1,6 @@
 // 全服维度协议的类型镜像（v23）：全服战况播报（AISLG-60）与全服排行榜
-// （AISLG-61）。唯一事实来源是 backend/common/src/protocol-server.ts；
+// （AISLG-61）。v111（AISLG-260）起播报按 serverBroadcastCategory 分「活动」与「系统播报」两个页签。
+// 唯一事实来源是 backend/common/src/protocol-server.ts；
 // protocol.ts 原名再导出，既有 import 路径不变。
 
 import type { AllianceLeaderboardEntryView } from './protocol-alliance';
@@ -86,11 +87,64 @@ export const SERVER_BROADCAST_TYPES = [
   'famous_first_explored',
   'hero_site_first_explored',
   'legendary_relic_claimed',
+  // v79（AISLG-200）洛阳：窗口预告 / 开始 / 结束 / 易主 / 政令
+  'luoyang_window',
   // v99（AISLG-239）五方势力：势力范围半径扩大（每周最多一次）
   'faction_expanded',
+  // v111（AISLG-259）名城任期届满：某名城重归无主
+  'famous_expired',
+  // v100（AISLG-240）势力围攻吞下玩家分城；v101（AISLG-241）某家势力本季灭亡；v107（AISLG-249）压制档变化
+  'faction_city_swallowed',
+  'faction_lair_destroyed',
+  'faction_suppressed',
+  // v75（AISLG-198 / AISLG-199）剧本战场：报名 / 开战 / 据点易手 / 收场
+  'battlefield_signup',
+  'battlefield_started',
+  'battlefield_stronghold',
+  'battlefield_finished',
+  // v112（AISLG-260）活动节点：原来发公告的四处改为播报（必达），进「活动」页签
+  'battlefield_start_soon',
+  'battlefield_wind',
+  'faction_season_started',
+  'season_ending',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];
+
+/** 播报分类（v111，AISLG-260）：event = 活动 / 玩法节点（「活动」页签），war = 战况与其余大事（「系统播报」页签） */
+export const SERVER_BROADCAST_CATEGORIES = ['event', 'war'] as const;
+export type ServerBroadcastCategory = (typeof SERVER_BROADCAST_CATEGORIES)[number];
+
+export function isServerBroadcastCategory(value: unknown): value is ServerBroadcastCategory {
+  return typeof value === 'string' && (SERVER_BROADCAST_CATEGORIES as readonly string[]).includes(value);
+}
+
+/** 归到「活动」页签的播报类型（与后端 common/src/protocol-server.ts 同构，不得各自改表） */
+export const SERVER_BROADCAST_EVENT_TYPES = [
+  'battlefield_signup',
+  'battlefield_start_soon',
+  'battlefield_started',
+  'battlefield_stronghold',
+  'battlefield_wind',
+  'battlefield_finished',
+  'luoyang_window',
+  'yt_started',
+  'yt_grown',
+  'yt_boss',
+  'yt_boss_first_kill',
+  'yt_finished',
+  'faction_season_started',
+  'faction_expanded',
+  'faction_city_swallowed',
+  'faction_lair_destroyed',
+  'faction_suppressed',
+  'season_ending',
+] as const satisfies readonly ServerBroadcastType[];
+
+/** 播报属于哪个页签（未知类型按 war 处理，与上线前的行为一致） */
+export function serverBroadcastCategory(type: string): ServerBroadcastCategory {
+  return (SERVER_BROADCAST_EVENT_TYPES as readonly string[]).includes(type) ? 'event' : 'war';
+}
 
 /** 全服播报视图（GET_SERVER_BROADCASTS / PUSH_SERVER_BROADCAST 共用） */
 export interface ServerBroadcastView {

@@ -55,12 +55,61 @@ export const SERVER_BROADCAST_TYPES = [
   'faction_lair_destroyed',
   // v107（AISLG-249）压制档变化：老巢被打到跨档（升档）/ 营恢复导致降档，必达（一季每家最多几次）
   'faction_suppressed',
+  // v111（AISLG-259）名城任期届满：某名城重归无主（玩家占着的名城到期回 NPC 城；周度事件，走普通限频）
+  'famous_expired',
+  // v112（AISLG-260）活动节点：原来发公告的四处改为播报，进聊天窗口的「活动」页签，必达（不受每分钟限频）
+  'battlefield_start_soon',
+  'battlefield_wind',
+  'faction_season_started',
+  'season_ending',
 ] as const;
 
 export type ServerBroadcastType = (typeof SERVER_BROADCAST_TYPES)[number];
 
 export function isServerBroadcastType(value: unknown): value is ServerBroadcastType {
   return typeof value === 'string' && (SERVER_BROADCAST_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * 播报分类（v111，AISLG-260）：`event` = 活动 / 玩法节点（聊天「活动」页签），`war` = 战况与其余大事（「系统播报」页签）。
+ * 分类的唯一出处就是本文件，前端镜像 frontend/src/api/protocol-server.ts 与本文件同构，不得各自改表。
+ */
+export const SERVER_BROADCAST_CATEGORIES = ['event', 'war'] as const;
+export type ServerBroadcastCategory = (typeof SERVER_BROADCAST_CATEGORIES)[number];
+
+export function isServerBroadcastCategory(value: unknown): value is ServerBroadcastCategory {
+  return typeof value === 'string' && (SERVER_BROADCAST_CATEGORIES as readonly string[]).includes(value);
+}
+
+/**
+ * 归到「活动」页签的播报类型：剧本战场（报名 / 即将开战 / 开战 / 据点易手 / 收场 / 风向预告）、
+ * 洛阳窗口、黄巾之乱节点、五方势力（启用 / 扩张 / 吞城 / 老巢被破 / 压制）、赛季临近结束。
+ * 其余（城被掠空、连胜、占领分城、名将获得、爵位晋升、竞技场第一、将星塔、公告类、迷雾类等）仍是 war。
+ */
+export const SERVER_BROADCAST_EVENT_TYPES = [
+  'battlefield_signup',
+  'battlefield_start_soon',
+  'battlefield_started',
+  'battlefield_stronghold',
+  'battlefield_wind',
+  'battlefield_finished',
+  'luoyang_window',
+  'yt_started',
+  'yt_grown',
+  'yt_boss',
+  'yt_boss_first_kill',
+  'yt_finished',
+  'faction_season_started',
+  'faction_expanded',
+  'faction_city_swallowed',
+  'faction_lair_destroyed',
+  'faction_suppressed',
+  'season_ending',
+] as const satisfies readonly ServerBroadcastType[];
+
+/** 播报属于哪个页签（未知类型按 war 处理，与上线前的行为一致） */
+export function serverBroadcastCategory(type: string): ServerBroadcastCategory {
+  return (SERVER_BROADCAST_EVENT_TYPES as readonly string[]).includes(type) ? 'event' : 'war';
 }
 
 /**
@@ -136,7 +185,14 @@ export interface ServerBroadcastView {
    *  yt_finished = { reason: boss_cleared|timeout, clearedCamps, totalCamps, scatteredCamps }；
    *  arena_champion = { username, previous }（v53，登上第 1 名，previous 为被取代的原第 1 名）；
    *  star_tower_cleared = { username, floor }（v55，将星塔 Boss 层首通）；
-   *  announcement = { announcementId, title }（v60，公告标题，标题为中文） */
+   *  announcement = { announcementId, title }（v60，公告标题，标题为中文）；
+   *  v111 famous_expired = { name, x, y, username, cityName }（某名城任期届满、重归无主）；
+   *  v112（AISLG-260）活动节点：battlefield_signup = { eventId, script?, signupStartAt, startAt, endAt }；
+   *  battlefield_started = { eventId, script?, startAt, endAt }；battlefield_start_soon = { eventId, script, startAt }；
+   *  battlefield_wind = { eventId, script, switchAt, nextWind: se|nw }；
+   *  faction_season_started = { placed, skipped: [{ key, name, nameEn }] }；
+   *  season_ending = { seasonId, seasonName, endAt, stage: T-3d|T-1d|T-1h|T-10m }
+   *  （旧记录的 battlefield_signup / battlefield_started 没有 script，前端按缺省不显示剧本名） */
   detail: Record<string, unknown>;
   createdAt: string;
 }
@@ -144,6 +200,8 @@ export interface ServerBroadcastView {
 export interface GetServerBroadcastsRequestData {
   /** 返回条数上限，1..50，默认 20 */
   limit?: number;
+  /** v111（AISLG-260）：只要某一类（event 活动节点 / war 战况）；缺省两类都要 */
+  category?: ServerBroadcastCategory;
 }
 
 export interface GetServerBroadcastsResponseData {

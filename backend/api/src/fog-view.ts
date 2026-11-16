@@ -241,6 +241,9 @@ export function exploredTileView(
     garrison: npc ? intelGarrisonTotal(intel) : 0,
     npcStockTier: null,
     famous: famousName ? famousStaticView(famousName) : null,
+    // 名城任期与到期封禁（v111，AISLG-259）：都是动态信息，已探索但不在视野内时不给
+    famousExpiresAt: null,
+    bannedUntil: null,
     camp: facts.camp,
     protection: null,
     durability: null,
@@ -269,6 +272,8 @@ export function campOnlyTileView(facts: TileFacts): TileView {
     garrison: 0,
     npcStockTier: null,
     famous: null,
+    famousExpiresAt: null,
+    bannedUntil: null,
     camp: facts.camp,
     protection: null,
     durability: null,

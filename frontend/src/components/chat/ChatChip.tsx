@@ -1,5 +1,6 @@
 // 收起条（AISLG-138）：底栏最左一小段（侧栏右侧，不挡侧栏底部的账号按钮）。显示聊天图标、未读数与世界频道最新一条
 // （截断）；1024–1279 宽时只留图标与未读数。点击展开 / 收起浮窗。
+// v112（AISLG-260）：「活动」页签有未看过的新消息时，图标上亮一个红点，点进该页签后消失。
 
 import { messagePreview } from './chatText';
 import { useCopy } from '../../i18n/bundle';
@@ -21,8 +22,15 @@ export function ChatChip() {
       onClick={() => chat.setOpen(!chat.open)}
       className="flex min-w-0 max-w-[420px] shrink-0 cursor-pointer items-center gap-2 rounded border border-line bg-panel-2 px-2 py-0.5 text-left text-[11.5px] hover:border-accent-dim disabled:cursor-default disabled:opacity-60 max-xl:max-w-[150px]"
     >
-      <span role="聊天-收起条-图标" className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded border border-line text-[11px] font-semibold text-accent">
+      <span role="聊天-收起条-图标" className="relative grid h-[20px] w-[20px] shrink-0 place-items-center rounded border border-line text-[11px] font-semibold text-accent">
         {CHAT_COPY.launcher.label.slice(0, 1)}
+        {chat.eventUnread ? (
+          <i
+            role="聊天-收起条-活动红点"
+            title={CHAT_COPY.launcher.eventUnread}
+            className="absolute -right-0.5 -top-0.5 h-[7px] w-[7px] rounded-full bg-st-error"
+          />
+        ) : null}
       </span>
       {chat.unreadTotal > 0 ? (
         <i

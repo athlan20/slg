@@ -95,15 +95,17 @@ describe('赛季预告发送（需 TEST_DATABASE_URL）', { skip: dbUrl ? false 
     assert.ok(Number(warn.data.remainingSec) > 0);
   });
 
-  test('公告与全服播报入库（强制播报，不受限频）', async () => {
-    const ann = await pool.query(`SELECT count(*)::int AS n FROM announcements WHERE category = 'system' AND title_zh LIKE '%即将结束%'`);
-    assert.equal(ann.rows[0].n, 4, '四个阶段各一条系统公告');
-    const strong = await pool.query(
-      `SELECT count(*)::int AS n FROM announcements WHERE strong_remind AND title_zh LIKE '%即将结束%'`,
+  test('活动播报入库（强制播报，不受限频），不再写公告表', async () => {
+    const broadcasts = await pool.query(`SELECT detail FROM server_broadcasts WHERE type = 'season_ending' ORDER BY id`);
+    assert.equal(broadcasts.rowCount, 4, '每个阶段一条 season_ending 播报');
+    assert.deepEqual(
+      broadcasts.rows.map((row) => (row as { detail: { stage: string } }).detail.stage),
+      ['T-3d', 'T-1d', 'T-1h', 'T-10m'],
+      'detail.stage 按阶段',
     );
-    assert.equal(strong.rows[0].n, 2, 'T-1h 与 T-10m 为强提醒');
-    const broadcasts = await pool.query(`SELECT count(*)::int AS n FROM server_broadcasts WHERE type = 'announcement'`);
-    assert.equal(broadcasts.rows[0].n, 4, '每个阶段一条全服播报');
+    assert.ok((broadcasts.rows[0] as { detail: { endAt: string; seasonName: string } }).detail.endAt);
+    const ann = await pool.query(`SELECT count(*)::int AS n FROM announcements`);
+    assert.equal(ann.rows[0].n, 0, 'v112 起赛季预告不再发公告');
   });
 
   test('晚部署（直接进入 T-1h 之内）只发最近的一个阶段，更早的阶段记为已发、不连发', async () => {

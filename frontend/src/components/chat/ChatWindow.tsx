@@ -1,5 +1,6 @@
 // 聊天浮窗（AISLG-138，v51）：桌面端从左下角浮起、盖在工作区上（不挤压页面布局，约 360 × 480，矮屏自动缩小）；
-// 手机端（< 1024）全屏。头部四个页签（世界 / 联盟（AISLG-183）/ 系统播报 / 私聊，私聊带未读数）与收起按钮；Esc 收起。
+// 手机端（< 1024）全屏。头部五个页签（世界 / 联盟（AISLG-183）/ 活动（v112，AISLG-260，只读）/ 系统播报 / 私聊，
+// 私聊带未读数）与收起按钮；Esc 收起。
 
 import { useEffect } from 'react';
 import { useCopy } from '../../i18n/bundle';
@@ -8,11 +9,17 @@ import { isModalOpen } from '../ui/Modal';
 import type { ChatTab } from '../../state/useChat';
 import { ChatComposer } from './ChatComposer';
 import { ChatConversations } from './ChatConversations';
-import { ChatAlliancePane, ChatSystemPane, ChatThreadPane, ChatWorldPane } from './ChatPanes';
+import { ChatAlliancePane, ChatEventPane, ChatSystemPane, ChatThreadPane, ChatWorldPane } from './ChatPanes';
 
-const TABS: readonly ChatTab[] = ['world', 'alliance', 'system', 'private'];
+const TABS: readonly ChatTab[] = ['world', 'alliance', 'event', 'system', 'private'];
 /** 页签的 role 取静态中文名（role 定位值不随界面语言变，见 AGENTS 前端规范） */
-const TAB_ROLE: Record<ChatTab, string> = { world: '世界', alliance: '联盟', system: '系统播报', private: '私聊' };
+const TAB_ROLE: Record<ChatTab, string> = {
+  world: '世界',
+  alliance: '联盟',
+  event: '活动',
+  system: '系统播报',
+  private: '私聊',
+};
 
 export function ChatWindow() {
   const { CHAT_COPY } = useCopy();
@@ -90,6 +97,7 @@ export function ChatWindow() {
         ) : null}
         {chat.tab === 'world' ? <ChatWorldPane /> : null}
         {chat.tab === 'alliance' ? <ChatAlliancePane /> : null}
+        {chat.tab === 'event' ? <ChatEventPane /> : null}
         {chat.tab === 'system' ? <ChatSystemPane /> : null}
         {chat.tab === 'private' ? (chat.peer ? <ChatThreadPane /> : <ChatConversations />) : null}
       </div>

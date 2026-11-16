@@ -107,6 +107,10 @@ export const SEASON_COPY = {
     hint: '换季前请把行军、建造与征兵安排好',
     confirm: '知道了',
   },
+  /** 全服播报（v112，AISLG-260）：赛季临近结束的四个阶段，进聊天「活动」页签 */
+  broadcastEndingStage: { 'T-3d': '还剩 3 天', 'T-1d': '还剩 1 天', 'T-1h': '还剩 1 小时', 'T-10m': '还剩 10 分钟' } as Record<string, string>,
+  broadcastEnding: (seasonId: number, stage: string, endsAt: string) =>
+    `第 ${seasonId} 赛季${stage}，将于 ${endsAt} 结束（届时短暂停服并重置世界，账号与令牌保留）`,
   /** 我的荣誉（排行榜名人堂页签顶部） */
   honorsLabel: '我的荣誉',
   honorsNone: '暂无荣誉',

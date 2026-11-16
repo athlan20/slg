@@ -1,13 +1,19 @@
 // 全服战况播报（v23，AISLG-60）：只播大事、不做聊天。当前四类：
 // 1) NPC 城被掠空  2) 首个占领金矿（全服一次性）  3) 主城被 NPC 攻破
 // 4) 玩家（或其 Agent）1 小时内连胜 5 场（此后每再连胜 5 场再播）。
+// 后续版本按同一通道追加：分城易主（city_conquered，v40）、洛阳窗口（luoyang_window，v79）、
+// 名将获得 / 下野 / 被俘（hero_granted / hero_left / hero_captured，v36 / v94）、
+// 势力动静（faction_*，v99–v107）、剧本战场（battlefield_*，v75），以及
+// 名城任期届满重归无主（famous_expired，v111，AISLG-259；周度事件，走普通限频）。
 // 限频：全服每分钟最多 3 条，超出的直接丢弃（播报不是事件流，漏掉不补）。
 // 写入由 Worker 在结算事务内完成（server_broadcasts 表），提交后 pg_notify → API
 // 经 PUSH_SERVER_BROADCAST 广播给全部在线连接；断线重连用 GET_SERVER_BROADCASTS
 // 拉最近若干条。API 与 Worker 共用本文件，两侧不得各自实现限频或连胜计数。
 
 import pg from 'pg';
-import type { InitiatorRole, ServerBroadcastType } from './protocol';
+import { NOTIFY_CHANNEL } from './db';
+import type { InitiatorRole, ServerBroadcastCategory, ServerBroadcastType } from './protocol';
+import { SERVER_BROADCAST_EVENT_TYPES } from './protocol-server';
 
 /** 全服每分钟最多播报条数（超出丢弃；占位值随需求「已定」标注可调） */
 export const SERVER_BROADCAST_RATE_PER_MINUTE = 3;
@@ -84,14 +90,20 @@ export async function recordWinStreak(
   return insertServerBroadcast(client, 'win_streak', { ...broadcastDetail, streak: count });
 }
 
-/** 查询最近的全服播报（新→旧；limit 由调用方钳制） */
+/** 查询最近的全服播报（新→旧；limit 由调用方钳制）。category 非空时只返回该类（v112，AISLG-260） */
 export async function listServerBroadcasts(
   q: pg.Pool | pg.PoolClient,
   limit: number,
+  category?: ServerBroadcastCategory,
 ): Promise<ServerBroadcastCreated[]> {
+  const eventTypes = SERVER_BROADCAST_EVENT_TYPES as readonly string[];
   const res = await q.query(
-    `SELECT id, type, detail, created_at FROM server_broadcasts ORDER BY id DESC LIMIT $1`,
-    [limit],
+    category === 'event'
+      ? `SELECT id, type, detail, created_at FROM server_broadcasts WHERE type = ANY($2::text[]) ORDER BY id DESC LIMIT $1`
+      : category === 'war'
+        ? `SELECT id, type, detail, created_at FROM server_broadcasts WHERE NOT (type = ANY($2::text[])) ORDER BY id DESC LIMIT $1`
+        : `SELECT id, type, detail, created_at FROM server_broadcasts ORDER BY id DESC LIMIT $1`,
+    category ? [limit, [...eventTypes]] : [limit],
   );
   return (res.rows as Array<{ id: number | string; type: string; detail: Record<string, unknown>; created_at: Date }>).map(
     (row) => ({
@@ -105,3 +117,35 @@ export async function listServerBroadcasts(
 
 /** 播报里出现的身份（前端拼文案用；与协议的登录类型同形，占位便于文档对齐） */
 export type BroadcastActor = InitiatorRole;
+
+/**
+ * 单条播报的独立事务（v112，AISLG-260）：写库、COMMIT 时 pg_notify，API 收到后走 PUSH_SERVER_BROADCAST。
+ * 用于「不在自己事务里」的调用方（Worker 定时器：活动提醒 / 赛季预告）；已经处在事务里的调用方
+ * 应当用 insertServerBroadcast 并在提交后自行发通知（如 battlefieldBroadcast + publishBroadcasts）。
+ * 失败向上抛，由调用方决定只记日志还是重试（播报不是关键路径）。
+ */
+export async function publishServerBroadcast(
+  pool: pg.Pool,
+  type: ServerBroadcastType,
+  detail: Record<string, unknown>,
+  options: { force?: boolean } = {},
+): Promise<ServerBroadcastCreated | null> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const created = await insertServerBroadcast(client, type, detail, options);
+    if (created) {
+      await client.query(`SELECT pg_notify($1, $2)`, [
+        NOTIFY_CHANNEL,
+        JSON.stringify({ reason: 'server_broadcast', accountId: '', broadcast: created }),
+      ]);
+    }
+    await client.query('COMMIT');
+    return created;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+}

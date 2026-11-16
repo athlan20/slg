@@ -19,11 +19,13 @@ import { FAMOUS_CITY_NOBILITY_INDEX } from '../../common/src/nobility';
 import { isLuoyangName, luoyangWindowOpen, nextLuoyangOpen } from '../../common/src/luoyang';
 import { loadNobilityIndex } from '../../common/src/nobility-db';
 import { loadBuildingLevels } from '../../common/src/production';
-import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';import { parseCargo } from '../../common/src/transport';
+import { loadBranchStanding, loadDiscardCooldownActive } from '../../common/src/branch-city-db';
+import { loadFamousTenureState } from '../../common/src/famous-tenure-db';
+import { parseCargo } from '../../common/src/transport';
 import { loadMovingTarget, rowIndexAt, rowStepMs } from '../../common/src/moving-target-db';
 import { loadCampAt } from '../../common/src/yellow-turban-db';
+import { isAllyOfCity, pvpTargetDenial, wildernessDenial } from './march-target-guards';
 import { reachWindowOf, routeIndexOfCell } from '../../common/src/moving-target';
-import { activeAt, inNewbieProtection } from '../../common/src/protection';
 import { canAssist, cannotAttack } from '../../common/src/alliance-db';
 import { assistLimitDenial } from '../../common/src/city-assist-db';
 import { factionLairAttackable, isFactionLairTarget } from '../../common/src/faction-db';
@@ -124,6 +126,8 @@ export interface MarchTargetVerdict {
   nobility?: { required: number; current: number };
   /** v79（AISLG-200）：LUOYANG_CLOSED 的下次开放时刻 */
   luoyangNextOpenAt?: Date;
+  /** v111（AISLG-259）：FAMOUS_BANNED 的封禁截止时刻（到期失去这座名城的原主人 48 小时内不能再占回） */
+  bannedUntil?: Date;
   /** v38（AISLG-122）：NEWBIE_PROTECTED / TARGET_IN_TRUCE / SELF_TRUCE_ACTIVE 的截止时刻，
    *  handleMarch 据此回传 until 与 retryAfterSeconds */
   protectedUntil?: Date;
@@ -277,14 +281,29 @@ export async function resolveMarchTarget(
         }
       }
       const standing = await loadBranchStanding(client, accountId);
+      // v111（AISLG-259）：名城另受「每账号最多 1 座」与「到期封禁 48 小时」限制（到达时 Worker 复核）
+      const famousTenure =
+        famous !== undefined
+          ? await loadFamousTenureState(client, accountId, famous.name, dbNow)
+          : undefined;
       const denial = checkOccupyNpcCity({
         mainGovernment: standing.mainGovernment,
         fromGovernment: governmentLevel,
         branchCount: standing.branchCount,
         targetLevel: tile.level,
         discardCooldown: await loadDiscardCooldownActive(client, accountId, tile.x, tile.y),
+        famous: famousTenure,
+        now: dbNow,
       });
-      return denial ? { purpose: null, reason: denial } : { purpose: 'occupy' };
+      if (!denial) {
+        return { purpose: 'occupy' };
+      }
+      return {
+        purpose: null,
+        reason: denial,
+        // 封禁中给客户端封禁截止，便于提示「到某时再来占」
+        ...(denial === 'FAMOUS_BANNED' && famousTenure?.bannedUntil ? { bannedUntil: famousTenure.bannedUntil } : {}),
+      };
     }
     if (!outerStage && inPlunderCooldown(tile.plundered_at, dbNow)) {
       return { purpose: null, reason: 'PLUNDER_COOLDOWN' };
@@ -349,14 +368,25 @@ export async function resolveMarchTarget(
     // 目标等级 = 该城官府等级）。发起时初核，Worker 到达复核（名额没了照打、只降城防值）
     const standing = await loadBranchStanding(client, accountId);
     const targetLevel = (await loadBuildingLevels(client, city.id)).government;
+    // v111（AISLG-259）：目标是名城时另受「每账号最多 1 座」与「到期封禁 48 小时」限制
+    const famousTenure =
+      city.famous_name !== null
+        ? await loadFamousTenureState(client, accountId, city.famous_name, dbNow)
+        : undefined;
     const denial = checkOccupyNpcCity({
       mainGovernment: standing.mainGovernment,
       fromGovernment: governmentLevel,
       branchCount: standing.branchCount,
       targetLevel,
+      famous: famousTenure,
+      now: dbNow,
     });
     if (denial) {
-      return { purpose: null, reason: denial };
+      return {
+        purpose: null,
+        reason: denial,
+        ...(denial === 'FAMOUS_BANNED' && famousTenure?.bannedUntil ? { bannedUntil: famousTenure.bannedUntil } : {}),
+      };
     }
   }
   // v79（AISLG-200）：洛阳被玩家占领后，只在周六 21:00–23:00 可攻打；窗口内没有被动免战
@@ -373,96 +403,6 @@ export async function resolveMarchTarget(
     pvp: { kind: 'city', targetCityId: city.id, targetAccountId: city.account_id },
   };
 }
-
-/** 目标城（占领野地的城）的主人是否与请求账号同一联盟（v67，AISLG-182）；城不存在返回 false */
-export async function isAllyOfCity(client: pg.PoolClient, accountId: string, cityId: string): Promise<boolean> {
-  const res = await client.query(`SELECT account_id FROM cities WHERE id = $1`, [cityId]);
-  if (!res.rowCount) {
-    return false;
-  }
-  return cannotAttack(client, accountId, (res.rows[0] as { account_id: string }).account_id);
-}
-
-/** 目标方（city 行含守方账号的保护列）与进攻方账号的保护 / 免战判定（v38，AISLG-122）；
- *  发起时初核，Worker 到达在锁内复核。通过返回 null */
-async function pvpTargetDenial(
-  client: pg.PoolClient,
-  accountId: string,
-  city: { account_id: string; truce_until: Date | null; newbie_until: Date | null; self_truce_until: Date | null },
-  dbNow: Date,
-  /** v79：洛阳窗口内跳过城级被动免战 */
-  skipTruce = false,
-): Promise<MarchTargetVerdict | null> {
-  // 守方新手保护：别人不能侦察、攻击他
-  if (inNewbieProtection(city.newbie_until, dbNow)) {
-    return { purpose: null, reason: 'NEWBIE_PROTECTED', protectedUntil: activeAt(city.newbie_until, dbNow) ?? undefined };
-  }
-  // 守方免战：被动（被打后，城级）与主动（账号级）任一生效，取更晚者
-  const truceAt = laterOf(skipTruce ? null : activeAt(city.truce_until, dbNow), activeAt(city.self_truce_until, dbNow));
-  if (truceAt) {
-    return { purpose: null, reason: 'TARGET_IN_TRUCE', protectedUntil: truceAt };
-  }
-  return attackerShieldDenial(client, accountId, dbNow);
-}
-
-/** 抢占他人野地的保护判定（v39，AISLG-123）：地块换主保护 + 守方账号级保护（新手 / 主动免战）+
- *  攻方主动免战。守方某座城的被动免战（cities.truce_until）**不**保护野地。通过返回 null */
-async function wildernessDenial(
-  client: pg.PoolClient,
-  accountId: string,
-  tile: TileRow,
-  dbNow: Date,
-): Promise<MarchTargetVerdict | null> {
-  // 刚换主人的野地有一小段保护，谁都不能抢（防拉锯）
-  const capturedAt = activeAt(tile.owner_changed_until ?? null, dbNow);
-  if (capturedAt) {
-    return { purpose: null, reason: 'TILE_PROTECTED', protectedUntil: capturedAt };
-  }
-  const ownerRes = await client.query(
-    `SELECT a.newbie_until, a.self_truce_until
-     FROM cities c JOIN accounts a ON a.id = c.account_id
-     WHERE c.id = $1`,
-    [tile.owner_city_id],
-  );
-  const owner = ownerRes.rows[0] as { newbie_until: Date | null; self_truce_until: Date | null } | undefined;
-  if (owner) {
-    if (inNewbieProtection(owner.newbie_until, dbNow)) {
-      return { purpose: null, reason: 'NEWBIE_PROTECTED', protectedUntil: activeAt(owner.newbie_until, dbNow) ?? undefined };
-    }
-    const shieldAt = activeAt(owner.self_truce_until, dbNow);
-    if (shieldAt) {
-      return { purpose: null, reason: 'TARGET_IN_TRUCE', protectedUntil: shieldAt };
-    }
-  }
-  return attackerShieldDenial(client, accountId, dbNow);
-}
-
-/** 攻方自己的主动免战：生效中不能出兵打玩家（含抢野地；打野地 / NPC 不受限） */
-async function attackerShieldDenial(
-  client: pg.PoolClient,
-  accountId: string,
-  dbNow: Date,
-): Promise<MarchTargetVerdict | null> {
-  const selfRes = await client.query(`SELECT self_truce_until FROM accounts WHERE id = $1`, [accountId]);
-  const selfTruce = (selfRes.rows[0] as { self_truce_until: Date | null } | undefined)?.self_truce_until ?? null;
-  const selfAt = activeAt(selfTruce, dbNow);
-  if (selfAt) {
-    return { purpose: null, reason: 'SELF_TRUCE_ACTIVE', protectedUntil: selfAt };
-  }
-  return null;
-}
-
-/** 两个截止时刻取更晚者（空值穿透） */
-function laterOf(a: Date | null, b: Date | null): Date | null {
-  if (!a) {
-    return b;
-  }
-  if (!b) {
-    return a;
-  }
-  return a.getTime() >= b.getTime() ? a : b;
-}
-
 
 /**
  * 截击目标判定（v28，AISLG-78）：目标须存在、仍在存在期内，且 (x, y) 是它路线上

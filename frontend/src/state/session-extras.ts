@@ -1,13 +1,14 @@
 // 会话扩展切片（v23，从 useGameSession 拆出以控制单文件行数）：
 // - 离线日报（AISLG-54）：GET_OFFLINE_REPORT 拉取 + 离线 ≥ 30 分钟自动弹出；
 //   checkOfflineReportRef 是「最新回调」桥——登录 / 重连流程先于本 hook 声明使用。
-// - 全服播报（AISLG-60）：GET_SERVER_BROADCASTS 拉取 + PUSH_SERVER_BROADCAST 实时置顶。
+// - 全服播报（AISLG-60）：GET_SERVER_BROADCASTS 拉取 + PUSH_SERVER_BROADCAST 实时置顶；
+//   v112（AISLG-260）起按 serverBroadcastCategory 拆两份——war 给「系统播报」页签，event 给「活动」页签。
 // - 排行榜（AISLG-61）：GET_LEADERBOARD 按榜单拉取。
 // - NPC 来袭预警（v23 AISLG-57 推送，AISLG-66 前端消费）：PUSH_NPC_ATTACK_WARNING
 //   到达即进待弹列表，逐条弹窗直至玩家确认。
 // 全部只依赖 clientRef；游戏状态（城池 / 事件 / 地图）仍由 useGameSession 主理。
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { ApiClient } from '../api/client';
 import {
   Op,
@@ -20,6 +21,7 @@ import {
   type ServerBroadcastView,
 } from '../api/protocol';
 import { getCopy } from '../i18n/bundle';
+import { serverBroadcastCategory } from '../api/protocol-server';
 
 /** 离线日报自动弹出的门槛（秒；占位值 30 分钟，随需求「已定」标注可调） */
 const OFFLINE_REPORT_THRESHOLD_SECONDS = 30 * 60;
@@ -45,11 +47,15 @@ export interface SessionExtras {
   loadOfflineSummary: () => Promise<void>;
   /** 上线自动检查的「最新回调」桥（登录 / 重连流程经 .current() 调用） */
   checkOfflineReportRef: RefObject<() => Promise<void>>;
-  /** 全服播报：最近 20 条（新→旧） */
+  /** 全服播报：最近 20 条（新→旧）；v112 起只含 war（战况与其余大事，系统播报页签 + 底栏） */
   broadcasts: ServerBroadcastView[];
-  /** 拉取最近全服播报（登录 / 重连后与点击展开时调用） */
+  /** 活动 / 玩法节点播报：最近 20 条（新→旧，v112），只含 event（聊天「活动」页签） */
+  eventBroadcasts: ServerBroadcastView[];
+  /** 两类合并（新→旧，各留 20 条）：底栏「全服播报」用，行为与拆分前一致 */
+  allBroadcasts: ServerBroadcastView[];
+  /** 拉取最近全服播报（登录 / 重连后与点击展开时调用；两类各拉一次） */
   fetchServerBroadcasts: () => Promise<void>;
-  /** 全服播报推送到达：置顶最新一条（保留最近 20 条） */
+  /** 全服播报推送到达：按类别置顶最新一条（各保留最近 20 条） */
   onBroadcastPush: (broadcast: ServerBroadcastView) => void;
   /** NPC 来袭预警（AISLG-66）：待确认列表（新→旧逐条弹窗）；空 = 无预警 */
   npcWarnings: NpcAttackWarningPushData[];
@@ -73,6 +79,7 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
   const [offlineReportError, setOfflineReportError] = useState<string | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<GetOfflineReportResponseData | null>(null);
   const [broadcasts, setBroadcasts] = useState<ServerBroadcastView[]>([]);
+  const [eventBroadcasts, setEventBroadcasts] = useState<ServerBroadcastView[]>([]);
   const [npcWarnings, setNpcWarnings] = useState<NpcAttackWarningPushData[]>([]);
   const [leaderboard, setLeaderboard] = useState<GetLeaderboardResponseData | null>(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
@@ -124,18 +131,25 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
     await fetchOfflineReport();
   }, [fetchOfflineReport]);
 
-  /** 拉取最近全服播报（登录 / 重连后与点击展开时调用） */
+  /** 拉取最近全服播报（登录 / 重连后与点击展开时调用）：两类各拉一次，后端按 category 过滤 */
   const fetchServerBroadcasts = useCallback(async () => {
     const client = clientRef.current;
     if (!client?.connected) {
       return;
     }
     try {
-      const res = await client.request(Op.GET_SERVER_BROADCASTS, { limit: 20 });
+      const res = await client.request(Op.GET_SERVER_BROADCASTS, { limit: 20, category: 'war' });
       if (res.ok) {
         const list = field<ServerBroadcastView[]>(res.data, 'broadcasts');
         if (list) {
           setBroadcasts(list);
+        }
+      }
+      const eventRes = await client.request(Op.GET_SERVER_BROADCASTS, { limit: 20, category: 'event' });
+      if (eventRes.ok) {
+        const list = field<ServerBroadcastView[]>(eventRes.data, 'broadcasts');
+        if (list) {
+          setEventBroadcasts(list);
         }
       }
     } catch {
@@ -180,10 +194,20 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
     checkOfflineReportRef.current = checkOfflineReport;
   }, [checkOfflineReport]);
 
-  /** 全服播报推送到达（v23 AISLG-60）：置顶最新一条，保留最近 20 条 */
+  /** 全服播报推送到达（v23 AISLG-60；v112 按类别分流）：置顶最新一条，各保留最近 20 条 */
   const onBroadcastPush = useCallback((broadcast: ServerBroadcastView) => {
+    if (serverBroadcastCategory(broadcast.type) === 'event') {
+      setEventBroadcasts((prev) => [broadcast, ...prev].slice(0, 20));
+      return;
+    }
     setBroadcasts((prev) => [broadcast, ...prev].slice(0, 20));
   }, []);
+
+  /** 两类合并（新→旧）：底栏「全服播报」的弹窗与最新一条同时显示活动与战况 */
+  const allBroadcasts = useMemo(
+    () => [...broadcasts, ...eventBroadcasts].sort((a, b) => b.id - a.id).slice(0, 20),
+    [broadcasts, eventBroadcasts],
+  );
 
   /** NPC 来袭预警推送到达（AISLG-66）：进待确认列表（尾部 = 下一条弹出）；同一次袭击只留一条 */
   const onNpcWarningPush = useCallback((warning: NpcAttackWarningPushData) => {
@@ -249,6 +273,8 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
     loadOfflineSummary,
     checkOfflineReportRef,
     broadcasts,
+    eventBroadcasts,
+    allBroadcasts,
     fetchServerBroadcasts,
     leaderboard,
     fetchLeaderboard,

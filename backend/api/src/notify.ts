@@ -191,6 +191,16 @@ export class CompletionNotifier {
         });
         return;
       }
+      if (payload.reason === 'famous_tenure' && payload.accountId && payload.data) {
+        // 名城任期提醒 / 到期（v111 AISLG-259）：推 PUSH_CITY_STATE 给该账号的全部在线连接（含 Agent），
+        // data 里 reason = famous_expiring（附 stage / expiresAt）或 famous_expired；客户端收到后重新 GET_STATE
+        this.registry.broadcast(payload.accountId, {
+          op: Op.PUSH_CITY_STATE,
+          push: true,
+          data: payload.data as Record<string, unknown>,
+        });
+        return;
+      }
       if (payload.reason === 'starvation' && payload.accountId && payload.data) {
         // 断粮预警 / 哗变（v34 AISLG-107）：推给该账号的全部在线连接（含 Agent）
         this.registry.broadcast(payload.accountId, {

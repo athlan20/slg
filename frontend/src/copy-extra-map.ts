@@ -279,6 +279,10 @@ export const EXTRA_MAP = {
     cellAria: (name: string) => `${name}势力范围`,
     /** 全服播报：半径扩大（每周最多一次） */
     broadcastExpanded: (radius: number) => `五方势力扩张：势力范围半径扩大至 ${radius} 格`,
+    /** 全服播报（v112，AISLG-260）：本季启用（placed 家登场；skipped 为逗号分隔的势力名，空串 = 全部登场） */
+    broadcastSeasonStarted: (placed: number, skipped: string) =>
+      `五方势力本季启用：${placed} 家登场${skipped ? `，${skipped}因该处已有玩家城本季不生成（下季换季再生成）` : ''}。` +
+      '势力的「第几天」从启用当天算第 1 天，满 7 天（第 8 天起）才开始围攻分城',
     /** 老巢：城墙减伤（AISLG-241） */
     lairWall: '城墙减伤 50%',
     /** 老巢的进攻按钮 */

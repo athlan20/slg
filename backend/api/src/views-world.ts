@@ -81,6 +81,10 @@ interface TileQueryRow extends TileRow {
   owner_main_created_at?: Date | null;
   /** 城主的「维修」科技等级（v72，AISLG-192；城防值与展示口径一致地回涨） */
   owner_repair_level?: number | null;
+  /** 名城任期到期时刻（v111，AISLG-259；被玩家占领的名城才有值） */
+  owner_famous_expires_at?: Date | null;
+  /** 本账号在这座名城上的到期封禁截止（v111，AISLG-259；famous_expiry_bans） */
+  requester_ban_until?: Date | null;
   /** 望楼（v97，AISLG-232）：地块上的设施类别与已建成等级（还在建第一级时 level 为 0）；没有设施为 null */
   facility_kind?: string | null;
   facility_level?: number | null;
@@ -117,7 +121,10 @@ const TILE_SELECT = `
          row_to_json(yc) AS camp_json,
          wt.wild_hero, wt.wild_lead, wt.wild_force, wt.wild_wit, wt.faction_lair,
          fl.destroyed_at AS lair_destroyed_at,
-         wt.reserve, wt.reserve_at, c.settled_at AS owner_settled_at,
+         wt.reserve, wt.reserve_at, c.settled_at AS owner_settled_at, c.famous_expires_at AS owner_famous_expires_at,
+         (SELECT b.until FROM famous_expiry_bans b
+           WHERE b.famous_name = COALESCE(c.famous_name, wt.npc->'famous'->>'name')
+             AND b.account_id = $1 AND b.until > now()) AS requester_ban_until,
          wf.kind AS facility_kind, wf.level AS facility_level,
          EXISTS (SELECT 1 FROM famous_heroes fh WHERE fh.name = wt.wild_hero AND fh.owner_account_id = $1) AS wild_claimed
   FROM world_tiles wt
@@ -282,6 +289,9 @@ export function tileView(row: TileQueryRow, requesterAccountId?: string): TileVi
     garrison,
     npcStockTier,
     famous: famousView(row),
+    // 名城任期（v111，AISLG-259）：被玩家占领的名城给到期时刻；本账号在该城的到期封禁给截止时刻
+    famousExpiresAt: row.kind === 'city' && row.owner_famous_expires_at ? row.owner_famous_expires_at.toISOString() : null,
+    bannedUntil: row.requester_ban_until ? row.requester_ban_until.toISOString() : null,
     camp: campOf(row),
     protection: protectionView(row, requesterAccountId),
     durability: durabilityView(row, requesterAccountId),

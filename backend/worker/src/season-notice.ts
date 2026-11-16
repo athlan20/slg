@@ -1,23 +1,12 @@
-// 换季预告发送（AISLG-134，docs/season-system.md §4）：到达新阶段时发公告（全服播报）+ PUSH_SEASON(warning)。
+// 换季预告发送（AISLG-134，docs/season-system.md §4）：到达新阶段时写一条「活动」播报（v112，AISLG-260：
+// 不再发公告、也不再自带 announcement 类播报，避免重复）+ PUSH_SEASON(warning)。
 // 先在 seasons.notified_stages 上抢占（条件 UPDATE），抢到才发：Worker 重启 / 多次 tick 不会重发。
 // 发送失败只记日志，不回滚抢占——宁可漏发一次，也不让同一阶段反复刷屏。
+// 播报文案（剩余时长 / 结束时刻 / 届时停服重置）由前端按 type + detail 拼，后端只给数据。
 import type pg from 'pg';
-import { publishAnnouncement } from '../../common/src/announcement-publish';
 import { notifySeasonEvent, type SeasonRow } from '../../common/src/season-db';
 import { crossedStages, planNotice, type SeasonNoticeStage } from '../../common/src/season-stages';
-
-/** 阶段对应的中文剩余时长（公告正文用） */
-const LEFT_TEXT: Record<SeasonNoticeStage, string> = {
-  'T-3d': '3 天',
-  'T-1d': '1 天',
-  'T-1h': '1 小时',
-  'T-10m': '10 分钟',
-};
-
-/** 北京时间的可读时刻（运营口径，公告用） */
-function formatBeijing(date: Date): string {
-  return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
-}
+import { publishServerBroadcast } from '../../common/src/server-broadcast';
 
 /**
  * 若当前时刻到达了新的预告阶段，发送最近的那一个并标记所有已到达阶段为已发。
@@ -49,26 +38,16 @@ export async function sendDueNotice(pool: pg.Pool, season: SeasonRow, nowMs: num
   }
   const remainingSec = Math.max(0, Math.floor((endMs - nowMs) / 1000));
   const endsAt = season.endAt.toISOString();
-  const strongRemind = stage === 'T-1h' || stage === 'T-10m';
   try {
-    // chat: true 同时写一条全服播报（强制入库，不受每分钟限频），PUSH_ANNOUNCEMENT 推给在线连接
-    await publishAnnouncement(pool, {
-      category: 'system',
-      titleZh: `${season.name}即将结束（距结束 ${LEFT_TEXT[stage]}）`,
-      bodyZh:
-        `${season.name}将于北京时间 ${formatBeijing(season.endAt)} 结束。届时服务会短暂停服，` +
-        `世界与城池重置并开启新赛季；账号、Agent 令牌与第三方登录绑定保留，各榜前列进入名人堂。`,
-      titleEn: null,
-      bodyEn: null,
-      pinned: false,
-      strongRemind,
-      host: null,
-      startsAt: new Date(nowMs - 1000),
-      endsAt: season.endAt,
-      chat: true,
-    });
+    // 必达：不受全服每分钟 3 条限频（四个阶段各一条）；原先的强提醒弹窗随公告一起去掉
+    await publishServerBroadcast(
+      pool,
+      'season_ending',
+      { seasonId: season.id, seasonName: season.name, endAt: endsAt, stage },
+      { force: true },
+    );
   } catch (err) {
-    console.error(`season notice ${stage}: announcement failed:`, err instanceof Error ? err.message : err);
+    console.error(`season notice ${stage}: broadcast failed:`, err instanceof Error ? err.message : err);
   }
   try {
     await notifySeasonEvent(pool, {

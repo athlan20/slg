@@ -152,6 +152,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     shieldNextAt: null,
     durability: null,
     famousName: null,
+    famousExpiresAt: null,
     productionBonusPercent: 0,
     luoyangBonusPercent: 0,
     famousEffect: null,

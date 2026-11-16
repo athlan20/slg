@@ -165,5 +165,27 @@ export const BATTLEFIELD_COPY_EN = {
     INSUFFICIENT_TROOPS: 'Not enough troops in the city',
     HERO_NOT_FOUND: 'Hero not found',
   },
+  /** Server news in the Events tab (v112, AISLG-260) */
+  broadcast: {
+    signup: (script: string | null, start: string, end: string) =>
+      script
+        ? `Script battlefield "${script}" signup open: starts ${start}, ends ${end} (Beijing time)`
+        : `Script battlefield signup open: starts ${start}, ends ${end} (Beijing time)`,
+    startSoon: (script: string | null, start: string) =>
+      script
+        ? `Script battlefield "${script}" starts in 1 hour (${start}) — bring your army in if you signed up`
+        : `Script battlefield starts in 1 hour (${start}) — bring your army in if you signed up`,
+    started: (script: string | null, end: string) =>
+      script ? `Script battlefield "${script}" has started, ends ${end}` : `Script battlefield has started, ends ${end}`,
+    stronghold: (actor: string, name: string, firstCapture: boolean) =>
+      `${actor} captured the stronghold "${name}"${firstCapture ? ' (first capture +200 merit)' : ''}`,
+    wind: (wind: string, at: string) => `Red Cliffs: the wind turns ${wind} at ${at}`,
+    finished: (winner: 'yuan' | 'cao' | null, scoreYuan: number, scoreCao: number) =>
+      winner === 'yuan'
+        ? `Script battlefield ended: the Yuan Shao / Sun-Liu / Anti-Dong coalition side won (score ${scoreYuan} : ${scoreCao})`
+        : winner === 'cao'
+          ? `Script battlefield ended: the Cao Cao / Dong Zhuo side won (score ${scoreYuan} : ${scoreCao})`
+          : `Script battlefield ended: both sides tied (${scoreYuan} : ${scoreCao})`,
+  },
   close: 'Close',
 } satisfies typeof BATTLEFIELD_COPY;
