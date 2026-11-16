@@ -242,6 +242,18 @@ function baseEventText(view: EventView): string {
       return EXTRA_STATE.event.accountReset;
     case 'city_discarded':
       return EXTRA_STATE.event.cityDiscarded(`${String(view.detail.x ?? '')},${String(view.detail.y ?? '')}`);
+    case 'famous_expiring': {
+      // v111（AISLG-259）：名城任期快到（stage 1 = 剩 24 小时 / 2 = 剩 1 小时）
+      const name = tName(String(view.detail.name ?? ''));
+      const left = view.detail.stage === 2 ? CITY_COPY.famous.warnStageHour : CITY_COPY.famous.warnStageDay;
+      return CITY_COPY.famous.eventExpiring(name, left);
+    }
+    case 'famous_expired': {
+      // v111：名城任期届满（重归无主；原主人 48 小时内不能再占回）
+      const name = tName(String(view.detail.name ?? ''));
+      const until = view.detail.bannedUntil ? formatClock(String(view.detail.bannedUntil)) : '';
+      return CITY_COPY.famous.eventExpired(name, until);
+    }
     case 'capital_changed':
       return EXTRA_STATE.event.capitalChanged;
     case 'account_renamed':
@@ -574,6 +586,12 @@ export function serverBroadcastText(view: {
       );
     case 'city_conquered':
       return EXTRA_STATE.broadcast.cityConquered(actor, String(view.detail.from ?? ''), tName(String(view.detail.cityName ?? '?')), pos);
+    case 'famous_expired':
+      // v111（AISLG-259）：某名城任期届满、重归无主
+      return CITY_COPY.famous.broadcastExpired(
+        String(view.detail.username ?? EXTRA_STATE.mapping.unknownPlayer),
+        tName(String(view.detail.name ?? '?')),
+      );
     case 'arena_champion':
       // v53 AISLG-145：登上第 1 名（previous 为被取代的原第 1 名，可能是守擂者）
       return EXTRA_STATE.broadcast.arenaChampion(actor, String(view.detail.previous ?? EXTRA_STATE.mapping.unknownPlayer));

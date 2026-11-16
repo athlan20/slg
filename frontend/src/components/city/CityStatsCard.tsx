@@ -2,7 +2,7 @@
  *  建造 / 升级前看一眼就知道缺什么、仓满没有。 */
 
 import { type Resources } from '../../api/protocol';
-import { compactNumber } from '../../api/format';
+import { compactNumber, formatClock, formatDurationText } from '../../api/format';
 import { useCopy } from '../../i18n/bundle';
 import type { CityView } from '../../api/protocol';
 import { Card } from '../ui/Card';
@@ -13,12 +13,18 @@ import { cityShareLabel } from '../chat/chatText';
 import { tName } from '../../i18n/names';
 import { famousEffectText } from '../famousEffectText';
 import { StratagemCityNote } from '../stratagem/StratagemCityNote';
+import { useNow } from '../../state/useNow';
 
 export function CityStatsCard({ city }: { city: CityView | null }) {
   const copy = useCopy();
   const { CITY_PAGE_COPY, CITY_COPY, DEFENSE_COPY, RESOURCE_LABEL, CHAT_COPY, LUOYANG_COPY } = copy;
   const { session } = useGame();
   const ref = city ? session.cityList.cities.find((item) => item.id === city.id) : undefined;
+  const now = useNow(city?.famousExpiresAt != null);
+  /** 名城任期（v111，AISLG-259）：到期后该城重归无主，城池页显示剩余时间 */
+  const famousTenureLeft = city?.famousExpiresAt
+    ? formatDurationText(Math.max(0, Math.floor((Date.parse(city.famousExpiresAt) - now) / 1000)))
+    : null;
   const shareable = ref !== undefined && ref.x !== null && ref.y !== null;
   // 资源遍历顺序来自文案包的资源键（各语言一致）
   const KEYS = Object.keys(RESOURCE_LABEL) as Array<keyof Resources>;
@@ -117,6 +123,15 @@ export function CityStatsCard({ city }: { city: CityView | null }) {
       {city?.famousName && city.famousEffect ? (
         <p role="城池页-概况-名城效果" className="mb-1.5 truncate rounded border border-gold/50 px-2 py-0.5 text-[11.5px] text-gold">
           {CITY_COPY.famous.title(tName(city.famousName))} · {CITY_COPY.famous.effectRow(famousEffectText(city.famousEffect, CITY_COPY.famous.effect, RESOURCE_LABEL))}
+        </p>
+      ) : null}
+      {famousTenureLeft ? (
+        <p
+          role="城池页-概况-名城任期"
+          className="mb-1.5 truncate rounded border border-gold/40 px-2 py-0.5 text-[11.5px] text-gold"
+          title={CITY_COPY.famous.tenureRow(formatClock(city?.famousExpiresAt as string))}
+        >
+          {CITY_COPY.famous.tenureRemaining(famousTenureLeft)}
         </p>
       ) : null}
       {city ? <StratagemCityNote city={city} /> : null}

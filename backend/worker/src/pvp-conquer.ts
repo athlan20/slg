@@ -29,6 +29,9 @@ import { famousTowerPercent, famousWallExtraPercent } from '../../common/src/fam
 import { loadBuildingLevels } from '../../common/src/production';
 import { checkOccupyNpcCity } from '../../common/src/branch-city';
 import { loadBranchStanding } from '../../common/src/branch-city-db';
+import { famousTenureMs } from '../../common/src/famous-tenure';
+import { loadFamousTenureState } from '../../common/src/famous-tenure-db';
+import { detachCityFromOwner } from './city-detach';
 import {
   CITY_CONQUEST_PROTECTION_MS,
   DURABILITY_MAX,
@@ -40,10 +43,8 @@ import {
 } from '../../common/src/protection';
 import { scaledMs } from '../../common/src/time-scale';
 import { insertServerBroadcast, recordWinStreak } from '../../common/src/server-broadcast';
-import { battleBonusOf, grantHeroExp, loadCityGuard } from '../../common/src/hero-db';
+import { battleBonusOf, loadCityGuard } from '../../common/src/hero-db';
 import { armyTotal } from '../../common/src/hero';
-import { loadTileArmy } from '../../common/src/world-db';
-import { destroyFacility } from '../../common/src/facility-db';
 import type { TileRow } from '../../common/src/world-db';
 import {
   completeMarchEvent,
@@ -61,9 +62,9 @@ import {
 import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen } from '../../common/src/luoyang';
 import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
-import { cancelSiegesForCity } from '../../common/src/faction-siege-db';
-import { clearCityTroopPools, recordPoolTroops } from '../../common/src/troop-pools-db';
+import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { captureAfterPvpBattle } from './pvp-capture';
+import { abortConquest, grantGuardExp, loadNaming } from './pvp-conquer-helpers';
 
 /** 事务内统一时间源 */
 async function dbNow(client: pg.PoolClient): Promise<Date> {
@@ -267,11 +268,17 @@ export async function resolvePvpConquestArrival(
   const standing = await loadBranchStanding(client, march.account_id);
   const fromLevels = await loadBuildingLevels(client, march.from_city_id);
   const targetLevel = (await loadBuildingLevels(client, city.id)).government;
+  // v111（AISLG-259）：目标是名城时另核「每账号最多 1 座」与「到期封禁 48 小时」（发起后可能已占 / 刚被封）
+  const famousTenure = city.famous_name
+    ? await loadFamousTenureState(client, march.account_id, city.famous_name, now)
+    : undefined;
   const denial = checkOccupyNpcCity({
     mainGovernment: standing.mainGovernment,
     fromGovernment: fromLevels.government,
     branchCount: standing.branchCount,
     targetLevel,
+    famous: famousTenure,
+    now,
   });
 
   if (after > 0) {
@@ -387,71 +394,34 @@ async function transferCityOwnership(
     [prevOwnerAccountId],
   );
   const prevOwnerMainCityId = (mainRes.rows[0] as { id: string }).id;
-  const prevOwnerAccountIdFinal = prevOwnerAccountId;
   const attackerNaming = await loadNaming(client, march.from_city_id);
   const attackerUsername = attackerNaming?.username ?? null;
 
-  // 该城野地全部变无主，驻军回原主人主城（已预锁）
-  const territoryRes = await client.query(
-    `SELECT x, y, terrain, level FROM world_tiles WHERE owner_city_id = $1 AND kind = 'wilderness'`,
-    [cityId],
-  );
-  for (const row of territoryRes.rows as Array<{ x: number; y: number; terrain: string; level: number }>) {
-    const garrison = await loadTileArmy(client, row.x, row.y);
-    if (Object.values(garrison).some((count) => (count ?? 0) > 0)) {
-      await troopsEnterCity(client, prevOwnerMainCityId, garrison);
-    }
-    await client.query(`DELETE FROM tile_army WHERE x = $1 AND y = $2`, [row.x, row.y]);
-    // v97（AISLG-232）：分城易主，该城名下的望楼一并毁掉（不转给新主人、不退资源）
-    await destroyFacility(client, row.x, row.y, 'city_lost');
-    await client.query(
-      `UPDATE world_tiles SET owner_city_id = NULL, owner_changed_until = NULL WHERE x = $1 AND y = $2 AND kind = 'wilderness'`,
-      [row.x, row.y],
-    );
-    // 原主人收到每块野地的失地通知（与 v39 抢野地同口径）
-    await insertEvent(client, {
-      accountId: prevOwnerAccountIdFinal,
-      cityId: prevOwnerMainCityId,
-      type: EventType.WILDERNESS_LOST,
-      initiator: null,
-      detail: {
-        x: row.x, y: row.y, cause: 'conquest', terrain: row.terrain, level: row.level,
-        attacker: { username: attackerUsername },
-        withCity: { id: cityId, name: cityRow.name },
-      },
-    });
-    notifies.push({ reason: 'tile_changed', accountId: prevOwnerAccountIdFinal, x: row.x, y: row.y, tileReason: 'wilderness_lost' });
-  }
-
-  // 该城在外的部队：改从原主人主城返程归属（返程 / 结算落点随之回主城）
-  await client.query(
-    `UPDATE marches SET from_city_id = $2 WHERE from_city_id = $1 AND status = 'marching' AND id <> $3`,
-    [cityId, prevOwnerMainCityId, march.id],
-  );
-
-  // 作废：排队 / 在建的建造、征兵、该城发起的研究、酒馆候选（不退资源）；针对该城的 NPC 袭击。
-  // v87（AISLG-217）：酒馆 / 书院已只在主城（主城永不可被占），分城的酒馆候选本已不存在；
-  // 这里的候选清理作为兼容存量 / 旧数据的兵底保留。建筑随城走（含万一存在的这两项）。
-  await client.query(`DELETE FROM builds WHERE city_id = $1`, [cityId]);
-  await client.query(`DELETE FROM recruits WHERE city_id = $1`, [cityId]);
-  await client.query(`DELETE FROM tech_research WHERE city_id = $1`, [cityId]);
-  await client.query(`DELETE FROM tavern_candidates WHERE city_id = $1`, [cityId]);
-  await client.query(
-    `UPDATE npc_attacks SET resolved_at = clock_timestamp() WHERE target_city_id = $1 AND resolved_at IS NULL`,
-    [cityId],
-  );
-  // v100（AISLG-240）：城已换主，正在围攻这座城的势力本次围攻作废（不战斗）
-  await cancelSiegesForCity(client, cityId);
+  // 该城脱离原主人：名下野地变无主（驻军回主城）、在外部队改从主城返程、队列 / NPC 袭击 / 围攻作废
+  //（v111 AISLG-259 起与名城任期届满共用同一函数 city-detach.ts）
+  await detachCityFromOwner(client, {
+    cityId,
+    mainCityId: prevOwnerMainCityId,
+    prevOwnerAccountId,
+    cityName: cityRow.name,
+    x: tile.x,
+    y: tile.y,
+    cause: 'conquest',
+    attackerUsername,
+    keepMarchId: march.id,
+    notifies,
+  });
 
   // 城行：换主 + 城守卸任（武将仍归原主人）+ 城防回满 + 6 小时保护；建筑 / 资源 / 名城名保留
-  // v85（AISLG-212）：原主人的伤兵 / 俘虏 / 逃兵池一并清空（城池易主，池子不随城移交）
-  await clearCityTroopPools(client, cityId);
+  // v111（AISLG-259）：名城易主后任期重新从 7 天算（提醒阶段归 0），原主人不受到期封禁限制
   const protectedUntil = new Date(now.getTime() + scaledMs(CITY_CONQUEST_PROTECTION_MS));
   await client.query(
     `UPDATE cities SET account_id = $2, guard_hero_id = NULL, durability = $3, durability_settled_at = $4,
-            truce_until = $5, settled_at = $6, mutiny_next_at = NULL, starve_warned_at = NULL
+            truce_until = $5, settled_at = $6, mutiny_next_at = NULL, starve_warned_at = NULL,
+            famous_expires_at = CASE WHEN famous_name IS NULL THEN NULL ELSE $7::timestamptz END,
+            famous_warn_stage = 0
      WHERE id = $1`,
-    [cityId, march.account_id, DURABILITY_MAX, now, protectedUntil, now],
+    [cityId, march.account_id, DURABILITY_MAX, now, protectedUntil, now, new Date(now.getTime() + famousTenureMs())],
   );
   // 攻方幸存部队进城驻守
   await troopsEnterCity(client, cityId, survivors);
@@ -495,61 +465,4 @@ async function transferCityOwnership(
     notifies.push({ reason: 'server_broadcast', accountId: '', broadcast });
   }
   return { protectedUntil };
-}
-
-/** 城守经验（守城战同口径；升级事件 + 推送载荷） */
-async function grantGuardExp(
-  client: pg.PoolClient,
-  accountId: string,
-  cityId: string,
-  heroId: string,
-  heroName: string,
-  gained: number,
-): Promise<{ gained: number; level: number; leveledTo: number | null }> {
-  const exp = await grantHeroExp(client, heroId, gained);
-  if (exp?.leveledTo) {
-    await insertEvent(client, {
-      accountId, cityId, buildId: heroId,
-      type: EventType.HERO_LEVEL_UP, initiator: null,
-      detail: { heroId, heroName, level: exp.leveledTo },
-    });
-  }
-  return { gained, level: exp?.level ?? 0, leveledTo: exp?.leveledTo ?? null };
-}
-
-/** 城池命名（攻守双方战报 / 事件用） */
-async function loadNaming(
-  client: pg.PoolClient,
-  cityId: string,
-): Promise<{ accountId: string; username: string; cityName: string } | null> {
-  const res = await client.query(
-    `SELECT c.account_id, a.username, c.name AS city_name FROM cities c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`,
-    [cityId],
-  );
-  if (!res.rowCount) {
-    return null;
-  }
-  const row = res.rows[0] as { account_id: string; username: string; city_name: string };
-  return { accountId: row.account_id, username: row.username, cityName: row.city_name };
-}
-
-/** 目标局面已变 / 受保护：不战斗，部队扑空原路返程并记录原因 */
-async function abortConquest(
-  client: pg.PoolClient,
-  march: MarchRow,
-  troops: Partial<Record<TroopKind, number>>,
-  settled: { row: { x: number | null; y: number | null } | null },
-  notifies: TileNotify[],
-  cause: string,
-  until: Date | null,
-): Promise<void> {
-  await markMarchArrived(client, march.id);
-  const returning = await createReturnMarch(client, march, troops, settled, march.initiator);
-  await completeMarchEvent(client, march, 'aborted', {
-    troops,
-    returning,
-    cause,
-    ...(until ? { until: until.toISOString() } : {}),
-  });
-  notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
 }

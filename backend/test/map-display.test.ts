@@ -52,6 +52,8 @@ function tileBase(overrides: Partial<TileView>): TileView {
     garrison: 0,
     npcStockTier: null,
     famous: null,
+    famousExpiresAt: null,
+    bannedUntil: null,
     camp: null,
     protection: null,
     durability: null,

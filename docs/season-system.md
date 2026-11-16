@@ -35,11 +35,20 @@
 
 **账号上要重置的列**：`plunder_total`、`newbie_until`、`self_truce_until`、`self_truce_used_at`、`last_online_at`。保留 `agent_model`、`agent_last_seen_at`、昵称。
 
-**清空（世界级）**：`world_tiles`、`tile_army`、`native_garrison_state`、`famous_cities`、`npc_attacks`、`moving_targets`、`yt_events`、`yt_camps`、`yt_contrib`、`city_discards`。
+**清空（世界级）**：`world_tiles`、`tile_army`、`native_garrison_state`、`famous_cities`、`npc_attacks`、`moving_targets`、`yt_events`、`yt_camps`、`yt_contrib`、`city_discards`、`famous_expiry_bans`（v111，AISLG-259：名城任期到期封禁随赛季清空，新季可以直接占回）。
 
 **清空（账号级游戏态）**：`cities`、`capital_swaps`、`city_buildings`、`city_army`、`builds`、`recruits`、`marches`、`battle_reports`、`scout_intel`、`events`、`account_techs`、`tech_research`、`account_heroes`、`tavern_candidates`、`famous_heroes`、`hero_unlocks`、`hero_friendship`、`arena_entries`、`arena_daily`、`arena_matches`、`star_tower_progress`、`star_tower_matches`、`quest_claims`、`quest_claims_once`、`signin_state`、`agent_plans`、`agent_daily_reports`、`win_streaks`、`leaderboard_snapshots`、`leaderboard_model_snapshots`、`server_broadcasts`、`chat_messages`、`chat_reads`。
 
 **清空后要重建**：世界地块（`generateWorldTiles`，**新种子**）、名城（`ensureFamousCities`）、野外名将（`ensureWildFamous`）、竞技场 NPC（`seedArenaNpcs`）。
+
+### 2.3.1 名城任期轮换（v111，AISLG-259）
+
+名城不再是永久占有：每账号同一时间最多 1 座，任期 7 天（按 `time_scale` 缩放），到期该城重归无主 NPC 名城。
+任期的绝对到期时刻记在 `cities.famous_expires_at`，提醒阶段记在 `cities.famous_warn_stage`（0/1/2），
+到期失去这座城的原主人 48 小时内不能再占回它，记在新表 `famous_expiry_bans`（按名号 + 账号）。
+换季时 `cities` 与 `famous_expiry_bans` 都在清空清单里——任期与封禁都不跨季，新季名城重新从零争。
+规则与数值集中在本节对应的 `backend/common/src/famous-tenure.ts`，到期处置由 Worker 的
+`famous-expire-tick.ts` 执行。
 
 > 开发时以 `backend/common/src/db.ts` 的 `SCHEMA_SQL` 实际表清单为准：新增的表必须归入上面某一类，并有一个单测对照 `information_schema` 断言“所有表都被分类”，防止以后加表漏处理。
 

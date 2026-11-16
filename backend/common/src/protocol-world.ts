@@ -161,6 +161,11 @@ export interface TileView {
   npcStockTier: NpcStockTier | null;
   /** 名城信息（v24，AISLG-56）：名称 / 当前阶段 / 独占加成；非名城为 null */
   famous: FamousTileView | null;
+  /** 名城任期到期时刻（v111，AISLG-259，ISO 8601）：被玩家占领的名城格才有值，到期时该城重归无主；其余为 null */
+  famousExpiresAt: string | null;
+  /** 本账号在这座名城上的到期封禁截止（v111，AISLG-259，ISO 8601）：到期失去这座城后 48 小时内不能占回，期间占领会被拒绝；
+   *  未封禁 / 与本次请求账无关为 null */
+  bannedUntil: string | null;
   /** 黄巾营地 / 张角老巢（v29，AISLG-76）：地块上有进行中的营地时给出档位 / 守军范围 / 升档倒计时；其余为 null */
   camp: YtTileCampView | null;
   /** 玩家城的保护状态（v38，AISLG-122）：新手保护 / 被动免战 / 主动免战的截止时刻；

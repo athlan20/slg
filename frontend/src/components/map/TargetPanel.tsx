@@ -12,7 +12,7 @@ import { useHeroPick } from '../../state/heroContext';
 import { interceptCandidates } from '../../state/interceptPlan';
 import { useNow } from '../../state/useNow';
 import { tName } from '../../i18n/names';
-import { formatDurationText } from '../../api/format';
+import { formatClock, formatDurationText } from '../../api/format';
 import { getCopy, useCopy } from '../../i18n/bundle';
 // role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
 import { TARGET_COPY as TARGET_COPY_ZH } from '../../copy-pages';
@@ -76,7 +76,7 @@ function unknownDetailAt(x: number, y: number): TileDetailView {
 
 export function TargetPanel() {
   const copy = useCopy();
-  const { TARGET_COPY, ALLIANCE_COPY, DEFENSE_COPY } = copy;
+  const { TARGET_COPY, ALLIANCE_COPY, DEFENSE_COPY, CITY_COPY } = copy;
   const { session, marchOrigin } = useGame();
   const { world, city } = session;
   const branch = session.cityList.branch;
@@ -172,6 +172,14 @@ export function TargetPanel() {
   const blockedNow = allyBlocked && current !== null && ATTACK_ACTS.includes(current);
   // v86（AISLG-211）：本城中了十面埋伏时派不出兵（服务端返回 CITY_AMBUSHED，这里先置灰并显示剩余）
   const ambushLeft = remainingSeconds(city.stratagems?.ambushedUntil ?? null, now);
+  // v111（AISLG-259）：名城任期轮换——已有名城（每账号 1 座）与到期封禁都在占城前提示（权威判定在服务端）
+  const famousLimitHint =
+    detail !== null && detail.kind !== 'wilderness' && branch !== null && branch.famousCount >= branch.famousLimit
+      ? CITY_COPY.famous.tenureLimitRow(branch.famousCount, branch.famousLimit)
+      : null;
+  const famousBannedUntil =
+    detail?.bannedUntil && Date.parse(detail.bannedUntil) > now ? formatClock(detail.bannedUntil) : null;
+  const famousBanHint = famousBannedUntil ? CITY_COPY.famous.bannedRow(famousBannedUntil) : null;
   const ambushBlocked = ambushLeft > 0 && current !== null && DISPATCH_ACTS.includes(current);
 
   const ctx: TargetCtx = {
@@ -299,6 +307,17 @@ export function TargetPanel() {
             {ambushLeft > 0 ? (
               <p role="选中详情-十面埋伏提示" className="text-[12px] leading-relaxed text-warn">
                 {copy.STRATAGEM_COPY.city.ambushed(formatDurationText(ambushLeft))}
+              </p>
+            ) : null}
+            {/* 名城名额与到期封禁（v111，AISLG-259）：占城前就提示「已占名城 / 封禁到某时」，与 AISLG-154 的分城名额提示合并 */}
+            {current === 'occupy' && famousLimitHint ? (
+              <p role="选中详情-名城名额提示" className="text-[12px] leading-relaxed text-warn">
+                {famousLimitHint}
+              </p>
+            ) : null}
+            {current === 'occupy' && famousBanHint ? (
+              <p role="选中详情-名城封禁提示" className="text-[12px] leading-relaxed text-warn">
+                {famousBanHint}
               </p>
             ) : null}
             {detail?.owner?.relation === 'hostile' ? (

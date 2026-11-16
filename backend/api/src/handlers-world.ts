@@ -263,7 +263,15 @@ export async function handleMarch(
               retryAfterSeconds: Math.max(1, Math.ceil((target.protectedUntil.getTime() - dbNow.getTime()) / 1000)),
             }
           : undefined;
-      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft, ...(target.nobility ? { nobility: target.nobility } : {}), ...(target.luoyangNextOpenAt ? { nextOpenAt: target.luoyangNextOpenAt.toISOString(), retryAfterSeconds: Math.max(1, Math.ceil((target.luoyangNextOpenAt.getTime() - dbNow.getTime()) / 1000)) } : {}) };
+      // v111（AISLG-259）：名城到期封禁中——给出封禁截止（bannedUntil）与剩余秒数，客户端据此提示「到某时再来占」
+      const famousBan =
+        target.reason === 'FAMOUS_BANNED' && target.bannedUntil
+          ? {
+              bannedUntil: target.bannedUntil.toISOString(),
+              retryAfterSeconds: Math.max(1, Math.ceil((target.bannedUntil.getTime() - dbNow.getTime()) / 1000)),
+            }
+          : undefined;
+      const data = { ...(cityState ? { city: cityState } : {}), ...cooldownLeft, ...protectionLeft, ...(target.nobility ? { nobility: target.nobility } : {}), ...(target.luoyangNextOpenAt ? { nextOpenAt: target.luoyangNextOpenAt.toISOString(), retryAfterSeconds: Math.max(1, Math.ceil((target.luoyangNextOpenAt.getTime() - dbNow.getTime()) / 1000)) } : {}), ...(famousBan ?? {}) };
       respondError(ctx.registry, conn, op, seq, target.reason ?? 'TARGET_NOT_ATTACKABLE', Object.keys(data).length ? data : undefined);
       return;
     }
