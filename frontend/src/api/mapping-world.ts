@@ -16,6 +16,7 @@ import { giftEventText } from './giftText';
 import { itemEventText } from './itemText';
 import { moveCityEventText } from './moveCityText';
 import { fogBroadcastText, fogEventText } from './fogText';
+import { activityBroadcastText } from './activityBroadcastText';
 
 function buildingName(kind: unknown): string {
   const { BUILDING_LABEL, EXTRA_STATE } = getCopy();
@@ -538,6 +539,11 @@ export function serverBroadcastText(view: {
         : (view.detail.username as string)
       : EXTRA_STATE.mapping.unknownPlayer;
   const pos = posOf(view.detail);
+  // 活动 / 玩法节点播报（v111，AISLG-260）：文案在 api/activityBroadcastText.ts，命中才返回
+  const activity = activityBroadcastText(view);
+  if (activity !== null) {
+    return activity;
+  }
   switch (view.type) {
     case 'npc_city_emptied':
       return EXTRA_STATE.broadcast.npcCityEmptied(actor, String(view.detail.level ?? '?'), pos);

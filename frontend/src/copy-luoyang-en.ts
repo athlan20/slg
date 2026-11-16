@@ -33,5 +33,13 @@ export const LUOYANG_COPY_EN = {
     LUOYANG_CLOSED: 'Luoyang is open only on Saturdays 21:00–23:00 Beijing time',
     INVALID_PARAMS: 'Invalid parameters',
   },
+  broadcast: {
+    soon: (start: string, end: string) => `Luoyang contest window opens at ${start} and closes at ${end}`,
+    started: (end: string) => `Luoyang contest window is open, closes at ${end}`,
+    ended: () => 'Luoyang contest window has closed',
+    holder: (username: string, alliance: string | null) =>
+      `${username} became the Governor of Luoyang${alliance ? ` (Lord of Luoyang for ${alliance})` : ''}`,
+    decree: (kind: string, until: string) => `The Lord of Luoyang alliance issued a decree: ${kind}, until ${until}`,
+  },
   close: 'Close',
 } satisfies typeof LUOYANG_COPY;

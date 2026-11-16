@@ -961,5 +961,32 @@
  *   GitHub 与 Linux.do 回调签发的一次性码（60 秒、一次性），不分 provider。
  *   三、GET_AGENT_INFO 新增 linuxdoBound / linuxdoLogin；/auth/config 按站点新增 linuxdoEnabled。
  *   四、新错误码 LINUXDO_UNAVAILABLE / LINUXDO_ALREADY_BOUND。无新表、无数据库迁移（oauth_identities.provider 为 text）。
+ * v111（公告只留人工发布，活动消息进聊天「活动」页签，AISLG-260；只加不改）：
+ *   一、公告不再由游戏自动发：Worker 不再往公告表写剧本战场报名 / 开战前 1 小时提醒、赤壁风向预告、
+ *   五方势力本季启用、赛季即将结束这四处内容（publishAnnouncement 与运维脚本 backend/scripts/announcement.ts 不变，
+ *   公告的 event 分类留给运营手写）。存量旧自动公告在迁移里幂等撤回（status='withdrawn'，记录保留，
+ *   只动 category='event' 且 title_zh 以「剧本战场「」或「赤壁战场：」开头的；势力启用与赛季预告是 system 公告，不动）。
+ *   二、这四处内容改走既有的全服播报通道（server_broadcasts + PUSH_SERVER_BROADCAST + GET_SERVER_BROADCASTS，
+ *   不新建表 / 频道），新增 4 个播报类型（均必达，不受每分钟 3 条限频）：
+ *   battlefield_start_soon = { eventId, script, startAt }（开战前 1 小时提醒；原先的强提醒弹窗取消）；
+ *   battlefield_wind = { eventId, script, switchAt, nextWind: se|nw }（赤壁风向切换前 30 分钟预告）；
+ *   faction_season_started = { placed, skipped: [{ key, name, nameEn }] }（五方势力本季启用、哪几家没放）；
+ *   season_ending = { seasonId, seasonName, endAt, stage: T-3d|T-1d|T-1h|T-10m }（原先的强提醒弹窗取消，
+ *   PUSH_SEASON reason=season_warning 与赛季遮罩照旧）。
+ *   三、播报分类：新增 serverBroadcastCategory(type) = 'event' | 'war'（唯一出处在 common/src/protocol-server.ts，
+ *   前端镜像同构）。event（活动 / 玩法节点）：battlefield_signup / battlefield_start_soon / battlefield_started /
+ *   battlefield_stronghold / battlefield_wind / battlefield_finished、luoyang_window、yt_started / yt_grown / yt_boss /
+ *   yt_boss_first_kill / yt_finished、faction_season_started / faction_expanded / faction_city_swallowed /
+ *   faction_lair_destroyed / faction_suppressed、season_ending；其余（城被掠空、连胜、占领分城、名将获得、爵位晋升、
+ *   竞技场第一、将星塔、公告类 announcement、迷雾类等）为 war。GET_SERVER_BROADCASTS 请求新增可选 category（后端过滤，
+ *   响应结构不变，非法值 INVALID_PARAMS）；PUSH_SERVER_BROADCAST 不变（客户端按 type 自行分流）。
+ *   四、已有类型的 detail 补充：battlefield_signup / battlefield_started 新发记录带 script（官渡 / 讨董 / 赤壁），
+ *   旧记录没有 script，客户端按不显示剧本名降级。
+ *   五、聊天窗口新增「活动」页签（顺序：世界 / 联盟 / 活动 / 系统播报 / 私聊，只读），前端拆两份播报列表：
+ *   「系统播报」只显示 war，「活动」只显示 event；聊天按钮红点看「活动」未读数，已读位置存本机 localStorage（键带账号 id），
+ *   不新增服务端字段 / 表。
+ *   六、Agent 侧：原先能从公告读到这些提醒，现在改为读播报（GET_SERVER_BROADCASTS + PUSH_SERVER_BROADCAST），时间与风向
+ *   仍可从 GET_BATTLEFIELD（event.signupStartAt / startAt / endAt / wind.direction / wind.nextAt / wind.noticeAt、
+ *   nextSignupAt / nextScript）拿到，字段无变化。
  */
-export const PROTOCOL_VERSION = 110;
+export const PROTOCOL_VERSION = 111;

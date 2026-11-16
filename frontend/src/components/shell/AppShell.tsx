@@ -116,7 +116,7 @@ export function AppShell() {
       <BottomBar
         city={city}
         research={session.techSession.tech?.research ?? null}
-        broadcasts={session.broadcasts}
+        broadcasts={session.allBroadcasts}
         onOpenBroadcasts={() => void session.fetchServerBroadcasts()}
         onOpenAnnouncement={session.announcements.openAnnouncement}
         allianceBadge={session.alliance.badge}

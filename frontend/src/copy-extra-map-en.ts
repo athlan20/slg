@@ -217,6 +217,9 @@ export const EXTRA_MAP_EN = {
     lairTile: (name: string) => `${name} lair`,
     cellAria: (name: string) => `${name} territory`,
     broadcastExpanded: (radius: number) => `The five factions expand: territory range is now ${radius} tiles`,
+    broadcastSeasonStarted: (placed: number, skipped: string) =>
+      `The Five Factions are live this season: ${placed} faction(s) deployed${skipped ? `; ${skipped} skipped this season because a player city is already there (returns next season)` : ''}.` +
+      ' Faction "day 1" is the activation day; sieges on branch cities start on day 8',
     lairWall: 'Walls reduce damage by 50%',
     lairAttack: 'Attack',
     lairAttackHint: 'You fight only the current camp. Every kill counts, even if you lose, and you are paid gold and resources on the spot for the defenders you destroy, with no carry limit.',

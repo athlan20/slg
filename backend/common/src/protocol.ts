@@ -1107,6 +1107,7 @@ export type {
 } from './protocol-agent';
 export type {
   ServerBroadcastType,
+  ServerBroadcastCategory,
   ServerBroadcastView,
   GetServerBroadcastsRequestData,
   GetServerBroadcastsResponseData,
@@ -1116,7 +1117,16 @@ export type {
   ModelLeaderboardEntryView,
   GetLeaderboardResponseData,
 } from './protocol-server';
-export { SERVER_BROADCAST_TYPES, isServerBroadcastType, LEADERBOARD_KINDS, isLeaderboardKind } from './protocol-server';
+export {
+  SERVER_BROADCAST_TYPES,
+  SERVER_BROADCAST_CATEGORIES,
+  SERVER_BROADCAST_EVENT_TYPES,
+  isServerBroadcastType,
+  isServerBroadcastCategory,
+  serverBroadcastCategory,
+  LEADERBOARD_KINDS,
+  isLeaderboardKind,
+} from './protocol-server';
 export type {
   BuildRequestData,
   UpgradeRequestData,

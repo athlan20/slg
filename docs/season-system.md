@@ -108,8 +108,9 @@ season_honors(              -- 荣誉称号
 ## 4. 预告与通知
 
 阶段（以现实时间距 `end_at`）：`T-3d`、`T-1d`、`T-1h`、`T-10m`。Worker 每 5 秒检查一次（AISLG-208 起节流），到点且 `notified_stages` 里没有则：
-- 用 `publishAnnouncement`（`common/src/announcement-publish.ts`）发公告，`--chat` 同步到世界频道；
-- `insertServerBroadcast(..., {force:true})` 发全服播报；
+- 发一条全服播报 `season_ending`（`publishServerBroadcast(..., {force:true})`，detail = `{ seasonId, seasonName, endAt, stage }`，
+  进聊天窗口的「活动」页签）；**v111（AISLG-260）起不再发公告**（原来那条公告 + `chat:true` 带出的 `announcement` 播报已去掉，
+  公告只留给人工发布），也不再是强提醒弹窗；
 - 推 `PUSH_SEASON{phase:'warning', stage, endsAt, remainingSec}` 给**所有在线连接含 Agent**（`broadcastAll`）；
 - 把阶段写进 `notified_stages`。
 

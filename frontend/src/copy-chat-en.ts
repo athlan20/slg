@@ -10,16 +10,22 @@ export const CHAT_COPY_EN = {
     unread: (count: number) => `${count} unread`,
     emptyWorld: 'No messages in World yet',
     close: 'Close chat',
+    eventUnread: 'New event news',
   },
   tabs: {
     world: 'World',
     alliance: 'Alliance',
+    event: 'Events',
     system: 'Server news',
     private: 'Private',
   },
   system: {
     empty: 'No announcements yet',
     readonly: 'Server news is read-only, pushed by the server',
+  },
+  event: {
+    empty: 'No event news yet',
+    readonly: 'Event news is read-only, pushed by the server',
   },
   alliance: {
     empty: 'Nobody in the alliance has said anything yet — say hi',
