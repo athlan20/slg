@@ -66,6 +66,17 @@ export const CITY_COPY = {
     cityBonusRow: (percent: number) => `名城加成：产量 +${percent}%`,
     hintOuter: '名城分两阶段：先出征清理外围（打赢无战利品），外围清空后限时内再出征攻城守；外围未清时不能直接占领',
     hintKeeper: '外围已清空：限时内出征攻城守——掠夺库存或占领变分城（占领独享产量加成）；超时外围恢复满编',
+    // v111（AISLG-259 名城任期轮换）：地图 / 城池页的任期展示与抢占前提示
+    tenureRow: (clock: string) => `名城任期至 ${clock}，到期重归无主`,
+    tenureRemaining: (left: string) => `名城任期剩余 ${left}`,
+    tenureLimitRow: (count: number, limit: number) => `已占名城 ${count} / ${limit}（同一时间只能占 1 座）`,
+    unbannedRow: '已占名城时不能再占新的名城：等任期结束或主动放弃现有名城',
+    bannedRow: (clock: string) => `刚因任期届满失去这座城，${clock} 前不能再占回它（可以去占其他名城）`,
+    warnStageDay: '24 小时',
+    warnStageHour: '1 小时',
+    eventExpiring: (name: string, left: string) => `${name}的任期还有 ${left} 就到期，到期后该城重归无主`,
+    eventExpired: (name: string, clock: string) => `${name}任期届满，已重归无主（${clock} 前不能再占回这座城）`,
+    broadcastExpired: (actor: string, name: string) => `${actor}的${name}任期届满，${name}重归无主`,
   },
   nobility: {
     label: '称号 / 爵位',

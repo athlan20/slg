@@ -32,7 +32,7 @@ import { checkHeroMarchable } from './handlers-hero';
 import { cannotAttack } from '../../common/src/alliance-db';
 import { isLuoyangName, luoyangWindowOpen, nextLuoyangOpen, decreeMarchSpeedPercent } from '../../common/src/luoyang';
 import { loadActiveDecree } from '../../common/src/luoyang-db';
-import { isAllyOfCity } from './march-target';
+import { isAllyOfCity } from './march-target-guards';
 import { factionLairAttackable, isFactionLairTarget } from '../../common/src/faction-db';
 import { cityDispatchBlockedSeconds } from './stratagem-target';
 

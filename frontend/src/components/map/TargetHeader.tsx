@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { formatClock } from '../../api/format';
+import { formatClock, formatDurationText } from '../../api/format';
 import { TROOP_KINDS, type BranchInfoView, type CityView, type TileDetailView } from '../../api/protocol';
 import { getCopy, useCopy } from '../../i18n/bundle';
 import { tName } from '../../i18n/names';
@@ -110,6 +110,13 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
           .join(' · ')
       : '';
   const cooldown = plunderCooldownLeft(detail?.plunderedAt ?? null, now, city.timeScale);
+  /** 名城任期（v111，AISLG-259）：被玩家占领的名城格显示剩余任期，本账号被封禁时提示解禁时刻 */
+  const famousTenureLeft = detail?.famousExpiresAt
+    ? formatDurationText(Math.max(0, Math.floor((Date.parse(detail.famousExpiresAt) - now) / 1000)))
+    : null;
+  const famousBannedUntil = detail?.bannedUntil ? formatClock(detail.bannedUntil) : null;
+  /** 已有名城（v111）：与分城名额提示合并，出征前就提示「已占名城」 */
+  const famousFull = branch !== null && branch.famousCount >= branch.famousLimit;
   /** 对方保护 / 免战状态（v38 AISLG-122）：任一截止未到即受保护，出征会被服务端拒绝 */
   const protectionLeft = protectionLeftText(detail?.protection ?? null, now);
 
@@ -196,7 +203,28 @@ export function TargetHeader({ world, city, x, y, detail, origin, branch, now, m
                 {CITY_COPY.worldMap.branchQuotaRow(branch.count, branch.limit)}
               </p>
             ) : null}
+            {/* 名城名额（v111，AISLG-259）：本账号已占 1 座时，与分城名额提示合并提示不能再占新的名城 */}
+            {famousFull && !isOwnCity && detail.kind !== 'wilderness' ? (
+              <p role="世界地图详情区-名城名额" className="truncate text-warn" title={CITY_COPY.famous.unbannedRow}>
+                {CITY_COPY.famous.tenureLimitRow(branch?.famousCount ?? 1, branch?.famousLimit ?? 1)}
+              </p>
+            ) : null}
             {detail.famous ? <FamousCityNote famous={detail.famous} /> : null}
+            {/* 名城任期（v111）：占领中的名城显示剩余任期；本账号到期封禁中显示解禁时刻 */}
+            {famousTenureLeft ? (
+              <p
+                role="世界地图详情区-名城任期"
+                className="truncate text-gold"
+                title={CITY_COPY.famous.tenureRow(formatClock(detail.famousExpiresAt as string))}
+              >
+                {CITY_COPY.famous.tenureRemaining(famousTenureLeft)}
+              </p>
+            ) : null}
+            {famousBannedUntil ? (
+              <p role="世界地图详情区-名城封禁" className="truncate text-warn" title={CITY_COPY.famous.bannedRow(famousBannedUntil)}>
+                {CITY_COPY.famous.bannedRow(famousBannedUntil)}
+              </p>
+            ) : null}
             <WorldSiteNote relic={detail.relic} heroSite={detail.heroSite} />
             {detail.camp ? <YellowTurbanCampNote camp={detail.camp} now={now} /> : null}
             {detail.nativePower > 0 ? <p className="truncate text-warn">{COPY.worldMap.nativePowerRow(detail.nativePower)}</p> : null}

@@ -147,15 +147,18 @@ export interface MarchRow {
 }
 
 /** 结束后经 pg_notify 发给 API 的载荷（battle_report 为 v13 新增；
- *  server_broadcast 为 v23 新增——broadcast 为完整播报视图，全服广播） */
+ *  server_broadcast 为 v23 新增——broadcast 为完整播报视图，全服广播；
+ *  famous_tenure 为 v111（AISLG-259）新增——data 为 PUSH_CITY_STATE 的载荷，
+ *  用于名城任期提醒 / 到期的定向推送） */
 export interface TileNotify {
-  reason: 'march_resolved' | 'tile_changed' | 'battle_report' | 'server_broadcast' | 'hero_state' | 'faction_lair';
+  reason: 'march_resolved' | 'tile_changed' | 'battle_report' | 'server_broadcast' | 'hero_state' | 'faction_lair' | 'famous_tenure';
   accountId: string;
   marchId?: string;
   x?: number;
   y?: number;
   tileReason?: string;
-  /** reason='hero_state' 时的武将推送载荷（PUSH_HERO_STATE 的 data） */
+  /** reason='hero_state' 时的武将推送载荷（PUSH_HERO_STATE 的 data）；
+   *  reason='famous_tenure'（v111）时为 PUSH_CITY_STATE 的 data（{ reason, cityId, stage?, expiresAt? }） */
   data?: Record<string, unknown>;
   /** reason='battle_report' 时的战报 id */
   reportId?: number;

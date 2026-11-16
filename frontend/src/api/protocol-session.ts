@@ -68,6 +68,9 @@ export type EventType =
   | 'city_renamed'
   | 'account_reset'
   | 'city_discarded'
+  /** 名城任期轮换（v111，AISLG-259）：到期前提醒 / 到期重归无主 */
+  | 'famous_expiring'
+  | 'famous_expired'
   | 'capital_changed'
   | 'troops_disbanded'
   | 'stratagem_cast'

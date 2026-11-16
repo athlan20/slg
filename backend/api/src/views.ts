@@ -252,6 +252,8 @@ export interface CitySnapshot {
   /** 洛阳之主联盟的全员产量加成（v79，AISLG-200；0 或 5） */
   luoyangBonusPercent: number;
   famousName: string | null;
+  /** 名城任期到期时刻（v111，AISLG-259）：名城的分城才有值；普通城为 null */
+  famousExpiresAt: Date | null;
   /** 城守产量加成（百分数，v36 AISLG-115：四资源非金）与城守武将；未任为 0 / null */
   guardProductionPercent: number;
   guardHero: { id: string; name: string; famous: boolean; lead: number; force: number; wit: number; level: number } | null;
@@ -292,7 +294,7 @@ export async function lockCitySnapshot(
   const sel = await client.query(
     `SELECT id, name, level, x, y, gold, wood, food, stone, iron,
             settled_at, gold_rem, food_rem, wood_rem, stone_rem, iron_rem,
-            population, population_rem, truce_until, famous_name, mutiny_next_at,
+            population, population_rem, truce_until, famous_name, famous_expires_at, mutiny_next_at,
             durability, durability_settled_at, now() AS db_now
      FROM cities WHERE account_id = $1 AND ($2::uuid IS NULL OR id = $2::uuid)
      ORDER BY created_at LIMIT 1 FOR UPDATE`,
@@ -302,7 +304,7 @@ export async function lockCitySnapshot(
     return null;
   }
   const row = sel.rows[0] as CityProductionRow & {
-    name: string; level: number; x: number | null; y: number | null; db_now: Date; truce_until: Date | null; famous_name: string | null; mutiny_next_at: Date | null;
+    name: string; level: number; x: number | null; y: number | null; db_now: Date; truce_until: Date | null; famous_name: string | null; famous_expires_at: Date | null; mutiny_next_at: Date | null;
     durability: number | null; durability_settled_at: Date | null;
   };
   const levels = await loadBuildingLevels(client, row.id);
@@ -390,6 +392,7 @@ export async function lockCitySnapshot(
     mainCityId,
     mutinyNextAt: row.mutiny_next_at,
     famousName: row.famous_name,
+    famousExpiresAt: row.famous_name ? row.famous_expires_at : null,
     productionBonusPercent: row.famous_name ? FAMOUS_PRODUCTION_BONUS_PERCENT : 0,
     luoyangBonusPercent: accountRow?.luoyang_holder ? 5 : 0,
     guardProductionPercent: guard ? guardProductionPercent(guard.wit) : 0,
@@ -490,6 +493,7 @@ export function toCityView(snap: CitySnapshot): CityView {
           ? Math.max(0, Math.min(100, Number(snap.durability ?? 100)))
           : settleDurability(snap.durability, snap.durabilitySettledAt, snap.truceUntil, new Date(), repairPercent(snap.techs)),
     famousName: snap.famousName,
+    famousExpiresAt: snap.famousExpiresAt ? snap.famousExpiresAt.toISOString() : null,
     productionBonusPercent: snap.productionBonusPercent,
     luoyangBonusPercent: snap.luoyangBonusPercent,
     famousEffect: famousEffectView(snap.famousName),

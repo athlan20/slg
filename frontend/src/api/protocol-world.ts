@@ -122,6 +122,10 @@ export interface TileView {
   npcStockTier: NpcStockTier | null;
   /** 名城信息（v24，AISLG-56）；非名城为 null */
   famous: FamousTileView | null;
+  /** 名城任期到期时刻（v111，AISLG-259）：被玩家占领的名城格才有值，到期重归无主；其余为 null */
+  famousExpiresAt: string | null;
+  /** 本账号在这座名城上的到期封禁截止（v111，AISLG-259）：到期失去这座城后 48 小时内不能占回；无封禁为 null */
+  bannedUntil: string | null;
   /** 黄巾营地 / 张角老巢（v29 AISLG-76）：地块上有进行中的营地时给出；其余为 null */
   camp: YtTileCampView | null;
   /** 玩家城的保护状态（v38 AISLG-122）：新手保护 / 被动免战 / 主动免战的截止时刻；
@@ -403,6 +407,10 @@ export interface BranchInfoView {
   limit: number;
   /** 占领 NPC 城所需的主城官府最低等级 */
   minGovernment: number;
+  /** 现有名城数（v111，AISLG-259） */
+  famousCount: number;
+  /** 同时可占名城数上限（v111，AISLG-259：恒为 1） */
+  famousLimit: number;
 }
 
 /** GET_WORLD_MAP 响应 */

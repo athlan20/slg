@@ -961,5 +961,22 @@
  *   GitHub 与 Linux.do 回调签发的一次性码（60 秒、一次性），不分 provider。
  *   三、GET_AGENT_INFO 新增 linuxdoBound / linuxdoLogin；/auth/config 按站点新增 linuxdoEnabled。
  *   四、新错误码 LINUXDO_UNAVAILABLE / LINUXDO_ALREADY_BOUND。无新表、无数据库迁移（oauth_identities.provider 为 text）。
+ * v111（名城任期轮换，AISLG-259，只加不改）：
+ *   一、名城不再永久：每账号同一时间最多占 1 座名城（NPC 名城与他人名城都算），任期 7 天（按时间缩放）。
+ *   任期到期该城回到「无主 NPC 名城」（外围满编 + 城守守军，与主动放弃分城后一致），城里驻军、该城名下野地驻军、
+ *   在外部队全部回原主人主城，建筑 / 库存 / 建造征兵研究队列随城作废不退（城内资源不回主城），
+ *   协防友军遣返。被玩家打下来不算到期：新主人任期重新从 7 天算，原主人不受限制。
+ *   二、到期前 24 小时 / 1 小时各提醒一次（事件 famous_expiring，stage 1/2，用 famous_warn_stage 去重），
+ *   到期事件 famous_expired（给原主人）与全服播报 famous_expired（某名城重归无主）。
+ *   三、到期失去该城的原主人 48 小时（按缩放）内不能再占回这一座：新错误码 FAMOUS_BANNED（附 bannedUntil /
+ *   retryAfterSeconds），FAMOUS_LIMIT（已有 1 座名城）。两者都在 MARCH task=occupy 发起时初核、Worker 到达复核；
+ *   NPC 名城到达被拒与分城名额同形态（幸存部队返程，事件 occupied=false + denial），
+ *   玩家名城到达被拒只降城防不换主。掠夺 / 打外围不受限。
+ *   四、CityView 新增 famousExpiresAt；TileView 新增 famousExpiresAt / bannedUntil（后者只对本次请求账号的封禁给出，
+ *   否则 null）；GET_STATE 的 branch 新增 famousCount / famousLimit。
+ *   五、PUSH_CITY_STATE 新增 reason famous_expiring（附 stage / expiresAt）/ famous_expired；
+ *   新事件 famous_expiring / famous_expired；新播报种类 famous_expired。
+ *   六、新表 famous_expiry_bans 与 cities.famous_expires_at / famous_warn_stage（只加列加表；存量名城启动时回填
+ *   7 天任期，不会上线就掉，已有名城的账号保留到到期，但不能再占新的）。换季随 RESET_TABLES 清空。
  */
-export const PROTOCOL_VERSION = 110;
+export const PROTOCOL_VERSION = 111;
