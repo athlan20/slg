@@ -192,8 +192,13 @@ export interface GameSession {
   /** 最近一次拉到的离线日报（Agent 页摘要用；不弹窗）与拉取动作 */
   offlineSummary: GetOfflineReportResponseData | null;
   loadOfflineSummary: () => Promise<void>;
-  /** 全服播报（v23 AISLG-60）：最近 20 条（新→旧）；登录后拉取 + 推送置顶 */
+  /** 全服播报（v23 AISLG-60）：最近 20 条（新→旧）；登录后拉取 + 推送置顶。
+   *  v111（AISLG-260）拆两份：broadcasts 只含 war（系统播报页签 / 底栏），eventBroadcasts 只含 event（活动页签） */
   broadcasts: ServerBroadcastView[];
+  /** 活动 / 玩法节点播报（v111）：最近 20 条（新→旧），给聊天「活动」页签 */
+  eventBroadcasts: ServerBroadcastView[];
+  /** 两类播报合并（新→旧）：底栏「全服播报」用（各留 20 条） */
+  allBroadcasts: ServerBroadcastView[];
   /** 打开播报列表（当前条目点击时也会刷新一次） */
   fetchServerBroadcasts: () => Promise<void>;
   /** 排行榜（v23 AISLG-61）：当前榜快照；null = 尚未拉取 */
@@ -514,15 +519,18 @@ export function useGameSession(): GameSession {
   // 联盟地图标记（AISLG-184 / F2）：随所在联盟加载；PUSH_ALLIANCE_MARK 增量合并；离盟 / 登出清空
   const allianceMarks = useAllianceMarks(clientRef, connection === 'online', alliance.state?.alliance?.id ?? null, alliance.state?.myRole ?? null);
   const { clear: allianceMarksClear, onPush: onAllianceMarkPush } = allianceMarks;
+  const { checkOfflineReportRef, fetchServerBroadcasts, eventBroadcasts, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, resetNpcWarnings } = extras;
   const chat = useChat({
     clientRef,
     online: connection === 'online',
     accountId: account?.accountId ?? null,
     allianceId: alliance.state?.alliance?.id ?? null,
+    // v111：活动页签的列表与未读位置（本机 localStorage，见 state/chatEventRead.ts）
+    eventBroadcasts,
+    refreshBroadcasts: fetchServerBroadcasts,
   });
   const announcements = useAnnouncements(clientRef);
   const { refresh: refreshAnnouncements, onPush: onAnnouncementPush, reset: resetAnnouncements } = announcements;
-  const { checkOfflineReportRef, fetchServerBroadcasts, onBroadcastPush, onNpcWarningPush, onFactionSiegePush, resetNpcWarnings } = extras;
   // 赛季切片（v65 AISLG-134）：换季预告 / 维护遮罩 / 新赛季重连收尾；名人堂切片：打开页签时按需拉取
   const season = useSeasonSession(clientRef, connection === 'online');
   const { applyLogin: applySeasonLogin, onPush: onSeasonPush, onMaintenance: onSeasonMaintenance, refresh: refreshSeason, clear: seasonClear } = season;
