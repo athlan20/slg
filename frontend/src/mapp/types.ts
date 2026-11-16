@@ -63,7 +63,7 @@ export interface MiniAppSDK {
     clear(): Promise<null>;
   };
   readonly webSocket: {
-    connect(endpoint: string, options?: { query?: Record<string, string>; textMode?: 'auto' | 'text' }): Promise<MiniAppSocket>;
+    connect(endpoint: string, options?: { query?: Record<string, string>; textMode?: 'auto' | 'text'; timeoutMs?: number }): Promise<MiniAppSocket>;
   };
 }
 

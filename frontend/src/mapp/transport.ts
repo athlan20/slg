@@ -8,6 +8,8 @@ export function createMappTransportFactory(sdk: MiniAppSDK, endpoint = 'game'): 
   return async (_url: string): Promise<TransportSocket> => {
     const socket = await sdk.webSocket.connect(endpoint, {
       textMode: 'text',
+      // 平台默认不设总超时：网关不可达时会一直转圈。给个上限，超时走「连接失败」提示
+      timeoutMs: 20_000,
     });
     return new SdkTransportSocket(socket);
   };
