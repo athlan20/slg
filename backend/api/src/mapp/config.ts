@@ -74,7 +74,7 @@ export function readMappConfig(env: NodeJS.ProcessEnv = process.env): MappConfig
 
   const identityProviderRaw = env.MAPP_IDENTITY_PROVIDER?.trim();
   const identityProvider: 'linuxdo_mapp' | 'linuxdo' =
-    identityProviderRaw === 'linuxdo' ? 'linuxdo' : 'linuxdo_mapp';
+    identityProviderRaw === 'linuxdo_mapp' ? 'linuxdo_mapp' : 'linuxdo';
 
   const minTrustLevel = readLinuxdoMinTrustLevel(env) ?? 1;
 

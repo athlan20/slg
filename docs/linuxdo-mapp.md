@@ -79,7 +79,7 @@ npm run pack:mapp      # 产出 dist-mapp/package/app.zip
 | `MAPP_CHANNEL` | `production` 或 `sandbox`，必须显式指定；可逗号分隔多个（`production,sandbox`） |
 | `MAPP_AUDIENCE` | 本服务对外的 WSS/HTTPS origin，用于 `aud` / `htu` 校验 |
 | `MAPP_ORIGINS` | 允许建立微应用连接的浏览器 Origin，逗号分隔 |
-| `MAPP_IDENTITY_PROVIDER` | 默认 `linuxdo_mapp`（与跳转登录账号分开）；确认 `sub` 与 Connect 数字 id 一致后可改 `linuxdo` |
+| `MAPP_IDENTITY_PROVIDER` | 默认 `linuxdo`：沙箱实测令牌 `sub` 就是 Linux.do Connect 的数字用户 id（同一用户 `sub` 与 Connect 登录绑定的 subject 一致），微应用与跳转登录是同一个游戏账号；可选 `linuxdo_mapp`（两边分开） |
 | `LINUXDO_MIN_TRUST_LEVEL` | 信任等级门槛，默认 1 |
 
 部署要求：反向代理必须原样传递 `/ws` 路径与 query，否则令牌里的 `htu` 对不上。
@@ -95,7 +95,7 @@ npm run pack:mapp      # 产出 dist-mapp/package/app.zip
 4. 390px 手机与 ≥1024px 桌面、深浅主题可读；离开再打开后偏好还在。
 5. **沙箱 CSP 对内联样式的限制**：既有代码里有 51 处 React `style=`（地图坐标、进度条宽度等）；如被拦，进度条和地图出征箭头会错位，需要改为 CSS 类。
 6. `app.js` 里残留 react-dom 自带的一处 `contentWindow.location.href` 只读判断，不是业务跳转；若机械扫描报警，需向审核说明。
-7. 平台 JWT 的 `sub` 是否等于 Linux.do Connect 数字 id（决定 `MAPP_IDENTITY_PROVIDER`）。
+7. ~~平台 JWT 的 `sub` 是否等于 Connect 数字 id~~：已实测一致（同一用户两边都是同一个数字 id），默认账号体系已改为与跳转登录共用。
 
 ## 整体移除（审核不通过时）
 
