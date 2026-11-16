@@ -5,7 +5,7 @@
 let consumed = false;
 
 export function takeTopupReturn(): boolean {
-  if (consumed || typeof window === 'undefined') {
+  if ((typeof __MAPP__ !== 'undefined' && __MAPP__) || consumed || typeof window === 'undefined') {
     return false;
   }
   consumed = true;

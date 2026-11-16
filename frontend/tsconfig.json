@@ -12,7 +12,8 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src", "tools", "rsbuild.config.ts"]
+  "include": ["src", "tools", "rsbuild.config.ts", "rsbuild.mapp.config.ts"]
 }

@@ -2,6 +2,8 @@
 // 只写 localStorage（键里带账号 id），不新增服务端字段 / 表；读写都用 try/catch 包住——
 // 隐私模式 / 存储被禁用时不当崩溃。读不到或首次（没有记录）一律视为全部已读，避免首次登录就一片红点。
 
+import { appStorage } from '../storage.ts';
+
 /** 已读位置的存储键前缀（拼上账号 id） */
 const KEY_PREFIX = 'slg.chat.event.seen.';
 
@@ -16,7 +18,7 @@ export function readEventSeenId(accountId: string | null): number | null {
     return null;
   }
   try {
-    const raw = window.localStorage.getItem(eventSeenKey(accountId));
+    const raw = appStorage.getItem(eventSeenKey(accountId));
     if (raw === null) {
       return null;
     }
@@ -33,7 +35,7 @@ export function writeEventSeenId(accountId: string | null, id: number): void {
     return;
   }
   try {
-    window.localStorage.setItem(eventSeenKey(accountId), String(Math.floor(id)));
+    appStorage.setItem(eventSeenKey(accountId), String(Math.floor(id)));
   } catch {
     // 存储不可用：这次不记，下次进入页签再试
   }

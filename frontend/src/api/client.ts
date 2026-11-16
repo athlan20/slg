@@ -4,6 +4,29 @@
 import type { ClientFrame, PushFrame, ResponseFrame } from './protocol';
 import { withActiveCity } from './cityScope';
 import { getCopy } from '../i18n/bundle';
+import { appStorage } from '../storage';
+
+/** 可替换的底层传输 Socket 接口（供微应用等非标准 WebSocket 环境注入） */
+export interface TransportSocket {
+  readonly readyState: number;
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+  onopen: (() => void) | null;
+  onclose: ((ev: { code: number; reason: string }) => void) | null;
+  onmessage: ((ev: { data: unknown }) => void) | null;
+}
+
+export type TransportFactory = (url: string) => TransportSocket | Promise<TransportSocket>;
+
+let customTransportFactory: TransportFactory | null = null;
+
+export function setTransportFactory(factory: TransportFactory | null): void {
+  customTransportFactory = factory;
+}
+
+export function getTransportFactory(): TransportFactory | null {
+  return customTransportFactory;
+}
 
 /** 构建时追加的站点 → 网关映射：环境变量 PUBLIC_WS_BY_HOST（JSON，如 `{"slg.example.cn":"wss://slgws.example.cn/ws"}`），
  *  放在 frontend/.env.local（已被 .gitignore 忽略）；格式不对时忽略并告警。 */
@@ -31,7 +54,7 @@ const PRODUCTION_WS_BY_HOST: Record<string, string> = {
 /** 本地联调 / 端到端测试用：非生产站点可经 localStorage `slg.wsUrl` 改接别的 API（如临时库上的 18080 实例）；读不到就用默认 */
 function localWsOverride(): string | null {
   try {
-    return window.localStorage.getItem('slg.wsUrl');
+    return appStorage.getItem('slg.wsUrl');
   } catch {
     return null;
   }
@@ -90,7 +113,7 @@ export class ConnectionError extends Error {
 }
 
 export class ApiClient {
-  private socket: WebSocket | null = null;
+  private socket: TransportSocket | WebSocket | null = null;
   private seq = 0;
   private readonly pending = new Map<number, PendingRequest>();
   private readonly pushHandlers = new Set<PushHandler>();
@@ -100,15 +123,48 @@ export class ApiClient {
   onMaintenance: ((retryAfterSec: number | null) => void) | null = null;
 
   get connected(): boolean {
-    return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
+    return this.socket !== null && this.socket.readyState === 1;
   }
 
   /** 建立连接；已连接时直接返回 */
-  connect(url = WS_URL): Promise<void> {
+  async connect(url = WS_URL): Promise<void> {
     if (this.connected) {
-      return Promise.resolve();
+      return;
     }
     this.teardownSocket();
+
+    if (customTransportFactory) {
+      const socket = await customTransportFactory(url);
+      this.socket = socket;
+      if (socket.readyState === 1) {
+        this.bindSocket(socket);
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        const failTimer = window.setTimeout(() => {
+          socket.close();
+        }, REQUEST_TIMEOUT_MS);
+        socket.onopen = () => {
+          window.clearTimeout(failTimer);
+          if (this.socket === socket) {
+            this.bindSocket(socket);
+          }
+          resolve();
+        };
+        socket.onclose = (ev) => {
+          window.clearTimeout(failTimer);
+          if (this.socket === socket) {
+            this.socket = null;
+          }
+          reject(new ConnectionError(getCopy().EXTRA_STATE.client.connectFailedCode(ev.code), 'connectFailed'));
+        };
+      });
+    }
+
+    if (typeof __MAPP__ !== 'undefined' && __MAPP__) {
+      throw new ConnectionError('MiniApp transport factory is not configured', 'connectFailed');
+    }
+
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(url);
       this.socket = socket;
@@ -135,7 +191,7 @@ export class ApiClient {
   /** 发送请求并等待同 seq 的响应；超时或连接断开时拒绝 */
   request(op: number, data?: Record<string, unknown>): Promise<ResponseFrame> {
     const socket = this.socket;
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
+    if (!socket || socket.readyState !== 1) {
       return Promise.reject(new ConnectionError(getCopy().EXTRA_STATE.client.notConnected, 'disconnected'));
     }
     const seq = ++this.seq;
@@ -165,8 +221,8 @@ export class ApiClient {
     this.rejectAllPending(new Error(getCopy().EXTRA_STATE.client.closed));
   }
 
-  private bindSocket(socket: WebSocket): void {
-    socket.onmessage = (ev: MessageEvent) => {
+  private bindSocket(socket: TransportSocket | WebSocket): void {
+    socket.onmessage = (ev: { data: unknown }) => {
       let frame: ResponseFrame & Partial<PushFrame>;
       try {
         frame = JSON.parse(String(ev.data)) as ResponseFrame & Partial<PushFrame>;
@@ -192,13 +248,13 @@ export class ApiClient {
         }
       }
     };
-    socket.onclose = (ev) => {
+    socket.onclose = (ev: { code: number; reason?: string }) => {
       if (this.socket !== socket) {
         return;
       }
       this.socket = null;
       this.rejectAllPending(new ConnectionError(getCopy().EXTRA_STATE.client.disconnected, 'disconnected'));
-      this.onClose?.(ev.code, ev.reason);
+      this.onClose?.(ev.code, ev.reason ?? '');
     };
   }
 

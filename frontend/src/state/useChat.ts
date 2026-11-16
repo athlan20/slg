@@ -92,13 +92,15 @@ export interface ChatState {
   error: string | null;
 }
 
+import { appStorage } from '../storage';
+
 const OPEN_KEY = 'slg.chat.open';
 const TAB_KEY = 'slg.chat.tab';
 const TABS: readonly ChatTab[] = ['world', 'alliance', 'event', 'system', 'private'];
 
 function readStored(key: string): string | null {
   try {
-    return window.localStorage.getItem(key);
+    return appStorage.getItem(key);
   } catch {
     return null;
   }
@@ -106,7 +108,7 @@ function readStored(key: string): string | null {
 
 function writeStored(key: string, value: string): void {
   try {
-    window.localStorage.setItem(key, value);
+    appStorage.setItem(key, value);
   } catch {
     // 记忆失败不影响本次展开 / 收起
   }

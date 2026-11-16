@@ -2,6 +2,8 @@
 // （GET_WORLD_MAP 的 w / h，上限 20）。档位越小格子越大（zoom in），越大看得越广（zoom out）。本文件放常量、限幅、
 // 「缩放中心保持不动」的原点换算与本地记忆；手势（滚轮 / 捏合）在 useMapZoomGestures。
 
+import { appStorage } from '../storage';
+
 /** 缩放上下限（窗口边长，格）：最近 5×5、最远 20×20（服务端 MAX_MAP_WINDOW = 20，越界会被当作缺省） */
 export const MAP_ZOOM_MIN = 5;
 export const MAP_ZOOM_MAX = 20;
@@ -20,7 +22,7 @@ export function clampZoom(size: number): number {
 /** 读本地记忆的缩放（无 / 不可读回落缺省）；localStorage 在隐私模式等场景可能抛错，一律吞掉 */
 export function loadSavedZoom(): number {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = appStorage.getItem(STORAGE_KEY);
     return raw === null ? MAP_ZOOM_DEFAULT : clampZoom(Number(raw));
   } catch {
     return MAP_ZOOM_DEFAULT;
@@ -29,7 +31,7 @@ export function loadSavedZoom(): number {
 
 export function saveZoom(size: number): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, String(size));
+    appStorage.setItem(STORAGE_KEY, String(size));
   } catch {
     // 记忆失败不影响缩放本身
   }

@@ -1,6 +1,9 @@
 /** 允许 `import './styles/index.css'` 这类副作用导入；样式由 Rsbuild 处理。 */
 declare module '*.css';
 
+/** 构建期常量：是否为微应用版本（普通构建为 false，微应用构建为 true） */
+declare const __MAPP__: boolean;
+
 /** Rsbuild 在构建时注入的 PUBLIC_ 前缀环境变量（读取 frontend/.env、.env.local 等）。 */
 interface ImportMetaEnv {
   /** 额外的站点 → WebSocket 网关映射（JSON），见 api/client.ts */

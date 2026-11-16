@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { BuildingKind } from '../api/protocol';
 import { usePage, type PageKey } from './usePage';
+import { appStorage } from '../storage';
 
 export interface MapLayers {
   /** 流寇 · 商队（移动目标标记与路线） */
@@ -51,7 +52,7 @@ const SEEN_KEY = 'slg.seenReportId';
 
 function readSeen(): number {
   try {
-    const raw = window.localStorage.getItem(SEEN_KEY);
+    const raw = appStorage.getItem(SEEN_KEY);
     const value = raw === null ? 0 : Number(raw);
     return Number.isFinite(value) ? value : 0;
   } catch {
@@ -81,7 +82,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
         return prev;
       }
       try {
-        window.localStorage.setItem(SEEN_KEY, String(maxId));
+        appStorage.setItem(SEEN_KEY, String(maxId));
       } catch {
         // 记忆失败不影响角标本次清零
       }

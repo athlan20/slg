@@ -8,6 +8,8 @@
     "dev": "rsbuild dev",
     "build": "rsbuild build",
     "preview": "rsbuild preview",
+    "build:mapp": "rsbuild build --config rsbuild.mapp.config.ts",
+    "pack:mapp": "node mapp/package.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test src/state/*.test.mjs"
   },
