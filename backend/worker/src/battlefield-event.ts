@@ -1,23 +1,19 @@
 // 剧本战场（v75，AISLG-198 官渡；v80，AISLG-199 讨董 / 赤壁）的事件生命周期公共函数：
-// 据点初始化、开战激活（含赤壁风向）、积分累计、军功入账、结束发奖、公告与播报 / 推送。
+// 据点初始化、开战激活（含赤壁风向）、积分累计、军功入账、结束发奖、活动播报与状态推送。
 // 由 battlefield-tick.ts（日程 / 耗粮 / 积分 / 风向）与 battlefield-move.ts（据点战斗）共用。
 
 import pg from 'pg';
 import { NOTIFY_CHANNEL } from '../../common/src/db';
 import { EventType, TROOP_KINDS, type TroopKind } from '../../common/src/protocol';
 import {
-  BATTLEFIELD_START_NOTICE_MS,
   BATTLEFIELD_WIND_MS,
-  BATTLEFIELD_SCRIPT_NAMES,
   battlefieldDongzhuoProgress,
   battlefieldGarrisonPlayerMultiplier,
   battlefieldInitialGarrison,
   battlefieldInitialWind,
   battlefieldRewardForScript,
-  battlefieldScriptForSignupStart,
   battlefieldStrongholds,
   battlefieldUnderdog,
-  battlefieldWindLabel,
   type BattlefieldCamp,
   type BattlefieldWind,
 } from '../../common/src/battlefield';
@@ -33,15 +29,10 @@ import {
 import { insertEvent } from '../../common/src/events';
 import { addPrestige } from '../../common/src/nobility-db';
 import { insertServerBroadcast, type ServerBroadcastCreated } from '../../common/src/server-broadcast';
-import { publishAnnouncement } from '../../common/src/announcement-publish';
 import type { TileNotify } from './tick-shared';
 
 /** 战场生命周期与据点结算共用的咨询锁（同一时刻只有一个 Worker 在推进战场） */
 export const BATTLEFIELD_LOCK_ID = 7_500_001;
-
-function formatBeijing(date: Date): string {
-  return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
-}
 
 /** 战场状态推送（提交后调用）：全服广播，客户端收到后重查 GET_BATTLEFIELD */
 export async function notifyBattlefield(
@@ -82,7 +73,13 @@ export async function publishNotifies(pool: pg.Pool, notifies: TileNotify[]): Pr
 export async function battlefieldBroadcast(
   client: pg.PoolClient,
   broadcasts: ServerBroadcastCreated[],
-  type: 'battlefield_signup' | 'battlefield_started' | 'battlefield_stronghold' | 'battlefield_finished',
+  type:
+    | 'battlefield_signup'
+    | 'battlefield_started'
+    | 'battlefield_start_soon'
+    | 'battlefield_stronghold'
+    | 'battlefield_wind'
+    | 'battlefield_finished',
   detail: Record<string, unknown>,
 ): Promise<void> {
   const created = await insertServerBroadcast(client, type, detail, { force: true });
@@ -158,7 +155,7 @@ function asScript(value: unknown): BattlefieldScript {
   return value === 'dongzhuo' || value === 'chibi' ? value : 'guandu';
 }
 
-/** 发「报名开始 / 即将开战」公告（事务内先抢占标记，提交后由调用方发送） */
+/** 报名开始 / 开战前提醒的去重标记（事务内先抢占，抢到才写播报；提交后由调用方广播） */
 export async function claimAnnouncement(
   client: pg.PoolClient,
   event: BattlefieldEventRow,
@@ -172,80 +169,55 @@ export async function claimAnnouncement(
   return res.rowCount === 1;
 }
 
-/** 各剧本的开场说明（报名公告正文里用） */
-const SCRIPT_BLURB: Record<BattlefieldScript, string> = {
-  guandu:
-    `袁绍军与曹操军在 30×30 独立战场抢渡口、据点和乌巢粮仓积累阵营积分。` +
-    `报名要求主城官府 ≥ 5 级，选择袁绍军或曹操军；开战前从主城带一支部队入场（按人口最多 3000），开战后不能追加兵力。` +
-    `军功可在战场商店换资源、武将经验与兵。`,
-  dongzhuo:
-    `讨伐董卓是全服合作：只有讨董联军一方，所有报名玩家一起从汜水关打到虎牢关，再打到洛阳；前一关打下后下一关才开放。` +
-    `守军打不完也没关系，伤亡会保留，大家可以分批消耗；吕布守虎牢关。全员按最远进度领一档奖励（军功 > 0 才能领）。`,
-  chibi:
-    `孙刘联军对曹操军，需要爵位大夫及以上才能报名。开战时随机一个风向，东南风利孙刘、西北风利曹操，每 6 小时切换一次（提前 30 分钟预告）。` +
-    `顺风方远程兵种与床弩射程 +10%；东南风期间孙刘方可用军功火攻曹方据点，曹方可用军功为据点连锁战船。`,
-};
-
 function scriptOf(event: BattlefieldEventRow): BattlefieldScript {
   return asScript(event.script);
 }
 
-export async function sendAnnouncement(pool: pg.Pool, event: BattlefieldEventRow, stage: 'signup' | 'start'): Promise<void> {
-  const script = scriptOf(event);
-  const name = BATTLEFIELD_SCRIPT_NAMES[script];
-  const nextScript = battlefieldScriptForSignupStart(new Date(event.signup_start.getTime() + 7 * 24 * 3_600_000));
-  const titleZh =
-    stage === 'signup'
-      ? `剧本战场「${name}」开始报名（每周二 20:00 — 周三 20:00）`
-      : `剧本战场「${name}」将在 1 小时后开战`;
-  const bodyZh =
-    stage === 'signup'
-      ? `剧本战场「${name}」开始报名。开战：北京时间 ${formatBeijing(event.start_at)}；结束：${formatBeijing(event.end_at)}。` +
-        `${SCRIPT_BLURB[script]}下一场（${formatBeijing(new Date(event.signup_start.getTime() + 7 * 24 * 3_600_000))} 起）为「${BATTLEFIELD_SCRIPT_NAMES[nextScript]}」。`
-      : `剧本战场「${name}」将在北京时间 ${formatBeijing(event.start_at)} 开战，已报名但还没入场的玩家请在开战前带兵入场（开战后不能再入场）。`;
-  try {
-    await publishAnnouncement(pool, {
-      category: 'event',
-      titleZh,
-      bodyZh,
-      titleEn: null,
-      bodyEn: null,
-      pinned: false,
-      strongRemind: stage === 'start',
-      host: null,
-      startsAt: new Date(Date.now() - 1000),
-      endsAt: event.end_at,
-      chat: false,
+/**
+ * 报名开始 / 开战前 1 小时提醒（v112，AISLG-260）：写成「活动」播报（必达，不受每分钟限频），
+ * 由调用方在事务提交后经 publishBroadcasts 推送。文案由前端按 type + detail 拼（中英文都在前端）。
+ * 原先这两处发的是公告（活动分类），已不再写公告表。
+ */
+export async function sendAnnouncement(
+  client: pg.PoolClient,
+  broadcasts: ServerBroadcastCreated[],
+  event: BattlefieldEventRow,
+  stage: 'signup' | 'start',
+): Promise<void> {
+  if (stage === 'signup') {
+    await battlefieldBroadcast(client, broadcasts, 'battlefield_signup', {
+      eventId: event.id,
+      script: scriptOf(event),
+      signupStartAt: event.signup_start.toISOString(),
+      startAt: event.start_at.toISOString(),
+      endAt: event.end_at.toISOString(),
     });
-  } catch (err) {
-    console.error(`battlefield ${stage} announcement failed:`, err instanceof Error ? err.message : err);
+    return;
   }
+  await battlefieldBroadcast(client, broadcasts, 'battlefield_start_soon', {
+    eventId: event.id,
+    script: scriptOf(event),
+    startAt: event.start_at.toISOString(),
+  });
 }
 
-/** 赤壁风向预告（切换前 30 分钟）：公告 + 状态推送，客户端重查 GET_BATTLEFIELD 拿新风向 */
-export async function sendWindNotice(pool: pg.Pool, event: BattlefieldEventRow, switchAt: Date, next: BattlefieldWind): Promise<void> {
-  const titleZh = `赤壁战场：30 分钟后转为${battlefieldWindLabel(next)}`;
-  const bodyZh =
-    `北京时间 ${formatBeijing(switchAt)} 风向转为${battlefieldWindLabel(next)}。` +
-    (next === 'se' ? '东南风利孙刘：孙刘方远程兵种与床弩射程 +10%，可以火攻曹方据点。' : '西北风利曹操：曹操方远程兵种与床弩射程 +10%，火攻暂停。');
-  try {
-    await publishAnnouncement(pool, {
-      category: 'event',
-      titleZh,
-      bodyZh,
-      titleEn: null,
-      bodyEn: null,
-      pinned: false,
-      strongRemind: false,
-      host: null,
-      startsAt: new Date(Date.now() - 1000),
-      endsAt: event.end_at,
-      chat: false,
-    });
-  } catch (err) {
-    console.error('battlefield wind notice failed:', err instanceof Error ? err.message : err);
-  }
-  await notifyBattlefield(pool, 'wind', event.id);
+/**
+ * 赤壁风向预告（切换前 30 分钟，v112）：写成「活动」播报（必达），原先的公告不再发；
+ * 客户端收到播报后照旧重查 GET_BATTLEFIELD 拿新风向（状态推送由调用方在提交后发）。
+ */
+export async function sendWindNotice(
+  client: pg.PoolClient,
+  broadcasts: ServerBroadcastCreated[],
+  event: BattlefieldEventRow,
+  switchAt: Date,
+  next: BattlefieldWind,
+): Promise<void> {
+  await battlefieldBroadcast(client, broadcasts, 'battlefield_wind', {
+    eventId: event.id,
+    script: scriptOf(event),
+    switchAt: switchAt.toISOString(),
+    nextWind: next,
+  });
 }
 
 /** 讨董：当前已打下的关卡数（进度档用） */

@@ -213,6 +213,8 @@ export interface AgentDailyReportResponseData {
 export interface GetServerBroadcastsRequestData {
   /** 返回条数上限，1..50，默认 20 */
   limit?: number;
+  /** v112（AISLG-260）：只取某一类（event 活动节点 / war 战况），缺省两类都要 */
+  category?: import('./protocol-server').ServerBroadcastCategory;
 }
 
 export function isServerBroadcastType(value: unknown): value is ServerBroadcastType {

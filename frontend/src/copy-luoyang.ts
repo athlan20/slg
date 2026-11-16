@@ -31,5 +31,17 @@ export const LUOYANG_COPY = {
     LUOYANG_CLOSED: '洛阳只在每周六 21:00–23:00 开放',
     INVALID_PARAMS: '参数不正确',
   },
+  /** 全服播报（v112，AISLG-260）：活动页签里的洛阳几句话（时刻由调用方按当前语言格式化） */
+  broadcast: {
+    /** 窗口前 30 分钟预告（detail.phase = soon） */
+    soon: (start: string, end: string) => `洛阳争夺窗口将在 ${start} 开放，${end} 结束`,
+    started: (end: string) => `洛阳争夺窗口开放中，${end} 结束`,
+    ended: () => '洛阳争夺窗口已结束',
+    /** 易主（detail = { username, allianceName }） */
+    holder: (username: string, alliance: string | null) =>
+      `${username} 成为洛阳太守${alliance ? `（${alliance} 的洛阳之主）` : ''}`,
+    /** 盟主发政令（detail = { decreeKind, until }） */
+    decree: (kind: string, until: string) => `洛阳之主联盟发布了政令：${kind}，至 ${until}`,
+  },
   close: '关闭',
 };

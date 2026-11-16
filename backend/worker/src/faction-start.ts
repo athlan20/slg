@@ -7,15 +7,16 @@
 // 只执行一次：判断依据就是 faction_started_at 有没有记录——关掉再打开开关不重复放，也不补放当初跳过的那家；
 // 换季后由 season-reset 重新对齐（开季五家全放，天数从新赛季开始算）。
 // 老巢已在本季生成过（v102 前的存量数据）时只补记启用时间（记成本季开始时间，势力节奏不变），不再放第二次。
-// 放完发一条公告：说明天数从开启当天算第 1 天，以及哪几家本季没放（原因：该处已有玩家城）。
+// 放完发一条「活动」播报（v112，AISLG-260：不再写公告表）：说明天数从开启当天算第 1 天，以及哪几家本季没放
+// （原因：该处已有玩家城）。文案由前端按 detail 里的落位数与跳过名单拼（中英文都在前端）。
 
 import type pg from 'pg';
-import { publishAnnouncement } from '../../common/src/announcement-publish';
 import { FACTIONS, factionLairClearanceBox, type FactionDef } from '../../common/src/faction';
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { createFaction, placeFactionLair } from '../../common/src/faction-db';
 import { ensureFactionLairs } from '../../common/src/faction-lair-db';
 import { loadFactionStartedAt, saveFactionStartedAt } from '../../common/src/faction-start';
+import { publishServerBroadcast } from '../../common/src/server-broadcast';
 import type { FactionKey } from '../../common/src/protocol-faction';
 import { getCurrentSeason } from '../../common/src/season-db';
 
@@ -108,22 +109,21 @@ export async function ensureFactionSeasonStart(pool: pg.Pool, now: Date = new Da
 }
 
 /**
- * 启用公告的标题与正文（纯函数，便于测试）：
- * 天数从开启当天算第 1 天；本季没放的势力写明是哪几家及原因（该处已有玩家城）。
+ * 启用播报的 detail（纯函数，便于测试）：落位数 + 本季没放的势力（带中英文名，前端拼文案）。
+ * 为什么本季没放（该处已有玩家城）由前端固定说明，协议里只给数据。
  */
-export function factionStartAnnouncement(result: FactionStartResult): { titleZh: string; bodyZh: string } {
-  const head =
-    '五方势力已在本季启用：势力的「第几天」从开启当天算第 1 天——当前势力范围半径 100 格，满 7 天（第 8 天起）才开始围攻分城，' +
-    '之后每过 7 天半径再扩大 50 格（第 8 天 150 格、第 15 天 200 格、第 22 天起 250 格）。';
-  const tail =
-    result.skipped.length > 0
-      ? `本季没有登场的势力：${result.skipped.map((def) => def.name).join('、')}（该处已有玩家城，本季不再生成，下季换季时重新生成）。`
-      : '五家势力本季全部登场。';
-  return { titleZh: '五方势力本季启用', bodyZh: head + tail };
+export function factionStartBroadcastDetail(result: FactionStartResult): {
+  placed: number;
+  skipped: Array<{ key: FactionKey; name: string; nameEn: string }>;
+} {
+  return {
+    placed: result.placed,
+    skipped: result.skipped.map((def) => ({ key: def.key, name: def.name, nameEn: def.nameEn })),
+  };
 }
 
 /**
- * Worker 定时器每轮调用：需要时执行一次当季启用，成功后发公告（公告失败只记日志，不回滚落位）。
+ * Worker 定时器每轮调用：需要时执行一次当季启用，成功后写一条活动播报（播报失败只记日志，不回滚落位）。
  * 绝大多数轮次已经有启用时间：一次查询就返回，不开事务、不加锁。
  */
 export async function runFactionStart(pool: pg.Pool, now: Date = new Date()): Promise<FactionStartResult> {
@@ -139,23 +139,11 @@ export async function runFactionStart(pool: pg.Pool, now: Date = new Date()): Pr
     return result;
   }
   console.log(`faction season start: placed ${result.placed} lair(s), skipped ${result.skipped.length}`);
-  const { titleZh, bodyZh } = factionStartAnnouncement(result);
   try {
-    await publishAnnouncement(pool, {
-      category: 'system',
-      titleZh,
-      bodyZh,
-      titleEn: null,
-      bodyEn: null,
-      pinned: false,
-      strongRemind: false,
-      host: null,
-      startsAt: now,
-      endsAt: null,
-      chat: true,
-    });
+    // 必达：不受全服每分钟 3 条限频（一季只发一次）
+    await publishServerBroadcast(pool, 'faction_season_started', factionStartBroadcastDetail(result), { force: true });
   } catch (err) {
-    console.error('faction start: announcement failed:', err instanceof Error ? err.message : err);
+    console.error('faction start: broadcast failed:', err instanceof Error ? err.message : err);
   }
   return result;
 }

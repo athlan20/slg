@@ -19,7 +19,6 @@ import {
   battlefieldScriptForWindow,
   battlefieldWindow,
   type BattlefieldCamp,
-  type BattlefieldWind,
 } from '../../common/src/battlefield';
 import type { BattlefieldScript } from '../../common/src/protocol-battlefield';
 import {
@@ -49,7 +48,6 @@ export async function processBattlefieldLifecycle(pool: pg.Pool): Promise<void> 
   const client = await pool.connect();
   const broadcasts: ServerBroadcastCreated[] = [];
   const notifies: TileNotify[] = [];
-  const announcements: Array<{ event: BattlefieldEventRow; stage: 'signup' | 'start' }> = [];
   let started = false;
   let finished = false;
   let created = false;
@@ -78,18 +76,13 @@ export async function processBattlefieldLifecycle(pool: pg.Pool): Promise<void> 
         if (event) {
           created = true;
           await insertStrongholds(client, event.id, script);
-          if (status === 'signup') {
-            await battlefieldBroadcast(client, broadcasts, 'battlefield_signup', {
-              eventId: event.id,
-              signupStartAt: event.signup_start.toISOString(),
-              startAt: event.start_at.toISOString(),
-              endAt: event.end_at.toISOString(),
-            });
-          } else {
+          // 报名开始的活动播报统一走下方 claimAnnouncement 分支（同一个 tick 里就会抢到），只发一条
+          if (status !== 'signup') {
             await activateEvent(client, event, now);
             started = true;
             await battlefieldBroadcast(client, broadcasts, 'battlefield_started', {
               eventId: event.id,
+              script,
               startAt: event.start_at.toISOString(),
               endAt: event.end_at.toISOString(),
             });
@@ -106,7 +99,7 @@ export async function processBattlefieldLifecycle(pool: pg.Pool): Promise<void> 
         const claim = await claimAnnouncement(client, event, 'signup');
         if (claim) {
           event.signup_announced_at = now;
-          announcements.push({ event, stage: 'signup' });
+          await sendAnnouncement(client, broadcasts, event, 'signup');
         }
       }
       if (now >= event.start_at) {
@@ -114,13 +107,15 @@ export async function processBattlefieldLifecycle(pool: pg.Pool): Promise<void> 
         started = true;
         await battlefieldBroadcast(client, broadcasts, 'battlefield_started', {
           eventId: event.id,
+          script: asScript(event.script),
           startAt: event.start_at.toISOString(),
           endAt: event.end_at.toISOString(),
         });
       } else if (now.getTime() >= event.start_at.getTime() - BATTLEFIELD_START_NOTICE_MS) {
         const claim = await claimAnnouncement(client, event, 'start');
         if (claim) {
-          announcements.push({ event, stage: 'start' });
+          event.start_announced_at = now;
+          await sendAnnouncement(client, broadcasts, event, 'start');
         }
       }
     }
@@ -138,9 +133,6 @@ export async function processBattlefieldLifecycle(pool: pg.Pool): Promise<void> 
     throw err;
   } finally {
     client.release();
-  }
-  for (const item of announcements) {
-    await sendAnnouncement(pool, item.event, item.stage);
   }
   await publishBroadcasts(pool, broadcasts);
   await publishNotifies(pool, notifies);
@@ -241,7 +233,8 @@ export async function processBattlefieldScores(pool: pg.Pool): Promise<void> {
 /** 第四步：赤壁风向到点切换（每 6 小时交替），切换前 30 分钟预告一次 */
 export async function processBattlefieldWind(pool: pg.Pool): Promise<void> {
   const client = await pool.connect();
-  let notice: { event: BattlefieldEventRow; switchAt: Date; next: BattlefieldWind } | null = null;
+  const broadcasts: ServerBroadcastCreated[] = [];
+  let noticedEventId: string | null = null;
   try {
     await client.query('BEGIN');
     await client.query('SELECT pg_advisory_xact_lock($1)', [BATTLEFIELD_LOCK_ID]);
@@ -265,14 +258,15 @@ export async function processBattlefieldWind(pool: pg.Pool): Promise<void> {
       await notifyBattlefield(pool, 'wind', event.id);
       return;
     }
-    // 预告：距离下次切换不足 30 分钟且还没预告过，抢占标记后发公告
+    // 预告：距离下次切换不足 30 分钟且还没预告过，抢占标记后写「活动」播报（提交后广播）
     if (battlefieldWindNoticeDue(event.wind_next_at, now, event.wind_notice_at !== null)) {
       const claimed = await client.query(
         `UPDATE battlefield_events SET wind_notice_at = now() WHERE id = $1 AND wind_notice_at IS NULL RETURNING id`,
         [event.id],
       );
       if (claimed.rowCount === 1) {
-        notice = { event, switchAt: event.wind_next_at, next: battlefieldFlipWind(wind) };
+        await sendWindNotice(client, broadcasts, event, event.wind_next_at, battlefieldFlipWind(wind));
+        noticedEventId = event.id;
       }
     }
     await client.query('COMMIT');
@@ -282,8 +276,9 @@ export async function processBattlefieldWind(pool: pg.Pool): Promise<void> {
   } finally {
     client.release();
   }
-  if (notice) {
-    await sendWindNotice(pool, notice.event, notice.switchAt, notice.next);
+  await publishBroadcasts(pool, broadcasts);
+  if (noticedEventId) {
+    await notifyBattlefield(pool, 'wind', noticedEventId);
   }
 }
 

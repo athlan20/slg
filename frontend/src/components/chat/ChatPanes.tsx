@@ -1,8 +1,10 @@
 // 聊天浮窗的页签内容（AISLG-138）：世界频道（最新在下、可翻更早）、联盟频道（AISLG-183，没有联盟时是引导）、
-// 系统播报（只读，复用全服播报数据）、私聊线程（顶部可返回会话列表）。
+// 活动（v112，AISLG-260：只读，只显示活动 / 玩法节点播报）、系统播报（只读，只显示战况与其余大事）、
+// 私聊线程（顶部可返回会话列表）。两份播报的拆分在会话层（state/session-extras.ts）完成。
 
 import { formatReportTime } from '../../api/format';
 import { serverBroadcastText } from '../../api/mapping';
+import type { ServerBroadcastView } from '../../api/protocol-server';
 import { useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
 import { PagedList } from '../ui/PagedList';
@@ -61,17 +63,21 @@ export function ChatAlliancePane() {
   );
 }
 
-export function ChatSystemPane() {
-  const { CHAT_COPY } = useCopy();
-  const { session } = useGame();
+/** 只读的播报页签（活动 / 系统播报共用同一套列表样式）：时间 + 一句话 */
+function ChatBroadcastPane(props: {
+  role: string;
+  broadcasts: ServerBroadcastView[];
+  hint: string;
+  empty: string;
+}) {
   return (
-    <div role="聊天浮窗-系统播报" className="flex min-h-0 flex-1 flex-col gap-1">
-      <p className="text-[11px] text-faint">{CHAT_COPY.system.readonly}</p>
+    <div role={props.role} className="flex min-h-0 flex-1 flex-col gap-1">
+      <p className="text-[11px] text-faint">{props.hint}</p>
       <PagedList
-        role="聊天浮窗-系统播报-列表"
-        items={session.broadcasts}
+        role={`${props.role}-列表`}
+        items={props.broadcasts}
         keyOf={(item) => item.id}
-        empty={<p className="py-6 text-center text-[12px] text-faint">{CHAT_COPY.system.empty}</p>}
+        empty={<p className="py-6 text-center text-[12px] text-faint">{props.empty}</p>}
         renderRow={(item) => (
           <p className="truncate border-b border-line-soft py-1 text-[12.5px] text-dim" title={serverBroadcastText(item)}>
             <span className="mr-1.5 font-mono text-[11px] text-faint">{formatReportTime(item.createdAt)}</span>
@@ -80,6 +86,34 @@ export function ChatSystemPane() {
         )}
       />
     </div>
+  );
+}
+
+/** 活动页签（v112）：剧本战场 / 洛阳 / 黄巾 / 五方势力 / 赛季等活动与玩法节点，只读 */
+export function ChatEventPane() {
+  const { CHAT_COPY } = useCopy();
+  const { session } = useGame();
+  return (
+    <ChatBroadcastPane
+      role="聊天浮窗-活动"
+      broadcasts={session.eventBroadcasts}
+      hint={CHAT_COPY.event.readonly}
+      empty={CHAT_COPY.event.empty}
+    />
+  );
+}
+
+/** 系统播报页签：城被掠空、连胜、占领分城、名将获得、爵位晋升、公告等（活动类在活动页签） */
+export function ChatSystemPane() {
+  const { CHAT_COPY } = useCopy();
+  const { session } = useGame();
+  return (
+    <ChatBroadcastPane
+      role="聊天浮窗-系统播报"
+      broadcasts={session.broadcasts}
+      hint={CHAT_COPY.system.readonly}
+      empty={CHAT_COPY.system.empty}
+    />
   );
 }
 

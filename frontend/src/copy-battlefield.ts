@@ -166,5 +166,33 @@ export const BATTLEFIELD_COPY = {
     INSUFFICIENT_TROOPS: '城内兵力不足',
     HERO_NOT_FOUND: '武将不存在',
   },
+  /** 全服播报（v112，AISLG-260）：活动页签里剧本战场的几句话；剧本名 / 据点名 / 时刻由调用方按当前语言传入 */
+  broadcast: {
+    /** 报名开始：detail = { script, startAt, endAt } */
+    signup: (script: string | null, start: string, end: string) =>
+      script
+        ? `剧本战场「${script}」开始报名：${start} 开战，${end} 结束（北京时间）`
+        : `剧本战场开始报名：${start} 开战，${end} 结束（北京时间）`,
+    /** 开战前 1 小时提醒：detail = { script, startAt } */
+    startSoon: (script: string | null, start: string) =>
+      script
+        ? `剧本战场「${script}」1 小时后开战（${start}），已报名还没入场的快带兵入场`
+        : `剧本战场 1 小时后开战（${start}），已报名还没入场的快带兵入场`,
+    /** 开战：detail = { script, startAt, endAt } */
+    started: (script: string | null, end: string) =>
+      script ? `剧本战场「${script}」开战了，${end} 结束` : `剧本战场开战了，${end} 结束`,
+    /** 据点易手：detail = { username, name, firstCapture } */
+    stronghold: (actor: string, name: string, firstCapture: boolean) =>
+      `${actor} 打下了据点「${name}」${firstCapture ? '（首占 +200 军功）' : ''}`,
+    /** 赤壁风向预告：detail = { script, switchAt, nextWind } */
+    wind: (wind: string, at: string) => `赤壁战场：${at} 风向转为${wind}`,
+    /** 收场：detail = { winner, scoreYuan, scoreCao } */
+    finished: (winner: 'yuan' | 'cao' | null, scoreYuan: number, scoreCao: number) =>
+      winner === 'yuan'
+        ? `剧本战场结束：袁绍 / 孙刘 / 讨董联军一方获胜（积分 ${scoreYuan} : ${scoreCao}）`
+        : winner === 'cao'
+          ? `剧本战场结束：曹操 / 董卓军一方获胜（积分 ${scoreYuan} : ${scoreCao}）`
+          : `剧本战场结束：双方积分持平（${scoreYuan} : ${scoreCao}）`,
+  },
   close: '关闭',
 };

@@ -9,16 +9,25 @@ export const CHAT_COPY = {
     unread: (count: number) => `${count} 条未读`,
     emptyWorld: '世界频道还没有消息',
     close: '关闭聊天',
+    /** 聊天按钮红点（v112，AISLG-260）：「活动」页签有未看过的新消息 */
+    eventUnread: '活动有新消息',
   },
   tabs: {
     world: '世界',
     alliance: '联盟',
+    /** v112（AISLG-260）：活动 / 玩法节点消息（只读，原来发公告的四处改到这里） */
+    event: '活动',
     system: '系统播报',
     private: '私聊',
   },
   system: {
     empty: '暂无播报',
     readonly: '系统播报只读，由服务器推送',
+  },
+  /** 「活动」页签（v112，AISLG-260）：只读，列表样式与系统播报一致 */
+  event: {
+    empty: '暂无活动消息',
+    readonly: '活动消息只读，由服务器推送',
   },
   alliance: {
     empty: '本联盟还没有消息，来打个招呼吧',

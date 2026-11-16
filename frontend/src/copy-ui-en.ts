@@ -103,6 +103,9 @@ export const SEASON_COPY_EN = {
     hint: 'Plan your marches, builds and recruits before the reset',
     confirm: 'Got it',
   },
+  broadcastEndingStage: { 'T-3d': 'has 3 days left', 'T-1d': 'has 1 day left', 'T-1h': 'has 1 hour left', 'T-10m': 'has 10 minutes left' } as Record<string, string>,
+  broadcastEnding: (seasonId: number, stage: string, endsAt: string) =>
+    `Season ${seasonId} ${stage}, ends at ${endsAt} (brief downtime and a world reset; accounts and tokens are kept)`,
   honorsLabel: 'My honors',
   honorsNone: 'No honors yet',
 } satisfies typeof SEASON_COPY;

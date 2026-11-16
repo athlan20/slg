@@ -203,7 +203,7 @@ export const REQUEST_GET_BATTLEFIELD: RequestOpDoc = {
     },
   ],
   agentNote:
-    '先看 event.script 与 event.status：signup 期只能报名 / 入场，active 才能行军与攻打。行军目标用 strongholds 的 id（MARCH_BATTLEFIELD_SQUAD 会按据点坐标走最短路径）；河只有 3 处渡口，先取渡口再渡河。攻打前用 garrisonPower 与自己的队伍战力对比，有城墙的据点按守城战（城墙 + 箭塔），没有把握先打渡口 / 普通据点。军功来自歼灭敌军（打 NPC 也算），首占据点 +200；乌巢（granary_wuchao）价值 30 分/小时并让敌方耗粮翻倍，适合偷袭。结束奖励自动入账，军功可立刻在战场商店换资源 / 武将经验 / 兵。讨董：只看 unlocked 为 true 的关卡，先打汜水关再虎牢关，洛阳最后；赤壁：先看 event.wind，东南风时孙刘方可以火攻，西北风时曹方可以连锁，留意预告的切换时刻。',
+    '先看 event.script 与 event.status：signup 期只能报名 / 入场，active 才能行军与攻打。日程与风向全在这一个协议里：报名开始 / 开战 / 结束时刻为 event.signupStartAt / startAt / endAt，下一场报名时刻与剧本为 nextSignupAt / nextScript，赤壁当前风向、下次切换与预告时刻为 event.wind.direction / nextAt / noticeAt（v112 起报名开始、开战前 1 小时、风向预告这些提醒不再来自公告，而是全服播报 battlefield_signup / battlefield_start_soon / battlefield_wind，用 GET_SERVER_BROADCASTS（category=event）补拉或等 PUSH_SERVER_BROADCAST）。行军目标用 strongholds 的 id（MARCH_BATTLEFIELD_SQUAD 会按据点坐标走最短路径）；河只有 3 处渡口，先取渡口再渡河。攻打前用 garrisonPower 与自己的队伍战力对比，有城墙的据点按守城战（城墙 + 箭塔），没有把握先打渡口 / 普通据点。军功来自歼灭敌军（打 NPC 也算），首占据点 +200；乌巢（granary_wuchao）价值 30 分/小时并让敌方耗粮翻倍，适合偷袭。结束奖励自动入账，军功可立刻在战场商店换资源 / 武将经验 / 兵。讨董：只看 unlocked 为 true 的关卡，先打汜水关再虎牢关，洛阳最后；赤壁：先看 event.wind，东南风时孙刘方可以火攻，西北风时曹方可以连锁，留意预告的切换时刻。',
 };
 
 export const REQUEST_SIGNUP_BATTLEFIELD: RequestOpDoc = {
