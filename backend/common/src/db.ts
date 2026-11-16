@@ -411,6 +411,9 @@ CREATE TABLE IF NOT EXISTS win_streaks (
   count integer NOT NULL DEFAULT 0,
   last_win_at timestamptz NOT NULL DEFAULT now()
 );
+-- AISLG-262：本轮连胜的首胜时间（窗口从首胜起算）与该账号上次连胜播报时间（单账号限频）；可空、向后兼容
+ALTER TABLE win_streaks ADD COLUMN IF NOT EXISTS streak_started_at timestamptz;
+ALTER TABLE win_streaks ADD COLUMN IF NOT EXISTS last_broadcast_at timestamptz;
 
 CREATE TABLE IF NOT EXISTS npc_attacks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
