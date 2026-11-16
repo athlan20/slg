@@ -49,8 +49,8 @@
 ### 沙箱与正式分开
 
 - 后端 `MAPP_CHANNEL`（`sandbox` | `production`，必须显式配置）与令牌里的 `channel` 不一致一律 401；支持逗号分隔多个渠道。
-- **当前部署决定**：沙箱联调直接连生产网关，`MAPP_CHANNEL=production,sandbox`，沙箱与正式共用同一应用 ID、同一网关、同一数据库（沙箱令牌只有能打开沙箱页的人拿得到，即开发者本人与受邀测试者）。平台文档建议沙箱与正式数据分开，如审核要求分开，改为测试网关 + `MAPP_CHANNEL=sandbox` 即可，代码不用改。
-- **审核通过后**把线上改回 `MAPP_CHANNEL=production`，沙箱令牌即被拒绝。
+- **部署**：沙箱联调连独立测试站（`slgtest.<域名>`，后端 `MAPP_CHANNEL=sandbox`，使用测试库）；正式连线上网关（`MAPP_CHANNEL=production`），两者不共用数据库，也不共用令牌。
+- `MAPP_CHANNEL` 也支持逗号分隔多个渠道（如 `production,sandbox`），仅在确需同一网关同时接受两种令牌时使用，默认不用。
 
 ## 构建与打包（可复现）
 
