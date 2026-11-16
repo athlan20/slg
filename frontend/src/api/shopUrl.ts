@@ -27,6 +27,9 @@ const SHOP_HOSTS = ['taobao.com', 'tmall.com'] as const;
 export const TAOBAO_SHOP_URL = (import.meta.env.PUBLIC_TAOBAO_URL ?? '').trim();
 
 export function isSafeShopUrl(url: unknown): url is string {
+  if (typeof __MAPP__ !== 'undefined' && __MAPP__) {
+    return false;
+  }
   if (typeof url !== 'string' || !url.startsWith('https://')) {
     return false;
   }

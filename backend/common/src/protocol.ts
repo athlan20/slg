@@ -283,6 +283,8 @@ export const Op = {
    *  CODE_RATE_LIMITED） */
   REDEEM_CODE: 156,
   OAUTH_AUTH_START: 157,
+  /** C→S Linux.do 微应用登录（v113，AISLG-261：握手阶段通过平台令牌验签后换取会话令牌。**仅玩家连接**，Agent 返回 AGENT_FORBIDDEN 且不进 agent-api 文档） */
+  MAPP_LOGIN: 158,
   /** C→S 公告列表（v60，AISLG-162：生效中公告，或 history=true 的往期；玩家与 Agent 通用） */
   GET_ANNOUNCEMENTS: 96,
   /** C→S 公告正文（v60，AISLG-162：可见的公告，含往期；玩家与 Agent 通用） */
@@ -570,6 +572,12 @@ export const ErrorCode = {
   GITHUB_ALREADY_BOUND: 'GITHUB_ALREADY_BOUND',
   LINUXDO_UNAVAILABLE: 'LINUXDO_UNAVAILABLE',
   LINUXDO_ALREADY_BOUND: 'LINUXDO_ALREADY_BOUND',
+  /** Linux.do 微应用服务未开启或当前连接非微应用环境（v113，AISLG-261） */
+  MAPP_UNAVAILABLE: 'MAPP_UNAVAILABLE',
+  /** Linux.do 论坛信任等级低于准入门槛（v113，AISLG-261） */
+  MAPP_TRUST_LEVEL_LOW: 'MAPP_TRUST_LEVEL_LOW',
+  /** Linux.do 微应用平台令牌无效或缺失（v113，AISLG-261：握手验证失败走 HTTP 401，此码为已建连接兜底） */
+  MAPP_TOKEN_INVALID: 'MAPP_TOKEN_INVALID',
   /** 请求过于频繁（v43：二维码生成 / Google 登录尝试 / GitHub 授权发起均按 IP 限频，20 次/分钟） */
   RATE_LIMITED: 'RATE_LIMITED',
   // AGENT_TOKEN_LIMIT（v43，多令牌上限）已随 v46 移除：每账号一个永久令牌，无上限概念。

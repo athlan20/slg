@@ -71,6 +71,7 @@ import {
 import { REQUEST_GOOGLE_BIND, REQUEST_GOOGLE_LOGIN } from './protocol-doc-ops-google';
 import { REQUEST_GITHUB_AUTH_START, REQUEST_OAUTH_REDEEM } from './protocol-doc-ops-github';
 import { REQUEST_OAUTH_AUTH_START } from './protocol-doc-ops-linuxdo';
+import { REQUEST_MAPP_LOGIN } from './protocol-doc-ops-mapp';
 import { PUSH_YELLOW_TURBAN_STATE, REQUEST_GET_YELLOW_TURBAN } from './protocol-doc-ops-yt';
 import { PUSH_MOVING_TARGET_STATE, REQUEST_GET_MOVING_TARGETS } from './protocol-doc-ops-moving';
 import {
@@ -559,6 +560,8 @@ export const OP_DOC: Record<Op, OpDoc> = {
   [Op.GOOGLE_BIND]: REQUEST_GOOGLE_BIND,
   [Op.GITHUB_AUTH_START]: REQUEST_GITHUB_AUTH_START,
   [Op.OAUTH_AUTH_START]: REQUEST_OAUTH_AUTH_START,
+  // Linux.do 微应用（v113，AISLG-261）：仅玩家连接，不进 Agent 文档（见 protocol-doc-ops-mapp.ts 的 MAPP_AGENT_HIDDEN_OPS）
+  [Op.MAPP_LOGIN]: REQUEST_MAPP_LOGIN,
   [Op.OAUTH_REDEEM]: REQUEST_OAUTH_REDEEM,
   [Op.RESEARCH_TECH]: withCityId(REQUEST_RESEARCH_TECH),
   [Op.CANCEL_RESEARCH]: REQUEST_CANCEL_RESEARCH,

@@ -1,5 +1,5 @@
 {
-  "version": 112,
+  "version": 113,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -288,7 +288,7 @@
   "connectionRules": [
     "连接地址由运营方提供，WebSocket 路径固定为 /ws（本地开发为 ws://127.0.0.1:8080/ws）；HTTP 健康检查 GET /health。",
     "连接建立后必须在时限内完成一次成功的 LOGIN（默认 15 秒，部署可调），否则服务端以 close code 4001 主动断开。",
-    "登录成功前只允许发送 LOGIN（op 1）、微信扫码登录的协议（WX_QR_CREATE / WX_SCAN / WX_CONFIRM / WX_CANCEL，op 54–57，仅供网页与微信小游戏）、GOOGLE_LOGIN（op 60，仅供网页）与 GITHUB_AUTH_START / OAUTH_REDEEM（op 62 / 63，仅供网页），其他协议号一律返回 NOT_LOGGED_IN；登录后重复发送 LOGIN 返回 ALREADY_LOGGED_IN。等人扫码的连接，登录时限会延长到二维码过期之后。",
+    "登录成功前只允许发送 LOGIN（op 1）、微信扫码登录的协议（WX_QR_CREATE / WX_SCAN / WX_CONFIRM / WX_CANCEL，op 54–57，仅供网页与微信小游戏）、GOOGLE_LOGIN（op 60，仅供网页）、GITHUB_AUTH_START / OAUTH_AUTH_START / OAUTH_REDEEM（op 62 / 157 / 63，仅供网页）与 MAPP_LOGIN（op 158，仅供 Linux.do 微应用），其他协议号一律返回 NOT_LOGGED_IN；登录后重复发送 LOGIN 返回 ALREADY_LOGGED_IN。等人扫码的连接，登录时限会延长到二维码过期之后。",
     "Google 一键登录（v44）与 Agent 无关：网页用 Google Identity Services 拿到 ID Token 后经 GOOGLE_LOGIN 换会话令牌再 LOGIN；没绑定过的 Google 账号自动建号（无密码），这类账号的 Agent 接入同样走「Agent 令牌」。",
     "GitHub 一键登录（v45）与 Agent 无关：网页经 GITHUB_AUTH_START 拿到 GitHub 授权地址后整页跳转，授权结果由 HTTP 回调（GET /auth/github/callback）302 带回前端，网页用 OAUTH_REDEEM 把 60 秒一次性登录码换成会话令牌再 LOGIN；没绑定过的 GitHub 账号自动建号（无密码），这类账号的 Agent 接入同样走「Agent 令牌」。",
     "每条请求帧可携带 seq（正整数，由客户端自增分配）；响应帧原样带回该值用于关联请求，推送帧没有 seq。",
@@ -874,7 +874,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 112,
+                "protocolVersion": 113,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -923,7 +923,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 112,
+                "protocolVersion": 113,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -943,14 +943,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/109 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/110 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 109,
+              "docVersion": 110,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -965,8 +965,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 112,
-                "docNotice": "接口文档已从 v109 更新到 v112：请 GET /agent-api/changes/109 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 113,
+                "docNotice": "接口文档已从 v110 更新到 v113：请 GET /agent-api/changes/110 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"

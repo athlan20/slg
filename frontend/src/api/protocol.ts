@@ -252,6 +252,8 @@ export const Op = {
   GITHUB_AUTH_START: 62,
   /** 发起第三方 OAuth 授权：data.provider 与 data.purpose */
   OAUTH_AUTH_START: 157,
+  /** 用平台令牌握手后换取会话令牌（v113，AISLG-261）：Linux.do 微应用登录 */
+  MAPP_LOGIN: 158,
   /** 用一次性登录码换会话令牌（v45）：data.code；OAuth 回跳进页面时使用 */
   OAUTH_REDEEM: 63,
   PUSH_BUILD_STATE: 2000,
@@ -449,6 +451,9 @@ export type ErrorCode =
   | 'GITHUB_ALREADY_BOUND'
   | 'LINUXDO_UNAVAILABLE'
   | 'LINUXDO_ALREADY_BOUND'
+  | 'MAPP_UNAVAILABLE'
+  | 'MAPP_TRUST_LEVEL_LOW'
+  | 'MAPP_TOKEN_INVALID'
   | 'RATE_LIMITED'
   | 'AGENT_PASSWORD_FORBIDDEN'
   | 'PASSWORD_LOGIN_CLOSED'

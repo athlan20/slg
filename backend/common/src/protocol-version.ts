@@ -1005,5 +1005,8 @@
  *   六、Agent 侧：原先能从公告读到这些提醒，现在改为读播报（GET_SERVER_BROADCASTS + PUSH_SERVER_BROADCAST），时间与风向
  *   仍可从 GET_BATTLEFIELD（event.signupStartAt / startAt / endAt / wind.direction / wind.nextAt / wind.noticeAt、
  *   nextSignupAt / nextScript）拿到，字段无变化。
+ * v113（Linux.do 微应用接入，AISLG-261）：
+ *   新增玩家专用 op MAPP_LOGIN（op 158，登录前可发，Agent 返回 AGENT_FORBIDDEN，不进 agent-api 文档），
+ *   握手阶段通过平台令牌验签后换取会话令牌；新增错误码 MAPP_UNAVAILABLE / MAPP_TRUST_LEVEL_LOW / MAPP_TOKEN_INVALID。
  */
-export const PROTOCOL_VERSION = 112;
+export const PROTOCOL_VERSION = 113;
