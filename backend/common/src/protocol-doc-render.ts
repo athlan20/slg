@@ -10,17 +10,20 @@ import { OP_DOC } from './protocol-doc-ops';
 import { AGENT_HIDDEN_ERROR_CODES as CHAT_HIDDEN_ERROR_CODES, AGENT_HIDDEN_OPS as CHAT_HIDDEN_OPS } from './protocol-doc-ops-chat';
 import { ALLIANCE_AGENT_HIDDEN_ERROR_CODES, ALLIANCE_AGENT_HIDDEN_OPS } from './protocol-doc-ops-alliance';
 import { TOPUP_AGENT_HIDDEN_ERROR_CODES, TOPUP_AGENT_HIDDEN_OPS } from './protocol-doc-ops-topup';
+import { MAPP_AGENT_HIDDEN_ERROR_CODES, MAPP_AGENT_HIDDEN_OPS } from './protocol-doc-ops-mapp';
 
-/** 不写进 Agent 文档的协议号 / 错误码：聊天、联盟的玩家专属部分，以及充值（付款必须玩家本人） */
+/** 不写进 Agent 文档的协议号 / 错误码：聊天、联盟的玩家专属部分，充值与微应用登录（付款/环境必须玩家本人） */
 const AGENT_HIDDEN_OPS: ReadonlySet<number> = new Set<number>([
   ...CHAT_HIDDEN_OPS,
   ...ALLIANCE_AGENT_HIDDEN_OPS,
   ...TOPUP_AGENT_HIDDEN_OPS,
+  ...MAPP_AGENT_HIDDEN_OPS,
 ]);
 const AGENT_HIDDEN_ERROR_CODES: ReadonlySet<string> = new Set<string>([
   ...CHAT_HIDDEN_ERROR_CODES,
   ...ALLIANCE_AGENT_HIDDEN_ERROR_CODES,
   ...TOPUP_AGENT_HIDDEN_ERROR_CODES,
+  ...MAPP_AGENT_HIDDEN_ERROR_CODES,
 ]);
 import { CHANGES_PATH_PREFIX } from './protocol-changelog';
 import {

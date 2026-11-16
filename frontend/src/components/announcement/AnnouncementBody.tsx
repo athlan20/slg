@@ -19,6 +19,12 @@ function renderInline(line: string, keyPrefix: string): ReactNode[] {
     const key = `${keyPrefix}-${index}`;
     if (match[1] !== undefined) {
       nodes.push(<strong key={key} className="font-semibold text-fg">{match[1]}</strong>);
+    } else if (typeof __MAPP__ !== 'undefined' && __MAPP__) {
+      nodes.push(
+        <span key={key} className="text-accent underline underline-offset-2">
+          {match[2]}
+        </span>,
+      );
     } else {
       nodes.push(
         <a key={key} href={match[3]} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2 hover:text-fg">

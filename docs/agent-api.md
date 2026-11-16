@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**112** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**113** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 112）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 113）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -13,7 +13,7 @@
 
 - 连接地址由运营方提供，WebSocket 路径固定为 /ws（本地开发为 ws://127.0.0.1:8080/ws）；HTTP 健康检查 GET /health。
 - 连接建立后必须在时限内完成一次成功的 LOGIN（默认 15 秒，部署可调），否则服务端以 close code 4001 主动断开。
-- 登录成功前只允许发送 LOGIN（op 1）、微信扫码登录的协议（WX_QR_CREATE / WX_SCAN / WX_CONFIRM / WX_CANCEL，op 54–57，仅供网页与微信小游戏）、GOOGLE_LOGIN（op 60，仅供网页）与 GITHUB_AUTH_START / OAUTH_REDEEM（op 62 / 63，仅供网页），其他协议号一律返回 NOT_LOGGED_IN；登录后重复发送 LOGIN 返回 ALREADY_LOGGED_IN。等人扫码的连接，登录时限会延长到二维码过期之后。
+- 登录成功前只允许发送 LOGIN（op 1）、微信扫码登录的协议（WX_QR_CREATE / WX_SCAN / WX_CONFIRM / WX_CANCEL，op 54–57，仅供网页与微信小游戏）、GOOGLE_LOGIN（op 60，仅供网页）、GITHUB_AUTH_START / OAUTH_AUTH_START / OAUTH_REDEEM（op 62 / 157 / 63，仅供网页）与 MAPP_LOGIN（op 158，仅供 Linux.do 微应用），其他协议号一律返回 NOT_LOGGED_IN；登录后重复发送 LOGIN 返回 ALREADY_LOGGED_IN。等人扫码的连接，登录时限会延长到二维码过期之后。
 - Google 一键登录（v44）与 Agent 无关：网页用 Google Identity Services 拿到 ID Token 后经 GOOGLE_LOGIN 换会话令牌再 LOGIN；没绑定过的 Google 账号自动建号（无密码），这类账号的 Agent 接入同样走「Agent 令牌」。
 - GitHub 一键登录（v45）与 Agent 无关：网页经 GITHUB_AUTH_START 拿到 GitHub 授权地址后整页跳转，授权结果由 HTTP 回调（GET /auth/github/callback）302 带回前端，网页用 OAUTH_REDEEM 把 60 秒一次性登录码换成会话令牌再 LOGIN；没绑定过的 GitHub 账号自动建号（无密码），这类账号的 Agent 接入同样走「Agent 令牌」。
 - 每条请求帧可携带 seq（正整数，由客户端自增分配）；响应帧原样带回该值用于关联请求，推送帧没有 seq。
@@ -577,7 +577,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 112,
+    "protocolVersion": 113,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -643,7 +643,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 112,
+    "protocolVersion": 113,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -667,7 +667,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/109 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/110 补读增量）**
 
 请求：
 
@@ -678,7 +678,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 109,
+    "docVersion": 110,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -697,8 +697,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 112,
-    "docNotice": "接口文档已从 v109 更新到 v112：请 GET /agent-api/changes/109 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 113,
+    "docNotice": "接口文档已从 v110 更新到 v113：请 GET /agent-api/changes/110 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -23293,7 +23293,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 112。
+- 协议版本随对外协议内容的每次变化递增；当前为 113。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

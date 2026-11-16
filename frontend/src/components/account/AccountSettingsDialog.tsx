@@ -26,10 +26,14 @@ export function AccountSettingsDialog({ onClose }: { onClose: () => void }) {
     <Modal role="账号设置弹窗" title={WECHAT_COPY.settings.title} accent="none" onClose={onClose}>
       <div role="账号设置弹窗-内容" className="flex min-h-0 flex-col gap-2 overflow-y-auto">
         <NicknameBlock />
-        <WechatBindBlock />
-        <GoogleBindBlock />
-        <GithubBindBlock />
-        <LinuxdoBindBlock />
+        {!(typeof __MAPP__ !== 'undefined' && __MAPP__) ? (
+          <>
+            <WechatBindBlock />
+            <GoogleBindBlock />
+            <GithubBindBlock />
+            <LinuxdoBindBlock />
+          </>
+        ) : null}
         <AgentTokenBlock />
       </div>
     </Modal>

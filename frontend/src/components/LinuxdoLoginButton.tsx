@@ -19,7 +19,9 @@ export function LinuxdoLoginButton({ connect }: { connect: () => Promise<ApiClie
       if (!res.ok) {
         setError(linuxdoErrorText(res.error?.code, res.error?.message));
       } else if (typeof res.data?.authUrl === 'string' && res.data.authUrl) {
-        window.location.href = res.data.authUrl;
+        if (!(typeof __MAPP__ !== 'undefined' && __MAPP__)) {
+          window.location.href = res.data.authUrl;
+        }
       } else {
         setError(LINUXDO_COPY.errors.fallback);
       }

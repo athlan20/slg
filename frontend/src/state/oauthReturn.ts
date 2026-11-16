@@ -12,7 +12,7 @@ export type OauthReturn =
 let consumed = false;
 
 export function takeOauthReturn(): OauthReturn | null {
-  if (consumed || typeof window === 'undefined') {
+  if ((typeof __MAPP__ !== 'undefined' && __MAPP__) || consumed || typeof window === 'undefined') {
     return null;
   }
   consumed = true;

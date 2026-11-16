@@ -22,15 +22,17 @@ export function ItemBalanceStrip({ gift, ingot, topup }: ItemBalanceStripProps) 
       <span role="ingot-balance" className="font-mono text-[12px] tabular-nums text-accent">
         {ingot === null ? ITEM_COPY.loading : TOPUP_COPY.balanceIngot(ingot)}
       </span>
-      <button
-        type="button"
-        role="topup-entry-button"
-        disabled={topup.unavailable}
-        onClick={topup.openPanel}
-        className="ml-auto cursor-pointer rounded border border-accent-dim bg-accent-soft px-2.5 py-0.5 text-[12px] text-accent disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {topup.unavailable ? TOPUP_COPY.entryUnavailable : TOPUP_COPY.entry}
-      </button>
+      {!(typeof __MAPP__ !== 'undefined' && __MAPP__) ? (
+        <button
+          type="button"
+          role="topup-entry-button"
+          disabled={topup.unavailable}
+          onClick={topup.openPanel}
+          className="ml-auto cursor-pointer rounded border border-accent-dim bg-accent-soft px-2.5 py-0.5 text-[12px] text-accent disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {topup.unavailable ? TOPUP_COPY.entryUnavailable : TOPUP_COPY.entry}
+        </button>
+      ) : null}
     </div>
   );
 }

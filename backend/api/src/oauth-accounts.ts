@@ -9,7 +9,7 @@ import pg from 'pg';
 import { insertAccountWithCity } from './auth';
 
 /** 支持的第三方登录提供商（oauth_identities.provider 的取值） */
-export type OauthProvider = 'google' | 'github' | 'linuxdo';
+export type OauthProvider = 'google' | 'github' | 'linuxdo' | 'linuxdo_mapp';
 
 export interface OauthIdentityInput {
   provider: OauthProvider;
@@ -94,7 +94,14 @@ export async function loginWithOauth(
   pool: pg.Pool,
   identity: OauthIdentityInput,
   signupIp: string | null,
-  makeUsername: () => string = () => randomOauthUsername(identity.provider === 'github' ? 'gh' : identity.provider === 'linuxdo' ? 'ld' : 'g'),
+  makeUsername: () => string = () =>
+    randomOauthUsername(
+      identity.provider === 'github'
+        ? 'gh'
+        : identity.provider === 'linuxdo' || identity.provider === 'linuxdo_mapp'
+          ? 'ld'
+          : 'g',
+    ),
 ): Promise<OauthLoginAccount> {
   for (let attempt = 0; attempt < MAX_CREATE_ATTEMPTS; attempt += 1) {
     const existing = await findAccountByOauth(pool, identity.provider, identity.subject);

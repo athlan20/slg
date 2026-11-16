@@ -119,6 +119,8 @@ export interface GameSession {
   connection: ConnectionStatus;
   loginBusy: boolean;
   loginError: string | null;
+  loginErrorCode?: string | null;
+  loginWithMapp?: () => Promise<void>;
   buildError: string | null;
   /** 征兵 / 取消征兵失败的人读提示（v11，征兵面板内展示） */
   recruitError: string | null;
@@ -280,6 +282,7 @@ export function useGameSession(): GameSession {
   const [connection, setConnection] = useState<ConnectionStatus>('idle');
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginErrorCode, setLoginErrorCode] = useState<string | null>(null);
   const [buildError, setBuildError] = useState<string | null>(null);
   const [recruitError, setRecruitError] = useState<string | null>(null);
   const [defenseError, setDefenseError] = useState<string | null>(null);
@@ -1069,10 +1072,67 @@ export function useGameSession(): GameSession {
     },
     [ensureClient, tokenLogin],
   );
+
+  const loginWithMapp = useCallback(async () => {
+    setLoginBusy(true);
+    setLoginError(null);
+    setLoginErrorCode(null);
+    try {
+      setConnection('connecting');
+      const client = ensureClient();
+      await client.connect();
+      const res = await client.request(Op.MAPP_LOGIN, {});
+      if (!res.ok) {
+        setConnection('idle');
+        const code = res.error?.code;
+        setLoginErrorCode(code ?? null);
+        if (code === 'MAPP_TRUST_LEVEL_LOW') {
+          setLoginError('论坛信任等级不足');
+        } else if (code === 'MAPP_UNAVAILABLE') {
+          setLoginError('微应用服务暂未开放');
+        } else if (code === 'MAPP_TOKEN_INVALID') {
+          setLoginError('平台身份已过期，请重新进入应用');
+        } else {
+          setLoginError(res.error?.message || '微应用登录失败');
+        }
+        return;
+      }
+      const data = res.data as unknown as { sessionToken?: string; username?: string; created?: boolean };
+      const sessionToken = data?.sessionToken;
+      if (typeof sessionToken !== 'string') {
+        setConnection('idle');
+        setLoginError('登录失败：未收到有效会话令牌');
+        return;
+      }
+      await tokenLogin(sessionToken, 'linuxdo');
+    } catch (err) {
+      setConnection('idle');
+      if (err instanceof ConnectionError) {
+        setLoginError('连接失败，请重新进入应用');
+      } else {
+        setLoginError(err instanceof Error ? err.message : '微应用登录失败');
+      }
+    } finally {
+      setLoginBusy(false);
+    }
+  }, [ensureClient, tokenLogin]);
+
   const security = useAccountSecurity({ clientRef, setAgent, setAccount });
 
   useEffect(() => {
     aliveRef.current = true;
+    if (typeof __MAPP__ !== 'undefined' && __MAPP__) {
+      setBooting(true);
+      void loginWithMapp().finally(() => {
+        setBooting(false);
+      });
+      return () => {
+        aliveRef.current = false;
+        clearTimers();
+        clientRef.current?.close();
+        clientRef.current = null;
+      };
+    }
     // OAuth 回跳：地址栏带一次性码 / 绑定结果（oauthReturn.ts 已顺手把参数抹掉）。
     // code 优先于本地保存的令牌——用户刚授权的是哪个号就进哪个号；绑定 / 失败结果在登录
     // 成功后进事件流，未登录场景由登录页的 loginError 显示。
@@ -1488,6 +1548,8 @@ export function useGameSession(): GameSession {
     connection,
     loginBusy,
     loginError,
+    loginErrorCode,
+    loginWithMapp,
     buildError,
     recruitError,
     city,

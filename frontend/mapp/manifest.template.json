@@ -1,0 +1,26 @@
+{
+  "format": 1,
+  "id": "019a2a58-0000-7000-8000-000000000001",
+  "name": "SLG",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "script": "app.js",
+  "style": "app.css",
+  "permissions": [
+    "user.read",
+    "theme.read",
+    "network.websocket",
+    "storage.read",
+    "storage.write"
+  ],
+  "tags": [
+    "游戏",
+    "策略"
+  ],
+  "websockets": {
+    "game": {
+      "url": "wss://slg.yuntianyou.cc/ws",
+      "auth": "platform"
+    }
+  }
+}
