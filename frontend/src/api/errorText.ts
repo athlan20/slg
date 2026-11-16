@@ -14,7 +14,7 @@ import {
   type Resources,
 } from './protocol';
 import { getCopy } from '../i18n/bundle';
-import { formatDurationText } from './format';
+import { formatClock, formatDurationText } from './format';
 
 /**
  * 资源缺口后缀（AISLG-69）：INSUFFICIENT_RESOURCES 失败响应附带的 shortfall（每资源缺口）
@@ -289,7 +289,11 @@ export function heroErrorText(code: ErrorCode | undefined, message: string | und
 }
 
 /** 出征 / 召回失败的人读提示（世界地图视图内显示，v12 起、v16 新增任务类错误码） */
-export function marchErrorText(code: ErrorCode | undefined, message: string | undefined): string {
+export function marchErrorText(
+  code: ErrorCode | undefined,
+  message: string | undefined,
+  data?: Record<string, unknown>,
+): string {
   const { COPY, CITY_COPY, DEFENSE_COPY, HERO_COPY, EXTRA_STATE } = getCopy();
   switch (code) {
     case 'TARGET_NOT_ATTACKABLE':
@@ -343,6 +347,18 @@ export function marchErrorText(code: ErrorCode | undefined, message: string | un
       return message ?? CITY_COPY.errors.governmentTooLow;
     case 'BRANCH_LIMIT':
       return message ?? CITY_COPY.errors.branchLimit;
+    // v111（AISLG-259）名城任期轮换：已占名城 / 到期封禁（封禁附 bannedUntil 与剩余秒数）
+    case 'FAMOUS_LIMIT':
+      return message ?? CITY_COPY.famous.unbannedRow;
+    case 'FAMOUS_BANNED': {
+      const bannedUntil =
+        typeof data?.bannedUntil === 'string'
+          ? data.bannedUntil
+          : typeof data?.until === 'string'
+            ? data.until
+            : null;
+      return bannedUntil ? CITY_COPY.famous.bannedRow(formatClock(bannedUntil)) : (message ?? CITY_COPY.famous.unbannedRow);
+    }
     case 'TARGET_LEVEL_TOO_HIGH':
       return message ?? CITY_COPY.errors.targetLevelTooHigh;
     default:

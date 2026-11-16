@@ -83,6 +83,19 @@ export const CITY_COPY_EN = {
       'Outer ring cleared: march out within the time limit to attack the keeper — plunder the stockpile or occupy ' +
       'the city as a Branch City (occupying grants an exclusive output bonus); when time runs out, the outer-ring ' +
       'garrisons refill',
+    // v111（AISLG-259 名城任期轮换）
+    tenureRow: (clock: string) => `Famous City tenure until ${clock}; it returns to no owner afterwards`,
+    tenureRemaining: (left: string) => `Famous City tenure left ${left}`,
+    tenureLimitRow: (count: number, limit: number) => `Famous Cities held ${count} / ${limit} (only one at a time)`,
+    unbannedRow: 'You already hold a Famous City: wait for its tenure to end or abandon it before taking another',
+    bannedRow: (clock: string) =>
+      `You lost this city when its tenure ended; you cannot take it back before ${clock} (other Famous Cities are fine)`,
+    warnStageDay: '24 hours',
+    warnStageHour: '1 hour',
+    eventExpiring: (name: string, left: string) => `The tenure of ${name} ends in ${left}; it will return to no owner`,
+    eventExpired: (name: string, clock: string) =>
+      `The tenure of ${name} has ended and the city is unowned again (you cannot take it back before ${clock})`,
+    broadcastExpired: (actor: string, name: string) => `${actor}'s ${name} tenure ended; ${name} is unowned again`,
   },
   nobility: {
     label: 'Title / Nobility',

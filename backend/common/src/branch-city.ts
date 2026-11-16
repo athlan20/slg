@@ -3,7 +3,12 @@
 // - 占领 NPC 城变分城：主城官府 ≥ 3 级；分城数 < 分城上限 = floor(主城官府等级 ÷ 2)（v57 由 ÷3 放宽）；
 //   目标 NPC 城等级 ≤ 出发城官府等级（参考旧游戏：只能拿下不高于自己级别的城）；
 //   本账号刚放弃的分城在冷却内不能再占回（v57，AISLG-153；冷却天数见 discardCooldownDays）。
+// v111（AISLG-259）名城任期轮换：占领名城（NPC 名城与他人名城）另需——本账号名下没有名城
+// （每账号同一时间最多 1 座）且本账号不在该城的到期封禁期内（规则见 famous-tenure.ts）。
 // API（出征发起初核）与 Worker（到达复核）共用，两侧不得各自另算。
+
+import type { FamousTenureDenial, FamousTenureState } from './famous-tenure';
+import { checkFamousTenure } from './famous-tenure';
 
 /** 占领 NPC 城所需的主城官府最低等级 */
 export const BRANCH_MIN_GOVERNMENT = 3;
@@ -25,12 +30,18 @@ export function discardCooldownDays(governmentLevel: number): number {
   return Math.max(1, Math.floor(Math.max(0, governmentLevel)));
 }
 
-export type OccupyCityDenial = 'GOVERNMENT_TOO_LOW' | 'BRANCH_LIMIT' | 'DISCARD_COOLDOWN' | 'TARGET_LEVEL_TOO_HIGH';
+export type OccupyCityDenial =
+  | 'GOVERNMENT_TOO_LOW'
+  | 'BRANCH_LIMIT'
+  | 'DISCARD_COOLDOWN'
+  | 'TARGET_LEVEL_TOO_HIGH'
+  | FamousTenureDenial;
 
 /**
  * 占领 NPC 城的资格判定（出征发起与到达复核共用）。顺序即提示优先级：
- * 主城官府不够 3 级 → 分城已满 → 放弃冷却中 → 目标等级高于出发城官府等级。
+ * 主城官府不够 3 级 → 已占名城 → 名城封禁中 → 分城已满 → 放弃冷却中 → 目标等级高于出发城官府等级。
  * branchCount 为账号现有分城数（不含主城）；discardCooldown 为本账号在该地块的放弃冷却是否未结束。
+ * famous（v111，AISLG-259）只对占领名城（NPC 名城 / 他人名城）传：本账号名城数与在该城的封禁。
  */
 export function checkOccupyNpcCity(args: {
   mainGovernment: number;
@@ -38,9 +49,16 @@ export function checkOccupyNpcCity(args: {
   branchCount: number;
   targetLevel: number;
   discardCooldown?: boolean;
+  famous?: FamousTenureState;
+  /** 判定用的当前时刻（与其它锁内判定同口径；缺省取进程当前时刻） */
+  now?: Date;
 }): OccupyCityDenial | null {
   if (args.mainGovernment < BRANCH_MIN_GOVERNMENT) {
     return 'GOVERNMENT_TOO_LOW';
+  }
+  const famousDenial = args.famous ? checkFamousTenure(args.famous, args.now ?? new Date()) : null;
+  if (famousDenial) {
+    return famousDenial;
   }
   if (args.branchCount >= branchCityLimit(args.mainGovernment)) {
     return 'BRANCH_LIMIT';

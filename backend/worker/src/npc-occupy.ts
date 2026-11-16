@@ -6,6 +6,8 @@
 // denial。战败与目标失效的处理与掠夺一致。设计上不掠夺（库存随城整体移交）。
 // 名城（AISLG-56）：外围阶段先清外围（famous-outer.ts）；城守阶段打城守，转城后以名城
 // 命名并带独占加成标记（cities.famous_name）。
+// v111（AISLG-259 名城轮换）：占下名城时写任期到期时刻（cities.famous_expires_at，7 天按缩放）；
+// 到达复核除分城资格外还核「每账号最多 1 座名城」与「到期封禁 48 小时」（famous-tenure.ts）。
 // 调用方（world-tick）已按锁序锁出征城并锁定目标地块，本文件内不再锁 cities。
 
 import pg from 'pg';
@@ -17,6 +19,8 @@ import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { checkOccupyNpcCity } from '../../common/src/branch-city';
+import { famousTenureMs } from '../../common/src/famous-tenure';
+import { loadFamousTenureState } from '../../common/src/famous-tenure-db';
 import { famousStage } from '../../common/src/famous-city';
 import { FAMOUS_CITY_NOBILITY_INDEX } from '../../common/src/nobility';
 import { loadNobilityIndex } from '../../common/src/nobility-db';
@@ -60,10 +64,14 @@ export async function convertNpcCityToBranch(
   for (const key of RESOURCE_KEYS) {
     stock[key] = Math.max(0, Math.floor(npc.stock?.[key] ?? 0));
   }
+  // v111（AISLG-259）：名城写任期到期时刻（基准 7 天 ÷ 全局时间缩放），提醒阶段从 0 起
   const ins = await client.query(
-    `INSERT INTO cities (account_id, name, gold, wood, food, stone, iron, population, x, y, famous_name, durability, durability_settled_at, origin_level)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), $13) RETURNING id`,
-    [accountId, cityName, stock.gold, stock.wood, stock.food, stock.stone, stock.iron, INITIAL_POPULATION, tile.x, tile.y, npc.famous?.name ?? null, DURABILITY_MAX, tile.level],
+    `INSERT INTO cities (account_id, name, gold, wood, food, stone, iron, population, x, y, famous_name, durability,
+                         durability_settled_at, origin_level, famous_expires_at, famous_warn_stage)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), $13,
+             CASE WHEN $11::text IS NULL THEN NULL ELSE now() + make_interval(secs => $14) END, 0)
+     RETURNING id`,
+    [accountId, cityName, stock.gold, stock.wood, stock.food, stock.stone, stock.iron, INITIAL_POPULATION, tile.x, tile.y, npc.famous?.name ?? null, DURABILITY_MAX, tile.level, famousTenureMs() / 1000],
   );
   const cityId = ins.rows[0].id as string;
   // v36（AISLG-115）：名城首占发绑定名将（全服唯一；已被他人获得或本账号名将满 3 名则跳过）
@@ -170,6 +178,10 @@ export async function resolveNpcOccupyArrival(
       : null;
   const standing = await loadBranchStanding(client, march.account_id);
   const fromLevels = await loadBuildingLevels(client, march.from_city_id);
+  // v111（AISLG-259）：名城另核「每账号最多 1 座」与「到期封禁 48 小时」（发起后可能已占 / 刚被封）
+  const famousTenure = npc.famous
+    ? await loadFamousTenureState(client, march.account_id, npc.famous.name, new Date())
+    : undefined;
   const denial =
     nobilityDenial ??
     checkOccupyNpcCity({
@@ -178,6 +190,7 @@ export async function resolveNpcOccupyArrival(
       branchCount: standing.branchCount,
       targetLevel: tile.level,
       discardCooldown: await loadDiscardCooldownActive(client, march.account_id, tile.x, tile.y),
+      famous: famousTenure,
     });
   await markMarchArrived(client, march.id);
   if (denial) {

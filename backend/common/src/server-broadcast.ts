@@ -1,6 +1,10 @@
 // 全服战况播报（v23，AISLG-60）：只播大事、不做聊天。当前四类：
 // 1) NPC 城被掠空  2) 首个占领金矿（全服一次性）  3) 主城被 NPC 攻破
 // 4) 玩家（或其 Agent）1 小时内连胜 5 场（此后每再连胜 5 场再播）。
+// 后续版本按同一通道追加：分城易主（city_conquered，v40）、洛阳窗口（luoyang_window，v79）、
+// 名将获得 / 下野 / 被俘（hero_granted / hero_left / hero_captured，v36 / v94）、
+// 势力动静（faction_*，v99–v107）、剧本战场（battlefield_*，v75），以及
+// 名城任期届满重归无主（famous_expired，v111，AISLG-259；周度事件，走普通限频）。
 // 限频：全服每分钟最多 3 条，超出的直接丢弃（播报不是事件流，漏掉不补）。
 // 写入由 Worker 在结算事务内完成（server_broadcasts 表），提交后 pg_notify → API
 // 经 PUSH_SERVER_BROADCAST 广播给全部在线连接；断线重连用 GET_SERVER_BROADCASTS

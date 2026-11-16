@@ -26,6 +26,7 @@ import { FOG_SCHEMA_SQL } from './fog-schema';
 import { FACILITY_SCHEMA_SQL } from './facility-schema';
 import { FACTION_SCHEMA_SQL } from './faction-schema';
 import { REDEEM_SCHEMA_SQL } from './redeem-schema';
+import { famousTenureMs } from './famous-tenure';
 
 /** Worker 完成建造后通知 API 的 PostgreSQL 通道名 */
 export const NOTIFY_CHANNEL = 'slg_build_completed';
@@ -816,6 +817,21 @@ CREATE TABLE IF NOT EXISTS city_troop_pools (
 );
 CREATE INDEX IF NOT EXISTS idx_city_troop_pools_city ON city_troop_pools (city_id, pool, expires_at);
 CREATE INDEX IF NOT EXISTS idx_city_troop_pools_expire ON city_troop_pools (expires_at);
+
+-- v111（AISLG-259 名城轮换）：名城任期与到期封禁。
+-- cities.famous_expires_at：名城任期的绝对到期时刻（写入时按全局时间缩放折算死）；非名城恒为 NULL。
+-- cities.famous_warn_stage：到期前提醒已发到哪一阶段（0 未提醒 / 1 已发 24 小时 / 2 已发 1 小时）。
+-- famous_expiry_bans：到期失去名城的原主人 48 小时内不能再占回那一座（按名号 + 账号记，与地块无关）。
+-- 只加列加表，不动存量数据（存量名城的回填在 migrateDataOnce 里，只补 NULL，幂等）。
+ALTER TABLE cities ADD COLUMN IF NOT EXISTS famous_expires_at timestamptz;
+ALTER TABLE cities ADD COLUMN IF NOT EXISTS famous_warn_stage smallint NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_cities_famous_expires ON cities (famous_expires_at) WHERE famous_expires_at IS NOT NULL;
+CREATE TABLE IF NOT EXISTS famous_expiry_bans (
+  famous_name text NOT NULL,
+  account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  until timestamptz NOT NULL,
+  PRIMARY KEY (famous_name, account_id)
+);
 `;
 
 /**
@@ -838,6 +854,13 @@ async function migrateDataOnce(client: pg.PoolClient): Promise<void> {
     await migrateGiftColumn(client);
     // v108（AISLG-251）：元宝列（accounts.ingot）与 user_items.paid_count（含 CHECK）；只加列、不回填，幂等
     await migrateIngotColumns(client);
+    // v111（AISLG-259）：存量名城回填任期（7 天，按全局时间缩放）——只补 famous_expires_at IS NULL 的行，
+    // 上线不会立刻掉城；已经占着多座的账号各自保留到各自到期（只靠名额校验拦新的）
+    await client.query(
+      `UPDATE cities SET famous_expires_at = now() + make_interval(secs => $1), famous_warn_stage = 0
+       WHERE famous_name IS NOT NULL AND famous_expires_at IS NULL`,
+      [famousTenureMs() / 1000],
+    );
     // v92（AISLG-224）：迷雾上线前已结束的行军不再重放探索——一次性把 fog_recorded_at 补齐（settings 标记防重复）
     const fogBackfill = await client.query(`SELECT 1 FROM settings WHERE key = 'fog_backfill_v92'`);
     if (!fogBackfill.rowCount) {

@@ -110,6 +110,7 @@ import { handleMoveCity } from './handlers-move-city';
 import { loadMoveCityView } from '../../common/src/move-city-db';
 import { SEASON_GIFT } from '../../common/src/gift';
 import { BRANCH_MIN_GOVERNMENT, branchCityLimit } from '../../common/src/branch-city';
+import { FAMOUS_CITY_LIMIT } from '../../common/src/famous-tenure';
 import { handleGetSeason, handleGetHallOfFame, respondMaintenance } from './handlers-season';
 import { maintenanceActive } from './maintenance-gate';
 
@@ -706,12 +707,13 @@ async function handleGetState(
   // v12：附带账号全部城池（主城在前；占领 NPC 城池后出现分城），供客户端定位与展示；
   // v24（AISLG-58）：level = 各城官府等级；branch 给出分城名额与占领门槛
   const citiesRes = await ctx.pool.query(
-    `SELECT c.id, c.name, COALESCE(${effectiveLevelSql('g.level', "'government'", 'c.famous_name')}, 0)::int AS level, c.x, c.y
+    `SELECT c.id, c.name, COALESCE(${effectiveLevelSql('g.level', "'government'", 'c.famous_name')}, 0)::int AS level, c.x, c.y,
+            c.famous_name
      FROM cities c LEFT JOIN city_buildings g ON g.city_id = c.id AND g.kind = 'government'
      WHERE c.account_id = $1 ORDER BY c.created_at`,
     [accountId],
   );
-  const cities = citiesRes.rows.map((row: { id: string; name: string; level: number; x: number | null; y: number | null }, index: number) => ({
+  const cities = citiesRes.rows.map((row: { id: string; name: string; level: number; x: number | null; y: number | null; famous_name: string | null }, index: number) => ({
     id: row.id,
     name: row.name,
     level: row.level,
@@ -726,6 +728,9 @@ async function handleGetState(
     count: Math.max(0, cities.length - 1),
     limit: branchCityLimit(mainGovernment),
     minGovernment: BRANCH_MIN_GOVERNMENT,
+    // v111（AISLG-259）：名城任期轮换——现有名城数与同时可占上限（前端据此在出征前提示「已占名城」）
+    famousCount: citiesRes.rows.filter((row: { famous_name: string | null }) => row.famous_name !== null).length,
+    famousLimit: FAMOUS_CITY_LIMIT,
   };
   // v82（AISLG-205）：设为主城的冷却 / 来袭 / 逐城不可设原因，供前端置灰
   const capitalSwap = await loadCapitalSwapView(ctx.pool, accountId);
