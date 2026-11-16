@@ -98,6 +98,7 @@ export function useAccountSecurity({ clientRef, setAgent, setAccount }: Options)
 
   /** GitHub 绑定授权（v45）：在当前已登录连接上发 GITHUB_AUTH_START，拿到授权地址交给调用方跳转 */
   const startGithubBind = useCallback(async (): Promise<string | null> => {
+    if (typeof __MAPP__ !== 'undefined' && __MAPP__) return null;
     const { GITHUB_COPY } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) {
@@ -112,7 +113,9 @@ export function useAccountSecurity({ clientRef, setAgent, setAccount }: Options)
       if (typeof authUrl !== 'string') {
         return GITHUB_COPY.errors.fallback;
       }
-      window.location.href = authUrl;
+      if (!(typeof __MAPP__ !== 'undefined' && __MAPP__)) {
+        window.location.href = authUrl;
+      }
       return null;
     } catch (err) {
       return err instanceof Error ? err.message : GITHUB_COPY.errors.fallback;
@@ -120,6 +123,7 @@ export function useAccountSecurity({ clientRef, setAgent, setAccount }: Options)
   }, [clientRef]);
 
   const startLinuxdoBind = useCallback(async (): Promise<string | null> => {
+    if (typeof __MAPP__ !== 'undefined' && __MAPP__) return null;
     const { LINUXDO_COPY } = getCopy();
     const client = clientRef.current;
     if (!client?.connected) return LINUXDO_COPY.errors.connect;
@@ -128,7 +132,9 @@ export function useAccountSecurity({ clientRef, setAgent, setAccount }: Options)
       if (!res.ok) return linuxdoErrorText(res.error?.code, res.error?.message);
       const authUrl = res.data?.authUrl;
       if (typeof authUrl !== 'string' || !authUrl) return LINUXDO_COPY.errors.fallback;
-      window.location.href = authUrl;
+      if (!(typeof __MAPP__ !== 'undefined' && __MAPP__)) {
+        window.location.href = authUrl;
+      }
       return null;
     } catch (err) {
       return err instanceof Error ? err.message : LINUXDO_COPY.errors.fallback;

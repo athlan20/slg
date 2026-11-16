@@ -10,6 +10,7 @@ import {
   type HonorView,
   type SeasonPushData,
 } from '../api/protocol';
+import { appStorage } from '../storage';
 
 /** 换季维护期间轮询 GET_SEASON 的间隔（毫秒） */
 const MAINTENANCE_POLL_MS = 10_000;
@@ -63,7 +64,7 @@ function warnedKey(seasonId: number, stage: string): string {
 /** 预告阶段是否已弹过（localStorage 不可用时视为未弹过，每次都弹） */
 function hasWarned(seasonId: number, stage: string): boolean {
   try {
-    return window.localStorage.getItem(warnedKey(seasonId, stage)) === '1';
+    return appStorage.getItem(warnedKey(seasonId, stage)) === '1';
   } catch {
     return false;
   }
@@ -71,7 +72,7 @@ function hasWarned(seasonId: number, stage: string): boolean {
 
 function markWarned(seasonId: number, stage: string): void {
   try {
-    window.localStorage.setItem(warnedKey(seasonId, stage), '1');
+    appStorage.setItem(warnedKey(seasonId, stage), '1');
   } catch {
     // 存储不可用（隐私模式 / 被禁用）时忽略：最多重复弹一次
   }

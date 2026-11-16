@@ -21,6 +21,16 @@ export interface ConnInfo {
   connectedAt: Date;
   /** 登录超时的截止时刻（毫秒时间戳；index.ts 建连时设置）。等人扫微信码的连接会被延长到 ticket 过期之后 */
   authDeadlineAt?: number;
+  /** Linux.do 微应用握手鉴权通过后的身份信息（AISLG-261） */
+  mappIdentity?: {
+    readonly iss: string;
+    readonly sub: string;
+    readonly trust_level?: number;
+    readonly channel: 'production' | 'sandbox';
+    readonly appId: string;
+  } | null;
+  /** 是否在握手阶段携带了 mini_app_token 参数（用于在连接建立后区分未握手与身份缺失） */
+  mappTokenPresent?: boolean;
 }
 
 /** 把未登录连接的登录截止时刻延后到至少 untilMs（只延不缩） */

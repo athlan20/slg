@@ -35,34 +35,36 @@ export function TopupPanel({ topup, redeem }: TopupPanelProps) {
           {TOPUP_COPY.backToShop}
         </button>
       </div>
-      <div
-        role="topup-product-card"
-        className="flex shrink-0 items-center gap-2 rounded border border-accent-dim bg-accent-soft p-2.5"
-      >
-        <div role="topup-product-info" className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <b role="topup-product-name" className="text-[13.5px]">
-              {TOPUP_COPY.productName(TOPUP_INGOT)}
-            </b>
-            <span role="topup-product-price" className="font-mono text-[15px] tabular-nums text-accent">
-              {TOPUP_COPY.productPrice}
-            </span>
-            {/* 窗口很矮时不显示小字，避免挤压下面的兑换码区块（不加滚动条） */}
-            <small role="topup-product-note" className="text-[11.5px] text-dim [@media(max-height:560px)]:hidden">
-              {TOPUP_COPY.productNote}
-            </small>
-          </div>
-        </div>
-        <button
-          type="button"
-          role="topup-buy-button"
-          disabled={buyDisabled}
-          onClick={() => void topup.buy()}
-          className="shrink-0 cursor-pointer self-start rounded border border-accent-dim bg-panel px-3 py-1 text-[12.5px] text-accent disabled:cursor-not-allowed disabled:opacity-40"
+      {!(typeof __MAPP__ !== 'undefined' && __MAPP__) ? (
+        <div
+          role="topup-product-card"
+          className="flex shrink-0 items-center gap-2 rounded border border-accent-dim bg-accent-soft p-2.5"
         >
-          {topup.busy ? TOPUP_COPY.buying : TOPUP_COPY.buy}
-        </button>
-      </div>
+          <div role="topup-product-info" className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <b role="topup-product-name" className="text-[13.5px]">
+                {TOPUP_COPY.productName(TOPUP_INGOT)}
+              </b>
+              <span role="topup-product-price" className="font-mono text-[15px] tabular-nums text-accent">
+                {TOPUP_COPY.productPrice}
+              </span>
+              {/* 窗口很矮时不显示小字，避免挤压下面的兑换码区块（不加滚动条） */}
+              <small role="topup-product-note" className="text-[11.5px] text-dim [@media(max-height:560px)]:hidden">
+                {TOPUP_COPY.productNote}
+              </small>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="topup-buy-button"
+            disabled={buyDisabled}
+            onClick={() => void topup.buy()}
+            className="shrink-0 cursor-pointer self-start rounded border border-accent-dim bg-panel px-3 py-1 text-[12.5px] text-accent disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {topup.busy ? TOPUP_COPY.buying : TOPUP_COPY.buy}
+          </button>
+        </div>
+      ) : null}
       {topup.unavailable ? (
         <p role="topup-unavailable" className="shrink-0 text-[12px] text-st-error">
           {TOPUP_COPY.unavailableBadge}
@@ -73,7 +75,7 @@ export function TopupPanel({ topup, redeem }: TopupPanelProps) {
           {TOPUP_COPY.popupBlocked}
         </p>
       ) : null}
-      {isSafeCheckoutUrl(topup.manualCheckoutUrl) ? (
+      {!(typeof __MAPP__ !== 'undefined' && __MAPP__) && isSafeCheckoutUrl(topup.manualCheckoutUrl) ? (
         <a
           role="topup-checkout-link"
           href={topup.manualCheckoutUrl}
@@ -95,17 +97,19 @@ export function TopupPanel({ topup, redeem }: TopupPanelProps) {
         </p>
       ) : null}
       <RedeemCodeSection redeem={redeem} />
-      <p role="topup-note" className="shrink-0 text-[11.5px] leading-relaxed text-faint">
-        {TOPUP_COPY.note} {TOPUP_COPY.noteLinks.prefix}{' '}
-        <a role="topup-terms-link" href="/terms.html" target="_blank" rel="noopener noreferrer" className="text-accent underline">
-          {TOPUP_COPY.noteLinks.terms}
-        </a>
-        {TOPUP_COPY.noteLinks.joiner}
-        <a role="topup-pricing-link" href="/pricing.html" target="_blank" rel="noopener noreferrer" className="text-accent underline">
-          {TOPUP_COPY.noteLinks.pricing}
-        </a>
-        {TOPUP_COPY.noteLinks.end}
-      </p>
+      {!(typeof __MAPP__ !== 'undefined' && __MAPP__) ? (
+        <p role="topup-note" className="shrink-0 text-[11.5px] leading-relaxed text-faint">
+          {TOPUP_COPY.note} {TOPUP_COPY.noteLinks.prefix}{' '}
+          <a role="topup-terms-link" href="/terms.html" target="_blank" rel="noopener noreferrer" className="text-accent underline">
+            {TOPUP_COPY.noteLinks.terms}
+          </a>
+          {TOPUP_COPY.noteLinks.joiner}
+          <a role="topup-pricing-link" href="/pricing.html" target="_blank" rel="noopener noreferrer" className="text-accent underline">
+            {TOPUP_COPY.noteLinks.pricing}
+          </a>
+          {TOPUP_COPY.noteLinks.end}
+        </p>
+      ) : null}
     </section>
   );
 }

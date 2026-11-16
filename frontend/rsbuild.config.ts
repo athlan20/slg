@@ -15,7 +15,10 @@ export default defineConfig({
   },
   source: {
     entry: { index: './src/main.tsx' },
-    define: { __SLG_API_PORT__: JSON.stringify(apiPort) },
+    define: {
+      __SLG_API_PORT__: JSON.stringify(apiPort),
+      __MAPP__: JSON.stringify(false),
+    },
   },
   server: {
     port: webPort,

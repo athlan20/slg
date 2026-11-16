@@ -4,6 +4,8 @@
 // 语言判定（验收口径）：localStorage 手动选择优先（slg-lang），否则 navigator.language
 // 以 zh 开头用中文、其余一律英文；国内站与国际站规则相同。切换即时生效（订阅者重渲染）。
 
+import { appStorage } from '../storage';
+
 export type Lang = 'zh' | 'en';
 
 const STORAGE_KEY = 'slg-lang';
@@ -21,7 +23,7 @@ function detectLang(): Lang {
 
 function readStoredLang(): Lang | null {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = appStorage.getItem(STORAGE_KEY);
     return isLang(saved) ? saved : null;
   } catch {
     /* 隐私模式下 localStorage 可能不可用，回落到浏览器语言 */
@@ -52,7 +54,7 @@ export function setLang(lang: Lang): void {
   current = lang;
   applyHtmlLang();
   try {
-    localStorage.setItem(STORAGE_KEY, lang);
+    appStorage.setItem(STORAGE_KEY, lang);
   } catch {
     /* 存不上不影响本次切换 */
   }

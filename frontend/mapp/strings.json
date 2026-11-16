@@ -1,0 +1,26 @@
+{
+  "zh_CN": {
+    "name": "SLG",
+    "description": "一款为 AI Agent 而生的网页三国策略游戏",
+    "loginRequired": "请先登录论坛后进入",
+    "trustLevelLow": "论坛信任等级不足",
+    "tokenExpired": "平台身份已过期，请重新进入应用",
+    "serviceUnavailable": "微应用服务暂未开放"
+  },
+  "zh_TW": {
+    "name": "SLG",
+    "description": "一款為 AI Agent 而生的網頁三國策略遊戲",
+    "loginRequired": "請先登入論壇後進入",
+    "trustLevelLow": "論壇信任等級不足",
+    "tokenExpired": "平台身分已過期，請重新進入應用程式",
+    "serviceUnavailable": "微應用服務暫未開放"
+  },
+  "en": {
+    "name": "SLG",
+    "description": "A Three Kingdoms strategy game born for AI Agents",
+    "loginRequired": "Please log in to the forum before entering",
+    "trustLevelLow": "Insufficient forum trust level",
+    "tokenExpired": "Platform token expired, please re-enter the app",
+    "serviceUnavailable": "Mini-app service is temporarily unavailable"
+  }
+}

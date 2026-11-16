@@ -35,7 +35,9 @@ export function GithubLoginButton({ connect }: GithubLoginButtonProps) {
       }
       const authUrl = res.data?.authUrl;
       if (typeof authUrl === 'string') {
-        window.location.href = authUrl;
+        if (!(typeof __MAPP__ !== 'undefined' && __MAPP__)) {
+          window.location.href = authUrl;
+        }
         return; // 整页跳转中，不用复位 busy
       }
       setError(GITHUB_COPY.errors.fallback);

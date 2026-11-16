@@ -103,8 +103,8 @@ test('错误码文档覆盖全部 ErrorCode 且无多余条目', () => {
   assert.deepEqual(Object.keys(ERROR_DOC).sort(), [...VALID_ERROR_CODES].sort());
 });
 
-// 登录前即可发送的协议：LOGIN、微信扫码登录一组（v43；WX_QR_CREATE 的 bind 用途在处理器内要求已登录）、Google 登录（v44）、GitHub 与 Linux.do 授权发起（v45 / v110）
-const PRE_AUTH_DOC_NAMES = new Set(['LOGIN', 'WX_QR_CREATE', 'WX_SCAN', 'WX_CONFIRM', 'WX_CANCEL', 'GOOGLE_LOGIN', 'GITHUB_AUTH_START', 'OAUTH_AUTH_START', 'OAUTH_REDEEM']);
+// 登录前即可发送的协议：LOGIN、微信扫码登录一组（v43；WX_QR_CREATE 的 bind 用途在处理器内要求已登录）、Google 登录（v44）、GitHub 与 Linux.do 授权发起（v45 / v110）、Linux.do 微应用（v113）
+const PRE_AUTH_DOC_NAMES = new Set(['LOGIN', 'WX_QR_CREATE', 'WX_SCAN', 'WX_CONFIRM', 'WX_CANCEL', 'GOOGLE_LOGIN', 'GITHUB_AUTH_START', 'OAUTH_AUTH_START', 'OAUTH_REDEEM', 'MAPP_LOGIN']);
 
 test('每个请求型协议都标注 preAuth，且只有 LOGIN、微信扫码与 Google / GitHub / Linux.do 登录协议允许登录前发送', () => {
   for (const doc of Object.values(OP_DOC)) {

@@ -61,6 +61,9 @@ export function isSafeCheckoutUrl(url: unknown): url is string {
  * 不带 noopener：要拿到窗口句柄，拿到地址后再 opener = null 并导航。返回 null 表示被拦截。
  */
 function openPlaceholderWindow(text: string): Window | null {
+  if (typeof __MAPP__ !== 'undefined' && __MAPP__) {
+    return null;
+  }
   let win: Window | null;
   try {
     win = window.open('', '_blank');
@@ -188,7 +191,7 @@ export function useTopupSession(clientRef: { current: ApiClient | null }, option
         return;
       }
       setAwaiting(true);
-      if (win) {
+      if (!(typeof __MAPP__ !== 'undefined' && __MAPP__) && win) {
         // 原样使用服务端返回的地址；先断开 opener，付款页不能反向操作本页
         win.opener = null;
         win.location.href = data.checkoutUrl;

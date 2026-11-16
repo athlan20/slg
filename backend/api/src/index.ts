@@ -33,6 +33,7 @@ import { createLinuxdoService, linuxdoEntryFor } from './handlers-linuxdo';
 import { readLinuxdoSites } from './linuxdo-sites';
 import { readLinuxdoMinTrustLevel } from './linuxdo';
 import { registerLinuxdoCallbackRoute } from './linuxdo-callback';
+import { createMappService } from './mapp';
 import { registerPayWebhookRoute } from './pay-creem-webhook';
 import { createPaymentService } from '../../common/src/payments';
 import { requestLogSerializer } from './request-log';
@@ -156,6 +157,15 @@ async function main(): Promise<void> {
   }
   const linuxdo = createLinuxdoService(readLinuxdoSites(), linuxdoMinTrustLevel);
   ctx.linuxdo = linuxdo;
+  const mapp = await createMappService(process.env);
+  if (mapp?.enabled) {
+    ctx.mapp = mapp;
+    console.log(
+      `slg-api linuxdo mapp enabled (channel: ${mapp.config.channel}, issuer: ${mapp.config.issuer})`,
+    );
+  } else {
+    console.log('slg-api linuxdo mapp disabled (MAPP_ENABLED not true or config missing)');
+  }
   console.log(
     githubSites.defaultSite || githubSites.byHost.size > 0
       ? `slg-api github login enabled (sites: ${[...githubSites.byHost.keys()].join(', ') || 'default'})`
@@ -215,19 +225,47 @@ async function main(): Promise<void> {
   // 充值回调（v108，AISLG-251）：POST /pay/creem/webhook，验签用原始请求体；此路由不能被 CDN 缓存
   registerPayWebhookRoute(app, { ctx });
 
-  app.get('/ws', { websocket: true }, (socket: WebSocket, request) => {
-    const conn: ConnInfo = {
-      socket,
-      ip: request.ip || null,
-      host: hostFromHeaders(request.headers, TRUST_PROXY !== false),
-      origin: typeof request.headers.origin === 'string' ? request.headers.origin : null,
-      accountId: null,
-      username: null,
-      role: null,
-      sessionId: null,
-      connectedAt: new Date(),
-      authDeadlineAt: Date.now() + AUTH_TIMEOUT_MS,
-    };
+  app.get(
+    '/ws',
+    {
+      websocket: true,
+      preValidation: async (request, reply) => {
+        const rawUrl = request.raw.url ?? request.url ?? '';
+        const search = rawUrl.includes('?') ? rawUrl.slice(rawUrl.indexOf('?') + 1) : '';
+        const hasMappToken = /(?:^|[&?])mini_app_token(?:=|$)/.test(search);
+        if (!hasMappToken) {
+          return;
+        }
+        (request.raw as unknown as Record<string, unknown>).mappTokenPresent = true;
+        if (!ctx.mapp?.enabled) {
+          reply.code(401).send('Unauthorized');
+          return;
+        }
+        try {
+          const identity = await ctx.mapp.verifyUpgrade(request);
+          (request.raw as unknown as Record<string, unknown>).mappIdentity = identity;
+        } catch {
+          reply.code(401).send('Unauthorized');
+          return;
+        }
+      },
+    },
+    (socket: WebSocket, request) => {
+      const rawReq = request.raw as unknown as Record<string, unknown>;
+      const conn: ConnInfo = {
+        socket,
+        ip: request.ip || null,
+        host: hostFromHeaders(request.headers, TRUST_PROXY !== false),
+        origin: typeof request.headers.origin === 'string' ? request.headers.origin : null,
+        accountId: null,
+        username: null,
+        role: null,
+        sessionId: null,
+        connectedAt: new Date(),
+        authDeadlineAt: Date.now() + AUTH_TIMEOUT_MS,
+        mappIdentity: (rawReq.mappIdentity as ConnInfo['mappIdentity']) ?? null,
+        mappTokenPresent: (rawReq.mappTokenPresent as boolean) ?? false,
+      };
     registry.add(conn);
 
     // 登录超时：等人扫微信码的连接会把 authDeadlineAt 往后延，到点时按最新截止时刻复查
@@ -280,6 +318,7 @@ async function main(): Promise<void> {
     clearInterval(activeHeartbeat);
     stopProbe.stop();
     stopLoopLag();
+    mapp?.stop();
     await notifier.stop();
     registry.closeAll(1001, 'server shutdown');
     await app.close();
