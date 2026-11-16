@@ -2,7 +2,7 @@
 // - 离线日报（AISLG-54）：GET_OFFLINE_REPORT 拉取 + 离线 ≥ 30 分钟自动弹出；
 //   checkOfflineReportRef 是「最新回调」桥——登录 / 重连流程先于本 hook 声明使用。
 // - 全服播报（AISLG-60）：GET_SERVER_BROADCASTS 拉取 + PUSH_SERVER_BROADCAST 实时置顶；
-//   v111（AISLG-260）起按 serverBroadcastCategory 拆两份——war 给「系统播报」页签，event 给「活动」页签。
+//   v112（AISLG-260）起按 serverBroadcastCategory 拆两份——war 给「系统播报」页签，event 给「活动」页签。
 // - 排行榜（AISLG-61）：GET_LEADERBOARD 按榜单拉取。
 // - NPC 来袭预警（v23 AISLG-57 推送，AISLG-66 前端消费）：PUSH_NPC_ATTACK_WARNING
 //   到达即进待弹列表，逐条弹窗直至玩家确认。
@@ -47,9 +47,9 @@ export interface SessionExtras {
   loadOfflineSummary: () => Promise<void>;
   /** 上线自动检查的「最新回调」桥（登录 / 重连流程经 .current() 调用） */
   checkOfflineReportRef: RefObject<() => Promise<void>>;
-  /** 全服播报：最近 20 条（新→旧）；v111 起只含 war（战况与其余大事，系统播报页签 + 底栏） */
+  /** 全服播报：最近 20 条（新→旧）；v112 起只含 war（战况与其余大事，系统播报页签 + 底栏） */
   broadcasts: ServerBroadcastView[];
-  /** 活动 / 玩法节点播报：最近 20 条（新→旧，v111），只含 event（聊天「活动」页签） */
+  /** 活动 / 玩法节点播报：最近 20 条（新→旧，v112），只含 event（聊天「活动」页签） */
   eventBroadcasts: ServerBroadcastView[];
   /** 两类合并（新→旧，各留 20 条）：底栏「全服播报」用，行为与拆分前一致 */
   allBroadcasts: ServerBroadcastView[];
@@ -194,7 +194,7 @@ export function useSessionExtras(clientRef: RefObject<ApiClient | null>): Sessio
     checkOfflineReportRef.current = checkOfflineReport;
   }, [checkOfflineReport]);
 
-  /** 全服播报推送到达（v23 AISLG-60；v111 按类别分流）：置顶最新一条，各保留最近 20 条 */
+  /** 全服播报推送到达（v23 AISLG-60；v112 按类别分流）：置顶最新一条，各保留最近 20 条 */
   const onBroadcastPush = useCallback((broadcast: ServerBroadcastView) => {
     if (serverBroadcastCategory(broadcast.type) === 'event') {
       setEventBroadcasts((prev) => [broadcast, ...prev].slice(0, 20));

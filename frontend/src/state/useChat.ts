@@ -1,6 +1,6 @@
 // 聊天会话切片（AISLG-138，v51）：浮窗的开合与页签、当前私聊对象、世界 / 私聊消息（游标分页）、会话与未读、
 // 屏蔽名单、发送与卡片草稿，以及 PUSH_CHAT_MESSAGE 到达后的实时合并。协议请求在 chatApi.ts，这里只管状态。
-// v111（AISLG-260）：新增只读的「活动」页签（活动 / 玩法节点播报），聊天按钮的红点看它的未读数，
+// v112（AISLG-260）：新增只读的「活动」页签（活动 / 玩法节点播报），聊天按钮的红点看它的未读数，
 // 已读位置只存本机（state/chatEventRead.ts）。
 // 只依赖 clientRef 与在线状态（与 session-extras 同一模式）；开合与页签只记在本机（localStorage，刷新后恢复），
 // 消息与未读一律以服务端为准。
@@ -46,7 +46,7 @@ export interface ChatState {
   setOpen: (open: boolean) => void;
   tab: ChatTab;
   setTab: (tab: ChatTab) => void;
-  /** 活动页签的播报（新→旧，只含 event 类；v111） */
+  /** 活动页签的播报（新→旧，只含 event 类；v112） */
   eventBroadcasts: ServerBroadcastView[];
   /** 活动页签有未看过的新消息（聊天按钮红点）；进该页签后消失 */
   eventUnread: boolean;
@@ -119,7 +119,7 @@ export function useChat(deps: {
   accountId: string | null;
   /** 我所在的联盟 id（null = 没有联盟）：联盟频道据此拉取 / 清空 */
   allianceId: string | null;
-  /** 活动 / 玩法节点播报（v111）：只含 event 类，新→旧 */
+  /** 活动 / 玩法节点播报（v112）：只含 event 类，新→旧 */
   eventBroadcasts: ServerBroadcastView[];
   /** 重新拉取全服播报（进活动页签 / 断线重连补拉） */
   refreshBroadcasts: () => Promise<void>;
@@ -147,7 +147,7 @@ export function useChat(deps: {
   const { append: appendAlliance, reload: reloadAlliance } = allianceChat;
 
   // 推送回调读取的是最新状态（回调注册一次，不随每次渲染重绑）
-  // 活动页签的已读位置与本机红点（v111）：只读播报，不进服务端
+  // 活动页签的已读位置与本机红点（v112）：只读播报，不进服务端
   const { eventUnread } = useChatEventTab({ accountId, viewing: open && tab === 'event', eventBroadcasts });
 
   const live = useRef({ open, tab, peer, accountId });

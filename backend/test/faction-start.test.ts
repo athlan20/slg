@@ -210,7 +210,7 @@ describe('势力当季启用的事务规则（需 TEST_DATABASE_URL）', { skip:
     assert.deepEqual(view.factions.map((faction) => faction.key), ['liangzhou', 'shanyue', 'heishan']);
     // 本季不存在的势力：袭击不带旗号、不画范围
     assert.deepEqual([...(await inactiveFactionKeys(pool))].sort(), ['nanman', 'wuhuan']);
-    // 启用播报（v111 起不再写公告表）：detail 带落位数与跳过的势力
+    // 启用播报（v112 起不再写公告表）：detail 带落位数与跳过的势力
     const broadcast = await pool.query(`SELECT detail FROM server_broadcasts WHERE type = 'faction_season_started' ORDER BY id DESC LIMIT 1`);
     assert.ok(broadcast.rowCount);
     const detail = (broadcast.rows[0] as { detail: { placed: number; skipped: Array<{ key: string; name: string }> } }).detail;

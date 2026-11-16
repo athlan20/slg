@@ -105,7 +105,7 @@ describe('赛季预告发送（需 TEST_DATABASE_URL）', { skip: dbUrl ? false 
     );
     assert.ok((broadcasts.rows[0] as { detail: { endAt: string; seasonName: string } }).detail.endAt);
     const ann = await pool.query(`SELECT count(*)::int AS n FROM announcements`);
-    assert.equal(ann.rows[0].n, 0, 'v111 起赛季预告不再发公告');
+    assert.equal(ann.rows[0].n, 0, 'v112 起赛季预告不再发公告');
   });
 
   test('晚部署（直接进入 T-1h 之内）只发最近的一个阶段，更早的阶段记为已发、不连发', async () => {

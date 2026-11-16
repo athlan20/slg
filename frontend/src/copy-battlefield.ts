@@ -166,7 +166,7 @@ export const BATTLEFIELD_COPY = {
     INSUFFICIENT_TROOPS: '城内兵力不足',
     HERO_NOT_FOUND: '武将不存在',
   },
-  /** 全服播报（v111，AISLG-260）：活动页签里剧本战场的几句话；剧本名 / 据点名 / 时刻由调用方按当前语言传入 */
+  /** 全服播报（v112，AISLG-260）：活动页签里剧本战场的几句话；剧本名 / 据点名 / 时刻由调用方按当前语言传入 */
   broadcast: {
     /** 报名开始：detail = { script, startAt, endAt } */
     signup: (script: string | null, start: string, end: string) =>

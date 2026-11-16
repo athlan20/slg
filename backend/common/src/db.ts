@@ -867,7 +867,7 @@ async function migrateDataOnce(client: pg.PoolClient): Promise<void> {
       await client.query(`UPDATE marches SET fog_recorded_at = now() WHERE resolved_at IS NOT NULL AND fog_recorded_at IS NULL`);
       await client.query(`INSERT INTO settings (key, value) VALUES ('fog_backfill_v92', '{"done": true}'::jsonb)`);
     }
-    // v111（AISLG-260）：公告只留给人工发布——一次性撤回历史上游戏自动发的事件公告（剧本战场报名 / 开战提醒、
+    // v112（AISLG-260）：公告只留给人工发布——一次性撤回历史上游戏自动发的事件公告（剧本战场报名 / 开战提醒、
     // 赤壁风向预告）。只动 category='event' 且标题以「剧本战场「」或「赤壁战场：」开头的（软删除，记录保留）；
     // 势力启用与赛季预告是历史 system 公告，保持原样。用 settings 标记防重复（跑过一次不再动新发的公告，幂等）。
     const announcementWithdraw = await client.query(`SELECT 1 FROM settings WHERE key = 'announcements_auto_withdrawn_v111'`);

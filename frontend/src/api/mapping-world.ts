@@ -551,7 +551,7 @@ export function serverBroadcastText(view: {
         : (view.detail.username as string)
       : EXTRA_STATE.mapping.unknownPlayer;
   const pos = posOf(view.detail);
-  // 活动 / 玩法节点播报（v111，AISLG-260）：文案在 api/activityBroadcastText.ts，命中才返回
+  // 活动 / 玩法节点播报（v112，AISLG-260）：文案在 api/activityBroadcastText.ts，命中才返回
   const activity = activityBroadcastText(view);
   if (activity !== null) {
     return activity;

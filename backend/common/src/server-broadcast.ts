@@ -90,7 +90,7 @@ export async function recordWinStreak(
   return insertServerBroadcast(client, 'win_streak', { ...broadcastDetail, streak: count });
 }
 
-/** 查询最近的全服播报（新→旧；limit 由调用方钳制）。category 非空时只返回该类（v111，AISLG-260） */
+/** 查询最近的全服播报（新→旧；limit 由调用方钳制）。category 非空时只返回该类（v112，AISLG-260） */
 export async function listServerBroadcasts(
   q: pg.Pool | pg.PoolClient,
   limit: number,
@@ -119,7 +119,7 @@ export async function listServerBroadcasts(
 export type BroadcastActor = InitiatorRole;
 
 /**
- * 单条播报的独立事务（v111，AISLG-260）：写库、COMMIT 时 pg_notify，API 收到后走 PUSH_SERVER_BROADCAST。
+ * 单条播报的独立事务（v112，AISLG-260）：写库、COMMIT 时 pg_notify，API 收到后走 PUSH_SERVER_BROADCAST。
  * 用于「不在自己事务里」的调用方（Worker 定时器：活动提醒 / 赛季预告）；已经处在事务里的调用方
  * 应当用 insertServerBroadcast 并在提交后自行发通知（如 battlefieldBroadcast + publishBroadcasts）。
  * 失败向上抛，由调用方决定只记日志还是重试（播报不是关键路径）。

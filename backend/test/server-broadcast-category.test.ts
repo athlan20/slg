@@ -1,4 +1,4 @@
-// 全服播报的分类（v111，AISLG-260）：聊天「活动」页签与「系统播报」页签靠 serverBroadcastCategory 分流，
+// 全服播报的分类（v112，AISLG-260）：聊天「活动」页签与「系统播报」页签靠 serverBroadcastCategory 分流，
 // 唯一出处在 common/src/protocol-server.ts。这里只校验纯函数与清单本身，不连数据库。
 
 import assert from 'node:assert/strict';

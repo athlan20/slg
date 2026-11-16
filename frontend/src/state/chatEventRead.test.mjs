@@ -1,4 +1,4 @@
-// 「活动」页签的已读位置（v111，AISLG-260）与播报分类镜像的单元测试（纯函数 / 不连库、不连网）。
+// 「活动」页签的已读位置（v112，AISLG-260）与播报分类镜像的单元测试（纯函数 / 不连库、不连网）。
 // Node 原生去除类型直接跑 .ts（见 package.json 的 test 脚本）；localStorage 用内存桩模拟，另有一份会抛错的桩。
 
 import test from 'node:test';

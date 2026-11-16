@@ -1,5 +1,5 @@
 // 聊天浮窗的页签内容（AISLG-138）：世界频道（最新在下、可翻更早）、联盟频道（AISLG-183，没有联盟时是引导）、
-// 活动（v111，AISLG-260：只读，只显示活动 / 玩法节点播报）、系统播报（只读，只显示战况与其余大事）、
+// 活动（v112，AISLG-260：只读，只显示活动 / 玩法节点播报）、系统播报（只读，只显示战况与其余大事）、
 // 私聊线程（顶部可返回会话列表）。两份播报的拆分在会话层（state/session-extras.ts）完成。
 
 import { formatReportTime } from '../../api/format';
@@ -89,7 +89,7 @@ function ChatBroadcastPane(props: {
   );
 }
 
-/** 活动页签（v111）：剧本战场 / 洛阳 / 黄巾 / 五方势力 / 赛季等活动与玩法节点，只读 */
+/** 活动页签（v112）：剧本战场 / 洛阳 / 黄巾 / 五方势力 / 赛季等活动与玩法节点，只读 */
 export function ChatEventPane() {
   const { CHAT_COPY } = useCopy();
   const { session } = useGame();
