@@ -55,7 +55,9 @@ export const SERVER_BROADCAST_TYPES = [
   'faction_lair_destroyed',
   // v107（AISLG-249）压制档变化：老巢被打到跨档（升档）/ 营恢复导致降档，必达（一季每家最多几次）
   'faction_suppressed',
-  // v111（AISLG-260）活动节点：原来发公告的四处改为播报，进聊天窗口的「活动」页签，必达（不受每分钟限频）
+  // v111（AISLG-259）名城任期届满：某名城重归无主（玩家占着的名城到期回 NPC 城；周度事件，走普通限频）
+  'famous_expired',
+  // v112（AISLG-260）活动节点：原来发公告的四处改为播报，进聊天窗口的「活动」页签，必达（不受每分钟限频）
   'battlefield_start_soon',
   'battlefield_wind',
   'faction_season_started',
@@ -184,7 +186,8 @@ export interface ServerBroadcastView {
    *  arena_champion = { username, previous }（v53，登上第 1 名，previous 为被取代的原第 1 名）；
    *  star_tower_cleared = { username, floor }（v55，将星塔 Boss 层首通）；
    *  announcement = { announcementId, title }（v60，公告标题，标题为中文）；
-   *  v111（AISLG-260）活动节点：battlefield_signup = { eventId, script?, signupStartAt, startAt, endAt }；
+   *  v111 famous_expired = { name, x, y, username, cityName }（某名城任期届满、重归无主）；
+   *  v112（AISLG-260）活动节点：battlefield_signup = { eventId, script?, signupStartAt, startAt, endAt }；
    *  battlefield_started = { eventId, script?, startAt, endAt }；battlefield_start_soon = { eventId, script, startAt }；
    *  battlefield_wind = { eventId, script, switchAt, nextWind: se|nw }；
    *  faction_season_started = { placed, skipped: [{ key, name, nameEn }] }；

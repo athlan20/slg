@@ -452,6 +452,10 @@ export const ErrorCode = {
   OUTER_NOT_CLEARED: 'OUTER_NOT_CLEARED',
   /** 放弃分城被拒：该城放弃冷却未结束，本账号暂不能再占回此 NPC 城（v57，AISLG-153；占领资格复核也返回它） */
   DISCARD_COOLDOWN: 'DISCARD_COOLDOWN',
+  /** 占领名城被拒：本账号名下已有 1 座名城（v111，AISLG-259；每账号同一时间最多 1 座，到达复核也返回它） */
+  FAMOUS_LIMIT: 'FAMOUS_LIMIT',
+  /** 占领名城被拒：本账号刚因任期届满失去这座名城，48 小时内不能占回它（v111，AISLG-259；响应附 bannedUntil / retryAfterSeconds） */
+  FAMOUS_BANNED: 'FAMOUS_BANNED',
   /** 放弃分城被拒：主城不能放弃（v57，AISLG-153） */
   DISCARD_MAIN_CITY: 'DISCARD_MAIN_CITY',
   /** 该城或其名下野地正有行军在途（指向本城）或有未结的 NPC 来袭：放弃分城（v57）与遣散士兵（v84，AISLG-209）都拒绝 */

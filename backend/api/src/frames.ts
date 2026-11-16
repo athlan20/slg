@@ -65,6 +65,8 @@ export const ERROR_MESSAGES: Record<ErrorCodeType, string> = {
   TARGET_LEVEL_TOO_HIGH: '目标 NPC 城等级高于出发城的官府等级（只能占领不高于出发城官府等级的城）',
   OUTER_NOT_CLEARED: '名城外围驻军尚未清空，不能直接攻城守或占领；请先出征清理外围（task=plunder），外围清空后在限时内攻城',
   DISCARD_COOLDOWN: '该分城刚被本账号放弃，冷却未结束前不能再占回（冷却天数 = 放弃时的官府等级）',
+  FAMOUS_LIMIT: '你名下已有一座名城：同一时间只能占 1 座，等它的 7 天任期结束（或主动放弃它）后才能再占新的名城',
+  FAMOUS_BANNED: '你刚因任期届满失去这座名城，48 小时内不能占回它（data.bannedUntil / retryAfterSeconds 为解禁时刻；这期间可以去占其他名城，也可以打外围或掠夺）',
   DISCARD_MAIN_CITY: '主城不能放弃，只能放弃分城',
   CITY_IN_BATTLE: '该城或其名下野地正有行军在途 / 有 NPC 来袭未结，暂不能放弃分城或遣散士兵',
   CITY_STARVING: '该城正在断粮（粮食归零且净产量为负），只有断粮结束后才能劝回逃兵',

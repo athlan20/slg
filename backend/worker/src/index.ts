@@ -42,6 +42,7 @@ import { processMarketOrders } from './market-tick';
 import { processTopupOrders } from './topup-tick';
 import { processRedeemAttempts } from './redeem-tick';
 import { processLuoyang } from './luoyang-tick';
+import { processFamousTenure } from './famous-expire-tick';
 import { refreshLuoyangHolder } from '../../common/src/luoyang-db';
 import { LEADERBOARD_REFRESH_MS, refreshLeaderboards } from './leaderboard-tick';
 import { processSeasonTick } from './season-tick';
@@ -221,6 +222,15 @@ async function main(): Promise<void> {
       await processLuoyang(pool);
     } catch (err) {
       console.error('worker luoyang tick failed:', err instanceof Error ? err.message : err);
+    }
+    try {
+      // v111（AISLG-259）：名城任期——到期前 24 小时 / 1 小时提醒，到点掉城回 NPC（内部节流到 5 秒）
+      const famous = await processFamousTenure(pool);
+      if (famous.expired > 0) {
+        console.log(`expired ${famous.expired} famous city tenure(s)`);
+      }
+    } catch (err) {
+      console.error('worker famous tenure tick failed:', err instanceof Error ? err.message : err);
     }
     try {
       // v78（AISLG-196）：交易所 48 小时过期挂单自动撤单退款（内部节流到 10 秒）

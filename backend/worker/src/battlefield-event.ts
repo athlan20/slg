@@ -174,7 +174,7 @@ function scriptOf(event: BattlefieldEventRow): BattlefieldScript {
 }
 
 /**
- * 报名开始 / 开战前 1 小时提醒（v111，AISLG-260）：写成「活动」播报（必达，不受每分钟限频），
+ * 报名开始 / 开战前 1 小时提醒（v112，AISLG-260）：写成「活动」播报（必达，不受每分钟限频），
  * 由调用方在事务提交后经 publishBroadcasts 推送。文案由前端按 type + detail 拼（中英文都在前端）。
  * 原先这两处发的是公告（活动分类），已不再写公告表。
  */
@@ -202,7 +202,7 @@ export async function sendAnnouncement(
 }
 
 /**
- * 赤壁风向预告（切换前 30 分钟，v111）：写成「活动」播报（必达），原先的公告不再发；
+ * 赤壁风向预告（切换前 30 分钟，v112）：写成「活动」播报（必达），原先的公告不再发；
  * 客户端收到播报后照旧重查 GET_BATTLEFIELD 拿新风向（状态推送由调用方在提交后发）。
  */
 export async function sendWindNotice(

@@ -91,6 +91,8 @@ export const SERVER_BROADCAST_TYPES = [
   'luoyang_window',
   // v99（AISLG-239）五方势力：势力范围半径扩大（每周最多一次）
   'faction_expanded',
+  // v111（AISLG-259）名城任期届满：某名城重归无主
+  'famous_expired',
   // v100（AISLG-240）势力围攻吞下玩家分城；v101（AISLG-241）某家势力本季灭亡；v107（AISLG-249）压制档变化
   'faction_city_swallowed',
   'faction_lair_destroyed',
@@ -100,7 +102,7 @@ export const SERVER_BROADCAST_TYPES = [
   'battlefield_started',
   'battlefield_stronghold',
   'battlefield_finished',
-  // v111（AISLG-260）活动节点：原来发公告的四处改为播报（必达），进「活动」页签
+  // v112（AISLG-260）活动节点：原来发公告的四处改为播报（必达），进「活动」页签
   'battlefield_start_soon',
   'battlefield_wind',
   'faction_season_started',

@@ -53,6 +53,8 @@ export const RESET_TABLES: readonly string[] = [
   'yt_camps',
   'yt_contrib',
   'city_discards',
+  // 名城任期到期封禁（v111，AISLG-259）：封禁随赛季清空——上一季到期失去的名城，新季可以直接占回
+  'famous_expiry_bans',
   // 账号级游戏态
   'cities',
   'capital_swaps',

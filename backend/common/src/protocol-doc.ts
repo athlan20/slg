@@ -314,6 +314,14 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     desc: '主城不能放弃，DISCARD_CITY 只能放弃分城（v57，AISLG-153）。',
     action: '如要放弃的是分城，请传该分城的 cityId（GET_STATE 的 cities[]，isMain 为 false）。',
   },
+  FAMOUS_LIMIT: {
+    desc: '占领名城被拒：本账号名下已有 1 座名城（v111，AISLG-259）——每账号同一时间最多占 1 座，占 NPC 名城与打下他人名城都算。MARCH task=occupy 发起时初核，Worker 到达时复核（NPC 名城：幸存部队返程，事件 occupied=false 与 denial=FAMOUS_LIMIT；玩家名城：只降城防不换主）。',
+    action: '等现有名城的任期结束（GET_STATE 的 city.famousExpiresAt 为到期时刻），或主动放弃那座名城（DISCARD_CITY）；打这座城的外围 / 掠夺不受限。',
+  },
+  FAMOUS_BANNED: {
+    desc: '占领名城被拒：本账号刚因任期届满失去这座名城，48 小时内（按全局时间缩放）不能再占回它（v111，AISLG-259；响应附 bannedUntil 与 retryAfterSeconds）。只对「到期失去这个名号的那个人」生效。',
+    action: '等 bannedUntil（GET_WORLD_MAP / GET_TILE 的 tile.bannedUntil 也能查到）过后再占；在此期间可以去占其他名城，也可以打这座城的外围 / 掠夺。',
+  },
   CITY_IN_BATTLE: {
     desc: '该城或其名下野地正有行军在途（来袭、运输或占领），或有未结的 NPC 来袭：此时不能放弃分城（v57，AISLG-153），也不能遣散士兵（v84，AISLG-209，否则会变成「躲战损 + 拿回一半资源」的投机）。不改任何数据。',
     action: '等这些行军结算或 NPC 来袭结束后再放弃 / 遣散；GET_STATE 的 city.inBattle 为 true 时可以先不发起。',

@@ -165,7 +165,7 @@ export const BATTLEFIELD_COPY_EN = {
     INSUFFICIENT_TROOPS: 'Not enough troops in the city',
     HERO_NOT_FOUND: 'Hero not found',
   },
-  /** Server news in the Events tab (v111, AISLG-260) */
+  /** Server news in the Events tab (v112, AISLG-260) */
   broadcast: {
     signup: (script: string | null, start: string, end: string) =>
       script

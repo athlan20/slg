@@ -115,8 +115,10 @@ export interface CityStatePushData {
    *  troop_pools_changed=伤兵 / 俘虏 / 逃兵池子发生变化（v85，AISLG-212；战斗结算入账、治疗 / 招降 / 劝回、放弃 / 释放、断粮兵变与过期清理后）；
    *  stratagem=城池中了计谋（v86，AISLG-211；烧粮 / 十面埋伏 / 趁火打劫 / 欺敌覆盖；收到后重新 GET_STATE）；
    *  city_moved=城池迁移（v91，AISLG-220；cityId 为迁走的城，from / to 为新旧坐标，收到后重新 GET_STATE）；
-   *  fog_reward=遗迹 / 名城首探奖励到账（v93，AISLG-227；cityId 为主城，收到后重新 GET_STATE） */
-  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem' | 'city_moved' | 'fog_reward';
+   *  fog_reward=遗迹 / 名城首探奖励到账（v93，AISLG-227；cityId 为主城，收到后重新 GET_STATE）；
+   *  famous_expiring=名城任期快到（v111，AISLG-259；cityId 为该城，stage 1 = 剩 24 小时 / 2 = 剩 1 小时，收到后刷新城池 / 地图上的剩余时间）；
+   *  famous_expired=名城任期届满、已重归无主（v111，AISLG-259；cityId 为已消失的城，收到后重新 GET_STATE） */
+  reason: 'city_renamed' | 'account_reset' | 'city_discarded' | 'assist_changed' | 'capital_changed' | 'troops_disbanded' | 'troop_pools_changed' | 'stratagem' | 'city_moved' | 'fog_reward' | 'famous_expiring' | 'famous_expired';
   cityId: string;
   /** reason=city_renamed 时的新名称 */
   name?: string;
@@ -125,6 +127,9 @@ export interface CityStatePushData {
   /** reason=city_moved 时的新旧坐标（v91） */
   from?: { x: number; y: number };
   to?: { x: number; y: number };
+  /** reason=famous_expiring 时的提醒阶段（v111：1 = 剩 24 小时，2 = 剩 1 小时）与任期到期时刻（ISO） */
+  stage?: number;
+  expiresAt?: string;
 }
 
 /** RESET_ACCOUNT（op 26）请求载荷：重置为不可逆操作，confirm 必须显式为 true */
@@ -188,6 +193,10 @@ export const EventType = {
   CITY_RENAMED: 'city_renamed',
   /** v57（AISLG-153）：分城被放弃，地块转回 NPC 城池（detail = { x, y, cooldownUntil }） */
   CITY_DISCARDED: 'city_discarded',
+  /** v111（AISLG-259）：名城任期快到（detail = { name, cityId, x, y, stage（1 = 剩 24 小时 / 2 = 剩 1 小时）, expiresAt }） */
+  FAMOUS_EXPIRING: 'famous_expiring',
+  /** v111（AISLG-259）：名城任期届满、该城重归无主（detail = { name, cityId, x, y, expiredAt, bannedUntil }） */
+  FAMOUS_EXPIRED: 'famous_expired',
   /** v82（AISLG-205）：分城与主城对调身份（detail = { capitalId, formerCapitalId, cooldownUntil }） */
   CAPITAL_CHANGED: 'capital_changed',
   /** v84（AISLG-209）：遣散城内驻军（detail = { cityId, troops, refunded }；返还征兵成本的 50%） */
@@ -429,6 +438,8 @@ export interface CityView {
   durability: number | null;
   /** 名城名（v24 AISLG-56）：占领名城得到的分城带名；普通城为 null */
   famousName: string | null;
+  /** 名城任期到期时刻（v111，AISLG-259，ISO 8601）：名城的分城才有值，到期该城重归无主；普通城为 null */
+  famousExpiresAt: string | null;
   /** 该城的独占产量加成百分数（v24 AISLG-56：名城分城 +20%，已计入 production）；普通城为 0 */
   productionBonusPercent: number;
   /** 洛阳之主联盟的全员产量加成（v79，AISLG-200；0 或 5，已计入 production） */

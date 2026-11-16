@@ -1,4 +1,4 @@
-// 换季预告发送（AISLG-134，docs/season-system.md §4）：到达新阶段时写一条「活动」播报（v111，AISLG-260：
+// 换季预告发送（AISLG-134，docs/season-system.md §4）：到达新阶段时写一条「活动」播报（v112，AISLG-260：
 // 不再发公告、也不再自带 announcement 类播报，避免重复）+ PUSH_SEASON(warning)。
 // 先在 seasons.notified_stages 上抢占（条件 UPDATE），抢到才发：Worker 重启 / 多次 tick 不会重发。
 // 发送失败只记日志，不回滚抢占——宁可漏发一次，也不让同一阶段反复刷屏。

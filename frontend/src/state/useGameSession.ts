@@ -193,9 +193,9 @@ export interface GameSession {
   offlineSummary: GetOfflineReportResponseData | null;
   loadOfflineSummary: () => Promise<void>;
   /** 全服播报（v23 AISLG-60）：最近 20 条（新→旧）；登录后拉取 + 推送置顶。
-   *  v111（AISLG-260）拆两份：broadcasts 只含 war（系统播报页签 / 底栏），eventBroadcasts 只含 event（活动页签） */
+   *  v112（AISLG-260）拆两份：broadcasts 只含 war（系统播报页签 / 底栏），eventBroadcasts 只含 event（活动页签） */
   broadcasts: ServerBroadcastView[];
-  /** 活动 / 玩法节点播报（v111）：最近 20 条（新→旧），给聊天「活动」页签 */
+  /** 活动 / 玩法节点播报（v112）：最近 20 条（新→旧），给聊天「活动」页签 */
   eventBroadcasts: ServerBroadcastView[];
   /** 两类播报合并（新→旧）：底栏「全服播报」用（各留 20 条） */
   allBroadcasts: ServerBroadcastView[];
@@ -525,7 +525,7 @@ export function useGameSession(): GameSession {
     online: connection === 'online',
     accountId: account?.accountId ?? null,
     allianceId: alliance.state?.alliance?.id ?? null,
-    // v111：活动页签的列表与未读位置（本机 localStorage，见 state/chatEventRead.ts）
+    // v112：活动页签的列表与未读位置（本机 localStorage，见 state/chatEventRead.ts）
     eventBroadcasts,
     refreshBroadcasts: fetchServerBroadcasts,
   });
@@ -685,6 +685,13 @@ export function useGameSession(): GameSession {
         const data = frame.data as unknown as CityStatePushData;
         if (data.reason === 'city_renamed') {
           setCity((prev) => (prev && data.name && data.cityId === prev.id ? { ...prev, name: data.name } : prev));
+        } else if (data.reason === 'famous_expired') {
+          // v111（AISLG-259）：名城任期届满（本账号的城重归无主）：城池列表变了，复位为主城并全量刷新
+          resetCityList();
+          void syncAll('initial');
+          return;
+        } else if (data.reason === 'famous_expiring') {
+          // v111：任期快到，只刷新城池剩余时间（下方增量查询同时把事件补进事件流）
         } else if (data.reason === 'city_discarded' || data.reason === 'capital_changed') {
           // 分城被放弃 / 主城对调（可能是本账号另一连接发起）：选中的城可能已不存在或身份已变，复位为主城并全量刷新
           resetCityList();

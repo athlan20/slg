@@ -403,7 +403,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
           void refresh();
           return true;
         }
-        setError(marchErrorText(res.error?.code, res.error?.message));
+        setError(marchErrorText(res.error?.code, res.error?.message, res.data));
         const cityNow = field<CityView>(res.data, 'city');
         if (cityNow) {
           setCity(() => cityNow);
@@ -446,7 +446,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
           void refresh();
           return true;
         }
-        setError(marchErrorText(res.error?.code, res.error?.message));
+        setError(marchErrorText(res.error?.code, res.error?.message, res.data));
         appendLocalEvent('player', COPY.session.recallRejected(res.error?.message ?? EXTRA_STATE.state.rejectedFallback));
         void refresh();
         return false;
@@ -485,7 +485,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
           void refresh();
           return true;
         }
-        setError(marchErrorText(res.error?.code, res.error?.message));
+        setError(marchErrorText(res.error?.code, res.error?.message, res.data));
         const cityNow = field<CityView>(res.data, 'city');
         if (cityNow) {
           setCity(() => cityNow);
@@ -521,7 +521,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
           void refresh();
           return true;
         }
-        setError(marchErrorText(res.error?.code, res.error?.message));
+        setError(marchErrorText(res.error?.code, res.error?.message, res.data));
         return false;
       } catch (err) {
         setError(err instanceof Error ? err.message : EXTRA_STATE.state.recallMarchFailed);

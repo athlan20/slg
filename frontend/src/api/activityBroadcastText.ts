@@ -1,4 +1,4 @@
-// 活动 / 玩法节点播报的文案（v111，AISLG-260）：聊天「活动」页签里的几句话。
+// 活动 / 玩法节点播报的文案（v112，AISLG-260）：聊天「活动」页签里的几句话。
 // 后端只给 type + detail（不写死中文），这里按当前语言拼；命中的类型返回文案，其余返回 null
 // （由 api/mapping-world.ts 的 serverBroadcastText 继续走系统播报那套 / 默认兜底）。
 // 单独成文件以控制 mapping-world.ts 的行数（与 fogText / stratagemText 同一做法）。
@@ -63,7 +63,7 @@ function factionName(item: { name?: unknown; nameEn?: unknown }): string {
   return getLang() === 'en' ? nameEn || name : name || nameEn;
 }
 
-/** 活动 / 玩法节点播报（v111）：命中返回文案，其余类型返回 null */
+/** 活动 / 玩法节点播报（v112）：命中返回文案，其余类型返回 null */
 export function activityBroadcastText(view: { type: string; detail: Record<string, unknown> }): string | null {
   const { EXTRA_STATE, EXTRA_MAP, BATTLEFIELD_COPY, SEASON_COPY } = getCopy();
   const detail = view.detail;
