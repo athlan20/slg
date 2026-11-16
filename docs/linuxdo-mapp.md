@@ -48,8 +48,9 @@
 
 ### 沙箱与正式分开
 
-- 后端 `MAPP_CHANNEL`（`sandbox` | `production`，必须显式配置）与令牌里的 `channel` 不一致一律 401。测试环境只配 `sandbox`，线上只配 `production`。
-- 沙箱构建的 manifest 指向测试网关，正式构建指向线上网关，两者不共用数据库。
+- 后端 `MAPP_CHANNEL`（`sandbox` | `production`，必须显式配置）与令牌里的 `channel` 不一致一律 401；支持逗号分隔多个渠道。
+- **当前部署决定**：沙箱联调直接连生产网关，`MAPP_CHANNEL=production,sandbox`，沙箱与正式共用同一应用 ID、同一网关、同一数据库（沙箱令牌只有能打开沙箱页的人拿得到，即开发者本人与受邀测试者）。平台文档建议沙箱与正式数据分开，如审核要求分开，改为测试网关 + `MAPP_CHANNEL=sandbox` 即可，代码不用改。
+- **审核通过后**把线上改回 `MAPP_CHANNEL=production`，沙箱令牌即被拒绝。
 
 ## 构建与打包（可复现）
 
@@ -75,7 +76,7 @@ npm run pack:mapp      # 产出 dist-mapp/package/app.zip
 | `MAPP_ENABLED` | 总开关，默认关闭；关闭时带 `mini_app_token` 的请求一律 401，其他连接路径不变 |
 | `MAPP_ISSUER` | 社区地址（可带子目录，不以 `/` 结尾） |
 | `MAPP_APP_ID` | 平台分配的应用 ID |
-| `MAPP_CHANNEL` | `production` 或 `sandbox`，必须显式指定 |
+| `MAPP_CHANNEL` | `production` 或 `sandbox`，必须显式指定；可逗号分隔多个（`production,sandbox`） |
 | `MAPP_AUDIENCE` | 本服务对外的 WSS/HTTPS origin，用于 `aud` / `htu` 校验 |
 | `MAPP_ORIGINS` | 允许建立微应用连接的浏览器 Origin，逗号分隔 |
 | `MAPP_IDENTITY_PROVIDER` | 默认 `linuxdo_mapp`（与跳转登录账号分开）；确认 `sub` 与 Connect 数字 id 一致后可改 `linuxdo` |

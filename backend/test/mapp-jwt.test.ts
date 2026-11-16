@@ -222,6 +222,14 @@ test('渠道隔离：sandbox 令牌打到 production 配置被拒，反之亦然
   );
 });
 
+test('MAPP_CHANNEL 配置多个渠道时两种令牌都接受，未列出的渠道仍被拒', async () => {
+  const cache = createMockJwksCache();
+  const both: MappConfig = { ...baseConfig, channel: 'production', allowedChannels: ['production', 'sandbox'] };
+  assert.equal((await verifyMappToken(buildToken({ payload: { channel: 'sandbox' } }), both, cache)).channel, 'sandbox');
+  assert.equal((await verifyMappToken(buildToken({ payload: { channel: 'production' } }), both, cache)).channel, 'production');
+  await assert.rejects(() => verifyMappToken(buildToken({ payload: { channel: 'staging' } }), both, cache), /Channel mismatch/);
+});
+
 test('用户信任等级：缺省视为 undefined，非法格式被拒', async () => {
   const cache = createMockJwksCache();
 

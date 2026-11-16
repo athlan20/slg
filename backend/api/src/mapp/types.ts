@@ -14,7 +14,10 @@ export interface MappConfig {
   readonly enabled: boolean;
   readonly issuer: string;
   readonly appId: string;
+  /** 主渠道（MAPP_CHANNEL 的第一个） */
   readonly channel: MappChannel;
+  /** 接受的渠道集合；缺省只接受主渠道（单元测试直接构造配置时可省略） */
+  readonly allowedChannels?: readonly MappChannel[];
   readonly audience: string;
   readonly origins: ReadonlySet<string>;
   readonly identityProvider: 'linuxdo_mapp' | 'linuxdo';

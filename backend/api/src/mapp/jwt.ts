@@ -275,8 +275,9 @@ export async function verifyMappToken(
     throw new MappAuthError(`AppId mismatch: expected ${config.appId}, got ${payload.app_id}`);
   }
 
-  if (payload.channel !== config.channel) {
-    throw new MappAuthError(`Channel mismatch: expected ${config.channel}, got ${payload.channel}`);
+  const allowedChannels = config.allowedChannels ?? [config.channel];
+  if (typeof payload.channel !== 'string' || !(allowedChannels as readonly string[]).includes(payload.channel)) {
+    throw new MappAuthError(`Channel mismatch: expected ${allowedChannels.join('|')}, got ${payload.channel}`);
   }
 
   if (typeof payload.sub !== 'string' || !/^[1-9][0-9]{0,19}$/.test(payload.sub)) {
