@@ -3,7 +3,7 @@
 // - 当前营的守军打掉多少算多少，打输也保留残血（写法与 yt_camps 的 remaining / remaining_at 一致）；
 // - 这一营清空才进入下一营，已打掉的营不会回来（faction_lairs.camps_remaining 只减不增，24 小时无人进攻才恢复）；
 // - 歼灭奖励：每歼灭 1 点守军战力金币 2、四种资源各 10，直接入账到出征城、不占负重（打输也发，幸存为 0 也发）；
-// - 声望按歼灭战力的 1%（不走世界地图 1:1 的规则，因此先自己入账再把数值写进战报）；
+// - 声望与世界地图其余战斗一致，歼灭多少战力得多少声望（AISLG-263，由 saveBattleReport 自动入账）；
 // - 最后一营打掉 = 这家本季灭亡（worker/src/faction-lair-destroy.ts），最后一击的玩家拿首领名将。
 // 锁序沿用全栈：出发城 → 目标地块（调用方已锁）→ faction_lairs 行。
 // faction_enabled 关闭时整模块不动作（调用方按开关决定是否走这里）。
@@ -24,11 +24,9 @@ import {
   factionLairCurrentCampPower,
   factionLairGarrison,
   factionLairKillReward,
-  factionLairPrestige,
   factionLairRemainingPercent,
 } from '../../common/src/faction-lair';
 import { addFactionContribution, lockFactionLairRow, recoverLairRow } from '../../common/src/faction-lair-db';
-import { addPrestige } from '../../common/src/nobility-db';
 import { insertEvent } from '../../common/src/events';
 import {
   completeMarchEvent,
@@ -121,14 +119,7 @@ export async function resolveFactionLairBattle(
     await addFactionContribution(client, args.key, march.account_id, killedPower);
   }
 
-  // 6) 声望：歼灭战力的 1%（不走 saveBattleReport 的 1:1 默认值，这里自己入账再把数值写进战报）
-  const prestigeGained = factionLairPrestige(killedPower);
-  if (prestigeGained > 0) {
-    const prestige = await addPrestige(client, march.account_id, prestigeGained, 'faction_lair');
-    if (prestige.broadcast) {
-      notifies.push({ reason: 'server_broadcast', accountId: '', broadcast: prestige.broadcast });
-    }
-  }
+  // 6) 声望：与世界地图其余战斗一致（歼灭敌军参考战力 1:1，AISLG-263），由 saveBattleReport 按歼灭战力自动入账
 
   // 7) 战报
   const naming = await loadCityNaming(client, march.from_city_id);
@@ -150,7 +141,7 @@ export async function resolveFactionLairBattle(
     hero?.report ?? null,
     null,
     null,
-    prestigeGained,
+    null,
     casualties,
   );
   const heroSettle = await settleMarchHero(client, march, result, notifies);
