@@ -1011,5 +1011,9 @@
  * v114（五方势力老巢声望上调，AISLG-263；只改数值，不增删字段）：
  *   打老巢每场战斗的声望由「歼灭战力的 1%」改为与世界地图其余战斗一致的 1:1（歼灭 1 点战力得 1 点声望），仍按每场各自结算、打输也有，
  *   不是只给最后一击（首领名将仍只给最后一击）；歼灭奖励（金币 2 / 四资源各 10）与灭亡榜单不变。
+ * v115（GET_AGENT_INFO 新增 accountCreatedAt，AISLG-266；只加不改）：
+ *   GET_AGENT_INFO 的 data 新增 accountCreatedAt（ISO 8601 字符串）——账号第一次创建的时间，直接取账号表已有的
+ *   accounts.created_at（自建表起就有该列，不新增表 / 列 / 迁移）；玩家连接与 Agent 连接取到的值一致。
+ *   纯只读字段：不参与任何游戏规则（不在服务端做判断），供前端「新手接入弹窗」判断新号用。
  */
-export const PROTOCOL_VERSION = 114;
+export const PROTOCOL_VERSION = 115;

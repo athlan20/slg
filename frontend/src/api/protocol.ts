@@ -5,7 +5,7 @@ import type { CityGuardView } from './protocol-hero';
 import type { CityStratagemView } from './protocol-stratagem';
 import { RESOURCE_KEYS } from './protocol-wire';
 
-export const PROTOCOL_VERSION = 109;
+export const PROTOCOL_VERSION = 115;
 
 /** 协议号（请求与响应用同一值，推送以 op 区分类型） */
 export const Op = {
