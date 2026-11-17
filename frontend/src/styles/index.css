@@ -7,9 +7,13 @@
 /* 偏矮（高度 ≤ 840）：城池概况等次要的副标行隐藏，给主内容留高度 */
 @custom-variant compact (@media (max-height: 840px));
 
-/* 主题变量映射为 Tailwind 工具类。
-   inline 让工具类保留 var() 引用，data-theme 切换才能即时生效。 */
+/* 标准布局的下限（AISLG-265）：Tailwind 的 xl 从默认 80rem（1280px）降到 77.5rem（= 1240px），
+   于是 xl: / max-xl: 与 shell.css 的 1239px 边界完全对齐。理由见 docs/frontend-nav-layout.md 第 3 节：
+   1260 是「1280 屏扣掉滚动条与浏览器侧栏」后的真实宽度，再留 20px 给滚动条和缩放误差，取整 1240。
+   断点只改这一处，组件里不要写死 1279 / 1280。 */
 @theme inline {
+  --breakpoint-xl: 77.5rem;
+
   --color-bg: var(--bg);
   --color-panel: var(--panel);
   --color-panel-2: var(--panel-2);

@@ -187,7 +187,7 @@ export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: A
         >
           {MCP_BUTTON_LABEL[mcpCopy]}
         </button>
-        {/* 离线日报入口（1024–1279 两栏时日报摘要卡隐藏，这里留一个入口） */}
+        {/* 离线日报入口（1024–1239 两栏时日报摘要卡隐藏，这里留一个入口） */}
         <button type="button" role="Agent面板-离线日报按钮" className="btn hidden shrink-0 py-1 max-xl:block" onClick={onOpenOfflineReport}>
           {COPY.offlineReport.openButton}
         </button>
