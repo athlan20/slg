@@ -51,7 +51,7 @@ export const AGENT_PANEL_EN = {
     `Agent token (token): ${token}`,
 } satisfies typeof COPY['agentPanel'];
 
-// Newcomer integration dialog (v113, AISLG-267): one screen, one button, no tabs or choices.
+// Newcomer integration dialog (AISLG-267): one screen, one button, no tabs or choices.
 export const NEWCOMER_GUIDE_EN = {
   title: 'Let your AI play for you',
   intro:

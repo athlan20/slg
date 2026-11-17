@@ -729,7 +729,7 @@ const AGENT_PANEL = {
     `Agent 令牌（token）：${token}`,
 };
 
-/** 新手接入弹窗（v113，AISLG-267）：进游戏一屏内告诉新玩家「把这段贴给你的 AI」。
+/** 新手接入弹窗（AISLG-267）：进游戏一屏内告诉新玩家「把这段贴给你的 AI」。
  *  没有页签、没有选项，只有一键复制；文案逐字来自需求，两种语言都要在。 */
 const NEWCOMER_GUIDE = {
   title: '让你的 AI 替你打三国',
@@ -997,7 +997,7 @@ export const COPY = {
   exchange: EXCHANGE,
   leaderboard: LEADERBOARD,
   agentPanel: AGENT_PANEL,
-  /** 新手接入弹窗（v113，AISLG-267） */
+  /** 新手接入弹窗（AISLG-267） */
   newcomerGuide: NEWCOMER_GUIDE,
   eventsPanel: EVENTS_PANEL,
   login: LOGIN,
