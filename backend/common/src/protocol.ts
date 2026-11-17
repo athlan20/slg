@@ -959,6 +959,9 @@ export interface GetEventsRequestData {
 }
 
 export interface GetAgentInfoResponseData {
+  /** 账号第一次创建的时间（ISO 8601，v115 新增）：取 accounts.created_at，玩家与 Agent 连接取值相同；
+   *  只读字段，不参与任何游戏规则 */
+  accountCreatedAt: string;
   agentOnline: boolean;
   connections: Array<{ role: InitiatorRole; connectedAt: string }>;
   /** Agent 最近一次上报的计划（v10；从未上报为 null） */

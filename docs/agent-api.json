@@ -1,5 +1,5 @@
 {
-  "version": 114,
+  "version": 115,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -874,7 +874,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 114,
+                "protocolVersion": 115,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -923,7 +923,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 114,
+                "protocolVersion": 115,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -943,14 +943,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/111 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/112 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 111,
+              "docVersion": 112,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -965,8 +965,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 114,
-                "docNotice": "接口文档已从 v111 更新到 v114：请 GET /agent-api/changes/111 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 115,
+                "docNotice": "接口文档已从 v112 更新到 v115：请 GET /agent-api/changes/112 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -2873,9 +2873,14 @@
       "name": "GET_AGENT_INFO",
       "title": "查询 Agent 信息",
       "preAuth": false,
-      "summary": "返回当前 Agent 是否在线、各在线 Agent 连接的上线时间、Agent 最近上报的计划（v10 起的 plan 快照），以及 Agent 近期事件（最新 10 条，只含 initiator 为 agent 的事件）；账号绑定状态（wechatBound / googleBound / githubBound + githubLogin，供网页设置区；Agent 令牌不在此下发——它经 GET_AGENT_TOKEN 专门协议、仅玩家连接可查，v46）。v49 起不再返回 directive（作战方针已移除：玩家改与自己的 Agent 直接讨论）。",
+      "summary": "返回当前 Agent 是否在线、各在线 Agent 连接的上线时间、Agent 最近上报的计划（v10 起的 plan 快照），以及 Agent 近期事件（最新 10 条，只含 initiator 为 agent 的事件）；账号绑定状态（wechatBound / googleBound / githubBound + githubLogin，供网页设置区；Agent 令牌不在此下发——它经 GET_AGENT_TOKEN 专门协议、仅玩家连接可查，v46）。v49 起不再返回 directive（作战方针已移除：玩家改与自己的 Agent 直接讨论）。v115 新增 accountCreatedAt（账号创建时间，只读）。",
       "requestFields": [],
       "dataFields": [
+        {
+          "name": "accountCreatedAt",
+          "type": "string",
+          "desc": "账号第一次创建的时间（ISO 8601，v115 新增）：取账号表已有的 accounts.created_at，玩家连接与 Agent 连接取到的值相同。纯只读字段，不参与任何游戏规则。"
+        },
         {
           "name": "agentOnline",
           "type": "boolean",
@@ -2965,6 +2970,7 @@
               "seq": 4,
               "ok": true,
               "data": {
+                "accountCreatedAt": "2026-09-20T11:22:33.000Z",
                 "agentOnline": true,
                 "connections": [
                   {

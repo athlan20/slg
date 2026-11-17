@@ -370,9 +370,10 @@ const REQUEST_GET_AGENT_INFO: RequestOpDoc = {
   name: 'GET_AGENT_INFO',
   title: '查询 Agent 信息',
   preAuth: false,
-  summary: '返回当前 Agent 是否在线、各在线 Agent 连接的上线时间、Agent 最近上报的计划（v10 起的 plan 快照），以及 Agent 近期事件（最新 10 条，只含 initiator 为 agent 的事件）；账号绑定状态（wechatBound / googleBound / githubBound + githubLogin，供网页设置区；Agent 令牌不在此下发——它经 GET_AGENT_TOKEN 专门协议、仅玩家连接可查，v46）。v49 起不再返回 directive（作战方针已移除：玩家改与自己的 Agent 直接讨论）。',
+  summary: '返回当前 Agent 是否在线、各在线 Agent 连接的上线时间、Agent 最近上报的计划（v10 起的 plan 快照），以及 Agent 近期事件（最新 10 条，只含 initiator 为 agent 的事件）；账号绑定状态（wechatBound / googleBound / githubBound + githubLogin，供网页设置区；Agent 令牌不在此下发——它经 GET_AGENT_TOKEN 专门协议、仅玩家连接可查，v46）。v49 起不再返回 directive（作战方针已移除：玩家改与自己的 Agent 直接讨论）。v115 新增 accountCreatedAt（账号创建时间，只读）。',
   requestFields: [],
   dataFields: [
+    { name: 'accountCreatedAt', type: 'string', desc: '账号第一次创建的时间（ISO 8601，v115 新增）：取账号表已有的 accounts.created_at，玩家连接与 Agent 连接取到的值相同。纯只读字段，不参与任何游戏规则。' },
     { name: 'agentOnline', type: 'boolean', desc: '是否存在至少一条声明为 Agent 的在线连接。' },
     { name: 'connections', type: 'array', desc: '当前在线的 Agent 连接列表。' },
     { name: 'connections[].role', type: "'agent'", desc: '恒为 agent（本列表只含 Agent 连接）。' },
@@ -399,6 +400,7 @@ const REQUEST_GET_AGENT_INFO: RequestOpDoc = {
         seq: 4,
         ok: true,
         data: {
+          accountCreatedAt: '2026-09-20T11:22:33.000Z',
           agentOnline: true,
           connections: [{ role: 'agent', connectedAt: '2026-09-25T07:59:00.000Z' }],
           plan: {
