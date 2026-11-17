@@ -50,10 +50,10 @@ export function MapPage() {
           ) : (
             <div role="地图页-军情" className="flex min-h-0 flex-col gap-2">
               <MoveCityPickBar />
-              <Card role="地图页-军情摘要" title={SUMMARY_COPY.title} meta={TARGET_COPY.summaryHint}>
+              <Card role="地图页-军情摘要" title={SUMMARY_COPY.title} meta={TARGET_COPY.summaryHint} className="shrink-0">
                 <MilitarySummary role="地图页-军情摘要-列表" />
               </Card>
-              <Card role="地图页-流寇商队" title={MOVING_COPY.panel.title}>
+              <Card role="地图页-流寇商队" title={MOVING_COPY.panel.title} className="shrink-0">
                 <MovingTargetList targets={session.moving.targets} world={world} />
               </Card>
               <FactionPanel state={session.factions.state} onFocusLair={(lair) => world.centerOn(lair.x, lair.y)} />
