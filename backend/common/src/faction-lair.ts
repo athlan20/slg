@@ -9,7 +9,7 @@
 // G1 = max(10,000, R10 × 0.35)、G20 = max(G1, R3 × 0.35)、Gk = G1 × (G20 / G1)^((k-1)/19)，
 // R10 / R3 = 全服战力第 10 / 第 3 名账号的单人战力；每天刷新一次、两个锚点各自只升不降、最低 10,000；
 // 编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放（与势力围城军同一比例）；
-// 歼灭奖励 = 每点守军战力金币 2、四种资源各 10；声望按歼灭战力的 15%（AISLG-263 由 1% 上调）；灭亡榜单是黄巾之乱同名次的 3 倍。
+// 歼灭奖励 = 每点守军战力金币 2、四种资源各 10；声望按歼灭战力的 10% 起、每深入一营 +1%（第 20 营 29%，AISLG-263 由固定 1% 上调）；灭亡榜单是黄巾之乱同名次的 3 倍。
 // 注意：营的守军 / 满编战力一律按「当前营序号」取 Gk，没有单一的「每营战力」了。
 
 import { armyPower } from './battle';
@@ -43,8 +43,9 @@ export const FACTION_LAIR_RECOVER_MS = 24 * 60 * 60 * 1000;
 export const FACTION_LAIR_KILL_GOLD_PER_POWER = 2;
 export const FACTION_LAIR_KILL_RESOURCE_PER_POWER = 10;
 
-/** 老巢战斗的声望比例（百分数）：歼灭战力的 15%（AISLG-263 由 1% 上调；世界地图其余战斗按 1:1） */
-export const FACTION_LAIR_PRESTIGE_PERCENT = 15;
+/** 老巢战斗的声望比例（百分数，AISLG-263 由固定 1% 上调；世界地图其余战斗按 1:1）：第 1 营 10%，每深入一营 +1%，第 20 营 29% */
+export const FACTION_LAIR_PRESTIGE_BASE_PERCENT = 10;
+export const FACTION_LAIR_PRESTIGE_STEP_PERCENT = 1;
 
 /** 每营战力的刷新间隔（毫秒，已按 time_scale 缩放；不低于 1 分钟，避免缩放到极小时每 tick 重算） */
 export function factionLairPowerRefreshMs(): number {
@@ -226,9 +227,15 @@ export function factionLairKillReward(killedPower: number): Resources {
   return reward;
 }
 
-/** 老巢战斗的声望：歼灭战力的 15%（向下取整，至少 0） */
-export function factionLairPrestige(killedPower: number): number {
-  return Math.max(0, Math.floor((Math.max(0, Math.floor(killedPower)) * FACTION_LAIR_PRESTIGE_PERCENT) / 100));
+/** 打第 campNo 营的声望比例（百分数）：10 + (营序号 − 1)，营序号夹在 1..20，即 10%..29% */
+export function factionLairPrestigePercent(campNo: number): number {
+  const no = Math.max(1, Math.min(FACTION_LAIR_CAMPS, Math.floor(campNo) || 1));
+  return FACTION_LAIR_PRESTIGE_BASE_PERCENT + (no - 1) * FACTION_LAIR_PRESTIGE_STEP_PERCENT;
+}
+
+/** 老巢战斗的声望：歼灭战力 × 当前营的声望比例（向下取整，至少 0；campNo 是打的那一营） */
+export function factionLairPrestige(killedPower: number, campNo: number): number {
+  return Math.max(0, Math.floor((Math.max(0, Math.floor(killedPower)) * factionLairPrestigePercent(campNo)) / 100));
 }
 
 /** 灭亡榜单的一档奖励（参战者按歼灭战力排名，灭亡时再发一次；数额 = 黄巾之乱同名次的 3 倍） */

@@ -75,7 +75,7 @@ describe('攻破老巢的主流程（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
       client.release();
     }
 
-    // 1) 打输也保留残血、照发歼灭奖励与 1% 声望
+    // 1) 打输也保留残血、照发歼灭奖励与第 1 营 10% 声望
     const goldBefore = Number((await fx.pool.query(`SELECT gold FROM cities WHERE id = $1`, [p1.cityId])).rows[0].gold);
     const lost = await attackLair(fx, { accountId: p1.accountId, cityId: p1.cityId, troops: { militia: 6000 }, now });
     assert.equal(lost.outcome, 'lost');
@@ -86,7 +86,7 @@ describe('攻破老巢的主流程（需 TEST_DATABASE_URL）', { skip: dbUrl ? 
     const goldAfter = Number((await fx.pool.query(`SELECT gold FROM cities WHERE id = $1`, [p1.cityId])).rows[0].gold);
     assert.equal(goldAfter - goldBefore, factionLairKillReward(lost.killedPower).gold, '歼灭奖励当场入账到出征城（不占负重）');
     const prestige = Number((await fx.pool.query(`SELECT prestige FROM accounts WHERE id = $1`, [p1.accountId])).rows[0].prestige);
-    assert.equal(prestige, Math.floor((lost.killedPower * 15) / 100), '声望按歼灭战力的 15%');
+    assert.equal(prestige, Math.floor((lost.killedPower * 10) / 100), '第 1 营声望按歼灭战力的 10%');
 
     // 2) 打赢清空当前营 → 进入下一营（满营），已清的营不回来
     const won = await attackLair(fx, {
