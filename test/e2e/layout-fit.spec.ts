@@ -1,4 +1,4 @@
-// 导航外壳的单屏验收（docs/frontend-nav-layout.md 第 11 节）：五种窗口尺寸 × 七个页面（含地图页选中目标、城池页选中建筑、
+// 导航外壳的单屏验收（docs/frontend-nav-layout.md 第 11 节）：多种窗口尺寸 × 七个页面（含地图页选中目标、城池页选中建筑、
 // 弹窗打开时），逐一检查
 //   1. 页面本身不滚动：document.documentElement.scrollHeight <= innerHeight；
 //   2. 没有任何元素 overflow-y 为 auto / scroll 且内容超出（竖向滚动条）；
@@ -16,6 +16,13 @@ const SIZES = [
   { width: 1920, height: 1080 },
   { width: 1440, height: 900 },
   { width: 1280, height: 720 },
+  // AISLG-265：标准布局的下限从 1280 降到 1240，1260（1280 屏扣掉滚动条 / 浏览器侧栏后的真实宽度）走标准布局，
+  // 四个常见笔记本可视高度都要不滚动、不裁内容；1240 是标准布局的边界（1240 标准 / 1239 紧凑，后者见 wide-layout.spec.ts）
+  { width: 1260, height: 900 },
+  { width: 1260, height: 800 },
+  { width: 1260, height: 720 },
+  { width: 1260, height: 680 },
+  { width: 1240, height: 720 },
   { width: 1100, height: 800 },
   { width: 390, height: 844 },
 ];
@@ -215,9 +222,10 @@ async function makeGrowthDense(page: Page): Promise<void> {
   await expect(page.locator('[role="养成页-竞技场-阵容-保存"]')).toBeDisabled();
 }
 
-// 养成页竞技场卡片在 1280×720（三栏，竞技场占右列）与 1100×800（分段条）下装满内容时不被裁：
+// 养成页竞技场卡片在 1280×720 / 1260×720（三栏，竞技场占右列）与 1100×800（分段条）下装满内容时不被裁：
 // 阵容 + 榜单 / 对手 + 战报列表要完整可见（AISLG-161 配兵预览加长后曾把列表压到 0 高）。
-test('养成页内容密集：竞技场在 1280×720 与 1100×800 下不被裁', async ({ page }) => {
+// AISLG-265：1240 起都是标准布局，1260 比 1280 少 40px 工作区，列宽少约 13px，同样不能把列表压没。
+test('养成页内容密集：竞技场在 1280×720、1260×720 与 1100×800 下不被裁', async ({ page }) => {
   test.setTimeout(400_000);
   await page.setViewportSize({ width: 1280, height: 720 });
   await loginViaForm(page, uniqueUsername('e2e-arena'));
@@ -226,11 +234,12 @@ test('养成页内容密集：竞技场在 1280×720 与 1100×800 下不被裁'
 
   for (const size of [
     { width: 1280, height: 720 },
+    { width: 1260, height: 720 },
     { width: 1100, height: 800 },
   ]) {
     await page.setViewportSize(size);
     await gotoPage(page, '养成');
-    // 1024–1279 养成页是分段条，先切到竞技场
+    // 1024–1239 养成页是分段条，先切到竞技场
     const seg = page.locator('[role="养成页-分段-竞技场"]');
     if (await seg.isVisible()) {
       await seg.click();
