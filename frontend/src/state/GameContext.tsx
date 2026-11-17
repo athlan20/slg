@@ -16,6 +16,8 @@ export interface GameState {
   openLeaderboard: (kind?: LeaderboardKind) => void;
   /** 黄巾之乱详情弹窗（地图黄巾浮卡 / 总览摘要入口） */
   openYellowTurban: () => void;
+  /** 新手接入弹窗（AISLG-267）：Agent 面板「接入指引」随时可手动打开 */
+  openNewcomerGuide: () => void;
 }
 
 export const GameContext = createContext<GameState | null>(null);

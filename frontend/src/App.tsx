@@ -27,6 +27,8 @@ export default function App() {
   const [leaderboardKind, setLeaderboardKind] = useState<LeaderboardKind>('power');
   const [ytOpen, setYtOpen] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
+  // 新手接入弹窗（AISLG-267）：Agent 面板「接入指引」手动打开（自动弹由 ModalHost 自己判断）
+  const [guideOpen, setGuideOpen] = useState(false);
   const { fetchLeaderboard } = session;
   const openLeaderboard = (kind: LeaderboardKind = leaderboardKind) => {
     setLeaderboardKind(kind);
@@ -59,6 +61,7 @@ export default function App() {
     openWarning: () => setWarningOpen(true),
     openLeaderboard,
     openYellowTurban: () => setYtOpen(true),
+    openNewcomerGuide: () => setGuideOpen(true),
   };
 
   return (
@@ -86,6 +89,8 @@ export default function App() {
                     onCloseYt={() => setYtOpen(false)}
                     warningOpen={warningOpen}
                     onCloseWarning={() => setWarningOpen(false)}
+                    guideOpen={guideOpen}
+                    onCloseGuide={() => setGuideOpen(false)}
                   />
                 </>
               ) : typeof __MAPP__ !== 'undefined' && __MAPP__ ? (
