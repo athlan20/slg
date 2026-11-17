@@ -111,13 +111,13 @@ describe('攻破老巢的纯规则（无需数据库）', () => {
     assert.deepEqual(factionLairKillReward(0), { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 });
   });
 
-  test('声望按歼灭战力的 30%（AISLG-263；不是世界地图战斗的 1:1）', () => {
-    assert.equal(FACTION_LAIR_PRESTIGE_PERCENT, 30);
-    assert.equal(factionLairPrestige(250_000), 75_000);
-    assert.equal(factionLairPrestige(26_261), 7_878);
-    assert.equal(factionLairPrestige(99), 29);
-    assert.equal(factionLairPrestige(3), 0);
-    assert.equal(factionLairPrestige(4), 1);
+  test('声望按歼灭战力的 15%（AISLG-263；不是世界地图战斗的 1:1）', () => {
+    assert.equal(FACTION_LAIR_PRESTIGE_PERCENT, 15);
+    assert.equal(factionLairPrestige(250_000), 37_500);
+    assert.equal(factionLairPrestige(26_261), 3_939);
+    assert.equal(factionLairPrestige(99), 14);
+    assert.equal(factionLairPrestige(6), 0);
+    assert.equal(factionLairPrestige(7), 1);
   });
 
   test('灭亡榜单 = 黄巾之乱同名次的 3 倍（第 1 / 2~3 / 4~10 / 其余参与者）', () => {
