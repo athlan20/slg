@@ -125,6 +125,7 @@ export const PROTOCOL_CHANGELOG: readonly ProtocolChange[] = [
   { version: 112, summary: '公告只留人工发布，活动消息进聊天「活动」页签（AISLG-260，只加不改）：游戏不再自动发公告（剧本战场报名 / 开战前 1 小时提醒、赤壁风向预告、五方势力本季启用、赛季临近结束），改走全服播报（不新建表 / 频道）。新增 4 个必达播报类型：battlefield_start_soon = { eventId, script, startAt }、battlefield_wind = { eventId, script, switchAt, nextWind: se|nw }、faction_season_started = { placed, skipped: [{ key, name, nameEn }] }、season_ending = { seasonId, seasonName, endAt, stage: T-3d|T-1d|T-1h|T-10m }；原来的强提醒弹窗取消（PUSH_SEASON reason=season_warning 照旧）。battlefield_signup / battlefield_started 的 detail 新发记录带 script（旧记录缺省不显示剧本名）。新增 serverBroadcastCategory(type) = event | war（event = 战场 / 洛阳 / 黄巾 / 五方势力 / 赛季等玩法节点，其余为 war），GET_SERVER_BROADCASTS 请求新增可选 category（后端过滤，响应结构不变，非法值 INVALID_PARAMS）。Agent 侧：这些提醒改读播报，时间与风向仍可从 GET_BATTLEFIELD 拿到。存量旧自动公告幂等撤回（status=withdrawn，记录保留）。' },
   { version: 113, summary: 'Linux.do 微应用接入（AISLG-261）：新增 MAPP_LOGIN（op 158，登录前可发，仅玩家连接，不进 Agent 文档），握手阶段通过平台令牌验签后换取会话令牌；新增错误码 MAPP_UNAVAILABLE / MAPP_TRUST_LEVEL_LOW / MAPP_TOKEN_INVALID。' },
   { version: 114, summary: '五方势力老巢声望上调（AISLG-263，只改数值）：打老巢每场战斗的声望由歼灭战力的 1% 改为与世界地图其余战斗一致的 1:1（歼灭 1 点战力得 1 点声望），仍按每场各自结算、打输也有（不是只给最后一击，首领名将仍只给最后一击）；歼灭奖励（金币 2 / 木粮石铁各 10）与灭亡榜单不变，协议字段无增删。' },
+  { version: 115, summary: 'GET_AGENT_INFO 新增 accountCreatedAt（AISLG-266，只加不改）：账号第一次创建的时间（ISO 8601），取账号表已有的 accounts.created_at，玩家连接与 Agent 连接取值相同；纯只读字段，不参与任何游戏规则（供客户端判断新号）。无新表、无迁移。' },
 ];
 
 /** 增量变更的 HTTP 路径（与 /agent-api.md 同域名；since 为调用方手上文档的版本号） */
