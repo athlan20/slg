@@ -110,6 +110,8 @@ export interface AgentInfoView {
   /** Agent 最近一次上报的计划（v10；从未上报为 null） */
   plan: AgentPlanView | null;
   recentEvents: EventView[];
+  /** 账号创建时间（ISO 8601；AISLG-266 起返回，旧服务端没有）：新手接入弹窗据此判断新号 */
+  accountCreatedAt?: string;
   /** 账号是否已绑定微信（v43） */
   wechatBound: boolean;
   /** 账号是否已绑定 Google（v44） */
