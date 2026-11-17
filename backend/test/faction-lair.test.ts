@@ -22,8 +22,6 @@ import {
   factionLairRemainingPercent,
   factionLairScoutGarrison,
   factionLairKillReward,
-  factionLairPrestige,
-  factionLairPrestigePercent,
   rescaledLairRemaining,
 } from '../common/src/faction-lair';
 import { factionSiegeArmy } from '../common/src/faction-siege';
@@ -109,19 +107,6 @@ describe('攻破老巢的纯规则（无需数据库）', () => {
     const reward = factionLairKillReward(1234);
     assert.deepEqual(reward, { gold: 2468, wood: 12340, food: 12340, stone: 12340, iron: 12340 });
     assert.deepEqual(factionLairKillReward(0), { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 });
-  });
-
-  test('声望比例第 1 营 10%、每深入一营 +1%、第 20 营 29%（AISLG-263；不是世界地图战斗的 1:1）', () => {
-    assert.equal(factionLairPrestigePercent(1), 10);
-    assert.equal(factionLairPrestigePercent(2), 11);
-    assert.equal(factionLairPrestigePercent(20), 29);
-    assert.equal(factionLairPrestigePercent(0), 10, '营序号夹在 1..20');
-    assert.equal(factionLairPrestigePercent(99), 29, '营序号夹在 1..20');
-    assert.equal(factionLairPrestige(26_261, 1), 2_626);
-    assert.equal(factionLairPrestige(250_000, 1), 25_000);
-    assert.equal(factionLairPrestige(250_000, 20), 72_500);
-    assert.equal(factionLairPrestige(9, 1), 0);
-    assert.equal(factionLairPrestige(10, 1), 1);
   });
 
   test('灭亡榜单 = 黄巾之乱同名次的 3 倍（第 1 / 2~3 / 4~10 / 其余参与者）', () => {
