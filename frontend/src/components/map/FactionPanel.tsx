@@ -113,7 +113,7 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
                 role="势力面板-仇恨"
                 title={F.hatredHint}
                 className={`col-start-2 col-end-4 truncate text-[11px] ${
-                  tier === 'target' ? 'text-danger' : tier === 'noticed' ? 'text-warn' : 'text-faint'
+                  tier === 'target' ? 'text-st-error' : tier === 'noticed' ? 'text-warn' : 'text-faint'
                 }`}
               >
                 <span role="势力面板-仇恨档位标签">{F.hatredLabel}</span>{' '}
