@@ -1,6 +1,6 @@
 /** 侧栏（docs/frontend-nav-layout.md 第 3 节）：顶部城池切换（下拉，列出全部城池）、七个导航项（图标 + 名字 + 角标）、
  *  底部账号按钮（带本人连接状态灯；菜单：城池改名 / 切换账号 / 重置账号 / 皮肤四选一）。
- *  1024–1279 收成 60px 图标栏；< 1024 变底部图标栏（集市 / 榜收进账号菜单；城池切换在手机顶栏胶囊，AISLG-191）。
+ *  1024–1239 收成 60px 图标栏；< 1024 变底部图标栏（集市 / 榜收进账号菜单；城池切换在手机顶栏胶囊，AISLG-191）。
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -193,7 +193,7 @@ export function Sidebar(props: SidebarProps) {
               >
                 {item.icon}
               </b>
-              {/* 手机（< 1024）底部导航用短标签（"将星塔" → "将星"），≥ 1280 宽侧栏仍用全称（AISLG-214） */}
+              {/* 手机（< 1024）底部导航用短标签（"将星塔" → "将星"），≥ 1240 宽侧栏仍用全称（AISLG-214） */}
               <span className="nav-label hidden max-lg:inline max-lg:whitespace-nowrap max-lg:tracking-tighter">{item.shortLabel ?? item.label}</span>
               <span className="nav-label-full max-xl:hidden">{item.label}</span>
               {badge && badge.count > 0 ? (

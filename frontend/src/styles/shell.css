@@ -1,6 +1,7 @@
 /* 导航外壳与页面网格（docs/frontend-nav-layout.md 第 3 / 5 节）。
    外壳 100dvh 锁定一屏；所有网格子项 min-height: 0 / min-width: 0，内容放不下由组件分页或截断，
-   任何一层都不出现竖向滚动条。断点：≥1280 标准；1024–1279 图标栏 + 三栏页变两栏；<1024 底部导航 + 每页一个主区块。 */
+   任何一层都不出现竖向滚动条。断点（AISLG-265）：≥1240 标准；1024–1239 图标栏 + 三栏页变两栏；
+   <1024 底部导航 + 每页一个主区块。1240 = Tailwind 的 xl（index.css 里 --breakpoint-xl: 77.5rem），两边必须同步。 */
 
 .nav-shell {
   height: 100dvh;
@@ -28,7 +29,7 @@
   grid-area: foot;
 }
 
-@media (max-width: 1279px) {
+@media (max-width: 1239px) {
   .nav-shell {
     grid-template-columns: 60px minmax(0, 1fr);
   }
@@ -173,8 +174,8 @@
 .p-agent {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-/* 养成页（武将 / 科技 / 竞技场 / 任务）：≥1280 三栏两行，竞技场占右侧整列（阵容 + 榜单 + 战报约 360px，半高装不下）；
-   任务横跨第二行左两列。1024–1279 四块装不进两栏，改成手机式分段（见下），一次一块、整块占满工作区 */
+/* 养成页（武将 / 科技 / 竞技场 / 任务）：≥1240 三栏两行，竞技场占右侧整列（阵容 + 榜单 + 战报约 360px，半高装不下）；
+   任务横跨第二行左两列。1024–1239 四块装不进两栏，改成手机式分段（见下），一次一块、整块占满工作区 */
 .p-growth {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
@@ -188,13 +189,13 @@
   grid-row: 2;
 }
 
-/* 将星塔页（v55，AISLG-146）：进度 / 阵容 / 战报三栏；1024–1279 两栏，战报横跨第二行 */
+/* 将星塔页（v55，AISLG-146）：进度 / 阵容 / 战报三栏；1024–1239 两栏，战报横跨第二行 */
 .p-star-tower {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-/* 1024–1279：三栏页变两栏（第三块隐藏，内容在别的页面也能找到）；地图页右栏收窄 */
-@media (min-width: 1024px) and (max-width: 1279px) {
+/* 1024–1239：三栏页变两栏（第三块隐藏，内容在别的页面也能找到）；地图页右栏收窄 */
+@media (min-width: 1024px) and (max-width: 1239px) {
   .p-army,
   .p-intel,
   .p-agent {

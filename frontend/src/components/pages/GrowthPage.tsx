@@ -1,4 +1,4 @@
-/** 养成页：武将（含酒馆）· 科技 · 竞技场 · 任务。≥1280 三栏两行（竞技场占右侧整列，任务横跨下排）；1279 及以下用分段条一次一块（见 shell.css 的 .p-growth）。 */
+/** 养成页：武将（含酒馆）· 科技 · 竞技场 · 任务。≥1240 三栏两行（竞技场占右侧整列，任务横跨下排）；1239 及以下用分段条一次一块（见 shell.css 的 .p-growth）。 */
 
 import { useCopy } from '../../i18n/bundle';
 import { useGame } from '../../state/GameContext';
