@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**113** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**114** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 113）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 114）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -577,7 +577,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 113,
+    "protocolVersion": 114,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -643,7 +643,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 113,
+    "protocolVersion": 114,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -667,7 +667,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/110 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/111 补读增量）**
 
 请求：
 
@@ -678,7 +678,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 110,
+    "docVersion": 111,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -697,8 +697,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 113,
-    "docNotice": "接口文档已从 v110 更新到 v113：请 GET /agent-api/changes/110 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 114,
+    "docNotice": "接口文档已从 v111 更新到 v114：请 GET /agent-api/changes/111 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -19257,7 +19257,7 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
 | factions[].suppression.swallowIntervalHours | number | 吞一座 NPC 城的基准间隔小时数（未随 time_scale 缩放，便于展示）：0 / 1 / 2 / 3 档 = 6 / 9 / 12 / 15 小时（实际时长按部署的 time_scale 缩放）。每家独立取值，已经计时中的下一次按新间隔往后算。 |
 | factions[].suppression.weeklyBranchCap | number | 每周最多吞下的玩家分城数：0~2 档 2 座，3 档 1 座（本周已经吞满的不回溯）。 |
 
-**Agent 提示**：势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 1.5 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 5 格内没有玩家城，所以别把坐标 (80, 80) / (920, 80) / (80, 920) / (920, 920) / (500, 500) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。v101（AISLG-241）起老巢可以打：MARCH（task=plunder）指向老巢坐标，一次只打当前一营（守城战、城墙减伤 50%），当前营守军打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营）；20 营由弱到强（v106，AISLG-247）：第 1 营最弱、第 20 营最强，中间逐营递增，强度随全服玩家整体实力成长（具体算法不公开），每天刷新、只升不降，编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。每场按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重），声望按歼灭战力的 1%；打掉最后一营的玩家拿该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，全服唯一），灭亡时按贡献（累计歼灭守军战力）名次再发一次（数额是黄巾之乱同名次的 3 倍）。任何玩家都能打，不要求入盟、不算攻击玩家、不破新手保护；打之前先 SCOUT 看当前营守军，SCOUT / GET_FACTIONS 都能看到剩余营数与当前营百分比。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。v107（AISLG-249）起打老巢有直接回报：每打掉 5 营升一档压制（factions[].suppression），围城军更弱、吞城更慢、3 档时每周吞分城从 2 座降到 1 座——不去打老巢，这家就一直维持最强。
+**Agent 提示**：势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 1.5 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 5 格内没有玩家城，所以别把坐标 (80, 80) / (920, 80) / (80, 920) / (920, 920) / (500, 500) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。v101（AISLG-241）起老巢可以打：MARCH（task=plunder）指向老巢坐标，一次只打当前一营（守城战、城墙减伤 50%），当前营守军打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营）；20 营由弱到强（v106，AISLG-247）：第 1 营最弱、第 20 营最强，中间逐营递增，强度随全服玩家整体实力成长（具体算法不公开），每天刷新、只升不降，编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。每场按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重），声望与世界地图其余战斗一致、歼灭 1 点战力得 1 点声望（v114，AISLG-263 起；此前固定 1%），每场各自结算、打输也有，不是只给最后一击；打掉最后一营的玩家拿该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，全服唯一），灭亡时按贡献（累计歼灭守军战力）名次再发一次（数额是黄巾之乱同名次的 3 倍）。任何玩家都能打，不要求入盟、不算攻击玩家、不破新手保护；打之前先 SCOUT 看当前营守军，SCOUT / GET_FACTIONS 都能看到剩余营数与当前营百分比。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。v107（AISLG-249）起打老巢有直接回报：每打掉 5 营升一档压制（factions[].suppression），围城军更弱、吞城更慢、3 档时每周吞分城从 2 座降到 1 座——不去打老巢，这家就一直维持最强。
 
 **示例**
 
@@ -23293,7 +23293,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 113。
+- 协议版本随对外协议内容的每次变化递增；当前为 114。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

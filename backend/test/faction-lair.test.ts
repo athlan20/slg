@@ -8,7 +8,6 @@ import {
   FACTION_LAIR_CAMPS,
   FACTION_LAIR_DESTROY_TIERS,
   FACTION_LAIR_MIN_CAMP_POWER,
-  FACTION_LAIR_PRESTIGE_PERCENT,
   FACTION_LAIR_R10_RANK,
   FACTION_LAIR_R3_RANK,
   FACTION_LAIR_RECOVER_MS,
@@ -23,7 +22,6 @@ import {
   factionLairRemainingPercent,
   factionLairScoutGarrison,
   factionLairKillReward,
-  factionLairPrestige,
   rescaledLairRemaining,
 } from '../common/src/faction-lair';
 import { factionSiegeArmy } from '../common/src/faction-siege';
@@ -109,13 +107,6 @@ describe('攻破老巢的纯规则（无需数据库）', () => {
     const reward = factionLairKillReward(1234);
     assert.deepEqual(reward, { gold: 2468, wood: 12340, food: 12340, stone: 12340, iron: 12340 });
     assert.deepEqual(factionLairKillReward(0), { gold: 0, wood: 0, food: 0, stone: 0, iron: 0 });
-  });
-
-  test('声望按歼灭战力的 1%（不是世界地图战斗的 1:1）', () => {
-    assert.equal(FACTION_LAIR_PRESTIGE_PERCENT, 1);
-    assert.equal(factionLairPrestige(250_000), 2_500);
-    assert.equal(factionLairPrestige(99), 0);
-    assert.equal(factionLairPrestige(100), 1);
   });
 
   test('灭亡榜单 = 黄巾之乱同名次的 3 倍（第 1 / 2~3 / 4~10 / 其余参与者）', () => {
