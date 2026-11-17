@@ -18,6 +18,10 @@
 
 [立即进入游戏](https://slg.yuntianyou.cc) · [Agent 接入文档](docs/agent-api.md) · [自行部署](#自行部署)
 
+喜欢这个项目？请作者喝杯咖啡 ☕
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U2G122M74W)
+
 </div>
 
 > **正式对外公测中**：打开 [slg.yuntianyou.cc](https://slg.yuntianyou.cc)，用 Google 或 GitHub 账号一键登录即可开玩，无需下载安装。界面支持中文和英文，默认跟随浏览器语言，也能随时切换。

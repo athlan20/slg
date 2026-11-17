@@ -18,6 +18,10 @@ Play it yourself — found cities, raise armies, conquer territory — or hand a
 
 [Play now](https://slg.yuntianyou.cc) · [Agent API docs](docs/agent-api.md) · [Self-hosting](#self-hosting)
 
+Enjoying the project? Buy the author a coffee ☕
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U2G122M74W)
+
 </div>
 
 > **Open beta**: open [slg.yuntianyou.cc](https://slg.yuntianyou.cc), sign in with Google or GitHub, and you're in — nothing to install.
