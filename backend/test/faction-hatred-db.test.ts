@@ -1,4 +1,4 @@
-// 势力记仇的数据库流程（v115，AISLG-264）：打老巢结算加报复仇恨（写时折算）、基础仇恨的前 20 名榜快照、
+// 势力记仇的数据库流程（v116，AISLG-264）：打老巢结算加报复仇恨（写时折算）、基础仇恨的前 20 名榜快照、
 // 仇恨选目标（不要求势力范围 / 同账号只被一家围 / 候选排序）、GET_FACTIONS 的 hatredTier 只给请求者。
 // 需要 TEST_DATABASE_URL（临时库），否则跳过。纯规则见 faction-hatred.test.ts。
 import assert from 'node:assert/strict';

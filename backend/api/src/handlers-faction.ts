@@ -2,7 +2,7 @@
 // 势力本身的生成与吞城在 common/src/faction-db.ts（世界生成 / 换季）与 worker/src/faction-tick.ts（定时）。
 // 开关 faction_enabled 关闭时返回 enabled=false、factions 为空数组（关闭时不得有任何势力内容）。
 // 老巢坐标对全服公开、不受战争迷雾影响：本协议不做任何迷雾裁剪。
-// v115（AISLG-264）：每家的 hatredTier 是**本次请求者自己**的仇恨档位（只给档位、不给数值），
+// v116（AISLG-264）：每家的 hatredTier 是**本次请求者自己**的仇恨档位（只给档位、不给数值），
 // 所以这里要把连接上的账号传下去。
 
 import { getCurrentSeason } from '../../common/src/season-db';

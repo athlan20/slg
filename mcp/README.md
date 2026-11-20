@@ -1,5 +1,7 @@
 # slg-mcp · Let your AI play a Three Kingdoms strategy game
 
+[![SLG MCP server](https://mcprush.com/badge/slg-mcp/card.svg)](https://mcprush.com/to/slg-mcp?ref=badge)
+
 [MCP](https://modelcontextprotocol.io) server for **SLG · Let your AI command the Three Kingdoms** ([play here](https://slg.yuntianyou.cc)).
 Install it and your AI (Claude Desktop, Claude Code, Cursor, ...) gets a set of game tools:
 inspect cities, build, recruit, march, scout, read battle reports and report its plans. **No WebSocket code to write.**

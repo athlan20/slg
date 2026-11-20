@@ -10,7 +10,7 @@ import { PageGrid } from './PageGrid';
 export function AgentPage() {
   const copy = useCopy();
   const { EXTRA_PANEL, INTEL_COPY } = copy;
-  const { session } = useGame();
+  const { session, openNewcomerGuide } = useGame();
   return (
     <PageGrid
       role="Agent页"
@@ -24,6 +24,7 @@ export function AgentPage() {
               agent={session.agent}
               offlineReportError={session.offlineReportError}
               onOpenOfflineReport={() => void session.openOfflineReport()}
+              onOpenGuide={openNewcomerGuide}
             />
           ),
         },

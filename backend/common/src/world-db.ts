@@ -138,7 +138,7 @@ async function wipeWorldForRebuild(client: pg.PoolClient): Promise<void> {
   // v101（AISLG-241）：老巢战况与贡献榜同样跟世界走（重建后按 20 营、每营 10,000 重新生成）
   await client.query(`DELETE FROM faction_lairs`);
   await client.query(`DELETE FROM faction_contrib`);
-  // v115（AISLG-264）：记仇（报复仇恨）同样跟世界走
+  // v116（AISLG-264）：记仇（报复仇恨）同样跟世界走
   await client.query(`DELETE FROM faction_hatred`);
   // 进行中的行军部队并回出发城（已结算的历史行军不并，避免重复入账）
   await client.query(

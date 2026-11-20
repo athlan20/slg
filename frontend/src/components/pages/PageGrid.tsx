@@ -13,7 +13,7 @@ export interface PageBlock {
   node: ReactNode;
   /** 对应 shell.css 的 grid-area 类（a-map / a-ctx / a-lanes 等） */
   areaClass?: string;
-  /** 1024–1279 两栏时隐藏（三栏页的第三块） */
+  /** 1024–1239 两栏时隐藏（三栏页的第三块） */
   hideMd?: boolean;
   /** 手机上也常驻显示（不参与分段切换，按内容高度） */
   always?: boolean;

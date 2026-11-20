@@ -1,4 +1,4 @@
-// 势力围攻的选目标（AISLG-240，v100；v115，AISLG-264 加仇恨路径）：入池条件只在这里写一份，
+// 势力围攻的选目标（AISLG-240，v100；v116，AISLG-264 加仇恨路径）：入池条件只在这里写一份，
 // 两条取法共用——回落的「范围内离老巢最近」（pickSiegeTarget）与仇恨路径的「每个账号离老巢最近的
 // 合格分城、不看范围」（querySiegeTargetsForAccounts，见 faction-hatred-db.ts 的 pickHatredSiegeTarget）。
 // 从 faction-siege-db.ts 分出来，避免那个文件把「选目标」与「围攻行读写 / 节奏计数」混在一起。
@@ -28,7 +28,7 @@ export interface SiegeCandidate {
 }
 
 /**
- * 选一家势力的围攻目标：玩家**分城**（不是主城）、不是名城。入池条件只在本函数里写一份（v115，AISLG-264）：
+ * 选一家势力的围攻目标：玩家**分城**（不是主城）、不是名城。入池条件只在本函数里写一份（v116，AISLG-264）：
  * 目标账号不在新手保护 / 主动免战，城不在被动免战，排除这家正在围 / 刚打输 24 小时内的城，
  * 并排除**已经被别家围攻中的账号**（需求「同一账号同一时间最多被 1 家势力围」）。
  *
@@ -167,7 +167,7 @@ export async function pickSiegeTarget(
 }
 
 /**
- * 仇恨路径（v115，AISLG-264）：给定账号里每个账号「离老巢最近的合格分城」，**不看势力范围**。
+ * 仇恨路径（v116，AISLG-264）：给定账号里每个账号「离老巢最近的合格分城」，**不看势力范围**。
  * 没有合格分城的账号不在结果里（调用方按仇恨顺序跳过它、换下一个）。
  */
 export async function querySiegeTargetsForAccounts(

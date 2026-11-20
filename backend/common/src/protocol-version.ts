@@ -1011,7 +1011,11 @@
  * v114（五方势力老巢声望上调，AISLG-263；只改数值，不增删字段）：
  *   打老巢每场战斗的声望由「歼灭战力的 1%」改为与世界地图其余战斗一致的 1:1（歼灭 1 点战力得 1 点声望），仍按每场各自结算、打输也有，
  *   不是只给最后一击（首领名将仍只给最后一击）；歼灭奖励（金币 2 / 四资源各 10）与灭亡榜单不变。
- * v115（五方势力记仇，AISLG-264；只加不改，开关 faction_enabled 关闭时行为与上线前一致）：
+ * v115（GET_AGENT_INFO 新增 accountCreatedAt，AISLG-266；只加不改）：
+ *   GET_AGENT_INFO 的 data 新增 accountCreatedAt（ISO 8601 字符串）——账号第一次创建的时间，直接取账号表已有的
+ *   accounts.created_at（自建表起就有该列，不新增表 / 列 / 迁移）；玩家连接与 Agent 连接取到的值一致。
+ *   纯只读字段：不参与任何游戏规则（不在服务端做判断），供前端「新手接入弹窗」判断新号用。
+ * v116（五方势力记仇，AISLG-264；只加不改，开关 faction_enabled 关闭时行为与上线前一致）：
  *   一、仇恨值：每家势力对每个账号一个仇恨值（换季清零）= 基础仇恨 + 报复仇恨。
  *   基础仇恨 = 全服战力榜（城内 + 野地驻军 + 协防 + 行军中，与老巢锚点同一口径）前 20 名，每天刷新，
  *   第 k 名 = G1 × (21 − k) ÷ 20（向下取整；G1 = 这家老巢第 1 营当前战力），五家各自给、榜外为 0；
@@ -1026,4 +1030,4 @@
  *   四、协议：GET_FACTIONS 的 factions[] 新增 hatredTier（none / noticed / target，只对请求者本人，不给数值）；
  *   PUSH_FACTION_SIEGE 的 reason=warning 新增可选 byHatred。新表 faction_hatred（换季清空）。
  */
-export const PROTOCOL_VERSION = 115;
+export const PROTOCOL_VERSION = 116;

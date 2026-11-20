@@ -1,6 +1,8 @@
 // GET_AGENT_INFO 与 AGENT_REPORT_PLAN（从 handlers.ts 拆出以控制单文件行数，v43）。
 // v43：GET_AGENT_INFO 新增 agentTokens（v46 移除，Agent 令牌改由 GET_AGENT_TOKEN 专门协议下发——
 // 本协议 Agent 连接也能调，不能带令牌）与 wechatBound；v44：googleBound；v45：githubBound / githubLogin。
+// v115（AISLG-266）：新增 accountCreatedAt（账号第一次创建的时间，取 accounts.created_at）——只读字段，
+// 玩家连接与 Agent 连接取到的值相同，不参与任何游戏规则（前端「新手接入弹窗」判断新号用）。
 
 import pg from 'pg';
 import { Op, type AgentPlanView } from '../../common/src/protocol';
@@ -10,6 +12,19 @@ import { respondError, respondOk } from './frames';
 import type { HandlerContext } from './handlers';
 import { accountHasWechat } from './wx-accounts';
 import { accountHasOauth, oauthDisplayName } from './oauth-accounts';
+
+/**
+ * 账号第一次创建的时间（accounts.created_at，v115 起下发）：ISO 8601 字符串，只读展示，不参与游戏规则。
+ * 账号行不存在属于异常状态（已登录连接的账号必定存在，sessions 对 accounts 是级联删除），
+ * 直接抛错交由 handleMessage 统一回 INTERNAL，不编造时间。
+ */
+export async function loadAccountCreatedAt(pool: pg.Pool, accountId: string): Promise<string> {
+  const res = await pool.query(`SELECT created_at FROM accounts WHERE id = $1`, [accountId]);
+  if (!res.rowCount) {
+    throw new Error(`account not found: ${accountId}`);
+  }
+  return (res.rows[0].created_at as Date).toISOString();
+}
 
 /** 账号是否已绑定微信；服务端没配微信时无从判断，按未绑定处理 */
 async function isWechatBound(ctx: HandlerContext, accountId: string): Promise<boolean> {
@@ -39,15 +54,18 @@ export async function handleGetAgentInfo(
 ): Promise<void> {
   const accountId = conn.accountId as string;
   const agentConns = ctx.registry.agentConnections(accountId);
-  const [recentRows, plan, wechatBound, googleBound, githubLogin, linuxdoLogin] = await Promise.all([
-    listEvents(ctx.pool, accountId, { limit: 10, initiator: 'agent' }),
-    loadAgentPlan(ctx.pool, accountId),
-    isWechatBound(ctx, accountId),
-    isOauthBound(ctx, 'google', accountId),
-    githubEnabled(ctx) ? oauthDisplayName(ctx.pool, 'github', accountId) : Promise.resolve(null),
-    oauthDisplayName(ctx.pool, 'linuxdo', accountId),
-  ]);
+  const [recentRows, plan, wechatBound, googleBound, githubLogin, linuxdoLogin, accountCreatedAt] =
+    await Promise.all([
+      listEvents(ctx.pool, accountId, { limit: 10, initiator: 'agent' }),
+      loadAgentPlan(ctx.pool, accountId),
+      isWechatBound(ctx, accountId),
+      isOauthBound(ctx, 'google', accountId),
+      githubEnabled(ctx) ? oauthDisplayName(ctx.pool, 'github', accountId) : Promise.resolve(null),
+      oauthDisplayName(ctx.pool, 'linuxdo', accountId),
+      loadAccountCreatedAt(ctx.pool, accountId),
+    ]);
   respondOk(ctx.registry, conn, op, seq, {
+    accountCreatedAt,
     agentOnline: agentConns.length > 0,
     connections: agentConns.map((c) => ({ role: 'agent', connectedAt: c.connectedAt.toISOString() })),
     plan,

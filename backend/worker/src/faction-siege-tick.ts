@@ -1,9 +1,9 @@
 // 势力围攻分城的定时器（AISLG-240，v100）：
-// - 发起：每家势力在本季满 7 天后、同一时间最多围 1 座城。目标选择（v115，AISLG-264）：先按仇恨挑
+// - 发起：每家势力在本季满 7 天后、同一时间最多围 1 座城。目标选择（v116，AISLG-264）：先按仇恨挑
 //   （仇恨 > 0 的账号排在前面，不要求在势力范围内，见 faction-hatred-db.ts），没有仇恨候选时回落到
 //   「范围内离老巢最近的玩家分城」（主城 / 名城 / 保护中 / 免战中的不入池）；同一账号同一时间只被 1 家围。
 //   每次提前 60 分钟（× 烽火台加成）发预警；
-// - 围城军强度（v115）：max（官府等级 × 倍率，目标账号当前战力 × k），再乘压制档比例；
+// - 围城军强度（v116）：max（官府等级 × 倍率，目标账号当前战力 × k），再乘压制档比例；
 // - 每周上限：第 8、15、22 天起算的一周里，每家最多吞下 2 座玩家分城（v107 / AISLG-249：老巢被打掉 15 营
 //   以上的 3 档降为 1 座）；
 // - 到达结算不在这里：见 faction-siege-battle.ts（守城战 + 城防值 + 吞城）。
@@ -63,9 +63,9 @@ export interface SiegeStartPlan {
   swallows: number;
   /** 这家当前的压制档（v107，AISLG-249：由剩余营数现算，决定每周上限与围城军战力） */
   suppressionLevel: number;
-  /** 势力第几天（v115，AISLG-264：决定围城军强度的「目标战力 × k」里的 k） */
+  /** 势力第几天（v116，AISLG-264：决定围城军强度的「目标战力 × k」里的 k） */
   day: number;
-  /** 老巢第 1 营当前战力（v115：基础仇恨的基准；没有老巢行按下限 10,000） */
+  /** 老巢第 1 营当前战力（v116：基础仇恨的基准；没有老巢行按下限 10,000） */
   g1: number;
 }
 
@@ -99,7 +99,7 @@ export async function planSiegeStart(
     swallows,
     suppressionLevel: level,
     day: args.day,
-    // v115（AISLG-264）：基础仇恨的基准是老巢第 1 营的战力（没有老巢行时按下限算，仍有仇恨可选）
+    // v116（AISLG-264）：基础仇恨的基准是老巢第 1 营的战力（没有老巢行时按下限算，仍有仇恨可选）
     g1: lair ? lair.camp_power_g1 : FACTION_LAIR_MIN_CAMP_POWER,
   };
 }
@@ -158,7 +158,7 @@ async function startOneSiege(pool: pg.Pool, plan: SiegeStartPlan, now: Date, sea
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // v115（AISLG-264）选目标有两条路：先按仇恨挑（不要求在势力范围内），
+    // v116（AISLG-264）选目标有两条路：先按仇恨挑（不要求在势力范围内），
     // 没有仇恨候选（没人有仇恨）时才回落到范围内离老巢最近的分城（v100 现状）
     const hatred = await pickHatredSiegeTarget(client, {
       faction: plan.def.key,
@@ -187,7 +187,7 @@ async function startOneSiege(pool: pg.Pool, plan: SiegeStartPlan, now: Date, sea
       return false;
     }
     const byHatred = !!hatred;
-    // v115（AISLG-264）围城军强度 = max（官府等级 × 周倍率，目标账号当前战力 × k），
+    // v116（AISLG-264）围城军强度 = max（官府等级 × 周倍率，目标账号当前战力 × k），
     // v107（AISLG-249）再乘压制档比例，向下取整、不低于 1。
     // 发起这一刻定，已出发的围城军不受之后升 / 降档影响（预警 / 战报里的 power 就是这个实际值）
     const targetPower = await accountServerPower(client, target.accountId);
@@ -252,7 +252,7 @@ async function startOneSiege(pool: pg.Pool, plan: SiegeStartPlan, now: Date, sea
       beaconLevel: beacon,
       ...warningIntel(army, beacon),
       arriveAt: arriveAt.toISOString(),
-      // v115（AISLG-264）：这次围攻是否由仇恨选中，方便玩家 / Agent 判断（false = 回落为范围内最近）
+      // v116（AISLG-264）：这次围攻是否由仇恨选中，方便玩家 / Agent 判断（false = 回落为范围内最近）
       byHatred,
     };
     const recipients = await insertWarningEvents(client, target.cityId, target.accountId, detail);

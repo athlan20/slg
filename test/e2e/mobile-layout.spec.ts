@@ -182,11 +182,11 @@ test('桌面 1440×900 与平板 1200×800：样式与现状一致', async ({ pa
     const sidebar = await page.locator('[role="导航-侧栏"]').boundingBox();
     expect(sidebar!.y, `${size.width}×${size.height} 侧栏应在左侧`).toBeLessThan(20);
     expect(sidebar!.width, `${size.width}×${size.height} 侧栏应为窄图标栏`).toBeLessThan(200);
-    // 1024–1279 是 60px 图标栏（不显示文字）；≥ 1280 用全称"将星塔"，不换成手机短标签
+    // 1024–1239 是 60px 图标栏（不显示文字）；≥ 1240 用全称"将星塔"，不换成手机短标签
     const starLabel = page.locator('[role="导航-将星塔"] span.nav-label');
     const starLabelFull = page.locator('[role="导航-将星塔"] span.nav-label-full');
     await expect(starLabel, `${size.width}×${size.height} 手机短标签不应出现`).toBeHidden();
-    if (size.width >= 1280) {
+    if (size.width >= 1240) {
       await expect(starLabelFull).toHaveText('将星塔');
     } else {
       await expect(starLabelFull).toBeHidden();

@@ -40,12 +40,12 @@ export interface FactionView {
   campPower: number;
   /** v107（AISLG-249）：这家当前的压制档与三项效果（完全由剩余营数算出） */
   suppression: FactionSuppressionView;
-  /** v115（AISLG-264）：请求者自己在这家仇恨榜上的档位（只给自己、不给数值） */
+  /** v116（AISLG-264）：请求者自己在这家仇恨榜上的档位（只给自己、不给数值） */
   hatredTier: FactionHatredTier;
 }
 
 /**
- * 玩家在某家势力仇恨榜上的档位（v115，AISLG-264）：
+ * 玩家在某家势力仇恨榜上的档位（v116，AISLG-264）：
  * target = 前 5 名（重点目标）、noticed = 第 6~20 名（被注意）、none = 其余（含仇恨为 0）。
  */
 export type FactionHatredTier = 'none' | 'noticed' | 'target';
@@ -103,7 +103,7 @@ export interface FactionSiegePushData {
   damage?: number;
   durabilityAfter?: number;
   protectedUntil?: string;
-  /** v115（AISLG-264）：warning 时说明这次围攻是否由仇恨选中（true = 不要求在势力范围内） */
+  /** v116（AISLG-264）：warning 时说明这次围攻是否由仇恨选中（true = 不要求在势力范围内） */
   byHatred?: boolean;
 }
 

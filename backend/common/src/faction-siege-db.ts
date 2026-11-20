@@ -1,6 +1,6 @@
 // 势力围攻分城的数据库读写（AISLG-240，v100）：发起 / 到期取行、节奏判定（在围一座 / 每周上限 /
 // 同城 6 小时 / 打输 24 小时）、结果回写与作废。纯规则与数值在 faction-siege.ts。
-// 选目标单独一份（v115，AISLG-264 起有仇恨与回落两条路）：见 faction-siege-target-db.ts；
+// 选目标单独一份（v116，AISLG-264 起有仇恨与回落两条路）：见 faction-siege-target-db.ts；
 // 仇恨榜与「不看范围」的选法见 faction-hatred-db.ts。
 // 表结构见 faction-siege-schema.ts：每次围攻一行，随换季清空。
 // 锁序沿用全栈：cities → world_tiles（选目标只读，不改地块；结算在 worker 里加锁）。

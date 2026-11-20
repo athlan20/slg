@@ -99,7 +99,7 @@ describe('势力围攻的节奏与结算（需 TEST_DATABASE_URL）', { skip: db
       createdAt: new Date(Date.now() - 1 * 24 * HOUR),
       originLevel: 2,
     });
-    // v115（AISLG-264）：这里**不给驻军**，全服没有部队 → 没有基础仇恨 → 走「范围内离老巢最近」的回落路径。
+    // v116（AISLG-264）：这里**不给驻军**，全服没有部队 → 没有基础仇恨 → 走「范围内离老巢最近」的回落路径。
     // 仇恨路径（不要求范围、按仇恨排序、同一账号只被一家围）见 faction-hatred-db.test.ts。
     const before = Date.now();
     const tick = await runFactionSiegeTick(fx.pool);

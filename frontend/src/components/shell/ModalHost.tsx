@@ -1,10 +1,12 @@
 /** 全局弹窗宿主：离线日报（上线自动弹出 / 手动打开）、NPC 来袭提醒（推送立即弹出，逐条确认；顶栏胶囊可重新打开）、
- *  排行榜（含名人堂，v65）、换季预告（v65）、黄巾之乱详情、公告列表与强提醒公告（AISLG-162）、联盟面板（AISLG-186）。战报 / 侦察报告弹窗由各自的 Provider 宿主（state/battleReportModal、scoutReportModal）。
+ *  排行榜（含名人堂，v65）、换季预告（v65）、黄巾之乱详情、公告列表与强提醒公告（AISLG-162）、联盟面板（AISLG-186）、
+ *  新手接入弹窗（AISLG-267，自动弹在它们之后）。战报 / 侦察报告弹窗由各自的 Provider 宿主（state/battleReportModal、scoutReportModal）。
  */
 
 import type { LeaderboardKind } from '../../api/protocol';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
+import { useNewcomerGuide } from '../../state/useNewcomerGuide';
 import { LeaderboardModal } from '../LeaderboardModal';
 import { AnnouncementModal } from '../announcement/AnnouncementModal';
 import { AllianceModal } from '../alliance/AllianceModal';
@@ -13,6 +15,7 @@ import { NpcWarningModal } from '../NpcWarningModal';
 import { SeasonWarningModal } from '../season/SeasonWarningModal';
 import { OfflineReportModal } from '../OfflineReportModal';
 import { YellowTurbanModal } from '../YellowTurbanModal';
+import { NewcomerGuideModal } from '../agent/NewcomerGuideModal';
 import { StratagemAlertModal } from '../stratagem/StratagemAlertModal';
 import { StratagemPanel } from '../stratagem/StratagemPanel';
 import { ItemsModal } from '../items/ItemsModal';
@@ -27,6 +30,9 @@ interface ModalHostProps {
   /** 顶栏胶囊手动重开的来袭提醒 */
   warningOpen: boolean;
   onCloseWarning: () => void;
+  /** 新手接入弹窗的手动打开状态（Agent 面板「接入指引」，AISLG-267） */
+  guideOpen: boolean;
+  onCloseGuide: () => void;
 }
 
 export function ModalHost(props: ModalHostProps) {
@@ -37,6 +43,26 @@ export function ModalHost(props: ModalHostProps) {
   const pending = session.npcWarnings[0] ?? null;
   const warning = pending ?? (props.warningOpen ? (incoming[0] ?? null) : null);
   const announcements = session.announcements;
+
+  // 新手接入弹窗（AISLG-267）：排在公告、离线日报、来袭预警等自动弹窗之后——它们开着时先不弹
+  const autoPopupOpen =
+    session.offlineReport !== null ||
+    warning !== null ||
+    announcements.open ||
+    announcements.strongQueue.length > 0 ||
+    session.season.warning !== null ||
+    session.stratagem.alerts.length > 0 ||
+    session.stratagem.panel !== null;
+  const guide = useNewcomerGuide({
+    accountId: session.account?.accountId ?? null,
+    agent: session.agent,
+    blocked: autoPopupOpen || session.connection !== 'online',
+    manualOpen: props.guideOpen,
+  });
+  const closeGuide = () => {
+    props.onCloseGuide();
+    guide.close();
+  };
 
   const dismiss = () => {
     if (pending) {
@@ -109,6 +135,17 @@ export function ModalHost(props: ModalHostProps) {
       {/* 强提醒与公告弹窗同为 z-50，按 DOM 顺序叠放：强提醒必须最后渲染，才盖在公告弹窗之上 */}
       {announcements.strongQueue.length > 0 ? (
         <StrongRemindModal queue={announcements.strongQueue} onConfirm={() => void announcements.confirmStrong()} onHide={announcements.hideStrong} />
+      ) : null}
+      {/* 新手接入弹窗（AISLG-267）：自动弹 / Agent 面板手动打开共用一个开关 */}
+      {guide.open ? (
+        <NewcomerGuideModal
+          agent={session.agent}
+          onClose={closeGuide}
+          onDismissForever={() => {
+            props.onCloseGuide();
+            guide.dismissForever();
+          }}
+        />
       ) : null}
     </>
   );

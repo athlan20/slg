@@ -729,6 +729,34 @@ const AGENT_PANEL = {
     `Agent 令牌（token）：${token}`,
 };
 
+/** 新手接入弹窗（AISLG-267）：进游戏一屏内告诉新玩家「把这段贴给你的 AI」。
+ *  没有页签、没有选项，只有一键复制；文案逐字来自需求，两种语言都要在。 */
+const NEWCOMER_GUIDE = {
+  title: '让你的 AI 替你打三国',
+  intro:
+    '这个游戏不用你亲自点：你的 AI 替你建造、征兵、出征，你只管下命令、看战报。把下面的内容整段粘贴给你的 AI，它就能上线接管你的城池。',
+  /** 适用产品：一行小字，只说明哪些能用，不是选项 */
+  products:
+    '适用于 WorkBuddy、Claude Code、Cursor、OpenAI Codex、Gemini CLI、Trae、Windsurf、Cline、OpenClaw 等能联网、会写代码的 AI 产品。',
+  copyButton: '一键复制',
+  copyCopied: '已复制，整段贴给你的 AI 即可',
+  copyFailed: '复制失败，请重试',
+  /** 追加到复制内容末尾的一行（只加在新弹窗这一版，Agent 面板原按钮不变） */
+  promptTail: '接入后，我问你游戏规则或玩法时，请以接入文档为准回答，不要凭印象。',
+  tokenHint: '内容里含有你的令牌，只发给你自己的 AI，别贴到公开群聊里。',
+  webOnlyHint: '纯网页版聊天（不能运行代码、不能装工具的）接不上，请用上面任意一个。',
+  /** 弹窗开着时 Agent 上线：复制按钮区换成这句 */
+  connected: '✅ 你的 AI 已上线！去「Agent 面板」看看它在做什么。',
+  /** 底部固定一行：玩法问题直接问自己的 AI（整句加粗提示，见「玩法提示」块） */
+  gameplayIcon: '💬',
+  gameplayBold: '游戏玩法有疑问（怎么建造、怎么出兵、数值和规则……），直接问你的 AI 就行。',
+  gameplayTail: '它能读完整的规则文档，比自己翻攻略快。',
+  later: '稍后再说',
+  never: '不再提示',
+  /** Agent 面板常驻入口（任何人任何时候都能手动打开） */
+  panelEntry: '接入指引',
+};
+
 const EVENTS_PANEL = {
   title: '最近事件',
   empty: '暂无事件。登录、建造与推送的结果会显示在这里。',
@@ -969,6 +997,8 @@ export const COPY = {
   exchange: EXCHANGE,
   leaderboard: LEADERBOARD,
   agentPanel: AGENT_PANEL,
+  /** 新手接入弹窗（AISLG-267） */
+  newcomerGuide: NEWCOMER_GUIDE,
   eventsPanel: EVENTS_PANEL,
   login: LOGIN,
   theme: THEME,

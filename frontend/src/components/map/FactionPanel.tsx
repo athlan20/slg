@@ -1,5 +1,5 @@
 /** 五方势力面板（v99，AISLG-239；v101，AISLG-241 加营数；v107，AISLG-249 加压制档；
- *  v115，AISLG-264 加仇恨档位）：地图页右栏的卡片——
+ *  v116，AISLG-264 加仇恨档位）：地图页右栏的卡片——
  *  五家的名称、首领、老巢坐标、当前半径、持城数，老巢剩余营数 / 当前营剩余百分比（已灭亡的写「已灭亡」），
  *  当前压制档与三项效果（围城军比例 / 吞城间隔 / 每周吞分城上限），以及**请求者自己**在这家的仇恨档位
  *  （无 / 被注意 / 重点目标，只给档位、不给数值）。数据来自 GET_FACTIONS
@@ -11,6 +11,7 @@ import type { FactionView, GetFactionsResponseData } from '../../api/protocol-fa
 import { useCopy } from '../../i18n/bundle';
 import { getLang } from '../../i18n/lang';
 import { Card } from '../ui/Card';
+import { PagedList } from '../ui/PagedList';
 import { FACTION_SOLID_COLORS, factionLeaderName, factionName } from './factionLayer';
 
 interface FactionPanelProps {
@@ -52,7 +53,7 @@ function rowText(
       faction.suppression?.swallowIntervalHours ?? 6,
       faction.suppression?.weeklyBranchCap ?? 2,
     ),
-    // v115（AISLG-264）：请求者自己在这家的仇恨档位（none / noticed / target，不显示数值）
+    // v116（AISLG-264）：请求者自己在这家的仇恨档位（none / noticed / target，不显示数值）
     hatred: F.hatredTier(faction.hatredTier ?? 'none'),
   };
 }
@@ -65,22 +66,27 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
     return null;
   }
   return (
-    <Card role="势力面板" title={F.panelTitle} meta={`D${state?.day ?? 0} · ${F.radius(state?.radius ?? 0)}`}>
-      <div role="势力面板-列表" aria-label={F.panelAria} className="flex flex-col gap-0.5">
-        {factions.map((faction) => {
+    <Card role="势力面板" title={F.panelTitle} meta={`D${state?.day ?? 0} · ${F.radius(state?.radius ?? 0)}`} className="flex-1 basis-0">
+      {/* 五家装不下时分页（不裁、不滚）：每页条数按卡片剩余高度量，翻页器自带 */}
+      <PagedList
+        role="势力面板-列表"
+        items={factions}
+        keyOf={(faction) => faction.key}
+        gap={2}
+        gapClass="gap-0.5"
+        renderRow={(faction) => {
           const text = rowText(faction, F);
           // v107（AISLG-249）：被压制（有档位）的行用醒目色，0 档 / 已灭亡保持暗淡
           const suppressed = !faction.destroyed && (faction.suppression?.level ?? 0) > 0;
-          // v115（AISLG-264）：仇恨档位用醒目色（重点目标 > 被注意 > 无）
+          // v116（AISLG-264）：仇恨档位用醒目色（重点目标 > 被注意 > 无）
           const tier = faction.hatredTier ?? 'none';
           return (
             <button
-              key={faction.key}
               type="button"
               role={`势力面板-行-${text.name}`}
               title={F.lairHint(text.name, text.leader)}
               onClick={() => onFocusLair?.(faction.lair)}
-              className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-baseline gap-x-2 rounded px-1 py-[2px] text-left text-[12px] hover:bg-accent-soft"
+              className="grid w-full cursor-pointer grid-cols-[auto_1fr_auto] items-baseline gap-x-2 rounded px-1 py-[2px] text-left text-[12px] hover:bg-accent-soft"
             >
               <span role="势力面板-色标" aria-hidden="true" className="inline-block h-[8px] w-[8px] rounded-sm" style={{ backgroundColor: FACTION_SOLID_COLORS[faction.key] }} />
               <span role="势力面板-名称" className="truncate font-semibold text-fg">
@@ -121,8 +127,8 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
               </span>
             </button>
           );
-        })}
-      </div>
+        }}
+      />
     </Card>
   );
 }

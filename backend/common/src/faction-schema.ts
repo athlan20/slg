@@ -7,7 +7,7 @@
 //   下一季按开关重新生成；faction_enabled 本身留在 settings 里跨季保留。
 // - 势力城的归属记在 world_tiles.npc 快照的 faction 字段上（不另建表）：玩家占下后地块转城池、
 //   快照清空，归属自然消失；按它计数需要一条表达式索引。
-// - 记仇（AISLG-264，v115）：faction_hatred 见 faction-hatred-schema.ts（换季清空）。
+// - 记仇（AISLG-264，v116）：faction_hatred 见 faction-hatred-schema.ts（换季清空）。
 // 由 db.ts 的 ensureSchema 幂等创建。
 
 import { FACTION_SIEGE_SCHEMA_SQL } from './faction-siege-schema';

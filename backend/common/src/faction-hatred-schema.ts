@@ -1,4 +1,4 @@
-// 五方势力记仇（AISLG-264，v115）的表结构：只加不改。
+// 五方势力记仇（AISLG-264，v116）的表结构：只加不改。
 //
 // faction_hatred：每家势力对每个账号的**报复**仇恨（随换季清空，season-tables.ts 的 RESET_TABLES）。
 //  - key / account_id：哪一家、哪个账号（复合主键：一家一行）；

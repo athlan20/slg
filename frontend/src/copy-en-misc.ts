@@ -51,6 +51,28 @@ export const AGENT_PANEL_EN = {
     `Agent token (token): ${token}`,
 } satisfies typeof COPY['agentPanel'];
 
+// Newcomer integration dialog (AISLG-267): one screen, one button, no tabs or choices.
+export const NEWCOMER_GUIDE_EN = {
+  title: 'Let your AI play for you',
+  intro:
+    "You don't have to click through the game yourself. Your AI builds, recruits and marches for you — you give orders and read battle reports. Paste everything below into your AI and it can take over your cities.",
+  products:
+    'Works with WorkBuddy, Claude Code, Cursor, OpenAI Codex, Gemini CLI, Trae, Windsurf, Cline, OpenClaw and other AI products that can go online and write code.',
+  copyButton: 'Copy',
+  copyCopied: 'Copied — paste it to your AI',
+  copyFailed: 'Copy failed, try again',
+  promptTail: 'After you connect, when I ask how the game works, answer from the integration document, not from memory.',
+  tokenHint: 'The content includes your token. Send it only to your own AI — never post it in public chats.',
+  webOnlyHint: "Web-only chat (no code execution, no tool install) can't connect. Use one of the products above.",
+  connected: "✅ Your AI is online! Check the Agent panel to see what it's doing.",
+  gameplayIcon: '💬',
+  gameplayBold: 'Questions about how the game works (building, marching, numbers, rules…)? Just ask your AI.',
+  gameplayTail: 'It reads the full rules document — faster than hunting for guides.',
+  later: 'Maybe later',
+  never: "Don't show again",
+  panelEntry: 'Connect your AI',
+} satisfies typeof COPY['newcomerGuide'];
+
 export const EVENTS_PANEL_EN = {
   title: 'Recent events',
   empty: 'No events yet. Results of logins, builds and server pushes will appear here.',

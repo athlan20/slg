@@ -1,7 +1,7 @@
 // 全服战力排名查询（AISLG-247，v106）：老巢 20 营的战力锚点要看「第 10 名 / 第 3 名账号的单人战力」，
 // 口径与 v101 的「前 10 名合计」相同（城内 + 野地驻军 + 协防 + 行军中，用 battle.ts 的参考战力 TROOP_POWER），
 // 只是从求和改成取第 N 名。从 faction-lair-db.ts 分出来，避免那个文件把「战况读写」和「榜单查询」混在一起。
-// v115（AISLG-264）起同一个口径还要给「记仇的基础仇恨」用（前 20 名的账号列表 + 单个账号的战力），
+// v116（AISLG-264）起同一个口径还要给「记仇的基础仇恨」用（前 20 名的账号列表 + 单个账号的战力），
 // 三个查询共用一份 CTE，不得各写一套。
 // 每营战力的公式与纯规则见 faction-lair.ts；刷新流程见 faction-lair-db.ts 的 refreshFactionLairPower，
 // 基础仇恨的快照见 faction-hatred-db.ts。
@@ -80,7 +80,7 @@ export async function serverAnchorPowers(q: Queryable): Promise<{ r3: number; r1
 }
 
 /**
- * 某账号当前的全服战力（口径同上）：围城军强度按「目标账号当前战力 × k」算（v115，AISLG-264），
+ * 某账号当前的全服战力（口径同上）：围城军强度按「目标账号当前战力 × k」算（v116，AISLG-264），
  * 在围攻发起那一刻取一次，编成固定不随目标之后的变化。没兵 / 账号不存在返回 0。
  */
 export async function accountServerPower(q: Queryable, accountId: string): Promise<number> {
@@ -94,7 +94,7 @@ export async function accountServerPower(q: Queryable, accountId: string): Promi
 }
 
 /**
- * 全服战力榜前 limit 名的账号与名次（v115，AISLG-264：记仇的基础仇恨用；需求「前 20 名，每天刷新」）。
+ * 全服战力榜前 limit 名的账号与名次（v116，AISLG-264：记仇的基础仇恨用；需求「前 20 名，每天刷新」）。
  * 口径与 serverPowerRank 完全一致（同一套 CTE），并列战力按 account_id 稳定排序（同一份快照可复算）。
  * 榜单为空（全服没兵）时返回空数组。
  */

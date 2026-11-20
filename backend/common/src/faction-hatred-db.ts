@@ -1,4 +1,4 @@
-// 五方势力记仇（AISLG-264，v115）的数据库读写：报复仇恨的累加 / 读取（按半衰期折算）、
+// 五方势力记仇（AISLG-264，v116）的数据库读写：报复仇恨的累加 / 读取（按半衰期折算）、
 // 基础仇恨的前 20 名榜单快照（每天重算一次，存 settings）、GET_FACTIONS 的档位、围攻的仇恨选目标。
 // 纯规则与数值在 faction-hatred.ts；表结构见 faction-hatred-schema.ts；入池条件在 faction-siege-db.ts。
 //
@@ -134,7 +134,7 @@ export async function loadFactionHatredLeaderboard(
 }
 
 /**
- * GET_FACTIONS 的 hatredTier（v115，AISLG-264）：请求者自己在这几家仇恨榜上的档位。
+ * GET_FACTIONS 的 hatredTier（v116，AISLG-264）：请求者自己在这几家仇恨榜上的档位。
  * 一次读取全部势力的报复仇恨 + 一份榜单快照（不逐家查询）；不在榜上 / 仇恨为 0 一律 none。
  * 请求者未登录（accountId 为 null）时返回空 Map，调用方按 none 处理。
  */

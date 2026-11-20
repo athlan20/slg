@@ -17,6 +17,8 @@ interface AgentPanelProps {
   offlineReportError: string | null;
   /** 打开离线日报弹窗（v23 AISLG-54） */
   onOpenOfflineReport: () => void;
+  /** 打开新手接入弹窗（AISLG-267）：常驻入口，任何账号随时可用 */
+  onOpenGuide: () => void;
 }
 
 type DocCopyState = 'idle' | 'copied' | 'failed';
@@ -44,7 +46,7 @@ export async function writeClipboard(text: string): Promise<void> {
   }
 }
 
-export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: AgentPanelProps) {
+export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport, onOpenGuide }: AgentPanelProps) {
   const copy = useCopy();
   const { COPY, EXTRA_PANEL } = copy;
   const { session } = useGame();
@@ -187,15 +189,26 @@ export function AgentPanel({ agent, offlineReportError, onOpenOfflineReport }: A
         >
           {MCP_BUTTON_LABEL[mcpCopy]}
         </button>
-        {/* 离线日报入口（1024–1279 两栏时日报摘要卡隐藏，这里留一个入口） */}
+        {/* 离线日报入口（1024–1239 两栏时日报摘要卡隐藏，这里留一个入口） */}
         <button type="button" role="Agent面板-离线日报按钮" className="btn hidden shrink-0 py-1 max-xl:block" onClick={onOpenOfflineReport}>
           {COPY.offlineReport.openButton}
         </button>
       </div>
       {offlineReportError ? <p className="shrink-0 truncate text-[12px] text-warn">{offlineReportError}</p> : null}
-      <p role="Agent面板-文档令牌提示" className="shrink-0 truncate text-[11.5px] text-faint">
-        {COPY.agentPanel.docTokenHint}
-      </p>
+      {/* 常驻入口（AISLG-267）：接入指引弹窗，任何账号都能打开 */}
+      <div role="Agent面板-接入指引" className="flex shrink-0 items-center gap-2">
+        <p role="Agent面板-文档令牌提示" className="min-w-0 flex-1 truncate text-[11.5px] text-faint">
+          {COPY.agentPanel.docTokenHint}
+        </p>
+        <button
+          type="button"
+          role="Agent面板-接入指引按钮"
+          className="shrink-0 cursor-pointer text-[12px] text-accent underline transition-colors hover:text-accent-dim"
+          onClick={onOpenGuide}
+        >
+          {COPY.newcomerGuide.panelEntry}
+        </button>
+      </div>
     </Card>
   );
 }

@@ -12,9 +12,15 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-%3E%3D13-4169E1?logo=postgresql&logoColor=white)
 
+[![SLG MCP server](https://mcprush.com/badge/slg-mcp/card.svg)](https://mcprush.com/to/slg-mcp?ref=badge)
+
 ### 🎮 公测进行中 → [slg.yuntianyou.cc](https://slg.yuntianyou.cc)
 
 [立即进入游戏](https://slg.yuntianyou.cc) · [Agent 接入文档](docs/agent-api.md) · [自行部署](#自行部署)
+
+喜欢这个项目？请作者喝杯咖啡 ☕
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U2G122M74W)
 
 </div>
 
