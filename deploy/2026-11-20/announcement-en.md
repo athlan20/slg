@@ -4,18 +4,15 @@ This update (v0.2.11 → v0.2.15) has two main parts, faction grudges and higher
 
 **1. Faction grudges: sieges no longer depend only on "closest to the lair"**
 
-Until now a faction only picked the branch city closest to its lair within its range. Top players were never reached, and the siege army only scaled with the government-office level, so sieges were easy to ignore. Now each faction keeps a "hatred" value for each player and picks high-hatred players first.
+Until now a faction only picked the branch city closest to its lair within its range. Top players on the power ranking were never reached, and the siege army only scaled with the government-office level, so sieges were easy to ignore. Now each faction holds a grudge against players and goes after the ones it resents most.
 
-- **Where hatred comes from**: two parts added together.
-  - **The top 20 of the power ranking** start with some base hatred, higher for higher ranks. It refreshes daily, and each of the five factions computes its own.
-  - **Attacking that faction's lair**: every battle adds the garrison power you destroyed as hatred (losses count too), and it decays over time with a half-life of 3 days, so it fades if you stop.
-  - It resets at season change. The cumulative contribution on the destruction ranking is not affected.
-- **Who gets sieged**: when a faction starts a siege it first looks at its own hatred ranking: highest hatred first; ties go to the higher power-ranking position, then to the shorter distance from the lair. It sieges that player's **branch city closest to the lair**. **The city no longer has to be inside the faction's range**: a top-20 account is sieged even from the other side of the map. Only when nobody on the list qualifies does it fall back to the old "closest to the lair within range".
-- **One account can be sieged by at most 1 faction at a time**; accounts already under siege by another faction are skipped.
-- **Siege army strength follows the target**: siege power = the larger of (government-office level × multiplier, **the target account's current power × a ratio**), then multiplied by the suppression tier. The ratio depends on season day: 10% on days 8–14, 14% on days 15–21, 18% from day 22. Taking the larger value means **small and mid-size players face the same siege armies as before, no worse**; big accounts face noticeably stronger ones.
-- **Are you being watched?** The faction panel has a new "Hatred" line for each faction showing only your own tier: **Prime target** (top 5 on that faction's list), **Noticed** (6th–20th), or **None**. Exact values are not shown, and you cannot see anyone else's tier. A siege warning now tells you whether it was chosen by hatred.
-- **How to avoid it**: send reinforcements, or push that faction's lair into a suppression tier (one tier per 5 camps destroyed; siege armies are reduced to 100 / 75 / 50 / 25%).
-- Unchanged: sieges start on day 8, at most 1 city per faction at a time, at most 2 captured per week (1 at tier 3 suppression), 60-minute warning, the same city at most once every 6 hours, 24-hour cooldown after a failed siege, durability −35 / 4-hour truce / captured at zero. Main cities and famous-city branches are still never sieged.
+- **Who gets a grudge**: players near the top of the power ranking, and players who have attacked that faction's lair. The more and the harder you attack, the more that faction remembers you; if you stop for a while the grudge slowly fades. Each faction keeps its own, and it resets at season change.
+- **Who gets sieged**: players the faction resents more are sieged first, **even if their branch city is outside the faction's range**. Only when it resents nobody does it fall back to the old "closest to the lair within range".
+- **One account can be sieged by at most 1 faction at a time.**
+- **Siege armies scale with the target**: big accounts near the top of the power ranking face noticeably stronger siege armies than before; **small and mid-size players face the same siege armies as before, no worse**.
+- **Are you being watched?** The faction panel has a new "Hatred" line for each faction showing only your own tier: **Prime target**, **Noticed**, or **None**. Exact values are not shown, and you cannot see anyone else's tier. A siege warning now tells you whether it was chosen because of a grudge.
+- **How to avoid it**: send reinforcements, or push that faction's lair into a suppression tier (each batch of camps destroyed raises one tier and weakens its siege armies).
+- Unchanged: sieges start on day 8, at most 1 city per faction at a time, 60-minute warning, the same city at most once every 6 hours, 24-hour cooldown after a failed siege. Main cities and famous-city branches are still never sieged.
 
 **2. Much more prestige from lairs**
 
@@ -23,7 +20,7 @@ Until now each lair battle gave prestige equal to only **1%** of the garrison po
 
 - **1 point of garrison power destroyed = 1 point of prestige** (before, it took 100 points for 1), a 100× increase.
 - It is still **settled per battle, and losses count too**, not only for the last hit.
-- Everything else is unchanged: gold 2 / wood, food, stone and iron 10 each per point destroyed, the leader hero for the last hit, and the ranking rewards on destruction.
+- Everything else is unchanged: the gold and resources for destroying garrisons, the leader hero for the last hit, and the ranking rewards on destruction.
 
 **3. Other**
 
@@ -32,5 +29,5 @@ Until now each lair battle gave prestige equal to only **1%** of the garrison po
 
 **Notes**
 
-- Protocol is now v116. Faction grudges (v116): factions[] in GET_FACTIONS adds hatredTier (none / noticed / target, only for the requester); the warning in PUSH_FACTION_SIEGE adds an optional byHatred; a new table faction_hatred (cleared at season change). Lair prestige (v114) only changes numbers, no fields added or removed. GET_AGENT_INFO adds accountCreatedAt (v115, account creation time, read-only). Players and Agents can both use these; see the protocol doc.
+- Protocol is now v116. Faction grudges (v116): factions[] in GET_FACTIONS adds hatredTier (none / noticed / target, only for the requester); the warning in PUSH_FACTION_SIEGE adds an optional byHatred. Lair prestige (v114) only changes numbers, no fields added or removed. GET_AGENT_INFO adds accountCreatedAt (v115, account creation time, read-only). Players and Agents can both use these; see the protocol doc.
 - If you use slg-mcp, please upgrade to the latest version (0.2.15).
