@@ -17,7 +17,7 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
   name: 'GET_FACTIONS',
   title: '查询五方势力（v99，AISLG-239；v102 起可当季启用）',
   preAuth: false,
-  summary: `查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：${LAIR_TEXT}。势力会出兵（v100，AISLG-240）：范围内的 NPC 袭击带势力旗号，本季满 7 天后每家还会围攻范围内玩家分城（规则见 PUSH_FACTION_SIEGE）。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随势力天数变大（${RADIUS_TEXT}，按势力起点算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 ${FACTION_INITIAL_RADIUS} 格内的 NPC 城全部归该势力，之后每家每 ${FACTION_SWALLOW_INTERVAL_MS / 3_600_000} 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响；v101（AISLG-241）起老巢可以打：每家老巢分 20 营，每次进攻只打当前一营（守城战、城墙减伤 50%），当前营打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营），20 营由弱到强（v106，AISLG-247）：第 1 营最弱、第 20 营最强，中间逐营递增，强度随全服玩家整体实力成长（具体算法不公开），每天刷新、只升不降；20 营全部清空这家本季灭亡（不再吞城 / 围攻、势力城变回普通 NPC 城、老巢变废墟，最后一击的玩家拿首领名将）。v107（AISLG-249）起老巢被打掉得越多这家越虚——每打掉 5 营升一档压制（最多 3 档，完全由剩余营数算出、营恢复后自动降档）：围城军战力 100 / 75 / 50 / 25%、吞 NPC 城间隔 6 / 9 / 12 / 15 小时、每周吞玩家分城 2 / 2 / 2 / 1 座，当前档位与三项效果见 factions[].suppression。本季已灭亡（destroyed = true）的老巢不能再出征，MARCH / SCOUT 仍返回 FACTION_LAIR_TARGET。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。v102（AISLG-243）起开关可以在赛季中途打开：打开当天就生成老巢、不等换季，势力的「第几天」从开启当天重新算第 1 天（半径 100 格、满 7 天才开始围攻、之后每周 +50 格，与换季启用完全一样）；老巢格上或周围 5 格内有玩家城的那家本季不生成（不吞城、不围攻、不在 factions 里、地图上也没有它的范围与老巢），下季换季再生成，系统会发公告说明是哪几家。`,
+  summary: `查询本季的五方势力（只读、无参数、玩家与 Agent 通用）。五家：${LAIR_TEXT}。势力会出兵（v100，AISLG-240）：范围内的 NPC 袭击带势力旗号，本季满 7 天后每家还会围攻玩家分城（v116，AISLG-264 起先挑仇恨高的账号、不要求在势力范围内，规则见 PUSH_FACTION_SIEGE）。每家有自己的老巢与地盘：势力范围是以老巢为中心的方块，半径随势力天数变大（${RADIUS_TEXT}，按势力起点算，与 time_scale 无关），两家范围重叠的格归离老巢更近的一家（距离相同时按上表顺序取先出现的一家）。开季时老巢周围 ${FACTION_INITIAL_RADIUS} 格内的 NPC 城全部归该势力，之后每家每 ${FACTION_SWALLOW_INTERVAL_MS / 3_600_000} 小时（随 time_scale 缩放）在当前范围内随机吞一座无主 NPC 城；名城、玩家城与已被其他势力吞下的城不会被吞。被吞的城仍是普通 NPC 城，可以侦察 / 掠夺 / 占领，只有两点不同：守军与可掠夺库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，地块的 faction 字段标出归属（见 GET_WORLD_MAP / GET_TILE）；玩家占下后这座城不再属于势力。老巢坐标对全服公开、不受战争迷雾影响；v101（AISLG-241）起老巢可以打：每家老巢分 20 营，每次进攻只打当前一营（守城战、城墙减伤 50%），当前营打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营），20 营由弱到强（v106，AISLG-247）：第 1 营最弱、第 20 营最强，中间逐营递增，强度随全服玩家整体实力成长（具体算法不公开），每天刷新、只升不降；20 营全部清空这家本季灭亡（不再吞城 / 围攻、势力城变回普通 NPC 城、老巢变废墟，最后一击的玩家拿首领名将）。v107（AISLG-249）起老巢被打掉得越多这家越虚——每打掉 5 营升一档压制（最多 3 档，完全由剩余营数算出、营恢复后自动降档）：围城军战力 100 / 75 / 50 / 25%、吞 NPC 城间隔 6 / 9 / 12 / 15 小时、每周吞玩家分城 2 / 2 / 2 / 1 座，当前档位与三项效果见 factions[].suppression。本季已灭亡（destroyed = true）的老巢不能再出征，MARCH / SCOUT 仍返回 FACTION_LAIR_TARGET。总开关 faction_enabled 默认关闭：关闭时本协议返回 enabled=false、factions 为空数组，地块不带势力归属，世界里也没有老巢。v102（AISLG-243）起开关可以在赛季中途打开：打开当天就生成老巢、不等换季，势力的「第几天」从开启当天重新算第 1 天（半径 100 格、满 7 天才开始围攻、之后每周 +50 格，与换季启用完全一样）；老巢格上或周围 5 格内有玩家城的那家本季不生成（不吞城、不围攻、不在 factions 里、地图上也没有它的范围与老巢），下季换季再生成，系统会发公告说明是哪几家。`,
   requestFields: [],
   dataFields: [
     { name: 'enabled', type: 'boolean', desc: '势力总开关（settings 的 faction_enabled，默认关闭）。false 时下面各字段为空值，世界里没有势力内容。' },
@@ -43,6 +43,7 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
     { name: 'factions[].suppression.siegePercent', type: 'number', desc: '围城军战力百分比（0 / 1 / 2 档 = 100 / 75 / 50，3 档 = 25）：围攻发起时按当时档位乘在原公式上、向下取整且不低于 1，已出发的围城军不变。PUSH_FACTION_SIEGE 的 power 与战报里的围城军战力就是这个压制后的实际值。' },
     { name: 'factions[].suppression.swallowIntervalHours', type: 'number', desc: '吞一座 NPC 城的基准间隔小时数（未随 time_scale 缩放，便于展示）：0 / 1 / 2 / 3 档 = 6 / 9 / 12 / 15 小时（实际时长按部署的 time_scale 缩放）。每家独立取值，已经计时中的下一次按新间隔往后算。' },
     { name: 'factions[].suppression.weeklyBranchCap', type: 'number', desc: '每周最多吞下的玩家分城数：0~2 档 2 座，3 档 1 座（本周已经吞满的不回溯）。' },
+    { name: 'factions[].hatredTier', type: "'none' | 'noticed' | 'target'", desc: '（v116，AISLG-264）**请求者自己**在这家仇恨榜上的档位：target = 前 5 名（重点目标）、noticed = 第 6~20 名（被注意）、none = 其余（含仇恨为 0 或在榜外）。仇恨 = 基础仇恨（全服战力榜前 20 名，第 k 名 = 老巢第 1 营战力 × (21 − k) ÷ 20）+ 报复仇恨（打这家老巢每场的歼灭战力，半衰期 3 天），**具体数值不公开**，只给档位；这个字段只对你自己的账号有意义（别人的档位看不到）。被盯上的档位意味着这家发起的围攻会先挑仇恨高的玩家（不要求在它的势力范围内）。', },
   ],
   errors: [],
   examples: [
@@ -75,6 +76,7 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
                 campRemainingPercent: 42,
                 campPower: 29721,
                 suppression: { level: 1, siegePercent: 75, swallowIntervalHours: 9, weeklyBranchCap: 2 },
+                hatredTier: 'noticed',
               },
             ],
           },
@@ -94,7 +96,7 @@ export const REQUEST_GET_FACTIONS: RequestOpDoc = {
       ],
     },
   ],
-  agentNote: `势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 ${FACTION_LAIR_CLEAR_RADIUS} 格内没有玩家城，所以别把坐标 (${FACTIONS.map((def) => `${def.lair.x}, ${def.lair.y}`).join(') / (')}) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。v101（AISLG-241）起老巢可以打：MARCH（task=plunder）指向老巢坐标，一次只打当前一营（守城战、城墙减伤 50%），当前营守军打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营）；20 营由弱到强（v106，AISLG-247）：第 1 营最弱、第 20 营最强，中间逐营递增，强度随全服玩家整体实力成长（具体算法不公开），每天刷新、只升不降，编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。每场按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重），声望与世界地图其余战斗一致、歼灭 1 点战力得 1 点声望（v114，AISLG-263 起；此前固定 1%），每场各自结算、打输也有，不是只给最后一击；打掉最后一营的玩家拿该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，全服唯一），灭亡时按贡献（累计歼灭守军战力）名次再发一次（数额是黄巾之乱同名次的 3 倍）。任何玩家都能打，不要求入盟、不算攻击玩家、不破新手保护；打之前先 SCOUT 看当前营守军，SCOUT / GET_FACTIONS 都能看到剩余营数与当前营百分比。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。v107（AISLG-249）起打老巢有直接回报：每打掉 5 营升一档压制（factions[].suppression），围城军更弱、吞城更慢、3 档时每周吞分城从 2 座降到 1 座——不去打老巢，这家就一直维持最强。`,
+  agentNote: `势力城是你附近最好找的掠夺 / 占领目标：它们散在整片地盘上（不是全挤在老巢周围），守军与库存是同等级普通 NPC 城的 ${FACTION_CITY_MULTIPLIER} 倍，打下来能带走更多、占领后分城库存也更厚。老巢周围 ${FACTION_LAIR_CLEAR_RADIUS} 格内没有玩家城，所以别把坐标 (${FACTIONS.map((def) => `${def.lair.x}, ${def.lair.y}`).join(') / (')}) 当成选址目标——注册落位与迁城都会避开那几块地方，派兵去老巢会被拒绝（FACTION_LAIR_TARGET）。势力确实会打人（v100，AISLG-240）：范围内的 NPC 袭击会带上势力旗号（PUSH_NPC_ATTACK_WARNING 的 faction / 事件 npc_attack_warning.detail.faction，如「南蛮来袭」），本季满 7 天后每家还会围攻范围内离老巢最近的玩家分城（见 PUSH_FACTION_SIEGE 与事件 faction_siege_warning / faction_siege / faction_city_lost）——主城与名城分城不会被围攻，城被吞后变成该势力的势力城，建筑与库存都在里面，任何玩家都能按占领 NPC 城的流程打回来。势力城被占下后归属立即消失；范围之外的老巢与地盘随本季天数增长，第 22 天起半径 250 格。v101（AISLG-241）起老巢可以打：MARCH（task=plunder）指向老巢坐标，一次只打当前一营（守城战、城墙减伤 50%），当前营守军打掉多少算多少、打输也保留残血，营清空才进下一营、已打掉的营不会回来（连续 24 小时没人进攻恢复 1 营）；20 营由弱到强（v106，AISLG-247）：第 1 营最弱、第 20 营最强，中间逐营递增，强度随全服玩家整体实力成长（具体算法不公开），每天刷新、只升不降，编成按 义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12 缩放。每场按歼灭的守军战力发金币 2 / 木粮石铁各 10（打输也发、不占负重），声望与世界地图其余战斗一致、歼灭 1 点战力得 1 点声望（v114，AISLG-263 起；此前固定 1%），每场各自结算、打输也有，不是只给最后一击；打掉最后一营的玩家拿该势力首领名将（韩遂 / 蹋顿 / 孟获 / 费栈 / 张燕，全服唯一），灭亡时按贡献（累计歼灭守军战力）名次再发一次（数额是黄巾之乱同名次的 3 倍）。任何玩家都能打，不要求入盟、不算攻击玩家、不破新手保护；打之前先 SCOUT 看当前营守军，SCOUT / GET_FACTIONS 都能看到剩余营数与当前营百分比。faction_enabled 关闭的服上这些字段全部为空、也没有旗号与围攻，忽略即可。v107（AISLG-249）起打老巢有直接回报：每打掉 5 营升一档压制（factions[].suppression），围城军更弱、吞城更慢、3 档时每周吞分城从 2 座降到 1 座——不去打老巢，这家就一直维持最强。v116（AISLG-264）起势力会记仇：每家对每个账号有一个不公开的仇恨值（基础仇恨 = 全服战力榜前 20 名按名次给，报复仇恨 = 你打这家老巢每场的歼灭战力、半衰期 3 天），发起围攻时先挑仇恨最高、**不要求分城在它的范围内**——榜前 20 的账号即使远在地图另一侧也会被围，打过老巢的人会被优先盯上（打 3 次第 1 营大致就超过榜首的基础仇恨）。同一账号同一时间只被 1 家势力围；围城军强度接目标账号战力（max（官府等级 × 倍率，你的账号战力 × k），k 随天数 10% / 14% / 18%），大户面对的围城军与自己匹配、中小玩家与以前一致。你自己的档位看 factions[].hatredTier（none / noticed / target），不要试图推导别人的榜单。`,
 };
 
 export const PUSH_FACTION_LAIR: PushOpDoc = {
@@ -142,8 +144,8 @@ export const PUSH_FACTION_LAIR: PushOpDoc = {
 export const PUSH_FACTION_SIEGE: PushOpDoc = {
   kind: 'push',
   name: 'PUSH_FACTION_SIEGE',
-  title: '推送：势力围攻分城（v100，AISLG-240）',
-  summary: `五方势力出兵打玩家分城：本季满 7 天后，每家势力在自己范围内选**离老巢最近的玩家分城**围攻（同一时间最多围 1 座，同一座城 6 小时最多打一次）。每次围攻提前 60 分钟预警（吃烽火台加成，敌情详细度也按烽火台等级分档，与 NPC 袭击预警同一套），预警时给出**当前城防值**。围城军战力 = 该分城官府等级 × 倍率（第 8~14 天 100、15~21 天 150、22 天起 200，随 time_scale 无关）× 该家的压制档比例（v107，AISLG-249：0 / 1 / 2 / 3 档 = 100 / 75 / 50 / 25%，向下取整且不低于 1，发起那一刻定），编成按 3 级 NPC 城守军的比例（义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12）缩放，不带冲车；战斗走守城战，城墙 / 箭塔 / 城防器械 / 城守 / 协防全部生效。势力打赢（全灭守军）扣 35 城防、城进入 4 小时被动免战、不掠夺资源；城防归零时城被吞，变成该势力的 NPC 城。被围城的主人与驻扎在该城的协防方都会收到本推送（reason 相同、内容相同）。等价事件：faction_siege_warning（预警）/ faction_siege（结算）/ faction_city_lost（失城）。`,
+  title: '推送：势力围攻分城（v100，AISLG-240；v116 起按仇恨选目标）',
+  summary: `五方势力出兵打玩家分城：本季满 7 天后，每家势力先在自己**仇恨榜**里选目标（v116，AISLG-264：仇恨 > 0 且有一座合格分城的账号，按仇恨从高到低、仇恨相同按战力榜名次、再相同按分城离老巢距离——**不要求在势力范围内**，哪里的分城都行），没有仇恨候选时才退回「范围内离老巢最近的玩家分城」；同一账号同一时间最多被 1 家势力围，每家同一时间最多围 1 座、同一座城 6 小时最多打一次。每次围攻提前 60 分钟预警（吃烽火台加成，敌情详细度也按烽火台等级分档，与 NPC 袭击预警同一套），预警时给出**当前城防值**与 byHatred（是否由仇恨选中）。围城军战力 = max（该分城官府等级 × 倍率（第 8~14 天 100、15~21 天 150、22 天起 200），目标账号当前战力 × k（同档 10% / 14% / 18%））× 该家的压制档比例（v107，AISLG-249：0 / 1 / 2 / 3 档 = 100 / 75 / 50 / 25%，向下取整且不低于 1，发起那一刻定），编成按 3 级 NPC 城守军的比例（义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12）缩放，不带冲车；战斗走守城战，城墙 / 箭塔 / 城防器械 / 城守 / 协防全部生效。取 max 保证中小玩家面对的围城军与以前一致（不会更惨）。势力打赢（全灭守军）扣 35 城防、城进入 4 小时被动免战、不掠夺资源；城防归零时城被吞，变成该势力的 NPC 城。被围城的主人与驻扎在该城的协防方都会收到本推送（reason 相同、内容相同）。等价事件：faction_siege_warning（预警）/ faction_siege（结算）/ faction_city_lost（失城）。`,
   dataFields: [
     { name: 'reason', type: "'warning' | 'repelled' | 'hit' | 'swallowed'", desc: 'warning 预警（提前 60 分钟 × 烽火台加成）；repelled 这家势力打输了（守住了，该势力 24 小时内不再打这座城）；hit 这家势力打赢一次、城防被扣、城进入 4 小时被动免战；swallowed 城防归零、城被吞（原主人腾出分城名额）。' },
     { name: 'siegeId', type: 'string', desc: '围攻编号（同一次围攻的预警与结算用同一个 id，可用于去重）。' },
@@ -152,7 +154,7 @@ export const PUSH_FACTION_SIEGE: PushOpDoc = {
     { name: 'cityName', type: 'string | null', desc: '城池名（查不到时为 null）。' },
     { name: 'x', type: 'number', desc: '城池坐标 x。' },
     { name: 'y', type: 'number', desc: '城池坐标 y。' },
-    { name: 'power', type: 'number', desc: '围城军参考战力（= 官府等级 × 倍率）。' },
+    { name: 'power', type: 'number', desc: '围城军参考战力（v116，AISLG-264：max（官府等级 × 倍率，目标账号当前战力 × k）× 压制档比例）。' },
     { name: 'arriveAt', type: 'string', desc: 'warning：预计到达（结算）时刻（ISO 8601，已按 time_scale 缩放）。' },
     { name: 'armyMin', type: 'number', desc: 'warning：围城军兵力范围下限（编成总单位数 −20% 取整）。' },
     { name: 'armyMax', type: 'number', desc: 'warning：围城军兵力范围上限（+20%）。' },
@@ -164,6 +166,7 @@ export const PUSH_FACTION_SIEGE: PushOpDoc = {
     { name: 'damage', type: 'number', desc: 'hit / swallowed：本次扣除的城防值（围城军不带冲车，恒为 35）。' },
     { name: 'durabilityAfter', type: 'number', desc: 'hit / swallowed：结算后的城防值（swallowed 恒为 0）。' },
     { name: 'protectedUntil', type: 'string', desc: 'hit：城进入 4 小时被动免战的截止时刻（ISO 8601，免战期内城防不回涨）。' },
+    { name: 'byHatred', type: 'boolean', desc: '（v116，AISLG-264）warning：这次围攻是否由仇恨选中（true = 这家按仇恨榜挑中了你，可能你的分城并不在它的势力范围内；false = 回落到「范围内离老巢最近」）。等价事件 faction_siege_warning 的 detail 同字段。' },
   ],
   examples: [
     {
@@ -184,6 +187,7 @@ export const PUSH_FACTION_SIEGE: PushOpDoc = {
         armyMax: 320,
         intel: 'range',
         beaconLevel: 0,
+        byHatred: true,
       },
     },
     {
@@ -205,5 +209,5 @@ export const PUSH_FACTION_SIEGE: PushOpDoc = {
       },
     },
   ],
-  agentNote: `收到 warning 时先看 durability：城防 100 起，每次被围城军打赢扣 35（两次之间只回涨一点点），所以城防 ≤ 35 的城下一轮就会丢。增援要在 arriveAt 之前进城门（MARCH task=reinforce / 协防 MARCH task=assist 都可，守城战里协防部队与城主驻军合并成守方）；把驻军塞满通常就能守住——常规驻军（义兵 30 × 官府等级 + 弓箭 8 × 官府等级）对上 1.0 倍围城军时全灭概率很低，而驻军只剩一半时大概率失守。守住的城该势力 24 小时内不会再来。城被吞（swallowed）后：建筑与等级留在城里、剩余资源变成这座势力城的可掠夺库存，任何玩家都能按占领 NPC 城的流程打下它并接收建筑与库存；原主人腾出分城名额，且打回来不受放弃分城冷却限制。每家势力每周最多吞 2 座城（一周按本季第 8、15、22 天起算；v107，AISLG-249：这家被压制到 3 档时降为 1 座，见 GET_FACTIONS 的 factions[].suppression），主城与名城分城永远不会被围攻。`,
+  agentNote: `收到 warning 时先看 durability：城防 100 起，每次被围城军打赢扣 35（两次之间只回涨一点点），所以城防 ≤ 35 的城下一轮就会丢。增援要在 arriveAt 之前进城门（MARCH task=reinforce / 协防 MARCH task=assist 都可，守城战里协防部队与城主驻军合并成守方）；把驻军塞满通常就能守住——常规驻军（义兵 30 × 官府等级 + 弓箭 8 × 官府等级）对上 1.0 倍围城军时全灭概率很低，而驻军只剩一半时大概率失守。守住的城该势力 24 小时内不会再来。城被吞（swallowed）后：建筑与等级留在城里、剩余资源变成这座势力城的可掠夺库存，任何玩家都能按占领 NPC 城的流程打下它并接收建筑与库存；原主人腾出分城名额，且打回来不受放弃分城冷却限制。每家势力每周最多吞 2 座城（一周按本季第 8、15、22 天起算；v107，AISLG-249：这家被压制到 3 档时降为 1 座，见 GET_FACTIONS 的 factions[].suppression），主城与名城分城永远不会被围攻。v116（AISLG-264）：byHatred = true 说明这家是按仇恨挑中你的（仇恨 = 战力榜前 20 名的基础仇恨 + 你打这家老巢的歼灭战力，半衰期 3 天），这时你的分城可能完全不在它的势力范围内；围城军强度接你的账号战力（k 10% / 14% / 18% 随天数），单座分城守军约占账号战力 9%——所以要么补兵协防、要么把这家老巢打到压制（围城军按 100 / 75 / 50 / 25% 打折）。`,
 };

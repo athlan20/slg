@@ -7,6 +7,8 @@
 // 数值来源（需求 AISLG-240「数值是怎么定的」）：围城军战力 = 分城官府等级 × 倍率（第 8~14 天 100、
 // 15~21 天 150、22 天起 200），编成按 3 级 NPC 城守军的比例（义兵 100 : 刀盾 30 : 弓箭 40 : 轻骑 12）；
 // 每次打赢扣 35 城防（沿用 siegeDamage，围城军不带冲车），城防 100 → 0 要连赢 6 次、跨约 30 小时。
+// AISLG-264（v116）起这个公式只是强度的一半：围城军战力 = max（官府等级 × 倍率，目标账号当前战力 × k），
+// k 与倍率同一天数档（100 / 10%、150 / 14%、200 / 18%），再乘压制档比例（见 factionSiegeStrength）。
 // AISLG-249（v107）起另受「压制档」影响：老巢被打掉 15 营以上（3 档）时每周上限降为 1 座、
 // 围城军战力按压制比例打折（factionSiegeSuppressedPower），压制档本身见 faction-suppression.ts。
 
@@ -132,6 +134,30 @@ export function factionSiegeWeekOf(
 
 // ---- 围城军 ----
 
+/**
+ * 围城军强度的目标战力档位（v116，AISLG-264）：围城军战力 =
+ * **max**（官府等级 × 倍率，目标账号当前战力 × k），再乘压制档比例（AISLG-249）。
+ * k 与倍率同一天数档：第 8~14 天 100 / 10%，15~21 天 150 / 14%，22 天起 200 / 18%。
+ * 需求「三、围城军强度」的表格已定死；取 max 是为了不把中小玩家变惨（他们乘以 k 远小于原公式）。
+ */
+export const FACTION_SIEGE_TARGET_PERCENTS: ReadonlyArray<{ fromDay: number; percent: number }> = [
+  { fromDay: 1, percent: 0 },
+  { fromDay: 8, percent: 10 },
+  { fromDay: 15, percent: 14 },
+  { fromDay: 22, percent: 18 },
+];
+
+/** 本周围城军强度的「目标账号战力 × k」里的 k（百分数，第 day 天） */
+export function factionSiegeTargetPercentForDay(day: number): number {
+  let percent = 0;
+  for (const step of FACTION_SIEGE_TARGET_PERCENTS) {
+    if (day >= step.fromDay) {
+      percent = step.percent;
+    }
+  }
+  return percent;
+}
+
 /** 围城军编成的基准比例：与 3 级 NPC 城守军同比例（义兵 100 / 刀盾 30 / 弓箭 40 / 轻骑 12），不带冲车 */
 export const FACTION_SIEGE_ARMY_BASE: Partial<Record<TroopKind, number>> = {
   militia: 100,
@@ -161,6 +187,26 @@ export function factionSiegeSuppressedPower(power: number, siegePercent: number)
   const base = Math.max(1, Math.floor(Number.isFinite(power) ? power : 0));
   const percent = Math.max(0, Math.min(100, Math.floor(Number.isFinite(siegePercent) ? siegePercent : 100)));
   return Math.max(1, Math.floor((base * percent) / 100));
+}
+
+/**
+ * 围城军强度（v116，AISLG-264）= max（官府等级 × 倍率，目标账号当前战力 × k），还未乘压制档比例。
+ * 目标战力用发起那一刻的全服战力口径（accountServerPower），k 见 FACTION_SIEGE_TARGET_PERCENTS。
+ * 取 max 保证中小玩家面对的围城军与 v107 之前完全一致（他们乘 k 之后更小）。
+ */
+export function factionSiegeStrength(args: {
+  governmentLevel: number;
+  multiplier: number;
+  /** 目标账号当前的全服战力（城内 + 野地驻军 + 协防 + 行军中） */
+  targetPower: number;
+  /** 势力第几天（决定 k） */
+  day: number;
+}): number {
+  const byGovernment = factionSiegePower(args.governmentLevel, args.multiplier);
+  const target = Number.isFinite(args.targetPower) ? Math.max(0, Math.floor(args.targetPower)) : 0;
+  const percent = factionSiegeTargetPercentForDay(args.day);
+  const byTarget = Math.floor((target * percent) / 100);
+  return Math.max(byGovernment, byTarget, 0);
 }
 
 /**

@@ -1,6 +1,9 @@
 // 势力围攻分城的定时器（AISLG-240，v100）：
-// - 发起：每家势力在本季满 7 天后、同一时间最多围 1 座城，选范围内离老巢最近的玩家分城
-//   （主城 / 名城 / 保护中 / 免战中的不入池），每次提前 60 分钟（× 烽火台加成）发预警；
+// - 发起：每家势力在本季满 7 天后、同一时间最多围 1 座城。目标选择（v116，AISLG-264）：先按仇恨挑
+//   （仇恨 > 0 的账号排在前面，不要求在势力范围内，见 faction-hatred-db.ts），没有仇恨候选时回落到
+//   「范围内离老巢最近的玩家分城」（主城 / 名城 / 保护中 / 免战中的不入池）；同一账号同一时间只被 1 家围。
+//   每次提前 60 分钟（× 烽火台加成）发预警；
+// - 围城军强度（v116）：max（官府等级 × 倍率，目标账号当前战力 × k），再乘压制档比例；
 // - 每周上限：第 8、15、22 天起算的一周里，每家最多吞下 2 座玩家分城（v107 / AISLG-249：老巢被打掉 15 营
 //   以上的 3 档降为 1 座）；
 // - 到达结算不在这里：见 faction-siege-battle.ts（守城战 + 城防值 + 吞城）。
@@ -14,7 +17,7 @@ import { factionBannerOf, factionDayAt, factionRadiusAt, factionDefOf, type Fact
 import { getFactionEnabled } from '../../common/src/faction-config';
 import { loadFactionRows } from '../../common/src/faction-db';
 import { loadFactionEpochStart } from '../../common/src/faction-start';
-import { FACTION_LAIR_CAMPS } from '../../common/src/faction-lair';
+import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER } from '../../common/src/faction-lair';
 import { destroyedFactionKeys, loadFactionLairRow } from '../../common/src/faction-lair-db';
 import {
   factionSiegeArmy,
@@ -23,19 +26,17 @@ import {
   factionSiegeLossCooldownMs,
   factionSiegeMaxLeadMs,
   factionSiegeMultiplierForDay,
-  factionSiegePower,
+  factionSiegeStrength,
   factionSiegeSuppressedPower,
   factionSiegeWarningMs,
   factionSiegeWeekOf,
   factionSiegeWeeklyCap,
 } from '../../common/src/faction-siege';
 import { suppressionLevel, suppressionSiegePercent } from '../../common/src/faction-suppression';
-import {
-  countWeekSwallows,
-  hasActiveSiege,
-  insertSiege,
-  pickSiegeTarget,
-} from '../../common/src/faction-siege-db';
+import { countWeekSwallows, hasActiveSiege, insertSiege } from '../../common/src/faction-siege-db';
+import { pickSiegeTarget, type SiegeCandidate } from '../../common/src/faction-siege-target-db';
+import { pickHatredSiegeTarget } from '../../common/src/faction-hatred-db';
+import { accountServerPower } from '../../common/src/faction-lair-rank-db';
 import { insertEvent } from '../../common/src/events';
 import { loadBuildingLevels } from '../../common/src/production';
 import { repairPercent } from '../../common/src/tech';
@@ -62,6 +63,10 @@ export interface SiegeStartPlan {
   swallows: number;
   /** 这家当前的压制档（v107，AISLG-249：由剩余营数现算，决定每周上限与围城军战力） */
   suppressionLevel: number;
+  /** 势力第几天（v116，AISLG-264：决定围城军强度的「目标战力 × k」里的 k） */
+  day: number;
+  /** 老巢第 1 营当前战力（v116：基础仇恨的基准；没有老巢行按下限 10,000） */
+  g1: number;
 }
 
 /** 是否现在该给这家发起围攻（不含目标是否存在）：满 7 天、没在围、本周没吞满 */
@@ -86,7 +91,17 @@ export async function planSiegeStart(
   if (swallows >= factionSiegeWeeklyCap(level)) {
     return null;
   }
-  return { def: args.def, radius: args.radius, multiplier, weekIndex: args.weekIndex, swallows, suppressionLevel: level };
+  return {
+    def: args.def,
+    radius: args.radius,
+    multiplier,
+    weekIndex: args.weekIndex,
+    swallows,
+    suppressionLevel: level,
+    day: args.day,
+    // v116（AISLG-264）：基础仇恨的基准是老巢第 1 营的战力（没有老巢行时按下限算，仍有仇恨可选）
+    g1: lair ? lair.camp_power_g1 : FACTION_LAIR_MIN_CAMP_POWER,
+  };
 }
 
 /**
@@ -130,7 +145,7 @@ export async function runFactionSiegeTick(pool: pg.Pool, now: Date = new Date())
     if (!plan) {
       continue;
     }
-    const started = await startOneSiege(pool, plan, now);
+    const started = await startOneSiege(pool, plan, now, season.startAt);
     if (started) {
       result.started += 1;
     }
@@ -139,28 +154,50 @@ export async function runFactionSiegeTick(pool: pg.Pool, now: Date = new Date())
 }
 
 /** 给一家发起一次围攻（选目标 → 落库 → 预警事件与推送）；没目标返回 false */
-async function startOneSiege(pool: pg.Pool, plan: SiegeStartPlan, now: Date): Promise<boolean> {
+async function startOneSiege(pool: pg.Pool, plan: SiegeStartPlan, now: Date, seasonStart: Date): Promise<boolean> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const target = await pickSiegeTarget(client, {
+    // v116（AISLG-264）选目标有两条路：先按仇恨挑（不要求在势力范围内），
+    // 没有仇恨候选（没人有仇恨）时才回落到范围内离老巢最近的分城（v100 现状）
+    const hatred = await pickHatredSiegeTarget(client, {
       faction: plan.def.key,
       lair: plan.def.lair,
-      radius: plan.radius,
-      // 同城两次到达至少隔 6 小时；守方守住（势力打输）后 24 小时内不再打这座城
+      g1: plan.g1,
       intervalMs: factionSiegeIntervalMs(),
       maxLeadMs: factionSiegeMaxLeadMs(),
       lossCooldownMs: factionSiegeLossCooldownMs(),
       now,
+      seasonStart,
     });
+    const target: SiegeCandidate | null =
+      hatred?.candidate ??
+      (await pickSiegeTarget(client, {
+        faction: plan.def.key,
+        lair: plan.def.lair,
+        radius: plan.radius,
+        // 同城两次到达至少隔 6 小时；守方守住（势力打输）后 24 小时内不再打这座城
+        intervalMs: factionSiegeIntervalMs(),
+        maxLeadMs: factionSiegeMaxLeadMs(),
+        lossCooldownMs: factionSiegeLossCooldownMs(),
+        now,
+      }));
     if (!target) {
       await client.query('COMMIT');
       return false;
     }
-    // v107（AISLG-249）：围城军战力 = 原公式（官府等级 × 周倍率）× 压制档比例，向下取整、不低于 1。
+    const byHatred = !!hatred;
+    // v116（AISLG-264）围城军强度 = max（官府等级 × 周倍率，目标账号当前战力 × k），
+    // v107（AISLG-249）再乘压制档比例，向下取整、不低于 1。
     // 发起这一刻定，已出发的围城军不受之后升 / 降档影响（预警 / 战报里的 power 就是这个实际值）
+    const targetPower = await accountServerPower(client, target.accountId);
     const power = factionSiegeSuppressedPower(
-      factionSiegePower(target.governmentLevel, plan.multiplier),
+      factionSiegeStrength({
+        governmentLevel: target.governmentLevel,
+        multiplier: plan.multiplier,
+        targetPower,
+        day: plan.day,
+      }),
       suppressionSiegePercent(plan.suppressionLevel),
     );
     const army = factionSiegeArmy(power);
@@ -215,6 +252,8 @@ async function startOneSiege(pool: pg.Pool, plan: SiegeStartPlan, now: Date): Pr
       beaconLevel: beacon,
       ...warningIntel(army, beacon),
       arriveAt: arriveAt.toISOString(),
+      // v116（AISLG-264）：这次围攻是否由仇恨选中，方便玩家 / Agent 判断（false = 回落为范围内最近）
+      byHatred,
     };
     const recipients = await insertWarningEvents(client, target.cityId, target.accountId, detail);
     await client.query('COMMIT');

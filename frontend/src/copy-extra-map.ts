@@ -299,6 +299,13 @@ export const EXTRA_MAP = {
     destroyed: '已灭亡',
     /** 面板：压制那两行的悬浮说明（老巢被打掉的营越多越虚，营恢复后自动降档） */
     suppressionHint: '老巢每被打掉 5 营升一档压制：围城军更弱、吞 NPC 城更慢，3 档时每周吞玩家分城从 2 座降到 1 座；营恢复后自动降档',
+    /** 面板：仇恨档位的悬浮说明（v116，AISLG-264；具体数值不公开） */
+    hatredHint: '这家会记仇：仇恨高的玩家会优先被它围攻，哪怕分城不在它的势力范围内；具体数值不公开',
+    /** 面板：仇恨档位标签（v116，AISLG-264） */
+    hatredLabel: '仇恨',
+    /** 面板：仇恨档位（none 无 / noticed 被注意 / target 重点目标） */
+    hatredTier: (tier: 'none' | 'noticed' | 'target'): string =>
+      tier === 'target' ? '重点目标' : tier === 'noticed' ? '被注意' : '无',
     /** 面板：压制档（v107，AISLG-249）：老巢被打掉的营越多，这家越虚 */
     suppression: (level: number) => (level > 0 ? `压制 ${level} 档` : '无压制'),
     /** 面板：压制档的三项效果（围城军战力百分比 / 吞 NPC 城基准小时数 / 每周吞分城上限） */

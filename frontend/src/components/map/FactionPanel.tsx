@@ -1,6 +1,8 @@
-/** 五方势力面板（v99，AISLG-239；v101，AISLG-241 加营数；v107，AISLG-249 加压制档）：地图页右栏的卡片——
- *  五家的名称、首领、老巢坐标、当前半径、持城数与老巢剩余营数 / 当前营剩余百分比（已灭亡的写「已灭亡」），
- *  以及当前压制档与三项效果（围城军比例 / 吞城间隔 / 每周吞分城上限）。数据来自 GET_FACTIONS
+/** 五方势力面板（v99，AISLG-239；v101，AISLG-241 加营数；v107，AISLG-249 加压制档；
+ *  v116，AISLG-264 加仇恨档位）：地图页右栏的卡片——
+ *  五家的名称、首领、老巢坐标、当前半径、持城数，老巢剩余营数 / 当前营剩余百分比（已灭亡的写「已灭亡」），
+ *  当前压制档与三项效果（围城军比例 / 吞城间隔 / 每周吞分城上限），以及**请求者自己**在这家的仇恨档位
+ *  （无 / 被注意 / 重点目标，只给档位、不给数值）。数据来自 GET_FACTIONS
  *  （会话切片在 state/factionSession.ts，每分钟重拉）；开关关闭（enabled=false）或本季还没有老巢时整块不渲染。
  *  老巢坐标对全服公开（不受战争迷雾影响），这里直接给出。中文 / 英文名都来自服务端字段，随界面语言取。
  */
@@ -18,7 +20,7 @@ interface FactionPanelProps {
   onFocusLair?: (lair: { x: number; y: number }) => void;
 }
 
-/** 一行的文案：名称 / 首领 / 老巢 / 半径 / 持城 / 营数 / 压制档（F 为 copy-extra-map 的 faction 文案组） */
+/** 一行的文案：名称 / 首领 / 老巢 / 半径 / 持城 / 营数 / 压制档 / 仇恨档位（F 为 copy-extra-map 的 faction 文案组） */
 function rowText(
   faction: FactionView,
   F: ReturnType<typeof useCopy>['EXTRA_MAP']['faction'],
@@ -31,6 +33,7 @@ function rowText(
   camps: string;
   suppression: string;
   suppressionEffects: string;
+  hatred: string;
 } {
   const lang = getLang();
   return {
@@ -50,6 +53,8 @@ function rowText(
       faction.suppression?.swallowIntervalHours ?? 6,
       faction.suppression?.weeklyBranchCap ?? 2,
     ),
+    // v116（AISLG-264）：请求者自己在这家的仇恨档位（none / noticed / target，不显示数值）
+    hatred: F.hatredTier(faction.hatredTier ?? 'none'),
   };
 }
 
@@ -73,6 +78,8 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
           const text = rowText(faction, F);
           // v107（AISLG-249）：被压制（有档位）的行用醒目色，0 档 / 已灭亡保持暗淡
           const suppressed = !faction.destroyed && (faction.suppression?.level ?? 0) > 0;
+          // v116（AISLG-264）：仇恨档位用醒目色（重点目标 > 被注意 > 无）
+          const tier = faction.hatredTier ?? 'none';
           return (
             <button
               type="button"
@@ -107,6 +114,16 @@ export function FactionPanel({ state, onFocusLair }: FactionPanelProps) {
                 <span role="势力面板-压制效果" className="font-mono">
                   {text.suppressionEffects}
                 </span>
+              </span>
+              <span
+                role="势力面板-仇恨"
+                title={F.hatredHint}
+                className={`col-start-2 col-end-4 truncate text-[11px] ${
+                  tier === 'target' ? 'text-st-error' : tier === 'noticed' ? 'text-warn' : 'text-faint'
+                }`}
+              >
+                <span role="势力面板-仇恨档位标签">{F.hatredLabel}</span>{' '}
+                <span role="势力面板-仇恨档位">{text.hatred}</span>
               </span>
             </button>
           );

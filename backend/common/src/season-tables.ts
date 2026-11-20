@@ -137,6 +137,9 @@ export const RESET_TABLES: readonly string[] = [
   // 下一季五家全部重生、贡献清零
   'faction_lairs',
   'faction_contrib',
+  // 记仇（v116，AISLG-264）：每家对每个账号的报复仇恨随赛季清空（基础仇恨是榜单派生值，不入库；
+  // 前 20 名榜单快照存 settings，下次读取时按「早于本季开始」立即重算）
+  'faction_hatred',
 ];
 
 /** 赛季历史：只追加，换季不清空 */

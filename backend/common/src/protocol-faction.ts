@@ -58,7 +58,19 @@ export interface FactionView {
   campPower: number;
   /** v107（AISLG-249）：这家当前的压制档与三项效果（完全由剩余营数算出，不存库） */
   suppression: FactionSuppressionView;
+  /**
+   * v116（AISLG-264）：**请求者自己**在这家仇恨榜上的档位（不显示具体数值，也不暴露榜单算法）——
+   * 前 5 名 target（重点目标）、第 6~20 名 noticed（被注意）、其余（含仇恨为 0 / 未登录）none（无）。
+   * 只对请求者本人有意义：别的账号看这一项没有参考价值。
+   */
+  hatredTier: FactionHatredTier;
 }
+
+/**
+ * 玩家在某家势力仇恨榜上的档位（v116，AISLG-264）：仇恨 = 基础仇恨（全服战力榜前 20 名）+ 报复仇恨
+ * （打这家老巢的歼灭战力，半衰期 3 天）。只给档位，不给数值；仇恨为 0 一律 none。
+ */
+export type FactionHatredTier = 'none' | 'noticed' | 'target';
 
 /**
  * 势力的压制档（v107，AISLG-249）：老巢被打掉的营越多，这家越虚——围城军更弱、吞 NPC 城更慢、
@@ -166,4 +178,9 @@ export interface FactionSiegePushData {
   durabilityAfter?: number;
   /** hit：城进入被动免战的截止时刻（ISO 8601） */
   protectedUntil?: string;
+  /**
+   * warning（v116，AISLG-264）：这次围攻是否由仇恨选中（仇恨 > 0 的账号按仇恨排序先围，不要求在势力范围内）。
+   * false / 缺省 = 回落到「范围内离老巢最近的玩家分城」。
+   */
+  byHatred?: boolean;
 }

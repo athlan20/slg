@@ -228,6 +228,10 @@ export const EXTRA_MAP_EN = {
     campRemaining: (percent: number) => `current camp ${percent}%`,
     destroyed: 'Destroyed',
     suppressionHint: 'Every 5 lair camps knocked out raises the suppression level by one: siege armies get weaker, NPC cities are swallowed more slowly, and at level 3 the weekly branch-city cap drops from 2 to 1. Levels drop again as camps recover',
+    hatredHint: 'This faction holds grudges: players with high hatred are besieged first, even if their branch city is outside the faction territory. Exact numbers are not disclosed',
+    hatredLabel: 'Hatred',
+    hatredTier: (tier: 'none' | 'noticed' | 'target'): string =>
+      tier === 'target' ? 'Priority target' : tier === 'noticed' ? 'Noticed' : 'None',
     suppression: (level: number) => (level > 0 ? `Suppression lv${level}` : 'No suppression'),
     suppressionEffects: (siegePercent: number, hours: number, weeklyCap: number) =>
       `siege army ${siegePercent}% · swallows every ${hours}h · ${weeklyCap}/week`,

@@ -8,7 +8,8 @@ import { EventType } from '../common/src/protocol';
 import { setFactionEnabledCache } from '../common/src/faction-config';
 import { FACTION_SIEGE_WEEKLY_CAP, factionSiegeLossCooldownMs } from '../common/src/faction-siege';
 import { DURABILITY_DAMAGE_PER_WIN, DURABILITY_MAX, PVP_CITY_TRUCE_MS } from '../common/src/protection';
-import { countWeekSwallows, hasActiveSiege, pickSiegeTarget } from '../common/src/faction-siege-db';
+import { countWeekSwallows, hasActiveSiege } from '../common/src/faction-siege-db';
+import { pickSiegeTarget } from '../common/src/faction-siege-target-db';
 import { createNpcAttack } from '../worker/src/npc-attack';
 import { runFactionSiegeTick } from '../worker/src/faction-siege-tick';
 import { FACTIONS } from '../common/src/faction';
@@ -98,7 +99,8 @@ describe('势力围攻的节奏与结算（需 TEST_DATABASE_URL）', { skip: db
       createdAt: new Date(Date.now() - 1 * 24 * HOUR),
       originLevel: 2,
     });
-    await fx.setGarrison(nearest, { militia: 150, archer: 40 });
+    // v116（AISLG-264）：这里**不给驻军**，全服没有部队 → 没有基础仇恨 → 走「范围内离老巢最近」的回落路径。
+    // 仇恨路径（不要求范围、按仇恨排序、同一账号只被一家围）见 faction-hatred-db.test.ts。
     const before = Date.now();
     const tick = await runFactionSiegeTick(fx.pool);
     assert.ok(tick.started >= 1, '至少南蛮发起了围攻');

@@ -22,6 +22,7 @@ import type { NpcCitySnapshot } from './world';
 import { FACTION_LAIR_CAMPS, FACTION_LAIR_MIN_CAMP_POWER, factionLairCurrentCampPower, factionLairRemainingPercent } from './faction-lair';
 import { destroyedFactionKeys, ensureFactionLairs, loadFactionLairRow, loadFactionLairs } from './faction-lair-db';
 import { suppressionView } from './faction-suppression';
+import { loadFactionHatredTiers } from './faction-hatred-db';
 
 type Queryable = pg.Pool | pg.PoolClient;
 
@@ -210,11 +211,14 @@ export async function factionCityCounts(q: Queryable): Promise<Record<string, nu
  * 势力面板数据（GET_FACTIONS）：势力第几天、当前半径与本季已放的各家的名称 / 首领 / 老巢 / 半径 / 持城数。
  * 开关关闭时返回 enabled=false 与空列表（关闭时不得有任何势力内容）；开了但本季还没生成老巢时同样为空。
  * 当季启用时因玩家城没放的那几家不在 factions 里（AISLG-243）。
+ * v116（AISLG-264）：viewerAccountId 给出时，每家的 hatredTier 是**这名请求者自己**的档位
+ * （前 5 重点目标 / 6~20 被注意 / 其余无）；未登录或不给就不查仇恨，一律 none。
  */
 export async function loadFactionView(
   q: Queryable,
   seasonStart: Date | null,
   now: Date = new Date(),
+  viewerAccountId: string | null = null,
 ): Promise<GetFactionsResponseData> {
   const serverTime = now.toISOString();
   if (!getFactionEnabled()) {
@@ -230,6 +234,15 @@ export async function loadFactionView(
   }
   const counts = await factionCityCounts(q);
   const lairs = new Map((await loadFactionLairs(q)).map((row) => [row.key, row]));
+  // v116（AISLG-264）：仇恨档位只对请求者自己有意义；基础仇恨的基准是这家老巢第 1 营的战力
+  const hatredTiers = await loadFactionHatredTiers(q, {
+    accountId: viewerAccountId,
+    now,
+    seasonStart,
+    factions: rows
+      .filter((row) => !!factionDefOf(row.key))
+      .map((row) => ({ key: row.key, g1: lairs.get(row.key)?.camp_power_g1 ?? FACTION_LAIR_MIN_CAMP_POWER })),
+  });
   const factions: FactionView[] = [];
   for (const row of rows) {
     const def = factionDefOf(row.key);
@@ -258,6 +271,8 @@ export async function loadFactionView(
       campPower,
       // v107（AISLG-249）：压制档由剩余营数现算；已灭亡的势力不再有压制（按 0 档展示，不留数据）
       suppression: suppressionView(campsTotal, destroyed ? campsTotal : campsRemaining),
+      // v116（AISLG-264）：请求者自己在这家仇恨榜上的档位（只给档位、不给数值）
+      hatredTier: hatredTiers.get(def.key) ?? 'none',
     });
   }
   return { enabled: true, day, radius, serverTime, factions };

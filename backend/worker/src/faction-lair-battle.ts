@@ -4,6 +4,8 @@
 // - 这一营清空才进入下一营，已打掉的营不会回来（faction_lairs.camps_remaining 只减不增，24 小时无人进攻才恢复）；
 // - 歼灭奖励：每歼灭 1 点守军战力金币 2、四种资源各 10，直接入账到出征城、不占负重（打输也发，幸存为 0 也发）；
 // - 声望与世界地图其余战斗一致，歼灭多少战力得多少声望（AISLG-263，由 saveBattleReport 自动入账）；
+// - 记仇（v116，AISLG-264）：同一场歼灭战力同时累加这家对这名玩家的报复仇恨（faction_hatred，半衰期 3 天），
+//   与贡献榜（faction_contrib，不衰减）并列写入；新赛季或这家已灭亡时不记；
 // - 最后一营打掉 = 这家本季灭亡（worker/src/faction-lair-destroy.ts），最后一击的玩家拿首领名将。
 // 锁序沿用全栈：出发城 → 目标地块（调用方已锁）→ faction_lairs 行。
 // faction_enabled 关闭时整模块不动作（调用方按开关决定是否走这里）。
@@ -27,6 +29,7 @@ import {
   factionLairRemainingPercent,
 } from '../../common/src/faction-lair';
 import { addFactionContribution, lockFactionLairRow, recoverLairRow } from '../../common/src/faction-lair-db';
+import { addFactionHatred } from '../../common/src/faction-hatred-db';
 import { insertEvent } from '../../common/src/events';
 import {
   completeMarchEvent,
@@ -116,7 +119,11 @@ export async function resolveFactionLairBattle(
       await creditLoot(client, march.from_city_id, reward);
       credited = reward;
     }
+    // 贡献榜：灭亡榜单用的累计值，不衰减（保持原样）
     await addFactionContribution(client, args.key, march.account_id, killedPower);
+    // v116（AISLG-264）：报复仇恨——同一口径 1:1 累加（打输也加），读时按半衰期 3 天折算；
+    // 本期已灭亡的势力在上面就返回了（gone），不会再记仇
+    await addFactionHatred(client, { key: args.key, accountId: march.account_id, power: killedPower, now: args.now });
   }
 
   // 6) 声望：与世界地图其余战斗一致（歼灭敌军参考战力 1:1，AISLG-263），由 saveBattleReport 按歼灭战力自动入账
