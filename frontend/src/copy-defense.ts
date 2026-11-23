@@ -6,11 +6,21 @@ import { TROOP_LABEL } from './copy';
 export const DEFENSE_COPY = {
   deploy: {
     meta: (count: number, limit: number) => `在外部队 ${count} / 上限 ${limit}`,
-    full: (limit: number) => `校场等级不足，最多同时派出 ${limit} 支部队（行军中、返程中、驻守野地都算；城内驻军不算）`,
-    hint: '本城同时在外的部队数 ≤ 校场等级（未建按 1）；分城各算各的，升级校场可提高',
+    full: (limit: number) =>
+      `校场等级不足，最多同时派出 ${limit} 支部队（上限 = max(1, min(校场等级, 官府等级))；行军中、返程中、驻守野地都算，城内驻军不算）`,
+    hint: '本城同时在外的部队数 ≤ max(1, min(校场等级, 官府等级))：校场等级不能超过官府等级，被压住时先升官府；分城各算各的',
   },
   building: {
-    parade: (count: number, limit: number) => `在外部队 ${count} / 上限 ${limit}（上限 = 校场等级，未建按 1）`,
+    /** 校场效果行（v117 AISLG-269）：被官府压住时额外点明生效上限与校场实际等级 */
+    parade: (count: number, limit: number, paradeLevel: number, governmentCapped: boolean) =>
+      governmentCapped
+        ? `在外部队 ${count} / 上限 ${limit}（受官府等级限制：生效 ${limit} / 校场 ${paradeLevel}——升级官府可提高上限）`
+        : `在外部队 ${count} / 上限 ${limit}（上限 = 校场等级，未建按 1）`,
+    /** 校场升级被官府卡住时的提示（v117） */
+    paradeAboveGovernment: (paradeLevel: number, governmentLevel: number) =>
+      `先升级官府：校场 Lv${paradeLevel} 已不高于官府 Lv${governmentLevel}，官府升级完成后才能继续升校场`,
+    /** 城内建筑格上的短提示（v117）：被官府压住时的生效上限与校场实际等级 */
+    paradeCappedShort: (limit: number, paradeLevel: number) => `受官府等级限制：生效 ${limit} / 校场 ${paradeLevel}`,
     beacon: (level: number) =>
       `来袭预警提前量 +${level * 10}%；敌情：${level >= 6 ? '精确兵种与数量' : level >= 3 ? '各兵种大概范围' : '只有总兵力大概范围（3 级起见兵种、6 级起精确）'}`,
     station: (level: number) => `自己城池之间的调兵 / 运输速度 +${level * 10}%`,
@@ -18,7 +28,7 @@ export const DEFENSE_COPY = {
       damage > 0 ? `守城每回合固定射击 ${damage} 点伤害，射程 ${range}（仅守城战生效）` : '守城每回合固定射击（建成后生效，伤害 = 150 × 等级）',
   },
   desc: {
-    parade_ground: '限制本城同时在外的部队数：行军中、返程中、驻守野地的部队合计不能超过校场等级（没建按 1 支）；城内驻军不计。',
+    parade_ground: '限制本城同时在外的部队数：行军中、返程中、驻守野地的部队合计不能超过 max(1, min(校场等级, 官府等级))（没建按 1 支）；校场等级不能超过官府等级，先升官府才能继续升校场；城内驻军不计。',
     beacon: '来袭预警更早、敌情更清楚：每级预警提前量 +10%（10 级翻倍）；0–2 级只看到兵力大概范围，3–5 级看到各兵种大概范围，6 级起精确。作用于本城和本城占领的野地。',
     post_station: '加快自己城池之间的调兵和资源运输：行军速度每级 +10%（10 级翻倍），出征野地 / NPC 城不受影响。',
     arrow_tower: '守城战（NPC 袭击主城）里城墙位上不会被消灭的远程单位：每回合对射程内最近的敌军造成固定伤害，伤害与射程随等级提升；野地战斗不生效。',

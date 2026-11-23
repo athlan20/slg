@@ -8,10 +8,16 @@ import {
   beaconLeadMultiplier,
   canDeployMore,
   deployLimit,
+  isGovernmentCapped,
+  paradeAboveGovernment,
+  paradeEffectiveTarget,
+  paradeLevelCap,
   stationPercent,
   towerStats,
   warningIntel,
 } from '../common/src/building-effects';
+import { judgeParadeAboveGovernment } from '../common/src/rules';
+import { queuedParadeTargets } from '../api/src/handlers-city';
 import { simulateBattle } from '../common/src/battle-engine';
 import { marchTravelSeconds } from '../common/src/world';
 
@@ -19,14 +25,54 @@ import { marchTravelSeconds } from '../common/src/world';
 const steady = () => 0.99;
 
 test('校场：上限 = 校场等级，未建按 1；达到上限不能再派', () => {
-  assert.equal(deployLimit(0), 1);
-  assert.equal(deployLimit(1), 1);
-  assert.equal(deployLimit(5), 5);
-  assert.equal(canDeployMore(0, 0), true);
-  assert.equal(canDeployMore(1, 0), false, '没建校场只能同时 1 支');
-  assert.equal(canDeployMore(4, 5), true);
-  assert.equal(canDeployMore(5, 5), false);
-  assert.equal(canDeployMore(9, 5), false, '上线前已超限的存量不受影响，但新的一律被拒');
+  // v117（AISLG-269）：上限 = max(1, min(校场等级, 官府等级))，这里先按「官府不低于校场」的旧口径校回归
+  assert.equal(deployLimit(0, 20), 1);
+  assert.equal(deployLimit(1, 20), 1);
+  assert.equal(deployLimit(5, 20), 5);
+  assert.equal(canDeployMore(0, 0, 20), true);
+  assert.equal(canDeployMore(1, 0, 20), false, '没建校场只能同时 1 支');
+  assert.equal(canDeployMore(4, 5, 20), true);
+  assert.equal(canDeployMore(5, 5, 20), false);
+  assert.equal(canDeployMore(9, 5, 20), false, '上线前已超限的存量不受影响，但新的一律被拒');
+});
+
+test('校场等级不能超过官府等级（v117，AISLG-269）：上限取两者较小值，未建都按保底 1', () => {
+  // 官府 3 / 校场 18：上限为 3，第 4 支起被拒
+  assert.equal(deployLimit(18, 3), 3);
+  assert.equal(canDeployMore(2, 18, 3), true);
+  assert.equal(canDeployMore(3, 18, 3), false);
+  // 未建官府（0 级）与未建校场一样按保底 1
+  assert.equal(deployLimit(18, 0), 1);
+  assert.equal(deployLimit(0, 0), 1);
+  assert.equal(canDeployMore(0, 18, 0), true);
+  assert.equal(canDeployMore(1, 18, 0), false);
+  // 官府不低于校场时就是校场等级（主城 / 分城 / 名城同口径，无额外系数）
+  assert.equal(deployLimit(5, 5), 5);
+  assert.equal(deployLimit(5, 12), 5);
+  // 被官府压住的标记（客户端据此提示「先升级官府」）
+  assert.equal(isGovernmentCapped(18, 3), true);
+  assert.equal(isGovernmentCapped(3, 3), false);
+  assert.equal(isGovernmentCapped(2, 3), false);
+});
+
+test('校场最高可升等级 = 本城已建成的官府等级（v117）：超目标 / toLevel / 队列已排的升级都计入', () => {
+  assert.equal(paradeLevelCap(3), 3);
+  assert.equal(paradeLevelCap(0), 0, '官府未建时没有可升空间（实际城池开局自带 1 级官府）');
+  // 目标等级超过官府被拒（官府 3 / 校场 18 想升到 19、或想升到 4）
+  assert.equal(paradeAboveGovernment(19, 3), true);
+  assert.equal(paradeAboveGovernment(4, 3), true);
+  assert.equal(paradeAboveGovernment(3, 3), false);
+  assert.equal(judgeParadeAboveGovernment('parade_ground', 4, 3)?.code, 'PARADE_ABOVE_GOVERNMENT');
+  assert.equal(judgeParadeAboveGovernment('parade_ground', 3, 3), null);
+  assert.equal(judgeParadeAboveGovernment('government', 20, 3), null, '只约束校场，其他建筑不受影响');
+  // 连续升级 toLevel 取最终等级：官府 5 时 toLevel 6 被拒、toLevel 5 通过
+  assert.equal(judgeParadeAboveGovernment('parade_ground', paradeEffectiveTarget(6), 5)?.code, 'PARADE_ABOVE_GOVERNMENT');
+  assert.equal(judgeParadeAboveGovernment('parade_ground', paradeEffectiveTarget(5), 5), null);
+  // 队列里已排的校场升级计入：本次目标 5 + 队列里的 Lv8 链条 → 实际目标等级 8，官府 6 时被拒
+  assert.equal(paradeEffectiveTarget(5, [8]), 8);
+  assert.equal(judgeParadeAboveGovernment('parade_ground', paradeEffectiveTarget(5, [8]), 6)?.code, 'PARADE_ABOVE_GOVERNMENT');
+  assert.equal(judgeParadeAboveGovernment('parade_ground', paradeEffectiveTarget(5, [8]), 8), null, '官府升到 8 后放行');
+  assert.equal(paradeEffectiveTarget(3, []), 3, '没有队列条目时就是本次目标');
 });
 
 test('烽火台：每级预警提前量 +10%（10 级翻倍），敌情 0–2 范围 / 3–5 兵种 / 6+ 精确', () => {
@@ -90,4 +136,20 @@ test('箭塔不会被消灭，但守军全灭仍判守城失败；空守军不�
   const noGarrison = simulateBattle({ militia: 5 }, {}, { siege: true, tower: towerStats(10) });
   assert.equal(noGarrison.attackerWon, true);
   assert.equal(noGarrison.towerDamage, 0, '没有守军时塔不出手');
+});
+
+test('队列里已排的校场升级计入目标等级（v117，AISLG-269，无需数据库）', () => {
+  // API 侧从队列行算出「已排的校场升级终点」：连续升级取 to_level，单级取 level
+  const queued = queuedParadeTargets({
+    queue: [
+      { kind: 'parade_ground', level: 6, to_level: 8, status: 'building' },
+      { kind: 'parade_ground', level: 9, to_level: null, status: 'queued' },
+      { kind: 'farm', level: 5, to_level: 12, status: 'queued' },
+    ],
+  } as unknown as Parameters<typeof queuedParadeTargets>[0]);
+  assert.deepEqual(queued, [8, 9], '只取校场条目，且取整链终点 / 目标等级');
+  assert.equal(paradeEffectiveTarget(7, queued), 9, '本次目标与队列取最大');
+  assert.equal(paradeEffectiveTarget(11, queued), 11);
+  assert.equal(paradeAboveGovernment(paradeEffectiveTarget(7, queued), 8), true, '官府 8 < 队列里的 9 → 拒绝');
+  assert.equal(paradeAboveGovernment(paradeEffectiveTarget(7, queued), 9), false);
 });

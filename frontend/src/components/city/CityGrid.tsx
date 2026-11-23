@@ -34,7 +34,7 @@ interface CityGridProps {
 
 export function CityGrid({ city, isMain, selected, onPick }: CityGridProps) {
   const copy = useCopy();
-  const { BUILDING_LABEL, COPY, EXTRA_PANEL } = copy;
+  const { BUILDING_LABEL, COPY, DEFENSE_COPY, EXTRA_PANEL } = copy;
   const queue = city?.queue ?? [];
   const activeEntry = queue.find((item) => item.status === 'building') ?? null;
   // 到期时间由服务端给出；剩余秒数按本地时钟推进，完成与否以服务端推送 / 查询为准
@@ -96,7 +96,14 @@ export function CityGrid({ city, isMain, selected, onPick }: CityGridProps) {
                       : entry
                         ? COPY.cityMap.queued
                         : level > 0 && city
-                          ? buildingEffectText(kind, city)
+                          ? kind === 'parade_ground' && city.deploy.governmentCapped
+                            ? (
+                                // v117（AISLG-269）：校场被官府等级压住时在格子上点明生效上限与校场实际等级
+                                <em role="城内视图-建筑-校场官府限制" className="not-italic text-gold">
+                                  {DEFENSE_COPY.building.paradeCappedShort(city.deploy.limit, city.deploy.paradeLevel)}
+                                </em>
+                              )
+                            : buildingEffectText(kind, city)
                           : label.tag}
                   </span>
                 </button>

@@ -410,6 +410,8 @@ export const ErrorCode = {
   BUILDING_LEVEL_MAX: 'BUILDING_LEVEL_MAX',
   /** 该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆与书院） */
   BUILDING_MAIN_ONLY: 'BUILDING_MAIN_ONLY',
+  /** 校场等级不能超过本城已建成的官府等级（v117，AISLG-269）：BUILD / UPGRADE 校场时目标等级超过即返回，不扣资源、不入队 */
+  PARADE_ABOVE_GOVERNMENT: 'PARADE_ABOVE_GOVERNMENT',
   /** 目标建造不存在、不属于本账号或已完成 / 已取消（v7 仅排队可取消；v71 AISLG-190 起在建条目也可取消） */
   BUILD_NOT_CANCELLABLE: 'BUILD_NOT_CANCELLABLE',
   /** 协议对连接声明的登录类型有限制（基于自报 role，非安全边界）：RESET_ACCOUNT 仅玩家、AGENT_REPORT_PLAN 仅 Agent（v9/v10） */
@@ -488,7 +490,8 @@ export const ErrorCode = {
   ACADEMY_TOO_LOW: 'ACADEMY_TOO_LOW',
   /** 没有可取消的研究，或研究不属于本账号 / 已结束（v27，AISLG-77） */
   RESEARCH_NOT_CANCELLABLE: 'RESEARCH_NOT_CANCELLABLE',
-  /** 本城同时在外的部队数已达校场等级上限（v30，AISLG-80；未建校场按 1，计入行军 / 返程 / 驻守野地，不计城内驻军） */
+  /** 本城同时在外的部队数已达校场等级上限（v30，AISLG-80；未建校场按 1，计入行军 / 返程 / 驻守野地，不计城内驻军；
+   *  v117 AISLG-269 起上限 = max(1, min(校场等级, 官府等级))） */
   DEPLOY_LIMIT: 'DEPLOY_LIMIT',
   /** 截击的移动目标不存在 / 已被击败 / 已过时消失（v28，AISLG-78；到达时目标已消失按「目标消失」战报处理，不报错） */
   MOVING_TARGET_GONE: 'MOVING_TARGET_GONE',

@@ -207,7 +207,8 @@ export async function handleMarch(
       return;
     }
     // v30（AISLG-80）：本城在外部队数已达校场等级 → 拒绝新的出征（已在外的不受影响）
-    if (!canDeployMore(deployCountOf(snap), snap.levels.parade_ground)) {
+    // v117（AISLG-269）：上限 = max(1, min(校场等级, 官府等级))，官府过低每样只能派保底 1 支
+    if (!canDeployMore(deployCountOf(snap), snap.levels.parade_ground, snap.levels.government)) {
       await client.query('ROLLBACK');
       const cityState = await loadCityState(ctx.pool, accountId);
       respondError(ctx.registry, conn, op, seq, 'DEPLOY_LIMIT', cityState ? { city: cityState } : undefined);

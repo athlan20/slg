@@ -143,6 +143,8 @@ export const ERRORS_EN = {
     buildingNotBuilt: 'This building type is not built yet — build it first, then upgrade',
     buildingLevelMax: 'The building has reached its level cap and cannot be upgraded further',
     buildingMainOnly: 'The Tavern and Academy can only be built in your main city — switch back to the main city to build or upgrade them',
+    paradeAboveGovernment:
+      'The Parade Ground cannot exceed the Government level — upgrade this city’s Government first, then upgrade the Parade Ground',
     buildNotCancellable: 'Build task not found, not yours, or already completed / cancelled',
     invalidParams: 'Invalid building type',
     fallback: 'Failed to start the build',

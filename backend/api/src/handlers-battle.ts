@@ -95,7 +95,7 @@ export async function handleScout(
       respondError(ctx.registry, conn, op, seq, 'INTERNAL');
       return;
     }
-    if (!canDeployMore(deployCountOf(snap), snap.levels.parade_ground)) {
+    if (!canDeployMore(deployCountOf(snap), snap.levels.parade_ground, snap.levels.government)) {
       // v30（AISLG-80）：侦察同样占一支在外部队
       await client.query('ROLLBACK');
       const cityState = await loadCityState(ctx.pool, accountId);

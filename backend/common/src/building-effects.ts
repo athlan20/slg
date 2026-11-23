@@ -1,6 +1,7 @@
 // 二期新建筑的效果出口（v30，AISLG-80~83）：校场 / 烽火台 / 驿站 / 箭塔。
 // 消费方只调这些函数，不自行乘系数；全部数值为占位，上线后按数据调整。
 // - 校场（parade_ground，AISLG-80）：每城同时在外部队数上限 = 校场等级（未建按 1）；
+//   v117（AISLG-269）：校场等级不得超过本城官府等级，上限改为 max(1, min(校场等级, 官府等级))；
 // - 烽火台（beacon，AISLG-81）：来袭预警提前量每级 +10%，敌情按等级分 3 档详细度；
 // - 驿站（post_station，AISLG-83）：从本城出发、目的地是自己另一座城的调兵 / 运输，行军速度每级 +10%；
 // - 箭塔（arrow_tower，AISLG-82）：守城战里守方城墙位上不会被消灭的远程单位，伤害与射程随等级提升。
@@ -10,17 +11,44 @@ import { TROOP_KINDS } from './protocol';
 
 // ---- 校场 ----
 
-/** 没建校场时的在外部队上限（保证新号能出征） */
+/** 没建校场 / 没建官府时的在外部队上限（保证新号能出征） */
 export const PARADE_BASE_LIMIT = 1;
 
-/** 在外部队上限 = max(1, 校场等级) */
-export function deployLimit(paradeLevel: number): number {
-  return Math.max(PARADE_BASE_LIMIT, Math.floor(paradeLevel));
+/**
+ * 在外部队上限 = max(1, min(校场等级, 本城官府等级))（v117，AISLG-269）。
+ * 校场等级不再单独决定上限：官府等级更低时按官府算；历史上已升高的校场不降级、不退资源，
+ * 只在这里按较小值计算。主城 / 分城 / 名城同一口径。
+ */
+export function deployLimit(paradeLevel: number, governmentLevel: number): number {
+  return Math.max(PARADE_BASE_LIMIT, Math.min(Math.floor(paradeLevel), Math.floor(governmentLevel)));
 }
 
 /** 能否再派出一支部队（count = 当前在外部队数；超限只拦新出征，已在外的不受影响） */
-export function canDeployMore(count: number, paradeLevel: number): boolean {
-  return count < deployLimit(paradeLevel);
+export function canDeployMore(count: number, paradeLevel: number, governmentLevel: number): boolean {
+  return count < deployLimit(paradeLevel, governmentLevel);
+}
+
+/** 校场是否被官府压住（校场实际等级 > 官府等级，上限取官府等级；客户端据此提示「先升级官府」；v117） */
+export function isGovernmentCapped(paradeLevel: number, governmentLevel: number): boolean {
+  return Math.floor(paradeLevel) > Math.floor(governmentLevel);
+}
+
+/** 校场最高可升等级 = 本城当前已建成的官府等级（v117，AISLG-269）；排队中的官府升级不算 */
+export function paradeLevelCap(governmentLevel: number): number {
+  return Math.max(0, Math.floor(governmentLevel));
+}
+
+/**
+ * 本次校场动作的实际目标等级 = max(本次目标等级, 队列里已排的校场升级终点)（v117）：
+ * 连续升级的终点由调用方传入（toLevel ?? 当前 + 1），队列里已排的条目取 to_level ?? level。
+ */
+export function paradeEffectiveTarget(targetLevel: number, queuedTargets: readonly number[] = []): number {
+  return queuedTargets.reduce((acc, target) => Math.max(acc, Math.floor(target)), Math.floor(targetLevel));
+}
+
+/** 校场目标等级是否超过官府等级（超过即 PARADE_ABOVE_GOVERNMENT；v117） */
+export function paradeAboveGovernment(targetLevel: number, governmentLevel: number): boolean {
+  return Math.floor(targetLevel) > paradeLevelCap(governmentLevel);
 }
 
 // ---- 烽火台 ----
