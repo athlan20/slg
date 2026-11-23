@@ -27,6 +27,7 @@ import {
   buildingLevelMax,
   exchangeGoldFor,
   judgeMainCityOnly,
+  judgeParadeAboveGovernment,
   startBuild,
   startUpgrade,
   upgradeCost,
@@ -41,6 +42,7 @@ import type { HandlerContext } from './handlers';
 import type { ConnInfo } from './connections';
 import { buildView, loadCityState, lockCitySnapshot, type BuildRow, type CitySnapshot } from './views';
 import { activateQueuedBuilds } from '../../common/src/queue-activate';
+import { paradeEffectiveTarget } from '../../common/src/building-effects';
 import { cancelRefundOf } from '../../common/src/build-cancel';
 import { constructionReductionPercent } from '../../common/src/tech';
 
@@ -159,6 +161,11 @@ export async function handleBuild(
     if (!verdict.ok) {
       return verdict;
     }
+    // v117（AISLG-269）：校场目标等级（含队列里已排的校场升级）不得超过本城已建成的官府等级
+    const parade = judgeParadeAboveGovernment(kind, paradeEffectiveTarget(1, queuedParadeTargets(snap)), snap.levels.government);
+    if (parade) {
+      return parade;
+    }
     return { ...verdict, kind, level: 1 as const, toLevel: null, fromLevel: 0, dueSeconds: buildSeconds(constructionReductionPercent(snap.techs)) };
   });
 }
@@ -180,8 +187,24 @@ export async function handleUpgrade(
     if (!verdict.ok) {
       return verdict;
     }
+    // v117（AISLG-269）：校场目标等级（连续升级取 toLevel 终点，并计入队列里已排的校场升级）不得超过官府等级
+    const parade = judgeParadeAboveGovernment(
+      kind,
+      paradeEffectiveTarget(verdict.toLevel ?? verdict.level, queuedParadeTargets(snap)),
+      snap.levels.government,
+    );
+    if (parade) {
+      return parade;
+    }
     return { ...verdict, kind, fromLevel: currentLevel, dueSeconds: upgradeSeconds(currentLevel, constructionReductionPercent(snap.techs)) };
   });
+}
+
+/** 该城建造队列里已排的校场升级的目标等级（连续升级取整链终点；v117，AISLG-269） */
+export function queuedParadeTargets(snap: Pick<CitySnapshot, 'queue'>): number[] {
+  return snap.queue
+    .filter((item) => item.kind === 'parade_ground')
+    .map((item) => item.to_level ?? item.level);
 }
 
 /** 连续升级的整链计划（响应体 chain）：每级 { level, cost, seconds }，秒为该级单级时长（未加速基准由服务端缩放后给出） */

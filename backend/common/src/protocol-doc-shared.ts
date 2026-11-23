@@ -159,7 +159,7 @@ export function exampleCity(overrides: Partial<CityView> = {}): CityView {
     starveAt: null,
     mutinyNextAt: null,
     guard: null,
-    deploy: { count: 0, limit: 1 },
+    deploy: { count: 0, limit: 1, paradeLevel: 0, governmentCapped: false },
     tower: null,
     techs: emptyTechLevels(),
     recruitQueue: [],

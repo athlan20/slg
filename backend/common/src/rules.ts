@@ -7,6 +7,7 @@ import { BUILDING_KINDS, RESOURCE_KEYS, type BuildingKind, type KindActionCosts,
 import { FAMOUS_THEME_LEVEL_MAX, famousThemeBuildingOf } from './famous-effects';
 import { getTimeScale, scaledRate } from './time-scale';
 import { EXCHANGE_INPUT_PER_GOLD, exchangeGoldFor } from './exchange';
+import { paradeAboveGovernment } from './building-effects';
 export { EXCHANGE_INPUT_PER_GOLD, exchangeGoldFor } from './exchange';
 
 /** 建筑建成后的经济产出；非生产建筑为 null（军营的征兵、城墙的守城加成属后续玩法） */
@@ -372,7 +373,9 @@ export type BuildDeniedCode =
   /** 已达等级上限（MAX_BUILDING_LEVEL） */
   | 'BUILDING_LEVEL_MAX'
   /** 该建筑只能在主城建造 / 升级（v87，AISLG-217：酒馆与书院） */
-  | 'BUILDING_MAIN_ONLY';
+  | 'BUILDING_MAIN_ONLY'
+  /** 校场等级不能超过本城已建成的官府等级（v117，AISLG-269） */
+  | 'PARADE_ABOVE_GOVERNMENT';
 
 export type StartBuildVerdict =
   | { ok: true; cost: Resources; /** 建造目标等级恒为 1 */ level: 1; /** start=立即开工；queued=进入排队 */ mode: 'start' | 'queued' }
@@ -495,6 +498,22 @@ export function judgeMainCityOnly(
   isMainCity: boolean,
 ): { ok: false; code: 'BUILDING_MAIN_ONLY' } | null {
   return !isMainCity && isMainCityOnlyBuilding(kind) ? { ok: false, code: 'BUILDING_MAIN_ONLY' } : null;
+}
+
+/**
+ * 校场等级不得超过本城当前已建成的官府等级（v117，AISLG-269）：BUILD / UPGRADE 校场时，
+ * 目标等级（连续升级取 toLevel 终点，并已计入队列里已排的校场升级）大于官府等级一律拒绝，
+ * 返回 PARADE_ABOVE_GOVERNMENT（不扣资源、不入队）。排队中的官府升级不算。
+ * 数值口径（上限 / 目标等级归并）只在 building-effects.ts 实现一次，这里只做判定入口。
+ */
+export function judgeParadeAboveGovernment(
+  kind: BuildingKind,
+  targetLevel: number,
+  governmentLevel: number,
+): { ok: false; code: 'PARADE_ABOVE_GOVERNMENT' } | null {
+  return kind === 'parade_ground' && paradeAboveGovernment(targetLevel, governmentLevel)
+    ? { ok: false, code: 'PARADE_ABOVE_GOVERNMENT' }
+    : null;
 }
 
 /** 扣减建造成本（纯函数，不修改入参） */

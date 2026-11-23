@@ -9,12 +9,20 @@ export const DEFENSE_COPY_EN = {
   deploy: {
     meta: (count: number, limit: number) => `Troops away ${count} / limit ${limit}`,
     full: (limit: number) =>
-      `Parade Ground level too low: at most ${limit} troops may be out at once (marching, returning and garrisoning wilderness all count; troops in the city do not)`,
-    hint: 'Troops out of this city at once ≤ Parade Ground level (1 if not built); each Branch City counts separately — upgrade the Parade Ground to raise the cap',
+      `Parade Ground level too low: at most ${limit} troops may be out at once (limit = max(1, min(Parade Ground level, Government level)); marching, returning and garrisoning wilderness all count, troops in the city do not)`,
+    hint: 'Troops out of this city at once ≤ max(1, min(Parade Ground level, Government level)): the Parade Ground cannot exceed the Government level — upgrade the Government first if it is capped; each Branch City counts separately',
   },
   building: {
-    parade: (count: number, limit: number) =>
-      `Troops away ${count} / limit ${limit} (limit = Parade Ground level, 1 if not built)`,
+    /** Parade Ground effect line (v117 AISLG-269): spells out the effective cap and the real Parade Ground level when capped */
+    parade: (count: number, limit: number, paradeLevel: number, governmentCapped: boolean) =>
+      governmentCapped
+        ? `Troops away ${count} / limit ${limit} (capped by Government level: effective ${limit} / Parade Ground ${paradeLevel} — upgrade the Government to raise it)`
+        : `Troops away ${count} / limit ${limit} (limit = Parade Ground level, 1 if not built)`,
+    /** Hint shown when the Parade Ground upgrade is blocked by the Government level (v117) */
+    paradeAboveGovernment: (paradeLevel: number, governmentLevel: number) =>
+      `Upgrade the Government first: Parade Ground Lv${paradeLevel} is already at Government Lv${governmentLevel} — the next Parade Ground upgrade unlocks after the Government finishes`,
+    /** Short badge on the city building cell (v117): effective cap vs. the real Parade Ground level when capped */
+    paradeCappedShort: (limit: number, paradeLevel: number) => `Capped by Government: effective ${limit} / Parade Ground ${paradeLevel}`,
     beacon: (level: number) =>
       `Incoming-attack warning lead time +${level * 10}%; intel: ${
         level >= 6
@@ -31,7 +39,7 @@ export const DEFENSE_COPY_EN = {
   },
   desc: {
     parade_ground:
-      'Caps the troops this city can have out at once: marching, returning and garrisoning wilderness troops combined cannot exceed the Parade Ground level (1 if not built); troops in the city do not count.',
+      'Caps the troops this city can have out at once: marching, returning and garrisoning wilderness troops combined cannot exceed max(1, min(Parade Ground level, Government level)) (1 if not built); the Parade Ground cannot exceed the Government level — upgrade the Government before upgrading it further; troops in the city do not count.',
     beacon:
       'Earlier incoming-attack warnings and clearer intel: warning lead time +10% per level (doubled at Lv 10); at Lv 0–2 you only see a rough headcount, Lv 3–5 rough ranges per troop type, Lv 6+ exact. Applies to this city and the wilderness it has occupied.',
     post_station:

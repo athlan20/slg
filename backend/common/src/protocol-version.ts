@@ -1030,4 +1030,4 @@
  *   四、协议：GET_FACTIONS 的 factions[] 新增 hatredTier（none / noticed / target，只对请求者本人，不给数值）；
  *   PUSH_FACTION_SIEGE 的 reason=warning 新增可选 byHatred。新表 faction_hatred（换季清空）。
  */
-export const PROTOCOL_VERSION = 116;
+export const PROTOCOL_VERSION = 117;
