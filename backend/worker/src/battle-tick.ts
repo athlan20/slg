@@ -38,8 +38,9 @@ import { addTileArmy, clearTileOccupation, type TileRow } from '../../common/src
 import type { NpcCitySnapshot } from '../../common/src/world';
 import { TERRAIN_INFO, wildernessBonusRate, wildernessGatherRate, wildernessLoot } from '../../common/src/world';
 import { INITIAL_POPULATION } from '../../common/src/rules';
+import { creditBattleLoot, patchBattleReportLoot } from './battle-loot';
+import { emptyResources } from '../../common/src/loot-cap';
 import {
-  creditLoot,
   createReturnMarch,
   loadCityNaming,
   completeMarchEvent,
@@ -138,9 +139,15 @@ export async function resolveBattleArrival(
 
   if (tile.kind === 'wilderness') {
     const loot = wildernessLoot(tile.terrain, tile.level);
+    // v118（AISLG-270）：战斗所得按城池储量上限入账（装不下的作废）loot 为实际入账量
+    let credited: Resources = loot;
+    let wasted: Resources = emptyResources();
     if (settled.row) {
-      await creditLoot(client, march.from_city_id, loot);
+      const split = await creditBattleLoot(client, march.from_city_id, loot);
+      credited = split.credited;
+      wasted = split.wasted;
     }
+    await patchBattleReportLoot(client, reportId, { lootPercent: 100, wasted });
     await clearNativeGarrison(client, tile);
     // v54（AISLG-144）：打赢在野名将所在野地的原住守军 → 获得该名将的结交资格
     if (tile.wild_hero) {
@@ -157,7 +164,9 @@ export async function resolveBattleArrival(
       troops,
       survivors: result.attacker.survivors,
       losses: result.attacker.losses,
-      loot,
+      loot: credited,
+      lootPercent: 100,
+      wasted,
       rounds: result.rounds,
       attackerPower: armyPower(troops),
       defenderPower: armyPower(defender),
@@ -189,8 +198,10 @@ export async function resolveBattleArrival(
   for (const key of RESOURCE_KEYS) {
     loot[key] = npc?.stock?.[key] ?? 0;
   }
+  // v118（AISLG-270）：NPC 城库存一次性入账同样按储量上限作废（超出部分不进城）
   if (settled.row) {
-    await creditLoot(client, march.from_city_id, loot);
+    const split = await creditBattleLoot(client, march.from_city_id, loot);
+    await patchBattleReportLoot(client, reportId, { lootPercent: 100, wasted: split.wasted });
   }
   const cityName = `分城(${tile.x},${tile.y})`;
   const cityIns = await client.query(

@@ -5,7 +5,15 @@
 
 import { useCallback, useState } from 'react';
 import { getActiveCityId, setActiveCityId } from '../api/cityScope';
-import type { BranchInfoView, CapitalSwapView, CityRefView, CityView, ItemCounts, MoveCityView } from '../api/protocol';
+import type {
+  BranchInfoView,
+  CapitalSwapView,
+  CityRefView,
+  CityView,
+  ItemCounts,
+  MoveCityView,
+  PlunderDailyView,
+} from '../api/protocol';
 
 /** 账号礼金（v89，AISLG-221）：余额与每季发放额度（GET_STATE 的 gift / giftSeasonGrant，未拉到为 null） */
 export interface GiftView {
@@ -36,6 +44,8 @@ export interface CityList {
   ingot: number | null;
   /** 城池迁移视图（v91，AISLG-220；GET_STATE 的 moveCity，未拉到为 null） */
   moveCity: MoveCityView | null;
+  /** 今日野地掠夺次数与下一次的收益倍数（v118，AISLG-270；GET_STATE 的 plunderDaily，未拉到为 null） */
+  plunderDaily: PlunderDailyView | null;
   /** 当前正在操作的城池 id（null = 尚未获取） */
   activeCityId: string | null;
   /** 吸收一次 GET_STATE 响应的 cities / branch；选中的城已不存在时复位主城 */
@@ -57,6 +67,7 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
   const [paidCounts, setPaidCounts] = useState<ItemCounts | null>(null);
   const [ingot, setIngot] = useState<number | null>(null);
   const [moveCity, setMoveCity] = useState<MoveCityView | null>(null);
+  const [plunderDaily, setPlunderDaily] = useState<PlunderDailyView | null>(null);
   const [activeCityId, setActive] = useState<string | null>(null);
 
   const applyState = useCallback((data: Record<string, unknown> | undefined) => {
@@ -94,6 +105,10 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     if (move && Array.isArray(move.cities)) {
       setMoveCity(move);
     }
+    const plunder = data?.plunderDaily as PlunderDailyView | undefined;
+    if (plunder && typeof plunder.count === 'number' && typeof plunder.lootPercent === 'number') {
+      setPlunderDaily(plunder);
+    }
     const city = data?.city as CityView | undefined;
     if (city) {
       setActive(city.id);
@@ -129,6 +144,7 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     setPaidCounts(null);
     setIngot(null);
     setMoveCity(null);
+    setPlunderDaily(null);
     setActive(null);
   }, []);
 
@@ -146,5 +162,20 @@ export function useCityList(setCity: (city: CityView | null) => void): CityList 
     [cities, activeCityId, setCity],
   );
 
-  return { cities, branch, capitalSwap, gift, items, paidCounts, ingot, moveCity, activeCityId, applyState, applyItems, reset, select };
+  return {
+    cities,
+    branch,
+    capitalSwap,
+    gift,
+    items,
+    paidCounts,
+    ingot,
+    moveCity,
+    plunderDaily,
+    activeCityId,
+    applyState,
+    applyItems,
+    reset,
+    select,
+  };
 }

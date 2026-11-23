@@ -35,3 +35,22 @@ export function warehouseProtectionPerResource(warehouseLevel: number): number {
 
 /** 掠夺冷却（小时）：镜像 backend/common/src/plunder.ts 的 PLUNDER_COOLDOWN_MS */
 export const PLUNDER_COOLDOWN_HOURS = 24;
+
+// ---- v118（AISLG-270）：野地掠夺按账号每日递减 ----
+// 唯一事实来源是 backend/common/src/plunder.ts 的 PLUNDER_DAILY_FULL_LIMIT /
+// PLUNDER_DAILY_HALF_LIMIT / plunderLootPercent；这里只镜像数值供界面提示，
+// 权威计数与打折在服务端（GET_STATE 的 plunderDaily 给出实际次数与倍数）。
+
+/** 当天第 1..200 次全额、201..400 次减半、401 起两成 */
+export const PLUNDER_DAILY_FULL_LIMIT = 200;
+
+export const PLUNDER_DAILY_HALF_LIMIT = 400;
+
+/** GET_STATE 的账号级 plunderDaily（v118）：今日已成功野地掠夺次数 / 下一次的收益倍数 / 下次清零时刻 */
+export interface PlunderDailyView {
+  count: number;
+  /** 下一次野地掠夺的收益倍数：100 / 50 / 20 */
+  lootPercent: number;
+  /** 次数清零时刻（ISO 8601） */
+  resetAt: string;
+}

@@ -12,7 +12,7 @@
 // - 主城与分城同样可打；本条不改归属、不占领（占领玩家城随后续阶段）。
 
 import pg from 'pg';
-import { EventType, type TroopKind } from '../../common/src/protocol';
+import { EventType, type Resources, type TroopKind } from '../../common/src/protocol';
 import { insertEvent } from '../../common/src/events';
 import { armyPower, resolveBattle, wallDefensePercent } from '../../common/src/battle';
 import { armyCarryCapacity } from '../../common/src/troops';
@@ -36,11 +36,12 @@ import { insertServerBroadcast, recordWinStreak } from '../../common/src/server-
 import { battleBonusOf, grantHeroExp, loadCityGuard } from '../../common/src/hero-db';
 import { armyTotal } from '../../common/src/hero';
 import { type TileRow } from '../../common/src/world-db';
+import { creditBattleLoot, patchBattleReportLoot } from './battle-loot';
+import { emptyResources } from '../../common/src/loot-cap';
 import {
   abortMarchToReturn,
   completeMarchEvent,
   createReturnMarch,
-  creditLoot,
   heroBattleView,
   loadCityNaming,
   loadMarchHeroBonus,
@@ -293,9 +294,15 @@ export async function resolvePvpPlunderArrival(
             stone = stone - $5, iron = iron - $6, truce_until = $7 WHERE id = $1`,
     [city.id, loot.gold, loot.wood, loot.food, loot.stone, loot.iron, truceUntil],
   );
+  // v118（AISLG-270）：战斗所得按城池储量上限入账（装不下的作废）；玩家互掠不计数、不打折
+  let credited: Resources = loot;
+  let wasted: Resources = emptyResources();
   if (settled.row) {
-    await creditLoot(client, march.from_city_id, loot);
+    const split = await creditBattleLoot(client, march.from_city_id, loot);
+    credited = split.credited;
+    wasted = split.wasted;
   }
+  await patchBattleReportLoot(client, attackerReportId, { lootPercent: 100, wasted });
   // 累计掠夺台账（排行榜「比掠夺」）：四资源合计（金不计），玩家互掠同样计入
   await client.query(`UPDATE accounts SET plunder_total = plunder_total + $2 WHERE id = $1`, [
     march.account_id,
@@ -308,7 +315,9 @@ export async function resolvePvpPlunderArrival(
     troops,
     survivors: result.attacker.survivors,
     losses: result.attacker.losses,
-    loot,
+    loot: credited,
+    lootPercent: 100,
+    wasted,
     carry,
     rounds: result.rounds,
     endReason: result.endReason,

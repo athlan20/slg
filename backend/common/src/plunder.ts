@@ -9,6 +9,7 @@
 // 玩家城池掠夺的消费方（v21，AISLG-32 方案 A）：NPC 袭击主城获胜后按被掠城
 // 仓库等级调用 cityPlunderPool 计算可掠量；玩家互掠仍随玩家对抗阶段接入。
 
+import { arenaNextDayAt } from './arena';
 import type { Resources } from './protocol';
 import { scaledMs } from './time-scale';
 
@@ -144,4 +145,60 @@ export function loadByCarry(carry: number, pool: Partial<Record<PlunderableKey, 
 /** 战利品合计（事件 / 校准统计用） */
 export function lootTotal(loot: Partial<PlunderLoot>): number {
   return PLUNDERABLE_KEYS.reduce((sum, key) => sum + Math.max(0, Math.floor(loot[key] ?? 0)), 0);
+}
+
+// ---- v118（AISLG-270）：野地掠夺按账号每日递减 ----
+// 同一个账号一个游戏日里的成功野地掠夺次数越多，后面每次带回来的资源越少。
+// 计数的日界与竞技场 / 武将每日次数同口径（arena.ts 的 arenaDayIndex / arenaNextDayAt：
+// 东八区自然日，时间缩放时按缩放后的日长切分）。只有野地掠夺计数：NPC 城掠夺、
+// 截击、黄巾营地 / 老巢、势力老巢、玩家城掠夺都不计数、不打折。
+
+/** 当天第 1..200 次成功野地掠夺全额 */
+export const PLUNDER_DAILY_FULL_LIMIT = 200;
+/** 当天第 201..400 次减半，第 401 次起只剩两成 */
+export const PLUNDER_DAILY_HALF_LIMIT = 400;
+/** 三档收益倍数（百分数）：1~200 → 100%、201~400 → 50%、401 起 → 20% */
+export const PLUNDER_LOOT_PERCENT_FULL = 100;
+export const PLUNDER_LOOT_PERCENT_HALF = 50;
+export const PLUNDER_LOOT_PERCENT_TAIL = 20;
+
+/**
+ * 当天第 dayCount 次（含本次，1 起）成功野地掠夺的收益倍数（百分数）。
+ * 纯函数：API（GET_STATE 的 plunderDaily.nextPercent）与 Worker（到达结算）共用。
+ */
+export function plunderLootPercent(dayCount: number): number {
+  const n = Math.max(1, Math.floor(dayCount));
+  if (n <= PLUNDER_DAILY_FULL_LIMIT) {
+    return PLUNDER_LOOT_PERCENT_FULL;
+  }
+  return n <= PLUNDER_DAILY_HALF_LIMIT ? PLUNDER_LOOT_PERCENT_HALF : PLUNDER_LOOT_PERCENT_TAIL;
+}
+
+/** 战利品按倍数打折（纯函数）：每种资源乘 percent ÷ 100、向下取整 */
+export function scaleLoot(loot: PlunderLoot, percent: number): PlunderLoot {
+  const p = Math.max(0, Math.floor(percent));
+  if (p === 100) {
+    return { ...loot };
+  }
+  const scaled = {} as PlunderLoot;
+  for (const key of PLUNDERABLE_KEYS) {
+    scaled[key] = Math.max(0, Math.floor((Math.max(0, Math.floor(loot[key] ?? 0)) * p) / 100));
+  }
+  return scaled;
+}
+
+/** GET_STATE 的账号级 plunderDaily：今日已成功野地掠夺次数、下一次的收益倍数、下次清零时刻 */
+export interface PlunderDailyView {
+  /** 今日已成功的野地掠夺次数（跨游戏日视为 0） */
+  count: number;
+  /** 下一次野地掠夺的收益倍数（100 / 50 / 20） */
+  lootPercent: number;
+  /** 次数清零时刻（ISO 8601） */
+  resetAt: string;
+}
+
+/** 账号当日掠夺次数 → plunderDaily 视图（纯函数；resetAt 按竞技场同口径的日界） */
+export function plunderDailyView(count: number, now: Date): PlunderDailyView {
+  const used = Math.max(0, Math.floor(count));
+  return { count: used, lootPercent: plunderLootPercent(used + 1), resetAt: arenaNextDayAt(now).toISOString() };
 }

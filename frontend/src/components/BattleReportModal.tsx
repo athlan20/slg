@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Modal } from './ui/Modal';
 import { TROOP_KINDS, type ArmyCounts, type BattleReportView, type BattleSideView } from '../api/protocol';
 import { formatReportTime } from '../api/mapping';
+import { cargoText } from '../api/mapping-world';
 // role 定位值取静态中文文案源（AISLG-137 约定：role 不随界面语言变）
 import { TROOP_LABEL as TROOP_LABEL_ZH } from '../copy';
 import { getCopy, useCopy } from '../i18n/bundle';
@@ -170,7 +171,7 @@ const ROUNDS_PER_PAGE = 16;
 
 export function BattleReportModal({ report, onClose, onShare, onLocate }: BattleReportModalProps) {
   const copy = useCopy();
-  const { COPY, DEFENSE_COPY, EXTRA_PANEL, CHAT_COPY, TROOP_LABEL } = copy;
+  const { COPY, DEFENSE_COPY, EXTRA_PANEL, CHAT_COPY, PLUNDER_DAILY_COPY, TROOP_LABEL } = copy;
   const [view, setView] = useState<'chart' | 'rounds'>('chart');
   const [roundPage, setRoundPage] = useState(0);
   const mineIsAttacker = report.role === 'attacker';
@@ -182,6 +183,9 @@ export function BattleReportModal({ report, onClose, onShare, onLocate }: Battle
   const showReturnNote = report.endReason === 'round_limit' && mineIsAttacker && totalOf(mySide.survivors) > 0;
   const roundPages = Math.max(1, Math.ceil(report.roundLog.length / ROUNDS_PER_PAGE));
   const page = Math.min(roundPage, roundPages - 1);
+  // v118（AISLG-270）：野地掠夺收益打折与「仓库已满作废」的资源（缺省 = 全额 / 没作废）
+  const lootPercent = report.lootPercent ?? 100;
+  const wastedText = cargoText(report.wasted);
   const result =
     report.endReason === 'no_contact'
       ? report.contact === 'gone'
@@ -239,6 +243,9 @@ export function BattleReportModal({ report, onClose, onShare, onLocate }: Battle
         ) : null}
         {' · '}{COPY.battleReport.idBadge(report.id)} · {formatReportTime(report.createdAt)} · {COPY.battleReport.roundsMeta(report.rounds)} · {endReasonText(report)}
         {report.wallDefensePercent > 0 ? <span className="text-dim"> · {COPY.battleReport.wallBadge(report.wallDefensePercent)}</span> : null}
+        {lootPercent < 100 ? (
+          <span role="战报弹窗-掠夺收益" className="text-warn"> · {PLUNDER_DAILY_COPY.yieldBadge(lootPercent)}</span>
+        ) : null}
         {report.wallBreak ? (
           <span role="战报弹窗-冲车破墙" className="text-gold"> · {DEFENSE_COPY.report.wallBreak(report.wallBreak.from, report.wallBreak.to)}</span>
         ) : null}
@@ -252,6 +259,15 @@ export function BattleReportModal({ report, onClose, onShare, onLocate }: Battle
           </span>
         ) : null}
       </p>
+
+      {wastedText !== '' ? (
+        <p
+          role="战报弹窗-仓库满作废"
+          className="shrink-0 rounded border border-warn bg-warn/10 px-2.5 py-1 text-[12px] text-warn"
+        >
+          {PLUNDER_DAILY_COPY.wasted(wastedText)}
+        </p>
+      ) : null}
 
       {report.assistLosses ? (
         <p role="战报弹窗-协防损失" className="shrink-0 rounded border border-line-soft bg-panel-2 px-2.5 py-1 text-[12px] text-dim">

@@ -1,5 +1,5 @@
 {
-  "version": 117,
+  "version": 118,
   "title": "SLG Agent API 参考",
   "compatPolicy": [
     "只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。",
@@ -876,7 +876,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 117,
+                "protocolVersion": 118,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -925,7 +925,7 @@
                 "role": "player",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": "2026-10-25T08:00:00.000Z",
-                "protocolVersion": 117,
+                "protocolVersion": 118,
                 "docNotice": null,
                 "season": {
                   "id": 2,
@@ -945,14 +945,14 @@
           ]
         },
         {
-          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/114 补读增量）",
+          "caption": "Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/115 补读增量）",
           "request": {
             "op": 1,
             "seq": 1,
             "data": {
               "token": "session-example-token-for-doc-0000000000000",
               "asAgent": true,
-              "docVersion": 114,
+              "docVersion": 115,
               "agentModel": "claude-opus-5-5"
             }
           },
@@ -967,8 +967,8 @@
                 "role": "agent",
                 "sessionToken": "session-example-token-for-doc-0000000000000",
                 "expiresAt": null,
-                "protocolVersion": 117,
-                "docNotice": "接口文档已从 v114 更新到 v117：请 GET /agent-api/changes/114 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+                "protocolVersion": 118,
+                "docNotice": "接口文档已从 v115 更新到 v118：请 GET /agent-api/changes/115 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
                 "season": {
                   "id": 2,
                   "endsAt": "2026-11-22T00:00:00.000Z"
@@ -1283,6 +1283,11 @@
           "name": "city.territory",
           "type": "array",
           "desc": "本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）, facility 这块地上的望楼（v97 新增，AISLG-232；{ kind（恒为 watchtower）, level 已建成等级 0..3, visionRadius 视野半径 1 级 6 / 2 级 8 / 3 级 10 格（丘陵上的野地各 +2：8 / 10 / 12，上限 12；level 为 0 时 0，AISLG-233）, building: { toLevel, finishAt } | null 进行中的建造 / 升级 }，没盖为 null）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。"
+        },
+        {
+          "name": "plunderDaily",
+          "type": "object",
+          "desc": "（v118，AISLG-270）今日野地掠夺次数与下一次的收益倍数：{ count 今日已成功的野地掠夺次数, lootPercent 下一次野地掠夺的收益倍数（100 / 50 / 20）, resetAt 次数清零时刻（ISO 8601，东八区自然日；时间缩放时按缩放后的日长切分，与竞技场 / 武将每日次数同口径） }。规则：同一账号当天第 1~200 次野地掠夺全额、第 201~400 次减半、第 401 次起只剩两成（只打折资源，战斗 / 伤亡 / 声望 / 连胜照旧）；只有**成功的野地掠夺**（打赢且目标不在 24 小时掠夺冷却内）计数——NPC 城掠夺、截击、玩家城掠夺、黄巾营地 / 老巢、势力老巢都不计数、不打折。跨游戏日自动回到 100%。"
         },
         {
           "name": "gift",
@@ -2732,7 +2737,7 @@
           ]
         }
       ],
-      "agentNote": "断线重连后先用它对齐本地状态；它不含历史事件（事件用 GET_EVENTS 查询）。资源与人口按时间累积，两次查询之间数值自然增长属正常；达到仓储上限后对应资源不再增长也属正常。解析城池建筑状态请只读 city.levels（city.buildings / city.farms 为 v3 遗留的 0/1 已建标记，已废弃）。"
+      "agentNote": "断线重连后先用它对齐本地状态；它不含历史事件（事件用 GET_EVENTS 查询）。资源与人口按时间累积，两次查询之间数值自然增长属正常；达到仓储上限后对应资源不再增长也属正常。解析城池建筑状态请只读 city.levels（city.buildings / city.farms 为 v3 遗留的 0/1 已建标记，已废弃）。两条要提前算进计划的规则（v118，AISLG-270）：①野地掠夺按账号每日递减——读 plunderDaily 的 count / lootPercent，到 200 次后每次收益减半、到 400 次后只剩两成（跨游戏日 resetAt 归零），靠刷野地印钞不可持续；②打仗抢回来的资源装不下就作废——入账城每种资源最多补到 storage 上限（金币 100 万 × 缩放），满了再抢 wasted 等于白打，出兵前先看城里余量，该升级储存科技 / 花掉 / 运输分流就别硬抢。"
     },
     {
       "op": 11,
@@ -2792,7 +2797,7 @@
         {
           "name": "events[].detail",
           "type": "object",
-          "desc": "事件详情：建造开始/入队含 { kind, cost, level }（队列激活时另含 fromQueue: true；连续升级 UPGRADE toLevel 的整链另含 toLevel——此时 cost 是整链总额、level 是首个推进的等级，v37）、完成含 { kind, level }、建造取消含 { kind, level, refund }（v7）、征兵开始/入队含 { troop, count, cost, population }（队列激活时另含 fromQueue: true）、征兵完成含 { troop, count }、征兵取消含 { troop, count, refund, population }（v11）、行军出发含 { x, y, troops, purpose, arriveAt }（v16：plunder / occupy 出征另含 task）、行军结算含 { x, y, purpose, outcome（plunder_won / battle_won / battle_lost / reinforced / returned / aborted / scouted / transferred）, …胜负与战利品明细；battle_lost 详情含 survivors 与 returning（幸存部队撤回的返程行军 id，全灭为 null，v15）；plunder_won（v16）含 loot（按负重装填的战利品，v21 起含金币）、carry（幸存部队负重）与 returning（幸存部队返程行军 id）；battle_won 在 purpose=occupy 时含 occupied（false 时附 denial=TERRITORY_LIMIT） }、野地占领含 { x, y, terrain, level, resource, bonusRate, gatherRate }、占领失效含 { x, y, cause（npc_attack / recall）, … }、NPC 城池占领含 { x, y, cityId, name, buildings, loot }、NPC 袭击含 { x, y, target（wilderness=袭击野地 / city=袭击主城，v21）, level（编成推导等级，v21）, outcome（garrison_lost / repelled）, npcPower, …（target=city 且 outcome=garrison_lost 时另含 loot，v21） }（v12）、改名含 { from, to }（v7）、账号重置无附加详情（v9）。"
+          "desc": "事件详情：建造开始/入队含 { kind, cost, level }（队列激活时另含 fromQueue: true；连续升级 UPGRADE toLevel 的整链另含 toLevel——此时 cost 是整链总额、level 是首个推进的等级，v37）、完成含 { kind, level }、建造取消含 { kind, level, refund }（v7）、征兵开始/入队含 { troop, count, cost, population }（队列激活时另含 fromQueue: true）、征兵完成含 { troop, count }、征兵取消含 { troop, count, refund, population }（v11）、行军出发含 { x, y, troops, purpose, arriveAt }（v16：plunder / occupy 出征另含 task）、行军结算含 { x, y, purpose, outcome（plunder_won / battle_won / battle_lost / reinforced / returned / aborted / scouted / transferred）, …胜负与战利品明细；battle_lost 详情含 survivors 与 returning（幸存部队撤回的返程行军 id，全灭为 null，v15）；plunder_won（v16）含 loot（按负重装填的战利品，v21 起含金币；v118 起为**实际入账量**）、lootPercent（v118：本次收益倍数 100 / 50 / 20，只有野地掠夺会低于 100）、wasted（v118：因城池储量上限作废的资源，五种资源，全 0 = 没作废）、carry（幸存部队负重）与 returning（幸存部队返程行军 id）；battle_won 在 purpose=occupy 时含 occupied（false 时附 denial=TERRITORY_LIMIT） }、野地占领含 { x, y, terrain, level, resource, bonusRate, gatherRate }、占领失效含 { x, y, cause（npc_attack / recall）, … }、NPC 城池占领含 { x, y, cityId, name, buildings, loot }、NPC 袭击含 { x, y, target（wilderness=袭击野地 / city=袭击主城，v21）, level（编成推导等级，v21）, outcome（garrison_lost / repelled）, npcPower, …（target=city 且 outcome=garrison_lost 时另含 loot，v21） }（v12）、改名含 { from, to }（v7）、账号重置无附加详情（v9）。"
         },
         {
           "name": "events[].createdAt",
@@ -6137,6 +6142,16 @@
           "name": "reports[].wallDefensePercent",
           "type": "number",
           "desc": "守方城墙守城减伤（百分数；非守城战斗为 0）。"
+        },
+        {
+          "name": "reports[].lootPercent",
+          "type": "number | undefined",
+          "desc": "本次掠夺的收益倍数（v118，AISLG-270）：100 / 50 / 20，只有野地掠夺会低于 100（同一账号当天第 201~400 次减半、第 401 次起只剩两成），其余战斗与历史战报为缺省（视同 100）。只打折资源，战斗、伤亡、声望、连胜照旧。"
+        },
+        {
+          "name": "reports[].wasted",
+          "type": "object | undefined",
+          "desc": "因城池储量上限作废的资源（v118，AISLG-270）：{ gold, food, wood, stone, iron }，只有本次有资源装不下时才给出（缺省 = 没有作废）。入账城每种资源最多补到 storage 上限（金币 100 万 × 缩放），超出部分不进城但仍从目标扣走。城里快满时先花掉 / 运输分流再抢。"
         },
         {
           "name": "reports[].roundLog",

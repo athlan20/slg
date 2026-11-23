@@ -32,12 +32,9 @@ import type { NpcCitySnapshot } from '../../common/src/world';
 import { loadBuildingLevels } from '../../common/src/production';
 import {
   inPlunderCooldown,
-  loadByCarry,
-  lootTotal,
   PLUNDERABLE_KEYS,
   territoryLimit,
   type PlunderableKey,
-  type PlunderLoot,
 } from '../../common/src/plunder';
 import { insertServerBroadcast, recordWinStreak } from '../../common/src/server-broadcast';
 import { addTileArmy, type TileRow } from '../../common/src/world-db';
@@ -46,7 +43,6 @@ import {
   abortMarchToReturn,
   completeMarchEvent,
   createReturnMarch,
-  creditLoot,
   loadCityNaming,
   loadMarchHeroBonus,
   markMarchArrived,
@@ -55,6 +51,7 @@ import {
   type MarchRow,
   type TileNotify,
 } from './tick-shared';
+import { settlePlunderLoot } from './plunder-loot';
 import { saveBattleReport } from './battle-tick';
 import { armyTotal } from '../../common/src/hero';
 import { resolveNpcOccupyArrival } from './npc-occupy';
@@ -80,11 +77,6 @@ async function dbNow(client: pg.PoolClient): Promise<Date> {
 async function governmentLevel(client: pg.PoolClient, cityId: string): Promise<number> {
   const levels = await loadBuildingLevels(client, cityId);
   return Math.max(1, levels.government);
-}
-
-/** 战利品转完整资源形态（v21 起金币参与掠夺，原样透传） */
-function toResources(loot: PlunderLoot): Resources {
-  return { gold: loot.gold, food: loot.food, wood: loot.wood, stone: loot.stone, iron: loot.iron };
 }
 
 /** NPC 城池的可掠池：持久化库存（v21 起含金币，AISLG-31） */
@@ -212,23 +204,29 @@ export async function resolvePlunderArrival(
     const terrainKey = TERRAIN_INFO[target.terrain].resource;
     pool[terrainKey] = Math.min(pool[terrainKey] ?? 0, reserve);
   }
-  const loot = inPlunderCooldown(target.plundered_at, now)
-    ? { gold: 0, food: 0, wood: 0, stone: 0, iron: 0 }
-    : loadByCarry(carry, pool);
-  const lootView = toResources(loot);
-  if (settled.row && lootTotal(loot) > 0) {
-    await creditLoot(client, march.from_city_id, lootView);
-    // 累计掠夺台账（v23 AISLG-61）：四资源合计（金不计），记在账号上
-    await client.query(`UPDATE accounts SET plunder_total = plunder_total + $2 WHERE id = $1`, [
-      march.account_id,
-      loot.food + loot.wood + loot.stone + loot.iron,
-    ]);
-  }
+  // v118（AISLG-270）：装车 → 野地掠夺每日递减 → 战斗所得钳储量上限（装不下的作废）
+  const outcome = await settlePlunderLoot(
+    client,
+    {
+      accountId: march.account_id,
+      cityId: march.from_city_id,
+      carry,
+      pool,
+      inCooldown: inPlunderCooldown(target.plundered_at, now),
+      npc: npc !== null,
+      hasCity: settled.row !== null,
+      reportId,
+    },
+    now,
+  );
+  const { credited, wasted, lootPercent } = outcome;
+  const carried = outcome.carried;
   if (npc) {
     // 持久化扣减库存（防负值：装填量 ≤ 库存；v21 起金币随库存一并可掠）
+    // v118：NPC 城库存按实际装上车的量扣减（作废的部分也算被抢走，即用未钳上限的 carried）
     const stock: Resources = { ...npc.stock };
     for (const key of PLUNDERABLE_KEYS) {
-      stock[key] = Math.max(0, Math.floor((npc.stock[key] ?? 0) - loot[key]));
+      stock[key] = Math.max(0, Math.floor((npc.stock[key] ?? 0) - carried[key]));
     }
     await client.query(
       `UPDATE world_tiles SET npc = $3::jsonb, plundered_at = $4 WHERE x = $1 AND y = $2`,
@@ -254,7 +252,7 @@ export async function resolvePlunderArrival(
       `UPDATE world_tiles SET plundered_at = $3 WHERE x = $1 AND y = $2`,
       [target.x, target.y, now],
     );
-    await writeTileReserve(client, target.x, target.y, reserve - loot[TERRAIN_INFO[target.terrain].resource], now);
+    await writeTileReserve(client, target.x, target.y, reserve - carried[TERRAIN_INFO[target.terrain].resource], now);
   }
   await markMarchArrived(client, march.id);
   // 幸存部队返程（掠夺不改归属、不留驻军）；全灭胜（幸存 0）无返程
@@ -263,7 +261,9 @@ export async function resolvePlunderArrival(
     troops,
     survivors: result.attacker.survivors,
     losses: result.attacker.losses,
-    loot: lootView,
+    loot: credited,
+    lootPercent,
+    wasted,
     carry,
     rounds: result.rounds,
     endReason: result.endReason,

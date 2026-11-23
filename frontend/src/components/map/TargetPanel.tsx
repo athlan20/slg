@@ -80,6 +80,7 @@ export function TargetPanel() {
   const { session, marchOrigin } = useGame();
   const { world, city } = session;
   const branch = session.cityList.branch;
+  const plunderDaily = session.cityList.plunderDaily;
   const hero = useHeroPick();
   const selected = world.selected;
   const detailRaw = world.detail;
@@ -190,6 +191,7 @@ export function TargetPanel() {
     detail,
     origin: marchOrigin,
     branch,
+    plunderDaily,
     hero,
     now,
     troops,
