@@ -313,6 +313,10 @@ export interface BattleReportView {
   defenses?: DefenseUseView[];
   /** 协防方视角的自身伤亡（v74）：只有协防方的战报带本字段 */
   assistLosses?: ArmyCounts;
+  /** 本次掠夺的收益倍数（v118，AISLG-270）：100 / 50 / 20，只有野地掠夺会低于 100；缺省视同 100 */
+  lootPercent?: number;
+  /** 因城池储量上限作废的资源（v118）：缺省 = 没有作废 */
+  wasted?: Resources;
   roundLog: BattleRoundLogEntryView[];
   /** Agent 点评（v23 AISLG-53）；尚无点评时为 null */
   comment: BattleReportCommentView | null;

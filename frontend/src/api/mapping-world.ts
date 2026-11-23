@@ -17,6 +17,7 @@ import { itemEventText } from './itemText';
 import { moveCityEventText } from './moveCityText';
 import { fogBroadcastText, fogEventText } from './fogText';
 import { activityBroadcastText } from './activityBroadcastText';
+import { lootPercentTail, lootWastedTail } from './lootText';
 
 function buildingName(kind: unknown): string {
   const { BUILDING_LABEL, EXTRA_STATE } = getCopy();
@@ -300,14 +301,18 @@ function baseEventText(view: EventView): string {
             const reason = typeof view.detail.denial === 'string' ? EXTRA_STATE.denial[view.detail.denial] : undefined;
             return EXTRA_STATE.event.wonNotOccupied(pos, reason ?? EXTRA_STATE.denial.TERRITORY_LIMIT, survivors);
           }
-          return EXTRA_STATE.event.wonLoot(pos, loot || EXTRA_STATE.mapping.noLoot, survivors);
+          return EXTRA_STATE.event.wonLoot(pos, loot || EXTRA_STATE.mapping.noLoot, survivors) + lootWastedTail(view.detail);
         }
         case 'plunder_won': {
           const loot = resourcesSuffix(view.detail.loot as Partial<Resources> | undefined);
           // v38（AISLG-122）：掠夺玩家城的目标名（detail.target.username）
           const pvpTarget = (view.detail.target as { username?: string } | undefined)?.username;
           const where = pvpTarget ? EXTRA_STATE.event.pvpCityWhere(pos, pvpTarget) : pos;
-          return EXTRA_STATE.event.plunderWon(where, loot || EXTRA_STATE.mapping.noPlunder, survivors);
+          return (
+            EXTRA_STATE.event.plunderWon(where, loot || EXTRA_STATE.mapping.noPlunder, survivors) +
+            lootPercentTail(view.detail) +
+            lootWastedTail(view.detail)
+          );
         }
         case 'battle_lost':
           return EXTRA_STATE.event.battleLost(pos, survivors);
@@ -322,18 +327,26 @@ function baseEventText(view: EventView): string {
           return EXTRA_STATE.event.aborted(pos, cause, carried ? CITY_COPY.transport.eventAbortedCargo(carried) : '');
         }
         case 'camp_won':
-          return YT_COPY.event.campWon(
-            YT_COPY.tierLabel[String(view.detail.campTier)] ?? EXTRA_STATE.mapping.ytCampFallback, pos,
-            Number(view.detail.killed ?? 0), cargoText(view.detail.loot as Partial<Resources> | undefined),
+          return (
+            YT_COPY.event.campWon(
+              YT_COPY.tierLabel[String(view.detail.campTier)] ?? EXTRA_STATE.mapping.ytCampFallback, pos,
+              Number(view.detail.killed ?? 0), cargoText(view.detail.loot as Partial<Resources> | undefined),
+            ) + lootWastedTail(view.detail)
           );
         case 'camp_lost':
           return YT_COPY.event.campLost(YT_COPY.tierLabel[String(view.detail.campTier)] ?? EXTRA_STATE.mapping.ytCampFallback, pos, Number(view.detail.killed ?? 0));
         case 'boss_outer_cleared':
           return YT_COPY.event.bossOuter(pos, Number(view.detail.killed ?? 0));
         case 'boss_won':
-          return YT_COPY.event.bossWon(pos, Number(view.detail.killed ?? 0), cargoText(view.detail.loot as Partial<Resources> | undefined));
+          return (
+            YT_COPY.event.bossWon(pos, Number(view.detail.killed ?? 0), cargoText(view.detail.loot as Partial<Resources> | undefined)) +
+            lootWastedTail(view.detail)
+          );
         case 'intercepted':
-          return MOVING_COPY.event.intercepted(EXTRA_STATE.mapping.movingTargetLabel, pos, cargoText(view.detail.loot as Partial<Resources> | undefined), survivors);
+          return (
+            MOVING_COPY.event.intercepted(EXTRA_STATE.mapping.movingTargetLabel, pos, cargoText(view.detail.loot as Partial<Resources> | undefined), survivors) +
+            lootWastedTail(view.detail)
+          );
         case 'intercept_lost':
           return MOVING_COPY.event.lost(EXTRA_STATE.mapping.movingTargetLabel, pos, survivors);
         case 'intercept_missed':

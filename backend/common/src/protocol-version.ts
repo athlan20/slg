@@ -1029,5 +1029,28 @@
  *   k 与倍率同一天数档：第 8~14 天 100 / 10%、15~21 天 150 / 14%、22 天起 200 / 18%。
  *   四、协议：GET_FACTIONS 的 factions[] 新增 hatredTier（none / noticed / target，只对请求者本人，不给数值）；
  *   PUSH_FACTION_SIEGE 的 reason=warning 新增可选 byHatred。新表 faction_hatred（换季清空）。
+ * v117（校场等级不能超过官府等级，AISLG-269；只加不改，与本条并行开发、合入后即为 v117）：
+ *   每城同时在外部队上限改为 max(1, min(校场等级, 官府等级))；BUILD / UPGRADE 校场超过官府返回
+ *   PARADE_ABOVE_GOVERNMENT；CityView.deploy 改为 { count, limit, paradeLevel, governmentCapped }。
+ * v118（野地掠夺按账号每日递减 + 战斗所得超出储量上限作废，AISLG-270；只加不改）：
+ *   一、野地掠夺递减：本账号每次**成功的野地掠夺**（打赢、目标不在掠夺冷却内）计 1 次，
+ *   按游戏日清零（arenaDayIndex 口径：东八区自然日，时间缩放时按缩放后的日长切分）。
+ *   当天第 1~200 次收益 100%、第 201~400 次 50%、第 401 次起 20%：在按负重装填（loadByCarry）
+ *   之后对实际带走量的每种资源乘倍数、向下取整；野地储量按乘倍数后的量扣减。
+ *   战斗、伤亡、伤兵 / 俘虏、声望、连胜、名将结交照旧，只打折资源。NPC 城掠夺、截击、
+ *   玩家城掠夺、黄巾营地 / 老巢、势力老巢不计数、不打折。
+ *   二、战斗所得作废：所有**战斗得来**的资源入账（野地 / NPC 城 / 玩家城掠夺、截击、黄巾营地 /
+ *   老巢掉落、旧版 attack 结算）最多补到入账城的储量上限（storageCaps，含储存科技与时间缩放；
+ *   金币上限 100 万 × 缩放），超出部分作废、不入账；已超上限的存量不扣减。非战斗来源（运输与
+ *   撤回带回、交易所交割、活动排名奖励、势力老巢击破奖励、遗迹、兑换码、充值、礼金）保持原样。
+ *   NPC 城库存按实际装上车的量扣减（作废的部分也算被抢走）。注意：战斗中缴获的伤兵 / 俘虏
+ *   进部队池，不受储量上限影响。
+ *   三、协议：GET_STATE 新增账号级 plunderDaily = { count, lootPercent, resetAt }（今日已成功
+ *   野地掠夺次数 / 下一次的收益倍数 100|50|20 / 下次清零时刻）；事件 march_completed 的
+ *   plunder_won / battle_won / intercepted / camp_won / boss_won 的 detail 新增 lootPercent 与
+ *   wasted（五种资源的作废量），loot 改为**实际入账量**；战报 BattleReportView 新增可选
+ *   lootPercent / wasted（同上口径，缺省 = 100 / 无作废）。新列 accounts.plunder_day /
+ *   accounts.plunder_day_count（只加列、有默认值，存量账号视为今天还没掠夺，不写数据迁移）。
+ *   递增收益的提示见 GET_STATE 的 agentNote 与 protocol-doc-ops 的两条规则说明。
  */
-export const PROTOCOL_VERSION = 116;
+export const PROTOCOL_VERSION = 118;

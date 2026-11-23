@@ -16,15 +16,16 @@ import { splitBattleCasualties } from '../../common/src/battle-casualties';
 import { recordPoolTroops } from '../../common/src/troop-pools-db';
 import { armyCarryCapacity } from '../../common/src/troops';
 import { loadByCarry, lootTotal, PLUNDERABLE_KEYS, type PlunderLoot } from '../../common/src/plunder';
+import { emptyResources } from '../../common/src/loot-cap';
 import { carryingPercent, combatTechBonus } from '../../common/src/tech';
 import { loadTechLevels } from '../../common/src/tech-db';
 import { INTERCEPT_REACH, MOVING_KIND_INFO, cellDistance, isMovingKind } from '../../common/src/moving-target';
 import { loadMovingTarget, movingTargetView, rowIndexAt, type MovingTargetRow } from '../../common/src/moving-target-db';
 import { insertBattleReport, type BattleReportDetail } from '../../common/src/battle-db';
+import { creditBattleLoot, patchBattleReportLoot } from './battle-loot';
 import {
   completeMarchEvent,
   createReturnMarch,
-  creditLoot,
   loadCityNaming,
   loadMarchHeroBonus,
   markMarchArrived,
@@ -166,14 +167,20 @@ export async function resolveInterceptArrival(
   }
   const loot: PlunderLoot = loadByCarry(carry, pool);
   const lootView: Resources = { gold: loot.gold, food: loot.food, wood: loot.wood, stone: loot.stone, iron: loot.iron };
+  // v118（AISLG-270）：战斗所得按城池储量上限入账（装不下的作废）；截击不计数、不打折
+  let credited: Resources = lootView;
+  let wasted: Resources = emptyResources();
   if (settled.row && lootTotal(loot) > 0) {
-    await creditLoot(client, march.from_city_id, lootView);
+    const split = await creditBattleLoot(client, march.from_city_id, lootView);
+    credited = split.credited;
+    wasted = split.wasted;
     // 累计掠夺台账（v23 AISLG-61）：四资源合计（金不计），与掠夺同口径
     await client.query(`UPDATE accounts SET plunder_total = plunder_total + $2 WHERE id = $1`, [
       march.account_id,
       loot.food + loot.wood + loot.stone + loot.iron,
     ]);
   }
+  await patchBattleReportLoot(client, reportId, { lootPercent: 100, wasted });
   const upd = await client.query(
     `UPDATE moving_targets SET status = 'defeated', defeated_by = $2, resolved_at = clock_timestamp()
      WHERE id = $1 AND status = 'active' RETURNING *`,
@@ -184,7 +191,14 @@ export async function resolveInterceptArrival(
   }
   await markMarchArrived(client, march.id);
   const returning = await createReturnMarch(client, march, result.attacker.survivors, settled, march.initiator);
-  await completeMarchEvent(client, march, 'intercepted', { ...common, loot: lootView, carry, returning });
+  await completeMarchEvent(client, march, 'intercepted', {
+    ...common,
+    loot: credited,
+    lootPercent: 100,
+    wasted,
+    carry,
+    returning,
+  });
   notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
 }
 

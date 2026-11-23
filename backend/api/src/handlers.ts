@@ -103,6 +103,7 @@ import { loadCapitalSwapView } from '../../common/src/capital-swap-db';
 import { loadGift } from '../../common/src/gift-db';
 import { loadItems, loadPaidCounts } from '../../common/src/items-db';
 import { loadIngot } from '../../common/src/ingot-db';
+import { loadPlunderDaily } from '../../common/src/plunder-daily-db';
 import type { PaymentService } from '../../common/src/payments';
 import { handleBuyItem, handleGetItems } from './handlers-items';
 import { handleRedeemCode } from './handlers-redeem';
@@ -752,11 +753,14 @@ async function handleGetState(
   const ingot = await loadIngot(ctx.pool, accountId);
   // v91（AISLG-220）：逐城迁城不可迁原因、出限截止时刻与两种令的持有数
   const moveCity = await loadMoveCityView(ctx.pool, accountId, items);
+  // v118（AISLG-270）：今日野地掠夺次数与下一次的收益倍数（超门槛递减）
+  const plunderDaily = await loadPlunderDaily(ctx.pool, accountId, new Date());
   respondOk(ctx.registry, conn, op, seq, {
     city,
     cities,
     branch,
     capitalSwap,
+    plunderDaily,
     gift,
     giftSeasonGrant: SEASON_GIFT,
     items,

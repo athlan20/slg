@@ -1,11 +1,11 @@
 # SLG Agent API 参考
 
-> 协议版本：**116** · 兼容策略：只加不改（见「版本与兼容」）
+> 协议版本：**118** · 兼容策略：只加不改（见「版本与兼容」）
 > 本文档由后端协议定义生成（`npm run gen:api-doc`），请勿手工编辑。
 > 运行中的服务提供同版本文档：`GET /agent-api.md`（本文件）与 `GET /agent-api.json`（机器可读清单）。
 > 给 Agent 的用法：把本文件（或 JSON 清单）连同服务器地址与你本账号的 Agent 令牌一起交给 Agent（你只给它令牌，不要给账号密码——Agent 不能密码登录）；它按第 1、2 节连接，用 LOGIN {token, asAgent: true} 登录（接入步骤见 op 1 的 Agent 提示），不要让它自行注册新账号。
 
-> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 116）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
+> **Agent 必读：保持文档最新（v32）**——服务端会持续更新。① 记住本文开头的协议版本号（当前 118）；② 每次 LOGIN 都在 data 里带上 `docVersion`（即该版本号），响应会返回服务端当前的 `protocolVersion`，文档落后时还会附 `docNotice`；③ 一旦落后，`GET /agent-api/changes/{你的版本号}` 获取此后每个版本的一句话变更（JSON），按需重新下载 `/agent-api.md` 全文，并更新你保存的版本号。每次服务端部署都会断开连接，重连登录时就能发现更新。协议只加不改，旧文档不会导致已有操作出错，只是用不上新功能。
 
 > **全局时间缩放（v20）**：当前部署开启了全局时间缩放（time_scale，settings 表运行时配置）：文档中的时长数值为未加速基准，实际耗时 = 基准 ÷ time_scale（**下限 1 秒作用于任务总时长**——征兵按「单兵基准 × 数量」、升级按「建造基准 × 等级」、行军按「距离 × 每格基准 ÷ 速度系数」合并成总时长后再缩放，v22 修复 AISLG-39 / AISLG-38；**取整到整秒：建造/升级、征兵、掠夺冷却、NPC 袭击间隔向下取整，行军向上取整**）——建造/升级、征兵、行军、掠夺冷却、NPC 袭击间隔同规则；实际速率 = 基准 × time_scale——资源产出、人口增长（growthPerHour）、军队耗粮（armyFoodUsePerHour）同幅放大，经济关系不变。只作用于新发起的任务与下一次结算（存量任务到期时间不变）。以响应内的 dueAt / production / growthPerHour 等实际下发值为准，不要按文档数值本地折算时长。
 
@@ -577,7 +577,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 116,
+    "protocolVersion": 118,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -643,7 +643,7 @@
     "role": "player",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": "2026-10-25T08:00:00.000Z",
-    "protocolVersion": 116,
+    "protocolVersion": 118,
     "docNotice": null,
     "season": {
       "id": 2,
@@ -667,7 +667,7 @@
 }
 ```
 
-**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/113 补读增量）**
+**Agent 令牌登录并带上手上文档的版本（令牌永不过期、expiresAt 为 null；可顺带 agentModel 自报驱动模型，供模型榜分组；文档落后时响应附 docNotice，按提示 GET /agent-api/changes/115 补读增量）**
 
 请求：
 
@@ -678,7 +678,7 @@
   "data": {
     "token": "session-example-token-for-doc-0000000000000",
     "asAgent": true,
-    "docVersion": 113,
+    "docVersion": 115,
     "agentModel": "claude-opus-5-5"
   }
 }
@@ -697,8 +697,8 @@
     "role": "agent",
     "sessionToken": "session-example-token-for-doc-0000000000000",
     "expiresAt": null,
-    "protocolVersion": 116,
-    "docNotice": "接口文档已从 v113 更新到 v116：请 GET /agent-api/changes/113 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
+    "protocolVersion": 118,
+    "docNotice": "接口文档已从 v115 更新到 v118：请 GET /agent-api/changes/115 查看增量变更，或重新下载 /agent-api.md（与本游戏服务同域名的 HTTPS 地址）。",
     "season": {
       "id": 2,
       "endsAt": "2026-11-22T00:00:00.000Z"
@@ -864,6 +864,7 @@
 | city.defenseBonus | number | 城墙守城防御加成（v11 新增；百分数数值，随城墙等级提升；v27 起含城防科技的额外百分点）：攻城战中守方位于城墙位的受击减免即按此值（机制见术语表「战斗」；具体结算算法不对外公开）。 |
 | city.marches | array | 本城进行中的行军（v12 新增）：status=marching 的出征与返程条目，按到达时间排序；到达结算后不在其中（结果见 march_completed 事件与推送）。 |
 | city.territory | array | 本城占领的野地（v12 新增）：{ x, y, terrain, level, resource, bonusRate 占领加成/小时, gatherRate 驻军采集/小时, garrison 驻军总数, clusterSize 连片块数（v23 新增，AISLG-59）, clusterBonusPercent 连片产量加成百分数（v23 新增：3–4 块 10 / ≥5 块 20，不足 3 块为 0）, reserve 野地储量（v61 新增，AISLG-165；档位与当前储量 / 上限 / 预计采空或回满时刻，本城占领的地块恒给出数值）, facility 这块地上的望楼（v97 新增，AISLG-232；{ kind（恒为 watchtower）, level 已建成等级 0..3, visionRadius 视野半径 1 级 6 / 2 级 8 / 3 级 10 格（丘陵上的野地各 +2：8 / 10 / 12，上限 12；level 为 0 时 0，AISLG-233）, building: { toLevel, finishAt } \| null 进行中的建造 / 升级 }，没盖为 null）}；production 已计入 bonusRate、gatherRate 与连片加成——连片按同地形 + 上下左右相邻计算，占领 / 失守后按最新领地自动重算。v61 起 gatherRate 受储量约束：储量空时驻军只按恢复速度（2%/h）采集，采空不需要撤兵，留兵即按恢复速度小量采集。 |
+| plunderDaily | object | （v118，AISLG-270）今日野地掠夺次数与下一次的收益倍数：{ count 今日已成功的野地掠夺次数, lootPercent 下一次野地掠夺的收益倍数（100 / 50 / 20）, resetAt 次数清零时刻（ISO 8601，东八区自然日；时间缩放时按缩放后的日长切分，与竞技场 / 武将每日次数同口径） }。规则：同一账号当天第 1~200 次野地掠夺全额、第 201~400 次减半、第 401 次起只剩两成（只打折资源，战斗 / 伤亡 / 声望 / 连胜照旧）；只有**成功的野地掠夺**（打赢且目标不在 24 小时掠夺冷却内）计数——NPC 城掠夺、截击、玩家城掠夺、黄巾营地 / 老巢、势力老巢都不计数、不打折。跨游戏日自动回到 100%。 |
 | gift | number | （v89，AISLG-221）账号礼金当前余额（账号级，不分城）。每个赛季开始固定发 1000（登录时惰性发放，同赛季不重复发），换季清零；不能转让、赠送、兑换成金币或任何资源。只用于服务端标明的便利功能，扣除时事件流写 gift_spent（detail = { reason, amount, balance }）。 |
 | giftSeasonGrant | number | （v89）每个赛季每个账号发放的礼金额度（当前为 1000）。界面与 Agent 用它显示“礼金 gift / giftSeasonGrant”，不要写死数值。 |
 | items | object | （v90，AISLG-222）账号道具背包：{ [itemId]: count }，每种已定义道具都有键（缺省 0）。与 GET_ITEMS 的 items 同口径，count 是**总数**。v108（AISLG-251）：元宝买的道具换季保留，保留多少见 paidCounts（每种道具里元宝买的张数）。 |
@@ -877,7 +878,7 @@
 | city.queue | array | 建造队列（v4 新增）：第 1 项为在建（status=building，dueAt 非空），其余为排队（status=queued，dueAt 为 null），按入队顺序；已取消的条目不在其中（CANCEL_BUILD 取消）。 |
 | city.building | object \| null | 兼容字段：当前在建建筑（= queue 中 status=building 的首项），无在建时为 null。 |
 
-**Agent 提示**：断线重连后先用它对齐本地状态；它不含历史事件（事件用 GET_EVENTS 查询）。资源与人口按时间累积，两次查询之间数值自然增长属正常；达到仓储上限后对应资源不再增长也属正常。解析城池建筑状态请只读 city.levels（city.buildings / city.farms 为 v3 遗留的 0/1 已建标记，已废弃）。
+**Agent 提示**：断线重连后先用它对齐本地状态；它不含历史事件（事件用 GET_EVENTS 查询）。资源与人口按时间累积，两次查询之间数值自然增长属正常；达到仓储上限后对应资源不再增长也属正常。解析城池建筑状态请只读 city.levels（city.buildings / city.farms 为 v3 遗留的 0/1 已建标记，已废弃）。两条要提前算进计划的规则（v118，AISLG-270）：①野地掠夺按账号每日递减——读 plunderDaily 的 count / lootPercent，到 200 次后每次收益减半、到 400 次后只剩两成（跨游戏日 resetAt 归零），靠刷野地印钞不可持续；②打仗抢回来的资源装不下就作废——入账城每种资源最多补到 storage 上限（金币 100 万 × 缩放），满了再抢 wasted 等于白打，出兵前先看城里余量，该升级储存科技 / 花掉 / 运输分流就别硬抢。
 
 **示例**
 
@@ -2304,7 +2305,7 @@
 | events[].initiator | 'player' \| 'agent' \| null | 发起事件的连接声明的登录类型。 |
 | events[].cityId | string \| null | 关联城池 id，无关联时为 null。 |
 | events[].buildId | string \| null | 关联建造 / 征兵 / 行军条目 id，无关联时为 null。 |
-| events[].detail | object | 事件详情：建造开始/入队含 { kind, cost, level }（队列激活时另含 fromQueue: true；连续升级 UPGRADE toLevel 的整链另含 toLevel——此时 cost 是整链总额、level 是首个推进的等级，v37）、完成含 { kind, level }、建造取消含 { kind, level, refund }（v7）、征兵开始/入队含 { troop, count, cost, population }（队列激活时另含 fromQueue: true）、征兵完成含 { troop, count }、征兵取消含 { troop, count, refund, population }（v11）、行军出发含 { x, y, troops, purpose, arriveAt }（v16：plunder / occupy 出征另含 task）、行军结算含 { x, y, purpose, outcome（plunder_won / battle_won / battle_lost / reinforced / returned / aborted / scouted / transferred）, …胜负与战利品明细；battle_lost 详情含 survivors 与 returning（幸存部队撤回的返程行军 id，全灭为 null，v15）；plunder_won（v16）含 loot（按负重装填的战利品，v21 起含金币）、carry（幸存部队负重）与 returning（幸存部队返程行军 id）；battle_won 在 purpose=occupy 时含 occupied（false 时附 denial=TERRITORY_LIMIT） }、野地占领含 { x, y, terrain, level, resource, bonusRate, gatherRate }、占领失效含 { x, y, cause（npc_attack / recall）, … }、NPC 城池占领含 { x, y, cityId, name, buildings, loot }、NPC 袭击含 { x, y, target（wilderness=袭击野地 / city=袭击主城，v21）, level（编成推导等级，v21）, outcome（garrison_lost / repelled）, npcPower, …（target=city 且 outcome=garrison_lost 时另含 loot，v21） }（v12）、改名含 { from, to }（v7）、账号重置无附加详情（v9）。 |
+| events[].detail | object | 事件详情：建造开始/入队含 { kind, cost, level }（队列激活时另含 fromQueue: true；连续升级 UPGRADE toLevel 的整链另含 toLevel——此时 cost 是整链总额、level 是首个推进的等级，v37）、完成含 { kind, level }、建造取消含 { kind, level, refund }（v7）、征兵开始/入队含 { troop, count, cost, population }（队列激活时另含 fromQueue: true）、征兵完成含 { troop, count }、征兵取消含 { troop, count, refund, population }（v11）、行军出发含 { x, y, troops, purpose, arriveAt }（v16：plunder / occupy 出征另含 task）、行军结算含 { x, y, purpose, outcome（plunder_won / battle_won / battle_lost / reinforced / returned / aborted / scouted / transferred）, …胜负与战利品明细；battle_lost 详情含 survivors 与 returning（幸存部队撤回的返程行军 id，全灭为 null，v15）；plunder_won（v16）含 loot（按负重装填的战利品，v21 起含金币；v118 起为**实际入账量**）、lootPercent（v118：本次收益倍数 100 / 50 / 20，只有野地掠夺会低于 100）、wasted（v118：因城池储量上限作废的资源，五种资源，全 0 = 没作废）、carry（幸存部队负重）与 returning（幸存部队返程行军 id）；battle_won 在 purpose=occupy 时含 occupied（false 时附 denial=TERRITORY_LIMIT） }、野地占领含 { x, y, terrain, level, resource, bonusRate, gatherRate }、占领失效含 { x, y, cause（npc_attack / recall）, … }、NPC 城池占领含 { x, y, cityId, name, buildings, loot }、NPC 袭击含 { x, y, target（wilderness=袭击野地 / city=袭击主城，v21）, level（编成推导等级，v21）, outcome（garrison_lost / repelled）, npcPower, …（target=city 且 outcome=garrison_lost 时另含 loot，v21） }（v12）、改名含 { from, to }（v7）、账号重置无附加详情（v9）。 |
 | events[].createdAt | string | 事件时间（ISO 8601）。 |
 
 **可能错误**：`INVALID_PARAMS`（处置建议见第 4 节）
@@ -5355,6 +5356,8 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 | reports[].endReason | 'defender_wiped' \| 'attacker_wiped' \| 'round_limit' \| 'no_contact' | 守方全灭 / 攻方全灭（含同回合同归于尽）/ 回合耗尽（攻方未能突破，v15 起幸存部队撤回出发城）/ 未接战（v28 截击扑空或目标消失，见 contact）。 |
 | reports[].attacker / reports[].defender | object | 双方汇总：{ name 展示名, troops 编成, losses 损失, survivors 幸存, damage 总输出, units 总单位数, totalHp 总血量, avgRange 平均射程（1 位小数，数量加权——会被大量近战稀释，不代表克制关系）, maxRange 编成单兵射程最大值, rangedUnits 远程单位数（射程 > 近战基准 10，当前即弓箭兵）, hero 武将（v36 新增，AISLG-114/115：{ name, lead, force, wit, atkPercent, defPercent }——攻方 = 随队武将、守方 = 城守（仅守城战 kind=city_raid），atkPercent/defPercent 为按部队规模折算后的实际生效加成；未配将 / 历史战报为 null）, wounded 伤兵 / captured 被俘（v85 新增，AISLG-212：玩家一方损失 × 20% 进伤兵营；被胜方抓走的部分只含基础七兵种；NPC 一方 wounded 为全 0；历史战报缺省视为 0）, captives 抓到的俘虏（v85 新增：胜方为玩家时才有，从败方损失抓 10% 进胜方城的俘虏营；平局 / NPC 胜为缺省 0）}。阵亡 = losses − wounded − captured；伤兵 / 俘虏的后续处置用 GET_STATE 的 city.wounded / captives + RESTORE_TROOPS。units/totalHp/avgRange 为 v21 新增、maxRange/rangedUnits 为 v23 新增（AISLG-49），hero 为 v36 新增，服务端按 troops 汇总下发，历史战报同样补齐；判断「对方有多少单位在远端输出、够多远」用 maxRange + rangedUnits，不要用 avgRange。 |
 | reports[].wallDefensePercent | number | 守方城墙守城减伤（百分数；非守城战斗为 0）。 |
+| reports[].lootPercent | number \| undefined | 本次掠夺的收益倍数（v118，AISLG-270）：100 / 50 / 20，只有野地掠夺会低于 100（同一账号当天第 201~400 次减半、第 401 次起只剩两成），其余战斗与历史战报为缺省（视同 100）。只打折资源，战斗、伤亡、声望、连胜照旧。 |
+| reports[].wasted | object \| undefined | 因城池储量上限作废的资源（v118，AISLG-270）：{ gold, food, wood, stone, iron }，只有本次有资源装不下时才给出（缺省 = 没有作废）。入账城每种资源最多补到 storage 上限（金币 100 万 × 缩放），超出部分不进城但仍从目标扣走。城里快满时先花掉 / 运输分流再抢。 |
 | reports[].roundLog | array | 逐回合统计：{ round, attackerDamage, defenderDamage, attackerKilled, defenderKilled, towerDamage? }（推进回合伤害为 0；towerDamage 为该回合箭塔伤害，已含在 defenderDamage 内，v30）。v105（AISLG-246）起战损按兵力占比对称折算，逐回合统计保留引擎原值、合计可能大于最终 losses——总损失以 attacker / defender 的 losses 为准。 |
 | reports[].comment | object \| null | Agent 写回的战报点评（v23 新增，AISLG-53）：{ text 点评正文, updatedAt 最近写入时间 }；尚未有点评为 null。一份战报只保留最新一条（Agent 重写覆盖）。 |
 | reports[].createdAt | string | 战斗结算时间（ISO 8601）。 |
@@ -23299,7 +23302,7 @@ LOGOUT 吊销本连接登录所用的令牌，服务端随即关闭连接（clos
 - 只加不改：已发布的协议号、字段与错误码只新增、不删除、不改变类型与语义。
 - 新增字段不视为破坏兼容：消费方应容忍请求与响应中出现文档未列出的字段。
 - 必须破坏语义时启用新的协议号承载新行为，旧协议号保留原语义直至正式公告下线。
-- 协议版本随对外协议内容的每次变化递增；当前为 116。
+- 协议版本随对外协议内容的每次变化递增；当前为 118。
 - Agent 可在启动时请求 `GET /agent-api.json`，比对 `version` 字段确认所用文档与所连服务一致；更省事的做法是每次 LOGIN 带 `docVersion`，看响应的 `protocolVersion` / `docNotice`（v32）。
 - 增量变更：`GET /agent-api/changes/{since}`（也接受 `?since=`）返回 `{ version, since, changes: [{ version, summary }] }`，列出 since 之后每个版本的一句话摘要；since 非法返回 HTTP 400。
 

@@ -2,7 +2,7 @@
 // 本文件只 import protocol / protocol-world / protocol-army 的类型（类型导入在运行时
 // 被擦除，不构成加载环）。
 
-import type { InitiatorRole } from './protocol';
+import type { InitiatorRole, Resources } from './protocol';
 import type { DefenseScoutView, DefenseUseView } from './protocol-defense';
 import type { ArmyCounts, TroopKind } from './protocol-army';
 import type { MarchView, TerrainKind, TileKind } from './protocol-world';
@@ -134,6 +134,12 @@ export interface BattleReportView {
   wallBreak?: { from: number; to: number };
   /** 城防器械用量（v73，AISLG-193；守城战实际用掉的器械，一种一项；无器械 / 未触发为缺省） */
   defenses?: DefenseUseView[];
+  /** 本次掠夺的收益倍数（v118，AISLG-270；百分数 100 / 50 / 20）——只有野地掠夺会低于 100，
+   *  其余战斗为 100 或缺省。当天该账号第 201 次起减半、第 401 次起只剩两成，跨游戏日恢复 */
+  lootPercent?: number;
+  /** 因城池储量上限作废的资源（v118；五种资源，只列出本次作废量 > 0 时的实际值，
+   *  全 0 / 缺省 = 没有作废）。事件 march_completed 的 wasted 同口径 */
+  wasted?: Resources;
   /** 协防方视角的自身伤亡（v74，AISLG-194）：只有协防方的战报带本字段；按同兵种开战数量比例分摊。
    *  战报的 defender 仍是合并后的守方编成，本字段单独给出"我的那部分"损失。 */
   assistLosses?: import('./protocol').ArmyCounts;

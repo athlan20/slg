@@ -835,6 +835,13 @@ CREATE TABLE IF NOT EXISTS famous_expiry_bans (
   until timestamptz NOT NULL,
   PRIMARY KEY (famous_name, account_id)
 );
+
+-- v118（AISLG-270 野地掠夺每日递减）：账号当日的成功野地掠夺计数。
+-- plunder_day = 该次数属于哪个游戏日（arenaDayIndex 的日序号，与竞技场 / 武将每日次数同口径）；
+-- plunder_day_count = 当天的成功野地掠夺次数。跨日结算时先重置为 1 再累加，日序号对不上即视为 0 次。
+-- 只加列、都带默认值（NULL / 0 = 今天还没掠夺），不动存量数据。
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS plunder_day integer;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS plunder_day_count integer NOT NULL DEFAULT 0;
 `;
 
 /**

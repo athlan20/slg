@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { carryBonusPercent, marchBonusPercent, marchTravelSeconds } from '../../../api/marchPlan';
 import { BRANCH_MIN_GOVERNMENT } from '../../../copy-cities';
+import { PLUNDER_DAILY_FULL_LIMIT, PLUNDER_DAILY_HALF_LIMIT } from '../../../api/protocol';
 import { useCopy } from '../../../i18n/bundle';
 import { useDeployBlockedText } from '../../../state/deployContext';
 import { ConfirmButton } from './ConfirmButton';
@@ -16,11 +17,20 @@ export type MarchAct = 'plunder' | 'occupy' | 'clear' | 'reinforce' | 'transfer'
 
 export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
   const copy = useCopy();
-  const { COPY, CITY_COPY, DEFENSE_COPY } = copy;
-  const { world, city, x, y, detail, origin, branch, hero, troops, setTroops, busy, run } = ctx;
+  const { COPY, CITY_COPY, DEFENSE_COPY, PLUNDER_DAILY_COPY } = copy;
+  const { world, city, x, y, detail, origin, branch, plunderDaily, hero, troops, setTroops, busy, run } = ctx;
   const deployBlocked = useDeployBlockedText(DEFENSE_COPY.deploy.full);
   const total = troopTotal(troops);
   const isNpc = detail?.kind === 'npc_city';
+  // v118（AISLG-270）：野地掠夺按账号每日递减——出征前告诉玩家今天打了多少次、下一次还剩多少收益
+  const plunderRow =
+    act === 'plunder' && !isNpc && plunderDaily
+      ? plunderDaily.lootPercent <= 20
+        ? { text: PLUNDER_DAILY_COPY.row(plunderDaily.count, plunderDaily.lootPercent), hint: PLUNDER_DAILY_COPY.tailHint(PLUNDER_DAILY_HALF_LIMIT) }
+        : plunderDaily.lootPercent <= 50
+          ? { text: PLUNDER_DAILY_COPY.row(plunderDaily.count, plunderDaily.lootPercent), hint: PLUNDER_DAILY_COPY.halfHint(PLUNDER_DAILY_FULL_LIMIT) }
+          : { text: PLUNDER_DAILY_COPY.row(plunderDaily.count, plunderDaily.lootPercent), hint: PLUNDER_DAILY_COPY.explain(PLUNDER_DAILY_FULL_LIMIT, PLUNDER_DAILY_HALF_LIMIT) }
+      : null;
   /** 他人玩家城（v38 AISLG-122）/ 他人分城（v40 AISLG-124）/ 他人占领的野地（v39 AISLG-123）；TargetPanel 只对他人目标给出这些页签 */
   const enemyCity = detail?.kind === 'city' && detail.owner !== null;
   const enemyBranch = enemyCity && detail?.durability != null;
@@ -94,6 +104,15 @@ export function MarchForm({ ctx, act }: { ctx: TargetCtx; act: MarchAct }) {
       <p className="line-clamp-2 text-[11.5px] text-faint" title={hint}>
         {hint}
       </p>
+      {plunderRow ? (
+        <p
+          role="世界地图详情区-出征表单-今日野地掠夺"
+          className={`shrink-0 rounded border border-line-soft bg-panel-2 px-2 py-1 text-[11.5px] leading-snug ${plunderDaily && plunderDaily.lootPercent < 100 ? 'text-warn' : 'text-faint'}`}
+          title={plunderRow.hint}
+        >
+          {plunderRow.text}
+        </p>
+      ) : null}
       <div className="min-h-0 flex-1 overflow-hidden">
         <TroopPicker
           army={city.army}

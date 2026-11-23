@@ -1,6 +1,6 @@
 // 地图页右侧「选中目标」面板里各表单共享的上下文（从 TargetPanel 传下来，避免逐个表单重复传一长串参数）。
 
-import type { BranchInfoView, CityView, TileDetailView, TroopKind } from '../../../api/protocol';
+import type { BranchInfoView, CityView, PlunderDailyView, TileDetailView, TroopKind } from '../../../api/protocol';
 import type { HeroPickState } from '../../../state/heroContext';
 import type { WorldSession } from '../../../state/worldSession';
 
@@ -17,6 +17,8 @@ export interface TargetCtx {
   origin: { x: number; y: number } | null;
   /** 账号分城名额（占领 NPC 城 / 他人分城都要占名额）；未获取为 null */
   branch: BranchInfoView | null;
+  /** 今日野地掠夺次数与下一次的收益倍数（v118，AISLG-270）；未获取为 null */
+  plunderDaily: PlunderDailyView | null;
   hero: HeroPickState | null;
   now: number;
   troops: TroopInput;

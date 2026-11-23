@@ -26,11 +26,12 @@ import {
   type YtCampRow,
   type YtEventRow,
 } from '../../common/src/yellow-turban-db';
+import { creditBattleLoot } from './battle-loot';
+import { emptyResources } from '../../common/src/loot-cap';
 import {
   abortMarchToReturn,
   completeMarchEvent,
   createReturnMarch,
-  creditLoot,
   loadCityNaming,
   loadMarchHeroBonus,
   markMarchArrived,
@@ -145,9 +146,14 @@ export async function resolveCampArrival(
   const carry = armyCarryCapacity(result.attacker.survivors, carryingPercent(await loadTechLevels(client, march.account_id)));
   const pool = ytLootPool(tier);
   const loot: PlunderLoot = loadByCarry(carry, Object.fromEntries(PLUNDERABLE_KEYS.map((key) => [key, pool[key]])));
-  const lootView: Resources = { gold: loot.gold, food: loot.food, wood: loot.wood, stone: loot.stone, iron: loot.iron };
+  const carried: Resources = { gold: loot.gold, food: loot.food, wood: loot.wood, stone: loot.stone, iron: loot.iron };
+  // v118（AISLG-270）：营地 / 老巢掉落同样按城池储量上限入账（装不下的作废）
+  let credited: Resources = carried;
+  let wasted: Resources = emptyResources();
   if (settled.row && lootTotal(loot) > 0) {
-    await creditLoot(client, march.from_city_id, lootView);
+    const split = await creditBattleLoot(client, march.from_city_id, carried);
+    credited = split.credited;
+    wasted = split.wasted;
     await client.query(`UPDATE accounts SET plunder_total = plunder_total + $2 WHERE id = $1`, [
       march.account_id, loot.food + loot.wood + loot.stone + loot.iron,
     ]);
@@ -167,7 +173,7 @@ export async function resolveCampArrival(
     await client.query(`UPDATE yt_events SET boss_cleared_at = $2, boss_cleared_by = $3 WHERE id = $1`, [event.id, now, march.account_id]);
     event = { ...event, boss_cleared_at: now, boss_cleared_by: march.account_id } as YtEventRow;
     await finishYtEvent(client, yt, event, 'boss_cleared');
-    await completeMarchEvent(client, march, 'boss_won', { ...base, loot: lootView, carry, returning });
+    await completeMarchEvent(client, march, 'boss_won', { ...base, loot: credited, lootPercent: 100, wasted, carry, returning });
   } else {
     const upd = await client.query(`UPDATE yt_events SET cleared_camps = cleared_camps + 1 WHERE id = $1 RETURNING *`, [event.id]);
     event = upd.rows[0] as YtEventRow;
@@ -175,7 +181,7 @@ export async function resolveCampArrival(
     if (!event.boss_appeared_at && event.cleared_camps >= ytBossUnlockCount(event.total_camps)) {
       await spawnYtBoss(client, yt, event);
     }
-    await completeMarchEvent(client, march, 'camp_won', { ...base, loot: lootView, carry, returning });
+    await completeMarchEvent(client, march, 'camp_won', { ...base, loot: credited, lootPercent: 100, wasted, carry, returning });
   }
   notifies.push({ reason: 'march_resolved', accountId: march.account_id, marchId: march.id });
 }
