@@ -169,7 +169,7 @@ const REQUEST_GET_STATE: RequestOpDoc = {
     { name: 'city.resources.food', type: 'number', desc: '粮。' },
     { name: 'city.resources.stone', type: 'number', desc: '石（v3 新增）。' },
     { name: 'city.resources.iron', type: 'number', desc: '铁（v3 新增）。' },
-    { name: 'city.deploy', type: 'object', desc: '在外部队数与上限（v30，AISLG-80）：{ count, limit }——count = 本城行军中（含返程、运输、侦察）+ 驻守野地（每块占领野地算一支）的部队数，不计城内驻军；limit = 校场等级（未建校场按 1）。count ≥ limit 时 MARCH / SCOUT 返回 DEPLOY_LIMIT；上线前已在外的部队不受影响。分城各算各的（带 cityId 查询）。' },
+    { name: 'city.deploy', type: 'object', desc: '在外部队数与上限（v30，AISLG-80；v117 AISLG-269 改上限口径）：{ count, limit, paradeLevel, governmentCapped }——count = 本城行军中（含返程、运输、侦察）+ 驻守野地（每块占领野地算一支）的部队数，不计城内驻军；limit = 生效上限 = max(1, min(校场等级, 本城官府等级))（未建校场或未建官府按保底 1）；paradeLevel = 校场实际等级；governmentCapped = 是否被官府等级压住（校场等级 > 官府等级）。count ≥ limit 时 MARCH / SCOUT 返回 DEPLOY_LIMIT；已在外的部队不受影响。分城各算各的（带 cityId 查询）。' },
     { name: 'city.tower', type: 'object | null', desc: '箭塔数值（v30，AISLG-82）：{ damage 每回合固定伤害, range 射程 }；未建箭塔为 null。仅守城战（NPC 袭击主城）生效，战报 towerDamage 单独列出。' },
     { name: 'city.techs', type: 'object', desc: '账号科技等级（v27，AISLG-77；全账号所有城共享）：{ farming, carrying, marching, storage, scouting, defense }，0 = 未研究。农耕 / 储存已计入 city.production / city.storage，城防已计入 city.defenseBonus；负重与行军加成不在 city 里预计算，客户端预估时自行折算（完整科技表见 GET_TECHS）。' },
     { name: 'city.buildings', type: 'object', desc: '**DEPRECATED（v3 遗留，勿用）**：按类型统计的已建数量，v5 单实例规则下恒为 0 或 1——切勿当作等级，解析城池建筑状态请一律读 city.levels。键集：{ farm, lumber_mill, quarry, iron_mine, house, government, barracks, warehouse, wall, academy, parade_ground, beacon, post_station, arrow_tower }（v7 起九种，v27 起加书院，v30 起再加校场 / 烽火台 / 驿站 / 箭塔共十四种）；v87 起分城不含 tavern / academy。' },

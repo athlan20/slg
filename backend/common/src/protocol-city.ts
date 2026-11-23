@@ -469,8 +469,10 @@ export interface CityView {
   /** 下一次断粮哗变的时刻（v34）：已断粮（粮食 0 且净产量为负）时有值——到点本城城内驻军每兵种减 10%；否则 null */
   mutinyNextAt: string | null;
   /** 在外部队数与上限（v30，AISLG-80）：count = 本城行军中 + 返程中 + 驻守野地的部队数（不计城内驻军），
-   *  limit = 校场等级（未建按 1）；count ≥ limit 时新出征 / 侦察被拒（DEPLOY_LIMIT），已在外的部队不受影响 */
-  deploy: { count: number; limit: number };
+   *  limit = 校场等级（未建按 1）；count ≥ limit 时新出征 / 侦察被拒（DEPLOY_LIMIT），已在外的部队不受影响。
+   *  v117（AISLG-269）：limit 改为生效上限 = max(1, min(校场等级, 官府等级))；
+   *  paradeLevel = 校场实际等级，governmentCapped = 是否被官府压住（校场等级 > 官府等级） */
+  deploy: { count: number; limit: number; paradeLevel: number; governmentCapped: boolean };
   /** 箭塔数值（v30，AISLG-82）：本城守城战中每回合固定伤害与射程；未建箭塔为 null */
   tower: { damage: number; range: number } | null;
   /** 账号科技等级（v27 AISLG-77；全账号共享，已计入 production / storage / defenseBonus，客户端据此折算负重与行军预估） */

@@ -383,8 +383,12 @@ export const ERROR_DOC: Record<ErrorCode, ErrorDoc> = {
     action: '先用 GET_TECHS 确认 research 字段；已完成的研究无法取消。',
   },
   DEPLOY_LIMIT: {
-    desc: '本城同时在外的部队数已达校场等级上限（v30，AISLG-80）：MARCH / SCOUT 发起时校验，上限 = 校场等级（未建校场按 1），计入行军中、返程中、驻守野地的部队（每块占领野地算一支），不计城内驻军与交易所商队（不带兵）；上线前已在外的部队不受影响、不强制召回，只拦新的出征，直到在外数量降到上限以下。失败 data 附 city（city.deploy = { count, limit }）。分城各算各的。',
-    action: '等在外部队回城 / 用 RECALL_GARRISON 召回驻军降到上限以下再出征，或升级本城校场（parade_ground）；GET_STATE 的 city.deploy 可提前判断。',
+    desc: '本城同时在外的部队数已达校场等级上限（v30，AISLG-80）：MARCH / SCOUT 发起时校验，上限 = max(1, min(校场等级, 本城官府等级))（未建校场 / 未建官府按保底 1；v117 AISLG-269 起由「校场等级」改为两者较小值），计入行军中、返程中、驻守野地的部队（每块占领野地算一支），不计城内驻军与交易所商队（不带兵）；已在外的部队不受影响、不强制召回，只拦新的出征，直到在外数量降到上限以下。失败 data 附 city（city.deploy = { count, limit, paradeLevel, governmentCapped }）。分城各算各的。',
+    action: '等在外部队回城 / 用 RECALL_GARRISON 召回驻军降到上限以下再出征，或升级官府（government）抬高上限（校场已高于官府时升官府直接生效）、必要时再升校场；GET_STATE 的 city.deploy 可提前判断（paradeLevel 为校场实际等级、governmentCapped 表示被官府压住）。',
+  },
+  PARADE_ABOVE_GOVERNMENT: {
+    desc: '校场等级不能超过本城官府等级（v117，AISLG-269）：BUILD / UPGRADE 校场 parade_ground 时，目标等级（连续升级取 toLevel 终点，并计入队列里已排的校场升级）大于本城**当前已建成的**官府等级即返回本错误码，不扣资源、不入队，失败响应附 city。排队中的官府升级不算（要到建成才生效）。已升高的校场不降级、不退资源，只在计算在外部队上限时取较小值。',
+    action: '先升级本城的官府（UPGRADE kind=government），等它建成后再升校场；不想等就把校场目标等级降到当前官府等级，或就让校场停在这个等级（在外部队上限此时由官府等级决定）。',
   },
   MOVING_TARGET_GONE: {
     desc: '截击（MARCH 带 targetId，v28，AISLG-78）发起时目标不存在、已被击败或已过时消失。注意：发起后到达时目标才消失不报错，而是记「目标消失」战报、部队返程。',

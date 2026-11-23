@@ -104,6 +104,9 @@ export function buildErrorText(
     case 'BUILDING_MAIN_ONLY':
       // v87（AISLG-217）：酒馆 / 书院只能在主城
       return COPY.errors.build.buildingMainOnly;
+    case 'PARADE_ABOVE_GOVERNMENT':
+      // v117（AISLG-269）：校场等级不能超过本城已建成的官府等级
+      return COPY.errors.build.paradeAboveGovernment;
     case 'BUILD_NOT_CANCELLABLE':
       return COPY.errors.build.buildNotCancellable;
     case 'INVALID_PARAMS':

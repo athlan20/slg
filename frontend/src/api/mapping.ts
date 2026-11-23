@@ -91,7 +91,13 @@ export function buildingEffectText(kind: BuildingKind, city: CityView | null): s
     return COPY.buildingModal.barracksLine(unlocked, TROOP_KINDS.length);
   }
   if (kind === 'parade_ground') {
-    return DEFENSE_COPY.building.parade(city?.deploy.count ?? 0, city?.deploy.limit ?? 1);
+    const deploy = city?.deploy;
+    return DEFENSE_COPY.building.parade(
+      deploy?.count ?? 0,
+      deploy?.limit ?? 1,
+      deploy?.paradeLevel ?? 0,
+      deploy?.governmentCapped ?? false,
+    );
   }
   if (kind === 'beacon') {
     return DEFENSE_COPY.building.beacon(city?.levels.beacon ?? 0);

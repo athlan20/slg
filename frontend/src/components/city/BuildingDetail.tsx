@@ -39,13 +39,18 @@ export function BuildingDetail({
   onCancelDefenseCraft,
 }: BuildingDetailProps) {
   const copy = useCopy();
-  const { BUILDING_DESC, BUILDING_LABEL, COPY, SHORTFALL_COPY, buildActionText } = copy;
+  const { BUILDING_DESC, BUILDING_LABEL, COPY, DEFENSE_COPY, SHORTFALL_COPY, buildActionText } = copy;
   // 连升目标等级（AISLG-68）：null = 单级（当前+1）；换建筑时由父级 key 复位
   const [targetLevel, setTargetLevel] = useState<number | null>(null);
   const label = BUILDING_LABEL[kind];
   const level = city.levels[kind] ?? 0;
   // 等级上限按城按建筑（v63）：占有对应名城时其主题建筑为 25，其余 20
   const levelMax = city.levelMax?.[kind] ?? BUILDING_LEVEL_MAX;
+  // v117（AISLG-269）：校场等级不能超过本城已建成的官府等级——能升到的最高等级取两者较小值；
+  // 存量已高于官府的校场不降级（不写迁移），但也不能再升
+  const governmentLevel = city.levels.government ?? 0;
+  const upgradeCeiling = kind === 'parade_ground' ? Math.min(levelMax, governmentLevel) : levelMax;
+  const paradeBlocked = kind === 'parade_ground' && level >= upgradeCeiling;
   const entry = city.queue.find((item) => item.kind === kind);
   const queueFull = city.queue.length >= 1 + BUILD_QUEUE_CAPACITY;
 
@@ -54,8 +59,8 @@ export function BuildingDetail({
   const actionCost = (level > 0 ? upgradeCost : city.costs?.[kind]?.build) ?? null;
   // 单级动作时长（v25 AISLG-71）：服务端已按当前 timeScale 折算；连升整链时长由 chainPlan 本地预估
   const actionSeconds = (level > 0 ? city.costs?.[kind]?.upgradeSeconds : city.costs?.[kind]?.buildSeconds) ?? null;
-  const canChain = level > 0 && level < levelMax && entry == null;
-  const selectableTarget = canChain ? Math.min(Math.max(targetLevel ?? level + 1, level + 1), levelMax) : level + 1;
+  const canChain = level > 0 && level < upgradeCeiling && entry == null;
+  const selectableTarget = canChain ? Math.min(Math.max(targetLevel ?? level + 1, level + 1), upgradeCeiling) : level + 1;
   const chain =
     canChain && selectableTarget >= level + 2 && upgradeCost !== null
       ? upgradeChainPreview({ currentLevel: level, toLevel: selectableTarget, nextCost: upgradeCost, timeScale: city.timeScale })
@@ -64,22 +69,24 @@ export function BuildingDetail({
   const displayCost: Resources | null = chain ? chain.totalCost : actionCost;
   const parts = displayCost ? costParts(displayCost, city.resources) : [];
   const lacking = parts.some((part) => part.insufficient);
-  const disabled = connection !== 'online' || queueFull || level >= levelMax || entry != null;
+  const disabled = connection !== 'online' || queueFull || level >= levelMax || paradeBlocked || entry != null;
 
   const hint =
     level >= levelMax
       ? COPY.buildingModal.hintLevelMax(levelMax)
-      : entry
-        ? COPY.buildingModal.hintInQueue
-        : queueFull
-          ? COPY.buildingModal.hintQueueFull
-          : lacking
-            ? SHORTFALL_COPY.hintClick
-            : chain
-              ? COPY.buildingModal.hintChain
-              : level > 0
-                ? COPY.buildingModal.hintUpgradeCost
-                : COPY.buildingModal.hintEnqueue;
+      : paradeBlocked && level > 0
+        ? DEFENSE_COPY.building.paradeAboveGovernment(level, governmentLevel)
+        : entry
+          ? COPY.buildingModal.hintInQueue
+          : queueFull
+            ? COPY.buildingModal.hintQueueFull
+            : lacking
+              ? SHORTFALL_COPY.hintClick
+              : chain
+                ? COPY.buildingModal.hintChain
+                : level > 0
+                  ? COPY.buildingModal.hintUpgradeCost
+                  : COPY.buildingModal.hintEnqueue;
 
   return (
     <div role="城池页-建筑详情" className="flex min-h-0 flex-col gap-2">
@@ -111,6 +118,12 @@ export function BuildingDetail({
           {buildingEffectText(kind, city)}
         </span>
       </div>
+
+      {kind === 'parade_ground' && level > 0 && paradeBlocked ? (
+        <p role="城池页-建筑详情-官府限制提示" className="font-mono text-[11.5px] leading-snug text-gold">
+          {DEFENSE_COPY.building.paradeAboveGovernment(level, governmentLevel)}
+        </p>
+      ) : null}
 
       {displayCost ? (
         <div role="城池页-建筑详情-消耗" className="font-mono text-[12px] leading-snug text-dim">
@@ -144,7 +157,7 @@ export function BuildingDetail({
             onChange={(event) => setTargetLevel(Number(event.target.value))}
             className="cursor-pointer rounded border border-line-soft bg-panel-2 px-1.5 py-0.5 text-[12px] text-fg outline-none focus:border-accent-dim"
           >
-            {Array.from({ length: levelMax - level }, (_, index) => level + 1 + index).map((lv) => (
+            {Array.from({ length: upgradeCeiling - level }, (_, index) => level + 1 + index).map((lv) => (
               <option key={lv} value={lv}>
                 {COPY.buildingModal.targetOption(lv, lv === level + 1)}
               </option>

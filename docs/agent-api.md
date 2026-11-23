@@ -435,7 +435,9 @@
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -831,7 +833,7 @@
 | city.resources.food | number | 粮。 |
 | city.resources.stone | number | 石（v3 新增）。 |
 | city.resources.iron | number | 铁（v3 新增）。 |
-| city.deploy | object | 在外部队数与上限（v30，AISLG-80）：{ count, limit }——count = 本城行军中（含返程、运输、侦察）+ 驻守野地（每块占领野地算一支）的部队数，不计城内驻军；limit = 校场等级（未建校场按 1）。count ≥ limit 时 MARCH / SCOUT 返回 DEPLOY_LIMIT；上线前已在外的部队不受影响。分城各算各的（带 cityId 查询）。 |
+| city.deploy | object | 在外部队数与上限（v30，AISLG-80；v117 AISLG-269 改上限口径）：{ count, limit, paradeLevel, governmentCapped }——count = 本城行军中（含返程、运输、侦察）+ 驻守野地（每块占领野地算一支）的部队数，不计城内驻军；limit = 生效上限 = max(1, min(校场等级, 本城官府等级))（未建校场或未建官府按保底 1）；paradeLevel = 校场实际等级；governmentCapped = 是否被官府等级压住（校场等级 > 官府等级）。count ≥ limit 时 MARCH / SCOUT 返回 DEPLOY_LIMIT；已在外的部队不受影响。分城各算各的（带 cityId 查询）。 |
 | city.tower | object \| null | 箭塔数值（v30，AISLG-82）：{ damage 每回合固定伤害, range 射程 }；未建箭塔为 null。仅守城战（NPC 袭击主城）生效，战报 towerDamage 单独列出。 |
 | city.techs | object | 账号科技等级（v27，AISLG-77；全账号所有城共享）：{ farming, carrying, marching, storage, scouting, defense }，0 = 未研究。农耕 / 储存已计入 city.production / city.storage，城防已计入 city.defenseBonus；负重与行军加成不在 city 里预计算，客户端预估时自行折算（完整科技表见 GET_TECHS）。 |
 | city.buildings | object | **DEPRECATED（v3 遗留，勿用）**：按类型统计的已建数量，v5 单实例规则下恒为 0 或 1——切勿当作等级，解析城池建筑状态请一律读 city.levels。键集：{ farm, lumber_mill, quarry, iron_mine, house, government, barracks, warehouse, wall, academy, parade_ground, beacon, post_station, arrow_tower }（v7 起九种，v27 起加书院，v30 起再加校场 / 烽火台 / 驿站 / 箭塔共十四种）；v87 起分城不含 tavern / academy。 |
@@ -1297,7 +1299,9 @@
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -1748,7 +1752,9 @@
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -2235,7 +2241,9 @@
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -2654,7 +2662,7 @@
 
 `C→S` 请求-响应 · 需登录后发送
 
-在当前城池发起一座指定类型建筑的建造（v3 起为统一入口，v4 起排队制，v5 起每种建筑同城唯一——已建成或已在队列中返回 BUILDING_EXISTS，成长请用 UPGRADE；一期不提供建筑拆除）：校验通过后立即扣减建造成本；无在建时立即开工（status=building，dueAt 为预计完成时间），有在建且排队未满时进入排队（status=queued，dueAt 为 null，队首完成后由后台自动激活）。由后台 Worker 在到期后完成。一期九种建筑（v27 起另加书院，v30 起另加校场 / 烽火台 / 驿站 / 箭塔）：农田/伐木场/采石场/铁矿四种资源建筑，民房（提高人口上限）、官府（自动产金，兼野地占领上限）、军营（征兵）、仓库（防掠夺保护：保护量 4000×等级、四资源固定均分；v21 起消费方接入——NPC 袭击主城攻破后按保护额结算可掠量）、城墙（守城加成：v21 起 NPC 袭击主城为守城战，defenseBonus 生效）；v27 起另有第十种书院 academy（科技研究所需：第 N 级科技要求主城书院 ≥ N 级，v87 起书院只在主城，见 RESEARCH_TECH）；v30 起再加四种二期建筑——校场 parade_ground（每城同时在外部队数上限 = 校场等级，未建按 1，超限 MARCH / SCOUT 返回 DEPLOY_LIMIT，见 city.deploy）、烽火台 beacon（NPC 来袭预警提前量每级 +10%，敌情详细度 0–2 / 3–5 / 6+ 级分范围 / 兵种 / 精确）、驿站 post_station（从本城出发、目的地是自己另一座城的调兵与运输，行军速度每级 +10%）、箭塔 arrow_tower（守城战里城墙位上不会被消灭的远程单位，每回合固定伤害 150 × 等级、射程 45 + 5 × 等级，见 city.tower）；v36 起再加酒馆 tavern（v87 起只在主城：每 4 小时基准随缩放刷新 3 名候选普通将、金币招募，账号普通将上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1，见 GET_HEROES / RECRUIT_HERO）。**v87（AISLG-217）起书院 academy 与酒馆 tavern 只能在主城建造与升级**：两者的效果本来就是账号级的（科技全账号生效、武将上限取主城酒馆等级），分城的 BUILD / UPGRADE（含连续升级 toLevel）一律返回 BUILDING_MAIN_ONLY，不扣资源、不入队，分城的 city.levels / city.costs 与建筑清单也不再下发这两项。当前成本：农田（farm）：金 100 / 木 50；伐木场（lumber_mill）：金 120 / 木 40；采石场（quarry）：金 150 / 木 60；铁矿（iron_mine）：金 200 / 木 80 / 石 60；民房（house）：金 80 / 木 60；官府（government）：金 200 / 木 100 / 石 50；军营（barracks）：金 150 / 木 120 / 石 30；仓库（warehouse）：金 120 / 木 100 / 石 30；城墙（wall）：金 200 / 木 80 / 石 50；书院（academy）：金 180 / 木 100 / 石 50；校场（parade_ground）：金 160 / 木 100 / 石 40；烽火台（beacon）：金 140 / 木 120 / 石 60；驿站（post_station）：金 150 / 木 110 / 石 30；箭塔（arrow_tower）：金 220 / 木 100 / 石 80；酒馆（tavern）：金 260 / 木 120 / 石 60。队列容量为 1 条在建 + 2 条排队（占位数值）；资源不足返回 INSUFFICIENT_RESOURCES（v22 起附 shortfall 缺口与 retryAfterSeconds——按当前净产量推导，等满后重发必然成功），队列已满返回 QUEUE_FULL，失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷）。
+在当前城池发起一座指定类型建筑的建造（v3 起为统一入口，v4 起排队制，v5 起每种建筑同城唯一——已建成或已在队列中返回 BUILDING_EXISTS，成长请用 UPGRADE；一期不提供建筑拆除）：校验通过后立即扣减建造成本；无在建时立即开工（status=building，dueAt 为预计完成时间），有在建且排队未满时进入排队（status=queued，dueAt 为 null，队首完成后由后台自动激活）。由后台 Worker 在到期后完成。一期九种建筑（v27 起另加书院，v30 起另加校场 / 烽火台 / 驿站 / 箭塔）：农田/伐木场/采石场/铁矿四种资源建筑，民房（提高人口上限）、官府（自动产金，兼野地占领上限）、军营（征兵）、仓库（防掠夺保护：保护量 4000×等级、四资源固定均分；v21 起消费方接入——NPC 袭击主城攻破后按保护额结算可掠量）、城墙（守城加成：v21 起 NPC 袭击主城为守城战，defenseBonus 生效）；v27 起另有第十种书院 academy（科技研究所需：第 N 级科技要求主城书院 ≥ N 级，v87 起书院只在主城，见 RESEARCH_TECH）；v30 起再加四种二期建筑——校场 parade_ground（每城同时在外部队数上限 = 校场等级，未建按 1，超限 MARCH / SCOUT 返回 DEPLOY_LIMIT，见 city.deploy）、烽火台 beacon（NPC 来袭预警提前量每级 +10%，敌情详细度 0–2 / 3–5 / 6+ 级分范围 / 兵种 / 精确）、驿站 post_station（从本城出发、目的地是自己另一座城的调兵与运输，行军速度每级 +10%）、箭塔 arrow_tower（守城战里城墙位上不会被消灭的远程单位，每回合固定伤害 150 × 等级、射程 45 + 5 × 等级，见 city.tower）；v36 起再加酒馆 tavern（v87 起只在主城：每 4 小时基准随缩放刷新 3 名候选普通将、金币招募，账号普通将上限 = ⌈主城酒馆等级 ÷ 2⌉ + 1，见 GET_HEROES / RECRUIT_HERO）。**v87（AISLG-217）起书院 academy 与酒馆 tavern 只能在主城建造与升级**：两者的效果本来就是账号级的（科技全账号生效、武将上限取主城酒馆等级），分城的 BUILD / UPGRADE（含连续升级 toLevel）一律返回 BUILDING_MAIN_ONLY，不扣资源、不入队，分城的 city.levels / city.costs 与建筑清单也不再下发这两项。**v117（AISLG-269）起校场 parade_ground 的等级不能超过本城已建成的官府等级**：BUILD / UPGRADE 校场时，目标等级（连续升级取 toLevel 终点，并计入队列里已排的校场升级）大于本城当前已建成的官府等级返回新错误码 PARADE_ABOVE_GOVERNMENT，不扣资源、不入队；排队中的官府升级不算；已升高的校场不降级、不退资源，只在外部队上限里取较小值（上限 = max(1, min(校场等级, 官府等级))，见 city.deploy）。当前成本：农田（farm）：金 100 / 木 50；伐木场（lumber_mill）：金 120 / 木 40；采石场（quarry）：金 150 / 木 60；铁矿（iron_mine）：金 200 / 木 80 / 石 60；民房（house）：金 80 / 木 60；官府（government）：金 200 / 木 100 / 石 50；军营（barracks）：金 150 / 木 120 / 石 30；仓库（warehouse）：金 120 / 木 100 / 石 30；城墙（wall）：金 200 / 木 80 / 石 50；书院（academy）：金 180 / 木 100 / 石 50；校场（parade_ground）：金 160 / 木 100 / 石 40；烽火台（beacon）：金 140 / 木 120 / 石 60；驿站（post_station）：金 150 / 木 110 / 石 30；箭塔（arrow_tower）：金 220 / 木 100 / 石 80；酒馆（tavern）：金 260 / 木 120 / 石 60。队列容量为 1 条在建 + 2 条排队（占位数值）；资源不足返回 INSUFFICIENT_RESOURCES（v22 起附 shortfall 缺口与 retryAfterSeconds——按当前净产量推导，等满后重发必然成功），队列已满返回 QUEUE_FULL，失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷）。
 
 **请求字段**
 
@@ -2677,7 +2685,7 @@
 | build.dueAt | string \| null | 预计到期时间（ISO 8601），基准为开始时间加 60 秒（未加速；部署与全局时间缩放可调，见文档头部「全局时间缩放」），四种建筑时长相同；排队中（queued）为 null，队首激活时由服务端重算。 |
 | build.completedAt | string \| null | 实际完成时间；building 阶段为 null。 |
 
-**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_RESOURCES`、`QUEUE_FULL`、`BUILDING_EXISTS`、`BUILDING_MAIN_ONLY`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`INSUFFICIENT_RESOURCES`、`QUEUE_FULL`、`BUILDING_EXISTS`、`BUILDING_MAIN_ONLY`、`PARADE_ABOVE_GOVERNMENT`（处置建议见第 4 节）
 
 **Agent 提示**：失败响应的 data 仅含 city（无 build 载荷），附当前城池状态（queue 可见队首预计完成时间），据此决策。请求超时时不要盲目重发——可能已扣资源开工或入队，先用 GET_STATE 确认。玩家与 Agent 并发提交时，后提交方按最新队列状态判定：能入队则成功（status=queued），队满收到 QUEUE_FULL。成功后同账号其他在线连接会收到 PUSH_BUILD_STATE（build_started 或 build_queued）推送。资源会随产量持续增长：扣费校验以服务端结算后的最新余额为准。
 
@@ -2924,7 +2932,7 @@
 
 `C→S` 请求-响应 · 需登录后发送
 
-把指定类型的建筑升到下一等级（v5 新增；每种建筑同城唯一，成长走升级）。**v87（AISLG-217）：书院 academy 与酒馆 tavern 只能在主城升级——cityId 指向分城时返回 BUILDING_MAIN_ONLY，不扣资源、不入队。** 与 BUILD 共用建造队列：无在建时立即开工，有在建时入队（排队上限内），队满返回 QUEUE_FULL。该类型已在队列中（含首次建造进行中、等级仍为 0）返回 BUILDING_EXISTS（在队冲突先于未建成判定）；未建造且不在队列返回 BUILDING_NOT_BUILT；已达等级上限（普通 20 级，v31 AISLG-85 由 10 级开放到 20 级；v63 AISLG-167 占有对应名城时其主题建筑可到 25 级，见 city.levelMax；占位数值）返回 BUILDING_LEVEL_MAX。升级成本 = 建造成本 × 升级倍数，升级时长 = 建造时长 × 升级倍数（均为占位公式；全局时间缩放作用于该总时长，钳 1 秒）：第 L → L+1 级的倍数 1~9 级 = L（线性，即升到 10 级为止的前期成本与耗时不变），L ≥ 10 时 = 9 × 1.3^(L − 9)（10→11 ≈ ×11.7、14→15 ≈ ×33.4、19→20 ≈ ×124.1；10→20 合计约 499 倍基础成本），成本逐项四舍五入；CityView.costs 的 upgrade / upgradeSeconds 与 chain 都按此公式下发。城墙守城减伤前 10 级每级 +5%、11~20 级每级 +2%（20 级 70%）、21~25 级每级 +1%（v63，仅名城洛阳的主题城墙可达，25 级 75%），其他按等级线性增长的效果（人口 / 产金 / 占领上限 / 分城上限 / 仓库保护 / 校场 / 烽火台 / 驿站等）本期不改。完成后产量、人口上限或仓储上限按新等级计算。失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷；v22 起资源不足时另附 shortfall 缺口与 retryAfterSeconds，见下方错误说明）。**v22（AISLG-43）连续升级**：可选 `toLevel`（当前等级 +2 .. 该城该建筑的等级上限，普通 20、名城主题建筑 25）一次把该建筑升到目标等级——中间每一级合成**一条**队列条目：整链按各级公式价在发起时**一次性预扣**（快照即全额，取消排队条目按快照全额返还）、只占 **1 个**队列位、Worker 到达一级推进一级（build.level 为当前推进中的目标等级、build.toLevel 为整链终点），每级完成各发一条 build_completed 事件；响应另附 chain 数组给出每级 { level, cost, seconds }。边界口径：toLevel 超过该建筑等级上限返回 BUILDING_LEVEL_MAX；toLevel ≤ 当前 +1（含低于当前等级的取值）视同单级升级（等效于不带 toLevel，不报错）；发起时整链校验资源，**中间级不会出现资源不足**（资源不足整单回滚、不入队，不存在「只做到某一级」的部分完成）。
+把指定类型的建筑升到下一等级（v5 新增；每种建筑同城唯一，成长走升级）。**v87（AISLG-217）：书院 academy 与酒馆 tavern 只能在主城升级——cityId 指向分城时返回 BUILDING_MAIN_ONLY，不扣资源、不入队。** **v117（AISLG-269）：校场 parade_ground 升到的目标等级（含 toLevel 整链终点与队列里已排的校场升级）不能超过本城已建成的官府等级，超过返回新错误码 PARADE_ABOVE_GOVERNMENT（不扣资源、不入队；排队中的官府升级不算）。** 与 BUILD 共用建造队列：无在建时立即开工，有在建时入队（排队上限内），队满返回 QUEUE_FULL。该类型已在队列中（含首次建造进行中、等级仍为 0）返回 BUILDING_EXISTS（在队冲突先于未建成判定）；未建造且不在队列返回 BUILDING_NOT_BUILT；已达等级上限（普通 20 级，v31 AISLG-85 由 10 级开放到 20 级；v63 AISLG-167 占有对应名城时其主题建筑可到 25 级，见 city.levelMax；占位数值）返回 BUILDING_LEVEL_MAX。升级成本 = 建造成本 × 升级倍数，升级时长 = 建造时长 × 升级倍数（均为占位公式；全局时间缩放作用于该总时长，钳 1 秒）：第 L → L+1 级的倍数 1~9 级 = L（线性，即升到 10 级为止的前期成本与耗时不变），L ≥ 10 时 = 9 × 1.3^(L − 9)（10→11 ≈ ×11.7、14→15 ≈ ×33.4、19→20 ≈ ×124.1；10→20 合计约 499 倍基础成本），成本逐项四舍五入；CityView.costs 的 upgrade / upgradeSeconds 与 chain 都按此公式下发。城墙守城减伤前 10 级每级 +5%、11~20 级每级 +2%（20 级 70%）、21~25 级每级 +1%（v63，仅名城洛阳的主题城墙可达，25 级 75%），其他按等级线性增长的效果（人口 / 产金 / 占领上限 / 分城上限 / 仓库保护 / 校场 / 烽火台 / 驿站等）本期不改。完成后产量、人口上限或仓储上限按新等级计算。失败响应均附当前城池状态（**data 仅含 city，无 build 载荷**——客户端必须先判 ok 再取载荷；v22 起资源不足时另附 shortfall 缺口与 retryAfterSeconds，见下方错误说明）。**v22（AISLG-43）连续升级**：可选 `toLevel`（当前等级 +2 .. 该城该建筑的等级上限，普通 20、名城主题建筑 25）一次把该建筑升到目标等级——中间每一级合成**一条**队列条目：整链按各级公式价在发起时**一次性预扣**（快照即全额，取消排队条目按快照全额返还）、只占 **1 个**队列位、Worker 到达一级推进一级（build.level 为当前推进中的目标等级、build.toLevel 为整链终点），每级完成各发一条 build_completed 事件；响应另附 chain 数组给出每级 { level, cost, seconds }。边界口径：toLevel 超过该建筑等级上限返回 BUILDING_LEVEL_MAX；toLevel ≤ 当前 +1（含低于当前等级的取值）视同单级升级（等效于不带 toLevel，不报错）；发起时整链校验资源，**中间级不会出现资源不足**（资源不足整单回滚、不入队，不存在「只做到某一级」的部分完成）。
 
 **请求字段**
 
@@ -2943,7 +2951,7 @@
 | shortfall | object | **仅 INSUFFICIENT_RESOURCES 失败响应**（v22 新增）：{ gold?, wood?, food?, stone?, iron? } 只列缺口 > 0 的资源与缺口量。 |
 | retryAfterSeconds | number \| null | **仅 INSUFFICIENT_RESOURCES 失败响应**（v22 新增）：按当前净产量（含全局缩放、粮已扣军队耗粮）补齐全部缺口所需秒数——**等满该时长后重发必然成功**；任一缺口资源的净产量 ≤ 0 时为 null（等待外部输入，如集市兑换 / 掠夺收入）。产量随后续变化以最新失败响应为准。 |
 
-**可能错误**：`INVALID_PARAMS`、`BUILDING_NOT_BUILT`、`BUILDING_LEVEL_MAX`、`BUILDING_EXISTS`、`INSUFFICIENT_RESOURCES`、`QUEUE_FULL`、`BUILDING_MAIN_ONLY`（处置建议见第 4 节）
+**可能错误**：`INVALID_PARAMS`、`BUILDING_NOT_BUILT`、`BUILDING_LEVEL_MAX`、`BUILDING_EXISTS`、`INSUFFICIENT_RESOURCES`、`QUEUE_FULL`、`BUILDING_MAIN_ONLY`、`PARADE_ABOVE_GOVERNMENT`（处置建议见第 4 节）
 
 **Agent 提示**：失败响应的 data.city 附当前城池状态（levels 可见各类型当前等级）。升级期间该建筑维持当前等级的产量，完成后按新等级计算；升级与建造共用队列，规划时注意队首完成时间。请求超时时先用 GET_STATE 确认是否已入队。
 
@@ -3747,7 +3755,9 @@
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -4396,7 +4406,7 @@ Agent 连接上报自己的当前计划，供玩家的托管监控界面展示�
 
 `C→S` 请求-响应 · 需登录后发送
 
-从账号主城派出部队前往目标地块，到达后由服务端自动结算。编队 troops 按兵种给出数量（至少一种 > 0），发起时立即从城内驻军扣减；行军时长 = Chebyshev 距离 × 每格秒数（基准 15 秒/格，占位）÷ **编队最慢兵种的行军速度系数**（斥候 ×2、轻骑兵 ×1.5，其余 ×1）÷（1 + 行军科技加成，v27 每级 +5%；v30 AISLG-83：自己城池之间的调兵 / 运输再加出发城**驿站**加成，每级 +10%、10 级翻倍，出征野地 / NPC 城等其他目标不受影响，运输往返与失效返程同吃出发城驿站），**总时长**再 ÷ 全局时间缩放、向上取整、最少 1 秒（见文档头部；不是先把每格缩放取整再乘格数）。以响应里的 arriveAt 为准。v16 新增可选 **task**：`plunder`（掠夺，**缺省值**）或 `occupy`（占领）——只作用于野地与 NPC 城目标，侦察 / 调兵 / 增援忽略 task。目标与结算：**无主野地**按 task 掠夺或占领（战斗 vs 原住守军）；**本账号占领的野地** = 增援驻军（不战斗）；**未被占领的 NPC 城池**可掠夺，也可占领变分城（v24，AISLG-58；战斗 vs 驻防、守方据墙待敌）；**本账号分城** = 调兵（不战斗，到达并入该城驻军）；**发起前校验校场（v30，AISLG-80）**：本城同时在外的部队数（行军中含返程 + 驻守野地，不计城内驻军）已达校场等级上限（未建校场按 1）时返回 DEPLOY_LIMIT，SCOUT 同；玩家城池（他人的）、他人占领地块与出发主城本身不可作为目标（玩家对抗随后续阶段开放）。**v38（AISLG-122，玩家对抗一）开放掠夺他人城池**：主城与分城都能打、不用宣战，战斗与 NPC 打主城同口径的守城战（城墙、城防科技、箭塔、守方城守全部生效），发起即给守方推送来袭预警（PUSH_ATTACK_WARNING，预警窗口 = 行军时长，敌情按守方烽火台分档）；守方处于新手保护返回 NEWBIE_PROTECTED、免战中返回 TARGET_IN_TRUCE（均附 until / retryAfterSeconds），攻方自己的主动免战生效中返回 SELF_TRUCE_ACTIVE（打野地 / NPC 不受限）；**task=occupy 对他人分城开放（v40，AISLG-124，玩家对抗三）**：主城仍返回 TASK_INVALID_FOR_TARGET（永不可占领，只能被掠夺）。分城占领资格与占 NPC 城同口径（GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH，目标等级 = 该城官府等级），发起时初核、到达复核（名额没了照打、只降城防值不换主，事件 battle_won 记 occupied=false 与 denial）。守城战打赢一次（守军全灭）城防值 −35，攻方幸存冲车占比每 1% 再 +1.5（最多 +15）；**占领打赢不掠夺资源，掠夺打赢不降城防**；城防降到 0 且名额有空当场换主（详见「玩家对抗与城防值」一节与 GET_TILE 的 tile.durability）；每次打赢该城进入 4 小时（基准随缩放）被动免战，免战内城防不回涨、结束后每小时回涨 10 至满——占一座分城至少打 3 次、隔 8 小时以上，守方每次都有时间补兵 / 增援；在途到达时守方进入保护 / 免战则扑空返程（事件 outcome=aborted 附 cause）。**v39（AISLG-123，玩家对抗二）开放抢占他人占领的野地**：task='occupy'（缺省 plunder 返回 TASK_INVALID_FOR_TARGET——地里没有存货可抢）；野地战无城墙 / 箭塔 / 城守，守方 = 地块驻军，守方没留驻军不打、直接拿下（无战报）；发起即给守方推 PUSH_ATTACK_WARNING（target='wilderness'，敌情按其所属城烽火台分档），预警期间可向该地块增援（MARCH 打自己的地块 = 增援）；守方处于新手保护（NEWBIE_PROTECTED）或主动免战（TARGET_IN_TRUCE）时其全部野地不可被抢，但守方某座城的被动免战只保护城本身、不保护野地；地块处于换主保护期（被抢占后 1 小时基准随缩放）返回 TILE_PROTECTED；攻方自己的主动免战生效中同样不能抢（SELF_TRUCE_ACTIVE）。**抢占结算**：打赢且出发城占领名额（官府等级）有空 → 地块易主、幸存部队驻守并获得加成、地块进入换主保护（1 小时基准随缩放，玩家与 NPC 都不能再抢）；名额已满 → 守方照样失地（wilderness_lost cause=conquest）、地块变无主（不设保护）、攻方幸存返程（事件 battle_won 记 occupied=false / denial=TERRITORY_LIMIT）；打输 → 守方继续占领，攻方残部返程；战报 kind='pvp_wilderness' 攻守双方各一份。**到达复核口径（v39）**：到达时地块已无主（对方召回等）→ 扑空返程（aborted，cause=target_gone）；已易主第三人 → 扑空返程（aborted，cause=owner_changed）；已归本账号 → 转增援并入驻军。战斗为多回合推进结构（速度与射程影响接敌、城墙为守方提供受击减免；具体算法不对外公开，机制概览见术语表「战斗」、兵种数值见「兵种与战斗属性」）；攻方歼灭守方获胜、胜方幸存 ≥ 1，攻方战败（全灭或回合耗尽）时幸存部队撤回出发城。**兵力占比对称折算战损（v103 起，AISLG-244；v105 扩到所有战斗、攻守对称，AISLG-246）**：所有用战斗引擎结算的战斗都按同一条规则折算战损，攻守双方各算各的——对每一方，r = 本方参考战力 ÷ 对方参考战力，r ≤ 3 时不变，r > 3 时本方各兵种损失按 round(原损失 × 3 / r)（四舍五入、不多于原值），带越多兵战损越低（此前堆过 2 倍后战损几乎不再下降）；对方参考战力为 0（空守军）不折算。胜负 / 回合数 / 逐回合战报 / 战利品 / 掠夺与占领结算都不变，被碾压的一方 r < 1/3 战损不变，所以只会减少强者一方的损失。**掠夺结算（task=plunder）**：野地奖励池 = 地形对应资源 × 750 × 等级 + 金币 × 250 × 等级（v21 掠夺含金，AISLG-31；金矿 gold_mine 保持空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。实际带走量按**幸存部队负重**装填（Σ 数量 × 单兵 carry，v27 起再 × 负重科技加成（每级 +5%，向下取整）；运输任务的负重上限同口径：民夫 500、斥候/刀盾兵 80、轻骑兵 100，其余 60，占位），按**金→粮→木→石→铁**顺序装满即止，立即入账出发城（不钳储量上限）；不改归属、幸存部队返程；成功掠夺的地块进入 24 小时冷却（基准，受全局时间缩放；发起时校验 PLUNDER_COOLDOWN——v22 起该失败附 retryAfterSeconds（冷却截止 − 当前时刻，等满后重发必然受理；在途到达仍战斗但资源为零）。**掠夺玩家城（v38，AISLG-122）**：可抢池 = 城内资源先扣仓库保护（粮/木/石/铁 各保护 1000×仓库等级，金币不受保护），再乘单次比例上限（四资源 45%、金币 15%，v42 AISLG-126 校准拍板）与等级差衰减（出发城官府比目标城官府高 5 级起每多 1 级收益 −15%、最低 25%——大号打小号不禁止但收益递减），最后仍按幸存部队负重装填；攻破（守军全灭）后该城进入 4 小时（基准，随缩放）被动免战，玩家与 NPC 都不能再打它（GET_TILE 的 tile.protection 可查）；战报 kind='pvp_raid'，攻守双方各得一份；玩家城不受地块掠夺冷却限制（免战即冷却）。**名城（v24，AISLG-56，GET_TILE / 地图的 famous 字段标识，全图 8 座）分两阶段**：外围阶段对其出征（掠夺 / 占领都一样）打的是外围驻军（野战无城墙），打赢 = 外围清空、名城进入城守阶段（事件 battle_won 含 stage='outer'、outerCleared=true、recoversAt），无战利品；城守阶段（限时，超时外围恢复满编）再出征攻城守——task=plunder 掠夺其库存，task=occupy 占领并变分城（以名城命名、产量 +20%，名城计入分城上限）；外围未清时对其 task=occupy 返回 OUTER_NOT_CLEARED。名城守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。**名城任期轮换（v111，AISLG-259）**：每账号同一时间最多占 1 座名城（已有时 task=occupy 返回 FAMOUS_LIMIT），任期 7 天（按全局时间缩放；GET_STATE 的 city.famousExpiresAt 与地图 / GET_TILE 的 tile.famousExpiresAt 给出到期时刻）。任期届满该城重归无主 NPC 名城（外围满编 + 城守守军），城里驻军、该城名下野地驻军与在外部队回原主人主城，建筑、库存与建造 / 征兵 / 研究队列随城作废不退（与主动放弃分城一致）；到期前 24 小时 / 1 小时各推一次提醒（事件 famous_expiring，stage 1 / 2），到期写事件 famous_expired 与全服播报 famous_expired。到期失去这座城的原主人 48 小时内不能再占回它（新错误码 FAMOUS_BANNED，附 bannedUntil 与 retryAfterSeconds；tile.bannedUntil 可预查），但可以占其他名城，也可以打这座城的外围 / 掠夺。被玩家打下来不算到期：新主人任期重新从 7 天算，原主人不受封禁限制。**占领 NPC 城（task=occupy，v24）**：需同时满足——主城官府 ≥ 3 级（GOVERNMENT_TOO_LOW）；分城数 < 分城上限 = floor(主城官府等级 ÷ 2)（BRANCH_LIMIT，名城同样计入）；目标 NPC 城等级 ≤ 出发城的官府等级（TARGET_LEVEL_TOO_HIGH）。发起时初核，Worker 到达时复核（不满足则胜利后不建分城、幸存部队返程，事件 battle_won 记录 occupied=false 与 denial）。打赢后该城成为分城：接收 NPC 城的建筑与**剩余库存**，幸存部队进城驻守，分城可独立建造 / 征兵 / 出征（城池类协议带 cityId）；占领不受掠夺冷却限制，不另行掠夺（库存随城移交）。**占领野地结算（task=occupy 目标为野地）**：无一次性战利品；该城占领野地数低于官府等级（上限 = 官府等级，随官府升级提高）时改归属、幸存部队驻守并获得持续加成；发起时初核 TERRITORY_LIMIT，到达复核（超限则胜利后不改归属、幸存部队返程，事件记录 occupied=false / denial=TERRITORY_LIMIT）。**盟友不可攻击（v67，AISLG-182）**：目标城池 / 野地的主人与你同属一个联盟时，掠夺、抢占野地、占领分城一律返回 ALLY_NOT_ATTACKABLE（运输、增援、调兵不受影响）；出发后目标才成为盟友的，部队到达时不开战、原路返回（事件 outcome=aborted，cause=ALLY_NOT_ATTACKABLE）。**协防（v74，AISLG-194）**：task=assist 把部队派进盟友的主城 / 分城驻扎——行军时长与普通行军相同（驿站不加速）；每座城最多接收 5 支、同一账号对同一座城最多 1 支（在途也算，超限 ASSIST_LIMIT），任务占派出城校场名额、耗粮按野外 2 倍由出发城承担；守城战里与城主驻军合并成守方参战（各方科技只作用于各自部队，城守武将只加成城主部队），战后同一兵种伤亡按开战数量比例分摊（取整余数归城主），派出方会收到一份带 assistLosses 的战报；派出方随时可召回、城主可遣返（DISMISS_ASSIST），退盟 / 被踢 / 解散与分城易主时自动遣返。出发后才退盟的，到达按 ASSIST_NOT_ALLY 原路返回。每场战斗生成一份战报（GET_BATTLE_REPORTS 可查、PUSH_BATTLE_REPORT 推送）。 迷雾（v92，AISLG-224）：目标未探索且不在视野内时（只限 task = plunder / occupy），目标相关的校验（保护、免战、占领资格等）被拒绝也不报错：照常建立行军，响应结构与校验通过时完全一致，且不会向守方发来袭预警、不破除新手保护；到达后由服务端复核——守方仍受保护或目标已不是可打的对象时原路返回（aborted），否则按现有规则结算。兵力不足、出征上限、迁城后的攻击限制（MOVE_CITY_ATTACK_LOCK）等与目标无关的校验照旧报错。
+从账号主城派出部队前往目标地块，到达后由服务端自动结算。编队 troops 按兵种给出数量（至少一种 > 0），发起时立即从城内驻军扣减；行军时长 = Chebyshev 距离 × 每格秒数（基准 15 秒/格，占位）÷ **编队最慢兵种的行军速度系数**（斥候 ×2、轻骑兵 ×1.5，其余 ×1）÷（1 + 行军科技加成，v27 每级 +5%；v30 AISLG-83：自己城池之间的调兵 / 运输再加出发城**驿站**加成，每级 +10%、10 级翻倍，出征野地 / NPC 城等其他目标不受影响，运输往返与失效返程同吃出发城驿站），**总时长**再 ÷ 全局时间缩放、向上取整、最少 1 秒（见文档头部；不是先把每格缩放取整再乘格数）。以响应里的 arriveAt 为准。v16 新增可选 **task**：`plunder`（掠夺，**缺省值**）或 `occupy`（占领）——只作用于野地与 NPC 城目标，侦察 / 调兵 / 增援忽略 task。目标与结算：**无主野地**按 task 掠夺或占领（战斗 vs 原住守军）；**本账号占领的野地** = 增援驻军（不战斗）；**未被占领的 NPC 城池**可掠夺，也可占领变分城（v24，AISLG-58；战斗 vs 驻防、守方据墙待敌）；**本账号分城** = 调兵（不战斗，到达并入该城驻军）；**发起前校验校场（v30，AISLG-80；v117 AISLG-269 改口径）**：本城同时在外的部队数（行军中含返程 + 驻守野地，不计城内驻军）已达上限（上限 = max(1, min(校场等级, 本城官府等级))，未建校场 / 未建官府按保底 1）时返回 DEPLOY_LIMIT，SCOUT 同；玩家城池（他人的）、他人占领地块与出发主城本身不可作为目标（玩家对抗随后续阶段开放）。**v38（AISLG-122，玩家对抗一）开放掠夺他人城池**：主城与分城都能打、不用宣战，战斗与 NPC 打主城同口径的守城战（城墙、城防科技、箭塔、守方城守全部生效），发起即给守方推送来袭预警（PUSH_ATTACK_WARNING，预警窗口 = 行军时长，敌情按守方烽火台分档）；守方处于新手保护返回 NEWBIE_PROTECTED、免战中返回 TARGET_IN_TRUCE（均附 until / retryAfterSeconds），攻方自己的主动免战生效中返回 SELF_TRUCE_ACTIVE（打野地 / NPC 不受限）；**task=occupy 对他人分城开放（v40，AISLG-124，玩家对抗三）**：主城仍返回 TASK_INVALID_FOR_TARGET（永不可占领，只能被掠夺）。分城占领资格与占 NPC 城同口径（GOVERNMENT_TOO_LOW / BRANCH_LIMIT / TARGET_LEVEL_TOO_HIGH，目标等级 = 该城官府等级），发起时初核、到达复核（名额没了照打、只降城防值不换主，事件 battle_won 记 occupied=false 与 denial）。守城战打赢一次（守军全灭）城防值 −35，攻方幸存冲车占比每 1% 再 +1.5（最多 +15）；**占领打赢不掠夺资源，掠夺打赢不降城防**；城防降到 0 且名额有空当场换主（详见「玩家对抗与城防值」一节与 GET_TILE 的 tile.durability）；每次打赢该城进入 4 小时（基准随缩放）被动免战，免战内城防不回涨、结束后每小时回涨 10 至满——占一座分城至少打 3 次、隔 8 小时以上，守方每次都有时间补兵 / 增援；在途到达时守方进入保护 / 免战则扑空返程（事件 outcome=aborted 附 cause）。**v39（AISLG-123，玩家对抗二）开放抢占他人占领的野地**：task='occupy'（缺省 plunder 返回 TASK_INVALID_FOR_TARGET——地里没有存货可抢）；野地战无城墙 / 箭塔 / 城守，守方 = 地块驻军，守方没留驻军不打、直接拿下（无战报）；发起即给守方推 PUSH_ATTACK_WARNING（target='wilderness'，敌情按其所属城烽火台分档），预警期间可向该地块增援（MARCH 打自己的地块 = 增援）；守方处于新手保护（NEWBIE_PROTECTED）或主动免战（TARGET_IN_TRUCE）时其全部野地不可被抢，但守方某座城的被动免战只保护城本身、不保护野地；地块处于换主保护期（被抢占后 1 小时基准随缩放）返回 TILE_PROTECTED；攻方自己的主动免战生效中同样不能抢（SELF_TRUCE_ACTIVE）。**抢占结算**：打赢且出发城占领名额（官府等级）有空 → 地块易主、幸存部队驻守并获得加成、地块进入换主保护（1 小时基准随缩放，玩家与 NPC 都不能再抢）；名额已满 → 守方照样失地（wilderness_lost cause=conquest）、地块变无主（不设保护）、攻方幸存返程（事件 battle_won 记 occupied=false / denial=TERRITORY_LIMIT）；打输 → 守方继续占领，攻方残部返程；战报 kind='pvp_wilderness' 攻守双方各一份。**到达复核口径（v39）**：到达时地块已无主（对方召回等）→ 扑空返程（aborted，cause=target_gone）；已易主第三人 → 扑空返程（aborted，cause=owner_changed）；已归本账号 → 转增援并入驻军。战斗为多回合推进结构（速度与射程影响接敌、城墙为守方提供受击减免；具体算法不对外公开，机制概览见术语表「战斗」、兵种数值见「兵种与战斗属性」）；攻方歼灭守方获胜、胜方幸存 ≥ 1，攻方战败（全灭或回合耗尽）时幸存部队撤回出发城。**兵力占比对称折算战损（v103 起，AISLG-244；v105 扩到所有战斗、攻守对称，AISLG-246）**：所有用战斗引擎结算的战斗都按同一条规则折算战损，攻守双方各算各的——对每一方，r = 本方参考战力 ÷ 对方参考战力，r ≤ 3 时不变，r > 3 时本方各兵种损失按 round(原损失 × 3 / r)（四舍五入、不多于原值），带越多兵战损越低（此前堆过 2 倍后战损几乎不再下降）；对方参考战力为 0（空守军）不折算。胜负 / 回合数 / 逐回合战报 / 战利品 / 掠夺与占领结算都不变，被碾压的一方 r < 1/3 战损不变，所以只会减少强者一方的损失。**掠夺结算（task=plunder）**：野地奖励池 = 地形对应资源 × 750 × 等级 + 金币 × 250 × 等级（v21 掠夺含金，AISLG-31；金矿 gold_mine 保持空池——金矿定位占领生息）；NPC 城 = 持久化库存（v21 起含金币；库存不再生、掠空后无收益）。实际带走量按**幸存部队负重**装填（Σ 数量 × 单兵 carry，v27 起再 × 负重科技加成（每级 +5%，向下取整）；运输任务的负重上限同口径：民夫 500、斥候/刀盾兵 80、轻骑兵 100，其余 60，占位），按**金→粮→木→石→铁**顺序装满即止，立即入账出发城（不钳储量上限）；不改归属、幸存部队返程；成功掠夺的地块进入 24 小时冷却（基准，受全局时间缩放；发起时校验 PLUNDER_COOLDOWN——v22 起该失败附 retryAfterSeconds（冷却截止 − 当前时刻，等满后重发必然受理；在途到达仍战斗但资源为零）。**掠夺玩家城（v38，AISLG-122）**：可抢池 = 城内资源先扣仓库保护（粮/木/石/铁 各保护 1000×仓库等级，金币不受保护），再乘单次比例上限（四资源 45%、金币 15%，v42 AISLG-126 校准拍板）与等级差衰减（出发城官府比目标城官府高 5 级起每多 1 级收益 −15%、最低 25%——大号打小号不禁止但收益递减），最后仍按幸存部队负重装填；攻破（守军全灭）后该城进入 4 小时（基准，随缩放）被动免战，玩家与 NPC 都不能再打它（GET_TILE 的 tile.protection 可查）；战报 kind='pvp_raid'，攻守双方各得一份；玩家城不受地块掠夺冷却限制（免战即冷却）。**名城（v24，AISLG-56，GET_TILE / 地图的 famous 字段标识，全图 8 座）分两阶段**：外围阶段对其出征（掠夺 / 占领都一样）打的是外围驻军（野战无城墙），打赢 = 外围清空、名城进入城守阶段（事件 battle_won 含 stage='outer'、outerCleared=true、recoversAt），无战利品；城守阶段（限时，超时外围恢复满编）再出征攻城守——task=plunder 掠夺其库存，task=occupy 占领并变分城（以名城命名、产量 +20%，名城计入分城上限）；外围未清时对其 task=occupy 返回 OUTER_NOT_CLEARED。名城守军 = 同等级普通 NPC 城 × 3（外围与城守各一半）。**名城任期轮换（v111，AISLG-259）**：每账号同一时间最多占 1 座名城（已有时 task=occupy 返回 FAMOUS_LIMIT），任期 7 天（按全局时间缩放；GET_STATE 的 city.famousExpiresAt 与地图 / GET_TILE 的 tile.famousExpiresAt 给出到期时刻）。任期届满该城重归无主 NPC 名城（外围满编 + 城守守军），城里驻军、该城名下野地驻军与在外部队回原主人主城，建筑、库存与建造 / 征兵 / 研究队列随城作废不退（与主动放弃分城一致）；到期前 24 小时 / 1 小时各推一次提醒（事件 famous_expiring，stage 1 / 2），到期写事件 famous_expired 与全服播报 famous_expired。到期失去这座城的原主人 48 小时内不能再占回它（新错误码 FAMOUS_BANNED，附 bannedUntil 与 retryAfterSeconds；tile.bannedUntil 可预查），但可以占其他名城，也可以打这座城的外围 / 掠夺。被玩家打下来不算到期：新主人任期重新从 7 天算，原主人不受封禁限制。**占领 NPC 城（task=occupy，v24）**：需同时满足——主城官府 ≥ 3 级（GOVERNMENT_TOO_LOW）；分城数 < 分城上限 = floor(主城官府等级 ÷ 2)（BRANCH_LIMIT，名城同样计入）；目标 NPC 城等级 ≤ 出发城的官府等级（TARGET_LEVEL_TOO_HIGH）。发起时初核，Worker 到达时复核（不满足则胜利后不建分城、幸存部队返程，事件 battle_won 记录 occupied=false 与 denial）。打赢后该城成为分城：接收 NPC 城的建筑与**剩余库存**，幸存部队进城驻守，分城可独立建造 / 征兵 / 出征（城池类协议带 cityId）；占领不受掠夺冷却限制，不另行掠夺（库存随城移交）。**占领野地结算（task=occupy 目标为野地）**：无一次性战利品；该城占领野地数低于官府等级（上限 = 官府等级，随官府升级提高）时改归属、幸存部队驻守并获得持续加成；发起时初核 TERRITORY_LIMIT，到达复核（超限则胜利后不改归属、幸存部队返程，事件记录 occupied=false / denial=TERRITORY_LIMIT）。**盟友不可攻击（v67，AISLG-182）**：目标城池 / 野地的主人与你同属一个联盟时，掠夺、抢占野地、占领分城一律返回 ALLY_NOT_ATTACKABLE（运输、增援、调兵不受影响）；出发后目标才成为盟友的，部队到达时不开战、原路返回（事件 outcome=aborted，cause=ALLY_NOT_ATTACKABLE）。**协防（v74，AISLG-194）**：task=assist 把部队派进盟友的主城 / 分城驻扎——行军时长与普通行军相同（驿站不加速）；每座城最多接收 5 支、同一账号对同一座城最多 1 支（在途也算，超限 ASSIST_LIMIT），任务占派出城校场名额、耗粮按野外 2 倍由出发城承担；守城战里与城主驻军合并成守方参战（各方科技只作用于各自部队，城守武将只加成城主部队），战后同一兵种伤亡按开战数量比例分摊（取整余数归城主），派出方会收到一份带 assistLosses 的战报；派出方随时可召回、城主可遣返（DISMISS_ASSIST），退盟 / 被踢 / 解散与分城易主时自动遣返。出发后才退盟的，到达按 ASSIST_NOT_ALLY 原路返回。每场战斗生成一份战报（GET_BATTLE_REPORTS 可查、PUSH_BATTLE_REPORT 推送）。 迷雾（v92，AISLG-224）：目标未探索且不在视野内时（只限 task = plunder / occupy），目标相关的校验（保护、免战、占领资格等）被拒绝也不报错：照常建立行军，响应结构与校验通过时完全一致，且不会向守方发来袭预警、不破除新手保护；到达后由服务端复核——守方仍受保护或目标已不是可打的对象时原路返回（aborted），否则按现有规则结算。兵力不足、出征上限、迁城后的攻击限制（MOVE_CITY_ATTACK_LOCK）等与目标无关的校验照旧报错。
 
 **请求字段**
 
@@ -10017,7 +10027,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -10736,7 +10748,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -11555,7 +11569,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -12258,7 +12274,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -16309,7 +16327,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -16866,7 +16886,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -17334,7 +17356,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -17852,7 +17876,9 @@ Agent 定期（建议每完成一批事或每小时）把「玩家不在时发�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -21568,7 +21594,8 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
 | `RESEARCH_IN_PROGRESS` | 账号已有进行中的研究（v27，AISLG-77：同一时间只能研究一项，与发起城无关）。 | 等待 PUSH_TECH_STATE（research_completed）后再发起，或用 CANCEL_RESEARCH 取消当前研究（全额返还）。 |
 | `ACADEMY_TOO_LOW` | 书院等级低于目标等级（v27，AISLG-77：第 N 级科技要求书院 ≥ N 级，未建书院按 0 级；v87 AISLG-217 起按主城的书院判定）；失败 data 附 academyRequired（要求的书院等级）与 academyLevel（主城现有）。 | 先在该城建造 / 升级书院（academy）到 academyRequired，或改用书院更高的分城发起（data.cityId）。 |
 | `RESEARCH_NOT_CANCELLABLE` | 没有可取消的研究（v27，AISLG-77）：账号当前没有进行中的研究、指定的 researchId 不属于本账号 / 已结束，或研究已到期等待结算。 | 先用 GET_TECHS 确认 research 字段；已完成的研究无法取消。 |
-| `DEPLOY_LIMIT` | 本城同时在外的部队数已达校场等级上限（v30，AISLG-80）：MARCH / SCOUT 发起时校验，上限 = 校场等级（未建校场按 1），计入行军中、返程中、驻守野地的部队（每块占领野地算一支），不计城内驻军与交易所商队（不带兵）；上线前已在外的部队不受影响、不强制召回，只拦新的出征，直到在外数量降到上限以下。失败 data 附 city（city.deploy = { count, limit }）。分城各算各的。 | 等在外部队回城 / 用 RECALL_GARRISON 召回驻军降到上限以下再出征，或升级本城校场（parade_ground）；GET_STATE 的 city.deploy 可提前判断。 |
+| `DEPLOY_LIMIT` | 本城同时在外的部队数已达校场等级上限（v30，AISLG-80）：MARCH / SCOUT 发起时校验，上限 = max(1, min(校场等级, 本城官府等级))（未建校场 / 未建官府按保底 1；v117 AISLG-269 起由「校场等级」改为两者较小值），计入行军中、返程中、驻守野地的部队（每块占领野地算一支），不计城内驻军与交易所商队（不带兵）；已在外的部队不受影响、不强制召回，只拦新的出征，直到在外数量降到上限以下。失败 data 附 city（city.deploy = { count, limit, paradeLevel, governmentCapped }）。分城各算各的。 | 等在外部队回城 / 用 RECALL_GARRISON 召回驻军降到上限以下再出征，或升级官府（government）抬高上限（校场已高于官府时升官府直接生效）、必要时再升校场；GET_STATE 的 city.deploy 可提前判断（paradeLevel 为校场实际等级、governmentCapped 表示被官府压住）。 |
+| `PARADE_ABOVE_GOVERNMENT` | 校场等级不能超过本城官府等级（v117，AISLG-269）：BUILD / UPGRADE 校场 parade_ground 时，目标等级（连续升级取 toLevel 终点，并计入队列里已排的校场升级）大于本城**当前已建成的**官府等级即返回本错误码，不扣资源、不入队，失败响应附 city。排队中的官府升级不算（要到建成才生效）。已升高的校场不降级、不退资源，只在计算在外部队上限时取较小值。 | 先升级本城的官府（UPGRADE kind=government），等它建成后再升校场；不想等就把校场目标等级降到当前官府等级，或就让校场停在这个等级（在外部队上限此时由官府等级决定）。 |
 | `MOVING_TARGET_GONE` | 截击（MARCH 带 targetId，v28，AISLG-78）发起时目标不存在、已被击败或已过时消失。注意：发起后到达时目标才消失不报错，而是记「目标消失」战报、部队返程。 | 用 GET_MOVING_TARGETS 重新取目标列表，挑还存在的目标再发起。 |
 | `TAVERN_NOT_BUILT` | （v36，AISLG-114）该城未建酒馆，无候选可招。 | 先建酒馆（BUILD kind=tavern），或到已建酒馆的城招募。 |
 | `HERO_CANDIDATE_GONE` | （v36，AISLG-114）候选武将不存在、已被招募或已随批次刷新失效。 | 重拉 GET_HEROES 取当前候选再招募。 |
@@ -22189,7 +22216,9 @@ NPC 出兵后不再立刻结算：先给被袭击账号发预警（预警提前�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {
@@ -22905,7 +22934,9 @@ Agent 与玩家看同一座城（同一账号），但 Agent **不能用账号�
       "guard": null,
       "deploy": {
         "count": 0,
-        "limit": 1
+        "limit": 1,
+        "paradeLevel": 0,
+        "governmentCapped": false
       },
       "tower": null,
       "techs": {

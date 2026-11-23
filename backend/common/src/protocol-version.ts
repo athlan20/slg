@@ -1029,7 +1029,7 @@
  *   k 与倍率同一天数档：第 8~14 天 100 / 10%、15~21 天 150 / 14%、22 天起 200 / 18%。
  *   四、协议：GET_FACTIONS 的 factions[] 新增 hatredTier（none / noticed / target，只对请求者本人，不给数值）；
  *   PUSH_FACTION_SIEGE 的 reason=warning 新增可选 byHatred。新表 faction_hatred（换季清空）。
- * v117（校场等级不能超过官府等级，AISLG-269；只加不改，与本条并行开发、合入后即为 v117）：
+ * v117（校场等级不能超过官府等级，AISLG-269；只加不改）：
  *   每城同时在外部队上限改为 max(1, min(校场等级, 官府等级))；BUILD / UPGRADE 校场超过官府返回
  *   PARADE_ABOVE_GOVERNMENT；CityView.deploy 改为 { count, limit, paradeLevel, governmentCapped }。
  * v118（野地掠夺按账号每日递减 + 战斗所得超出储量上限作废，AISLG-270；只加不改）：

@@ -357,6 +357,7 @@ export type ErrorCode =
   | 'BUILDING_NOT_BUILT'
   | 'BUILDING_LEVEL_MAX'
   | 'BUILDING_MAIN_ONLY'
+  | 'PARADE_ABOVE_GOVERNMENT'
   | 'BUILD_NOT_CANCELLABLE'
   | 'TRAINING_NOT_CANCELLABLE'
   | 'AGENT_FORBIDDEN'
@@ -1076,8 +1077,9 @@ export interface CityView {
   defenseBonus: number;
   /** 账号科技等级（v27 AISLG-77；全账号共享，已计入 production / storage / defenseBonus；负重与行军加成由客户端折算） */
   techs: TechLevels;
-  /** 在外部队数与上限（v30 AISLG-80）：count = 行军中（含返程）+ 驻守野地，limit = 校场等级（未建按 1） */
-  deploy: { count: number; limit: number };
+  /** 在外部队数与上限（v30 AISLG-80；v117 AISLG-269 上限改为生效值）：count = 行军中（含返程）+ 驻守野地，
+   *  limit = max(1, min(校场等级, 官府等级))，paradeLevel = 校场实际等级，governmentCapped = 是否被官府压住 */
+  deploy: { count: number; limit: number; paradeLevel: number; governmentCapped: boolean };
   /** 预计断粮时间（v34 AISLG-107；ISO 8601）：已断粮 = 当前时刻；不会断粮为 null */
   starveAt: string | null;
   /** 下一次断粮哗变时刻（v34）：已断粮时有值——到点本城城内驻军每兵种减 10% */
