@@ -31,6 +31,7 @@ import { getCopy } from '../i18n/bundle';
 import type { Actor } from '../types';
 import { applyMarchResult } from './cityUpdates';
 import { clampZoom, loadSavedZoom, resizedOrigin, saveZoom } from './mapZoom';
+import { requestTargetTile, type TargetTileResult } from './targetTile';
 
 /** 窗口边长（与服务端缺省一致：一屏 10×10；单边上限 20 见协议文档） */
 /** 战报分页大小：首页条数，也是「加载更早」每页条数（协议上限 50） */
@@ -88,6 +89,9 @@ export interface WorldSession {
   selectTile: (x: number, y: number) => void;
   /** 取消选中（关闭地块详情弹窗） */
   deselectTile: () => void;
+  /** 按坐标静取一格地块（AISLG-268 行军目的地名称）：不覆盖详情面板、不写错误条；
+   *  迷雾未探索（TILE_UNEXPLORED）与失败分开返回，调用方据此显「迷雾中」或什么都不显示 */
+  fetchTargetTile: (x: number, y: number) => Promise<TargetTileResult>;
   /** 出征（v16：task 缺省 plunder；野地掠夺/占领，NPC 固定掠夺） */
   march: (
     x: number,
@@ -364,6 +368,12 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
     setSelected(null);
     setDetail(null);
   }, []);
+
+  /** 静取一格地块（AISLG-268）：不 setDetail / setSelected，失败也不进 error；只给行军卡补目的地名称 */
+  const fetchTargetTile = useCallback(
+    (x: number, y: number) => requestTargetTile(clientRef.current, x, y),
+    [clientRef],
+  );
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -827,6 +837,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
       resizeWindow,
       selectTile,
       deselectTile,
+      fetchTargetTile,
       march,
       recall,
       scout,
@@ -873,6 +884,7 @@ export function useWorldSession(deps: WorldSessionDeps): WorldSession {
       resizeWindow,
       selectTile,
       deselectTile,
+      fetchTargetTile,
       march,
       recall,
       scout,

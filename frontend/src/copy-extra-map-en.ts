@@ -63,6 +63,8 @@ export const EXTRA_MAP_EN = {
     unknownTitle: 'Unexplored: black fog here. Send a scout or troops to see it.',
     exploredTitle: (time: string) => `Explored · last seen ${time}`,
     unknownNotice: (x: number, y: number) => `Target (${x}, ${y}) is in the fog. Its situation is unknown.`,
+    /** 行军卡目的地名称的迷雾占位（AISLG-268） */
+    tileInFog: 'In fog',
     exploredPercent: (pct: number) => `Explored ${pct}%`,
     reportTitle: 'Exploration report',
     reportSummary: (chunks: number) => `Explored ${chunks} new chunk(s)`,

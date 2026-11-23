@@ -11,8 +11,11 @@ import { tName } from '../../i18n/names';
 import { useGame } from '../../state/GameContext';
 import { useNav } from '../../state/NavContext';
 import { activeMarches } from '../../state/progressItems';
+import { useMarchTargetTiles } from '../../state/useMarchTargetTiles';
+import { targetKey } from '../../state/marchTargetTiles';
 import { useNow } from '../../state/useNow';
 import { marchLabel } from '../worldPanelText';
+import { tileTitle } from '../worldMapTip';
 import { StratagemEntry } from '../stratagem/StratagemEntry';
 import { Card } from '../ui/Card';
 import { PagedList } from '../ui/PagedList';
@@ -21,13 +24,16 @@ import { cargoSummaryText, compositionText } from './marchDetailText';
 
 export function MarchesCard({ role }: { role: string }) {
   const copy = useCopy();
-  const { ARMY_COPY, COPY, DEFENSE_COPY, EXTRA_PANEL } = copy;
+  const { ARMY_COPY, COPY, DEFENSE_COPY, EXTRA_MAP, EXTRA_PANEL } = copy;
   const { session } = useGame();
   const { go } = useNav();
   const { world, city } = session;
   const [recallBusyId, setRecallBusyId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const marches = city ? activeMarches(city) : [];
+  // 目的地名称（AISLG-268）：窗口缓存优先，缺的用 GET_TILE 静取；拿不到就没有这一小段
+  const targetTiles = useMarchTargetTiles(marches, world.window, world.fetchTargetTile);
+  const accountId = session.account?.accountId ?? null;
   const now = useNow(marches.length > 0);
   const heroes = session.heroSession.state?.heroes ?? [];
 
@@ -80,6 +86,14 @@ export function MarchesCard({ role }: { role: string }) {
           const state = march.purpose === 'return' ? ARMY_COPY.marchStateReturn : ambush ? ARMY_COPY.marchStateAmbush : ARMY_COPY.marchStateMarching;
           const hero = march.heroId ? heroes.find((item) => item.id === march.heroId) : undefined;
           const title = marchLabel(march, now);
+          const target = targetTiles.get(targetKey(march.x, march.y));
+          // 名称与地图悬浮卡第一行同一来源（tileTitle，isOwn 口径同 WorldMapGrid）；迷雾未探索显示「迷雾中」
+          const targetText =
+            target === 'fog'
+              ? EXTRA_MAP.fog.tileInFog
+              : target
+                ? tileTitle(target, target.owner !== null && target.owner.accountId === accountId)
+                : null;
           // 行内第二行：运输类行军列物资摘要，其余列将领名（武将列表未加载时占位「将领」）
           const cargoSummary = cargoSummaryText(march.cargo);
           const summary = cargoSummary
@@ -96,9 +110,15 @@ export function MarchesCard({ role }: { role: string }) {
                     world.centerOn(march.x, march.y);
                     go('map');
                   }}
-                  className="block max-w-full cursor-pointer truncate text-left text-[12px] hover:text-accent"
+                  className="flex max-w-full cursor-pointer items-center gap-1 text-left text-[12px] hover:text-accent"
                 >
-                  {title}
+                  <span className="shrink-0">{title}</span>
+                  {targetText ? (
+                    // 行过长时先截断名称，任务与坐标（shrink-0）不被截掉
+                    <span role="行军-目的地名称" title={targetText} className="min-w-0 truncate text-[11.5px] text-faint">
+                      {targetText}
+                    </span>
+                  ) : null}
                 </button>
                 <button
                   type="button"
