@@ -93,6 +93,8 @@ export const EXTRA_MAP = {
     unknownTitle: '未探索：这里是黑雾，派斥候或部队过去才能看到',
     exploredTitle: (time: string) => `已探索 · 上次看到 ${time}`,
     unknownNotice: (x: number, y: number) => `目标 (${x}, ${y}) 在迷雾中，情况未知`,
+    /** 行军卡目的地名称的迷雾占位（AISLG-268）：不带任何地块信息，只说明这一格还没探索 */
+    tileInFog: '迷雾中',
     exploredPercent: (pct: number) => `已探索 ${pct}%`,
     reportTitle: '探索简报',
     reportSummary: (chunks: number) => `新探索 ${chunks} 个区块`,
